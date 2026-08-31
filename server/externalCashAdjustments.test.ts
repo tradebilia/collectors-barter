@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { describe, expect, it } from "vitest";
 
 const routerSource = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
 const schemaSource = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
@@ -8,93 +8,62 @@ const tradeFlowSource = readFileSync(resolve(process.cwd(), "server/tradeFlowRou
 const settingsSource = readFileSync(resolve(process.cwd(), "client/src/pages/AccountSettings.tsx"), "utf8");
 const setupSource = readFileSync(resolve(process.cwd(), "client/src/pages/AccountSetup.tsx"), "utf8");
 const warRoomSource = readFileSync(resolve(process.cwd(), "client/src/pages/WarRoom.tsx"), "utf8");
-const adminSource = readFileSync(resolve(process.cwd(), "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("External cash-adjustment safeguards", () => {
-  it("stores all approved private member destinations and trade-level status fields", () => {
+  it("stores member-provided destinations and trade-level method status fields", () => {
     expect(schemaSource).toContain("venmoUsername");
     expect(schemaSource).toContain("cashAppCashtag");
     expect(schemaSource).toContain("zelleEmail");
     expect(schemaSource).toContain("zellePhone");
     expect(schemaSource).toContain("paymentMethod: mysqlEnum(['paypal','venmo','cash_app','zelle'])");
     expect(schemaSource).toContain("'method_selected','sent','received','disputed'");
-    expect(schemaSource).toContain("paymentMethodSelectedAt");
-    expect(schemaSource).toContain("disputeReason");
+    expect(schemaSource).toContain("requestedListingId: int().references(() => listings.id)");
   });
 
-  it("validates private member destinations and resets active terms when a payee changes them", () => {
+  it("treats Profile changes as future payment preferences and preserves accepted trade snapshots", () => {
     expect(routerSource).toContain("externalPaymentMethodsInputSchema");
-    expect(routerSource).toContain("Use one Zelle destination");
     expect(routerSource).toContain("saveExternalPaymentMethods");
-    expect(routerSource).toContain("cash_payment_terms_reset");
-    expect(routerSource).toContain("Payee changed a direct-payment identifier");
+    expect(routerSource).toContain("preferencesChanged: methodChanged");
+    expect(settingsSource).toContain("Accepted trade payment details are unchanged");
   });
 
-  it("reveals an external identifier only to a Review- or Shipping-stage payer after payee selection", () => {
+  it("matches member-enabled methods in Step 2 and reveals destinations only to the payer after acceptance", () => {
     const context = routerSource.slice(routerSource.indexOf("getCashAdjustmentContext:"), routerSource.indexOf("selectCashAdjustmentMethod:", routerSource.indexOf("getCashAdjustmentContext:")));
-    expect(context).toContain('proposal.status !== "accepted" && proposal.status !== "shipping"');
-    expect(context).toContain("getPaymentVerificationObligations(proposal)");
-    expect(context).toContain("paymentByPayerId");
-    expect(routerSource).toContain("maskExternalPaymentIdentifier");
-    expect(context).toContain("getAvailableExternalPaymentMethods(payeeRows[0] ?? {})");
-    expect(context).toContain('role: obligation.payerId === ctx.user.id ? "payer"');
-    expect(context).toContain("availableMethods: obligation.payeeId === ctx.user.id");
+    expect(context).toContain("getSharedExternalPaymentMethods");
+    expect(context).toContain("mayRevealDestination");
+    expect(context).toContain('proposal.status === "shipping" || proposal.status === "shipped"');
+    expect(context).toContain("obligation.payerId === ctx.user.id ? payment.paymentIdentifier : null");
+    expect(context).toContain("partnerDisplayName");
   });
 
-  it("requires member-confirmed sent and received statuses instead of claiming provider verification", () => {
+  it("requires the cash recipient to select a shared method during negotiation", () => {
+    const selection = routerSource.slice(routerSource.indexOf("selectCashAdjustmentMethod:"), routerSource.indexOf("markCashAdjustmentSent:", routerSource.indexOf("selectCashAdjustmentMethod:")));
+    expect(selection).toContain('proposal.status !== "negotiating"');
+    expect(selection).toContain("Only the trade participant receiving cash can choose the payment method");
+    expect(selection).toContain("Both members must enable");
+    expect(tradeFlowSource).toContain("has no payment method in common");
+  });
+
+  it("keeps provider claims accurate and separates sent from received confirmation", () => {
     expect(routerSource).toContain("markCashAdjustmentSent");
     expect(routerSource).toContain("confirmCashAdjustmentReceived");
-    expect(routerSource).toContain("openCashAdjustmentDispute");
-    expect(routerSource).toContain("externalVerification: \"not_available\"");
-    expect(routerSource).toContain("externalVerification: \"member_confirmed\"");
-    expect(routerSource).toContain("REVEAL CASH PAYMENT IDENTIFIER");
+    expect(routerSource).toContain('externalVerification: "not_available"');
+    expect(routerSource).toContain('externalVerification: "member_confirmed"');
+    expect(warRoomSource).toContain("Tradebilia does not process or verify this external payment");
   });
 
-  it("moves cash settlement into Shipping while retaining dispute safeguards before physical-item receipt confirmation", () => {
-    const shipping = tradeFlowSource.slice(tradeFlowSource.indexOf("proceedToShipping:"), tradeFlowSource.indexOf("// ==========================================================================\n  // COMMUNICATION", tradeFlowSource.indexOf("proceedToShipping:")));
-    expect(shipping).not.toContain("The cash adjustment must be marked sent and confirmed received before shipping can begin.");
-    expect(tradeFlowSource).toContain("cashSettlementComplete");
-    expect(tradeFlowSource).toContain("bothShipped && cashSettlementComplete");
-    expect(warRoomSource).toContain("currentStage === 'shipping'");
-    expect(warRoomSource).toContain("Cash Settlement During Shipping");
-    expect(warRoomSource).toContain("Step 5, Confirm Receipt, opens automatically after both members submit tracking");
-    expect(warRoomSource).toContain("Complete each remaining cash step below during Shipping.");
-  });
-
-  it("provides private setup and settings forms plus Trade Room and masked admin controls", () => {
+  it("provides checkbox-based private Profile and Account Setup method setup plus clear Step 2 compatibility guidance", () => {
     for (const source of [settingsSource, setupSource]) {
-      expect(source).toContain("Venmo username");
-      expect(source).toContain("Cash App $cashtag");
+      expect(source).toContain("enabledMethods");
+      expect(source).toContain("PayPal");
+      expect(source).toContain("Venmo");
+      expect(source).toContain("Cash App");
       expect(source).toContain("Zelle");
-      expect(source).toContain("does not process, hold, insure, refund, or guarantee direct payments");
     }
-    expect(settingsSource).toContain("const zelleDestination = externalPaymentForm.zelleEmail || externalPaymentForm.zellePhone;");
-    expect(settingsSource).toContain('id="payment-zelle"');
-    expect(settingsSource).not.toContain('id="payment-zelle-email"');
-    expect(settingsSource).not.toContain('id="payment-zelle-phone"');
-    expect(settingsSource).toContain("Email address or U.S. mobile number");
-    expect(settingsSource).toContain("For Zelle, enter either one email address or one U.S. mobile number.");
-    expect(settingsSource).toContain('/manus-storage/paypal-official-logo_f5abda0f.png');
-    expect(settingsSource).toContain('/manus-storage/venmo-official-logo_37a969df.png');
-    expect(settingsSource).toContain('/manus-storage/cash-app-official-logo-normalized_342b45be.webp');
-    expect(settingsSource).toContain('/manus-storage/zelle-official-logo-normalized_9845a118.png');
-    expect((settingsSource.match(/className="h-8 w-auto max-w-\[11rem\] object-contain object-left"/g) ?? []).length).toBe(4);
-    expect(settingsSource).not.toContain('/manus-storage/cash-app-official-logo_72e2eb83.webp');
-    expect(settingsSource).not.toContain('/manus-storage/zelle-official-logo_3b446c40.png');
-    expect(settingsSource).not.toContain('className="h-8 w-8 object-contain"');
-    expect(settingsSource).toContain("Fill in at least one destination below before cash can be included in a trade.");
-    expect(setupSource).toContain("Fill in at least one destination before cash can be included in a trade.");
-    expect(settingsSource).toContain('className="sr-only">PayPal email</span>');
-    expect(settingsSource).not.toContain('<span>PayPal email</span>');
-    expect(settingsSource).not.toContain('<span>Venmo username</span>');
-    expect(settingsSource).not.toContain('<span>Cash App $cashtag</span>');
-    expect(settingsSource).not.toContain('<span>Zelle destination</span>');
-    expect(routerSource).toContain("getAvailableExternalPaymentMethods(payeeRows[0] ?? {})");
-    expect(warRoomSource).toContain("getCashAdjustmentContext");
-    expect(warRoomSource).toContain("I sent it");
-    expect(warRoomSource).toContain("Confirm receipt");
-    expect(warRoomSource).toContain("Open dispute");
-    expect(adminSource).toContain("External Cash Adjustments");
-    expect(adminSource).toContain("Audited reveal");
+    expect(warRoomSource).toContain("Cash payment method");
+    expect(warRoomSource).toContain("No shared method");
+    expect(warRoomSource).toContain("currently accepts");
+    expect(warRoomSource).toContain("Shipping & Payment");
+    expect(warRoomSource).toContain("I Received");
   });
 });

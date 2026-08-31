@@ -1143,3 +1143,24 @@
 - [x] Repair authenticated participant-to-owner mapping so Rtavani sees the locked Mark McGwire shipment and its tracking fields. User confirmed this was a screen-adjustment issue; no trade data change was needed.
 - [x] Verify Administrator still sees both Administrator-owned items separately from Rtavani’s shipment. User confirmed the current view after adjusting the screen.
 - [x] Add a two-participant Shipping regression and verify the corrected owner-specific tracking controls. Existing owner-specific Shipping coverage remains in place.
+
+- [x] Redesign direct-cash eligibility and payment-method selection for Stage 2 Negotiation, before cash-inclusive terms can be accepted.
+- [x] Define clear two-sided direct-cash rules for sender, recipient, method selection, and neutral cash-only trades; payment-method selection stays in Step 2 and sending occurs in Step 4.
+- [x] Keep the current test trade unchanged until the revised cash workflow is approved and ready for a clean retest. The prior test trade was separately authorized for deletion and removed before redesign implementation.
+
+- [x] Permanently delete authorized test trade TR-000002 and all associated test-only tracking, payment, activity, alert, message, and receipt records. The guarded transaction removed only the identified trade and its child records; no users, inquiries, or unrelated records were included.
+- [x] Release only the three listings locked by TR-000002 back to active status. Listing IDs 690002, 690006, and 1170010 were each prevalidated as traded, then restored to active inside the same transaction.
+- [x] Verify the trade and related test records are removed before beginning a fresh cash-workflow test. Independent read-only verification found no TR-000002 proposal and confirmed all three authorized listings are active.
+
+- [x] Move direct-cash payment-method setup from the Profile Integrations tab into the private Profile tab and optional Account Setup flow, using enable checkboxes plus method-specific member-provided destinations.
+- [x] Prevent incomplete or disabled payment methods from enabling Add Cash, while preserving item-only trading with no payment-method setup.
+- [x] Compare the two participants’ enabled payment methods during Step 2, show only shared methods for each positive cash direction, and display a clear display-name-based explanation when a compatible method is missing.
+- [x] Require the cash recipient to select the compatible method for each cash direction before final acceptance, snapshot the private selected destination at acceptance, and reset acceptance when an amount, direction, or method changes.
+- [x] Preserve neutral cash-only exchanges without promotional treatment; display no-shipping guidance when an agreement contains no items.
+- [x] Make Step 4 Shipping & Payment require all applicable tracking submissions and payer Payment Sent confirmations before automatically opening Step 5.
+- [x] Make Step 5 retain read-only tracking details and require recipient confirmation of each expected item and any cash owed before completion, with a clear issue-report path for missing or incorrect fulfillment.
+- [x] Keep payment destinations private from public pages, directory cards, notification previews, activity text, review, and print receipt; accurately describe methods as member-provided rather than platform-verified.
+- [x] Add focused regression coverage and TypeScript/build/whitespace validation for Profile, Account Setup, two-party cash, cash-only, and late-stage Trade Room flows. Unauthenticated visual capture confirmed the access gate; an authenticated two-member manual test remains required.
+- [ ] Perform an authenticated two-member manual test for item-only, cash-only, and item-plus-cash exchanges before treating the redesigned flow as production-ready.
+- [ ] Push the verified direct-cash workflow commit to a safe dedicated branch in the canonical Tradebilia GitHub repository for source backup; do not overwrite its divergent main branch.
+- [ ] Save the updated managed WebDev version so Rich can perform the authenticated two-member test.

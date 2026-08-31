@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getAvailableExternalPaymentMethods } from "./externalPaymentMethods";
+import { getAvailableExternalPaymentMethods, getEnabledExternalPaymentMethods, getSharedExternalPaymentMethods } from "./externalPaymentMethods";
 
 describe("Trade Room saved payment-method availability", () => {
   it("returns only Venmo when Venmo is the only saved destination", () => {
@@ -23,5 +23,16 @@ describe("Trade Room saved payment-method availability", () => {
 
   it("returns no selectable methods when no destination is saved", () => {
     expect(getAvailableExternalPaymentMethods({})).toEqual([]);
+  });
+
+  it("returns only enabled methods that contain a member-provided destination", () => {
+    expect(getEnabledExternalPaymentMethods({ paypalEmail: "member@example.test", venmoUsername: "" })).toEqual(["paypal"]);
+  });
+
+  it("returns only method labels that both members enabled", () => {
+    expect(getSharedExternalPaymentMethods(
+      { paypalEmail: "payer@example.test", venmoUsername: "payer-name", cashAppCashtag: "$payer" },
+      { paypalEmail: "payee@example.test", venmoUsername: "", zellePhone: "+15551234567" },
+    )).toEqual([{ method: "paypal", label: "PayPal" }]);
   });
 });

@@ -40,3 +40,23 @@ export function getAvailableExternalPaymentMethods(profile: ExternalPaymentProfi
     .filter((entry): entry is { method: ExternalPaymentMethod; label: string; identifier: string } => Boolean(entry.identifier))
     .map((entry) => ({ ...entry, identifier: maskExternalPaymentIdentifier(entry.identifier) }));
 }
+
+/** Returns only the member-provided methods that have a saved usable destination. */
+export function getEnabledExternalPaymentMethods(profile: ExternalPaymentProfile): ExternalPaymentMethod[] {
+  return EXTERNAL_PAYMENT_METHODS.filter((method) => Boolean(getExternalPaymentIdentifier(method, profile)));
+}
+
+/**
+ * A direct-cash obligation is eligible only when both participants have enabled
+ * the same member-provided method. Method labels are safe to show in Trade Room;
+ * identifiers remain private and are never included here.
+ */
+export function getSharedExternalPaymentMethods(
+  firstProfile: ExternalPaymentProfile,
+  secondProfile: ExternalPaymentProfile,
+): Array<{ method: ExternalPaymentMethod; label: string }> {
+  const secondMethods = new Set(getEnabledExternalPaymentMethods(secondProfile));
+  return getEnabledExternalPaymentMethods(firstProfile)
+    .filter((method) => secondMethods.has(method))
+    .map((method) => ({ method, label: getExternalPaymentMethodLabel(method) }));
+}

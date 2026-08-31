@@ -1040,7 +1040,7 @@ async function getProposalCards(userId: number) {
     id: p.id,
     requesterId: p.requesterId,
     recipientId: p.recipientId,
-    requestedListing: listingMap.get(p.requestedListingId) ?? null,
+    requestedListing: p.requestedListingId ? listingMap.get(p.requestedListingId) ?? null : null,
     note: p.note,
     status: p.status,
     respondedAt: p.respondedAt ? new Date(p.respondedAt).getTime() : null,
@@ -1388,12 +1388,14 @@ export async function respondToTradeProposal(
         .where(eq(tradeProposalItems.proposalId, input.proposalId));
 
       const listingIds = proposalItems.map(item => item.offeredListingId);
-      listingIds.push(proposal[0].requestedListingId);
+      if (proposal[0].requestedListingId) listingIds.push(proposal[0].requestedListingId);
 
-      await tx
-        .update(listings)
-        .set({ status: "traded" })
-        .where(inArray(listings.id, listingIds));
+      if (listingIds.length > 0) {
+        await tx
+          .update(listings)
+          .set({ status: "traded" })
+          .where(inArray(listings.id, listingIds));
+      }
     }
   });
 

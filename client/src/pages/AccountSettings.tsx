@@ -52,6 +52,14 @@ const accountSources = [
 ] as const;
 
 type AccountSource = typeof accountSources[number]["value"];
+type ExternalPaymentMethodKey = "paypal" | "venmo" | "cash_app" | "zelle";
+
+const externalPaymentMethodOptions: Array<{ key: ExternalPaymentMethodKey; label: string; logo: string }> = [
+  { key: "paypal", label: "PayPal", logo: "/manus-storage/paypal-official-logo_f5abda0f.png" },
+  { key: "venmo", label: "Venmo", logo: "/manus-storage/venmo-official-logo_37a969df.png" },
+  { key: "cash_app", label: "Cash App", logo: "/manus-storage/cash-app-official-logo-normalized_342b45be.webp" },
+  { key: "zelle", label: "Zelle", logo: "/manus-storage/zelle-official-logo-normalized_9845a118.png" },
+];
 
 
 
@@ -173,6 +181,12 @@ export default function AccountSettings() {
     zelleEmail: "",
     zellePhone: "",
   });
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<Record<ExternalPaymentMethodKey, boolean>>({
+    paypal: false,
+    venmo: false,
+    cash_app: false,
+    zelle: false,
+  });
   const [externalPaymentSaving, setExternalPaymentSaving] = useState(false);
   const zelleDestination = externalPaymentForm.zelleEmail || externalPaymentForm.zellePhone;
 
@@ -185,6 +199,12 @@ export default function AccountSettings() {
       cashAppCashtag: methods.cashAppCashtag ?? "",
       zelleEmail: methods.zelleEmail ?? "",
       zellePhone: methods.zellePhone ?? "",
+    });
+    setEnabledPaymentMethods({
+      paypal: Boolean(methods.paypalEmail),
+      venmo: Boolean(methods.venmoUsername),
+      cash_app: Boolean(methods.cashAppCashtag),
+      zelle: Boolean(methods.zelleEmail || methods.zellePhone),
     });
   }, [externalPaymentMethodsQuery.data]);
   // Communications State
@@ -601,19 +621,31 @@ export default function AccountSettings() {
     setExternalPaymentSaving(true);
     try {
       const result = await saveExternalPaymentMethodsMutation.mutateAsync({
-        paypalEmail: externalPaymentForm.paypalEmail.trim() || null,
-        venmoUsername: externalPaymentForm.venmoUsername.trim() || null,
-        cashAppCashtag: externalPaymentForm.cashAppCashtag.trim() || null,
-        zelleEmail: externalPaymentForm.zelleEmail.trim() || null,
-        zellePhone: externalPaymentForm.zellePhone.trim() || null,
+        enabledMethods: enabledPaymentMethods,
+        paypalEmail: enabledPaymentMethods.paypal ? externalPaymentForm.paypalEmail.trim() || null : null,
+        venmoUsername: enabledPaymentMethods.venmo ? externalPaymentForm.venmoUsername.trim() || null : null,
+        cashAppCashtag: enabledPaymentMethods.cash_app ? externalPaymentForm.cashAppCashtag.trim() || null : null,
+        zelleEmail: enabledPaymentMethods.zelle ? externalPaymentForm.zelleEmail.trim() || null : null,
+        zellePhone: enabledPaymentMethods.zelle ? externalPaymentForm.zellePhone.trim() || null : null,
       });
       await externalPaymentMethodsQuery.refetch();
-      toast.success(result.resetTradeCount ? `Payment destinations saved. ${result.resetTradeCount} active cash trade${result.resetTradeCount === 1 ? "" : "s"} must select a method again.` : "Payment destinations saved privately.");
+      toast.success(result.preferencesChanged ? "Payment methods saved privately. Accepted trade payment details are unchanged." : "Payment methods saved privately.");
     } catch (err: any) {
       toast.error(err?.message || "Failed to save payment destinations.");
     } finally {
       setExternalPaymentSaving(false);
     }
+  };
+
+  const handlePaymentMethodToggle = (method: ExternalPaymentMethodKey, checked: boolean) => {
+    setEnabledPaymentMethods((current) => ({ ...current, [method]: checked }));
+    if (checked) return;
+    setExternalPaymentForm((current) => {
+      if (method === "paypal") return { ...current, paypalEmail: "" };
+      if (method === "venmo") return { ...current, venmoUsername: "" };
+      if (method === "cash_app") return { ...current, cashAppCashtag: "" };
+      return { ...current, zelleEmail: "", zellePhone: "" };
+    });
   };
 
   const handleSaveIntegrations = async () => {
@@ -951,6 +983,21 @@ export default function AccountSettings() {
                     )}
                   </div>
 
+                  <div className="border-t border-slate-200 pt-4 space-y-4">
+                    <div>
+                      <h3 className="flex items-center gap-2 font-semibold text-slate-900"><CreditCard className="h-5 w-5 text-blue-700" />Direct Cash Payment Methods <span className="text-slate-400 font-normal">(optional)</span></h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">Choose only the methods you can use to both send and receive a direct payment. If you enable a method, add the destination for that method. If you enable none, Add Cash remains unavailable in the Trade Room.</p>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="rounded-lg border border-slate-200 p-4"><label className="flex cursor-pointer items-center gap-3" htmlFor="payment-enable-paypal"><input id="payment-enable-paypal" type="checkbox" checked={enabledPaymentMethods.paypal} onChange={(event) => handlePaymentMethodToggle("paypal", event.target.checked)} className="h-4 w-4 rounded border-slate-300" /><img src={externalPaymentMethodOptions[0].logo} alt="PayPal" className="h-8 w-auto max-w-[11rem] object-contain object-left" /></label>{enabledPaymentMethods.paypal && <div className="mt-3 space-y-1.5"><Label htmlFor="payment-paypal">PayPal email</Label><Input id="payment-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>}</div>
+                      <div className="rounded-lg border border-slate-200 p-4"><label className="flex cursor-pointer items-center gap-3" htmlFor="payment-enable-venmo"><input id="payment-enable-venmo" type="checkbox" checked={enabledPaymentMethods.venmo} onChange={(event) => handlePaymentMethodToggle("venmo", event.target.checked)} className="h-4 w-4 rounded border-slate-300" /><img src={externalPaymentMethodOptions[1].logo} alt="Venmo" className="h-8 w-auto max-w-[11rem] object-contain object-left" /></label>{enabledPaymentMethods.venmo && <div className="mt-3 space-y-1.5"><Label htmlFor="payment-venmo">Venmo username</Label><Input id="payment-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>}</div>
+                      <div className="rounded-lg border border-slate-200 p-4"><label className="flex cursor-pointer items-center gap-3" htmlFor="payment-enable-cashapp"><input id="payment-enable-cashapp" type="checkbox" checked={enabledPaymentMethods.cash_app} onChange={(event) => handlePaymentMethodToggle("cash_app", event.target.checked)} className="h-4 w-4 rounded border-slate-300" /><img src={externalPaymentMethodOptions[2].logo} alt="Cash App" className="h-8 w-auto max-w-[11rem] object-contain object-left" /></label>{enabledPaymentMethods.cash_app && <div className="mt-3 space-y-1.5"><Label htmlFor="payment-cashapp">Cash App $cashtag</Label><Input id="payment-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>}</div>
+                      <div className="rounded-lg border border-slate-200 p-4"><label className="flex cursor-pointer items-center gap-3" htmlFor="payment-enable-zelle"><input id="payment-enable-zelle" type="checkbox" checked={enabledPaymentMethods.zelle} onChange={(event) => handlePaymentMethodToggle("zelle", event.target.checked)} className="h-4 w-4 rounded border-slate-300" /><img src={externalPaymentMethodOptions[3].logo} alt="Zelle" className="h-8 w-auto max-w-[11rem] object-contain object-left" /></label>{enabledPaymentMethods.zelle && <div className="mt-3 space-y-1.5"><Label htmlFor="payment-zelle">Zelle email or U.S. mobile number</Label><Input id="payment-zelle" inputMode="text" placeholder="Email address or U.S. mobile number" value={zelleDestination} onChange={(event) => { const destination = event.target.value; const isEmailDestination = destination.includes("@"); setExternalPaymentForm((current) => ({ ...current, zelleEmail: isEmailDestination ? destination : "", zellePhone: isEmailDestination ? "" : destination })); }} /></div>}</div>
+                    </div>
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Enabled methods are member-provided, not platform-verified. Your private destination is shared only with the agreed payer after both members accept the final terms.</div>
+                    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">You may change these private preferences at any time, except while a selected cash payment is awaiting your receipt confirmation.</p><Button type="button" onClick={handleSaveExternalPaymentMethods} disabled={externalPaymentSaving || externalPaymentMethodsQuery.isLoading} className="rounded-lg">{externalPaymentSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}<span className="ml-1">Save payment methods</span></Button></div>
+                  </div>
+
                   <Button 
                     onClick={handleSaveProfile} 
                     disabled={saveProfileMutation.isPending}
@@ -1191,28 +1238,6 @@ export default function AccountSettings() {
                 ) : null;
               })()}
 
-              {/* Private direct-payment destinations */}
-              <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-blue-700" />
-                    Direct Cash Payment Methods
-                  </CardTitle>
-                  <CardDescription>
-                    Add only the destinations you are willing to use. Fill in at least one destination below before cash can be included in a trade. These details stay private and are shown only to your accepted cash-trade partner.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-1.5"><Label htmlFor="payment-paypal" className="flex min-h-8 items-center gap-2"><img src="/manus-storage/paypal-official-logo_f5abda0f.png" alt="PayPal" className="h-8 w-auto max-w-[11rem] object-contain object-left" /><span className="sr-only">PayPal email</span></Label><Input id="payment-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>
-                    <div className="space-y-1.5"><Label htmlFor="payment-venmo" className="flex min-h-8 items-center gap-2"><img src="/manus-storage/venmo-official-logo_37a969df.png" alt="Venmo" className="h-8 w-auto max-w-[11rem] object-contain object-left" /><span className="sr-only">Venmo username</span></Label><Input id="payment-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>
-                    <div className="space-y-1.5"><Label htmlFor="payment-cashapp" className="flex min-h-8 items-center gap-2"><img src="/manus-storage/cash-app-official-logo-normalized_342b45be.webp" alt="Cash App" className="h-8 w-auto max-w-[11rem] object-contain object-left" /><span className="sr-only">Cash App $cashtag</span></Label><Input id="payment-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>
-                    <div className="space-y-1.5"><Label htmlFor="payment-zelle" className="flex min-h-8 items-center gap-2"><img src="/manus-storage/zelle-official-logo-normalized_9845a118.png" alt="Zelle" className="h-8 w-auto max-w-[11rem] object-contain object-left" /><span className="sr-only">Zelle destination</span></Label><Input id="payment-zelle" inputMode="text" placeholder="Email address or U.S. mobile number" value={zelleDestination} onChange={(event) => { const destination = event.target.value; const isEmailDestination = destination.includes("@"); setExternalPaymentForm((current) => ({ ...current, zelleEmail: isEmailDestination ? destination : "", zellePhone: isEmailDestination ? "" : destination })); }} /></div>
-                  </div>
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Your destination is private, and it is shown only when an accepted trade includes cash. Changing a destination resets any active cash-trade method selection so both members can confirm the new terms.</div>
-                  <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">For Zelle, enter either one email address or one U.S. mobile number.</p><Button onClick={handleSaveExternalPaymentMethods} disabled={externalPaymentSaving || externalPaymentMethodsQuery.isLoading} className="rounded-lg">{externalPaymentSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}<span className="ml-1">Save methods</span></Button></div>
-                </CardContent>
-              </Card>
             </TabsContent>
 
             {/* Communications Tab */}

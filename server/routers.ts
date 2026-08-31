@@ -123,7 +123,7 @@ import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
-import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getAvailableExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
+import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
 import { closeEligibleAccount, getAccountClosureAudit, getAccountClosureRequestsForAdmin, getMyAccountClosureRequest, requestAccountClosure, reviewAccountClosureRequest } from "./accountClosure";
@@ -136,22 +136,46 @@ const ADMIN_REVEAL_CASH_IDENTIFIER_PHRASE = "REVEAL CASH PAYMENT IDENTIFIER";
 const externalPaymentMethodSchema = z.enum(EXTERNAL_PAYMENT_METHODS);
 
 const externalPaymentMethodsInputSchema = z.object({
+  enabledMethods: z.object({
+    paypal: z.boolean(),
+    venmo: z.boolean(),
+    cash_app: z.boolean(),
+    zelle: z.boolean(),
+  }).optional(),
   paypalEmail: z.string().trim().email().max(320).nullable().optional(),
   venmoUsername: z.string().trim().min(1).max(80).nullable().optional(),
   cashAppCashtag: z.string().trim().min(1).max(80).nullable().optional(),
   zelleEmail: z.string().trim().email().max(320).nullable().optional(),
   zellePhone: z.string().trim().min(7).max(32).nullable().optional(),
 }).superRefine((input, ctx) => {
-  if (input.zelleEmail && input.zellePhone) {
+  const enabled = input.enabledMethods ?? {
+    paypal: Boolean(input.paypalEmail),
+    venmo: Boolean(input.venmoUsername),
+    cash_app: Boolean(input.cashAppCashtag),
+    zelle: Boolean(input.zelleEmail || input.zellePhone),
+  };
+  if (enabled.paypal && !input.paypalEmail) {
+    ctx.addIssue({ code: "custom", message: "Enter the email address for enabled PayPal.", path: ["paypalEmail"] });
+  }
+  if (enabled.venmo && !input.venmoUsername) {
+    ctx.addIssue({ code: "custom", message: "Enter the username for enabled Venmo.", path: ["venmoUsername"] });
+  }
+  if (enabled.cash_app && !input.cashAppCashtag) {
+    ctx.addIssue({ code: "custom", message: "Enter the $cashtag for enabled Cash App.", path: ["cashAppCashtag"] });
+  }
+  if (enabled.zelle && !input.zelleEmail && !input.zellePhone) {
+    ctx.addIssue({ code: "custom", message: "Enter an email address or U.S. mobile number for enabled Zelle.", path: ["zelleEmail"] });
+  }
+  if (enabled.zelle && input.zelleEmail && input.zellePhone) {
     ctx.addIssue({ code: "custom", message: "Use one Zelle destination: an email address or a U.S. mobile number, not both.", path: ["zellePhone"] });
   }
-  if (input.venmoUsername && !/^[A-Za-z0-9_-]{3,30}$/.test(input.venmoUsername.replace(/^@+/, ""))) {
+  if (enabled.venmo && input.venmoUsername && !/^[A-Za-z0-9_-]{3,30}$/.test(input.venmoUsername.replace(/^@+/, ""))) {
     ctx.addIssue({ code: "custom", message: "Enter a valid Venmo username using 3–30 letters, numbers, underscores, or hyphens.", path: ["venmoUsername"] });
   }
-  if (input.cashAppCashtag && !/^\$?[A-Za-z][A-Za-z0-9_]{0,19}$/.test(input.cashAppCashtag)) {
+  if (enabled.cash_app && input.cashAppCashtag && !/^\$?[A-Za-z][A-Za-z0-9_]{0,19}$/.test(input.cashAppCashtag)) {
     ctx.addIssue({ code: "custom", message: "Enter a valid Cash App $cashtag starting with a letter and using up to 20 letters, numbers, or underscores.", path: ["cashAppCashtag"] });
   }
-  if (input.zellePhone && input.zellePhone.replace(/\D/g, "").length !== 10) {
+  if (enabled.zelle && input.zellePhone && input.zellePhone.replace(/\D/g, "").length !== 10) {
     ctx.addIssue({ code: "custom", message: "Enter a valid 10-digit U.S. mobile number for Zelle.", path: ["zellePhone"] });
   }
 });
@@ -172,13 +196,47 @@ function normalizeCashAppCashtag(value?: string | null) {
 }
 
 function normalizeExternalPaymentMethods(input: z.infer<typeof externalPaymentMethodsInputSchema>) {
-  return {
-    paypalEmail: normalizeOptionalText(input.paypalEmail)?.toLowerCase() ?? null,
-    venmoUsername: normalizeVenmoUsername(input.venmoUsername),
-    cashAppCashtag: normalizeCashAppCashtag(input.cashAppCashtag),
-    zelleEmail: normalizeOptionalText(input.zelleEmail)?.toLowerCase() ?? null,
-    zellePhone: normalizeOptionalText(input.zellePhone)?.replace(/[^\d+]/g, "") ?? null,
+  const enabled = input.enabledMethods ?? {
+    paypal: Boolean(input.paypalEmail),
+    venmo: Boolean(input.venmoUsername),
+    cash_app: Boolean(input.cashAppCashtag),
+    zelle: Boolean(input.zelleEmail || input.zellePhone),
   };
+  return {
+    paypalEmail: enabled.paypal ? normalizeOptionalText(input.paypalEmail)?.toLowerCase() ?? null : null,
+    venmoUsername: enabled.venmo ? normalizeVenmoUsername(input.venmoUsername) : null,
+    cashAppCashtag: enabled.cash_app ? normalizeCashAppCashtag(input.cashAppCashtag) : null,
+    zelleEmail: enabled.zelle ? normalizeOptionalText(input.zelleEmail)?.toLowerCase() ?? null : null,
+    zellePhone: enabled.zelle ? normalizeOptionalText(input.zellePhone)?.replace(/[^\d+]/g, "") ?? null : null,
+  };
+}
+
+type PaymentMethodMember = {
+  id: number;
+  displayName: string | null;
+  username: string | null;
+  paypalEmail: string | null;
+  venmoUsername: string | null;
+  cashAppCashtag: string | null;
+  zelleEmail: string | null;
+  zellePhone: string | null;
+};
+
+async function getPaymentMethodMembers(db: Awaited<ReturnType<typeof requireDb>>, memberIds: number[]) {
+  return db.select({
+    id: users.id,
+    displayName: userProfiles.displayName,
+    username: users.username,
+    paypalEmail: users.paypalEmail,
+    venmoUsername: users.venmoUsername,
+    cashAppCashtag: users.cashAppCashtag,
+    zelleEmail: users.zelleEmail,
+    zellePhone: users.zellePhone,
+  }).from(users).leftJoin(userProfiles, eq(userProfiles.userId, users.id)).where(inArray(users.id, memberIds));
+}
+
+function memberPaymentDisplayName(member: PaymentMethodMember | undefined) {
+  return member?.displayName?.trim() || member?.username?.trim() || "Your trade partner";
 }
 
 // The R2 adapter enforces decoded per-kind limits (10MB listing, 5MB avatar).
@@ -3925,7 +3983,7 @@ export const appRouter = router({
       return result[0] ?? { paypalEmail: null, paypalVerified: 0, paypalVerifiedAt: null, venmoUsername: null, cashAppCashtag: null, zelleEmail: null, zellePhone: null, updatedAt: null };
     }),
 
-    /** Saves private direct-payment identifiers and invalidates any not-yet-confirmed cash terms that used the prior destination. */
+    /** Saves private member payment preferences for future negotiations. Accepted trade snapshots are not changed. */
     saveExternalPaymentMethods: protectedProcedure
       .input(externalPaymentMethodsInputSchema)
       .mutation(async ({ ctx, input }) => {
@@ -3948,13 +4006,6 @@ export const appRouter = router({
           || current.zellePhone !== nextMethods.zellePhone;
         const now = mysqlNow();
 
-        const activeRows = methodChanged ? await db.select({ id: tradePayments.id, proposalId: tradePayments.proposalId, payerId: tradePayments.payerId, status: tradePayments.status })
-          .from(tradePayments)
-          .where(and(eq(tradePayments.payeeId, ctx.user.id), inArray(tradePayments.status, ["method_selected", "sent"]))) : [];
-        if (activeRows.some((payment) => payment.status === "sent")) {
-          throw new TRPCError({ code: "CONFLICT", message: "You cannot change a payment destination after a partner marks a cash adjustment sent. Confirm receipt or open a trade dispute first." });
-        }
-
         await db.update(users).set({
           ...nextMethods,
           paypalVerified: current.paypalEmail === nextMethods.paypalEmail ? undefined : 0,
@@ -3962,33 +4013,7 @@ export const appRouter = router({
           externalPaymentMethodsUpdatedAt: now,
         }).where(eq(users.id, ctx.user.id));
 
-        let resetTradeCount = 0;
-        if (methodChanged) {
-          for (const payment of activeRows) {
-            await db.update(tradePayments).set({
-              paymentMethod: null,
-              paymentIdentifier: null,
-              paymentMethodSelectedAt: null,
-              transactionId: null,
-              sentAt: null,
-              receivedAt: null,
-              status: "pending",
-              verificationResult: JSON.stringify({ reason: "Payee changed a direct-payment identifier; choose and confirm a payment method again." }),
-              verifiedAt: null,
-            }).where(eq(tradePayments.id, payment.id));
-            await db.insert(tradeActivityLog).values({
-              proposalId: payment.proposalId,
-              actorId: ctx.user.id,
-              actorName: ctx.user.name ?? ctx.user.username ?? "Member",
-              eventType: "cash_payment_terms_reset",
-              details: JSON.stringify({ payerId: payment.payerId, reason: "Payee updated an external payment identifier." }),
-              createdAt: now,
-            });
-            resetTradeCount += 1;
-          }
-        }
-
-        return { success: true, resetTradeCount };
+        return { success: true, preferencesChanged: methodChanged };
       }),
 
     /**
@@ -4145,7 +4170,11 @@ export const appRouter = router({
         return result;
       }),
 
-    /** Returns the active cash obligation and only the selected payee's private identifier to an accepted-trade participant who owes cash. */
+    /**
+     * Returns cash obligations plus compatible method labels to a trade participant.
+     * Private destinations are returned only to the payer during Shipping or
+     * Confirm Receipt, after both members accept final terms.
+     */
     getCashAdjustmentContext: protectedProcedure
       .input(z.object({ proposalId: z.number().int().positive() }))
       .query(async ({ ctx, input }) => {
@@ -4160,31 +4189,50 @@ export const appRouter = router({
         const proposal = proposalRows[0];
         if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
         if (proposal.requesterId !== ctx.user.id && proposal.recipientId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Cash adjustment details are limited to trade participants." });
-        if (proposal.status !== "accepted" && proposal.status !== "shipping") return { obligations: [] as Array<{ payerId: number; payeeId: number; amount: number; role: "payer" | "payee"; payment: null; availableMethods: Array<{ method: ExternalPaymentMethod; label: string; identifier: string }> }> };
+        const paymentMembers = await getPaymentMethodMembers(db, [proposal.requesterId, proposal.recipientId]);
+        const memberById = new Map(paymentMembers.map((member) => [member.id, member]));
+        const currentMember = memberById.get(ctx.user.id);
+        const partnerId = proposal.requesterId === ctx.user.id ? proposal.recipientId : proposal.requesterId;
+        const partner = memberById.get(partnerId);
+        const sharedMethods = currentMember && partner
+          ? getSharedExternalPaymentMethods(currentMember, partner)
+          : [];
+        const partnerMethods = partner
+          ? getEnabledExternalPaymentMethods(partner).map((method) => ({ method, label: getExternalPaymentMethodLabel(method) }))
+          : [];
+        const supportedStatuses = ["negotiating", "accepted", "shipping", "shipped"];
+        if (!supportedStatuses.includes(proposal.status)) {
+          return { obligations: [], sharedMethods, partnerMethods, partnerDisplayName: memberPaymentDisplayName(partner) };
+        }
 
         const obligations = getPaymentVerificationObligations(proposal);
         const paymentRows = obligations.length
           ? await db.select().from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, obligations.map((obligation) => obligation.payerId))))
           : [];
         const paymentByPayerId = new Map(paymentRows.map((payment) => [payment.payerId, payment]));
-        const memberReceivesCash = obligations.some((obligation) => obligation.payeeId === ctx.user.id);
-        const payeeRows = memberReceivesCash
-          ? await db.select({
-              paypalEmail: users.paypalEmail,
-              venmoUsername: users.venmoUsername,
-              cashAppCashtag: users.cashAppCashtag,
-              zelleEmail: users.zelleEmail,
-              zellePhone: users.zellePhone,
-            }).from(users).where(eq(users.id, ctx.user.id)).limit(1)
-          : [];
-        const availableMethods = memberReceivesCash ? getAvailableExternalPaymentMethods(payeeRows[0] ?? {}) : [];
+        const mayRevealDestination = proposal.status === "shipping" || proposal.status === "shipped";
 
         return {
+          sharedMethods,
+          partnerMethods,
+          partnerDisplayName: memberPaymentDisplayName(partner),
           obligations: obligations.map((obligation) => ({
             ...obligation,
             role: obligation.payerId === ctx.user.id ? "payer" as const : "payee" as const,
-            payment: paymentByPayerId.get(obligation.payerId) ?? null,
-            availableMethods: obligation.payeeId === ctx.user.id ? availableMethods : [] as Array<{ method: ExternalPaymentMethod; label: string; identifier: string }>,
+            payment: (() => {
+              const payment = paymentByPayerId.get(obligation.payerId);
+              if (!payment) return null;
+              return {
+                id: payment.id,
+                status: payment.status,
+                paymentMethod: payment.paymentMethod,
+                paymentMethodSelectedAt: payment.paymentMethodSelectedAt,
+                sentAt: payment.sentAt,
+                receivedAt: payment.receivedAt,
+                paymentIdentifier: mayRevealDestination && obligation.payerId === ctx.user.id ? payment.paymentIdentifier : null,
+              };
+            })(),
+            sharedMethods,
           })),
         };
       }),
@@ -4197,14 +4245,21 @@ export const appRouter = router({
           .from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
         const proposal = proposalRows[0];
         if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
+        if (proposal.status !== "negotiating") throw new TRPCError({ code: "CONFLICT", message: "Choose a payment method while the trade is being negotiated, before acceptance." });
         const payerId = ctx.user.id === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
         const obligation = getPaymentVerificationObligation(proposal, payerId);
         if (!obligation || obligation.payeeId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the trade participant receiving cash can choose the payment method." });
 
-        const payeeRows = await db.select({ paypalEmail: users.paypalEmail, venmoUsername: users.venmoUsername, cashAppCashtag: users.cashAppCashtag, zelleEmail: users.zelleEmail, zellePhone: users.zellePhone })
-          .from(users).where(eq(users.id, ctx.user.id)).limit(1);
-        const identifier = getExternalPaymentIdentifier(input.method, payeeRows[0] ?? {});
-        if (!identifier) throw new TRPCError({ code: "BAD_REQUEST", message: `Add your ${getExternalPaymentMethodLabel(input.method)} destination in Account Settings before selecting it for a trade.` });
+        const paymentMembers = await getPaymentMethodMembers(db, [proposal.requesterId, proposal.recipientId]);
+        const memberById = new Map(paymentMembers.map((member) => [member.id, member]));
+        const payee = memberById.get(ctx.user.id);
+        const payer = memberById.get(obligation.payerId);
+        const identifier = getExternalPaymentIdentifier(input.method, payee ?? {});
+        if (!identifier) throw new TRPCError({ code: "BAD_REQUEST", message: `Add and enable your ${getExternalPaymentMethodLabel(input.method)} destination in Profile before selecting it for a trade.` });
+        const sharedMethods = payee && payer ? getSharedExternalPaymentMethods(payee, payer) : [];
+        if (!sharedMethods.some((method) => method.method === input.method)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: `Both members must enable ${getExternalPaymentMethodLabel(input.method)} before it can be selected for this cash payment.` });
+        }
 
         const existingRows = await db.select({ id: tradePayments.id, status: tradePayments.status }).from(tradePayments)
           .where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payerId, obligation.payerId))).limit(1);
@@ -4231,7 +4286,9 @@ export const appRouter = router({
         };
         if (existingRows[0]) await db.update(tradePayments).set(paymentData).where(eq(tradePayments.id, existingRows[0].id));
         else await db.insert(tradePayments).values(paymentData);
-        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_method_selected", details: JSON.stringify({ method: input.method, amount: obligation.amount, identifierMasked: maskExternalPaymentIdentifier(identifier) }), createdAt: now });
+        await db.execute(sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`);
+        await db.execute(sql`UPDATE tradeProposals SET lastProposedBy = ${ctx.user.id}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'negotiating'`);
+        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_method_selected", details: JSON.stringify({ method: input.method, amount: obligation.amount }), createdAt: now });
         return { success: true, status: "method_selected" as const, method: input.method };
       }),
 
@@ -4239,8 +4296,9 @@ export const appRouter = router({
       .input(z.object({ proposalId: z.number().int().positive(), transactionReference: z.string().trim().max(255).optional() }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
-        const proposalRows = await db.select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId, status: tradeProposals.status, cashFromRequester: tradeProposals.cashFromRequester, cashFromRecipient: tradeProposals.cashFromRecipient })
+        const proposalRows = await db.select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId, requestedListingId: tradeProposals.requestedListingId, status: tradeProposals.status, cashFromRequester: tradeProposals.cashFromRequester, cashFromRecipient: tradeProposals.cashFromRecipient })
           .from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+        if (proposalRows[0]?.status !== "shipping") throw new TRPCError({ code: "CONFLICT", message: "Mark a cash payment sent during Step 4, Shipping & Payment." });
         const obligation = proposalRows[0] ? getPaymentVerificationObligation(proposalRows[0], ctx.user.id) : null;
         if (!obligation) throw new TRPCError({ code: "FORBIDDEN", message: "You do not have a payable cash adjustment for this accepted trade." });
         const paymentRows = await db.select({ id: tradePayments.id, status: tradePayments.status, paymentMethod: tradePayments.paymentMethod }).from(tradePayments)
@@ -4250,13 +4308,30 @@ export const appRouter = router({
         const now = mysqlNow();
         await db.update(tradePayments).set({ status: "sent", transactionId: normalizeOptionalText(input.transactionReference), sentAt: now, verificationResult: JSON.stringify({ source: "payer_marked_sent", externalVerification: "not_available" }) }).where(eq(tradePayments.id, payment.id));
         await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_marked_sent", details: JSON.stringify({ method: payment.paymentMethod, amount: obligation.amount, transactionReferenceProvided: Boolean(normalizeOptionalText(input.transactionReference)) }), createdAt: now });
-        return { success: true, status: "sent" as const };
+
+        const proposal = proposalRows[0];
+        const [itemRows] = await db.execute(sql`SELECT offeredListingId AS listingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}`);
+        const tradeListingIds = [...new Set([proposal.requestedListingId, ...((itemRows as unknown as Array<{ listingId: number }>) || []).map((item) => item.listingId)].filter((listingId): listingId is number => Number.isInteger(listingId)))];
+        const [trackingRows] = await db.execute(sql`SELECT listingId FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`);
+        const trackedListingIds = ((trackingRows as unknown as Array<{ listingId: number }>) || []).map((tracking) => tracking.listingId);
+        const cashObligations = getPaymentVerificationObligations(proposal);
+        const allPaymentRows = await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
+          .where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((cashObligation) => cashObligation.payerId))));
+        const allTrackingSubmitted = tradeListingIds.every((listingId) => trackedListingIds.map(Number).includes(Number(listingId)));
+        const allCashPaymentsSent = cashObligations.every((cashObligation) => ["sent", "received", "verified"].includes(allPaymentRows.find((paymentRow) => paymentRow.payerId === cashObligation.payerId)?.status ?? "pending"));
+        const readyForReceiptConfirmation = allTrackingSubmitted && allCashPaymentsSent;
+        if (readyForReceiptConfirmation) {
+          await db.execute(sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'shipping'`);
+        }
+        return { success: true, status: "sent" as const, readyForReceiptConfirmation };
       }),
 
     confirmCashAdjustmentReceived: protectedProcedure
       .input(z.object({ proposalId: z.number().int().positive() }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
+        const proposalRows = await db.select({ status: tradeProposals.status }).from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
+        if (proposalRows[0]?.status !== "shipped") throw new TRPCError({ code: "CONFLICT", message: "Confirm cash receipt during Step 5, Confirm Receipt." });
         const paymentRows = await db.select({ id: tradePayments.id, payerId: tradePayments.payerId, payeeId: tradePayments.payeeId, status: tradePayments.status, paymentMethod: tradePayments.paymentMethod, amount: tradePayments.amount })
           .from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), eq(tradePayments.payeeId, ctx.user.id))).limit(1);
         const payment = paymentRows[0];
@@ -4266,23 +4341,29 @@ export const appRouter = router({
         await db.update(tradePayments).set({ status: "received", receivedAt: now, verifiedAt: now, verificationResult: JSON.stringify({ source: "payee_confirmed_received", externalVerification: "member_confirmed" }) }).where(eq(tradePayments.id, payment.id));
         await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_received_confirmed", details: JSON.stringify({ method: payment.paymentMethod, amount: payment.amount, payerId: payment.payerId }), createdAt: now });
 
-        const proposalRows = await db.select({ requesterId: tradeProposals.requesterId, recipientId: tradeProposals.recipientId, status: tradeProposals.status, cashFromRequester: tradeProposals.cashFromRequester, cashFromRecipient: tradeProposals.cashFromRecipient })
-          .from(tradeProposals).where(eq(tradeProposals.id, input.proposalId)).limit(1);
-        const proposal = proposalRows[0];
+        const [proposalRowsForCompletion] = await db.execute(sql`SELECT requesterId, recipientId, requestedListingId, cashFromRequester, cashFromRecipient, status FROM tradeProposals WHERE id = ${input.proposalId}`);
+        const proposal = (proposalRowsForCompletion as unknown as Array<any>)?.[0];
         const cashObligations = proposal ? getPaymentVerificationObligations(proposal) : [];
         const allPaymentRows = cashObligations.length
           ? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
-            .where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
+            .where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((cashObligation) => cashObligation.payerId))))
           : [];
-        const paymentStatusByPayerId = new Map(allPaymentRows.map((row) => [row.payerId, row.status]));
-        const cashSettlementComplete = cashObligations.every((obligation) => ["received", "verified"].includes(paymentStatusByPayerId.get(obligation.payerId) ?? "pending"));
-        const [trackingRows] = await db.execute(sql`SELECT COUNT(DISTINCT userId) AS userCount FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`);
-        const bothMembersShipped = (trackingRows as unknown as Array<{ userCount?: number }>)?.[0]?.userCount !== undefined && Number((trackingRows as unknown as Array<{ userCount?: number }>)[0]?.userCount) >= 2;
-        const readyForReceiptConfirmation = proposal?.status === "shipping" && cashSettlementComplete && bothMembersShipped;
-        if (readyForReceiptConfirmation) {
-          await db.execute(sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'shipping'`);
+        const allCashPaymentsReceived = cashObligations.every((cashObligation) => ["received", "verified"].includes(allPaymentRows.find((paymentRow) => paymentRow.payerId === cashObligation.payerId)?.status ?? "pending"));
+        const [itemRows] = await db.execute(sql`SELECT offeredListingId AS listingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}`);
+        const tradeListingIds = [...new Set([proposal?.requestedListingId, ...((itemRows as unknown as Array<{ listingId: number }>) || []).map((item) => item.listingId)].filter((listingId): listingId is number => Number.isInteger(listingId)))];
+        const [listingRows] = tradeListingIds.length
+          ? await db.execute(sql`SELECT id, ownerId FROM listings WHERE id IN (${sql.join(tradeListingIds.map((listingId) => sql`${listingId}`), sql`, `)})`)
+          : [[]];
+        const expectedItemRecipientIds = ((listingRows as unknown as Array<{ ownerId: number }>) || []).map((listing) => listing.ownerId === proposal?.requesterId ? proposal?.recipientId : proposal?.requesterId).filter((userId): userId is number => Number.isInteger(userId));
+        const [receiptRows] = await db.execute(sql`SELECT DISTINCT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`);
+        const confirmedRecipientIds = ((receiptRows as unknown as Array<{ userId: number }>) || []).map((receipt) => receipt.userId);
+        const allRequiredItemReceiptsConfirmed = [...new Set(expectedItemRecipientIds)].every((userId) => confirmedRecipientIds.includes(userId));
+        const completed = allCashPaymentsReceived && allRequiredItemReceiptsConfirmed;
+        if (completed) {
+          const referenceNumber = `TR-${String(input.proposalId).padStart(5, '0')}`;
+          await db.execute(sql`UPDATE tradeProposals SET status = 'completed', completedAt = ${now}, referenceNumber = ${referenceNumber}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'shipped'`);
         }
-        return { success: true, status: "received" as const, readyForReceiptConfirmation };
+        return { success: true, status: "received" as const, completed };
       }),
 
     openCashAdjustmentDispute: protectedProcedure

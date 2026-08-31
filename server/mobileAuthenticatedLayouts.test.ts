@@ -21,7 +21,7 @@ describe("authenticated mobile-only responsive layout contracts", () => {
 
   it("stacks Trade Room panels and retains the desktop rail and eleven-column negotiation workspace", () => {
     const source = read("client/src/pages/WarRoom.tsx");
-    expect(source).toContain("flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:overflow-hidden");
+    expect(source).toContain("flex min-h-0 flex-1 flex-col overflow-visible lg:flex-row lg:items-stretch lg:overflow-hidden");
     expect(source).toContain("grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-11");
     expect(source).toContain("min-h-[34rem] w-full flex-shrink-0 flex-col p-4 lg:min-h-0 lg:w-[360px]");
     expect(source).toContain("overflow-x-auto pb-2 lg:pb-0");

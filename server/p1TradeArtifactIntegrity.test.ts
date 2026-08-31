@@ -32,7 +32,7 @@ describe("second deep-audit trade artifact integrity", () => {
   it("keeps one-time trade artifact writes participant-bound and conflict-safe", () => {
     expect(tradeRouter).toContain("randomBytes(32).toString('base64url')");
     expect(tradeRouter).toContain("Both members must complete Review before tracking can be submitted.");
-    expect(tradeRouter).toContain("Receipt confirmation is available after both members have submitted tracking.");
+    expect(tradeRouter).toContain("Receipt confirmation is available after Step 4 fulfillment is complete.");
     expect(tradeRouter).toContain("ON DUPLICATE KEY UPDATE id = id");
     expect(tradeRouter).toContain("You have already submitted a review for this trade.");
     expect(tradeRouter).toContain("You have already voted on this trade.");

@@ -42,6 +42,8 @@ import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
 import { requireMarketplaceApproval } from "./accountApproval";
 import { describeTradeCashChange } from "./tradeCashTimeline";
 import { getPaymentVerificationObligations } from "./paymentAuthorization";
+import { getSharedExternalPaymentMethods } from "./externalPaymentMethods";
+import { hasTrackingForEveryItem, haveAllCashPaymentsBeenReceived, haveAllCashPaymentsBeenSent, haveAllRequiredItemRecipientsConfirmed } from "./tradeFulfillment";
 
 // ============================================================================
 // HELPER: Check notification preference and get user email
@@ -119,6 +121,7 @@ const sendProposalSchema = z.object({
   proposalId: z.number().int().positive(),
   offeredListingIds: z.array(z.number().int().positive()).max(50),
   requestedListingIds: z.array(z.number().int().positive()).max(50).optional().default([]),
+  includeOriginalRequestedListing: z.boolean().optional().default(true),
   cashFromProposer: z.number().min(0).optional(),
   cashFromRecipient: z.number().min(0).optional(),
   message: z.string().optional(),
@@ -472,7 +475,7 @@ export const tradeFlowRouter = router({
         if (offeredListingIds.some((listingId) => requestedListingIds.includes(listingId))) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'A trade item cannot be offered and requested at the same time' });
         }
-        if (offeredListingIds.includes(proposal.requestedListingId) || requestedListingIds.includes(proposal.requestedListingId)) {
+        if (proposal.requestedListingId && (offeredListingIds.includes(proposal.requestedListingId) || requestedListingIds.includes(proposal.requestedListingId))) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'The original requested item is already included in this trade' });
         }
 
@@ -507,9 +510,12 @@ export const tradeFlowRouter = router({
         const currentOfferIds = ((currentOfferRows as unknown as Array<{ id: number }>) || [])
           .map((row) => row.id)
           .sort((left, right) => left - right);
+        const currentTradeListingIds = [...new Set([proposal.requestedListingId, ...currentOfferIds].filter((listingId): listingId is number => Number.isInteger(listingId)))].sort((left, right) => left - right);
+        const keepOriginalRequestedListing = Boolean(proposal.requestedListingId) && input.includeOriginalRequestedListing;
         const nextOfferIds = [...new Set([...offeredListingIds, ...requestedListingIds])].sort((left, right) => left - right);
-        const offeredItemsChanged = currentOfferIds.length !== nextOfferIds.length
-          || currentOfferIds.some((listingId, index) => listingId !== nextOfferIds[index]);
+        const nextTradeListingIds = [...new Set([keepOriginalRequestedListing ? proposal.requestedListingId : null, ...nextOfferIds].filter((listingId): listingId is number => Number.isInteger(listingId)))].sort((left, right) => left - right);
+        const offeredItemsChanged = currentTradeListingIds.length !== nextTradeListingIds.length
+          || currentTradeListingIds.some((listingId, index) => listingId !== nextTradeListingIds[index]);
 
         const senderIsRequester = proposal.requesterId === userId;
         const newCashFromRequester = senderIsRequester ? (input.cashFromProposer ?? 0) : (input.cashFromRecipient ?? 0);
@@ -521,15 +527,49 @@ export const tradeFlowRouter = router({
         );
         const termsChanged = offeredItemsChanged || cashTermsChanged;
 
+        const nextCashObligations = getPaymentVerificationObligations({
+          requesterId: proposal.requesterId,
+          recipientId: proposal.recipientId,
+          status: "negotiating",
+          cashFromRequester: newCashFromRequester,
+          cashFromRecipient: newCashFromRecipient,
+        });
+        if (nextTradeListingIds.length === 0 && nextCashObligations.length === 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "A proposal must include at least one collectible or a positive cash amount." });
+        }
+        if (nextCashObligations.length > 0) {
+          const [paymentMemberRows] = await tx.execute(sql`SELECT
+            u.id,
+            COALESCE(NULLIF(up.displayName, ''), NULLIF(u.username, ''), 'Your trade partner') AS displayName,
+            u.paypalEmail,
+            u.venmoUsername,
+            u.cashAppCashtag,
+            u.zelleEmail,
+            u.zellePhone
+            FROM users u
+            LEFT JOIN userProfiles up ON up.userId = u.id
+            WHERE u.id IN (${proposal.requesterId}, ${proposal.recipientId})`);
+          const paymentMemberById = new Map((((paymentMemberRows as unknown as any[]) || []).map((member) => [Number(member.id), member])));
+          for (const obligation of nextCashObligations) {
+            const payer = paymentMemberById.get(obligation.payerId);
+            const payee = paymentMemberById.get(obligation.payeeId);
+            const sharedMethods = payer && payee ? getSharedExternalPaymentMethods(payer, payee) : [];
+            if (sharedMethods.length === 0) {
+              const payeeName = payee?.displayName || "Your trade partner";
+              throw new TRPCError({ code: "BAD_REQUEST", message: `${payeeName} has no payment method in common with the member who would send this cash. Add a matching method in Profile or discuss another option before including cash.` });
+            }
+          }
+        }
+
         await tx.execute(sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId}`);
         for (const listingId of nextOfferIds) {
           await tx.insert(tradeProposalItems).values({ proposalId: input.proposalId, offeredListingId: listingId, createdAt: now });
         }
 
         if (cashTermsWereSubmitted) {
-          await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', cashFromRequester = ${newCashFromRequester}, cashFromRecipient = ${newCashFromRecipient}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
+          await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', requestedListingId = ${keepOriginalRequestedListing ? proposal.requestedListingId : null}, cashFromRequester = ${newCashFromRequester}, cashFromRecipient = ${newCashFromRecipient}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
         } else {
-          await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
+          await tx.execute(sql`UPDATE tradeProposals SET status = 'negotiating', requestedListingId = ${keepOriginalRequestedListing ? proposal.requestedListingId : null}, lastProposedBy = ${userId}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);
         }
 
         if (input.message) {
@@ -546,6 +586,9 @@ export const tradeFlowRouter = router({
           await tx.execute(
             sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Trade terms changed; both members must accept the updated terms.', ${now})`
           );
+        }
+        if (cashTermsChanged) {
+          await tx.execute(sql`DELETE FROM tradePayments WHERE proposalId = ${input.proposalId}`);
         }
         for (const item of [...itemRows, ...requestedItemRows]) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`);
@@ -605,6 +648,23 @@ export const tradeFlowRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must be in negotiating status to accept' });
         }
 
+        const cashObligations = getPaymentVerificationObligations(proposal);
+        if (cashObligations.length > 0) {
+          const [paymentRows] = await db.execute(sql`SELECT payerUserId AS payerId, payeeUserId AS payeeId, amount, paymentMethod, status FROM tradePayments WHERE proposalId = ${input.proposalId}`);
+          const paymentByPayerId = new Map(((paymentRows as any[]) || []).map((payment) => [Number(payment.payerId), payment]));
+          const missingMethod = cashObligations.some((obligation) => {
+            const payment = paymentByPayerId.get(obligation.payerId);
+            return !payment
+              || Number(payment.payeeId) !== obligation.payeeId
+              || Number(payment.amount) !== obligation.amount
+              || !payment.paymentMethod
+              || payment.status !== "method_selected";
+          });
+          if (missingMethod) {
+            throw new TRPCError({ code: "CONFLICT", message: "Each member receiving cash must choose a shared payment method during Step 2 before this trade can be accepted." });
+          }
+        }
+
         const [existingAcceptance] = await db.execute(
           sql`SELECT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted' FOR UPDATE`
         );
@@ -626,24 +686,26 @@ export const tradeFlowRouter = router({
           ...((offeredListingRows as any[]) || []).map((row) => row.offeredListingId),
         ])].sort((left, right) => Number(left) - Number(right));
 
-        if (involvedListingIds.length === 0) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must include an active listing' });
+        if (involvedListingIds.length === 0 && getPaymentVerificationObligations(proposal).length === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Trade must include an active listing or an agreed cash amount' });
         }
 
         // Stable all-listing locks serialize competing acceptances that share
         // any item; the losing proposal rechecks and returns a neutral conflict.
-        const [lockedListingRows] = await db.execute(
-          sql`SELECT id FROM listings WHERE id IN (${sql.join(involvedListingIds.map((id) => sql`${id}`), sql`, `)}) AND isActive = 1 AND status = 'active' ORDER BY id FOR UPDATE`
-        );
-        if (((lockedListingRows as any[]) || []).length !== involvedListingIds.length) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'One or more trade items are no longer available' });
-        }
+        if (involvedListingIds.length > 0) {
+          const [lockedListingRows] = await db.execute(
+            sql`SELECT id FROM listings WHERE id IN (${sql.join(involvedListingIds.map((id) => sql`${id}`), sql`, `)}) AND isActive = 1 AND status = 'active' ORDER BY id FOR UPDATE`
+          );
+          if (((lockedListingRows as any[]) || []).length !== involvedListingIds.length) {
+            throw new TRPCError({ code: 'CONFLICT', message: 'One or more trade items are no longer available' });
+          }
 
-        const [listingLockResult] = await db.execute(
-          sql`UPDATE listings SET status = 'traded' WHERE id IN (${sql.join(involvedListingIds.map((id) => sql`${id}`), sql`, `)}) AND isActive = 1 AND status = 'active'`
-        );
-        if (Number((listingLockResult as any)?.affectedRows ?? 0) !== involvedListingIds.length) {
-          throw new TRPCError({ code: 'CONFLICT', message: 'One or more trade items are no longer available' });
+          const [listingLockResult] = await db.execute(
+            sql`UPDATE listings SET status = 'traded' WHERE id IN (${sql.join(involvedListingIds.map((id) => sql`${id}`), sql`, `)}) AND isActive = 1 AND status = 'active'`
+          );
+          if (Number((listingLockResult as any)?.affectedRows ?? 0) !== involvedListingIds.length) {
+            throw new TRPCError({ code: 'CONFLICT', message: 'One or more trade items are no longer available' });
+          }
         }
 
         await db.execute(
@@ -659,9 +721,11 @@ export const tradeFlowRouter = router({
         );
 
         // Auto-cancel all other pending/negotiating proposals involving these items
-        await db.execute(
-          sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Item is no longer available (traded in another proposal)', updatedAt = ${now} WHERE id != ${input.proposalId} AND requestedListingId = ${proposal.requestedListingId} AND status IN ('pending', 'negotiating')`
-        );
+        if (proposal.requestedListingId) {
+          await db.execute(
+            sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'Item is no longer available (traded in another proposal)', updatedAt = ${now} WHERE id != ${input.proposalId} AND requestedListingId = ${proposal.requestedListingId} AND status IN ('pending', 'negotiating')`
+          );
+        }
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'cancelled', declineReason = 'An item in this proposal is no longer available', updatedAt = ${now} WHERE id != ${input.proposalId} AND status IN ('pending', 'negotiating') AND id IN (SELECT proposalId FROM tradeProposalItems WHERE offeredListingId IN (SELECT offeredListingId FROM tradeProposalItems WHERE proposalId = ${input.proposalId}))`
         );
@@ -864,21 +928,20 @@ export const tradeFlowRouter = router({
         );
       }
 
-			// Item receipt confirmation starts only after both members have shipped
-			// and every direct cash obligation has been confirmed in Shipping.
-			const [trackingCounts] = await db.execute(
-				sql`SELECT COUNT(DISTINCT userId) as userCount FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`
-			);
-			const bothShipped = (trackingCounts as any)?.[0]?.userCount >= 2;
+			// Step 5 opens after every required item has tracking and every payer
+			// has marked the agreed external payment sent. Cash receipt is confirmed
+			// in Step 5, alongside physical-item receipt.
+			const trackingRows = await db.execute(sql`SELECT listingId FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`);
+			const trackedListingIds = ((trackingRows[0] as unknown as Array<{ listingId: number }>) || []).map((tracking) => tracking.listingId);
 			const cashObligations = getPaymentVerificationObligations(proposal);
 			const paymentRows = cashObligations.length
 				? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
 					.where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
 				: [];
-			const paymentStatusByPayerId = new Map(paymentRows.map((payment) => [payment.payerId, payment.status]));
-			const cashSettlementComplete = cashObligations.every((obligation) => ['received', 'verified'].includes(paymentStatusByPayerId.get(obligation.payerId) ?? 'pending'));
+			const allTrackingSubmitted = hasTrackingForEveryItem(tradeListingIds, trackedListingIds);
+			const allCashPaymentsSent = haveAllCashPaymentsBeenSent(cashObligations, paymentRows);
 
-			if (bothShipped && cashSettlementComplete) {
+			if (allTrackingSubmitted && allCashPaymentsSent) {
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );
@@ -910,7 +973,7 @@ export const tradeFlowRouter = router({
         }).catch(err => console.warn('[Email] Items shipped email failed:', err));
       }
 
-			return { success: true, bothShipped, awaitingCashSettlement: bothShipped && !cashSettlementComplete };
+			return { success: true, allTrackingSubmitted, awaitingPaymentSentConfirmation: allTrackingSubmitted && !allCashPaymentsSent, readyForReceiptConfirmation: allTrackingSubmitted && allCashPaymentsSent };
     }),
   confirmItemsReceived: protectedProcedure
     .input(confirmReceiptSchema)
@@ -924,7 +987,19 @@ export const tradeFlowRouter = router({
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Not authorized' });
       }
       if ((proposal.status as string) !== 'shipped') {
-        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Receipt confirmation is available after both members have submitted tracking.' });
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Receipt confirmation is available after Step 4 fulfillment is complete.' });
+      }
+
+      const proposalItemRows = await db.select({ listingId: tradeProposalItems.offeredListingId })
+        .from(tradeProposalItems)
+        .where(eq(tradeProposalItems.proposalId, input.proposalId));
+      const tradeListingIds = [...new Set([proposal.requestedListingId, ...proposalItemRows.map((item) => item.listingId)].filter((listingId): listingId is number => Number.isInteger(listingId)))];
+      const tradeListings = tradeListingIds.length
+        ? await db.select({ id: listings.id, ownerId: listings.ownerId }).from(listings).where(inArray(listings.id, tradeListingIds))
+        : [];
+      const incomingItemIds = tradeListings.filter((listing) => listing.ownerId !== userId).map((listing) => listing.id);
+      if (incomingItemIds.length === 0) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'You have no physical items to confirm in this agreement. Confirm any cash you are owed instead.' });
       }
 
       const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -933,13 +1008,22 @@ export const tradeFlowRouter = router({
         sql`INSERT INTO tradeReceiptConfirmation (proposalId, userId, confirmationType, confirmedAt) VALUES (${input.proposalId}, ${userId}, ${input.confirmationType}, ${now}) ON DUPLICATE KEY UPDATE id = id`
       );
 
-      // Check if both confirmed receipt (exclude 'accepted' type which is used for mutual acceptance)
+      // Complete only after every member expecting an item confirms physical
+      // receipt and every cash recipient confirms the cash they were owed.
       const [confirmCounts] = await db.execute(
-        sql`SELECT COUNT(DISTINCT userId) as userCount FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
+        sql`SELECT DISTINCT userId FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType IN ('received', 'damaged')`
       );
-      const bothConfirmed = (confirmCounts as any)?.[0]?.userCount >= 2;
+      const confirmedRecipientIds = ((confirmCounts as unknown as Array<{ userId: number }>) || []).map((confirmation) => confirmation.userId);
+      const expectedRecipientIds = tradeListings.map((listing) => listing.ownerId === proposal.requesterId ? proposal.recipientId : proposal.requesterId);
+      const cashObligations = getPaymentVerificationObligations(proposal);
+      const paymentRows = cashObligations.length
+        ? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
+          .where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
+        : [];
+      const allRequiredItemReceiptsConfirmed = haveAllRequiredItemRecipientsConfirmed(expectedRecipientIds, confirmedRecipientIds);
+      const allCashPaymentsReceived = haveAllCashPaymentsBeenReceived(cashObligations, paymentRows);
 
-      if (bothConfirmed) {
+      if (allRequiredItemReceiptsConfirmed && allCashPaymentsReceived) {
         // Generate a unique reference number: TR-XXXXX (zero-padded proposal ID)
         const refNumber = `TR-${String(input.proposalId).padStart(5, '0')}`;
         await db.execute(
@@ -1235,11 +1319,13 @@ export const tradeFlowRouter = router({
       // Admin inspection uses the requester as the display perspective, never as the authenticated actor.
       const viewerUserId = isAdminReadOnly ? proposal.requesterId : userId;
 
-      // Get the requested listing (the item being inquired about)
-      const [requestedListing] = await db.select().from(listings).where(eq(listings.id, proposal.requestedListingId)).limit(1);
-
-      // Get photos for the requested listing
-      const requestedPhotos = await db.select().from(listingPhotos).where(eq(listingPhotos.listingId, proposal.requestedListingId)).orderBy(asc(listingPhotos.sortOrder));
+      // Cash-only negotiations intentionally have no original requested listing.
+      const [requestedListing] = proposal.requestedListingId
+        ? await db.select().from(listings).where(eq(listings.id, proposal.requestedListingId)).limit(1)
+        : [undefined];
+      const requestedPhotos = proposal.requestedListingId
+        ? await db.select().from(listingPhotos).where(eq(listingPhotos.listingId, proposal.requestedListingId)).orderBy(asc(listingPhotos.sortOrder))
+        : [];
 
       // Get all proposal items (items offered by both sides)
       const proposalItems = await db.select().from(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
@@ -1351,10 +1437,7 @@ export const tradeFlowRouter = router({
           ...proposal,
           ...(tradeExtra as any)?.[0],
         },
-        requestedListing: {
-          ...requestedListing,
-          photos: requestedPhotos,
-        },
+        requestedListing: requestedListing ? { ...requestedListing, photos: requestedPhotos } : null,
         offeredListings: offeredListings.map(l => ({
           ...l,
           ownerId: l.ownerId,

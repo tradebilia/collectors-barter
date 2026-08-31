@@ -66,6 +66,12 @@ export default function AccountSetup() {
     zelleEmail: "",
     zellePhone: "",
   });
+  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState({
+    paypal: false,
+    venmo: false,
+    cash_app: false,
+    zelle: false,
+  });
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [emailVerificationCode, setEmailVerificationCode] = useState("");
   const [showEmailVerification, setShowEmailVerification] = useState(false);
@@ -402,11 +408,12 @@ export default function AccountSetup() {
     }
 
     await saveExternalPaymentMethodsMutation.mutateAsync({
-      paypalEmail: externalPaymentForm.paypalEmail.trim() || null,
-      venmoUsername: externalPaymentForm.venmoUsername.trim() || null,
-      cashAppCashtag: externalPaymentForm.cashAppCashtag.trim() || null,
-      zelleEmail: externalPaymentForm.zelleEmail.trim() || null,
-      zellePhone: externalPaymentForm.zellePhone.trim() || null,
+      enabledMethods: enabledPaymentMethods,
+      paypalEmail: enabledPaymentMethods.paypal ? externalPaymentForm.paypalEmail.trim() || null : null,
+      venmoUsername: enabledPaymentMethods.venmo ? externalPaymentForm.venmoUsername.trim() || null : null,
+      cashAppCashtag: enabledPaymentMethods.cash_app ? externalPaymentForm.cashAppCashtag.trim() || null : null,
+      zelleEmail: enabledPaymentMethods.zelle ? externalPaymentForm.zelleEmail.trim() || null : null,
+      zellePhone: enabledPaymentMethods.zelle ? externalPaymentForm.zellePhone.trim() || null : null,
     });
 
     await saveProfileMutation.mutateAsync({
@@ -904,16 +911,15 @@ export default function AccountSetup() {
                   <div className="border-t border-slate-200 pt-6 mt-6 space-y-4">
                     <div>
                       <h3 className="font-semibold text-slate-900">Direct Cash Payment Methods <span className="text-slate-400 font-normal">(optional)</span></h3>
-                      <p className="mt-1 text-sm text-slate-600">Add destinations you are comfortable using for a cash adjustment in a trade. Fill in at least one destination before cash can be included in a trade. They remain private and are shared only with an accepted cash-trade partner.</p>
+                      <p className="mt-1 text-sm text-slate-600">Optional: select only methods you can use to both send and receive a direct payment, then add the destination for that method. If you select none, you can still trade items but cannot add cash in the Trade Room.</p>
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1"><Label htmlFor="setup-paypal">PayPal email</Label><Input id="setup-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>
-                      <div className="space-y-1"><Label htmlFor="setup-venmo">Venmo username</Label><Input id="setup-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>
-                      <div className="space-y-1"><Label htmlFor="setup-cashapp">Cash App $cashtag</Label><Input id="setup-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>
-                      <div className="space-y-1"><Label htmlFor="setup-zelle-email">Zelle email</Label><Input id="setup-zelle-email" type="email" placeholder="Use email or mobile below" value={externalPaymentForm.zelleEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zelleEmail: event.target.value, zellePhone: event.target.value ? "" : current.zellePhone }))} /></div>
-                      <div className="space-y-1"><Label htmlFor="setup-zelle-phone">Zelle U.S. mobile</Label><Input id="setup-zelle-phone" inputMode="tel" placeholder="Use email or mobile above" value={externalPaymentForm.zellePhone} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, zellePhone: event.target.value, zelleEmail: event.target.value ? "" : current.zelleEmail }))} /></div>
+                      <div className="rounded-lg border border-slate-200 p-3"><label className="flex cursor-pointer items-center gap-2" htmlFor="setup-enable-paypal"><input id="setup-enable-paypal" type="checkbox" checked={enabledPaymentMethods.paypal} onChange={(event) => { const checked = event.target.checked; setEnabledPaymentMethods((current) => ({ ...current, paypal: checked })); if (!checked) setExternalPaymentForm((current) => ({ ...current, paypalEmail: "" })); }} className="h-4 w-4" /><span className="font-medium">PayPal</span></label>{enabledPaymentMethods.paypal && <div className="mt-3 space-y-1"><Label htmlFor="setup-paypal">PayPal email</Label><Input id="setup-paypal" type="email" placeholder="you@example.com" value={externalPaymentForm.paypalEmail} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, paypalEmail: event.target.value }))} /></div>}</div>
+                      <div className="rounded-lg border border-slate-200 p-3"><label className="flex cursor-pointer items-center gap-2" htmlFor="setup-enable-venmo"><input id="setup-enable-venmo" type="checkbox" checked={enabledPaymentMethods.venmo} onChange={(event) => { const checked = event.target.checked; setEnabledPaymentMethods((current) => ({ ...current, venmo: checked })); if (!checked) setExternalPaymentForm((current) => ({ ...current, venmoUsername: "" })); }} className="h-4 w-4" /><span className="font-medium">Venmo</span></label>{enabledPaymentMethods.venmo && <div className="mt-3 space-y-1"><Label htmlFor="setup-venmo">Venmo username</Label><Input id="setup-venmo" placeholder="username or @username" value={externalPaymentForm.venmoUsername} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, venmoUsername: event.target.value }))} /></div>}</div>
+                      <div className="rounded-lg border border-slate-200 p-3"><label className="flex cursor-pointer items-center gap-2" htmlFor="setup-enable-cashapp"><input id="setup-enable-cashapp" type="checkbox" checked={enabledPaymentMethods.cash_app} onChange={(event) => { const checked = event.target.checked; setEnabledPaymentMethods((current) => ({ ...current, cash_app: checked })); if (!checked) setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: "" })); }} className="h-4 w-4" /><span className="font-medium">Cash App</span></label>{enabledPaymentMethods.cash_app && <div className="mt-3 space-y-1"><Label htmlFor="setup-cashapp">Cash App $cashtag</Label><Input id="setup-cashapp" placeholder="$yourcashtag" value={externalPaymentForm.cashAppCashtag} onChange={(event) => setExternalPaymentForm((current) => ({ ...current, cashAppCashtag: event.target.value }))} /></div>}</div>
+                      <div className="rounded-lg border border-slate-200 p-3"><label className="flex cursor-pointer items-center gap-2" htmlFor="setup-enable-zelle"><input id="setup-enable-zelle" type="checkbox" checked={enabledPaymentMethods.zelle} onChange={(event) => { const checked = event.target.checked; setEnabledPaymentMethods((current) => ({ ...current, zelle: checked })); if (!checked) setExternalPaymentForm((current) => ({ ...current, zelleEmail: "", zellePhone: "" })); }} className="h-4 w-4" /><span className="font-medium">Zelle</span></label>{enabledPaymentMethods.zelle && <div className="mt-3 space-y-1"><Label htmlFor="setup-zelle">Zelle email or U.S. mobile number</Label><Input id="setup-zelle" inputMode="text" placeholder="Email address or U.S. mobile number" value={externalPaymentForm.zelleEmail || externalPaymentForm.zellePhone} onChange={(event) => { const destination = event.target.value; const isEmail = destination.includes("@"); setExternalPaymentForm((current) => ({ ...current, zelleEmail: isEmail ? destination : "", zellePhone: isEmail ? "" : destination })); }} /></div>}</div>
                     </div>
-                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Choose a method for each accepted cash trade before it is shared.</p>
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. These are member-provided methods, not platform-verified accounts. You can update them later in your private Profile.</p>
                   </div>
 
                   {/* Verified recovery methods */}

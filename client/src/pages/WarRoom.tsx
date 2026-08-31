@@ -43,7 +43,7 @@ const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'proposed',    label: 'Propose',   sub: 'Trade Created'   },
   { key: 'negotiating', label: 'Negotiate', sub: 'Refine Details'  },
   { key: 'accepted',    label: 'Review',    sub: 'Finalize Terms'  },
-  { key: 'shipping',    label: 'Shipping',  sub: 'Track Packages'  },
+  { key: 'shipping',    label: 'Shipping & Payment',  sub: 'Fulfill Agreement'  },
   { key: 'shipped',     label: 'Confirm',   sub: 'Confirm Receipt' },
   { key: 'completed',   label: 'Complete',  sub: 'Trade Complete'  },
   { key: 'disputed',    label: 'Disputed',  sub: 'Under Review'    },
@@ -251,6 +251,7 @@ export default function WarRoom() {
       setRemovedItemIds([]);
       setCashPay('');
       setCashReceive('');
+      void utils.payment.getCashAdjustmentContext.invalidate({ proposalId });
     },
     onError: (err) => toast.error(err.message),
   });
@@ -442,12 +443,12 @@ export default function WarRoom() {
   const serverMyItems: any[] = (isRequester
     ? myOfferedItems
     : [requestedListing, ...myOfferedItems].filter(Boolean)
-  ).filter((i: any) => i?.id === requestedListing?.id || !removedSet.has(i?.id));
+  ).filter((i: any) => !removedSet.has(i?.id));
 
   const serverTheirItems: any[] = (isRequester
     ? [requestedListing, ...theirOfferedItems].filter(Boolean)
     : theirOfferedItems
-  ).filter((i: any) => i?.id === requestedListing?.id || !removedSet.has(i?.id));
+  ).filter((i: any) => !removedSet.has(i?.id));
 
   // Merge pending items (deduplicate by id)
   const existingIds = new Set([...serverMyItems, ...serverTheirItems].map((i: any) => i?.id).filter(Boolean));
@@ -459,6 +460,7 @@ export default function WarRoom() {
     ...serverTheirItems,
     ...pendingTheirItems.filter(i => !existingIds.has(i.id)),
   ];
+  const hasIncomingPhysicalItems = theirItems.length > 0;
 
   const storedShippingDeadline = (trade?.proposal as any)?.shippingDeadline;
   const shippingDeadline = deriveShippingDeadline(
@@ -496,6 +498,14 @@ export default function WarRoom() {
   // Use local if touched, otherwise fall back to server value
   const myCash = cashPayTouched ? localMyCash : serverMyCash;
   const theirCash = cashReceiveTouched ? localTheirCash : serverTheirCash;
+  const cashAdjustmentContext = cashAdjustmentContextQuery.data as any;
+  const sharedPaymentMethods = (cashAdjustmentContext?.sharedMethods ?? []) as Array<{ method: string; label: string }>;
+  const partnerPaymentMethods = (cashAdjustmentContext?.partnerMethods ?? []) as Array<{ method: string; label: string }>;
+  const partnerPaymentMethodLabels = partnerPaymentMethods.map((method) => method.label).join(", ");
+  const hasSharedPaymentMethod = sharedPaymentMethods.length > 0;
+  const paymentMethodMismatchMessage = partnerPaymentMethodLabels
+    ? `${theirDisplayName} currently accepts ${partnerPaymentMethodLabels}. Add a matching payment method in your Profile, or discuss another payment option with ${theirDisplayName} before including cash.`
+    : `${theirDisplayName} has not enabled a direct cash payment method. Add matching payment methods in Profile, or discuss another payment option with ${theirDisplayName} before including cash.`;
 
   // Detect if the user has made ANY local modifications to the trade
   // (adding/removing items, changing cash) — if so, they can't accept the current proposal
@@ -676,7 +686,7 @@ export default function WarRoom() {
     setPendingMyItems(prev => prev.filter(i => i.id !== itemId));
     setPendingTheirItems(prev => prev.filter(i => i.id !== itemId));
     // If this is a server-persisted item, track it as removed so it's excluded on submit
-    const isServerItem = (trade?.offeredListings || []).some((l: any) => l.id === itemId);
+    const isServerItem = itemId === requestedListing?.id || (trade?.offeredListings || []).some((l: any) => l.id === itemId);
     if (isServerItem) {
       setRemovedItemIds(prev => [...prev, itemId]);
     }
@@ -701,6 +711,7 @@ export default function WarRoom() {
       proposalId,
       offeredListingIds,
       requestedListingIds,
+      includeOriginalRequestedListing: requestedListing?.id ? !removedItemIds.includes(requestedListing.id) : false,
       cashFromProposer: cashPay ? parseFloat(cashPay) : (serverMyCash > 0 ? serverMyCash : undefined),
       cashFromRecipient: cashReceive ? parseFloat(cashReceive) : (serverTheirCash > 0 ? serverTheirCash : undefined),
     });
@@ -827,6 +838,7 @@ export default function WarRoom() {
             const theirContact = (trade as any)?.theirContactInfo;
             const myReceiptConfirmed = (trade as any)?.myReceiptConfirmed;
             const theirReceiptConfirmed = (trade as any)?.theirReceiptConfirmed;
+            const cashReceiptObligations = ((cashAdjustmentContext?.obligations ?? []) as Array<any>).filter((obligation) => obligation.role === 'payee');
 
             const getTrackingUrl = (carrier: string, number: string) => {
               if (carrier === 'USPS') return buildUspsTrackingUrl(number);
@@ -1178,12 +1190,12 @@ export default function WarRoom() {
                         </svg>
                       </div>
                       <div>
-                        <h2 className="text-white font-bold text-lg">Tracking</h2>
-                        <p className="text-gray-400 text-xs">Both packages are on the way.</p>
+                        <h2 className="text-white font-bold text-lg">{allItems.length > 0 ? 'Tracking & Receipt' : 'Cash Receipt'}</h2>
+                        <p className="text-gray-400 text-xs">{allItems.length > 0 ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.' : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}</p>
                       </div>
-                      <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">BOTH SHIPPED</span>
+                      <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">{allItems.length > 0 ? 'TRACKING SUBMITTED' : 'PAYMENT SENT'}</span>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-2">
+                    {allItems.length > 0 && <div className="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-2">
                       <div className="min-w-0">
                         <p className="text-blue-400 text-xs font-bold mb-2">Your Tracking</p>
                         {myTracking.map((t: any, i: number) => {
@@ -1214,13 +1226,13 @@ export default function WarRoom() {
                           );
                         })}
                       </div>
-                    </div>
+                    </div>}
 
                     {/* Receipt confirmation */}
                     {currentStage === 'shipped' && (
                       <div className="pt-4 border-t border-gray-700">
                         <p className="text-white text-sm font-bold mb-1">Confirm Receipt</p>
-                        <p className="text-gray-400 text-xs mb-3">Once both parties confirm they received their items, the trade is complete.</p>
+                        <p className="text-gray-400 text-xs mb-3">Confirm only what you actually received. The trade completes after every applicable item and cash receipt confirmation is recorded.</p>
                         <div className="flex flex-col gap-3 sm:flex-row">
                           <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold ${
                             myReceiptConfirmed ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'
@@ -1233,6 +1245,7 @@ export default function WarRoom() {
                             {theirReceiptConfirmed ? '✓' : '○'} {theirDisplayName}: {theirReceiptConfirmed ? 'Received' : 'Pending'}
                           </div>
                         </div>
+                        {cashReceiptObligations.length > 0 && <div className="mt-3 space-y-2">{cashReceiptObligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; return <div key={`cash-receipt-${obligation.payerId}`} className={`rounded-lg border px-3 py-2 text-xs ${status === 'received' || status === 'verified' ? 'border-green-500/30 bg-green-900/20 text-green-300' : 'border-amber-500/30 bg-amber-950/30 text-amber-100'}`}>{status === 'received' || status === 'verified' ? `✓ You confirmed ${formatWholeDollar(obligation.amount)} cash received.` : status === 'sent' ? `Cash receipt awaiting your confirmation: ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}.` : `Waiting for ${theirDisplayName} to mark ${formatWholeDollar(obligation.amount)} sent.`}</div>; })}</div>}
                       </div>
                     )}
 
@@ -1388,13 +1401,14 @@ export default function WarRoom() {
                   ) : (
                     <div className={`grid ${getGridCols(myItems.length)} gap-3 flex-1 content-start ${myItems.length >= 7 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
                       {myItems.map((item: any) => {
-                        const isLocked = item.id === requestedListing?.id;
+                        const isLocked = false;
+                        const isOriginalRequestedItem = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isLocked ? 'border-blue-500/40' : 'border-gray-600'}`}>
-                          {isLocked && (
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                          {isOriginalRequestedItem && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-                              Locked
+                              Original request
                             </div>
                           )}
                           {item.photos?.[0]?.imageUrl ? (
@@ -1853,13 +1867,14 @@ export default function WarRoom() {
                   ) : (
                     <div className={`grid ${getGridCols(theirItems.length)} gap-3 flex-1 content-start ${theirItems.length >= 7 ? 'overflow-y-auto custom-scrollbar' : ''}`}>
                       {theirItems.map((item: any) => {
-                        const isLocked = item.id === requestedListing?.id;
+                        const isLocked = false;
+                        const isOriginalRequestedItem = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isLocked ? 'border-blue-500/40' : 'border-gray-600'}`}>
-                          {isLocked && (
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg p-2.5 relative group ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                          {isOriginalRequestedItem && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
-                              Requested
+                              Original request
                             </div>
                           )}
                           {item.photos?.[0]?.imageUrl ? (
@@ -2056,6 +2071,26 @@ export default function WarRoom() {
         </div>
       </div>
 
+      {currentStage === 'negotiating' && (myCash > 0 || theirCash > 0) && (
+        <section className="mx-6 mb-4 rounded-xl border border-blue-500/40 bg-[#16213e] p-4 shadow-xl">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-white">Cash payment method</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">Choose a member-provided method during negotiation. Review shows the method name only; private payment destinations remain hidden until Step 4.</p>
+            </div>
+            {hasSharedPaymentMethod ? <span className="rounded-full border border-emerald-500/40 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-200">Shared: {sharedPaymentMethods.map((method) => method.label).join(', ')}</span> : <span className="rounded-full border border-amber-500/40 bg-amber-950/40 px-3 py-1 text-xs font-semibold text-amber-200">No shared method</span>}
+          </div>
+          {cashAdjustmentContextQuery.isLoading && <p className="mt-3 text-xs text-slate-400">Checking compatible payment methods…</p>}
+          {!cashAdjustmentContextQuery.isLoading && !hasSharedPaymentMethod && <p className="mt-3 rounded-lg border border-amber-600/40 bg-amber-950/30 px-3 py-2.5 text-xs leading-relaxed text-amber-100">{paymentMethodMismatchMessage}</p>}
+          {!cashAdjustmentContextQuery.isLoading && hasSharedPaymentMethod && <div className="mt-3 grid gap-3 xl:grid-cols-2">{(cashAdjustmentContext?.obligations ?? []).map((obligation: any) => {
+            const payment = obligation.payment as any;
+            const iAmPayee = obligation.role === 'payee';
+            const selectedMethod = sharedPaymentMethods.find((method) => method.method === payment?.paymentMethod);
+            return <div key={obligation.payerId} className="rounded-lg border border-slate-600 bg-slate-950/40 p-3"><p className="text-xs font-bold text-white">{iAmPayee ? `You will receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}` : `You will send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}`}</p>{iAmPayee ? <><p className="mt-1 text-xs text-slate-300">Select how you want to receive this payment.</p><div className="mt-2 flex flex-wrap gap-2">{sharedPaymentMethods.map((method) => <button key={method.method} type="button" onClick={() => selectCashAdjustmentMethodMutation.mutate({ proposalId, method: method.method as any })} disabled={selectCashAdjustmentMethodMutation.isPending} className={`rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${payment?.paymentMethod === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 text-slate-200 hover:border-blue-400'}`}>{payment?.paymentMethod === method.method ? 'Selected: ' : ''}{method.label}</button>)}</div>{payment?.paymentMethod && <p className="mt-2 text-xs text-emerald-300">{selectedMethod?.label || 'Compatible method'} selected. Your destination remains private until Step 4.</p>}</> : <p className="mt-2 text-xs text-slate-300">{payment?.paymentMethod ? `${selectedMethod?.label || 'A compatible method'} selected by ${theirDisplayName}. The private destination will appear in Step 4.` : `Waiting for ${theirDisplayName} to select a compatible method before either member can accept.`}</p>}</div>;
+          })}</div>}
+        </section>
+      )}
+
       {/* Sticky Footer Action Bar */}
       <div className="sticky bottom-0 z-30 bg-[#0f0f1a] border-t border-gray-700 px-6 py-4">
         <div className="flex flex-col gap-4">
@@ -2145,12 +2180,12 @@ export default function WarRoom() {
               {/* Step 4: Shipping — direct cash settlement and shipment fulfilment. */}
               {(myCash > 0 || theirCash > 0) && (() => {
                 const obligations = (cashAdjustmentContextQuery.data?.obligations ?? []) as Array<any>;
-                const pendingObligations = obligations.filter((obligation) => !['received', 'verified'].includes(obligation.payment?.status ?? 'pending'));
+                const pendingObligations = obligations.filter((obligation) => !['sent', 'received', 'verified'].includes(obligation.payment?.status ?? 'pending'));
 
                 const submittedTrackingMemberCount = new Set((trade?.trackingNumbers || []).map((tracking: any) => tracking.userId)).size;
                 return <div className="mb-3 flex w-full flex-col gap-3">
                   <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
-                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Cash Settlement During Shipping</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Complete' : status === 'sent' ? `Waiting for ${obligation.role === 'payer' ? theirDisplayName : 'you'} to confirm receipt` : status === 'method_selected' ? obligation.role === 'payer' ? 'Mark payment sent after transferring funds' : `Waiting for ${theirDisplayName} to send payment` : obligation.role === 'payee' ? 'Choose a payment destination' : `Waiting for ${theirDisplayName} to choose a payment destination`; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul><p className="mt-2 border-t border-slate-700 pt-2 text-slate-300">Step 5, Confirm Receipt, opens automatically after both members submit tracking ({submittedTrackingMemberCount}/2) and all cash cards show received.</p>{pendingObligations.length > 0 && <p className="mt-1 text-amber-200">Complete each remaining cash step below during Shipping.</p>}</div>
+                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Payment & Shipping Checklist</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Recipient confirmed cash received' : status === 'sent' ? 'Payment sent — cash receipt is confirmed in Step 5' : status === 'method_selected' ? obligation.role === 'payer' ? 'Send payment and mark it sent' : `Waiting for ${theirDisplayName} to send payment` : 'Payment method must be selected in Step 2'; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul><p className="mt-2 border-t border-slate-700 pt-2 text-slate-300">Step 5, Confirm Receipt, opens automatically after all required tracking is submitted ({submittedTrackingMemberCount}/2) and each required cash payment is marked sent.</p>{pendingObligations.length > 0 && <p className="mt-1 text-amber-200">Complete each remaining payment-sent action below during Shipping & Payment.</p>}</div>
                   {cashAdjustmentContextQuery.isLoading && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">Loading payment steps…</p>}
                   {cashAdjustmentContextQuery.isError && <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-4 py-3 text-xs text-red-200">Payment steps could not be loaded. Please refresh the Trade Room or try again.</p>}
                   {cashAdjustmentContextQuery.isSuccess && obligations.length === 0 && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">No direct cash settlement is required for this trade.</p>}
@@ -2167,8 +2202,8 @@ export default function WarRoom() {
 
                     return <div key={context.payerId} className={`rounded-xl border p-4 shadow-xl ${paymentStatus === 'received' ? 'border-green-500/50 bg-[#16213e]' : paymentStatus === 'disputed' ? 'border-red-500/60 bg-[#241b2a]' : 'border-blue-500/40 bg-[#16213e]'}`}>
                       <div className="mb-3 flex items-center gap-2"><span className="text-lg">💵</span><h3 className="text-sm font-bold text-white">{iAmPayer ? `Send ${formatWholeDollar(cashAmount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(cashAmount)} from ${theirDisplayName}`}</h3><span className="ml-auto rounded-full border border-slate-600 bg-slate-950/40 px-2 py-0.5 text-[11px] font-medium text-slate-200">{statusLabel}</span></div>
-                      {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">Choose the private method your partner may use for this trade. Your selected destination is locked once the payer marks it sent.</p>{context.availableMethods?.length ? <div className="flex flex-wrap gap-2">{context.availableMethods.map((method: any) => <button key={method.method} onClick={() => selectCashAdjustmentMethodMutation.mutate({ proposalId, method: method.method })} disabled={paymentStatus === 'sent' || paymentStatus === 'received' || paymentStatus === 'disputed' || selectCashAdjustmentMethodMutation.isPending} className={`rounded-lg border px-3 py-2 text-left text-xs transition disabled:opacity-50 ${payment?.paymentMethod === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 bg-slate-950/40 text-slate-200 hover:border-blue-400'}`}><span className="block font-bold">{method.label}</span><span className="block text-slate-400">{method.identifier}</span></button>)}</div> : <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-3 py-2 text-xs text-red-200">Add at least one payment destination in Account Settings → Integrations before selecting a method for this trade.</p>}{paymentStatus === 'sent' && <button onClick={() => confirmCashAdjustmentReceivedMutation.mutate({ proposalId })} disabled={confirmCashAdjustmentReceivedMutation.isPending} className="rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700 disabled:opacity-50">Confirm receipt of {formatWholeDollar(cashAmount)}</button>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed receipt. The cash adjustment is member-confirmed, not provider-verified.</p>}</div>}
-                      {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionReference} onChange={(event) => setTransactionReferenceByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionReference.trim() || undefined })} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Waiting for {theirDisplayName} to confirm receipt.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">Waiting for {theirDisplayName} to select a private payment method for this trade.</p>}</div>}
+                      {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">{payment?.paymentMethod ? `${String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())} was selected in Step 2. Your private destination remains hidden here.` : 'A compatible method must be selected in Step 2 before payment can be sent.'}</p>{paymentStatus === 'sent' && <p className="rounded-lg border border-amber-500/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">Your partner marked this payment sent. Confirm that the cash arrived in Step 5, Confirm Receipt.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed cash receipt. This is a member confirmation, not provider verification.</p>}</div>}
+                      {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionReference} onChange={(event) => setTransactionReferenceByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => { if (window.confirm(`Confirm that you sent ${formatWholeDollar(cashAmount)} to ${theirDisplayName} through ${String(payment.paymentMethod).replace('_', ' ')}. Tradebilia does not process or verify this external payment.`)) markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionReference.trim() || undefined }); }} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Payment marked sent. {theirDisplayName} confirms cash receipt in Step 5.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">The recipient selects a compatible private payment method during Step 2.</p>}</div>}
                       {payment?.paymentMethod && paymentStatus !== 'received' && paymentStatus !== 'disputed' && <div className="mt-3 border-t border-slate-700 pt-3"><div className="flex flex-wrap gap-2"><input value={disputeReason} onChange={(event) => setCashDisputeReasonByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} placeholder="Describe a payment issue for admin review" className="min-w-[13rem] flex-1 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-white" /><button onClick={() => openCashAdjustmentDisputeMutation.mutate({ proposalId, payerId: context.payerId, reason: disputeReason.trim() })} disabled={disputeReason.trim().length < 5 || openCashAdjustmentDisputeMutation.isPending} className="rounded-lg border border-red-500/60 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-900/30 disabled:opacity-50">Open dispute</button></div></div>}
                       {paymentStatus === 'disputed' && <p className="mt-2 text-xs text-red-200">A cash-adjustment dispute is open for administrator review. Do not continue shipping until it is resolved.</p>}
                     </div>;
@@ -2252,18 +2287,21 @@ export default function WarRoom() {
             );
           })()}
 
-          {/* Stage 4: Shipped — confirm receipt */}
+          {/* Step 5: Confirm Receipt — retain tracking above and confirm only what arrived. */}
           {currentStage === 'shipped' && (() => {
             const myReceiptConfirmed = (trade as any)?.myReceiptConfirmed;
+            const cashReceiptObligations = ((cashAdjustmentContext?.obligations ?? []) as Array<any>).filter((obligation) => obligation.role === 'payee');
+            const waitingCashReceipts = cashReceiptObligations.filter((obligation) => ['sent'].includes(obligation.payment?.status ?? 'pending'));
+            const alreadyConfirmedCashReceipts = cashReceiptObligations.filter((obligation) => ['received', 'verified'].includes(obligation.payment?.status ?? 'pending'));
             return (
               <>
                 <p className="text-gray-400 text-sm flex items-center gap-2">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-orange-400">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
                   </svg>
-                  Both parties have shipped — confirm when you receive your items
+                  {hasIncomingPhysicalItems ? 'Tracking is available above. Confirm each item only after it arrives.' : 'No physical items are expected in this cash-only agreement.'}
                 </p>
-                {!myReceiptConfirmed ? (
+                {hasIncomingPhysicalItems && !myReceiptConfirmed ? (
                   <button
                     onClick={() => confirmReceiptMutation.mutate({ proposalId, confirmationType: 'received' })}
                     disabled={confirmReceiptMutation.isPending}
@@ -2274,9 +2312,13 @@ export default function WarRoom() {
                     </svg>
                     I Received My Items
                   </button>
-                ) : (
+                ) : hasIncomingPhysicalItems ? (
                   <p className="text-green-400 text-sm flex items-center gap-2">✓ You confirmed receipt — waiting for {theirDisplayName}</p>
-                )}
+                ) : null}
+                {waitingCashReceipts.map((obligation) => (
+                  <button key={`confirm-cash-${obligation.payerId}`} onClick={() => confirmCashAdjustmentReceivedMutation.mutate({ proposalId })} disabled={confirmCashAdjustmentReceivedMutation.isPending} className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>I Received {formatWholeDollar(obligation.amount)} Cash</button>
+                ))}
+                {alreadyConfirmedCashReceipts.map((obligation) => <p key={`confirmed-cash-${obligation.payerId}`} className="text-green-400 text-sm flex items-center gap-2">✓ You confirmed {formatWholeDollar(obligation.amount)} cash received.</p>)}
               </>
             );
           })()}
@@ -2788,6 +2830,9 @@ export default function WarRoom() {
               </button>
             </div>
 
+            {!cashAdjustmentContextQuery.isLoading && !hasSharedPaymentMethod && <p className="mb-4 rounded-lg border border-amber-600/40 bg-amber-950/30 px-3 py-2.5 text-xs leading-relaxed text-amber-100">{paymentMethodMismatchMessage}</p>}
+            {hasSharedPaymentMethod && <p className="mb-4 rounded-lg border border-blue-500/30 bg-blue-950/30 px-3 py-2.5 text-xs leading-relaxed text-blue-100">Shared payment methods with {theirDisplayName}: <strong>{sharedPaymentMethods.map((method) => method.label).join(', ')}</strong>. The recipient selects one after the cash terms are proposed.</p>}
+
             <div className="relative mb-5">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">$</span>
               <input
@@ -2824,6 +2869,10 @@ export default function WarRoom() {
                   const amount = parseFloat(cashInput);
                   if (isNaN(amount) || amount < 0) {
                     toast.error('Please enter a valid amount.');
+                    return;
+                  }
+                  if (amount > 0 && !cashAdjustmentContextQuery.isLoading && !hasSharedPaymentMethod) {
+                    toast.error(paymentMethodMismatchMessage);
                     return;
                   }
                   if (showCashModal === 'my') setCashPay(String(amount));

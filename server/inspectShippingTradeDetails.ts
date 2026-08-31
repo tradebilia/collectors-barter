@@ -15,14 +15,14 @@ try {
   if (!proposal) {
     console.log(JSON.stringify({ shippingProposalFound: false }));
   } else {
-    const outcomes = [] as Array<{ participant: "requester" | "recipient"; isRequester: boolean; requestedListingId: number; offeredItems: Array<{ id: number; ownerId: number }> }>;
+    const outcomes = [] as Array<{ participant: "requester" | "recipient"; isRequester: boolean; requestedListingId: number | null; offeredItems: Array<{ id: number; ownerId: number }> }>;
     for (const [participant, id] of [["requester", proposal.requesterId], ["recipient", proposal.recipientId]] as const) {
       const caller = appRouter.createCaller({ user: { id }, req: {}, res: {} } as any);
       const details = await caller.tradeFlow.getTradeDetails({ proposalId: proposal.id });
       outcomes.push({
         participant,
         isRequester: details.isRequester,
-        requestedListingId: details.requestedListing.id,
+        requestedListingId: details.requestedListing?.id ?? null,
         offeredItems: details.offeredListings.map((item: { id: number; ownerId: number }) => ({ id: item.id, ownerId: item.ownerId })),
       });
     }
