@@ -1010,3 +1010,7 @@
 - [x] Change the verification highlight wording to “Connect more verified accounts to strengthen authenticity”.
 - [x] Improve Coming Soon hierarchy by separating the Launching Soon stamp, highlights, category labels, consent notice, and signup form while preserving the existing wallpaper, hero scale, and stats treatment.
 - [x] Add or update regression coverage, visually verify desktop/mobile layouts, and save the revised checkpoint.
+
+- [x] Move the Launching Soon stamp farther left and upward on desktop while keeping it visible and balanced on mobile.
+- [x] Decide whether the launch-update consent checkbox is necessary for the preview signup and preserve compliant opt-in behavior if it remains.
+- [x] Update regression coverage, visually verify both responsive layouts, and save the final signup refinement checkpoint.

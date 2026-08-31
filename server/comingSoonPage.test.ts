@@ -35,7 +35,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("The Collectors Trading Exchange");
     expect(pageSource).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
     expect(pageSource).toContain("Launching Soon");
-    expect(pageSource).toContain("hidden w-44 -translate-y-1/2");
+    expect(pageSource).toContain("-left-52 top-[38%] hidden w-44 -translate-y-1/2");
     expect(pageSource).toContain("w-36 rotate-[-2deg] object-contain");
     expect(pageSource).toContain("Trade without fees.");
     expect(pageSource).toContain("No fees are charged to complete a trade.");
@@ -44,9 +44,11 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("Swap sports cards for comics, toys, games, and more.");
     expect(pageSource).not.toContain("A deliberate place to discover, value, and trade across all ten collector categories.");
     expect(pageSource).toContain('"Notify me"');
-    expect(pageSource).toContain("Yes, I&apos;d like to receive launch updates");
+    expect(pageSource).toContain("Launch updates only · unsubscribe anytime.");
+    expect(pageSource).not.toContain("Yes, I&apos;d like to receive launch updates");
+    expect(pageSource).not.toContain("Checkbox");
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
-    expect(pageSource).toContain('order-1 mt-0 flex cursor-pointer items-start justify-center gap-2 rounded-sm bg-[#fbf2e1]/80 px-2 text-left text-[11px] font-medium leading-4 text-[#2b2119]/90 shadow-sm sm:mt-0 sm:text-center');
+    expect(pageSource).toContain('order-1 mx-auto max-w-sm text-[10px] font-medium leading-4 text-[#2b2119]/80 sm:text-center');
     expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0 text-[8px]');
     expect(pageSource).toContain('sm:grid-cols-5');
     expect(pageSource).toContain("<span>Vintage Toys</span>");
