@@ -1045,3 +1045,8 @@
 - [x] Add recognizable provider icons to Member Directory account-verification badges.
 - [x] Add a concise tooltip explaining that account verification confirms a connected external account, while Verified Merchant is a separate Tradebilia-reviewed designation.
 - [x] Add regression coverage and visually verify the updated badges and tooltip on desktop and mobile.
+
+- [x] Add email-safe spacing around the logo divider so the letter T is not crowded in real email clients.
+- [x] Remove the highlighted styling from the Visit Tradebilia link while keeping it usable.
+- [x] Make the unsubscribe control functional for pre-launch recipients and use the main Tradebilia background treatment in the email template.
+- [x] Add template regression coverage and verify the generated email HTML before saving the checkpoint.

@@ -74,10 +74,15 @@ describe("Pre-Launch Email", () => {
     expect(peakEnrollments).toBe(5);
   });
 
-  it("escapes drafted content and includes a provider-managed unsubscribe link", () => {
+  it("renders email-client-safe branding, background, neutral site link, and active unsubscribe control", () => {
     const html = buildPreLaunchEmailHtml("<b>Hello</b>");
     expect(html).toContain("&lt;b&gt;Hello&lt;/b&gt;");
+    expect(html).toContain("tradebilia_email_spaced_dfb4be7e.svg");
+    expect(html).toContain("Background_23084d14.jpg");
+    expect(html).toContain('text-decoration:underline');
+    expect(html).toContain("Unsubscribe from pre-launch updates");
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
+    expect(html).not.toContain("background:#7f31ff;color:#fff");
   });
 
   it("records only a safe operational classification when recipient retrieval fails", async () => {
