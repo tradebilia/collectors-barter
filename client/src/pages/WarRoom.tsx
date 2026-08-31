@@ -995,11 +995,15 @@ export default function WarRoom() {
 
                 {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
                 {currentStage === 'shipping' && (() => {
-                  const { allItems: lockedShipmentItems, myItems: myShippingItems, theirItems: theirShippingItems } = getLockedShipmentItems({
+                  const { myItems: myShippingItems, theirItems: theirShippingItems } = getLockedShipmentItems({
                     requestedListing,
                     offeredListings: trade?.offeredListings || [],
                     viewerUserId: myUserId,
                   });
+                  const myTrackingByListingId = new Map(myTracking.map((tracking: any) => [tracking.listingId, tracking]));
+                  const theirTrackingByListingId = new Map(theirTracking.map((tracking: any) => [tracking.listingId, tracking]));
+                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => myTrackingByListingId.has(item.id));
+                  const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => theirTrackingByListingId.has(item.id));
                   const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
                   return (
                     <div className="bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
@@ -1019,59 +1023,30 @@ export default function WarRoom() {
                         <span className="px-3 py-1 bg-orange-500/20 border border-orange-500/40 text-orange-300 text-xs font-bold rounded-full animate-pulse">ACTION REQUIRED</span>
                       </div>
 
-                      <div data-testid="shipping-locked-trade-contents" className="border-b border-orange-500/15 bg-[#10182d] px-6 py-3">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-orange-300">Locked trade contents</p>
-                        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                          {lockedShipmentItems.map((item: any) => {
-                            const itemOwnerName = Number(item.ownerId) === Number(myUserId) ? myDisplayName : theirDisplayName;
-                            return <div key={item.id} className="flex min-w-0 items-center justify-between gap-3 rounded-md border border-slate-700/80 bg-slate-950/45 px-3 py-2"><span className="min-w-0 truncate text-xs font-medium text-slate-100">{item.title}</span><span className="shrink-0 text-[10px] text-slate-400">Sent by {itemOwnerName}</span></div>;
-                          })}
-                        </div>
-                      </div>
-
                       {/* Two-column tracking area */}
-                      <div className="grid grid-cols-2 divide-x divide-gray-700">
+                      <div className="grid grid-cols-1 divide-y divide-gray-700 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
 
                         {/* LEFT: Your shipment */}
-                        <div className="p-5">
+                        <div className="min-w-0 p-5">
                           <div className="flex items-center gap-2 mb-4">
                             {myAvatarUrl ? <TradeRoomAvatar src={myAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
                             <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">You — {myDisplayName}</p>
-                            {myTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
+                            {myItemsShipped ? <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span> : <span className="ml-auto text-orange-300 text-xs font-bold">{myTrackingByListingId.size}/{myShippingItems.length} tracked</span>}
                           </div>
 
-                          {myTracking.length > 0 && <div data-testid="shipping-my-locked-items" className="mb-3 space-y-1.5 rounded-lg border border-blue-500/20 bg-blue-950/10 p-2.5">
-                            <p className="text-[10px] font-bold uppercase tracking-wide text-blue-300">Items you are sending</p>
-                            {myShippingItems.map((item: any) => <p key={item.id} className="text-xs text-gray-200">{item.title}</p>)}
-                          </div>}
-
-                          {myTracking.length > 0 ? (
-                            // Already submitted — show submitted tracking
-                            <div className="space-y-2">
-                              {myTracking.map((t: any, i: number) => {
-                                const url = getTrackingUrl(t.carrier, t.trackingNumber);
-                                return (
-                                  <div key={i} className="bg-green-900/10 border border-green-500/20 rounded-lg p-3">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="px-2 py-0.5 bg-green-900/40 text-green-400 text-[10px] font-bold rounded">{t.carrier}</span>
-                                      {t.itemTitle && <span className="text-gray-400 text-xs truncate">{t.itemTitle}</span>}
-                                    </div>
-                                    <p className="text-white text-xs font-mono mb-2">{t.trackingNumber}</p>
-                                    {url && (
-                                      <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-400 text-xs hover:underline">
-                                        Track on {t.carrier} →
-                                      </a>
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            // Not yet submitted — show input form
-                            <div className="space-y-3">
-                              {myShippingItems.map((item: any) => {
-                                const inp = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
-                                return (
+                          <div data-testid="shipping-my-items" className="space-y-3">
+                            {myShippingItems.map((item: any) => {
+                              const submittedTracking = myTrackingByListingId.get(item.id) as any;
+                              const inp = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
+                              if (submittedTracking) {
+                                const url = getTrackingUrl(submittedTracking.carrier, submittedTracking.trackingNumber);
+                                return <div key={item.id} className="rounded-lg border border-green-500/20 bg-green-900/10 p-3">
+                                  <div className="mb-1 flex items-center gap-2"><span className="rounded bg-green-900/40 px-2 py-0.5 text-[10px] font-bold text-green-400">{submittedTracking.carrier}</span><span className="min-w-0 truncate text-xs text-gray-300">{item.title}</span></div>
+                                  <p className="mb-2 text-xs font-mono text-white">{submittedTracking.trackingNumber}</p>
+                                  {url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">Track on {submittedTracking.carrier} →</a>}
+                                </div>;
+                              }
+                              return (
                                   <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-lg p-3">
                                     <div className="flex items-center gap-2 mb-2">
                                       {item.photos?.[0]?.imageUrl
@@ -1113,23 +1088,23 @@ export default function WarRoom() {
                                     </div>
                                   </div>
                                 );
-                              })}
-                            </div>
-                          )}
+                            })}
+                            {myShippingItems.length === 0 && <p className="text-xs italic text-gray-600">No locked items recorded for your side.</p>}
+                          </div>
                         </div>
 
                         {/* RIGHT: Their shipment */}
-                        <div className="p-5">
+                        <div className="min-w-0 p-5">
                           <div className="flex items-center gap-2 mb-4">
                             {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                             <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
-                            {theirTracking.length > 0 && <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span>}
+                            {theirItemsShipped ? <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span> : <span className="ml-auto text-gray-500 text-xs font-bold">{theirTrackingByListingId.size}/{theirShippingItems.length} tracked</span>}
                           </div>
 
                           <div data-testid="shipping-counterparty-locked-items" className="mb-3 space-y-1.5 rounded-lg border border-gray-700 bg-[#0f0f1a] p-2.5">
                             <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Items {theirDisplayName} is sending</p>
                             {theirShippingItems.length > 0 ? theirShippingItems.map((item: any) => {
-                              const itemTracking = theirTracking.find((tracking: any) => tracking.listingId === item.id);
+                              const itemTracking = theirTrackingByListingId.get(item.id) as any;
                               return <div key={item.id} className="flex items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate text-gray-200">{item.title}</span><span className={itemTracking ? "shrink-0 text-green-400" : "shrink-0 text-gray-500"}>{itemTracking ? "Tracking submitted" : "Awaiting tracking"}</span></div>;
                             }) : <p className="text-xs italic text-gray-600">No locked items recorded for this side.</p>}
                           </div>

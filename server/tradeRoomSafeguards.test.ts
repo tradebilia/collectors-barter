@@ -48,7 +48,11 @@ describe("Trade Room safeguards", () => {
   it("uses owner-derived tracking items and distinguishes payment loading from a cash-free trade", () => {
     expect(warRoomSource).toContain("getLockedShipmentItems({");
     expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
+    expect(warRoomSource).toContain('data-testid="shipping-my-items"');
+    expect(warRoomSource).not.toContain('data-testid="shipping-locked-trade-contents"');
     expect(warRoomSource).toContain("Items {theirDisplayName} is sending");
+    expect(warRoomSource).toContain("lg:grid-cols-2 lg:divide-x lg:divide-y-0");
+    expect(warRoomSource).toContain("myTrackingByListingId");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isLoading");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isError");
     expect(warRoomSource).toContain("No direct cash settlement is required for this trade.");

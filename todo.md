@@ -1129,3 +1129,8 @@
 - [x] Trace why the browser still omits locked counterparty items after the saved Trade Room payload confirmed they exist.
 - [x] Render the immutable locked item set directly in Shipping and bypass stale editable draft state.
 - [x] Verify both participant views of the current Shipping trade before checkpointing the repair.
+
+- [x] Restore Step 4 to stable two-column shipment dimensions without changing Chat/Timeline width or height.
+- [x] Show every locked trade item within its owner’s shipment column above the corresponding tracking controls.
+- [x] Preserve readable participant names and prevent Shipping content from being clipped at desktop and mobile widths.
+- [x] Add layout regression coverage and visually verify the repaired Step 4 layout with the current test trade.
