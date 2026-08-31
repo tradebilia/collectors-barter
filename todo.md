@@ -1078,3 +1078,10 @@
 - [x] Trace and repair the Trade Room `tradeActivityLog` insert that fails after a counterproposal terms update.
 - [x] Keep counterproposal term updates and activity records atomic without exposing database error details to members.
 - [x] Add a regression for the Admin/Rtavani counterproposal activity-log path and verify the user-facing result.
+
+- [x] Make an already-open Trade Room clearly synchronize when the other member submits a new proposal, without discarding unsent local edits.
+- [x] Add regression coverage for remote-proposal detection, safe draft handling, and the member-facing update notice.
+
+- [x] Add safe automatic incoming-proposal detection in an open Trade Room, preserving unsent local edits and offering a clear load-incoming-terms action.
+- [x] Allow the responding member to adjust either side’s cash amount during negotiation while retaining turn-based submission safeguards.
+- [x] Add regression coverage and verify automatic incoming-proposal synchronization plus two-sided cash editing.

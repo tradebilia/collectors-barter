@@ -18,6 +18,7 @@ import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt
 import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
 import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
+import { getTradeProposalRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed' | 'disputed';
 
@@ -199,6 +200,8 @@ export default function WarRoom() {
   const [paymentStepStarted, setPaymentStepStarted] = useState(false);
   const [selectedCashMethod, setSelectedCashMethod] = useState<'paypal' | 'venmo' | 'cash_app' | 'zelle'>('paypal');
   const [cashDisputeReason, setCashDisputeReason] = useState('');
+  const [incomingProposalNotice, setIncomingProposalNotice] = useState(false);
+  const latestProposalRevisionRef = useRef<string | null>(null);
 
   // ── tRPC queries ──────────────────────────────────────────────────────────
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
@@ -509,7 +512,42 @@ export default function WarRoom() {
     hasLocalChanges,
   });
   const iCanAccept = negotiationTurn.canAcceptCurrentProposal;
-  const canSubmitProposal = negotiationTurn.canSubmitProposal;
+  const canSubmitProposal = negotiationTurn.canSubmitProposal && !incomingProposalNotice;
+  const proposalRevision = getTradeProposalRevision(trade?.proposal as any);
+
+  const loadIncomingProposalTerms = () => {
+    setPendingMyItems([]);
+    setPendingTheirItems([]);
+    setRemovedItemIds([]);
+    setSelectedItemIds([]);
+    setCashPay('');
+    setCashReceive('');
+    setIncomingProposalNotice(false);
+    void tradeDetailsQuery.refetch();
+    toast.success('Loaded your trade partner’s latest proposal.');
+  };
+
+  useEffect(() => {
+    if (!proposalRevision || !myUserId) return;
+    const previousRevision = latestProposalRevisionRef.current;
+    latestProposalRevisionRef.current = proposalRevision;
+    if (!isIncomingProposalRevision({
+      previousRevision,
+      nextRevision: proposalRevision,
+      lastProposedBy,
+      myUserId,
+      isNegotiating: currentStage === 'proposed' || currentStage === 'negotiating',
+    })) {
+      return;
+    }
+
+    if (hasLocalChanges) {
+      setIncomingProposalNotice(true);
+      return;
+    }
+
+    toast.info(`${theirDisplayName} sent a new proposal. The Trade Room has been refreshed.`);
+  }, [proposalRevision, lastProposedBy, myUserId, currentStage, hasLocalChanges, theirDisplayName]);
 
   // Calculate total values (items + cash)
   const myItemsValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
@@ -765,6 +803,17 @@ export default function WarRoom() {
 
         {/* Center: Trade Table or Post-Acceptance View */}
         <div className="flex flex-1 flex-col overflow-visible p-4 lg:overflow-y-auto custom-scrollbar">
+          {incomingProposalNotice && (
+            <div data-testid="incoming-proposal-notice" className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.12)] sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-bold">Your trade partner sent updated terms.</p>
+                <p className="mt-0.5 text-xs text-amber-100/80">Your unsent changes are protected. Load their proposal when you are ready to review it.</p>
+              </div>
+              <button type="button" onClick={loadIncomingProposalTerms} className="rounded-lg bg-amber-400 px-4 py-2 text-sm font-bold text-slate-950 transition hover:bg-amber-300 active:scale-[0.97]">
+                Load Updated Terms
+              </button>
+            </div>
+          )}
 
           {/* ── STAGE 3+: Review / Shipping / Confirm / Completed ── */}
           {(currentStage === 'accepted' || currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'completed') && (() => {
@@ -1425,7 +1474,7 @@ export default function WarRoom() {
                       >
                         + Add Item
                       </button>
-                      {canSubmitProposal && myCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('my'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
+                      {canSubmitProposal && <button onClick={() => { setCashInput(myCash > 0 ? String(myCash) : ''); setShowCashModal('my'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 {myCash > 0 ? 'Adjust Cash' : 'Add Cash'}</button>}
                     </div>
                   )}
                 </div>
@@ -1891,7 +1940,7 @@ export default function WarRoom() {
                       >
                         + Browse User Items
                       </button>
-                      {canSubmitProposal && theirCash === 0 && <button onClick={() => { setCashInput(''); setShowCashModal('their'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 Add Cash</button>}
+                      {canSubmitProposal && <button onClick={() => { setCashInput(theirCash > 0 ? String(theirCash) : ''); setShowCashModal('their'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 {theirCash > 0 ? 'Adjust Cash' : 'Add Cash'}</button>}
                     </div>
                   )}
                 </div>

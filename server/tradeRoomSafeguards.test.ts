@@ -13,7 +13,7 @@ describe("Trade Room safeguards", () => {
     expect(resolveTradeContactName({ contactFullName: "Dylan Rhoads", firstName: "Dylan", lastName: "Rhoads", name: "rtavani" })).toBe("Dylan Rhoads");
   });
   it("shows a waiting state instead of a proposal action when the member must wait", () => {
-    expect(warRoomSource).toContain("const canSubmitProposal = negotiationTurn.canSubmitProposal;");
+    expect(warRoomSource).toContain("const canSubmitProposal = negotiationTurn.canSubmitProposal && !incomingProposalNotice;");
     expect(warRoomSource).toContain("Waiting for the listing owner to respond.");
     expect(warRoomSource).toContain("Your proposal is awaiting the other member’s response.");
     expect(warRoomSource).toContain("onClick={() => setShowDeclineModal(true)}");
@@ -25,6 +25,16 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("The original requested item is already in this trade.");
     expect(theirInventory).toContain("Select additional items you want to request from");
     expect(theirInventory).toContain("Add Requested Items");
+  });
+
+  it("surfaces incoming terms safely and keeps both cash sides adjustable while negotiating", () => {
+    expect(warRoomSource).toContain("getTradeProposalRevision");
+    expect(warRoomSource).toContain("isIncomingProposalRevision");
+    expect(warRoomSource).toContain("data-testid=\"incoming-proposal-notice\"");
+    expect(warRoomSource).toContain("Load Updated Terms");
+    expect(warRoomSource).toContain("Your unsent changes are protected");
+    expect(warRoomSource).toContain("myCash > 0 ? 'Adjust Cash' : 'Add Cash'");
+    expect(warRoomSource).toContain("theirCash > 0 ? 'Adjust Cash' : 'Add Cash'");
   });
   it("rejects review resubmission while allowing a first completed-trade review", () => {
     expect(getReviewSubmissionBlocker({ isParticipant: true, tradeStatus: "completed", alreadyReviewed: false })).toBeNull();
