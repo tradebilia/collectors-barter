@@ -1070,3 +1070,7 @@
 - [x] Reproduce and trace the Trade Room error where Rtavani’s proposal is rejected because an offered item is reported as inactive.
 - [x] Correct item ownership and active-listing state handling without weakening proposal validation or inquiry waiting-state safeguards.
 - [x] Add a two-account regression test and verify the corrected Trade Room workflow.
+
+- [x] Restore counterparty inventory selection so a member can request an additional item owned by the other member.
+- [x] Persist and validate own offered items separately from counterparty requested items in a Trade Room counterproposal.
+- [x] Add a two-account regression for Rtavani selecting an Administrator-owned requested item and verify the restored checkboxes.

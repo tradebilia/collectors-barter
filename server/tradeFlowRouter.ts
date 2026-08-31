@@ -116,6 +116,7 @@ const declineTradeSchema = z.object({
 const sendProposalSchema = z.object({
   proposalId: z.number().int().positive(),
   offeredListingIds: z.array(z.number().int().positive()).max(50),
+  requestedListingIds: z.array(z.number().int().positive()).max(50).optional().default([]),
   cashFromProposer: z.number().min(0).optional(),
   cashFromRecipient: z.number().min(0).optional(),
   message: z.string().optional(),
@@ -457,12 +458,20 @@ export const tradeFlowRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Your proposal is awaiting the other member’s response. You can decline it, but you cannot submit another proposal yet.' });
         }
 
+        const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
         const offeredListingIds = [...new Set(input.offeredListingIds)];
+        const requestedListingIds = [...new Set(input.requestedListingIds ?? [])];
         if (offeredListingIds.length !== input.offeredListingIds.length) {
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Each offered item may be included only once' });
         }
-        if (offeredListingIds.includes(proposal.requestedListingId)) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'The requested item is already included in this trade' });
+        if (requestedListingIds.length !== (input.requestedListingIds ?? []).length) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Each requested item may be included only once' });
+        }
+        if (offeredListingIds.some((listingId) => requestedListingIds.includes(listingId))) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'A trade item cannot be offered and requested at the same time' });
+        }
+        if (offeredListingIds.includes(proposal.requestedListingId) || requestedListingIds.includes(proposal.requestedListingId)) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'The original requested item is already included in this trade' });
         }
 
         let itemRows: Array<{ id: number; title: string }> = [];
@@ -476,17 +485,27 @@ export const tradeFlowRouter = router({
           }
         }
 
+        let requestedItemRows: Array<{ id: number; title: string }> = [];
+        if (requestedListingIds.length > 0) {
+          const [requestedRows] = await tx.execute(
+            sql`SELECT id, title FROM listings WHERE id IN (${sql.join(requestedListingIds.map(id => sql`${id}`), sql`, `)}) AND ownerId = ${otherUserId} AND isActive = 1 AND status = 'active' FOR UPDATE`
+          );
+          requestedItemRows = (requestedRows as unknown as Array<{ id: number; title: string }>) || [];
+          if (requestedItemRows.length !== requestedListingIds.length) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Every requested item must be an active listing owned by the other member' });
+          }
+        }
+
         const [currentOfferRows] = await tx.execute(
           sql`SELECT tpi.offeredListingId AS id
               FROM tradeProposalItems tpi
-              JOIN listings l ON l.id = tpi.offeredListingId
-              WHERE tpi.proposalId = ${input.proposalId} AND l.ownerId = ${userId}
+              WHERE tpi.proposalId = ${input.proposalId}
               FOR UPDATE`
         );
         const currentOfferIds = ((currentOfferRows as unknown as Array<{ id: number }>) || [])
           .map((row) => row.id)
           .sort((left, right) => left - right);
-        const nextOfferIds = [...offeredListingIds].sort((left, right) => left - right);
+        const nextOfferIds = [...new Set([...offeredListingIds, ...requestedListingIds])].sort((left, right) => left - right);
         const offeredItemsChanged = currentOfferIds.length !== nextOfferIds.length
           || currentOfferIds.some((listingId, index) => listingId !== nextOfferIds[index]);
 
@@ -500,10 +519,8 @@ export const tradeFlowRouter = router({
         );
         const termsChanged = offeredItemsChanged || cashTermsChanged;
 
-        await tx.execute(
-          sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId} AND offeredListingId IN (SELECT id FROM listings WHERE ownerId = ${userId})`
-        );
-        for (const listingId of offeredListingIds) {
+        await tx.execute(sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId}`);
+        for (const listingId of nextOfferIds) {
           await tx.insert(tradeProposalItems).values({ proposalId: input.proposalId, offeredListingId: listingId, createdAt: now });
         }
 
@@ -517,7 +534,6 @@ export const tradeFlowRouter = router({
           await tx.insert(tradeMessages).values({ proposalId: input.proposalId, senderId: userId, message: input.message, createdAt: now });
         }
 
-        const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
         await createTradeAlert(tx, input.proposalId, otherUserId, 'counterProposal', `A new counter proposal has been submitted for your trade (TR-${proposal.tradeReferenceNumber}).`, now);
         const actorName = await getUserDisplayName(tx, userId);
         if (termsChanged) {
@@ -528,7 +544,7 @@ export const tradeFlowRouter = router({
             sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'acceptance_reset', 'Trade terms changed; both members must accept the updated terms.', ${now})`
           );
         }
-        for (const item of itemRows) {
+        for (const item of [...itemRows, ...requestedItemRows]) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`);
         }
         if (input.cashFromProposer && input.cashFromProposer > 0) {

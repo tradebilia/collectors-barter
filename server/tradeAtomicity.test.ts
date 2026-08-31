@@ -30,9 +30,12 @@ describe("Trade Room atomicity and retry-safety contracts", () => {
     const proposalSchema = source.slice(source.indexOf("sendProposalSchema"), source.indexOf("acceptProposalSchema"));
     const counteroffer = source.slice(source.indexOf("sendTradeProposal:"), source.indexOf("acceptTradeProposal:"));
     expect(proposalSchema).toContain("offeredListingIds: z.array(z.number().int().positive()).max(50)");
+    expect(proposalSchema).toContain("requestedListingIds: z.array(z.number().int().positive()).max(50).optional().default([])");
     expect(counteroffer).toContain("Each offered item may be included only once");
     expect(counteroffer).toContain("Every offered item must be an active listing you own");
     expect(counteroffer).toContain("ownerId = ${userId} AND isActive = 1 AND status = 'active'");
+    expect(counteroffer).toContain("Every requested item must be an active listing owned by the other member");
+    expect(counteroffer).toContain("ownerId = ${otherUserId} AND isActive = 1 AND status = 'active'");
   });
 
   it("serializes mutual acceptance and treats a completed retry as safe", () => {
