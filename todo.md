@@ -1039,3 +1039,5 @@
 
 - [x] Add a clear title explaining that category chips represent each collector’s active collecting interests.
 - [x] Show every available category when a member has all categories selected; reserve “Multi-category collector” for members with no category data.
+
+- [x] Remove “Categories this collector has selected” beneath the Collecting interests title and update its regression assertion.

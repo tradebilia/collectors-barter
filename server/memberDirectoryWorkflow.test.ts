@@ -88,7 +88,8 @@ describe("Member Directory discovery workflow", () => {
     expect(searchMembersSource).toContain("preferredCategories: userProfiles.preferredCategories");
     expect(searchMembersSource).toContain("const collectingInterests = preferredCategories.length");
     expect(directorySource).toContain("Collecting interests");
-    expect(directorySource).toContain("Categories this collector has selected.");
+    expect(directorySource).not.toContain("Categories this collector has selected.");
+    expect(directorySource).toContain("Collecting interests");
     expect(directorySource).toContain("member.topCategories.map");
   });
 

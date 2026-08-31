@@ -278,7 +278,6 @@ export default function MemberSearch() {
                       </div>
                       <div className="mt-4 border-t border-slate-100 pt-4">
                         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Collecting interests</p>
-                        <p className="mt-1 text-xs text-slate-500">Categories this collector has selected.</p>
                         <div className="mt-2 flex flex-wrap gap-2">
                           {member.topCategories.length ? member.topCategories.map(category => <Badge key={category} variant="secondary" className="rounded-full bg-violet-50 px-3 py-1 text-violet-800">{category.replace(/_/g, " ")}</Badge>) : <span className="text-sm text-slate-500">Multi-category collector</span>}
                         </div>
