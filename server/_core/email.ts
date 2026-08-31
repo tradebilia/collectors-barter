@@ -5,6 +5,7 @@
 
 const FROM_ADDRESS = "Tradebilia <noreply@tradebilia.com>";
 const SITE_URL = "https://tradebilia.manus.space";
+const EMAIL_HEADER_URL = "https://tradebilia.manus.space/manus-storage/tradebilia_email_logo_reference_c09ef836.png";
 import { isStagingSafetyEnabled, stagingSafetyReason } from "./stagingSafety";
 import { classifyApiFailure, recordApiFailure } from "../apiHealth";
 
@@ -78,7 +79,7 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
   }
 }
 
-function emailWrapper(content: string): string {
+export function emailWrapper(content: string): string {
   return `<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -87,12 +88,12 @@ function emailWrapper(content: string): string {
     <tr><td align="center">
       <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
         <!-- Header -->
-        <tr><td style="background:#0a0d22;padding:24px 16px;text-align:center;">
+        <tr><td style="background:#0a0d22;padding:0;text-align:center;">
           <img
-            src="https://assets.tradebilia.com/tradebilia_final_transparent_58812c5a.svg"
+            src="${EMAIL_HEADER_URL}"
             alt="Tradebilia"
-            width="520"
-            style="display:block;margin:0 auto;width:100%;max-width:520px;height:auto;"
+            width="560"
+            style="display:block;margin:0 auto;width:100%;max-width:560px;height:auto;"
           />
         </td></tr>
         <!-- Content -->
@@ -192,14 +193,16 @@ export async function getUserEmailAndPref(
 /**
  * Notify a user that someone initiated a trade proposal with them.
  */
-export async function sendTradeInitiatedEmail(params: {
+export type TradeInitiatedEmailParams = {
   recipientEmail: string;
   recipientName: string;
   senderName: string;
   itemTitle: string;
   tradeRef: string;
-}): Promise<boolean> {
-  const html = emailWrapper(`
+};
+
+export function buildTradeInitiatedEmailHtml(params: TradeInitiatedEmailParams) {
+  return emailWrapper(`
     <h2 style="margin:0 0 8px;font-size:22px;color:#0a0d22;">New Trade Proposal from ${escapeEmailHtml(params.senderName)}</h2>
     <p style="color:#666;font-size:14px;margin:0 0 24px;">Someone wants to trade with you on Tradebilia.</p>
     <div style="background:#f8f8f6;border-radius:12px;padding:20px;margin-bottom:24px;">
@@ -210,6 +213,10 @@ export async function sendTradeInitiatedEmail(params: {
     </div>
     <a href="${SITE_URL}/trade-hub" style="display:inline-block;background:#7f31ff;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:10px;font-weight:600;font-size:14px;">View Trade Proposal</a>
   `);
+}
+
+export async function sendTradeInitiatedEmail(params: TradeInitiatedEmailParams): Promise<boolean> {
+  const html = buildTradeInitiatedEmailHtml(params);
   return sendEmail(params.recipientEmail, `New trade proposal from ${params.senderName} on Tradebilia`, html);
 }
 

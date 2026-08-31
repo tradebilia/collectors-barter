@@ -1089,3 +1089,6 @@
 - [x] Update counterproposal cash timeline details to distinguish added, adjusted, and removed amounts.
 - [x] Name the affected member side in every cash timeline entry.
 - [x] Add regression coverage and verify the improved cash timeline wording.
+
+- [x] Update new trade-proposal email notifications to use the approved hero-backed Tradebilia logo header.
+- [x] Add regression coverage and verify the proposal-notification email HTML and header asset reachability.
