@@ -1025,3 +1025,5 @@
 - [x] Add server and UI regression coverage for inquiry waiting-state authorization and verify the Coming Soon responsive spacing.
 
 - [x] Add intentional vertical space between “Why Buy or Sell” and “When You Can Trade?” while preserving mathematical centering and responsive balance.
+
+- [x] Move the Coming Soon Tradebilia logo slightly upward and enlarge it modestly without overflowing the parchment or colliding with the headline/divider.
