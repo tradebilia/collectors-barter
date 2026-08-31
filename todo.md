@@ -1092,3 +1092,9 @@
 
 - [x] Update new trade-proposal email notifications to use the approved hero-backed Tradebilia logo header.
 - [x] Add regression coverage and verify the proposal-notification email HTML and header asset reachability.
+
+- [x] Remove the duplicate top-left SVG logo from the printable trade confirmation header.
+- [x] Replace printable confirmation @usernames with labeled display names and format phone numbers consistently.
+- [x] Vertically center the printable confirmation exchange arrow between both trade sides.
+- [x] Trace and repair the shipping confirmation failure caused by the `tradePayments` status query.
+- [x] Add regression coverage and verify the corrected printable confirmation and shipping transition.

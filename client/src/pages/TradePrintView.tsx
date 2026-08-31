@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useEffect } from "react";
 import { formatWholeDollar } from "@/lib/tradebilia";
+import { formatTradeContactPhone } from "@/lib/tradePrint";
 
 export default function TradePrintView() {
   const params = useParams<{ id: string }>();
@@ -33,8 +34,8 @@ export default function TradePrintView() {
 
   const myContact = (trade as any)?.myContactInfo;
   const theirContact = (trade as any)?.theirContactInfo;
-  const myDisplayName = (user as any)?.displayName || user?.name || user?.username || 'Trader 1';
-  const theirDisplayName = (trade?.otherUser as any)?.displayName || (trade?.otherUser as any)?.username || 'Trader 2';
+  const myDisplayName = (user as any)?.displayName || user?.name || 'Trader 1';
+  const theirDisplayName = (trade?.otherUser as any)?.displayName || 'Trader 2';
 
   const serverMyCash = isRequester
     ? parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0
@@ -63,10 +64,10 @@ export default function TradePrintView() {
     return <div className="flex items-center justify-center min-h-screen bg-white text-red-600">Trade not found.</div>;
   }
 
-  const ContactBlock = ({ contact, name }: { contact: any; name: string }) => (
+  const ContactBlock = ({ contact, displayName }: { contact: any; displayName: string }) => (
     <div className="text-center">
-      <p className="font-black text-2xl text-gray-900">{contact?.contactFullName || name}</p>
-      {(contact as any)?.username && <p className="text-gray-500 text-base">@{(contact as any).username}</p>}
+      <p className="font-black text-2xl text-gray-900">{contact?.contactFullName || displayName}</p>
+      <p className="text-gray-500 text-sm">Display Name: {displayName}</p>
       {contact?.contactAddress && (
         <div className="mt-2 text-gray-700 text-base leading-relaxed">
           <p>{contact.contactAddress}</p>
@@ -75,7 +76,7 @@ export default function TradePrintView() {
         </div>
       )}
       {contact?.contactEmail && <p className="text-gray-700 text-base mt-1">{contact.contactEmail}</p>}
-      {contact?.contactPhone && <p className="text-gray-700 text-base">{contact.contactPhone}</p>}
+      {contact?.contactPhone && <p className="text-gray-700 text-base">{formatTradeContactPhone(contact.contactPhone)}</p>}
     </div>
   );
 
@@ -99,8 +100,7 @@ export default function TradePrintView() {
 
         {/* Header */}
         <div className="flex items-center justify-between mb-8 border-b-2 border-gray-800 pb-4">
-          <div className="flex items-center gap-3">
-            <img src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg" alt="Tradebilia" className="h-10" />
+          <div>
             <div>
               <p className="font-black text-2xl text-gray-900 tracking-tight">TRADEBILIA</p>
               <p className="text-gray-500 text-xs">Collectors Trading Exchange</p>
@@ -134,11 +134,11 @@ export default function TradePrintView() {
         <div className="grid grid-cols-2 gap-0 mb-8 border border-gray-300 rounded-lg overflow-hidden bg-white">
           <div className="p-5 border-r border-gray-300">
             <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold mb-3 text-center">Trader 1</p>
-            <ContactBlock contact={myContact} name={myDisplayName} />
+            <ContactBlock contact={myContact} displayName={myDisplayName} />
           </div>
           <div className="p-5">
             <p className="text-gray-500 text-xs uppercase tracking-widest font-semibold mb-3 text-center">Trader 2</p>
-            <ContactBlock contact={theirContact} name={theirDisplayName} />
+            <ContactBlock contact={theirContact} displayName={theirDisplayName} />
           </div>
         </div>
 
@@ -156,7 +156,7 @@ export default function TradePrintView() {
             </div>
           </div>
           {/* Arrow */}
-          <div className="flex items-center justify-center pt-8 shrink-0 px-2">
+          <div className="flex self-stretch items-center justify-center shrink-0 px-2">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-8 h-8 text-gray-400">
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
             </svg>

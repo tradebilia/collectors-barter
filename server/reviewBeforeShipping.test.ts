@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 const source = readFileSync(resolve(process.cwd(), "server/tradeFlowRouter.ts"), "utf8");
 const paymentSource = readFileSync(resolve(process.cwd(), "server/paymentAuthorization.ts"), "utf8");
+const schemaSource = readFileSync(resolve(process.cwd(), "drizzle/schema.ts"), "utf8");
 
 describe("Review-before-Shipping trade lifecycle", () => {
   it("keeps a mutually accepted trade in the Review status with its items locked", () => {
@@ -22,6 +23,13 @@ describe("Review-before-Shipping trade lifecycle", () => {
     expect(shipping).toContain("proposal.status as string) !== 'accepted'");
     expect(shipping).toContain("status = 'shipping'");
     expect(shipping).toContain("shippingDeadline = COALESCE(shippingDeadline, DATE_ADD");
+  });
+
+  it("maps payment payer and payee fields to the established live database columns", () => {
+    expect(schemaSource).toContain('payerId: int("payerUserId")');
+    expect(schemaSource).toContain('payeeId: int("payeeUserId")');
+    expect(source).toContain("tradePayments.payerId");
+    expect(source).toContain("tradePayments.status");
   });
 
   it("keeps server-derived PayPal verification available during the accepted Review stage", () => {

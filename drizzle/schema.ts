@@ -953,8 +953,8 @@ export const directMessages = mysqlTable("directMessages", {
 export const tradePayments = mysqlTable("tradePayments", {
 	id: int().autoincrement().notNull().primaryKey(),
 	proposalId: int().notNull().references(() => tradeProposals.id),
-	payerId: int().notNull().references(() => users.id),
-	payeeId: int().notNull().references(() => users.id),
+	payerId: int("payerUserId").notNull().references(() => users.id),
+	payeeId: int("payeeUserId").notNull().references(() => users.id),
 	amount: decimal({ precision: 12, scale: 2 }).notNull(),
 	paypalEmail: varchar({ length: 320 }),
 	paymentMethod: mysqlEnum(['paypal','venmo','cash_app','zelle']),
