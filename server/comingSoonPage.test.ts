@@ -44,11 +44,10 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("Swap sports cards for comics, toys, games, and more.");
     expect(pageSource).not.toContain("A deliberate place to discover, value, and trade across all ten collector categories.");
     expect(pageSource).toContain('"Notify me"');
-    expect(pageSource).toContain("Launch updates only · unsubscribe anytime.");
+    expect(pageSource).not.toContain("Launch updates only · unsubscribe anytime.");
     expect(pageSource).not.toContain("Yes, I&apos;d like to receive launch updates");
     expect(pageSource).not.toContain("Checkbox");
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
-    expect(pageSource).toContain('order-1 mx-auto max-w-sm text-[10px] font-medium leading-4 text-[#2b2119]/80 sm:text-center');
     expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0 text-[8px]');
     expect(pageSource).toContain('sm:grid-cols-5');
     expect(pageSource).toContain("<span>Vintage Toys</span>");

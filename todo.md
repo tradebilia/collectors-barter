@@ -1016,3 +1016,5 @@
 - [x] Update regression coverage, visually verify both responsive layouts, and save the final signup refinement checkpoint.
 
 - [x] Change the verification highlight wording to “Connect more verified accounts to strengthen user authenticity” and update its regression assertion.
+
+- [x] Remove “Launch updates only · unsubscribe anytime.” from the Coming Soon signup area and update its regression assertion.

@@ -89,7 +89,6 @@ export default function ComingSoon() {
                 <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
                   <div className="relative">
                 <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
-                  <p className="order-1 mx-auto max-w-sm text-[10px] font-medium leading-4 text-[#2b2119]/80 sm:text-center">Launch updates only · unsubscribe anytime.</p>
                   <div className="order-2 flex flex-col gap-2 sm:flex-row sm:items-stretch">
                     <div className="relative flex-1 border border-[#6c503c]/35 bg-[#fffaf0]/80">
                       <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5a4536]/50" aria-hidden="true" />
