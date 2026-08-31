@@ -1113,3 +1113,9 @@
 - [x] Repair Step 4 tracking validation so each member can submit tracking for the listings they are actually sending.
 - [x] Repair the Step 4 cash-obligation context so payment cards load instead of remaining on the loading message.
 - [x] Add regression coverage and verify the revised action area, tracking submission, and payment-step loading.
+
+- [x] Trace the live Shipping-stage cash payment-context error from runtime logs and repair its root cause.
+- [x] Ensure Trade Room shows usable payment steps or a safe, specific member-facing next action during Shipping.
+- [x] Add regression coverage and verify the repaired Shipping payment-context request before checkpointing.
+
+- [x] Add the missing nullable `verificationResult` column to the secured Trade Payments table after explicit approval, then verify the live Shipping payment-context query.
