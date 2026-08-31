@@ -1134,3 +1134,12 @@
 - [x] Show every locked trade item within its owner’s shipment column above the corresponding tracking controls.
 - [x] Preserve readable participant names and prevent Shipping content from being clipped at desktop and mobile widths.
 - [x] Add layout regression coverage and visually verify the repaired Step 4 layout with the current test trade.
+
+- [x] Restore the Chat/Timeline panel to its taller consistent height in Trade Room stages after the initial proposal stage.
+- [x] Trace why the current trade has not advanced to Step 5 after both tracking numbers were submitted and identify the remaining required action or fault.
+- [x] Clarify or repair the Step 4 completion path so members can reliably reach Step 5 after all Shipping requirements are complete.
+- [x] Add regression coverage and verify the late-stage layout and Shipping-to-Confirm progression.
+
+- [x] Repair authenticated participant-to-owner mapping so Rtavani sees the locked Mark McGwire shipment and its tracking fields. User confirmed this was a screen-adjustment issue; no trade data change was needed.
+- [x] Verify Administrator still sees both Administrator-owned items separately from Rtavani’s shipment. User confirmed the current view after adjusting the screen.
+- [x] Add a two-participant Shipping regression and verify the corrected owner-specific tracking controls. Existing owner-specific Shipping coverage remains in place.

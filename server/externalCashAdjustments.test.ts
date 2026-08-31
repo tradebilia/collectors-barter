@@ -57,7 +57,8 @@ describe("External cash-adjustment safeguards", () => {
     expect(tradeFlowSource).toContain("bothShipped && cashSettlementComplete");
     expect(warRoomSource).toContain("currentStage === 'shipping'");
     expect(warRoomSource).toContain("Cash Settlement During Shipping");
-    expect(warRoomSource).toContain("Complete each cash confirmation during Shipping before the trade moves to item receipt confirmation.");
+    expect(warRoomSource).toContain("Step 5, Confirm Receipt, opens automatically after both members submit tracking");
+    expect(warRoomSource).toContain("Complete each remaining cash step below during Shipping.");
   });
 
   it("provides private setup and settings forms plus Trade Room and masked admin controls", () => {

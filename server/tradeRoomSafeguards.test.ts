@@ -40,7 +40,8 @@ describe("Trade Room safeguards", () => {
   it("renders every Shipping-stage cash obligation separately before item receipt confirmation", () => {
     expect(warRoomSource).toContain("const obligations = (cashAdjustmentContextQuery.data?.obligations ?? [])");
     expect(warRoomSource).toContain("Cash Settlement During Shipping");
-    expect(warRoomSource).toContain("Complete each cash confirmation during Shipping before the trade moves to item receipt confirmation.");
+    expect(warRoomSource).toContain("Step 5, Confirm Receipt, opens automatically after both members submit tracking");
+    expect(warRoomSource).toContain("Complete each remaining cash step below during Shipping.");
     expect(warRoomSource).toContain("transactionReferenceByPayer");
     expect(warRoomSource).toContain("payerId: context.payerId");
   });
@@ -53,6 +54,9 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("Items {theirDisplayName} is sending");
     expect(warRoomSource).toContain("lg:grid-cols-2 lg:divide-x lg:divide-y-0");
     expect(warRoomSource).toContain("myTrackingByListingId");
+    expect(warRoomSource).toContain("lg:h-full lg:min-h-0 lg:w-[360px]");
+    expect(warRoomSource).toContain("Step 5, Confirm Receipt, opens automatically after both members submit tracking");
+    expect(warRoomSource).toContain("pendingCashSteps");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isLoading");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isError");
     expect(warRoomSource).toContain("No direct cash settlement is required for this trade.");
