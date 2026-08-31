@@ -1059,3 +1059,6 @@
 - [x] Create a self-contained email-safe header image with the main-page hero background behind the exact Tradebilia logo.
 - [x] Place “Unsubscribe from pre-launch updates” on its own line in the production email and admin preview.
 - [x] Add regression coverage, verify the asset reaches the sent email, and save the corrected email checkpoint.
+
+- [x] Remove the extra dark overlay from the self-contained email header or reduce it to the minimum needed for logo readability.
+- [x] Compare the brighter asset with the main-page hero, update the production email and admin preview, and verify the result before checkpointing.

@@ -77,7 +77,7 @@ describe("Pre-Launch Email", () => {
   it("renders email-client-safe branding, background, neutral site link, and active unsubscribe control", () => {
     const html = buildPreLaunchEmailHtml("<b>Hello</b>");
     expect(html).toContain("&lt;b&gt;Hello&lt;/b&gt;");
-    expect(html).toContain("tradebilia_email_hero_header_4abcf727.png");
+    expect(html).toContain("tradebilia_email_hero_header_bright_1cc00871.png");
     expect(html).toContain("<br><a href=\"{{{RESEND_UNSUBSCRIBE_URL}}}\"");
     expect(html).toContain("Unsubscribe from pre-launch updates");
     expect(html).toContain("{{{RESEND_UNSUBSCRIBE_URL}}}");
