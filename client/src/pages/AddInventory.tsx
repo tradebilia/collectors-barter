@@ -3,7 +3,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Upload, Loader2 } from "lucide-react";
+import { Camera, ImagePlus, Upload, Loader2 } from "lucide-react";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useParams, useLocation } from "wouter";
@@ -812,8 +812,30 @@ export default function AddInventory() {
                 )}
               </div>
 
-              {/* Upload Button */}
-              <label className={`flex cursor-pointer items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+              {/* Mobile source choices keep the camera and library actions clear. */}
+              <div className="grid grid-cols-2 gap-2 md:hidden">
+                <label className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors ${
+                  photos.length >= 10
+                    ? 'bg-slate-500 cursor-not-allowed opacity-50'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}>
+                  <Camera className="mr-1.5 h-4 w-4" />
+                  Take Photo
+                  <input type="file" accept="image/*" capture="environment" onChange={handlePhotos} className="hidden" disabled={photos.length >= 10} />
+                </label>
+                <label className={`flex min-h-11 cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-center text-sm font-semibold transition-colors ${
+                  photos.length >= 10
+                    ? 'bg-slate-500 cursor-not-allowed opacity-50'
+                    : 'bg-slate-700 hover:bg-slate-600'
+                }`}>
+                  <ImagePlus className="mr-1.5 h-4 w-4" />
+                  Choose from Library
+                  <input type="file" multiple accept="image/*" onChange={handlePhotos} className="hidden" disabled={photos.length >= 10} />
+                </label>
+              </div>
+
+              {/* Desktop retains the established file-picker upload control. */}
+              <label className={`hidden cursor-pointer items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors md:flex ${
                 photos.length >= 10
                   ? 'bg-slate-500 cursor-not-allowed opacity-50'
                   : 'bg-blue-600 hover:bg-blue-700'

@@ -1175,3 +1175,7 @@
 - [x] Correct Step 5 viewport sizing so receipt, cash, tracking, and support controls remain visible without a member shrinking their browser view.
 - [x] Include accepted completed-trade cash adjustments in the homepage Recent Trades section and Traders Showcase summaries without exposing private payment destinations.
 - [x] Add focused regression coverage and verify cash wording, responsive late-stage layout, print-confirmation privacy, and completed-trade cash summaries. Focused tests passed (20/20), TypeScript and production build passed, and the public Traders Showcase visual check showed the completed cash trade without exposing a destination.
+- [x] Add an explicit mobile Take Photo control that requests the rear device camera for new listing images, while preserving user-controlled permissions and confirmation.
+- [x] Add a separate mobile Choose from Library control, retaining desktop file-picker upload, preview, image reorder, and removal behavior.
+- [x] Add regression coverage and validate the new-item image controls at mobile and desktop viewports. The focused tests, TypeScript, production build, and whitespace checks passed; the unauthenticated mobile route rendered correctly to the existing sign-in boundary.
+- [ ] Verify Take Photo and Choose from Library on a signed-in physical mobile browser, including camera permission, cancel, preview, cover-photo, removal, and submit behavior.
