@@ -76,8 +76,8 @@ function DirectionMarker({ side }: { side: "left" | "right" }) {
   );
 }
 
-function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
-  if (!items.length) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
+function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPaid: number }) {
+  if (!items.length && cashPaid <= 0) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
   return (
     <div className="mx-auto grid w-full min-w-0 grid-cols-1 justify-items-center items-center gap-2">
@@ -106,6 +106,7 @@ function TradeItemList({ items }: { items: TradeShowcaseItem[] }) {
         const className = "group grid w-fit max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 overflow-hidden rounded-md p-1 text-left transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
         return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
       })}
+      {cashPaid > 0 && <span className="rounded-md bg-emerald-100 px-3 py-1.5 text-sm font-extrabold text-emerald-800 ring-1 ring-emerald-200">+ {formatEstimatedValue(cashPaid)} Cash paid</span>}
     </div>
   );
 }
@@ -206,7 +207,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
         <div className="grid min-w-0 gap-1 px-4 py-4 md:grid-cols-[minmax(10rem,0.95fr)_1px_minmax(12rem,1.1fr)_auto_1px_minmax(7rem,0.7fr)_1px_auto_minmax(12rem,1.1fr)_1px_minmax(10rem,0.95fr)] md:items-center md:gap-1 lg:px-4 lg:py-5">
           <TradeMember member={exchange.left.member} />
           <TicketDivider />
-          <TradeItemList items={exchange.left.items} />
+          <TradeItemList items={exchange.left.items} cashPaid={exchange.left.cashPaid} />
           <DirectionMarker side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
@@ -214,7 +215,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           </div>
           <TicketDivider />
           <DirectionMarker side="right" />
-          <TradeItemList items={exchange.right.items} />
+          <TradeItemList items={exchange.right.items} cashPaid={exchange.right.cashPaid} />
           <TicketDivider />
           <TradeMember member={exchange.right.member} />
         </div>

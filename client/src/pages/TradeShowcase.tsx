@@ -2,7 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
-import { tradebiliaCategories, type TradebiliaCategorySlug } from "@/lib/tradebilia";
+import { formatWholeDollar, tradebiliaCategories, type TradebiliaCategorySlug } from "@/lib/tradebilia";
 import { Handshake, ArrowLeftRight, ArrowUpDown } from "lucide-react";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty } from "@/lib/tradeShowcaseMovements";
 
@@ -81,6 +81,10 @@ function TradeItems({ items }: { items: TradeShowcaseItem[] }) {
   );
 }
 
+function CashPaid({ amount }: { amount: number }) {
+  return amount > 0 ? <span className="shrink-0 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-xs font-extrabold text-emerald-800">+ {formatWholeDollar(amount)} Cash paid</span> : null;
+}
+
 function TradeParty({ member, reverse = false }: { member: TradeShowcaseParty; reverse?: boolean }) {
   return (
     <div className={`flex shrink-0 items-center gap-2 ${reverse ? "flex-row-reverse text-right" : ""}`}>
@@ -95,6 +99,7 @@ function TradeParty({ member, reverse = false }: { member: TradeShowcaseParty; r
 function TradeCard({ trade }: { trade: any }) {
   const exchange = buildTradeShowcaseExchange(trade);
   const hasItems = exchange.left.items.length > 0 || exchange.right.items.length > 0;
+  const hasCash = exchange.left.cashPaid > 0 || exchange.right.cashPaid > 0;
 
   return (
     <div className="bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden">
@@ -109,7 +114,7 @@ function TradeCard({ trade }: { trade: any }) {
 
       {/* Both sides of each completed trade are shown together in one exchange line. */}
       <div className="p-4">
-        {!hasItems ? (
+        {!hasItems && !hasCash ? (
           <div className="h-24 flex items-center justify-center text-gray-400 text-sm">No item details available</div>
         ) : (
           <div className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50/70">
@@ -117,11 +122,13 @@ function TradeCard({ trade }: { trade: any }) {
               <div className="flex flex-1 items-center gap-3">
                 <TradeParty member={exchange.left.member} />
                 <TradeItems items={exchange.left.items} />
+                <CashPaid amount={exchange.left.cashPaid} />
               </div>
               <ArrowLeftRight className="h-10 w-10 shrink-0 text-purple-500" strokeWidth={2.6} aria-label="Completed exchange between both members" />
               <div className="flex flex-1 flex-row-reverse items-center gap-3">
                 <TradeParty member={exchange.right.member} reverse />
                 <TradeItems items={exchange.right.items} />
+                <CashPaid amount={exchange.right.cashPaid} />
               </div>
             </div>
           </div>

@@ -3733,6 +3733,8 @@ export const appRouter = router({
             tp.completedAt,
             tp.requesterId,
             tp.recipientId,
+            tp.cashFromRequester,
+            tp.cashFromRecipient,
             -- Public requester identity with display-name-first fallback
             COALESCE(NULLIF(req_up.displayName, ''), NULLIF(req_u.displayName, ''), NULLIF(req_u.name, ''), req_u.username, 'Collector') as requesterDisplayName,
             req_u.username as requesterUsername,
@@ -3768,8 +3770,11 @@ export const appRouter = router({
             l.estimatedValue as requestedListingValue,
             (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) as requestedListingImage,
             -- Item count and total value
-            (SELECT COUNT(*) FROM tradeProposalItems WHERE proposalId = tp.id) + 1 as itemCount,
-            (SELECT COALESCE(SUM(ol.estimatedValue), 0) FROM listings ol JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id WHERE tpi.proposalId = tp.id) + COALESCE(l.estimatedValue, 0) as totalValue
+            (SELECT COUNT(*) FROM tradeProposalItems WHERE proposalId = tp.id) + CASE WHEN l.id IS NULL THEN 0 ELSE 1 END as itemCount,
+            (SELECT COALESCE(SUM(ol.estimatedValue), 0) FROM listings ol JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id WHERE tpi.proposalId = tp.id)
+              + COALESCE(l.estimatedValue, 0)
+              + COALESCE(tp.cashFromRequester, 0)
+              + COALESCE(tp.cashFromRecipient, 0) as totalValue
           FROM tradeProposals tp
           LEFT JOIN users req_u ON req_u.id = tp.requesterId
           LEFT JOIN userProfiles req_up ON req_up.userId = tp.requesterId

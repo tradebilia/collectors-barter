@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
 const warRoomSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/WarRoom.tsx"), "utf8");
+const stylesheet = fs.readFileSync(path.join(projectRoot, "client/src/index.css"), "utf8");
 
 describe("Trade Room responsive completed-trade layout", () => {
   it("keeps receipt and trade-issue actions in a separate full-width flow section before tracking", () => {
@@ -21,10 +22,13 @@ describe("Trade Room responsive completed-trade layout", () => {
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
-    expect(warRoomSource).toContain('min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] xl:h-[100dvh] xl:overflow-hidden');
-    expect(warRoomSource).toContain('flex min-h-0 flex-1 flex-col overflow-visible xl:flex-row xl:items-stretch xl:overflow-hidden');
-    expect(warRoomSource).toContain('flex flex-1 flex-col overflow-visible p-4 xl:overflow-y-auto custom-scrollbar');
-    expect(warRoomSource).toContain('flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4 xl:h-full xl:min-h-0 xl:w-[360px]');
+    expect(warRoomSource).toContain('trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a]');
+    expect(warRoomSource).toContain('trade-room-workspace flex min-h-0 flex-1 flex-col overflow-visible');
+    expect(warRoomSource).toContain('trade-room-content flex flex-1 flex-col overflow-visible p-4 custom-scrollbar');
+    expect(warRoomSource).toContain('trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4');
+    expect(stylesheet).toContain('@media (min-width: 1280px) and (min-height: 760px)');
+    expect(stylesheet).toContain('.trade-room-chat-rail');
+    expect(stylesheet).toContain('height: 100%;');
     expect(warRoomSource).toContain('px-3 py-3 sm:px-6 sm:py-4');
   });
 });

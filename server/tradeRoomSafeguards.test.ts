@@ -49,10 +49,19 @@ describe("Trade Room safeguards", () => {
   it("renders every Shipping-stage cash obligation separately before item receipt confirmation", () => {
     expect(warRoomSource).toContain("const obligations = (cashAdjustmentContextQuery.data?.obligations ?? [])");
     expect(warRoomSource).toContain("Payment & Shipping Checklist");
-    expect(warRoomSource).toContain("each required cash payment is marked sent");
+    expect(warRoomSource).toContain("Payment sent — cash receipt is confirmed in Step 5");
+    expect(warRoomSource).not.toContain("Step 5, Confirm Receipt, opens automatically");
     expect(warRoomSource).toContain("Complete each remaining payment-sent action below during Shipping & Payment.");
     expect(warRoomSource).toContain("transactionReferenceByPayer");
-    expect(warRoomSource).toContain("payerId: context.payerId");
+    expect(warRoomSource).toContain("markCashAdjustmentSentMutation.mutate({ proposalId");
+  });
+
+  it("shows private Review cash terms with method names while keeping the shipping disclosure and issue path unambiguous", () => {
+    expect(warRoomSource).toContain("Cash PAID via {getAcceptedCashMethodLabel(myUserId)}");
+    expect(warRoomSource).toContain("Cash PAID via {getAcceptedCashMethodLabel(otherUser?.id)}");
+    expect(warRoomSource).toContain("Tradebilia does not process payments.");
+    expect(warRoomSource).not.toContain("Describe a payment issue for admin review");
+    expect(warRoomSource).toContain("Report a Trade Issue");
   });
 
   it("uses owner-derived tracking items and distinguishes payment loading from a cash-free trade", () => {
@@ -63,8 +72,8 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("Items {theirDisplayName} is sending");
     expect(warRoomSource).toContain("lg:grid-cols-2 lg:divide-x lg:divide-y-0");
     expect(warRoomSource).toContain("myTrackingByListingId");
-    expect(warRoomSource).toContain("xl:h-full xl:min-h-0 xl:w-[360px]");
-    expect(warRoomSource).toContain("each required cash payment is marked sent");
+    expect(warRoomSource).toContain("trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4");
+    expect(warRoomSource).toContain("Payment sent — cash receipt is confirmed in Step 5");
     expect(warRoomSource).toContain("pendingCashSteps");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isLoading");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isError");

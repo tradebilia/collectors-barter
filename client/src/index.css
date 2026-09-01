@@ -310,3 +310,33 @@
 
 
 }
+
+/* Trade Room uses a fixed, side-by-side workspace only when both dimensions
+   can accommodate it. Short windows, tablets, mobile devices, and browser
+   zoom levels fall back to a natural stacked document so actions never clip. */
+@media (min-width: 1280px) and (min-height: 760px) {
+  .trade-room-shell {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .trade-room-workspace {
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .trade-room-content {
+    overflow-y: auto;
+  }
+
+  .trade-room-chat-rail {
+    width: 360px;
+    min-height: 0;
+    height: 100%;
+  }
+
+  .trade-room-chat-card {
+    height: 100%;
+  }
+}

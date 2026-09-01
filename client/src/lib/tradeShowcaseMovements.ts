@@ -20,6 +20,8 @@ export type TradeShowcaseItem = {
 };
 
 export type TradeShowcaseTrade = {
+  cashFromRequester?: string | number | null;
+  cashFromRecipient?: string | number | null;
   requestedListingId?: number | null;
   requestedListingTitle?: string | null;
   requestedListingCategory?: string | null;
@@ -62,6 +64,7 @@ export type TradeShowcaseMovement = TradeShowcaseItem & {
 export type TradeShowcaseExchangeSide = {
   member: TradeShowcaseParty;
   items: TradeShowcaseItem[];
+  cashPaid: number;
 };
 
 export type TradeShowcaseExchange = {
@@ -153,7 +156,7 @@ export function buildTradeShowcaseExchange(trade: TradeShowcaseTrade): TradeShow
       : [];
 
   return {
-    left: { member: recipient, items: recipientItems },
-    right: { member: requester, items: trade.offeredItems ?? [] },
+    left: { member: recipient, items: recipientItems, cashPaid: Number(trade.cashFromRecipient ?? 0) || 0 },
+    right: { member: requester, items: trade.offeredItems ?? [], cashPaid: Number(trade.cashFromRequester ?? 0) || 0 },
   };
 }

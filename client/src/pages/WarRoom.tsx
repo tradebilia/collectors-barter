@@ -198,7 +198,6 @@ export default function WarRoom() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // Payment step state, kept separately for each payer obligation.
   const [transactionReferenceByPayer, setTransactionReferenceByPayer] = useState<Record<number, string>>({});
-  const [cashDisputeReasonByPayer, setCashDisputeReasonByPayer] = useState<Record<number, string>>({});
   const [incomingProposalNotice, setIncomingProposalNotice] = useState(false);
   const latestProposalRevisionRef = useRef<string | null>(null);
 
@@ -347,7 +346,6 @@ export default function WarRoom() {
   const selectCashAdjustmentMethodMutation = trpc.payment.selectCashAdjustmentMethod.useMutation({ onSuccess: () => { toast.success('Payment method selected for this trade.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
   const markCashAdjustmentSentMutation = trpc.payment.markCashAdjustmentSent.useMutation({ onSuccess: () => { toast.success('Marked as sent. Your trade partner must confirm receipt.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
   const confirmCashAdjustmentReceivedMutation = trpc.payment.confirmCashAdjustmentReceived.useMutation({ onSuccess: () => { toast.success('Receipt confirmed.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
-  const openCashAdjustmentDisputeMutation = trpc.payment.openCashAdjustmentDispute.useMutation({ onSuccess: () => { toast.success('Cash-adjustment dispute opened for administrator review.'); setCashDisputeReasonByPayer({}); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
 
   // ── Effects ───────────────────────────────────────────────────────────────
   // Mark alerts as read when entering the Trade Room; do NOT auto-transition stage
@@ -501,6 +499,12 @@ export default function WarRoom() {
   const cashAdjustmentContext = cashAdjustmentContextQuery.data as any;
   const sharedPaymentMethods = (cashAdjustmentContext?.sharedMethods ?? []) as Array<{ method: string; label: string }>;
   const partnerPaymentMethods = (cashAdjustmentContext?.partnerMethods ?? []) as Array<{ method: string; label: string }>;
+  const getAcceptedCashMethodLabel = (payerId?: number | null) => {
+    const paymentMethod = (cashAdjustmentContext?.obligations ?? []).find((obligation: any) => String(obligation.payerId) === String(payerId ?? ''))?.payment?.paymentMethod;
+    return paymentMethod
+      ? String(paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())
+      : 'Selected Direct Method';
+  };
   const partnerPaymentMethodLabels = partnerPaymentMethods.map((method) => method.label).join(", ");
   const hasSharedPaymentMethod = sharedPaymentMethods.length > 0;
   const paymentMethodMismatchMessage = partnerPaymentMethodLabels
@@ -754,7 +758,7 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] xl:h-[100dvh] xl:overflow-hidden">
+    <div className="trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a]">
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
       {isAdminReadOnly && (
@@ -821,10 +825,10 @@ export default function WarRoom() {
       </header>
 
       {/* Main Layout: Trade Table (left) + Chat/Timeline (right) */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-visible xl:flex-row xl:items-stretch xl:overflow-hidden">
+      <div className="trade-room-workspace flex min-h-0 flex-1 flex-col overflow-visible">
 
         {/* Center: Trade Table or Post-Acceptance View */}
-        <div className="flex flex-1 flex-col overflow-visible p-4 xl:overflow-y-auto custom-scrollbar">
+        <div className="trade-room-content flex flex-1 flex-col overflow-visible p-4 custom-scrollbar">
           {incomingProposalNotice && (
             <div data-testid="incoming-proposal-notice" className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-400/50 bg-amber-500/10 px-4 py-3 text-amber-100 shadow-[0_0_18px_rgba(251,191,36,0.12)] sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -911,7 +915,7 @@ export default function WarRoom() {
                         </div>
                       ))}
                       {myCash > 0 && (
-                        <p className="text-green-400 text-sm font-bold pl-2">+ {formatWholeDollar(myCash)} Cash</p>
+                        <p className="pl-2 text-sm font-bold text-green-400">+ {formatWholeDollar(myCash)} Cash PAID via {getAcceptedCashMethodLabel(myUserId)}</p>
                       )}
                     </div>
                     {/* Exchange Arrow */}
@@ -940,7 +944,7 @@ export default function WarRoom() {
                         </div>
                       ))}
                       {theirCash > 0 && (
-                        <p className="text-green-400 text-sm font-bold pl-2">+ {formatWholeDollar(theirCash)} Cash</p>
+                        <p className="pl-2 text-sm font-bold text-green-400">+ {formatWholeDollar(theirCash)} Cash PAID via {getAcceptedCashMethodLabel(otherUser?.id)}</p>
                       )}
                     </div>
                   </div>
@@ -1944,8 +1948,8 @@ export default function WarRoom() {
         </div>
 
         {/* Right Column: Chat + Timeline as a card */}
-        <div className="flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4 xl:h-full xl:min-h-0 xl:w-[360px]">
-          <div className="bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl xl:h-full">
+        <div className="trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4">
+          <div className="trade-room-chat-card bg-[#16213e] border border-gray-600 rounded-xl flex flex-col flex-1 overflow-hidden shadow-xl">
           {/* Tabs */}
           <div className="flex border-b border-gray-600 rounded-t-xl overflow-hidden">
             <button
@@ -2189,11 +2193,8 @@ export default function WarRoom() {
               {(myCash > 0 || theirCash > 0) && (() => {
                 const obligations = (cashAdjustmentContextQuery.data?.obligations ?? []) as Array<any>;
                 const pendingObligations = obligations.filter((obligation) => !['sent', 'received', 'verified'].includes(obligation.payment?.status ?? 'pending'));
-
-                const submittedTrackingMemberCount = new Set((trade?.trackingNumbers || []).map((tracking: any) => tracking.userId)).size;
                 return <div className="mb-3 flex w-full flex-col gap-3">
-                  <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
-                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Payment & Shipping Checklist</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Recipient confirmed cash received' : status === 'sent' ? 'Payment sent — cash receipt is confirmed in Step 5' : status === 'method_selected' ? obligation.role === 'payer' ? 'Send payment and mark it sent' : `Waiting for ${theirDisplayName} to send payment` : 'Payment method must be selected in Step 2'; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul><p className="mt-2 border-t border-slate-700 pt-2 text-slate-300">Step 5, Confirm Receipt, opens automatically after all required tracking is submitted ({submittedTrackingMemberCount}/2) and each required cash payment is marked sent.</p>{pendingObligations.length > 0 && <p className="mt-1 text-amber-200">Complete each remaining payment-sent action below during Shipping & Payment.</p>}</div>
+                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Payment & Shipping Checklist</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Recipient confirmed cash received' : status === 'sent' ? 'Payment sent — cash receipt is confirmed in Step 5' : status === 'method_selected' ? obligation.role === 'payer' ? 'Send payment and mark it sent' : `Waiting for ${theirDisplayName} to send payment` : 'Payment method must be selected in Step 2'; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul>{pendingObligations.length > 0 && <p className="mt-2 border-t border-slate-700 pt-2 text-amber-200">Complete each remaining payment-sent action below during Shipping & Payment.</p>}</div>
                   {cashAdjustmentContextQuery.isLoading && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">Loading payment steps…</p>}
                   {cashAdjustmentContextQuery.isError && <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-4 py-3 text-xs text-red-200">Payment steps could not be loaded. Please refresh the Trade Room or try again.</p>}
                   {cashAdjustmentContextQuery.isSuccess && obligations.length === 0 && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">No direct cash settlement is required for this trade.</p>}
@@ -2206,16 +2207,14 @@ export default function WarRoom() {
                     const providerUrl = payment?.paymentMethod === 'paypal' ? 'https://www.paypal.com/' : payment?.paymentMethod === 'venmo' ? 'https://venmo.com/' : payment?.paymentMethod === 'cash_app' ? 'https://cash.app/' : payment?.paymentMethod === 'zelle' ? 'https://www.zellepay.com/' : null;
                     const statusLabel = paymentStatus === 'received' ? 'Recipient confirmed received' : paymentStatus === 'sent' ? 'Awaiting receipt confirmation' : paymentStatus === 'disputed' ? 'Dispute open' : paymentStatus === 'method_selected' ? 'Method selected' : 'Method needed';
                     const transactionReference = transactionReferenceByPayer[context.payerId] ?? '';
-                    const disputeReason = cashDisputeReasonByPayer[context.payerId] ?? '';
-
                     return <div key={context.payerId} className={`rounded-xl border p-4 shadow-xl ${paymentStatus === 'received' ? 'border-green-500/50 bg-[#16213e]' : paymentStatus === 'disputed' ? 'border-red-500/60 bg-[#241b2a]' : 'border-blue-500/40 bg-[#16213e]'}`}>
                       <div className="mb-3 flex items-center gap-2"><span className="text-lg">💵</span><h3 className="text-sm font-bold text-white">{iAmPayer ? `Send ${formatWholeDollar(cashAmount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(cashAmount)} from ${theirDisplayName}`}</h3><span className="ml-auto rounded-full border border-slate-600 bg-slate-950/40 px-2 py-0.5 text-[11px] font-medium text-slate-200">{statusLabel}</span></div>
                       {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">{payment?.paymentMethod ? `${String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())} was selected in Step 2. Your private destination remains hidden here.` : 'A compatible method must be selected in Step 2 before payment can be sent.'}</p>{paymentStatus === 'sent' && <p className="rounded-lg border border-amber-500/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">Your partner marked this payment sent. Confirm that the cash arrived in Step 5, Confirm Receipt.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed cash receipt. This is a member confirmation, not provider verification.</p>}</div>}
                       {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionReference} onChange={(event) => setTransactionReferenceByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => { if (window.confirm(`Confirm that you sent ${formatWholeDollar(cashAmount)} to ${theirDisplayName} through ${String(payment.paymentMethod).replace('_', ' ')}. Tradebilia does not process or verify this external payment.`)) markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionReference.trim() || undefined }); }} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Payment marked sent. {theirDisplayName} confirms cash receipt in Step 5.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">The recipient selects a compatible private payment method during Step 2.</p>}</div>}
-                      {payment?.paymentMethod && paymentStatus !== 'received' && paymentStatus !== 'disputed' && <div className="mt-3 border-t border-slate-700 pt-3"><div className="flex flex-wrap gap-2"><input value={disputeReason} onChange={(event) => setCashDisputeReasonByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} placeholder="Describe a payment issue for admin review" className="min-w-[13rem] flex-1 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-white" /><button onClick={() => openCashAdjustmentDisputeMutation.mutate({ proposalId, payerId: context.payerId, reason: disputeReason.trim() })} disabled={disputeReason.trim().length < 5 || openCashAdjustmentDisputeMutation.isPending} className="rounded-lg border border-red-500/60 px-3 py-2 text-xs font-bold text-red-200 hover:bg-red-900/30 disabled:opacity-50">Open dispute</button></div></div>}
                       {paymentStatus === 'disputed' && <p className="mt-2 text-xs text-red-200">A cash-adjustment dispute is open for administrator review. Do not continue shipping until it is resolved.</p>}
                     </div>;
                   })}</div>
+                  <div className="flex items-start gap-2 rounded-lg border border-amber-600/50 bg-amber-900/30 px-4 py-2.5"><span className="mt-0.5 text-base text-amber-400">⚠️</span><p className="text-xs leading-relaxed text-amber-200"><strong>Tradebilia does not process payments.</strong> PayPal, Venmo, Cash App, and Zelle transfers are made directly between members. Tradebilia does not hold, insure, refund, or guarantee direct payments.</p></div>
                 </div>;
               })()}
               </>

@@ -22,4 +22,12 @@ describe("printable trade confirmation", () => {
     expect(printViewSource).toContain("flex self-stretch items-center justify-center shrink-0 px-2");
     expect(printViewSource).not.toContain("justify-center pt-8 shrink-0 px-2");
   });
+
+  it("shows the agreed payment method for cash while excluding private destinations", () => {
+    expect(printViewSource).toContain("trpc.payment.getCashAdjustmentContext.useQuery");
+    expect(printViewSource).toContain("Cash PAID via {formatSelectedPaymentMethod(myCashPaymentMethod)}");
+    expect(printViewSource).toContain("Cash PAID via {formatSelectedPaymentMethod(theirCashPaymentMethod)}");
+    expect(printViewSource).not.toContain("paymentIdentifier}");
+    expect(printViewSource).not.toContain("Send to:");
+  });
 });

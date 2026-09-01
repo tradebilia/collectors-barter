@@ -5,12 +5,22 @@ import { useEffect } from "react";
 import { formatWholeDollar } from "@/lib/tradebilia";
 import { formatTradeContactPhone } from "@/lib/tradePrint";
 
+function formatSelectedPaymentMethod(method?: string | null) {
+  return method
+    ? method.replace("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+    : "Selected Direct Method";
+}
+
 export default function TradePrintView() {
   const params = useParams<{ id: string }>();
   const proposalId = parseInt(params.id || "0");
   const { user } = useAuth();
 
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
+    { proposalId },
+    { enabled: proposalId > 0 }
+  );
+  const cashAdjustmentContextQuery = trpc.payment.getCashAdjustmentContext.useQuery(
     { proposalId },
     { enabled: proposalId > 0 }
   );
@@ -43,6 +53,14 @@ export default function TradePrintView() {
   const serverTheirCash = isRequester
     ? parseFloat((trade?.proposal as any)?.cashFromRecipient || '0') || 0
     : parseFloat((trade?.proposal as any)?.cashFromRequester || '0') || 0;
+  const paymentMethodByPayer = new Map<string, string | null>(
+    ((cashAdjustmentContextQuery.data as any)?.obligations ?? []).map((obligation: any): [string, string | null] => [
+      String(obligation.payerId),
+      typeof obligation.payment?.paymentMethod === "string" ? obligation.payment.paymentMethod : null,
+    ])
+  );
+  const myCashPaymentMethod = paymentMethodByPayer.get(String(myUserId));
+  const theirCashPaymentMethod = paymentMethodByPayer.get(String(isRequester ? trade?.proposal?.recipientId : trade?.proposal?.requesterId));
 
   const acceptedAt = (trade?.proposal as any)?.acceptedAt;
   const acceptedDate = acceptedAt
@@ -150,7 +168,7 @@ export default function TradePrintView() {
               {myItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverMyCash > 0 && (
                 <div className="text-center">
-                  <p className="text-green-700 font-extrabold text-lg mt-2">+ {formatWholeDollar(serverMyCash)} Cash</p>
+                  <p className="text-green-700 font-extrabold text-lg mt-2">+ {formatWholeDollar(serverMyCash)} Cash PAID via {formatSelectedPaymentMethod(myCashPaymentMethod)}</p>
                 </div>
               )}
             </div>
@@ -167,7 +185,7 @@ export default function TradePrintView() {
               {theirItems.map((item: any) => item && <ItemCard key={item.id} item={item} />)}
               {serverTheirCash > 0 && (
                 <div className="text-center">
-                  <p className="text-green-700 font-extrabold text-lg mt-2">+ {formatWholeDollar(serverTheirCash)} Cash</p>
+                  <p className="text-green-700 font-extrabold text-lg mt-2">+ {formatWholeDollar(serverTheirCash)} Cash PAID via {formatSelectedPaymentMethod(theirCashPaymentMethod)}</p>
                 </div>
               )}
             </div>

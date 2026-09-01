@@ -1169,3 +1169,9 @@
 - [x] Audit and replace fixed Trade Room sizing that can clip negotiation, fulfillment, actions, or Chat/Timeline content at normal desktop, tablet, mobile, and browser-zoom widths.
 - [x] Add viewport-adaptive height, stacking, and scrolling safeguards that preserve the Trade Room workflow and essential controls without changing their meaning.
 - [x] Add responsive regression coverage and validate the Trade Room at desktop, tablet, and mobile target viewports. Focused Trade Room tests passed (14/14), as did TypeScript, production build, and whitespace validation; the unauthenticated browser check correctly redirected to sign-in.
+- [x] Show each agreed cash direction and selected method name, such as “+$250 Cash PAID via PayPal,” in the private print confirmation and Step 3 Review without exposing private payment destinations.
+- [x] Remove the redundant Step 4 payment-issue description control and the premature Step 5 progress explanation, while retaining the existing report-a-trade-issue and dispute controls.
+- [x] Keep the external-payment disclosure within the Step 4 cash section and restore the Step 4 Chat/Timeline panel to the full available workspace height.
+- [x] Correct Step 5 viewport sizing so receipt, cash, tracking, and support controls remain visible without a member shrinking their browser view.
+- [x] Include accepted completed-trade cash adjustments in the homepage Recent Trades section and Traders Showcase summaries without exposing private payment destinations.
+- [x] Add focused regression coverage and verify cash wording, responsive late-stage layout, print-confirmation privacy, and completed-trade cash summaries. Focused tests passed (20/20), TypeScript and production build passed, and the public Traders Showcase visual check showed the completed cash trade without exposing a destination.
