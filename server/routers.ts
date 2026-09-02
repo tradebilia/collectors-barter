@@ -2087,7 +2087,7 @@ export const appRouter = router({
             up.avatarUrl as counterpartAvatarUrl,
             -- latest message
             (SELECT dm2.body FROM directMessages dm2 WHERE dm2.threadId = t.id ORDER BY dm2.createdAt DESC LIMIT 1) as latestBody,
-            (SELECT dm2.subject FROM directMessages dm2 WHERE dm2.threadId = t.id ORDER BY dm2.createdAt DESC LIMIT 1) as latestSubject,
+            (SELECT dm2.subject FROM directMessages dm2 WHERE dm2.threadId = t.id AND NULLIF(TRIM(dm2.subject), '') IS NOT NULL ORDER BY dm2.createdAt ASC LIMIT 1) as latestSubject,
             (SELECT dm2.senderId FROM directMessages dm2 WHERE dm2.threadId = t.id ORDER BY dm2.createdAt DESC LIMIT 1) as latestSenderId,
             -- unread count for current user
             (SELECT COUNT(*) FROM directMessages dm3 WHERE dm3.threadId = t.id AND dm3.senderId != ${ctx.user.id} AND dm3.isReadByRecipient = 0) as unreadCount

@@ -493,9 +493,10 @@ export default function Messages() {
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
                             <p className="truncate text-lg font-semibold">{inquiryPresentation.listLabel}</p>
-                            <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>
-                              Item Inquiry • Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link>
-                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
+                              <span className={`text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link></span>
+                            </div>
                           </div>
                           <div className="flex flex-wrap justify-end gap-2">
                             <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full ${inquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>
@@ -535,7 +536,7 @@ export default function Messages() {
                           {thread.kind === "direct" ? (
                             <>
                               <p className="truncate text-lg font-semibold">{directPresentation?.listLabel}</p>
-                              <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>Direct Message</p>
+                              <div className="mt-2"><Badge className="rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge></div>
                             </>
                           ) : (
                             <>
@@ -662,12 +663,12 @@ export default function Messages() {
                       <div>
                         <h2 className="text-3xl font-semibold text-slate-900">{activeThread.kind === "direct" ? activeDirectPresentation?.detailHeading : activeThread.counterpartName}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                          <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct conversation" : activeThread.proposal.status}</Badge>
+                          <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct Conversation" : activeThread.proposal.status}</Badge>
                           {activeThread.kind === "direct" && activeDirectPresentation && (
                             <Badge className={`rounded-full ${activeDirectDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeDirectPresentation.badge}</Badge>
                           )}
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
-                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><MessageSquareText className="h-4 w-4" />Collector direct line</span>}
+                          {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : null}
                         </div>
                       </div>
                     </div>
@@ -768,7 +769,7 @@ export default function Messages() {
                         </Link>
                       </Button>
                     ) : null}
-                    <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
+                    <Button className={`h-12 rounded-full px-6 ${activeThread.kind === "direct" ? "bg-violet-600 text-white shadow-lg shadow-violet-900/20 hover:bg-violet-700" : ""}`} disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
                       {sendTradeMessageMutation.isPending && activeThread.kind === "trade" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       {activeThread.kind === "direct" ? "Send Message" : "Send Trade Message"}
                     </Button>

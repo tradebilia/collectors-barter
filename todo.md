@@ -1202,3 +1202,9 @@
 - [x] Inspect the Profile page’s saved address/location fields and determine the privacy-safe timezone source for each member.
 - [x] Use each viewer’s profile-derived timezone for Messages timestamps, preserving UTC storage and never exposing the source address or location details.
 - [x] Add timezone regression coverage for New York daylight time and a non-New-York profile-derived timezone. New York state/country resolves privately to America/New_York; an international profile fallback is covered as well.
+
+- [x] Make the Messages Send Message button use a more noticeable accessible accent color.
+- [x] Remove the duplicate “Collectors direct line” wording while retaining the Direct Conversation badge.
+- [x] Use distinct accessible badge colors for Direct Message and Item Inquiry rows in All Messages.
+- [x] Preserve or recover the original direct-message subject in existing threads when the thread subject is blank, without exposing private data or altering unrelated records.
+- [x] Add regression coverage and verify the Messages visual and subject refinements. Focused Messages tests passed 5/5, TypeScript, production build, and whitespace validation passed; authenticated visual testing remains pending.

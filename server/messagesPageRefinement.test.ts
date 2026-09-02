@@ -24,10 +24,18 @@ describe("Messages page refinements", () => {
     expect(dbSource).toContain("senderAvatarUrl: userProfiles.avatarUrl");
   });
 
-  it("preserves the original subject when a direct-message reply is inserted", () => {
+  it("preserves the original subject when a direct-message reply is inserted or listed", () => {
     expect(routerSource).toContain("const originalMessage = await db");
     expect(routerSource).toContain(".orderBy(asc(directMessages.createdAt))");
     expect(routerSource).toContain("subject: replySubject");
+    expect(routerSource).toContain("NULLIF(TRIM(dm2.subject), '') IS NOT NULL ORDER BY dm2.createdAt ASC");
+  });
+
+  it("distinguishes message types and emphasizes direct-message sending", () => {
+    expect(messagesSource).toContain("bg-amber-100 text-[10px]");
+    expect(messagesSource).toContain("bg-violet-100 text-[10px]");
+    expect(messagesSource).toContain("bg-violet-600 text-white");
+    expect(messagesSource).not.toContain("Collector direct line");
   });
 
   it("formats list and detail timestamps with the viewer's local timezone", () => {
