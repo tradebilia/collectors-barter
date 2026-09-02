@@ -108,7 +108,7 @@ import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
-import { eq, sql, desc, or, inArray, and, isNull } from "drizzle-orm";
+import { eq, sql, desc, asc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
 import { isPublicMemberEligible } from "./publicVisibility";
@@ -2163,7 +2163,20 @@ export const appRouter = router({
           ))
           .limit(1);
         if (!thread.length) throw new TRPCError({ code: 'FORBIDDEN', message: 'Thread not found.' });
-        await db.insert(directMessages).values({ threadId: input.threadId, senderId: ctx.user.id, body: input.body, isReadByRecipient: 0 });
+        const originalMessage = await db
+          .select({ subject: directMessages.subject })
+          .from(directMessages)
+          .where(eq(directMessages.threadId, input.threadId))
+          .orderBy(asc(directMessages.createdAt))
+          .limit(1);
+        const replySubject = originalMessage[0]?.subject?.trim() || 'Direct message';
+        await db.insert(directMessages).values({
+          threadId: input.threadId,
+          senderId: ctx.user.id,
+          subject: replySubject,
+          body: input.body,
+          isReadByRecipient: 0,
+        });
         await db.execute(sql`UPDATE directMessageThreads SET lastMessageAt = NOW(), participantAArchivedAt = NULL, participantBArchivedAt = NULL WHERE id = ${input.threadId}`);
 
         // Send email notification to the other participant if messages.email enabled (fire-and-forget)

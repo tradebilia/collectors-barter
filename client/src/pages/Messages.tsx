@@ -392,8 +392,8 @@ export default function Messages() {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="container relative flex min-h-[20rem] flex-col items-center justify-center py-8 text-center sm:min-h-[23rem] lg:min-h-[26rem]">
-          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto w-[94vw] max-w-[82rem] object-contain" />
+        <div className="container relative flex h-[400px] items-center justify-center py-0 text-center">
+          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto w-full max-w-6xl object-contain" />
         </div>
       </section>
       <CategoryBar />

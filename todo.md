@@ -1190,3 +1190,7 @@
 
 - [x] Replace the separately rendered Messages hero tagline treatment with the complete supplied Messages SVG artwork as one enlarged, centered asset, preserving the hero background and overall hero height.
 - [x] Add a regression check and verify that the complete SVG includes the logo, divider, Messages title, and built-in subtitle without a duplicate standalone tagline. The focused Messages tests passed 3/3, TypeScript, production build, and whitespace validation passed; the authenticated visual check remains pending because the preview session is not signed in.
+
+- [x] Match the Messages hero outer frame height to the homepage hero at desktop and mobile breakpoints so the category bar aligns at the same vertical position, while keeping the complete SVG centered within it.
+- [x] Preserve the original direct-message subject when a recipient replies, instead of creating or displaying “(no subject)” for the reply thread.
+- [x] Add regression coverage and verify hero alignment and direct-message subject preservation. Focused Messages tests passed 4/4, TypeScript, production build, and whitespace validation passed.
