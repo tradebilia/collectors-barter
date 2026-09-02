@@ -1211,5 +1211,5 @@
 
 - [x] Center the complete Messages SVG hero artwork as one edge-balanced unit so its visible left and right edges have equal space to the page edges at supported viewports.
 - [x] Add a regression check and visually verify the corrected Messages hero alignment without changing the shared homepage-height frame. The Messages regression passed 5/5, TypeScript, production build, and whitespace validation passed; the route capture confirmed the existing signed-out guard.
-- [ ] Create a full credential-safe source commit for this correction, push the dedicated GitHub backup branch, and verify local/remote synchronization.
+- [x] Create a full credential-safe source commit for this correction, push the dedicated GitHub backup branch, and verify local/remote synchronization.
 - [ ] Save the synchronized WebDev version for Rich’s review.
