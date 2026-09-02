@@ -3850,7 +3850,7 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
       senderProfileDisplayName: userProfiles.displayName,
       senderAccountName: users.name,
       senderUsername: users.username,
-      senderAvatarUrl: users.avatarUrl,
+      senderAvatarUrl: userProfiles.avatarUrl,
       recipientId: itemInquiries.recipientId,
           listingId: itemInquiries.listingId,
           subject: itemInquiries.subject,
@@ -3879,9 +3879,9 @@ export async function getInquiriesByUser(userId: number, limit: number = 50, off
   const inquiriesWithRecipients = await Promise.all(
     inquiries.map(async (inquiry) => {
       const recipient = await db
-        .select({ avatarUrl: users.avatarUrl })
-        .from(users)
-        .where(eq(users.id, inquiry.recipientId))
+        .select({ avatarUrl: userProfiles.avatarUrl })
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, inquiry.recipientId))
         .limit(1);
       return {
         ...inquiry,
@@ -3973,9 +3973,9 @@ export async function sendInquiryReply(inquiryId: number, senderId: number, mess
   
   // Fetch the sender's display name and avatar
   const sender = await db
-    .select({ avatarUrl: users.avatarUrl })
-    .from(users)
-    .where(eq(users.id, senderId))
+    .select({ avatarUrl: userProfiles.avatarUrl })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, senderId))
     .limit(1);
   const senderName = await getCommunicationDisplayName(senderId);
   
@@ -4020,7 +4020,7 @@ export async function getRepliesByInquiry(inquiryId: number, userId: number) {
       senderProfileDisplayName: userProfiles.displayName,
       senderUsername: users.username,
       senderAccountName: users.name,
-      senderAvatarUrl: users.avatarUrl,
+      senderAvatarUrl: userProfiles.avatarUrl,
       message: inquiryReplies.message,
       createdAt: inquiryReplies.createdAt,
     })
@@ -4073,7 +4073,7 @@ export async function getDeletedInquiries(userId: number) {
       senderName: users.displayName,
       senderProfileDisplayName: userProfiles.displayName,
       senderUsername: users.username,
-      senderAvatarUrl: users.avatarUrl,
+      senderAvatarUrl: userProfiles.avatarUrl,
       listingId: itemInquiries.listingId,
       subject: itemInquiries.subject,
       message: itemInquiries.message,

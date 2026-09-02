@@ -1179,3 +1179,11 @@
 - [x] Add a separate mobile Choose from Library control, retaining desktop file-picker upload, preview, image reorder, and removal behavior.
 - [x] Add regression coverage and validate the new-item image controls at mobile and desktop viewports. The focused tests, TypeScript, production build, and whitespace checks passed; the unauthenticated mobile route rendered correctly to the existing sign-in boundary.
 - [ ] Verify Take Photo and Choose from Library on a signed-in physical mobile browser, including camera permission, cancel, preview, cover-photo, removal, and submit behavior.
+
+- [x] Enlarge and center the Messages hero title horizontally and vertically while preserving the shared page artwork and navigation.
+- [x] Redesign the Messages detail subject as prominent plain text without a Subject label or separate bubble.
+- [x] Resolve the counterparty avatar from the authoritative profile image source, with an initials fallback only when no image exists.
+- [x] Remove the Archive helper paragraph and format message timestamps with the viewer’s local computer timezone.
+- [x] Add regression coverage and verify Messages layout, avatar resolution, and local timestamp behavior at desktop and mobile widths.
+
+- [ ] Perform an authenticated visual check of the revised Messages page with a member avatar and a message timestamp.

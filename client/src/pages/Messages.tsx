@@ -39,6 +39,13 @@ function initials(name: string) {
     .join("") || "TB";
 }
 
+function formatLocalTimestamp(value: string | number | Date) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
 export default function Messages() {
   const { user, isAuthenticated } = useAuth();
   const utils = trpc.useUtils();
@@ -310,6 +317,12 @@ export default function Messages() {
   const activeInquiryPresentation = activeInquiry && activeInquiryCounterpartName && activeInquiryDirection
     ? getInquiryDirectionPresentation(activeInquiryDirection, activeInquiryCounterpartName)
     : null;
+  const activeInquiryAvatarUrl = activeInquiryDirection === "sent"
+    ? (activeInquiry as any)?.recipientAvatarUrl
+    : activeInquiry?.senderAvatarUrl;
+  const activeInquiryAvatarName = activeInquiryDirection === "sent"
+    ? activeInquiry?.recipientName
+    : activeInquiry?.senderName;
   const activePresence = activeThread ? presenceMap[activeThread.counterpartId] : null;
   const activeOnline = activePresence ? Date.now() - activePresence.updatedAt < 15000 : false;
   const activeDirectDirection = activeThread?.kind === "direct"
@@ -379,10 +392,10 @@ export default function Messages() {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="container relative flex flex-col items-center justify-center py-0 h-64 sm:h-72 lg:h-80">
-          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="h-auto w-full max-w-2xl mx-auto" />
-          <p className="mt-4 text-3xl sm:text-5xl lg:text-6xl font-bold text-center opacity-90">Direct Lines, Trusted Conversations</p>
-          </div>
+        <div className="container relative flex min-h-[20rem] flex-col items-center justify-center py-8 text-center sm:min-h-[23rem] lg:min-h-[26rem]">
+          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto max-h-64 w-full max-w-5xl object-contain sm:max-h-80" />
+          <p className="mt-5 text-2xl font-bold opacity-90 sm:text-4xl lg:text-5xl">Direct Lines, Trusted Conversations</p>
+        </div>
       </section>
       <CategoryBar />
 
@@ -415,9 +428,6 @@ export default function Messages() {
                   </button>
                 );
               })}
-            </div>
-            <div className="mt-6 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
-              Direct messages update live across open browser sessions using browser events, while Trade Proposal comments remain available in the same workspace for context.
             </div>
           </aside>
 
@@ -502,7 +512,7 @@ export default function Messages() {
                         </div>
                         <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
                         <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
-                          <span>{new Date(inquiry.createdAt).toLocaleString()}</span>
+                          <span>{formatLocalTimestamp(inquiry.createdAt)}</span>
                         </div>
                       </button>
                     );
@@ -543,7 +553,7 @@ export default function Messages() {
                       {thread.kind === "direct" && <p className={`mt-3 truncate text-sm font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
                       <p className={`mt-2 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
                       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
-                        <span>{new Date(thread.updatedAt).toLocaleString()}</span>
+                        <span>{formatLocalTimestamp(thread.updatedAt)}</span>
                         {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
                       </div>
                     </button>
@@ -563,8 +573,8 @@ export default function Messages() {
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-14 w-14 border border-slate-200">
-                        <AvatarImage src={activeInquiry.senderAvatarUrl ?? undefined} alt={activeInquiry.senderName || "Collector"} />
-                        <AvatarFallback>{initials(activeInquiry.senderName || "Collector")}</AvatarFallback>
+                        <AvatarImage src={activeInquiryAvatarUrl ?? undefined} alt={activeInquiryAvatarName || "Collector"} />
+                        <AvatarFallback>{initials(activeInquiryAvatarName || "Collector")}</AvatarFallback>
                       </Avatar>
                       <div>
                         <h2 className="text-3xl font-semibold text-slate-900">{activeInquiryPresentation?.detailHeading}</h2>
@@ -589,16 +599,13 @@ export default function Messages() {
 
                 <ScrollArea className="flex-1 px-6 py-5 overflow-hidden">
                   <div className="space-y-4 w-full">
-                    <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600 break-words">
-                      <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Subject</p>
-                      <p className="mt-2 font-semibold text-slate-900 break-words">{activeInquiry.subject}</p>
-                    </div>
+                    <p className="break-words text-xl font-semibold leading-8 text-slate-900 sm:text-2xl">{activeInquiry.subject}</p>
                     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600 break-words">
                       <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Message</p>
                       <p className="mt-2 whitespace-pre-wrap text-slate-900 break-words">{activeInquiry.message}</p>
                     </div>
                     <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      {activeInquiryPresentation?.detailPrefix} on {new Date(activeInquiry.createdAt).toLocaleString()}
+                      {activeInquiryPresentation?.detailPrefix} on {formatLocalTimestamp(activeInquiry.createdAt)}
                     </div>
 
                     {repliesQuery.data && repliesQuery.data.length > 0 && (
@@ -613,7 +620,7 @@ export default function Messages() {
                               </Avatar>
                               <div>
                                 <p className="text-sm font-semibold text-slate-900">{reply.senderName || `Collector ${reply.senderId}`}</p>
-                                <p className="text-xs text-slate-500">{new Date(reply.createdAt).toLocaleString()}</p>
+                                <p className="text-xs text-slate-500">{formatLocalTimestamp(reply.createdAt)}</p>
                               </div>
                             </div>
                             <p className="mt-2 whitespace-pre-wrap text-sm text-slate-900">{reply.message}</p>
@@ -722,10 +729,9 @@ export default function Messages() {
                       </div>
                     ) : null}
                     {activeThread.kind === "direct" && (dbMessagesQuery.data ?? []).length > 0 && (
-                      <div className="rounded-[1.5rem] border border-slate-100 bg-slate-50 px-4 py-3 text-sm">
-                        <p className="text-xs uppercase tracking-[0.24em] text-slate-500">Subject</p>
-                        <p className="mt-1 font-semibold text-slate-900">{(activeThread as any).subject || '(no subject)'}</p>
-                        {activeDirectPresentation && <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{activeDirectPresentation.detailPrefix} on {new Date(activeThread.updatedAt).toLocaleString()}</p>}
+                      <div className="px-1 py-1">
+                        <p className="break-words text-xl font-semibold leading-8 text-slate-900 sm:text-2xl">{(activeThread as any).subject || '(no subject)'}</p>
+                        {activeDirectPresentation && <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{activeDirectPresentation.detailPrefix} on {formatLocalTimestamp(activeThread.updatedAt)}</p>}
                       </div>
                     )}
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {
@@ -736,7 +742,7 @@ export default function Messages() {
                           <div className={`max-w-[75%] rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-sm ${ownMessage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>
                             <p className="text-xs uppercase tracking-[0.18em] opacity-65">{messageSenderName}</p>
                             <p className="mt-2">{message.body ?? message.message}</p>
-                            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{new Date(message.createdAt).toLocaleString()}</p>
+                            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{formatLocalTimestamp(message.createdAt)}</p>
                           </div>
                         </div>
                       );
