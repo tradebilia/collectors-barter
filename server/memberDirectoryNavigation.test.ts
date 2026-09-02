@@ -13,9 +13,15 @@ describe("Member Directory navigation", () => {
     expect(homeSource).toContain("setLocation('/members')");
   });
 
+  it("places a protected Messages link in the homepage subscriber-tools panel", () => {
+    expect(homeSource).toContain("Members only - Please sign in to access your messages");
+    expect(homeSource).toContain("setLocation('/messages')");
+    expect(homeSource).toContain("/> Messages</button>");
+  });
+
   it("stacks the Subscriber Tools panel above homepage content on mobile", () => {
-    expect(homeSource).toContain("grid-cols-1 gap-0 md:grid-cols-[200px_minmax(0,1fr)]");
-    expect(homeSource).toContain("md:col-start-1 md:row-span-2");
+    expect(homeSource).toContain("grid-cols-1 items-stretch gap-0 md:grid-cols-[230px_minmax(0,1fr)]");
+    expect(homeSource).toContain("md:col-start-1 md:row-span-3");
   });
 
   it("removes the Member Directory button from the direct-message composer", () => {

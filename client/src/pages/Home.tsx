@@ -660,6 +660,13 @@ export default function Home() {
                       }
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-[#8b5cf6]/30 transition text-white text-sm font-medium text-left flex items-center gap-2"><ArrowRightLeft className="w-4 h-4 flex-shrink-0" /> My Trades</button>
                     <button onClick={() => {
+                      if (!isAuthenticated) {
+                        toast.error('Members only - Please sign in to access your messages');
+                      } else {
+                        setLocation('/messages');
+                      }
+                    }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-[#8b5cf6]/30 transition text-white text-sm font-medium text-left flex items-center gap-2"><MessageSquareText className="w-4 h-4 flex-shrink-0" /> Messages</button>
+                    <button onClick={() => {
                       setLocation('/members');
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-[#8b5cf6]/30 transition text-white text-sm font-medium text-left flex items-center gap-2"><Users className="w-4 h-4 flex-shrink-0" /> Member Directory</button>
                     <button onClick={() => {

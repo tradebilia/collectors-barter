@@ -1213,3 +1213,9 @@
 - [x] Add a regression check and visually verify the corrected Messages hero alignment without changing the shared homepage-height frame. The Messages regression passed 5/5, TypeScript, production build, and whitespace validation passed; the route capture confirmed the existing signed-out guard.
 - [x] Create a full credential-safe source commit for this correction, push the dedicated GitHub backup branch, and verify local/remote synchronization.
 - [x] Save the synchronized WebDev version for Rich’s review. Checkpoint version 33fcc33b was saved after the full source commit and GitHub backup synchronization.
+
+- [x] Add a protected Messages link to the homepage Subscriber Tools left-side panel, matching existing panel navigation and the canonical `/messages` route. Duplicate checklist record; implementation is recorded below.
+- [x] Add regression coverage and verify the homepage member-panel Messages link at desktop and mobile widths. Duplicate checklist record; focused validation is recorded below.
+
+- [x] Add a protected Messages link to the homepage Subscriber Tools left-side panel, matching existing panel navigation and the canonical `/messages` route.
+- [x] Add regression coverage and verify the homepage member-panel Messages link at desktop and mobile widths. Focused navigation tests passed 6/6, along with TypeScript, production build, and whitespace validation.
