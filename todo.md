@@ -1178,7 +1178,7 @@
 - [x] Add an explicit mobile Take Photo control that requests the rear device camera for new listing images, while preserving user-controlled permissions and confirmation.
 - [x] Add a separate mobile Choose from Library control, retaining desktop file-picker upload, preview, image reorder, and removal behavior.
 - [x] Add regression coverage and validate the new-item image controls at mobile and desktop viewports. The focused tests, TypeScript, production build, and whitespace checks passed; the unauthenticated mobile route rendered correctly to the existing sign-in boundary.
-- [ ] Verify Take Photo and Choose from Library on a signed-in physical mobile browser, including camera permission, cancel, preview, cover-photo, removal, and submit behavior.
+- [x] Verify Take Photo and Choose from Library on a signed-in physical mobile browser, including camera permission, cancel, preview, cover-photo, removal, and submit behavior. Rich confirmed both mobile actions work.
 
 - [x] Enlarge and center the Messages hero title horizontally and vertically while preserving the shared page artwork and navigation.
 - [x] Redesign the Messages detail subject as prominent plain text without a Subject label or separate bubble.
@@ -1186,7 +1186,7 @@
 - [x] Remove the Archive helper paragraph and format message timestamps with the viewer’s local computer timezone.
 - [x] Add regression coverage and verify Messages layout, avatar resolution, and local timestamp behavior at desktop and mobile widths.
 
-- [ ] Perform an authenticated visual check of the revised Messages page with a member avatar and a message timestamp.
+- [x] Perform an authenticated visual check of the revised Messages page with a member avatar and a message timestamp. Rich confirmed the homepage Messages link and revised Messages hero, avatar, timestamp, and subject behavior work as expected.
 
 - [x] Replace the separately rendered Messages hero tagline treatment with the complete supplied Messages SVG artwork as one enlarged, centered asset, preserving the hero background and overall hero height.
 - [x] Add a regression check and verify that the complete SVG includes the logo, divider, Messages title, and built-in subtitle without a duplicate standalone tagline. The focused Messages tests passed 3/3, TypeScript, production build, and whitespace validation passed; the authenticated visual check remains pending because the preview session is not signed in.
@@ -1219,3 +1219,20 @@
 
 - [x] Add a protected Messages link to the homepage Subscriber Tools left-side panel, matching existing panel navigation and the canonical `/messages` route.
 - [x] Add regression coverage and verify the homepage member-panel Messages link at desktop and mobile widths. Focused navigation tests passed 6/6, along with TypeScript, production build, and whitespace validation.
+
+- [x] Audit duplicate-use enforcement for account email, verified phone number, and connected external-account identities during account setup, Profile updates, and verification connections.
+- [x] Design a private restricted-identity record and fair admin suspension/block workflow that prevents reuse of blocked email, phone, and external verification identities while allowing review or appeal for recycled/shared identifiers.
+- [x] Implement approved server-side uniqueness and restricted-identity safeguards without exposing identifiers publicly or logging sensitive values.
+- [x] Add regression coverage for duplicate active identities, suspended identity reuse, and authorized restriction review behavior.
+
+- [ ] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers.
+- [ ] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
+- [ ] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers.
+- [ ] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
+- [ ] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review.
+
+- [x] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers. The count-only audit found one pre-existing duplicate email group, which was safely flagged for review rather than exposed or overwritten.
+- [x] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
+- [x] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers. Aggregate verification found five active records and one review-required existing collision, with no raw identifiers logged.
+- [x] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
+- [x] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review. Focused identity tests passed 4/4, TypeScript and whitespace validation passed; production build is running as final validation.

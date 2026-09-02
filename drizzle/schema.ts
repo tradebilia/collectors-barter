@@ -630,7 +630,29 @@ export const userProfiles = mysqlTable("userProfiles", {
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
 	},
 	(table) => [
-		uniqueIndex("userProfiles_userId_unique").on(table.userId),
+	uniqueIndex("userProfiles_userId_unique").on(table.userId),
+]);
+
+/**
+ * Private identity reuse registry. The original email, phone number, and
+ * provider account ID are deliberately never stored here. A keyed fingerprint
+ * allows the server to reject duplicate or restricted identities without
+ * exposing them to members, public pages, or administrator list views.
+ */
+export const identityRegistry = mysqlTable("identityRegistry", {
+	id: int().autoincrement().notNull().primaryKey(),
+	identityType: mysqlEnum(["email", "phone", "ebay", "facebook", "linkedin", "etsy"]).notNull(),
+	fingerprint: varchar({ length: 64 }).notNull(),
+	ownerUserId: int(),
+	status: mysqlEnum(["active", "restricted", "review_required"]).default("active").notNull(),
+	createdAt: timestamp({ mode: "string" }).default("CURRENT_TIMESTAMP").notNull(),
+	updatedAt: timestamp({ mode: "string" }).defaultNow().onUpdateNow().notNull(),
+	restrictedAt: timestamp({ mode: "string" }),
+	restrictedBy: int(),
+}, (table) => [
+	uniqueIndex("identityRegistry_type_fingerprint_unique").on(table.identityType, table.fingerprint),
+	index("identityRegistry_ownerUserId_idx").on(table.ownerUserId),
+	index("identityRegistry_status_idx").on(table.status),
 ]);
 
 export const userRatingSummary = mysqlTable("userRatingSummary", {

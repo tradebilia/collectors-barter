@@ -9,6 +9,7 @@ import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { mysqlNow } from "../db";
 import { encrypt } from "./crypto";
+import { claimIdentity } from "../identityRegistry";
 
 export async function handleFacebookCallback(code: string, userId: number): Promise<{
   success: true;
@@ -24,9 +25,9 @@ export async function handleFacebookCallback(code: string, userId: number): Prom
 
   // Step 3: Persist to database using Drizzle ORM
   const db = await requireDb();
-  await db
-    .update(users)
-    .set({
+  await db.transaction(async tx => {
+    await claimIdentity(tx, { userId, identityType: "facebook", value: userInfo.id });
+    await tx.update(users).set({
       facebookId: userInfo.id,
       facebookName: userInfo.name,
       facebookVerified: 1, // Successfully connected via OAuth = verified
@@ -37,8 +38,8 @@ export async function handleFacebookCallback(code: string, userId: number): Prom
       facebookLocation: userInfo.location ?? null,
       facebookLink: userInfo.link ?? null,
       facebookLikes: userInfo.likes ? JSON.stringify(userInfo.likes) : null,
-    })
-    .where(eq(users.id, userId));
+    }).where(eq(users.id, userId));
+  });
 
   return {
     success: true,

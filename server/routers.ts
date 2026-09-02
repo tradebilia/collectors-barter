@@ -107,6 +107,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
+import { setIdentityRestrictionStatus } from "./identityRegistry";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { eq, sql, desc, asc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
@@ -3184,6 +3185,7 @@ export const appRouter = router({
         await db.execute(
           sql`UPDATE users SET isSuspended = 1, suspendedAt = ${now}, suspensionReason = ${input.reason}, suspendedBy = ${ctx.user.id} WHERE id = ${input.userId}`
         );
+        await setIdentityRestrictionStatus(db, { userId: input.userId, status: "restricted", administratorId: ctx.user.id });
 
         // 2. Deactivate all their active listings
         await db.execute(
@@ -3229,6 +3231,7 @@ export const appRouter = router({
         await db.execute(
           sql`UPDATE users SET isSuspended = 0, suspendedAt = NULL, suspensionReason = NULL, suspendedBy = NULL WHERE id = ${input.userId}`
         );
+        await setIdentityRestrictionStatus(db, { userId: input.userId, status: "active" });
 
         // 2. Re-activate their listings
         await db.execute(
@@ -3322,6 +3325,7 @@ export const appRouter = router({
         await db.execute(
           sql`UPDATE users SET isBanned = 1, bannedAt = ${now}, banReason = ${input.reason}, bannedBy = ${ctx.user.id}, isSuspended = 0, suspendedAt = NULL, suspensionReason = NULL WHERE id = ${input.userId}`
         );
+        await setIdentityRestrictionStatus(db, { userId: input.userId, status: "restricted", administratorId: ctx.user.id });
 
         // 2. Permanently delete all their listings
         await db.execute(
@@ -3363,6 +3367,7 @@ export const appRouter = router({
         await db.execute(
           sql`UPDATE users SET isBanned = 0, bannedAt = NULL, banReason = NULL, bannedBy = NULL WHERE id = ${input.userId}`
         );
+        await setIdentityRestrictionStatus(db, { userId: input.userId, status: "active" });
         await db.execute(
           sql`INSERT INTO moderationLog (adminId, targetUserId, action, reason, createdAt) VALUES (${ctx.user.id}, ${input.userId}, 'unban', NULL, ${now})`
         );

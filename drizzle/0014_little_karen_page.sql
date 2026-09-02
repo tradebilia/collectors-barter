@@ -1,0 +1,1 @@
+ALTER TABLE `identityRegistry` ADD PRIMARY KEY(`id`);

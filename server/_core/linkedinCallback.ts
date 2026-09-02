@@ -8,6 +8,7 @@ import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { mysqlNow } from "../db";
 import { encrypt } from "./crypto";
+import { claimIdentity } from "../identityRegistry";
 
 export async function handleLinkedInCallback(
   code: string,
@@ -26,9 +27,9 @@ export async function handleLinkedInCallback(
   // Step 3: Persist to database using Drizzle ORM
   // Access token is encrypted at rest using AES-256-GCM
   const db = await requireDb();
-  await db
-    .update(users)
-    .set({
+  await db.transaction(async tx => {
+    await claimIdentity(tx, { userId, identityType: "linkedin", value: userInfo.id });
+    await tx.update(users).set({
       linkedinId: userInfo.id,
       linkedinName: userInfo.name,
       linkedinEmail: userInfo.email ?? null,
@@ -37,8 +38,8 @@ export async function handleLinkedInCallback(
       linkedinProfileUrl: userInfo.profileUrl ?? null,
       linkedinAccessToken: encrypt(tokenData.access_token),
       linkedinConnectedAt: mysqlNow(),
-    })
-    .where(eq(users.id, userId));
+    }).where(eq(users.id, userId));
+  });
 
   return {
     success: true,

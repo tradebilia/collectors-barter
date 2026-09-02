@@ -36,6 +36,7 @@ import { filterListingsByOwnerDistance, getApproximateDistanceBand, orderListing
 import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 import { isPublicMemberEligible } from "./publicVisibility";
+import { claimIdentity } from "./identityRegistry";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -2660,8 +2661,15 @@ export async function updateProfile(
     updateSet.phoneVerified = input.phoneVerified;
   }
 
-  console.log("[updateProfile] Updating database...");
-  await db.update(userProfiles).set(updateSet).where(eq(userProfiles.userId, user.id));
+  await db.transaction(async tx => {
+    if (input.contactEmail !== undefined && input.emailVerified === true && input.contactEmail) {
+      await claimIdentity(tx, { userId: user.id, identityType: "email", value: input.contactEmail });
+    }
+    if (input.contactPhone !== undefined && input.phoneVerified === true && input.contactPhone) {
+      await claimIdentity(tx, { userId: user.id, identityType: "phone", value: input.contactPhone });
+    }
+    await tx.update(userProfiles).set(updateSet).where(eq(userProfiles.userId, user.id));
+  });
   console.log("[updateProfile] Database updated, calling getDashboardData...");
   const result = await getDashboardData(user);
   console.log("[updateProfile] getDashboardData completed, returning result");
@@ -2958,7 +2966,8 @@ export async function createUser(input: {
 }) {
   const db = await requireDb();
   const now = new Date();
-  const result = await db.insert(users).values({
+  const result = await db.transaction(async tx => {
+    const inserted = await tx.insert(users).values({
     username: input.username,
     passwordHash: input.passwordHash,
     displayName: input.displayName,
@@ -3019,9 +3028,13 @@ export async function createUser(input: {
     banReason: null,
     bannedBy: null,
     lastWarnedAt: null,
-  }).catch((error) => {
-    if (isDuplicateKeyError(error)) throw new Error("Username already taken");
-    throw error;
+    }).catch((error) => {
+      if (isDuplicateKeyError(error)) throw new Error("Username already taken");
+      throw error;
+    });
+    const userId = getInsertId(inserted);
+    if (input.email) await claimIdentity(tx, { userId, identityType: "email", value: input.email });
+    return inserted;
   });
   return getInsertId(result);
 }
@@ -3430,9 +3443,9 @@ export async function updateUserEbayInfo(input: {
   ebayTokenExpiresAt: Date;
 }): Promise<void> {
   const db = await requireDb();
-  await db
-    .update(users)
-    .set({
+  await db.transaction(async tx => {
+    await claimIdentity(tx, { userId: input.userId, identityType: "ebay", value: input.ebayUserId });
+    await tx.update(users).set({
       ebayUsername: input.ebayUsername,
       ebayUserId: input.ebayUserId,
       ebayFeedbackScore: input.ebayFeedbackScore,
@@ -3449,8 +3462,8 @@ export async function updateUserEbayInfo(input: {
       ebayAccessToken: encrypt(input.ebayAccessToken),
       ebayRefreshToken: encrypt(input.ebayRefreshToken),
       ebayTokenExpiresAt: input.ebayTokenExpiresAt ? toMysqlDateTime(input.ebayTokenExpiresAt) : undefined,
-    })
-    .where(eq(users.id, input.userId));
+    }).where(eq(users.id, input.userId));
+  });
 }
 
 export async function getUserEbayInfo(userId: number): Promise<{
@@ -3765,7 +3778,10 @@ export async function updateUserEtsyInfo(input: any) {
   const accounts = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.accounts) ? parsed.accounts : []);
   const etsy = { ...input, etsyTokenExpiresAt: input.etsyTokenExpiresAt?.toISOString() ?? null, etsyConnectedAt: new Date().toISOString() };
   delete etsy.userId;
-  await db.update(userProfiles).set({ connectedAccounts: JSON.stringify({ accounts, etsy }) }).where(eq(userProfiles.userId, input.userId));
+  await db.transaction(async tx => {
+    await claimIdentity(tx, { userId: input.userId, identityType: "etsy", value: String(input.etsyUserId || "") });
+    await tx.update(userProfiles).set({ connectedAccounts: JSON.stringify({ accounts, etsy }) }).where(eq(userProfiles.userId, input.userId));
+  });
 }
 
 export async function clearUserEtsyInfo(userId: number) {
