@@ -8,6 +8,8 @@ const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
 describe("Messages page refinements", () => {
   it("uses a centered, expanded hero and prominent unlabeled subjects", () => {
     expect(messagesSource).toContain("min-h-[20rem] flex-col items-center justify-center");
+    expect(messagesSource).toContain("w-[94vw] max-w-[82rem] object-contain");
+    expect(messagesSource).not.toContain("Direct Lines, Trusted Conversations</p>");
     expect(messagesSource).toContain("text-xl font-semibold leading-8");
     expect(messagesSource).not.toContain('>Subject</p>');
     expect(messagesSource).not.toContain("Direct messages update live across open browser sessions");

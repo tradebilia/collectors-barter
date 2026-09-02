@@ -393,8 +393,7 @@ export default function Messages() {
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex min-h-[20rem] flex-col items-center justify-center py-8 text-center sm:min-h-[23rem] lg:min-h-[26rem]">
-          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto max-h-64 w-full max-w-5xl object-contain sm:max-h-80" />
-          <p className="mt-5 text-2xl font-bold opacity-90 sm:text-4xl lg:text-5xl">Direct Lines, Trusted Conversations</p>
+          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto w-[94vw] max-w-[82rem] object-contain" />
         </div>
       </section>
       <CategoryBar />

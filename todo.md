@@ -1187,3 +1187,6 @@
 - [x] Add regression coverage and verify Messages layout, avatar resolution, and local timestamp behavior at desktop and mobile widths.
 
 - [ ] Perform an authenticated visual check of the revised Messages page with a member avatar and a message timestamp.
+
+- [x] Replace the separately rendered Messages hero tagline treatment with the complete supplied Messages SVG artwork as one enlarged, centered asset, preserving the hero background and overall hero height.
+- [x] Add a regression check and verify that the complete SVG includes the logo, divider, Messages title, and built-in subtitle without a duplicate standalone tagline. The focused Messages tests passed 3/3, TypeScript, production build, and whitespace validation passed; the authenticated visual check remains pending because the preview session is not signed in.
