@@ -1225,11 +1225,11 @@
 - [x] Implement approved server-side uniqueness and restricted-identity safeguards without exposing identifiers publicly or logging sensitive values.
 - [x] Add regression coverage for duplicate active identities, suspended identity reuse, and authorized restriction review behavior.
 
-- [ ] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers.
-- [ ] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
-- [ ] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers.
-- [ ] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
-- [ ] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review.
+- [x] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers.
+- [x] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
+- [x] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers.
+- [x] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
+- [x] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review.
 
 - [x] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers. The count-only audit found one pre-existing duplicate email group, which was safely flagged for review rather than exposed or overwritten.
 - [x] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
