@@ -1194,3 +1194,11 @@
 - [x] Match the Messages hero outer frame height to the homepage hero at desktop and mobile breakpoints so the category bar aligns at the same vertical position, while keeping the complete SVG centered within it.
 - [x] Preserve the original direct-message subject when a recipient replies, instead of creating or displaying “(no subject)” for the reply thread.
 - [x] Add regression coverage and verify hero alignment and direct-message subject preservation. Focused Messages tests passed 4/4, TypeScript, production build, and whitespace validation passed.
+
+- [x] Trace why a New York message sent at 10:15 PM is displayed as 2:15 AM instead of converting the stored UTC timestamp to local time exactly once.
+- [x] Correct Messages list and detail timestamp parsing so local computer timezone output is accurate for UTC offsets and daylight-saving time.
+- [x] Add timezone regression coverage for a UTC timestamp that should display as 10:15 PM in New York, then run focused tests, TypeScript, build, and whitespace checks. Focused profile/timezone/Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
+
+- [x] Inspect the Profile page’s saved address/location fields and determine the privacy-safe timezone source for each member.
+- [x] Use each viewer’s profile-derived timezone for Messages timestamps, preserving UTC storage and never exposing the source address or location details.
+- [x] Add timezone regression coverage for New York daylight time and a non-New-York profile-derived timezone. New York state/country resolves privately to America/New_York; an international profile fallback is covered as well.

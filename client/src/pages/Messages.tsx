@@ -13,6 +13,7 @@ import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memb
 import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
+import { formatMessageTimestamp } from "@/lib/messageTimestamps";
 import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
@@ -37,13 +38,6 @@ function initials(name: string) {
     .slice(0, 2)
     .map(part => part[0]?.toUpperCase() ?? "")
     .join("") || "TB";
-}
-
-function formatLocalTimestamp(value: string | number | Date) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 export default function Messages() {
@@ -75,6 +69,11 @@ export default function Messages() {
     { threadId: activeDbThreadId ?? 0 },
     { enabled: isAuthenticated && !!activeDbThreadId, refetchInterval: 10000 }
   );
+  const viewerTimeZoneQuery = trpc.market.getViewerTimeZone.useQuery(undefined, {
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  });
+  const viewerTimeZone = viewerTimeZoneQuery.data?.timeZone ?? null;
 
   useEffect(() => {
     if (!shouldRefreshUnreadAlertAfterOpeningDirectThread(activeDbThreadId, Boolean(dbMessagesQuery.data))) return;
@@ -511,7 +510,7 @@ export default function Messages() {
                         </div>
                         <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
                         <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
-                          <span>{formatLocalTimestamp(inquiry.createdAt)}</span>
+                          <span>{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
                         </div>
                       </button>
                     );
@@ -552,7 +551,7 @@ export default function Messages() {
                       {thread.kind === "direct" && <p className={`mt-3 truncate text-sm font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
                       <p className={`mt-2 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
                       <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
-                        <span>{formatLocalTimestamp(thread.updatedAt)}</span>
+                        <span>{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
                         {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
                       </div>
                     </button>
@@ -604,7 +603,7 @@ export default function Messages() {
                       <p className="mt-2 whitespace-pre-wrap text-slate-900 break-words">{activeInquiry.message}</p>
                     </div>
                     <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                      {activeInquiryPresentation?.detailPrefix} on {formatLocalTimestamp(activeInquiry.createdAt)}
+                      {activeInquiryPresentation?.detailPrefix} on {formatMessageTimestamp(activeInquiry.createdAt, viewerTimeZone)}
                     </div>
 
                     {repliesQuery.data && repliesQuery.data.length > 0 && (
@@ -619,7 +618,7 @@ export default function Messages() {
                               </Avatar>
                               <div>
                                 <p className="text-sm font-semibold text-slate-900">{reply.senderName || `Collector ${reply.senderId}`}</p>
-                                <p className="text-xs text-slate-500">{formatLocalTimestamp(reply.createdAt)}</p>
+                                <p className="text-xs text-slate-500">{formatMessageTimestamp(reply.createdAt, viewerTimeZone)}</p>
                               </div>
                             </div>
                             <p className="mt-2 whitespace-pre-wrap text-sm text-slate-900">{reply.message}</p>
@@ -730,7 +729,7 @@ export default function Messages() {
                     {activeThread.kind === "direct" && (dbMessagesQuery.data ?? []).length > 0 && (
                       <div className="px-1 py-1">
                         <p className="break-words text-xl font-semibold leading-8 text-slate-900 sm:text-2xl">{(activeThread as any).subject || '(no subject)'}</p>
-                        {activeDirectPresentation && <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{activeDirectPresentation.detailPrefix} on {formatLocalTimestamp(activeThread.updatedAt)}</p>}
+                        {activeDirectPresentation && <p className="mt-3 text-xs uppercase tracking-[0.18em] text-slate-500">{activeDirectPresentation.detailPrefix} on {formatMessageTimestamp(activeThread.updatedAt, viewerTimeZone)}</p>}
                       </div>
                     )}
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {
@@ -741,7 +740,7 @@ export default function Messages() {
                           <div className={`max-w-[75%] rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-sm ${ownMessage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>
                             <p className="text-xs uppercase tracking-[0.18em] opacity-65">{messageSenderName}</p>
                             <p className="mt-2">{message.body ?? message.message}</p>
-                            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{formatLocalTimestamp(message.createdAt)}</p>
+                            <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{formatMessageTimestamp(message.createdAt, viewerTimeZone)}</p>
                           </div>
                         </div>
                       );

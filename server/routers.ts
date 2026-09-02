@@ -123,6 +123,7 @@ import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
@@ -805,6 +806,15 @@ export const appRouter = router({
     }),
     siteStatistics: publicProcedure.query(() => {
       return getSiteStatistics();
+    }),
+    getViewerTimeZone: protectedProcedure.query(async ({ ctx }) => {
+      const db = await requireDb();
+      const [profile] = await db
+        .select({ contactState: userProfiles.contactState, contactCountry: userProfiles.contactCountry })
+        .from(userProfiles)
+        .where(eq(userProfiles.userId, ctx.user.id))
+        .limit(1);
+      return { timeZone: resolveProfileTimeZone(profile) };
     }),
     topHighestValueItems: publicProcedure.query(({ ctx }) => {
       return getTopHighestValueItems(ctx.user?.id ?? null);

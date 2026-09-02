@@ -5,6 +5,7 @@ import { resolve } from "node:path";
 const messagesSource = readFileSync(resolve(process.cwd(), "client/src/pages/Messages.tsx"), "utf8");
 const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
 const routerSource = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
+const timestampSource = readFileSync(resolve(process.cwd(), "client/src/lib/messageTimestamps.ts"), "utf8");
 
 describe("Messages page refinements", () => {
   it("uses a centered, expanded hero and prominent unlabeled subjects", () => {
@@ -30,9 +31,11 @@ describe("Messages page refinements", () => {
   });
 
   it("formats list and detail timestamps with the viewer's local timezone", () => {
-    expect(messagesSource).toContain("new Intl.DateTimeFormat(undefined");
-    expect(messagesSource).toContain("dateStyle: \"medium\"");
-    expect(messagesSource).toContain("timeStyle: \"short\"");
+    expect(messagesSource).toContain("formatMessageTimestamp(message.createdAt, viewerTimeZone)");
+    expect(timestampSource).toContain("normalized.replace(\" \", \"T\")}Z");
+    expect(timestampSource).toContain("...(timeZone ? { timeZone } : {})");
+    expect(timestampSource).toContain("dateStyle: \"medium\"");
+    expect(timestampSource).toContain("timeStyle: \"short\"");
     expect(messagesSource).not.toContain("new Date(message.createdAt).toLocaleString()");
   });
 });
