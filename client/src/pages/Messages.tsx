@@ -400,7 +400,7 @@ export default function Messages() {
       <main className="py-8 lg:py-10 px-4">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr_1.2fr]">
           <aside className="h-fit rounded-[2rem] border border-slate-300/70 bg-white/82 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:sticky lg:top-8">
-            <h2 className="text-xl font-semibold text-slate-900">Messages</h2>
+            <h2 className="text-xl font-semibold text-slate-900">Inbox Folders</h2>
             <div className="mt-5 space-y-2">
               {folders.map(item => {
                 const count = item.value === "all"
@@ -475,7 +475,7 @@ export default function Messages() {
                   <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
                 </div>
               ) : (filteredThreads.length || filteredInquiries.length) ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {filteredInquiries.map((inquiry: any) => {
                     const inquiryDirection = getInquiryDirection(inquiry.senderId, user?.id);
                     const inquiryCounterpartName = inquiryDirection === "sent"
@@ -488,12 +488,12 @@ export default function Messages() {
                         key={`inquiry-${inquiry.id}`}
                         type="button"
                         onClick={() => setActiveThreadKey(`inquiry-${inquiry.id}`)}
-                        className={`w-full rounded-[1.5rem] border p-4 text-left transition ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
+                        className={`w-full rounded-[1.25rem] border px-3 py-2.5 text-left transition ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-lg font-semibold">{inquiryPresentation.listLabel}</p>
-                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <p className="truncate text-base font-semibold">{inquiryPresentation.listLabel}</p>
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
                               <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
                               <span className={`text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link></span>
                             </div>
@@ -509,8 +509,8 @@ export default function Messages() {
                             )}
                           </div>
                         </div>
-                        <p className={`mt-3 line-clamp-2 text-sm leading-6 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
-                        <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
+                        <p className={`mt-1.5 line-clamp-1 text-xs leading-5 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
+                        <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em]">
                           <span>{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
                         </div>
                       </button>
@@ -529,14 +529,14 @@ export default function Messages() {
                       key={thread.key}
                       type="button"
                       onClick={() => setActiveThreadKey(thread.key)}
-                      className={`w-full rounded-[1.5rem] border p-4 text-left transition ${thread.key === activeThreadKey ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
+                      className={`w-full rounded-[1.25rem] border px-3 py-2.5 text-left transition ${thread.key === activeThreadKey ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0 flex-1">
                           {thread.kind === "direct" ? (
                             <>
-                              <p className="truncate text-lg font-semibold">{directPresentation?.listLabel}</p>
-                              <div className="mt-2"><Badge className="rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge></div>
+                              <p className="truncate text-base font-semibold">{directPresentation?.listLabel}</p>
+                              <div className="mt-1"><Badge className="rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge></div>
                             </>
                           ) : (
                             <>
@@ -549,9 +549,9 @@ export default function Messages() {
                           {thread.kind === "direct" ? directPresentation?.badge : thread.proposal.status}
                         </Badge>
                       </div>
-                      {thread.kind === "direct" && <p className={`mt-3 truncate text-sm font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
-                      <p className={`mt-2 line-clamp-2 text-sm leading-6 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
-                      <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.18em]">
+                      {thread.kind === "direct" && <p className={`mt-1.5 truncate text-xs font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
+                      <p className={`mt-1 line-clamp-1 text-xs leading-5 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
+                      <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em]">
                         <span>{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
                         {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
                       </div>
@@ -661,12 +661,9 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeThread.counterpartName)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.kind === "direct" ? activeDirectPresentation?.detailHeading : activeThread.counterpartName}</h2>
+                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.kind === "direct" ? `Messages with ${activeThread.counterpartName}` : activeThread.counterpartName}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct Conversation" : activeThread.proposal.status}</Badge>
-                          {activeThread.kind === "direct" && activeDirectPresentation && (
-                            <Badge className={`rounded-full ${activeDirectDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeDirectPresentation.badge}</Badge>
-                          )}
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
                           {activeThread.kind === "trade" ? <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1"><ShieldCheck className="h-4 w-4" />{activeThread.proposal.ownerRating?.averageRating?.toFixed(1) ?? "N/A"} rating</span> : null}
                         </div>
@@ -736,10 +733,19 @@ export default function Messages() {
                     {(activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).length ? (activeThread.kind === "direct" ? (dbMessagesQuery.data ?? []) : activeThread.proposal.messages).map((message: any) => {
                       const ownMessage = message.senderId === user?.id;
                       const messageSenderName = message.senderName ?? (ownMessage ? "You" : activeThread.counterpartName);
+                      const messageAvatarUrl = message.senderAvatarUrl
+                        ?? (ownMessage ? (user as any)?.avatarUrl : activeThread.counterpartAvatarUrl)
+                        ?? null;
                       return (
                         <div key={message.id} className={`flex ${ownMessage ? "justify-end" : "justify-start"}`}>
                           <div className={`max-w-[75%] rounded-[1.5rem] px-4 py-3 text-sm leading-7 shadow-sm ${ownMessage ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}>
-                            <p className="text-xs uppercase tracking-[0.18em] opacity-65">{messageSenderName}</p>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6 border border-white/25">
+                                <AvatarImage src={messageAvatarUrl ?? undefined} alt={messageSenderName} />
+                                <AvatarFallback>{initials(messageSenderName)}</AvatarFallback>
+                              </Avatar>
+                              <p className="text-xs uppercase tracking-[0.18em] opacity-65">{messageSenderName}</p>
+                            </div>
                             <p className="mt-2">{message.body ?? message.message}</p>
                             <p className="mt-2 text-[11px] uppercase tracking-[0.16em] opacity-55">{formatMessageTimestamp(message.createdAt, viewerTimeZone)}</p>
                           </div>

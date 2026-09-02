@@ -1236,3 +1236,9 @@
 - [x] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers. Aggregate verification found five active records and one review-required existing collision, with no raw identifiers logged.
 - [x] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
 - [x] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review. Focused identity tests passed 4/4, TypeScript and whitespace validation passed; production build is running as final validation.
+
+- [x] Rename the Messages left-side panel to Inbox Folders and use the clearer “Messages with [Display Name]” conversation heading.
+- [x] Remove the redundant Sent/Received header bubble beside Direct Conversation while retaining type and unread context where it is useful.
+- [x] Render a small authoritative profile avatar beside the participant name in each direct-message bubble, with a privacy-safe initials fallback only when no avatar exists.
+- [x] Condense the vertical density of All Messages list rows while retaining readable participant, type, subject/preview, status, and local timestamp information.
+- [x] Add regression coverage and verify the refined Messages header, type badges, avatars, and condensed inbox layout. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.

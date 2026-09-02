@@ -39,6 +39,17 @@ describe("Messages page refinements", () => {
     expect(messagesSource).not.toContain("Collector direct line");
   });
 
+  it("uses an inbox-oriented hierarchy with compact list rows and participant avatars in direct-message bubbles", () => {
+    expect(messagesSource).toContain(">Inbox Folders</h2>");
+    expect(messagesSource).toContain("`Messages with ${activeThread.counterpartName}`");
+    expect(messagesSource).not.toContain("{activeDirectPresentation.badge}");
+    expect(messagesSource).toContain("const messageAvatarUrl = message.senderAvatarUrl");
+    expect(messagesSource).toContain('Avatar className="h-6 w-6 border border-white/25"');
+    expect(messagesSource).toContain('className="space-y-2"');
+    expect(messagesSource).toContain('rounded-[1.25rem] border px-3 py-2.5');
+    expect(messagesSource).toContain("line-clamp-1 text-xs leading-5");
+  });
+
   it("formats list and detail timestamps with the viewer's local timezone", () => {
     expect(messagesSource).toContain("formatMessageTimestamp(message.createdAt, viewerTimeZone)");
     expect(timestampSource).toContain("normalized.replace(\" \", \"T\")}Z");
