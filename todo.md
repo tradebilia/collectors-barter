@@ -1208,3 +1208,8 @@
 - [x] Use distinct accessible badge colors for Direct Message and Item Inquiry rows in All Messages.
 - [x] Preserve or recover the original direct-message subject in existing threads when the thread subject is blank, without exposing private data or altering unrelated records.
 - [x] Add regression coverage and verify the Messages visual and subject refinements. Focused Messages tests passed 5/5, TypeScript, production build, and whitespace validation passed; authenticated visual testing remains pending.
+
+- [x] Center the complete Messages SVG hero artwork as one edge-balanced unit so its visible left and right edges have equal space to the page edges at supported viewports.
+- [x] Add a regression check and visually verify the corrected Messages hero alignment without changing the shared homepage-height frame. The Messages regression passed 5/5, TypeScript, production build, and whitespace validation passed; the route capture confirmed the existing signed-out guard.
+- [ ] Create a full credential-safe source commit for this correction, push the dedicated GitHub backup branch, and verify local/remote synchronization.
+- [ ] Save the synchronized WebDev version for Rich’s review.

@@ -11,6 +11,7 @@ describe("Messages page refinements", () => {
   it("uses a centered, expanded hero and prominent unlabeled subjects", () => {
     expect(messagesSource).toContain("h-[400px] items-center justify-center");
     expect(messagesSource).toContain("w-full max-w-6xl object-contain");
+    expect(messagesSource).toContain('transform: "translateX(-2.34375%)"');
     expect(messagesSource).not.toContain("Direct Lines, Trusted Conversations</p>");
     expect(messagesSource).toContain("text-xl font-semibold leading-8");
     expect(messagesSource).not.toContain('>Subject</p>');
