@@ -14,17 +14,21 @@ describe("homepage launch polish", () => {
     expect(homepageSource).not.toContain("Shipping Supplies");
   });
 
-  it("shows accessible non-linking Facebook, Instagram, and X placeholders until official destinations are configured", () => {
+  it("links Facebook, Instagram, and X icons to Rich's supplied official Tradebilia destinations", () => {
     expect(homepageSource).toContain('aria-labelledby="tradebilia-social-heading"');
     expect(homepageSource).toContain('id="tradebilia-social-heading"');
     expect(homepageSource).toContain("Follow Tradebilia");
-    expect(homepageSource).toContain("Official social links will be added here soon.");
-    expect(homepageSource).toContain('aria-label="Facebook link coming soon"');
-    expect(homepageSource).toContain('aria-label="Instagram link coming soon"');
-    expect(homepageSource).toContain('aria-label="X link coming soon"');
+    expect(homepageSource).toContain("Find Tradebilia across the collector community.");
+    expect(homepageSource).toContain('href="https://www.facebook.com/tradebilia"');
+    expect(homepageSource).toContain('href="https://www.instagram.com/tradebilia"');
+    expect(homepageSource).toContain('href="https://x.com/Tradebilia66"');
+    expect(homepageSource).toContain('aria-label="Follow Tradebilia on Facebook (opens in a new tab)"');
+    expect(homepageSource).toContain('aria-label="Follow Tradebilia on Instagram (opens in a new tab)"');
+    expect(homepageSource).toContain('aria-label="Follow Tradebilia on X (opens in a new tab)"');
+    expect(homepageSource).toContain('target="_blank" rel="noopener noreferrer"');
     expect(homepageSource).toContain("<Facebook");
     expect(homepageSource).toContain("<Instagram");
     expect(homepageSource).toContain("<X");
-    expect(homepageSource).not.toMatch(/(?:facebook|instagram|twitter|x)\.com/i);
+    expect(homepageSource).not.toContain("link coming soon");
   });
 });

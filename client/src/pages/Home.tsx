@@ -910,21 +910,21 @@ export default function Home() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Collector community</p>
                 <h2 id="tradebilia-social-heading" className="mt-2 font-serif text-3xl font-medium sm:text-4xl">Follow Tradebilia</h2>
-                <p className="mt-2 text-sm leading-6 text-white/70">Official social links will be added here soon.</p>
+                <p className="mt-2 text-sm leading-6 text-white/70">Find Tradebilia across the collector community.</p>
               </div>
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Tradebilia social media links coming soon">
-                <span className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#1877f2]/60 bg-[#1877f2]/15 px-4 py-2 text-sm font-semibold text-white" role="img" aria-label="Facebook link coming soon" title="Facebook link coming soon">
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Tradebilia social media links">
+                <a href="https://www.facebook.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#1877f2]/60 bg-[#1877f2]/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1877f2]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#63a4ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Facebook (opens in a new tab)">
                   <Facebook className="h-5 w-5 text-[#63a4ff]" aria-hidden="true" />
                   Facebook
-                </span>
-                <span className="inline-flex min-h-12 items-center gap-2 rounded-full border border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-rose-500/15 to-amber-400/15 px-4 py-2 text-sm font-semibold text-white" role="img" aria-label="Instagram link coming soon" title="Instagram link coming soon">
+                </a>
+                <a href="https://www.instagram.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-rose-500/15 to-amber-400/15 px-4 py-2 text-sm font-semibold text-white transition hover:from-fuchsia-500/30 hover:via-rose-500/30 hover:to-amber-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Instagram (opens in a new tab)">
                   <Instagram className="h-5 w-5 text-fuchsia-300" aria-hidden="true" />
                   Instagram
-                </span>
-                <span className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white" role="img" aria-label="X link coming soon" title="X link coming soon">
+                </a>
+                <a href="https://x.com/Tradebilia66" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on X (opens in a new tab)">
                   <X className="h-5 w-5 text-white" aria-hidden="true" />
                   X
-                </span>
+                </a>
               </div>
             </div>
           </section>
