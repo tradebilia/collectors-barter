@@ -51,6 +51,9 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain("Item #{inquiry.listingId}");
     expect(messagesSource).toContain("flex shrink-0 flex-col items-end gap-1");
     expect(messagesSource).toContain("truncate text-sm font-normal");
+    expect(messagesSource).toContain('const inquiryDirectionLabel = inquiryDirection === "sent" ? "To:" : "From:"');
+    expect(messagesSource).toContain('const directDirectionLabel = directDirection === "sent" ? "To:" : "From:"');
+    expect(messagesSource).toContain('ml-1 text-base font-semibold');
     expect(messagesSource).toContain('Avatar className="h-7 w-7 border border-slate-200"');
     expect(messagesSource).toContain("border-t pt-2 text-xs");
     expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");

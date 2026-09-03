@@ -481,6 +481,7 @@ export default function Messages() {
                     const inquiryCounterpartName = inquiryDirection === "sent"
                       ? inquiry.recipientName || `Collector ${inquiry.recipientId}`
                       : inquiry.senderName || `Collector ${inquiry.senderId}`;
+                    const inquiryDirectionLabel = inquiryDirection === "sent" ? "To:" : "From:";
                     const inquiryPresentation = getInquiryDirectionPresentation(inquiryDirection, inquiryCounterpartName);
 
                     return (
@@ -496,7 +497,7 @@ export default function Messages() {
                               <AvatarImage src={(inquiryDirection === "sent" ? inquiry.recipientAvatarUrl : inquiry.senderAvatarUrl) ?? undefined} alt={inquiryCounterpartName} />
                               <AvatarFallback>{initials(inquiryCounterpartName)}</AvatarFallback>
                             </Avatar>
-                            <p className="truncate text-sm font-normal">{inquiryPresentation.listLabel}</p>
+                            <p className="truncate text-sm font-normal"><span>{inquiryDirectionLabel}</span><span className="ml-1 text-base font-semibold">{inquiryCounterpartName}</span></p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
@@ -521,6 +522,7 @@ export default function Messages() {
                     const directPresentation = thread.kind === "direct" && directDirection
                       ? getDirectMessageDirectionPresentation(directDirection, thread.counterpartName)
                       : null;
+                    const directDirectionLabel = directDirection === "sent" ? "To:" : "From:";
 
                     return (
                     <button
@@ -537,7 +539,7 @@ export default function Messages() {
                           </Avatar>
                           {thread.kind === "direct" ? (
                             <>
-                              <p className="truncate text-sm font-normal">{directPresentation?.listLabel}</p>
+                              <p className="truncate text-sm font-normal"><span>{directDirectionLabel}</span><span className="ml-1 text-base font-semibold">{thread.counterpartName}</span></p>
                             </>
                           ) : (
                             <>
