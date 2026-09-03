@@ -508,14 +508,14 @@ export default function Messages() {
                             <p className="truncate text-sm font-normal"><span>{inquiryDirectionLabel}</span><span className="ml-1 text-base font-semibold">{inquiryCounterpartName}</span></p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
-                            <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
+                            <Badge className="rounded-full border border-amber-800 bg-amber-900 px-2.5 text-[10px] uppercase tracking-[0.12em] text-amber-50 hover:bg-amber-800">Item Inquiry</Badge>
                             <button
                               type="button"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setPreviewListingId(inquiry.listingId);
                               }}
-                              className={`text-[10px] font-medium uppercase tracking-[0.12em] underline underline-offset-2 hover:no-underline ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/70" : "text-slate-500"}`}
+                              className={`text-[10px] font-bold uppercase tracking-[0.12em] underline underline-offset-2 hover:no-underline ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/80" : "text-slate-700"}`}
                             >
                               Item #{inquiry.listingId}
                             </button>
@@ -523,10 +523,10 @@ export default function Messages() {
                         </div>
                         <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
                         <div className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 text-white/75" : "border-slate-200 text-slate-600"}`}>
-                          <span className="min-w-0 flex-1 truncate">{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
+                          <span className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 ${activeThreadKey === `inquiry-${inquiry.id}` ? "bg-white/10 text-white/90" : "bg-slate-100 text-slate-700"}`}>{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
                           <div className="flex shrink-0 items-center gap-2">
                             <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
-                            <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full ${inquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{inquiryPresentation.badge}</Badge>
+                            <Badge className={`rounded-full border ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/25 bg-white/15 text-white hover:bg-white/20" : inquiryDirection === "sent" ? "border-sky-800 bg-sky-900 text-sky-50 hover:bg-sky-800" : "border-emerald-800 bg-emerald-900 text-emerald-50 hover:bg-emerald-800"}`}>{inquiryPresentation.badge}</Badge>
                           </div>
                         </div>
                       </button>
@@ -564,14 +564,14 @@ export default function Messages() {
                             </>
                           )}
                         </div>
-                        {thread.kind === "direct" ? <Badge className="shrink-0 rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge> : <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="shrink-0 rounded-full capitalize">{thread.proposal.status}</Badge>}
+                        {thread.kind === "direct" ? <Badge className="shrink-0 rounded-full border border-indigo-800 bg-indigo-950 px-2.5 text-[10px] uppercase tracking-[0.12em] text-indigo-50 hover:bg-indigo-900">Direct Message</Badge> : <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="shrink-0 rounded-full capitalize">{thread.proposal.status}</Badge>}
                       </div>
                       {thread.kind === "direct" && <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
                       <div className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 text-white/75" : "border-slate-200 text-slate-600"}`}>
-                        <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
+                        <span className={`min-w-0 flex-1 truncate rounded-md px-2 py-1 ${thread.key === activeThreadKey ? "bg-white/10 text-white/90" : "bg-slate-100 text-slate-700"}`}>{thread.summary}</span>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
-                          {thread.kind === "direct" ? <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className={`rounded-full ${directDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{directPresentation?.badge}</Badge> : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
+                          {thread.kind === "direct" ? <Badge className={`rounded-full border ${thread.key === activeThreadKey ? "border-white/25 bg-white/15 text-white hover:bg-white/20" : directDirection === "sent" ? "border-sky-800 bg-sky-900 text-sky-50 hover:bg-sky-800" : "border-emerald-800 bg-emerald-900 text-emerald-50 hover:bg-emerald-800"}`}>{directPresentation?.badge}</Badge> : thread.unread ? <span className="inline-flex items-center gap-2 font-medium text-amber-800"><span className="h-2 w-2 rounded-full bg-amber-700" />Unread</span> : <span className="font-medium text-slate-600">Seen</span>}
                         </div>
                       </div>
                     </button>

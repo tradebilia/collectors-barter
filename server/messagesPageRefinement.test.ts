@@ -33,8 +33,8 @@ describe("Messages page refinements", () => {
   });
 
   it("distinguishes message types and emphasizes direct-message sending", () => {
-    expect(messagesSource).toContain("bg-amber-100 text-[10px]");
-    expect(messagesSource).toContain("bg-violet-100 text-[10px]");
+    expect(messagesSource).toContain("border-amber-800 bg-amber-900");
+    expect(messagesSource).toContain("border-indigo-800 bg-indigo-950");
     expect(messagesSource).toContain("bg-violet-600 text-white");
     expect(messagesSource).not.toContain("Collector direct line");
   });
@@ -50,12 +50,15 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain("font-serif text-2xl font-bold leading-tight");
     expect(messagesSource).toContain("Item #{inquiry.listingId}");
     expect(messagesSource).toContain("flex shrink-0 flex-col items-end gap-1");
+    expect(messagesSource).toContain("text-[10px] font-bold uppercase tracking-[0.12em]");
     expect(messagesSource).toContain("truncate text-sm font-normal");
     expect(messagesSource).toContain('const inquiryDirectionLabel = inquiryDirection === "sent" ? "To:" : "From:"');
     expect(messagesSource).toContain('const directDirectionLabel = directDirection === "sent" ? "To:" : "From:"');
     expect(messagesSource).toContain('ml-1 text-base font-semibold');
     expect(messagesSource).toContain('Avatar className="h-7 w-7 border border-slate-200"');
     expect(messagesSource).toContain("border-t pt-2 text-xs");
+    expect(messagesSource).toContain('rounded-md px-2 py-1 ${activeThreadKey === `inquiry-${inquiry.id}` ? "bg-white/10 text-white/90" : "bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('rounded-md px-2 py-1 ${thread.key === activeThreadKey ? "bg-white/10 text-white/90" : "bg-slate-100 text-slate-700"}');
     expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");
   });
 
