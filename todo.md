@@ -1250,3 +1250,7 @@
 - [x] Apply the approved Message List visual hierarchy: participant and message-type context on the upper row, bold subject as the primary line, and compact preview/timestamp/status beneath.
 - [x] Show the persisted Item # beside the Item Inquiry badge only for inquiry rows; do not display an item number for direct messages.
 - [x] Add regression coverage and verify the approved Message List hierarchy and item-number rendering. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
+
+- [x] Move the Item Inquiry badge to the right side of inquiry rows and place the Item # link directly beneath it.
+- [x] Increase and strengthen inquiry and direct-message subject typography while making To/From participant labels regular-weight supporting text.
+- [x] Add regression coverage and verify the adjusted Message List hierarchy at responsive widths. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.

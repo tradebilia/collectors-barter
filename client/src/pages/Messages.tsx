@@ -496,14 +496,14 @@ export default function Messages() {
                               <AvatarImage src={(inquiryDirection === "sent" ? inquiry.recipientAvatarUrl : inquiry.senderAvatarUrl) ?? undefined} alt={inquiryCounterpartName} />
                               <AvatarFallback>{initials(inquiryCounterpartName)}</AvatarFallback>
                             </Avatar>
-                            <p className="truncate text-sm font-medium">{inquiryPresentation.listLabel}</p>
+                            <p className="truncate text-sm font-normal">{inquiryPresentation.listLabel}</p>
                           </div>
-                          <div className="flex shrink-0 items-center gap-1.5">
+                          <div className="flex shrink-0 flex-col items-end gap-1">
                             <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
                             <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-medium uppercase tracking-[0.12em] underline underline-offset-2 hover:no-underline ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/70" : "text-slate-500"}`}>Item #{inquiry.listingId}</Link>
                           </div>
                         </div>
-                        <p className={`mt-2 truncate font-serif text-xl font-semibold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
+                        <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
                         <div className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 text-white/75" : "border-slate-200 text-slate-600"}`}>
                           <span className="min-w-0 flex-1 truncate">{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
                           <div className="flex shrink-0 items-center gap-2">
@@ -537,17 +537,17 @@ export default function Messages() {
                           </Avatar>
                           {thread.kind === "direct" ? (
                             <>
-                              <p className="truncate text-sm font-medium">{directPresentation?.listLabel}</p>
+                              <p className="truncate text-sm font-normal">{directPresentation?.listLabel}</p>
                             </>
                           ) : (
                             <>
-                              <p className="truncate text-sm font-medium">{thread.counterpartName}</p>
+                              <p className="truncate text-sm font-normal">{thread.counterpartName}</p>
                             </>
                           )}
                         </div>
                         {thread.kind === "direct" ? <Badge className="shrink-0 rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge> : <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="shrink-0 rounded-full capitalize">{thread.proposal.status}</Badge>}
                       </div>
-                      {thread.kind === "direct" && <p className={`mt-2 truncate font-serif text-xl font-semibold leading-tight ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
+                      {thread.kind === "direct" && <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
                       <div className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 text-white/75" : "border-slate-200 text-slate-600"}`}>
                         <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
                         <div className="flex shrink-0 items-center gap-2">
