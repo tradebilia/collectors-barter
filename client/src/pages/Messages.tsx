@@ -508,7 +508,7 @@ export default function Messages() {
                             <p className="truncate text-sm font-normal"><span>{inquiryDirectionLabel}</span><span className="ml-1 text-base font-semibold">{inquiryCounterpartName}</span></p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
-                            <Badge className="rounded-full border border-amber-800 bg-amber-900 px-2.5 text-[10px] uppercase tracking-[0.12em] text-amber-50 hover:bg-amber-800">Item Inquiry</Badge>
+                            <Badge className="rounded-full border border-cyan-800 bg-cyan-950 px-2.5 text-[10px] uppercase tracking-[0.12em] text-cyan-50 hover:bg-cyan-900">Item Inquiry</Badge>
                             <button
                               type="button"
                               onClick={(event) => {
@@ -526,7 +526,8 @@ export default function Messages() {
                           <span className="min-w-0 flex-1 truncate">{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
                           <div className="flex shrink-0 items-center gap-2">
                             <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
-                            <Badge className={`rounded-full border ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/25 bg-white/15 text-white hover:bg-white/20" : inquiryDirection === "sent" ? "border-sky-800 bg-sky-900 text-sky-50 hover:bg-sky-800" : "border-emerald-800 bg-emerald-900 text-emerald-50 hover:bg-emerald-800"}`}>{inquiryPresentation.badge}</Badge>
+                            {inquiryDirection === "received" && !inquiry.isRead ? <Badge className="rounded-full border border-yellow-400 bg-yellow-300 text-yellow-950 hover:bg-yellow-400"><span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-yellow-700" />Unseen</Badge> : null}
+                            <Badge className={`rounded-full border ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/25 bg-white/15 text-white hover:bg-white/20" : inquiryDirection === "sent" ? "border-blue-700 bg-blue-700 text-white hover:bg-blue-800" : "border-teal-700 bg-teal-700 text-white hover:bg-teal-800"}`}>{inquiryPresentation.badge}</Badge>
                           </div>
                         </div>
                       </button>
@@ -571,7 +572,7 @@ export default function Messages() {
                         <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
-                          {thread.kind === "direct" ? <Badge className={`rounded-full border ${thread.key === activeThreadKey ? "border-white/25 bg-white/15 text-white hover:bg-white/20" : directDirection === "sent" ? "border-sky-800 bg-sky-900 text-sky-50 hover:bg-sky-800" : "border-emerald-800 bg-emerald-900 text-emerald-50 hover:bg-emerald-800"}`}>{directPresentation?.badge}</Badge> : thread.unread ? <span className="inline-flex items-center gap-2 font-medium text-amber-800"><span className="h-2 w-2 rounded-full bg-amber-700" />Unread</span> : <span className="font-medium text-slate-600">Seen</span>}
+                          {thread.kind === "direct" ? <>{thread.unread ? <Badge className="rounded-full border border-yellow-400 bg-yellow-300 text-yellow-950 hover:bg-yellow-400"><span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-yellow-700" />Unseen</Badge> : null}<Badge className={`rounded-full border ${thread.key === activeThreadKey ? "border-white/25 bg-white/15 text-white hover:bg-white/20" : directDirection === "sent" ? "border-blue-700 bg-blue-700 text-white hover:bg-blue-800" : "border-teal-700 bg-teal-700 text-white hover:bg-teal-800"}`}>{directPresentation?.badge}</Badge></> : thread.unread ? <Badge className="rounded-full border border-yellow-400 bg-yellow-300 text-yellow-950 hover:bg-yellow-400"><span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-yellow-700" />Unseen</Badge> : <span className="font-medium text-slate-600">Seen</span>}
                         </div>
                       </div>
                     </button>
@@ -657,7 +658,7 @@ export default function Messages() {
                   ) : (
                     <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
                       <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 min-w-0 bg-white text-base" />
-                      <Button className="h-12 w-full rounded-full px-6 lg:w-auto" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
+                      <Button className="h-12 w-full rounded-full bg-blue-700 px-6 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800 lg:w-auto" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
                         if (!activeInquiry || !user?.id) return;
                         const trimmed = messageDraft.trim();
                         if (!trimmed) return;
@@ -794,7 +795,7 @@ export default function Messages() {
                         </Link>
                       </Button>
                     ) : null}
-                    <Button className={`h-12 w-full rounded-full px-6 lg:w-auto ${activeThread.kind === "direct" ? "bg-violet-600 text-white shadow-lg shadow-violet-900/20 hover:bg-violet-700" : ""}`} disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
+                    <Button className="h-12 w-full rounded-full bg-blue-700 px-6 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800 lg:w-auto" disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
                       {sendTradeMessageMutation.isPending && activeThread.kind === "trade" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       {activeThread.kind === "direct" ? "Send Message" : "Send Trade Message"}
                     </Button>

@@ -1287,3 +1287,6 @@
 - [x] Shorten the desktop Message List panel so it is visually distinct from and does not match the communication section height.
 - [x] Keep the Message List independently scrollable and responsive while preserving the larger conversation area and mobile natural-flow layout.
 - [x] Add regression coverage and verify the updated Message List versus communication-section proportions. Focused Messages tests passed 7/7, TypeScript, production build, and whitespace validation passed.
+- [x] Refine the Message List color system so Direct Message, Item Inquiry, Sent, and Received are visually distinct, professional, and accessible.
+- [x] Use a high-visibility yellow unread treatment in the Message List without changing read state or message behavior.
+- [x] Use the approved blue color for Send Message actions and add focused regression coverage for the revised color contracts. Focused Messages tests passed 10/10, TypeScript, production build, whitespace validation, and an unsigned phone-size route check passed.

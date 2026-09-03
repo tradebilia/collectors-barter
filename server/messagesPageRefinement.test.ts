@@ -32,10 +32,14 @@ describe("Messages page refinements", () => {
     expect(routerSource).toContain("NULLIF(TRIM(dm2.subject), '') IS NOT NULL ORDER BY dm2.createdAt ASC");
   });
 
-  it("distinguishes message types and emphasizes direct-message sending", () => {
-    expect(messagesSource).toContain("border-amber-800 bg-amber-900");
+  it("uses distinct type, direction, unseen, and send-action colors", () => {
+    expect(messagesSource).toContain("border-cyan-800 bg-cyan-950");
     expect(messagesSource).toContain("border-indigo-800 bg-indigo-950");
-    expect(messagesSource).toContain("bg-violet-600 text-white");
+    expect(messagesSource).toContain('inquiryDirection === "received" && !inquiry.isRead');
+    expect(messagesSource).toContain("border-yellow-400 bg-yellow-300 text-yellow-950");
+    expect(messagesSource).toContain("border-blue-700 bg-blue-700 text-white hover:bg-blue-800");
+    expect(messagesSource).toContain("border-teal-700 bg-teal-700 text-white hover:bg-teal-800");
+    expect(messagesSource).toContain("bg-blue-700 px-6 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800");
     expect(messagesSource).not.toContain("Collector direct line");
   });
 
@@ -75,7 +79,7 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto_auto]');
     expect(messagesSource).toContain('className="h-12 min-w-0 bg-white text-base"');
-    expect(messagesSource).toContain('h-12 w-full rounded-full px-6 lg:w-auto');
+    expect(messagesSource).toContain('h-12 w-full rounded-full bg-blue-700 px-6 text-white shadow-lg shadow-blue-900/20 hover:bg-blue-800 lg:w-auto');
   });
 
   it("uses white workspace panels with a matching light-gray reply-composer surface", () => {
