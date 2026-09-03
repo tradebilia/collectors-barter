@@ -490,28 +490,26 @@ export default function Messages() {
                         onClick={() => setActiveThreadKey(`inquiry-${inquiry.id}`)}
                         className={`w-full rounded-[1.25rem] border px-3 py-2.5 text-left transition ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-base font-semibold">{inquiryPresentation.listLabel}</p>
-                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                              <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
-                              <span className={`text-xs uppercase tracking-[0.18em] ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/65" : "text-slate-500"}`}>Ref <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">#{inquiry.listingId}</Link></span>
-                            </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Avatar className="h-7 w-7 border border-slate-200">
+                              <AvatarImage src={(inquiryDirection === "sent" ? inquiry.recipientAvatarUrl : inquiry.senderAvatarUrl) ?? undefined} alt={inquiryCounterpartName} />
+                              <AvatarFallback>{initials(inquiryCounterpartName)}</AvatarFallback>
+                            </Avatar>
+                            <p className="truncate text-sm font-medium">{inquiryPresentation.listLabel}</p>
                           </div>
-                          <div className="flex flex-wrap justify-end gap-2">
-                            <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full ${inquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>
-                              {inquiryPresentation.badge}
-                            </Badge>
-                            {inquiryDirection === "received" && (
-                              <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full capitalize ${inquiry.isRead ? "bg-slate-200 text-slate-700 hover:bg-slate-300" : "bg-yellow-400 text-slate-900 hover:bg-yellow-500"}`}>
-                                {inquiry.isRead ? "Seen" : inquiryPresentation.statusLabel}
-                              </Badge>
-                            )}
+                          <div className="flex shrink-0 items-center gap-1.5">
+                            <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
+                            <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-medium uppercase tracking-[0.12em] underline underline-offset-2 hover:no-underline ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/70" : "text-slate-500"}`}>Item #{inquiry.listingId}</Link>
                           </div>
                         </div>
-                        <p className={`mt-1.5 line-clamp-1 text-xs leading-5 ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/75" : "text-slate-600"}`}>{inquiry.subject}</p>
-                        <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em]">
-                          <span>{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
+                        <p className={`mt-2 truncate font-serif text-xl font-semibold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
+                        <div className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 text-white/75" : "border-slate-200 text-slate-600"}`}>
+                          <span className="min-w-0 flex-1 truncate">{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
+                            <Badge variant={activeThreadKey === `inquiry-${inquiry.id}` ? "secondary" : "outline"} className={`rounded-full ${inquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{inquiryPresentation.badge}</Badge>
+                          </div>
                         </div>
                       </button>
                     );
@@ -531,29 +529,31 @@ export default function Messages() {
                       onClick={() => setActiveThreadKey(thread.key)}
                       className={`w-full rounded-[1.25rem] border px-3 py-2.5 text-left transition ${thread.key === activeThreadKey ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-slate-50 text-slate-900 hover:bg-slate-100"}`}
                     >
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Avatar className="h-7 w-7 border border-slate-200">
+                            <AvatarImage src={thread.counterpartAvatarUrl ?? undefined} alt={thread.counterpartName} />
+                            <AvatarFallback>{initials(thread.counterpartName)}</AvatarFallback>
+                          </Avatar>
                           {thread.kind === "direct" ? (
                             <>
-                              <p className="truncate text-base font-semibold">{directPresentation?.listLabel}</p>
-                              <div className="mt-1"><Badge className="rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge></div>
+                              <p className="truncate text-sm font-medium">{directPresentation?.listLabel}</p>
                             </>
                           ) : (
                             <>
-                              <p className="truncate text-lg font-semibold">{thread.counterpartName}</p>
-                              <p className={`mt-1 text-xs uppercase tracking-[0.18em] ${thread.key === activeThreadKey ? "text-white/65" : "text-slate-500"}`}>Trade Proposal #{thread.proposal.id}</p>
+                              <p className="truncate text-sm font-medium">{thread.counterpartName}</p>
                             </>
                           )}
                         </div>
-                        <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className={`rounded-full capitalize ${thread.kind === "direct" ? directDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200" : ""}`}>
-                          {thread.kind === "direct" ? directPresentation?.badge : thread.proposal.status}
-                        </Badge>
+                        {thread.kind === "direct" ? <Badge className="shrink-0 rounded-full border border-violet-200 bg-violet-100 text-[10px] uppercase tracking-[0.12em] text-violet-900 hover:bg-violet-200">Direct Message</Badge> : <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="shrink-0 rounded-full capitalize">{thread.proposal.status}</Badge>}
                       </div>
-                      {thread.kind === "direct" && <p className={`mt-1.5 truncate text-xs font-semibold ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
-                      <p className={`mt-1 line-clamp-1 text-xs leading-5 ${thread.key === activeThreadKey ? "text-white/75" : "text-slate-600"}`}>{thread.summary}</p>
-                      <div className="mt-2 flex items-center justify-between text-[10px] uppercase tracking-[0.16em]">
-                        <span>{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
-                        {thread.kind === "direct" && directDirection === "sent" ? null : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
+                      {thread.kind === "direct" && <p className={`mt-2 truncate font-serif text-xl font-semibold leading-tight ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
+                      <div className={`mt-3 flex items-center justify-between gap-3 border-t pt-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 text-white/75" : "border-slate-200 text-slate-600"}`}>
+                        <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
+                          {thread.kind === "direct" ? <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className={`rounded-full ${directDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{directPresentation?.badge}</Badge> : thread.unread ? <span className="inline-flex items-center gap-2"><span className="h-2 w-2 rounded-full bg-emerald-400" />Unread</span> : <span>Seen</span>}
+                        </div>
                       </div>
                     </button>
                     );

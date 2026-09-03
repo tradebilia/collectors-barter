@@ -39,7 +39,7 @@ describe("Messages page refinements", () => {
     expect(messagesSource).not.toContain("Collector direct line");
   });
 
-  it("uses an inbox-oriented hierarchy with compact list rows and participant avatars in direct-message bubbles", () => {
+  it("uses the approved subject-first inbox hierarchy with inquiry-only Item # links and compact context", () => {
     expect(messagesSource).toContain(">Inbox Folders</h2>");
     expect(messagesSource).toContain("`Messages with ${activeThread.counterpartName}`");
     expect(messagesSource).not.toContain("{activeDirectPresentation.badge}");
@@ -47,7 +47,11 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain('Avatar className="h-6 w-6 border border-white/25"');
     expect(messagesSource).toContain('className="space-y-2"');
     expect(messagesSource).toContain('rounded-[1.25rem] border px-3 py-2.5');
-    expect(messagesSource).toContain("line-clamp-1 text-xs leading-5");
+    expect(messagesSource).toContain("font-serif text-xl font-semibold leading-tight");
+    expect(messagesSource).toContain("Item #{inquiry.listingId}");
+    expect(messagesSource).toContain('Avatar className="h-7 w-7 border border-slate-200"');
+    expect(messagesSource).toContain("border-t pt-2 text-xs");
+    expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");
   });
 
   it("formats list and detail timestamps with the viewer's local timezone", () => {

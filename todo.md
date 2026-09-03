@@ -1242,3 +1242,11 @@
 - [x] Render a small authoritative profile avatar beside the participant name in each direct-message bubble, with a privacy-safe initials fallback only when no avatar exists.
 - [x] Condense the vertical density of All Messages list rows while retaining readable participant, type, subject/preview, status, and local timestamp information.
 - [x] Add regression coverage and verify the refined Messages header, type badges, avatars, and condensed inbox layout. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
+
+- [x] Create a non-production visual mockup of a subject-first Message List hierarchy for Rich’s approval before changing the live Messages page.
+- [x] Create a second non-production Message List visual mockup with a balanced subject-and-sender hierarchy for comparison before changing the live Messages page.
+- [x] Create a third non-production Message List visual mockup with a compact subject-first hierarchy for comparison before changing the live Messages page. Rich selected this direction for implementation.
+
+- [x] Apply the approved Message List visual hierarchy: participant and message-type context on the upper row, bold subject as the primary line, and compact preview/timestamp/status beneath.
+- [x] Show the persisted Item # beside the Item Inquiry badge only for inquiry rows; do not display an item number for direct messages.
+- [x] Add regression coverage and verify the approved Message List hierarchy and item-number rendering. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
