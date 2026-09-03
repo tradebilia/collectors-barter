@@ -1279,6 +1279,11 @@
 - [x] Use a matching light-gray background for the reply composer area while preserving the contained input and Send Message action.
 - [x] Add regression coverage and verify the refined Messages surface colors and composer contrast. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
 
+- [x] Audit and correct mobile Messages layout overlap across inbox folders, Message List, conversation content, item popup, and reply composer.
+- [x] Make mobile Messages panels stack, scroll, size, and wrap safely while preserving usable controls and the established desktop workspace.
+- [x] Add responsive regression coverage and verify the Messages page at phone, tablet, and desktop viewports. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed; the unsigned phone capture remained at the existing sign-in boundary.
+- [ ] Verify the signed-in Messages page on a physical phone: folder/list/conversation stacking, Item # popup, message metadata wrapping, and contained reply composer.
+
 - [x] Shorten the desktop Message List panel so it is visually distinct from and does not match the communication section height.
 - [x] Keep the Message List independently scrollable and responsive while preserving the larger conversation area and mobile natural-flow layout.
 - [x] Add regression coverage and verify the updated Message List versus communication-section proportions. Focused Messages tests passed 7/7, TypeScript, production build, and whitespace validation passed.

@@ -405,8 +405,8 @@ export default function Messages() {
       </section>
       <CategoryBar />
 
-      <main className="py-8 lg:py-10 px-4">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr_1.2fr]">
+      <main className="px-3 py-6 sm:px-4 sm:py-8 lg:py-10">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[240px_1fr_1.2fr]">
           <aside className="h-fit rounded-[2rem] border border-slate-300/70 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:sticky lg:top-8">
             <h2 className="text-xl font-semibold text-slate-900">Inbox Folders</h2>
             <div className="mt-5 space-y-2">
@@ -477,7 +477,7 @@ export default function Messages() {
                 </div>
               )}
             </div>
-            <ScrollArea className="h-[52vh] min-h-[22rem] max-h-[32rem] px-3 py-3 sm:h-[56vh] lg:h-[48vh] lg:max-h-[34rem]">
+            <ScrollArea className="h-[min(48dvh,26rem)] min-h-[18rem] max-h-[24rem] px-3 py-3 sm:h-[56vh] sm:min-h-[22rem] sm:max-h-[32rem] lg:h-[48vh] lg:max-h-[34rem]">
               {dashboardQuery.isLoading || inquiriesQuery.isLoading ? (
                 <div className="flex min-h-[18rem] items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
@@ -522,7 +522,7 @@ export default function Messages() {
                           </div>
                         </div>
                         <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
-                        <div className={`-mx-3 -mb-2.5 mt-3 flex items-center justify-between gap-3 rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
+                        <div className={`-mx-3 -mb-2.5 mt-3 flex flex-col gap-2 rounded-b-[1.15rem] border-t px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
                           <span className="min-w-0 flex-1 truncate">{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
                           <div className="flex shrink-0 items-center gap-2">
                             <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
@@ -567,7 +567,7 @@ export default function Messages() {
                         {thread.kind === "direct" ? <Badge className="shrink-0 rounded-full border border-indigo-800 bg-indigo-950 px-2.5 text-[10px] uppercase tracking-[0.12em] text-indigo-50 hover:bg-indigo-900">Direct Message</Badge> : <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="shrink-0 rounded-full capitalize">{thread.proposal.status}</Badge>}
                       </div>
                       {thread.kind === "direct" && <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
-                      <div className={`-mx-3 -mb-2.5 mt-3 flex items-center justify-between gap-3 rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
+                        <div className={`-mx-3 -mb-2.5 mt-3 flex flex-col gap-2 rounded-b-[1.15rem] border-t px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${thread.key === activeThreadKey ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
                         <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>
@@ -586,8 +586,8 @@ export default function Messages() {
 
           <section className="rounded-[2rem] border border-slate-300/70 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
             {activeInquiry ? (
-              <div className="flex h-[70vh] min-h-0 flex-col">
-                <div className="border-b border-slate-200 px-6 py-5">
+              <div className="flex min-h-[34rem] flex-col sm:h-[70vh] sm:min-h-0">
+                <div className="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-14 w-14 border border-slate-200">
@@ -595,7 +595,7 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeInquiryAvatarName || "Collector")}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeInquiryPresentation?.detailHeading}</h2>
+                        <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{activeInquiryPresentation?.detailHeading}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">Item Inquiry</Badge>
                           <Badge className={`rounded-full ${activeInquiryDirection === "sent" ? "bg-blue-100 text-blue-800 hover:bg-blue-200" : "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"}`}>{activeInquiryPresentation?.badge}</Badge>
@@ -615,7 +615,7 @@ export default function Messages() {
                   </div>
                 </div>
 
-                <ScrollArea className="min-h-0 flex-1 px-6 py-5 overflow-hidden">
+                <ScrollArea className="min-h-0 flex-1 overflow-hidden px-4 py-4 sm:px-6 sm:py-5">
                   <div className="space-y-4 w-full">
                     <p className="break-words text-xl font-semibold leading-8 text-slate-900 sm:text-2xl">{activeInquiry.subject}</p>
                     <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600 break-words">
@@ -649,15 +649,15 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
-                <div className="shrink-0 border-t border-slate-200 bg-slate-100 px-6 py-5">
+                <div className="shrink-0 border-t border-slate-200 bg-slate-100 px-4 py-3 sm:px-6 sm:py-5">
                   {folder === "deleted" ? (
                     <p className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
                       Archived inquiries are retained for your records and are not permanently deleted here.
                     </p>
                   ) : (
                     <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-                      <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 min-w-0 bg-white" />
-                      <Button className="h-12 rounded-full px-6" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
+                      <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder="Reply to this inquiry..." className="h-12 min-w-0 bg-white text-base" />
+                      <Button className="h-12 w-full rounded-full px-6 lg:w-auto" disabled={!messageDraft.trim() || sendReplyMutation.isPending} onClick={() => {
                         if (!activeInquiry || !user?.id) return;
                         const trimmed = messageDraft.trim();
                         if (!trimmed) return;
@@ -671,8 +671,8 @@ export default function Messages() {
                 </div>
               </div>
             ) : activeThread ? (
-              <div className="flex h-[70vh] min-h-0 flex-col">
-                <div className="border-b border-slate-200 px-6 py-5">
+              <div className="flex min-h-[34rem] flex-col sm:h-[70vh] sm:min-h-0">
+                <div className="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-14 w-14 border border-slate-200">
@@ -680,7 +680,7 @@ export default function Messages() {
                         <AvatarFallback>{initials(activeThread.counterpartName)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <h2 className="text-3xl font-semibold text-slate-900">{activeThread.kind === "direct" ? `Messages with ${activeThread.counterpartName}` : activeThread.counterpartName}</h2>
+                        <h2 className="text-2xl font-semibold text-slate-900 sm:text-3xl">{activeThread.kind === "direct" ? `Messages with ${activeThread.counterpartName}` : activeThread.counterpartName}</h2>
                         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                           <Badge variant="outline" className="rounded-full capitalize">{activeThread.kind === "direct" ? "Direct Conversation" : activeThread.proposal.status}</Badge>
                           {activeOnline ? <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-emerald-700"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online now</span> : null}
@@ -735,7 +735,7 @@ export default function Messages() {
                   ) : null}
                 </div>
 
-                <ScrollArea className="min-h-0 flex-1 px-6 py-5">
+                <ScrollArea className="min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-5">
                   <div className="space-y-4">
                     {activeThread.kind === "trade" && activeThread.proposal.note ? (
                       <div className="rounded-[1.5rem] border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-600">
@@ -778,23 +778,23 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
-                <div className="shrink-0 border-t border-slate-200 bg-slate-100 px-6 py-5">
+                <div className="shrink-0 border-t border-slate-200 bg-slate-100 px-4 py-3 sm:px-6 sm:py-5">
                   {folder === "deleted" && activeThread.kind === "direct" ? (
                     <p className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
                       Archived conversations remain available to read and are not permanently deleted here.
                     </p>
                   ) : (
                   <div className={`min-w-0 ${activeThread.kind === "trade" ? "grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]" : "grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]"}`}>
-                    <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder={activeThread.kind === "direct" ? "Write a direct member message" : "Add a trade note, shipping update, or negotiation reply"} className="h-12 min-w-0 bg-white" />
+                    <Input value={messageDraft} onChange={event => setMessageDraft(event.target.value)} placeholder={activeThread.kind === "direct" ? "Write a direct member message" : "Add a trade note, shipping update, or negotiation reply"} className="h-12 min-w-0 bg-white text-base" />
                     {activeThread.kind === "trade" ? (
-                      <Button variant="outline" className="h-12 rounded-full bg-transparent" asChild>
+                      <Button variant="outline" className="h-12 w-full rounded-full bg-transparent lg:w-auto" asChild>
                         <Link href={`/listings/${activeThread.proposal.requestedListing?.id ?? 0}`}>
                           <ArrowRightLeft className="mr-2 h-4 w-4" />
                           View listing
                         </Link>
                       </Button>
                     ) : null}
-                    <Button className={`h-12 rounded-full px-6 ${activeThread.kind === "direct" ? "bg-violet-600 text-white shadow-lg shadow-violet-900/20 hover:bg-violet-700" : ""}`} disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
+                    <Button className={`h-12 w-full rounded-full px-6 lg:w-auto ${activeThread.kind === "direct" ? "bg-violet-600 text-white shadow-lg shadow-violet-900/20 hover:bg-violet-700" : ""}`} disabled={!messageDraft.trim() || sendTradeMessageMutation.isPending} onClick={sendActiveMessage}>
                       {sendTradeMessageMutation.isPending && activeThread.kind === "trade" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       {activeThread.kind === "direct" ? "Send Message" : "Send Trade Message"}
                     </Button>
@@ -803,7 +803,7 @@ export default function Messages() {
                 </div>
               </div>
             ) : (
-              <div className="flex h-[70vh] items-center justify-center px-8 text-center">
+              <div className="flex min-h-[26rem] items-center justify-center px-5 text-center sm:h-[70vh] sm:min-h-0 sm:px-8">
                 <div className="max-w-md space-y-4">
                   <MailOpen className="mx-auto h-10 w-10 text-slate-500" />
                   <h2 className="text-3xl font-semibold text-slate-900">Select a message thread.</h2>

@@ -56,25 +56,26 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain('const directDirectionLabel = directDirection === "sent" ? "To:" : "From:"');
     expect(messagesSource).toContain('ml-1 text-base font-semibold');
     expect(messagesSource).toContain('Avatar className="h-7 w-7 border border-slate-200"');
-    expect(messagesSource).toContain('rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
-    expect(messagesSource).toContain('rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('flex flex-col gap-2 rounded-b-[1.15rem] border-t px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('flex flex-col gap-2 rounded-b-[1.15rem] border-t px-3 py-2 text-xs sm:flex-row sm:items-center sm:justify-between sm:gap-3 ${thread.key === activeThreadKey ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
     expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");
   });
 
   it("keeps the desktop Message List shorter and independently scrollable than the communication panel", () => {
     expect(messagesSource).toContain("bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:self-start");
-    expect(messagesSource).toContain("h-[52vh] min-h-[22rem] max-h-[32rem]");
-    expect(messagesSource).toContain("sm:h-[56vh] lg:h-[48vh] lg:max-h-[34rem]");
+    expect(messagesSource).toContain("h-[min(48dvh,26rem)] min-h-[18rem] max-h-[24rem]");
+    expect(messagesSource).toContain("sm:h-[56vh] sm:min-h-[22rem] sm:max-h-[32rem] lg:h-[48vh] lg:max-h-[34rem]");
     expect(messagesSource).not.toContain('ScrollArea className="h-[70vh]');
   });
 
   it("keeps reply composers inside their conversation panel while the message body scrolls", () => {
-    expect(messagesSource).toContain('className="flex h-[70vh] min-h-0 flex-col"');
-    expect(messagesSource).toContain('className="min-h-0 flex-1 px-6 py-5"');
-    expect(messagesSource).toContain('className="shrink-0 border-t border-slate-200 bg-slate-100 px-6 py-5"');
+    expect(messagesSource).toContain('className="flex min-h-[34rem] flex-col sm:h-[70vh] sm:min-h-0"');
+    expect(messagesSource).toContain('className="min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-5"');
+    expect(messagesSource).toContain('className="shrink-0 border-t border-slate-200 bg-slate-100 px-4 py-3 sm:px-6 sm:py-5"');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto_auto]');
-    expect(messagesSource).toContain('className="h-12 min-w-0 bg-white"');
+    expect(messagesSource).toContain('className="h-12 min-w-0 bg-white text-base"');
+    expect(messagesSource).toContain('h-12 w-full rounded-full px-6 lg:w-auto');
   });
 
   it("uses white workspace panels with a matching light-gray reply-composer surface", () => {
