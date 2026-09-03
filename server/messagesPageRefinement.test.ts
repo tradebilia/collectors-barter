@@ -59,6 +59,13 @@ describe("Messages page refinements", () => {
     expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");
   });
 
+  it("keeps the desktop Message List shorter and independently scrollable than the communication panel", () => {
+    expect(messagesSource).toContain("backdrop-blur-sm lg:self-start");
+    expect(messagesSource).toContain("h-[52vh] min-h-[22rem] max-h-[32rem]");
+    expect(messagesSource).toContain("sm:h-[56vh] lg:h-[48vh] lg:max-h-[34rem]");
+    expect(messagesSource).not.toContain('ScrollArea className="h-[70vh]');
+  });
+
   it("formats list and detail timestamps with the viewer's local timezone", () => {
     expect(messagesSource).toContain("formatMessageTimestamp(message.createdAt, viewerTimeZone)");
     expect(timestampSource).toContain("normalized.replace(\" \", \"T\")}Z");

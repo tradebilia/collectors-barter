@@ -429,7 +429,7 @@ export default function Messages() {
             </div>
           </aside>
 
-          <section className="rounded-[2rem] border border-slate-300/70 bg-white/82 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm min-w-0">
+          <section className="min-w-0 rounded-[2rem] border border-slate-300/70 bg-white/82 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:self-start">
             <div className="border-b border-slate-200 px-5 py-4">
               <h2 className="text-2xl font-semibold text-slate-900">Message List</h2>
               {folder === "inquiries" && (
@@ -469,7 +469,7 @@ export default function Messages() {
                 </div>
               )}
             </div>
-            <ScrollArea className="h-[70vh] px-3 py-3">
+            <ScrollArea className="h-[52vh] min-h-[22rem] max-h-[32rem] px-3 py-3 sm:h-[56vh] lg:h-[48vh] lg:max-h-[34rem]">
               {dashboardQuery.isLoading || inquiriesQuery.isLoading ? (
                 <div className="flex min-h-[18rem] items-center justify-center">
                   <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
