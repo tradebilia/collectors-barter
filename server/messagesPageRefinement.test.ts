@@ -56,9 +56,8 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain('const directDirectionLabel = directDirection === "sent" ? "To:" : "From:"');
     expect(messagesSource).toContain('ml-1 text-base font-semibold');
     expect(messagesSource).toContain('Avatar className="h-7 w-7 border border-slate-200"');
-    expect(messagesSource).toContain("border-t pt-2 text-xs");
-    expect(messagesSource).toContain('rounded-md px-2 py-1 ${activeThreadKey === `inquiry-${inquiry.id}` ? "bg-white/10 text-white/90" : "bg-slate-100 text-slate-700"}');
-    expect(messagesSource).toContain('rounded-md px-2 py-1 ${thread.key === activeThreadKey ? "bg-white/10 text-white/90" : "bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('rounded-lg border px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/10 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('rounded-lg border px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/10 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
     expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");
   });
 
@@ -67,6 +66,15 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain("h-[52vh] min-h-[22rem] max-h-[32rem]");
     expect(messagesSource).toContain("sm:h-[56vh] lg:h-[48vh] lg:max-h-[34rem]");
     expect(messagesSource).not.toContain('ScrollArea className="h-[70vh]');
+  });
+
+  it("keeps reply composers inside their conversation panel while the message body scrolls", () => {
+    expect(messagesSource).toContain('className="flex h-[70vh] min-h-0 flex-col"');
+    expect(messagesSource).toContain('className="min-h-0 flex-1 px-6 py-5"');
+    expect(messagesSource).toContain('className="shrink-0 border-t border-slate-200 px-6 py-5"');
+    expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
+    expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto_auto]');
+    expect(messagesSource).toContain('className="h-12 min-w-0 bg-white"');
   });
 
   it("opens inquiry Item # details in an accessible inbox-preserving popup", () => {
