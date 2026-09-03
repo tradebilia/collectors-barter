@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { getLoginUrl } from "@/const";
@@ -12,7 +13,8 @@ import { matchesDirectMessageDirectionFilter, type DirectMessageDirectionFilter 
 import { loadPresenceMap, subscribeToPresence, updatePresence } from "@/lib/memberMessaging";
 import { shouldRefreshUnreadAlertAfterOpeningDirectThread } from "@/lib/unreadAlertRefresh";
 import { trpc } from "@/lib/trpc";
-import { TRADEBILIA_LOGO_URL, tradebiliaCategories } from "@/lib/tradebilia";
+import { TRADEBILIA_LOGO_URL, formatItemValue, tradebiliaCategories } from "@/lib/tradebilia";
+import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { formatMessageTimestamp } from "@/lib/messageTimestamps";
 import { ArrowRightLeft, Loader2, MailOpen, MessageSquareText, Send, ShieldCheck } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
@@ -48,6 +50,7 @@ export default function Messages() {
   const [directDirectionFilter, setDirectDirectionFilter] = useState<DirectMessageDirectionFilter>("all");
   const [deletedQueryToken, setDeletedQueryToken] = useState(() => Date.now());
   const [activeThreadKey, setActiveThreadKey] = useState<string | null>(null);
+  const [previewListingId, setPreviewListingId] = useState<number | null>(null);
   const [messageDraft, setMessageDraft] = useState("");
   const [directThreads, setDirectThreads] = useState<any[]>([]);
   const [archivedDirectThreads, setArchivedDirectThreads] = useState<any[]>([]);
@@ -74,6 +77,11 @@ export default function Messages() {
     staleTime: 5 * 60 * 1000,
   });
   const viewerTimeZone = viewerTimeZoneQuery.data?.timeZone ?? null;
+  const listingPreviewQuery = trpc.market.listingDetail.useQuery(
+    { listingId: previewListingId ?? 0 },
+    { enabled: isAuthenticated && typeof previewListingId === "number" && previewListingId > 0 },
+  );
+  const previewListing = listingPreviewQuery.data?.listing;
 
   useEffect(() => {
     if (!shouldRefreshUnreadAlertAfterOpeningDirectThread(activeDbThreadId, Boolean(dbMessagesQuery.data))) return;
@@ -501,7 +509,16 @@ export default function Messages() {
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
                             <Badge className="rounded-full border border-amber-200 bg-amber-100 text-[10px] uppercase tracking-[0.12em] text-amber-900 hover:bg-amber-200">Item Inquiry</Badge>
-                            <Link href={`/listings/${inquiry.listingId}`} target="_blank" rel="noopener noreferrer" className={`text-[10px] font-medium uppercase tracking-[0.12em] underline underline-offset-2 hover:no-underline ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/70" : "text-slate-500"}`}>Item #{inquiry.listingId}</Link>
+                            <button
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setPreviewListingId(inquiry.listingId);
+                              }}
+                              className={`text-[10px] font-medium uppercase tracking-[0.12em] underline underline-offset-2 hover:no-underline ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white/70" : "text-slate-500"}`}
+                            >
+                              Item #{inquiry.listingId}
+                            </button>
                           </div>
                         </div>
                         <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
@@ -797,6 +814,55 @@ export default function Messages() {
           </section>
         </div>
       </main>
+      <Dialog open={previewListingId !== null} onOpenChange={(open) => !open && setPreviewListingId(null)}>
+        <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto p-0 sm:rounded-[1.75rem]">
+          <DialogHeader className="border-b border-slate-200 px-6 py-5 text-left">
+            <DialogTitle className="font-serif text-2xl text-slate-950">{previewListing?.title ?? "Item details"}</DialogTitle>
+            <DialogDescription>Review this item without leaving your Messages inbox.</DialogDescription>
+          </DialogHeader>
+          {listingPreviewQuery.isLoading ? (
+            <div className="flex min-h-64 items-center justify-center p-8" aria-label="Loading item details">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-500" />
+            </div>
+          ) : listingPreviewQuery.error ? (
+            <div className="p-6 text-sm text-slate-600">This item could not be loaded. It may no longer be available.</div>
+          ) : previewListing ? (
+            <div className="grid gap-6 p-6 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              <img
+                src={resolveTradebiliaListingImage({
+                  title: previewListing.title,
+                  category: previewListing.category,
+                  primaryPhotoUrl: previewListing.photos?.[0]?.imageUrl ?? previewListing.primaryPhotoUrl,
+                })}
+                alt={previewListing.title}
+                className="aspect-square w-full rounded-2xl border border-slate-200 bg-slate-50 object-contain"
+              />
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline">Item #{previewListing.id}</Badge>
+                  <Badge variant="outline" className="capitalize">{previewListing.category?.replace(/_/g, " ")}</Badge>
+                </div>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Listed value</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{formatItemValue(previewListing.estimatedValue)}</p>
+                </div>
+                {(previewListing.grade || previewListing.condition) && (
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">Condition / grade</p>
+                    <p className="mt-1 text-sm font-medium text-slate-800">{previewListing.grade || previewListing.condition}</p>
+                  </div>
+                )}
+                {previewListing.description && <p className="text-sm leading-6 text-slate-700">{previewListing.description}</p>}
+                <Button asChild className="mt-2 w-full bg-violet-600 text-white hover:bg-violet-700">
+                  <Link href={`/listings/${previewListing.id}`}>Open full item page</Link>
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 text-sm text-slate-600">Select an Item # to preview its details.</div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

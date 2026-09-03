@@ -1258,9 +1258,9 @@
 - [x] Render Message List direction labels as regular text and the following display name as bold, moderately larger text that remains secondary to the subject.
 - [x] Add regression coverage and verify the Message List direction/display-name typography hierarchy. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
 
-- [ ] Open the relevant item details in an accessible in-page popup when a member selects an Item # from an Item Inquiry row, retaining the inbox behind it.
-- [ ] Reuse existing listing data/UI where practical and provide close, keyboard, loading, error, and mobile-safe popup behavior.
-- [ ] Add regression coverage and verify the Message List item-details popup across supported viewports.
+- [x] Open the relevant item details in an accessible in-page popup when a member selects an Item # from an Item Inquiry row, retaining the inbox behind it.
+- [x] Reuse existing listing data/UI where practical and provide close, keyboard, loading, error, and mobile-safe popup behavior.
+- [x] Add regression coverage and verify the Message List item-details popup across supported viewports. Focused Messages tests passed 8/8, TypeScript, production build, and whitespace validation passed.
 
 - [x] Shorten the desktop Message List panel so it is visually distinct from and does not match the communication section height.
 - [x] Keep the Message List independently scrollable and responsive while preserving the larger conversation area and mobile natural-flow layout.

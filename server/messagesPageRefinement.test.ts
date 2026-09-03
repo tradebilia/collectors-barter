@@ -66,6 +66,17 @@ describe("Messages page refinements", () => {
     expect(messagesSource).not.toContain('ScrollArea className="h-[70vh]');
   });
 
+  it("opens inquiry Item # details in an accessible inbox-preserving popup", () => {
+    expect(messagesSource).toContain('const [previewListingId, setPreviewListingId] = useState<number | null>(null)');
+    expect(messagesSource).toContain('trpc.market.listingDetail.useQuery');
+    expect(messagesSource).toContain('event.stopPropagation();');
+    expect(messagesSource).toContain('setPreviewListingId(inquiry.listingId)');
+    expect(messagesSource).toContain('<Dialog open={previewListingId !== null}');
+    expect(messagesSource).toContain('max-h-[90dvh] max-w-2xl overflow-y-auto');
+    expect(messagesSource).toContain('Review this item without leaving your Messages inbox.');
+    expect(messagesSource).toContain('Open full item page');
+  });
+
   it("formats list and detail timestamps with the viewer's local timezone", () => {
     expect(messagesSource).toContain("formatMessageTimestamp(message.createdAt, viewerTimeZone)");
     expect(timestampSource).toContain("normalized.replace(\" \", \"T\")}Z");
