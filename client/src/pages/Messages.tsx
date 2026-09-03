@@ -508,7 +508,7 @@ export default function Messages() {
                             <p className="truncate text-sm font-normal"><span>{inquiryDirectionLabel}</span><span className="ml-1 text-base font-semibold">{inquiryCounterpartName}</span></p>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1">
-                            <Badge className="rounded-full border border-cyan-800 bg-cyan-950 px-2.5 text-[10px] uppercase tracking-[0.12em] text-cyan-50 hover:bg-cyan-900">Item Inquiry</Badge>
+                            <Badge className="rounded-full border border-orange-500 bg-orange-700 px-2.5 text-[10px] uppercase tracking-[0.12em] text-white hover:bg-orange-800">Item Inquiry</Badge>
                             <button
                               type="button"
                               onClick={(event) => {

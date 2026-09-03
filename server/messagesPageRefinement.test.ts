@@ -33,8 +33,9 @@ describe("Messages page refinements", () => {
   });
 
   it("uses distinct type, direction, unseen, and send-action colors", () => {
-    expect(messagesSource).toContain("border-cyan-800 bg-cyan-950");
+    expect(messagesSource).toContain("border-orange-500 bg-orange-700");
     expect(messagesSource).toContain("border-indigo-800 bg-indigo-950");
+    expect(messagesSource).not.toContain("border-cyan-800 bg-cyan-950");
     expect(messagesSource).toContain('inquiryDirection === "received" && !inquiry.isRead');
     expect(messagesSource).toContain("border-yellow-400 bg-yellow-300 text-yellow-950");
     expect(messagesSource).toContain("border-blue-700 bg-blue-700 text-white hover:bg-blue-800");

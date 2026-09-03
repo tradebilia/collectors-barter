@@ -1294,3 +1294,5 @@
 - [ ] Confirm the official account destination URLs before enabling external social-media links.
 - [x] Add focused regression coverage and validate homepage social-link layout at desktop and mobile widths. Homepage and Messages focused tests passed, as did TypeScript, production build, and whitespace validation. Desktop and phone-size checks confirmed the social row is visible, contained, and readable.
 - [x] Render Facebook, Instagram, and X as explicitly non-linking homepage icon placeholders until Rich supplies the official destination URLs.
+- [x] Increase the Item Inquiry badge contrast so it is visibly distinct from the Direct Message badge on both light and dark message rows.
+- [x] Add regression coverage and validate the corrected Item Inquiry badge treatment without changing message behavior. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
