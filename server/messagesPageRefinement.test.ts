@@ -56,8 +56,8 @@ describe("Messages page refinements", () => {
     expect(messagesSource).toContain('const directDirectionLabel = directDirection === "sent" ? "To:" : "From:"');
     expect(messagesSource).toContain('ml-1 text-base font-semibold');
     expect(messagesSource).toContain('Avatar className="h-7 w-7 border border-slate-200"');
-    expect(messagesSource).toContain('rounded-lg border px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/10 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
-    expect(messagesSource).toContain('rounded-lg border px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/10 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
+    expect(messagesSource).toContain('rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}');
     expect(messagesSource).not.toContain("Ref <Link href={`/listings/${inquiry.listingId}`}");
   });
 

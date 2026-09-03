@@ -522,7 +522,7 @@ export default function Messages() {
                           </div>
                         </div>
                         <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${activeThreadKey === `inquiry-${inquiry.id}` ? "text-white" : "text-slate-900"}`}>{inquiry.subject}</p>
-                        <div className={`mt-3 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/10 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
+                        <div className={`-mx-3 -mb-2.5 mt-3 flex items-center justify-between gap-3 rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${activeThreadKey === `inquiry-${inquiry.id}` ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
                           <span className="min-w-0 flex-1 truncate">{(inquiry as any).latestMessage || (inquiry as any).message || "Open inquiry to view message"}</span>
                           <div className="flex shrink-0 items-center gap-2">
                             <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(inquiry.createdAt, viewerTimeZone)}</span>
@@ -567,7 +567,7 @@ export default function Messages() {
                         {thread.kind === "direct" ? <Badge className="shrink-0 rounded-full border border-indigo-800 bg-indigo-950 px-2.5 text-[10px] uppercase tracking-[0.12em] text-indigo-50 hover:bg-indigo-900">Direct Message</Badge> : <Badge variant={thread.key === activeThreadKey ? "secondary" : "outline"} className="shrink-0 rounded-full capitalize">{thread.proposal.status}</Badge>}
                       </div>
                       {thread.kind === "direct" && <p className={`mt-2 truncate font-serif text-2xl font-bold leading-tight ${thread.key === activeThreadKey ? "text-white" : "text-slate-900"}`}>{thread.subject || "Direct message"}</p>}
-                      <div className={`mt-3 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/10 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
+                      <div className={`-mx-3 -mb-2.5 mt-3 flex items-center justify-between gap-3 rounded-b-[1.15rem] border-t px-3 py-2 text-xs ${thread.key === activeThreadKey ? "border-white/15 bg-white/10 text-white/80" : "border-slate-200 bg-slate-100 text-slate-700"}`}>
                         <span className="min-w-0 flex-1 truncate">{thread.summary}</span>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="text-[10px] uppercase tracking-[0.12em]">{formatMessageTimestamp(thread.updatedAt, viewerTimeZone)}</span>

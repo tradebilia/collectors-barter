@@ -1271,6 +1271,10 @@
 - [x] Apply a unified light-gray preview/footer surface across each Message List row, with readable timestamp and status content, matching the approved reference treatment.
 - [x] Add regression coverage and verify composer containment and preview-footer surfaces at responsive widths. Focused Messages tests passed 9/9, TypeScript, production build, and whitespace validation passed.
 
+- [x] Replace rounded message-preview bubbles with a simple horizontal divider beneath the subject and a full-width gray lower section for preview, timestamp, and status.
+- [x] Apply the approved divider-and-gray-footer treatment consistently to Item Inquiry and Direct Message rows while preserving the selected-row contrast.
+- [x] Add regression coverage and verify the revised Message List footer treatment at responsive widths. Focused Messages tests passed 9/9, TypeScript, production build, and whitespace validation passed.
+
 - [x] Shorten the desktop Message List panel so it is visually distinct from and does not match the communication section height.
 - [x] Keep the Message List independently scrollable and responsive while preserving the larger conversation area and mobile natural-flow layout.
 - [x] Add regression coverage and verify the updated Message List versus communication-section proportions. Focused Messages tests passed 7/7, TypeScript, production build, and whitespace validation passed.
