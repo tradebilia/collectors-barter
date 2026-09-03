@@ -62,7 +62,7 @@ describe("Messages page refinements", () => {
   });
 
   it("keeps the desktop Message List shorter and independently scrollable than the communication panel", () => {
-    expect(messagesSource).toContain("backdrop-blur-sm lg:self-start");
+    expect(messagesSource).toContain("bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:self-start");
     expect(messagesSource).toContain("h-[52vh] min-h-[22rem] max-h-[32rem]");
     expect(messagesSource).toContain("sm:h-[56vh] lg:h-[48vh] lg:max-h-[34rem]");
     expect(messagesSource).not.toContain('ScrollArea className="h-[70vh]');
@@ -71,10 +71,16 @@ describe("Messages page refinements", () => {
   it("keeps reply composers inside their conversation panel while the message body scrolls", () => {
     expect(messagesSource).toContain('className="flex h-[70vh] min-h-0 flex-col"');
     expect(messagesSource).toContain('className="min-h-0 flex-1 px-6 py-5"');
-    expect(messagesSource).toContain('className="shrink-0 border-t border-slate-200 px-6 py-5"');
+    expect(messagesSource).toContain('className="shrink-0 border-t border-slate-200 bg-slate-100 px-6 py-5"');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto_auto]');
     expect(messagesSource).toContain('className="h-12 min-w-0 bg-white"');
+  });
+
+  it("uses white workspace panels with a matching light-gray reply-composer surface", () => {
+    expect(messagesSource).toContain('bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:sticky');
+    expect(messagesSource).toContain('bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:self-start');
+    expect(messagesSource).toContain('rounded-[2rem] border border-slate-300/70 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]');
   });
 
   it("opens inquiry Item # details in an accessible inbox-preserving popup", () => {

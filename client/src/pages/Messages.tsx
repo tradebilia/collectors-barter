@@ -407,7 +407,7 @@ export default function Messages() {
 
       <main className="py-8 lg:py-10 px-4">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr_1.2fr]">
-          <aside className="h-fit rounded-[2rem] border border-slate-300/70 bg-white/82 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:sticky lg:top-8">
+          <aside className="h-fit rounded-[2rem] border border-slate-300/70 bg-white p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:sticky lg:top-8">
             <h2 className="text-xl font-semibold text-slate-900">Inbox Folders</h2>
             <div className="mt-5 space-y-2">
               {folders.map(item => {
@@ -437,7 +437,7 @@ export default function Messages() {
             </div>
           </aside>
 
-          <section className="min-w-0 rounded-[2rem] border border-slate-300/70 bg-white/82 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm lg:self-start">
+          <section className="min-w-0 rounded-[2rem] border border-slate-300/70 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)] lg:self-start">
             <div className="border-b border-slate-200 px-5 py-4">
               <h2 className="text-2xl font-semibold text-slate-900">Message List</h2>
               {folder === "inquiries" && (
@@ -584,7 +584,7 @@ export default function Messages() {
             </ScrollArea>
           </section>
 
-          <section className="rounded-[2rem] border border-slate-300/70 bg-white/86 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
+          <section className="rounded-[2rem] border border-slate-300/70 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
             {activeInquiry ? (
               <div className="flex h-[70vh] min-h-0 flex-col">
                 <div className="border-b border-slate-200 px-6 py-5">
@@ -649,7 +649,7 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
-                <div className="shrink-0 border-t border-slate-200 px-6 py-5">
+                <div className="shrink-0 border-t border-slate-200 bg-slate-100 px-6 py-5">
                   {folder === "deleted" ? (
                     <p className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
                       Archived inquiries are retained for your records and are not permanently deleted here.
@@ -778,7 +778,7 @@ export default function Messages() {
                   </div>
                 </ScrollArea>
 
-                <div className="shrink-0 border-t border-slate-200 px-6 py-5">
+                <div className="shrink-0 border-t border-slate-200 bg-slate-100 px-6 py-5">
                   {folder === "deleted" && activeThread.kind === "direct" ? (
                     <p className="rounded-[1.25rem] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
                       Archived conversations remain available to read and are not permanently deleted here.
