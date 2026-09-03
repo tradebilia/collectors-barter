@@ -13,4 +13,18 @@ describe("homepage launch polish", () => {
   it("does not render the Shipping Supplies Coming soon placeholder", () => {
     expect(homepageSource).not.toContain("Shipping Supplies");
   });
+
+  it("shows accessible non-linking Facebook, Instagram, and X placeholders until official destinations are configured", () => {
+    expect(homepageSource).toContain('aria-labelledby="tradebilia-social-heading"');
+    expect(homepageSource).toContain('id="tradebilia-social-heading"');
+    expect(homepageSource).toContain("Follow Tradebilia");
+    expect(homepageSource).toContain("Official social links will be added here soon.");
+    expect(homepageSource).toContain('aria-label="Facebook link coming soon"');
+    expect(homepageSource).toContain('aria-label="Instagram link coming soon"');
+    expect(homepageSource).toContain('aria-label="X link coming soon"');
+    expect(homepageSource).toContain("<Facebook");
+    expect(homepageSource).toContain("<Instagram");
+    expect(homepageSource).toContain("<X");
+    expect(homepageSource).not.toMatch(/(?:facebook|instagram|twitter|x)\.com/i);
+  });
 });

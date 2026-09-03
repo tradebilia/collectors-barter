@@ -1290,3 +1290,7 @@
 - [x] Refine the Message List color system so Direct Message, Item Inquiry, Sent, and Received are visually distinct, professional, and accessible.
 - [x] Use a high-visibility yellow unread treatment in the Message List without changing read state or message behavior.
 - [x] Use the approved blue color for Send Message actions and add focused regression coverage for the revised color contracts. Focused Messages tests passed 10/10, TypeScript, production build, whitespace validation, and an unsigned phone-size route check passed.
+- [x] Add an accessible, responsive social-media area to the main homepage for Tradebilia’s Facebook, Instagram, and X accounts.
+- [ ] Confirm the official account destination URLs before enabling external social-media links.
+- [x] Add focused regression coverage and validate homepage social-link layout at desktop and mobile widths. Homepage and Messages focused tests passed, as did TypeScript, production build, and whitespace validation. Desktop and phone-size checks confirmed the social row is visible, contained, and readable.
+- [x] Render Facebook, Instagram, and X as explicitly non-linking homepage icon placeholders until Rich supplies the official destination URLs.

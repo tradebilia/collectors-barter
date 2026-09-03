@@ -37,7 +37,10 @@ import {
   UserPlus,
   Bookmark,
   MessageCircle,
-  MessagesSquare
+  MessagesSquare,
+  Facebook,
+  Instagram,
+  X
 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -901,6 +904,30 @@ export default function Home() {
                 </div>
               </div>
           </div>
+
+          <section className="border-t border-white/10 bg-[#0b102b] px-4 py-8 text-white sm:py-10" aria-labelledby="tradebilia-social-heading">
+            <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Collector community</p>
+                <h2 id="tradebilia-social-heading" className="mt-2 font-serif text-3xl font-medium sm:text-4xl">Follow Tradebilia</h2>
+                <p className="mt-2 text-sm leading-6 text-white/70">Official social links will be added here soon.</p>
+              </div>
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Tradebilia social media links coming soon">
+                <span className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#1877f2]/60 bg-[#1877f2]/15 px-4 py-2 text-sm font-semibold text-white" role="img" aria-label="Facebook link coming soon" title="Facebook link coming soon">
+                  <Facebook className="h-5 w-5 text-[#63a4ff]" aria-hidden="true" />
+                  Facebook
+                </span>
+                <span className="inline-flex min-h-12 items-center gap-2 rounded-full border border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-rose-500/15 to-amber-400/15 px-4 py-2 text-sm font-semibold text-white" role="img" aria-label="Instagram link coming soon" title="Instagram link coming soon">
+                  <Instagram className="h-5 w-5 text-fuchsia-300" aria-hidden="true" />
+                  Instagram
+                </span>
+                <span className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white" role="img" aria-label="X link coming soon" title="X link coming soon">
+                  <X className="h-5 w-5 text-white" aria-hidden="true" />
+                  X
+                </span>
+              </div>
+            </div>
+          </section>
         </section>
 
         {/* Warning Banner — shown to users who have received admin warnings */}
