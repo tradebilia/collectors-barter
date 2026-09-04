@@ -10,7 +10,7 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 describe("Coming Soon experience", () => {
   it("uses the animated Tradebilia logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} />');
+    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} lockupCenterBiasX={32} />');
     expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-extra-wide-parchment_9f77d258.png');
     expect(pageSource).toContain('COMING_SOON_CATEGORY_COLORS');
     expect(pageSource).toContain('COMICS: "#6f3b9e"');
@@ -18,7 +18,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('const COMING_SOON_WHEEL_COLORS = [');
     expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
     expect(pageSource).toContain('className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8"');
-    expect(pageSource).toContain('className="mx-auto -mx-2 h-24 w-[calc(100%+1rem)] max-w-[calc(100%+1rem)] translate-y-12 overflow-visible px-2 sm:-mx-12 sm:h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:px-4"');
+    expect(pageSource).toContain('className="mx-auto -mx-2 flex aspect-[20/4] min-h-32 w-[calc(100%+1rem)] max-w-[calc(100%+1rem)] translate-y-12 items-center overflow-visible px-2 sm:-mx-12 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
     expect(pageSource).toContain('className="mx-auto mt-6 max-w-md sm:mt-4"');

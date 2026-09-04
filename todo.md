@@ -1391,6 +1391,6 @@
 - [x] Preserve original thin arrows and divider proportions while adding label room through internal lockup geometry rather than visual canvas distortion.
 - [x] Verify exact Comics and Sports Cards animation states against the reference for centered placement, divider balance, and unclipped wheel/label presentation. Live geometry checks show each full lockup within 9px of the SVG center; Sports Cards remains contained with divider clearance on both sides.
 
-- [ ] Align the Coming Soon wheel and divider relative to the fixed TRADEBILIA wordmark rather than centering them independently.
-- [ ] Ensure the complete title lockup remains centered as one unit for every rotating category name, including Sports Cards.
-- [ ] Verify exact BILIA, Comics, and Sports Cards states for wordmark alignment, full-title centering, and unclipped presentation.
+- [x] Align the Coming Soon wheel and divider relative to the fixed TRADEBILIA wordmark rather than centering them independently. The live measured offsets now use the wordmark baseline and a single whole-lockup centering bias.
+- [x] Ensure the complete title lockup remains centered as one unit for every rotating category name, including Sports Cards. The geometry uses each rendered category width and the expanded canvas; a narrow-viewport mode scales the same centered unit for phones.
+- [x] Verify exact BILIA, Comics, and Sports Cards states for wordmark alignment, full-title centering, and unclipped presentation. Focused geometry tests passed 8/8, TypeScript, production build, whitespace validation, and desktop/phone screenshots passed.

@@ -37,6 +37,7 @@ type AnimatedLogoSmall70Props = {
   lockupScale?: number;
   canvasWidthScale?: number;
   contentOffsetX?: number;
+  lockupCenterBiasX?: number;
   categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;
   wheelColors?: WheelColors;
 };
@@ -58,6 +59,7 @@ const AnimatedLogoSmall70 = ({
   lockupScale = 1,
   canvasWidthScale = 1,
   contentOffsetX = 0,
+  lockupCenterBiasX = 0,
   categoryColorOverrides = {},
   wheelColors = DEFAULT_WHEEL_COLORS,
 }: AnimatedLogoSmall70Props) => {
@@ -67,6 +69,15 @@ const AnimatedLogoSmall70 = ({
   const [lockupOffsetX, setLockupOffsetX] = useState(0);
   const [dynamicViewBoxWidth, setDynamicViewBoxWidth] = useState(1300);
   const [wordmarkTextWidth, setWordmarkTextWidth] = useState(fontSize * 3.8);
+  const [isNarrowViewport, setIsNarrowViewport] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateViewport = () => setIsNarrowViewport(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -89,6 +100,8 @@ const AnimatedLogoSmall70 = ({
       ? LARGE_CATEGORY_WORD_X + contentOffsetX
       : 348 + contentOffsetX;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : categoryColorOverrides[currentCategory.name] ?? currentCategory.color;
+  const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 1100 : centeredViewBoxWidth;
+  const activeLockupScale = centerLockup && isNarrowViewport ? 0.52 : lockupScale;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
@@ -113,13 +126,13 @@ const AnimatedLogoSmall70 = ({
     const lockupLeft = Math.min(15, wheelVisualLeft);
     const lockupRight = categoryWordX + categoryWidth;
     const lockupWidth = Math.max(1, lockupRight - lockupLeft);
-    const scaledLockupWidth = lockupWidth * lockupScale;
-    const nextViewBoxWidth = centeredViewBoxWidth;
-    const nextOffset = (nextViewBoxWidth - scaledLockupWidth) / 2 - lockupLeft * lockupScale;
+    const scaledLockupWidth = lockupWidth * activeLockupScale;
+    const nextViewBoxWidth = activeCenteredViewBoxWidth;
+    const nextOffset = (nextViewBoxWidth - scaledLockupWidth) / 2 - lockupLeft * activeLockupScale;
 
     setDynamicViewBoxWidth(nextViewBoxWidth);
     setLockupOffsetX(nextOffset);
-  }, [categoryWordX, centerLockup, centeredViewBoxWidth, currentCategory.name, fontSize, lockupScale, wheelVisualLeft, wordmarkTextWidth]);
+  }, [activeCenteredViewBoxWidth, activeLockupScale, categoryWordX, centerLockup, currentCategory.name, fontSize, wheelVisualLeft, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -140,7 +153,7 @@ const AnimatedLogoSmall70 = ({
           </filter>
         </defs>
 
-        <g transform={`translate(${lockupOffsetX}, ${108 * (1 - lockupScale)}) scale(${lockupScale})`}>
+        <g transform={`translate(${lockupOffsetX + lockupCenterBiasX}, ${108 * (1 - activeLockupScale)}) scale(${activeLockupScale})`}>
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />

@@ -5,11 +5,11 @@ const source = readFileSync(new URL("../client/src/pages/ComingSoon.tsx", import
 
 describe("Coming Soon logo containment", () => {
   it("expands the SVG lockup frame for the enlarged wheel and long category labels", () => {
-    expect(source).toContain('<div className="mx-auto -mx-2 h-24 w-[calc(100%+1rem)] max-w-[calc(100%+1rem)] translate-y-12 overflow-visible px-2 sm:-mx-12 sm:h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:px-4">');
-    expect(source).toContain("wheelOffsetX={-65}");
+    expect(source).toContain('<div className="mx-auto -mx-2 flex aspect-[20/4] min-h-32 w-[calc(100%+1rem)] max-w-[calc(100%+1rem)] translate-y-12 items-center overflow-visible px-2 sm:-mx-12 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:px-4">');
+    expect(source).toContain("wheelOffsetX={-65} wheelOffsetY={-65}");
     expect(source).toContain("wheelStrokeWidth={0}");
     expect(source).toContain("dividerScale={1.55}");
-    expect(source).toContain("centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56}");
+    expect(source).toContain("centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} lockupCenterBiasX={32}");
     expect(source).toContain("<AnimatedLogoSmall70");
   });
 

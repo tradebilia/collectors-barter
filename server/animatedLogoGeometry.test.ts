@@ -17,6 +17,12 @@ describe("animated logo geometry", () => {
     expect(source).toContain("<line x1={dividerX}");
   });
 
+  it("uses a contained narrow-viewport mode for the Coming Soon title", () => {
+    expect(source).toContain('window.matchMedia("(max-width: 639px)")');
+    expect(source).toContain("const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 1100 : centeredViewBoxWidth;");
+    expect(source).toContain("const activeLockupScale = centerLockup && isNarrowViewport ? 0.52 : lockupScale;");
+  });
+
   it("centers each full rotating category label rather than reserving empty width after shorter words", () => {
     expect(source).toContain("const lockupRight = categoryWordX + categoryWidth;");
     expect(source).not.toContain("categoryReserveWidth");
