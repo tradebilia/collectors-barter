@@ -1381,3 +1381,8 @@
 - [x] Compare Explore All and category-page mobile image frames to identify the source of visual image cutoff.
 - [x] Match category-page phone image frames to Explore All’s fully contained, uncropped image behavior without changing desktop sizing.
 - [x] Add focused regression coverage and before/after phone plus desktop visual validation for category image containment. Sports Cards and Comics cards were verified at 375px and 1280px with the direct `object-contain` image pattern used by Explore All.
+
+- [x] Compare the current Coming Soon animated lockup against the supplied reference without reopening the attached image.
+- [x] Expand the animated lockup’s visual bounds so the full wheel and all rotating category labels remain visible, especially Sports Cards.
+- [x] Center the divider relative to the complete animated lockup and restore the original thin arrow geometry.
+- [x] Add focused regression coverage and visually verify all rotation states at phone and desktop widths. Exact live Sports Cards measurement confirms both the category label and wheel are contained in the 4800-unit SVG canvas, with divider clearance on both sides; final 1280px and 375px captures remain contained.
