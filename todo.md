@@ -1390,3 +1390,7 @@
 - [x] Replace the rejected canvas-only Coming Soon lockup adjustment with a single visually centered wheel–divider–wordmark geometry that matches Rich’s supplied reference.
 - [x] Preserve original thin arrows and divider proportions while adding label room through internal lockup geometry rather than visual canvas distortion.
 - [x] Verify exact Comics and Sports Cards animation states against the reference for centered placement, divider balance, and unclipped wheel/label presentation. Live geometry checks show each full lockup within 9px of the SVG center; Sports Cards remains contained with divider clearance on both sides.
+
+- [ ] Align the Coming Soon wheel and divider relative to the fixed TRADEBILIA wordmark rather than centering them independently.
+- [ ] Ensure the complete title lockup remains centered as one unit for every rotating category name, including Sports Cards.
+- [ ] Verify exact BILIA, Comics, and Sports Cards states for wordmark alignment, full-title centering, and unclipped presentation.
