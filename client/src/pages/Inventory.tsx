@@ -642,7 +642,7 @@ Clear Filters
               </div>
             )}
             <div className="px-4 py-2 lg:px-8 border-b border-slate-200 -mx-4 mb-2">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <div className="flex gap-4">
                   <div className="bg-blue-50 rounded-lg p-6 border border-blue-200 min-w-48">
                     <p className="text-xs font-semibold text-blue-600 uppercase">Total Items</p>
@@ -653,13 +653,13 @@ Clear Filters
                     <p className="text-2xl font-bold text-green-900 mt-1">{formatWholeDollar(filteredListings.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0))}</p>
                   </div>
                 </div>
-                <div className="flex w-full flex-wrap items-center justify-center gap-3 lg:relative">
-                  <Button className="min-h-14 w-full rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-4 text-lg font-bold text-white shadow-xl shadow-blue-900/30 ring-1 ring-blue-300/40 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:w-auto" onClick={() => (window.location.href = "/inventory/new")}>
+                <div className="flex min-w-0 flex-1 flex-wrap items-center justify-center gap-3 lg:relative lg:flex-nowrap">
+                  <Button className="min-h-14 w-full rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-4 text-lg font-bold text-white shadow-xl shadow-blue-900/30 ring-1 ring-blue-300/40 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:w-auto lg:mx-auto" onClick={() => (window.location.href = "/inventory/new")}>
                     <Plus className="mr-2 h-5 w-5" />
                     Add Item to Inventory
                   </Button>
 
-                  <div className="flex w-full flex-wrap items-center justify-center gap-3 lg:absolute lg:right-0 lg:w-auto">
+                  <div className="flex w-full flex-wrap items-center justify-center gap-3 lg:absolute lg:right-0 lg:top-1/2 lg:w-auto lg:-translate-y-1/2 lg:flex-nowrap">
                     <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
                     {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                       Delete Selected ({selectedIds.size})

@@ -1319,3 +1319,5 @@
 - [x] Remove the Selected count control from the My Inventory action area.
 - [x] Center Add Item to Inventory within the action area and increase its label size further while preserving phone usability.
 - [x] Update focused regression coverage and validate the revised centered action area and unchanged navigation behavior. Focused regression, TypeScript, production build, and whitespace validation passed. Desktop and phone-size captures completed without route-level errors; both unauthenticated captures reached the public homepage instead of the signed-in inventory workspace, so signed-in visual confirmation remains pending.
+- [x] Keep Add Item to Inventory and all bulk actions on one horizontal desktop row without introducing an additional action row.
+- [x] Preserve a non-overlapping phone layout and update focused regression coverage for the single-row desktop action area. Focused regression, TypeScript, production build, and whitespace validation passed.
