@@ -1333,3 +1333,7 @@
 - [x] Confirm the corrected sports-card animated state in the development browser and preserve all non-logo Coming Soon content. Browser reached `TRADE SPORTS CARDS`; the label and containing SVG remained contained, with the wheel visibly left of the divider.
 - [x] Correct the Coming Soon animated lockup geometry so the rotating wheel is fully visible and remains left of the divider, including during SPORTS CARDS.
 - [x] Preserve the enlarged logo and all non-logo Coming Soon content, then add focused regression and desktop/phone checks for the unclipped wheel and divider clearance. Focused geometry and containment tests, TypeScript, production build, whitespace validation, and desktop/phone BILIA-state checks passed. The user-visible SPORTS CARDS animation state remains open for Rich’s confirmation.
+
+- [x] Design the admin Social Content Manager information architecture and operating workflow before implementation.
+- [x] Compare direct platform publishing, approval-only content management, and third-party scheduler approaches with their privacy, cost, and setup tradeoffs.
+- [ ] Obtain Rich’s approval on the recommended social-content tab scope and platform-integration phase before writing code.
