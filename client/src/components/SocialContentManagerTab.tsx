@@ -11,6 +11,7 @@ import {
   Link2,
   Linkedin,
   Plus,
+  Youtube,
   Save,
   Send,
   ShieldCheck,
@@ -45,6 +46,7 @@ const platformStyles: Record<SocialPlatform, string> = {
   Instagram: "border-pink-200 bg-pink-50 text-pink-700",
   X: "border-slate-300 bg-slate-50 text-slate-800",
   LinkedIn: "border-sky-200 bg-sky-50 text-sky-700",
+  YouTube: "border-red-200 bg-red-50 text-red-700",
 };
 
 const statusStyles: Record<DraftStatus, string> = {
@@ -73,6 +75,7 @@ function makeDraft(title = "Untitled social post"): SocialDraft {
 function platformIcon(platform: SocialPlatform) {
   if (platform === "Instagram") return <Instagram className="h-3.5 w-3.5" />;
   if (platform === "LinkedIn") return <Linkedin className="h-3.5 w-3.5" />;
+  if (platform === "YouTube") return <Youtube className="h-3.5 w-3.5" />;
   if (platform === "X") return <X className="h-3.5 w-3.5" />;
   return <span className="text-[11px] font-bold">f</span>;
 }

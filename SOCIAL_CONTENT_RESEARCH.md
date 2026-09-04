@@ -38,3 +38,11 @@ Store provider access tokens only in secure server-side secrets or encrypted int
 ## Note
 
 This is a planning record. No external account was connected, no post was created, and no secret was requested or displayed.
+
+## YouTube extension
+
+The official YouTube Data API documentation describes OAuth-authorized video uploads through `videos.insert`, including title, description, tags, category, privacy status, and scheduled publish metadata. It requires a Google API project with the YouTube Data API enabled and OAuth 2.0 credentials. The current reference documents a 256GB maximum upload size, video MIME types, and quota controls; it also warns that uploads from unverified API projects created after July 28, 2020 are restricted to private viewing until the API project passes an audit. Because this feature is planning-only, the Social Content Manager will expose YouTube as a target platform and will not request YouTube credentials or perform uploads.
+
+- [5] Google for Developers, YouTube Data API Upload a Video: https://developers.google.com/youtube/v3/guides/uploading_a_video
+- [6] Google for Developers, YouTube Data API Videos: insert: https://developers.google.com/youtube/v3/docs/videos/insert
+- [7] Google for Developers, YouTube Data API Overview: https://developers.google.com/youtube/v3/getting-started

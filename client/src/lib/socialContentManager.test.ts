@@ -5,6 +5,7 @@ import {
   filterSocialDrafts,
   requestSocialReview,
   toggleSocialPlatform,
+  SOCIAL_PLATFORMS,
 } from "@/lib/socialContentManager";
 
 describe("social content manager draft workflow", () => {
@@ -14,11 +15,15 @@ describe("social content manager draft workflow", () => {
     expect(draft).not.toHaveProperty("accessToken");
   });
 
+  it("includes YouTube as a selectable platform", () => {
+    expect(SOCIAL_PLATFORMS).toContain("YouTube");
+  });
+
   it("toggles additional platforms without mutating the original draft", () => {
     const draft = createSocialDraft("draft-2", "2026-09-04T12:00:00.000Z");
-    const updated = toggleSocialPlatform(draft, "Instagram", "2026-09-04T12:01:00.000Z");
+    const updated = toggleSocialPlatform(draft, "YouTube", "2026-09-04T12:01:00.000Z");
     expect(draft.platforms).toEqual(["Facebook"]);
-    expect(updated.platforms).toEqual(["Facebook", "Instagram"]);
+    expect(updated.platforms).toEqual(["Facebook", "YouTube"]);
     expect(updated.updatedAt).toBe("2026-09-04T12:01:00.000Z");
   });
 

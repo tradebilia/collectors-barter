@@ -1,4 +1,4 @@
-export type SocialPlatform = "Facebook" | "Instagram" | "X" | "LinkedIn";
+export type SocialPlatform = "Facebook" | "Instagram" | "X" | "LinkedIn" | "YouTube";
 export type DraftStatus = "Draft" | "Needs Review" | "Approved" | "Scheduled" | "Published";
 
 export type SocialDraft = {
@@ -12,7 +12,7 @@ export type SocialDraft = {
   updatedAt: string;
 };
 
-export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "LinkedIn"];
+export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "LinkedIn", "YouTube"];
 export const SOCIAL_DRAFT_STATUSES: DraftStatus[] = ["Draft", "Needs Review", "Approved", "Scheduled", "Published"];
 
 export function createSocialDraft(id: string, now = new Date().toISOString()): SocialDraft {

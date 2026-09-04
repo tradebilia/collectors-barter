@@ -1343,3 +1343,6 @@
 - [x] Implement an approval-first Social Content Manager workspace without external social-account connections or automatic publishing.
 - [x] Add draft, media-reference, platform-target, status, planned-date, preview, approval, and history interactions without migrations or destructive data scripts. Draft planning is intentionally browser-local in phase 1; no external account tokens, posts, migrations, or destructive scripts were used.
 - [x] Add focused Vitest coverage for the new admin tab; responsive signed-in visual validation remains a manual follow-up because the available preview session is unauthenticated.
+
+- [x] Add YouTube as a planned platform in the approval-first Social Content Manager without account connection or automatic publishing.
+- [x] Add YouTube platform styling and regression coverage while preserving existing platform behavior. The focused Social Content Manager suite passed 5 tests; TypeScript and production build passed.
