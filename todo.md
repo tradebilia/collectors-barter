@@ -1305,3 +1305,5 @@
 - [ ] Verify the signed-in My Inventory workspace on desktop and phone: hero/category-bar alignment, equal title edge spacing, prominent Add Item action, and aligned visibility filter labels/switches.
 - [x] Apply Rich’s selected inline Add Item hierarchy: keep it in the current action row, enlarge it modestly, and visibly separate it from bulk actions.
 - [x] Add focused regression coverage and validate the revised Add Item emphasis without changing inventory actions. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Remove the redundant “Show only items listed for trade” toggle and its duplicate status-filter state, retaining the Status dropdown as the sole listing-status filter.
+- [x] Preserve Show Drafts as a separate inventory-state control and add focused regression coverage for the simplified filter panel. Focused regression, TypeScript, production build, and whitespace validation passed.

@@ -62,7 +62,6 @@ export default function Inventory() {
   const [keyword, setKeyword] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("date_added");
-  const [tradeOnly, setTradeOnly] = useState(false);
   const [graderCompany, setGraderCompany] = useState("all");
   const [gradeRange, setGradeRange] = useState("all");
   const [condition, setCondition] = useState("all");
@@ -307,7 +306,6 @@ export default function Inventory() {
         listing.title.toLowerCase().includes(normalizedKeyword) ||
         listing.description.toLowerCase().includes(normalizedKeyword);
       const matchesCategory = category === "all" || listing.category === category;
-      const matchesTradeOnly = !tradeOnly || listing.status === "active";
       const matchesGrader = graderCompany === "all" || listing.description.toLowerCase().includes(graderCompany.toLowerCase());
       const matchesGradeRange = gradeRange === "all" || listing.description.toLowerCase().includes(gradeRange.toLowerCase());
       const matchesCondition = condition === "all" || listing.condition === condition;
@@ -341,7 +339,7 @@ export default function Inventory() {
         }
       }
 
-      return matchesKeyword && matchesCategory && matchesTradeOnly && matchesGrader && matchesGradeRange && matchesCondition && matchesStatus && matchesMinValue && matchesMaxValue && matchesDateRange;
+      return matchesKeyword && matchesCategory && matchesGrader && matchesGradeRange && matchesCondition && matchesStatus && matchesMinValue && matchesMaxValue && matchesDateRange;
     });
 
     return [...filtered].sort((a, b) => {
@@ -355,7 +353,7 @@ export default function Inventory() {
       if (sortBy === "condition") return a.condition.localeCompare(b.condition);
       return b.id - a.id;
     });
-  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, tradeOnly, showDrafts, getDraftsQuery.data]);
+  }, [category, condition, dateRange, gradeRange, graderCompany, keyword, listings, maxValue, minValue, sortBy, status, showDrafts, getDraftsQuery.data]);
 
   const exportInventory = () => {
     const payload = filteredListings.map((listing: any) => ({
@@ -582,13 +580,6 @@ export default function Inventory() {
 
                 <div className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
                   <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left">
-                    <p className="text-xs font-medium leading-5 text-slate-800">Show only items listed for trade</p>
-                    <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
-                  </div>
-                </div>
-
-                <div className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
-                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left">
                     <p className="text-xs font-medium leading-5 text-slate-800">Show draft and unsaved items</p>
                     <Switch checked={showDrafts} onCheckedChange={setShowDrafts} />
                   </div>
@@ -606,7 +597,6 @@ export default function Inventory() {
                     setMaxValue('');
                     setStatus('all');
                     setDateRange('all');
-                    setTradeOnly(false);
                   }}
                   className="w-full bg-slate-300 text-slate-900 hover:bg-slate-400 text-xs h-8 font-medium"
                 >

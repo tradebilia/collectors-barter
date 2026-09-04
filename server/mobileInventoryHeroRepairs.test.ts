@@ -36,10 +36,12 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).toContain('className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4"');
     expect(source).toContain('className="h-auto w-full object-contain"');
     expect(source).toContain('</section>\n\n      <CategoryBar />');
-    expect(source).toContain('Show only items listed for trade');
     expect(source).toContain('Show draft and unsaved items');
     expect(source).toContain('grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left');
     expect(source).toContain('min-h-12 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-3.5 text-base');
     expect(source).toContain('focus-visible:ring-offset-2 lg:mr-3');
+    expect(source).not.toContain('Show only items listed for trade');
+    expect(source).not.toContain('const [tradeOnly, setTradeOnly]');
+    expect(source).toContain('status === "all" || (status === "listed" ? listing.isActive : !listing.isActive)');
   });
 });
