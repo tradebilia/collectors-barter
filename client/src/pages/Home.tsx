@@ -40,6 +40,7 @@ import {
   MessagesSquare,
   Facebook,
   Instagram,
+  Youtube,
   X
 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
@@ -925,6 +926,10 @@ export default function Home() {
                   <X className="h-5 w-5 text-white" aria-hidden="true" />
                   X
                 </a>
+                <span className="inline-flex min-h-12 cursor-not-allowed items-center gap-2 rounded-full border border-red-300/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-white/80" aria-label="Tradebilia YouTube channel link coming soon" title="Official YouTube channel link coming soon">
+                  <Youtube className="h-5 w-5 text-red-300" aria-hidden="true" />
+                  YouTube <span className="text-xs font-normal text-white/50">(coming soon)</span>
+                </span>
               </div>
             </div>
           </section>

@@ -1346,3 +1346,7 @@
 
 - [x] Add YouTube as a planned platform in the approval-first Social Content Manager without account connection or automatic publishing.
 - [x] Add YouTube platform styling and regression coverage while preserving existing platform behavior. The focused Social Content Manager suite passed 5 tests; TypeScript and production build passed.
+
+- [x] Add the YouTube icon to the homepage social-media section while preserving existing social links and responsive layout.
+- [x] Confirm the YouTube homepage destination behavior without inventing an official Tradebilia URL or exposing private information. Since Rich has not supplied the channel URL, the icon is a non-clickable “coming soon” placeholder.
+- [x] Add focused regression coverage and desktop/mobile validation for the homepage YouTube social icon. The focused homepage/social-content tests, TypeScript, production build, and 1280px/390px screenshots passed.
