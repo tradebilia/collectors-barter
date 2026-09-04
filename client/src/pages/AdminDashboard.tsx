@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Archive, BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
+import { Archive, BarChart3, BookOpen, Users, Package, Settings, Trash2, Flag, Mail, Search, ArrowUpDown, Calendar, ExternalLink, CheckCircle, XCircle, AlertTriangle, Ban, ShieldOff, ClipboardList, MessageSquare, TicketCheck, Send, Share2, ChevronDown, ChevronUp, Store, CloudUpload } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +23,7 @@ import { R2MediaMigrationTab } from "@/components/R2MediaMigrationTab";
 import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
 import { AdminOperationsTab } from "@/components/AdminOperationsTab";
 import { AccountClosureRequestsTab } from "@/components/AccountClosureRequestsTab";
+import { SocialContentManagerTab } from "@/components/SocialContentManagerTab";
 import { Link, useLocation } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -872,6 +873,10 @@ export default function AdminDashboard() {
               <Send className="h-4 w-4" />
               Pre-Launch Email
             </TabsTrigger>
+            <TabsTrigger value="social-content" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <Share2 className="h-4 w-4" />
+              Social Content
+            </TabsTrigger>
             <TabsTrigger value="media-storage" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <CloudUpload className="h-4 w-4" />
               Media Storage
@@ -1591,6 +1596,9 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="pre-launch-email" className="space-y-4 mt-6">
             <PreLaunchEmailTab />
+          </TabsContent>
+          <TabsContent value="social-content" className="space-y-4 mt-6">
+            <SocialContentManagerTab />
           </TabsContent>
           <TabsContent value="media-storage" className="space-y-4 mt-6">
             <R2StorageHealthTab />

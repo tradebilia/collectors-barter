@@ -1336,4 +1336,10 @@
 
 - [x] Design the admin Social Content Manager information architecture and operating workflow before implementation.
 - [x] Compare direct platform publishing, approval-only content management, and third-party scheduler approaches with their privacy, cost, and setup tradeoffs.
-- [ ] Obtain Rich’s approval on the recommended social-content tab scope and platform-integration phase before writing code.
+- [x] Obtain Rich’s approval on the recommended social-content tab scope and platform-integration phase before writing code.
+
+- [x] Obtain Rich’s approval on the recommended social-content tab scope and platform-integration phase before writing code.
+- [x] Inspect the existing Admin page tabs, access controls, and reusable UI components for the Social Content Manager.
+- [x] Implement an approval-first Social Content Manager workspace without external social-account connections or automatic publishing.
+- [x] Add draft, media-reference, platform-target, status, planned-date, preview, approval, and history interactions without migrations or destructive data scripts. Draft planning is intentionally browser-local in phase 1; no external account tokens, posts, migrations, or destructive scripts were used.
+- [x] Add focused Vitest coverage for the new admin tab; responsive signed-in visual validation remains a manual follow-up because the available preview session is unauthenticated.
