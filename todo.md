@@ -1309,3 +1309,5 @@
 - [x] Preserve Show Drafts as a separate inventory-state control and add focused regression coverage for the simplified filter panel. Focused regression, TypeScript, production build, and whitespace validation passed.
 - [x] Change the My Inventory primary-action label to “+ Add Item to Inventory” while preserving its current size, placement, spacing, and behavior.
 - [x] Update the focused inventory regression and validate the revised primary-action label. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Remove the redundant text plus symbol so the My Inventory action shows one icon followed by “Add Item to Inventory”.
+- [x] Update the focused regression and validate the corrected single-plus primary action. Focused regression, TypeScript, production build, and whitespace validation passed.
