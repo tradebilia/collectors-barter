@@ -54,7 +54,7 @@ export default function ComingSoon() {
       <section className="relative flex min-h-screen items-center justify-center px-5 py-8 sm:px-10 sm:py-16">
         <div className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8">
           <div className="mx-auto -mx-2 h-24 w-[calc(100%+1rem)] max-w-[calc(100%+1rem)] translate-y-12 overflow-visible px-2 sm:-mx-8 sm:h-32 sm:w-[calc(100%+4rem)] sm:max-w-[50rem] sm:translate-y-20 sm:px-4">
-            <AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-40} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3200} lockupScale={1.24} canvasWidthScale={1} />
+            <AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3200} lockupScale={1.24} canvasWidthScale={1} contentOffsetX={56} />
           </div>
 
           <div className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6">

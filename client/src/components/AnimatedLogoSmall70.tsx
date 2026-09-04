@@ -36,6 +36,7 @@ type AnimatedLogoSmall70Props = {
   centeredViewBoxWidth?: number;
   lockupScale?: number;
   canvasWidthScale?: number;
+  contentOffsetX?: number;
   categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;
   wheelColors?: WheelColors;
 };
@@ -56,6 +57,7 @@ const AnimatedLogoSmall70 = ({
   centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,
   lockupScale = 1,
   canvasWidthScale = 1,
+  contentOffsetX = 0,
   categoryColorOverrides = {},
   wheelColors = DEFAULT_WHEEL_COLORS,
 }: AnimatedLogoSmall70Props) => {
@@ -77,17 +79,21 @@ const AnimatedLogoSmall70 = ({
   const currentCategory = categories[index];
   const isLargeWordmark = fontSize >= LARGE_WORDMARK_FONT_SIZE;
   const categoryGap = currentCategory.name === "BILIA" ? fontSize * 0.04 : fontSize * 0.22;
+  const wordmarkX = 132 + contentOffsetX;
+  const dividerX = 114 + contentOffsetX;
   const categoryWordX = centerLockup
-    ? Math.ceil(132 + wordmarkTextWidth + categoryGap)
+    ? Math.ceil(wordmarkX + wordmarkTextWidth + categoryGap)
     : fixedCategoryMetrics
-      ? GLOBAL_SEARCH_CATEGORY_WORD_X
-    : isLargeWordmark
-      ? LARGE_CATEGORY_WORD_X
-      : 348;
+      ? GLOBAL_SEARCH_CATEGORY_WORD_X + contentOffsetX
+      : isLargeWordmark
+      ? LARGE_CATEGORY_WORD_X + contentOffsetX
+      : 348 + contentOffsetX;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : categoryColorOverrides[currentCategory.name] ?? currentCategory.color;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
+  const wheelOrbitRadius = 82 * wheelScale;
+  const wheelVisualLeft = 6 + wheelOffsetX + 0.441 * (104 - wheelOrbitRadius);
   const dividerCenterY = 129.9 + dividerOffsetY;
   const dividerHalfHeight = 48.6 * dividerScale;
 
@@ -104,7 +110,7 @@ const AnimatedLogoSmall70 = ({
     }
 
     const categoryWidth = categoryTextRef.current?.getComputedTextLength() ?? 0;
-    const lockupLeft = 15;
+    const lockupLeft = Math.min(15, wheelVisualLeft);
     const lockupRight = categoryWordX + categoryWidth;
     const lockupWidth = Math.max(1, lockupRight - lockupLeft);
     const scaledLockupWidth = lockupWidth * lockupScale;
@@ -113,7 +119,7 @@ const AnimatedLogoSmall70 = ({
 
     setDynamicViewBoxWidth(nextViewBoxWidth);
     setLockupOffsetX(nextOffset);
-  }, [categoryWordX, centerLockup, centeredViewBoxWidth, currentCategory.name, fontSize, lockupScale, wordmarkTextWidth]);
+  }, [categoryWordX, centerLockup, centeredViewBoxWidth, currentCategory.name, fontSize, lockupScale, wheelVisualLeft, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
@@ -147,8 +153,8 @@ const AnimatedLogoSmall70 = ({
           </g>
         </g>
 
-        <line x1="114" y1={dividerCenterY - dividerHalfHeight} x2="114" y2={dividerCenterY + dividerHalfHeight} stroke={wordmarkColor} strokeWidth={dividerStrokeWidth * dividerScale} strokeLinecap="round" />
-        <text ref={wordmarkTextRef} x="132" y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
+        <line x1={dividerX} y1={dividerCenterY - dividerHalfHeight} x2={dividerX} y2={dividerCenterY + dividerHalfHeight} stroke={wordmarkColor} strokeWidth={dividerStrokeWidth * dividerScale} strokeLinecap="round" />
+        <text ref={wordmarkTextRef} x={wordmarkX} y="157.5" fontFamily="Montserrat, sans-serif" fontSize={fontSize} fontWeight="600" fill={wordmarkColor}>TRADE</text>
         <text
           x={categoryWordX}
           y="157.5"

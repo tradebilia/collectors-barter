@@ -9,3 +9,7 @@ At phone width, the larger logo remains horizontally contained and centered with
 ## Expanded-frame follow-up
 
 The follow-up desktop and phone captures after the frame expansion show the full TRADEBILIA lockup with the longer SPORTS CARDS state visible; the wheel is no longer clipped by the logo frame. The desktop logo remains centered and the surrounding parchment composition is unchanged. The phone capture keeps the logo horizontally contained and the page controls remain stacked without horizontal overflow. The logo is more prominent, but the phone background naturally makes the dark wordmark lower-contrast than desktop; no non-logo styling was changed.
+
+## Internal geometry correction
+
+The newest desktop and phone captures verify the BILIA animation state after accounting for the scaled wheel orbit in the internal centering bounds and shifting the divider and wordmark together, rather than moving the wheel right. The wheel is fully visible and has clear separation from the divider in the captured state at both widths. The longer SPORTS CARDS state is guarded by the same measured category width and expanded viewBox logic; its final live animation state remains a user-visible confirmation item.
