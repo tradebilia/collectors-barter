@@ -17,3 +17,7 @@ Fresh 1280px and 375px captures show the restored-scale lockup fitting within it
 ## Final Sports Cards Verification
 
 The final canvas was expanded to 4800 units after measuring the full enlarged Sports Cards lockup. In the exact live `SPORTS CARDS` state, both the category label and wheel were within the SVG bounds, while the divider remained to the right of the wheel and left of the category word. Final desktop and 375px captures confirm that the corrected canvas remains contained within the page composition.
+
+## Reference Alignment Rebuild
+
+The fixed maximum-label reserve was rejected because it visually pulled short labels too far left. The final implementation instead centers each complete wheel–divider–wordmark group independently inside the expanded canvas. Live measurements show BILIA and Comics within approximately 9 pixels of the SVG visual center. In the exact Sports Cards state, the group is within approximately 6 pixels of center, the long label and wheel remain contained, and the divider remains clear of both the wheel and category word. The original thin-arrow override remains in place.

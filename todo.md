@@ -1386,3 +1386,7 @@
 - [x] Expand the animated lockup’s visual bounds so the full wheel and all rotating category labels remain visible, especially Sports Cards.
 - [x] Center the divider relative to the complete animated lockup and restore the original thin arrow geometry.
 - [x] Add focused regression coverage and visually verify all rotation states at phone and desktop widths. Exact live Sports Cards measurement confirms both the category label and wheel are contained in the 4800-unit SVG canvas, with divider clearance on both sides; final 1280px and 375px captures remain contained.
+
+- [x] Replace the rejected canvas-only Coming Soon lockup adjustment with a single visually centered wheel–divider–wordmark geometry that matches Rich’s supplied reference.
+- [x] Preserve original thin arrows and divider proportions while adding label room through internal lockup geometry rather than visual canvas distortion.
+- [x] Verify exact Comics and Sports Cards animation states against the reference for centered placement, divider balance, and unclipped wheel/label presentation. Live geometry checks show each full lockup within 9px of the SVG center; Sports Cards remains contained with divider clearance on both sides.

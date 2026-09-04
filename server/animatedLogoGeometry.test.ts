@@ -16,4 +16,9 @@ describe("animated logo geometry", () => {
     expect(source).toContain("const dividerX = 114 + contentOffsetX;");
     expect(source).toContain("<line x1={dividerX}");
   });
+
+  it("centers each full rotating category label rather than reserving empty width after shorter words", () => {
+    expect(source).toContain("const lockupRight = categoryWordX + categoryWidth;");
+    expect(source).not.toContain("categoryReserveWidth");
+  });
 });
