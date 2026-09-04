@@ -39,8 +39,9 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).toContain('Show draft and unsaved items');
     expect(source).toContain('grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left');
     expect(source).toContain('min-h-14 w-full rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-4 text-lg');
-    expect(source).toContain('flex min-w-0 flex-1 flex-wrap items-center justify-center gap-3 lg:relative lg:flex-nowrap');
-    expect(source).toContain('flex w-full flex-wrap items-center justify-center gap-3 lg:absolute lg:right-0 lg:top-1/2 lg:w-auto lg:-translate-y-1/2 lg:flex-nowrap');
+    expect(source).toContain('relative flex flex-wrap items-center gap-4 lg:min-h-[72px]');
+    expect(source).toContain('flex w-full flex-wrap items-center justify-center gap-3 lg:absolute lg:inset-0 lg:z-0 lg:pointer-events-none');
+    expect(source).toContain('flex w-full flex-wrap items-center justify-center gap-3 lg:relative lg:z-10 lg:ml-auto lg:w-auto lg:flex-nowrap');
     expect(source).not.toContain('Selected: {selectedIds.size}');
     expect(source).toContain('sm:w-auto');
     expect(source).toContain('text-base font-bold leading-snug text-slate-900 line-clamp-2');
