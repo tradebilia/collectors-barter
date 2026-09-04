@@ -7,6 +7,7 @@ import {
   Clock3,
   Copy,
   DollarSign,
+  Eye,
   FileText,
   Image as ImageIcon,
   Instagram,
@@ -28,6 +29,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,6 +128,10 @@ function readFileAsBase64(file: File) {
   });
 }
 
+function isVideoMediaUrl(url: string) {
+  return /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(url);
+}
+
 function platformIcon(platform: SocialPlatform) {
   if (platform === "Instagram") return <Instagram className="h-3.5 w-3.5" />;
   if (platform === "LinkedIn") return <Linkedin className="h-3.5 w-3.5" />;
@@ -139,6 +145,8 @@ export function SocialContentManagerTab() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"All" | DraftStatus>("All");
   const [autoListEnabled, setAutoListEnabled] = useState<boolean | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
@@ -171,6 +179,9 @@ export function SocialContentManagerTab() {
   }, [autoListEnabled, hydrated]);
 
   const selectedDraft = drafts.find((draft) => draft.id === selectedId) ?? null;
+  const selectedPreviewPlatform = selectedDraft?.platforms.includes(previewPlatform as SocialPlatform)
+    ? previewPlatform
+    : selectedDraft?.platforms[0] ?? null;
   const filteredDrafts = useMemo(() => filterSocialDrafts(drafts, statusFilter), [drafts, statusFilter]);
   const counts = useMemo(() => ({
     total: drafts.length,
@@ -262,6 +273,16 @@ export function SocialContentManagerTab() {
     if (!selectedDraft) return;
     const next = toggleSocialPlatform(selectedDraft, platform);
     updateDraft({ platforms: next.platforms });
+  }
+
+  function openPreview() {
+    if (!selectedDraft) return;
+    if (selectedDraft.platforms.length === 0) {
+      toast.error("Select at least one target platform before opening a preview.");
+      return;
+    }
+    setPreviewPlatform(selectedDraft.platforms[0]);
+    setIsPreviewOpen(true);
   }
 
   async function uploadOriginalMedia(file: File) {
@@ -407,8 +428,34 @@ export function SocialContentManagerTab() {
               <div className="space-y-2"><p className="text-sm font-semibold text-slate-700">Target platforms</p><div className="grid gap-2 sm:grid-cols-2">{platforms.map((platform) => <button key={platform} type="button" onClick={() => togglePlatform(platform)} className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${selectedDraft.platforms.includes(platform) ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className="flex items-center gap-2">{platformIcon(platform)}{platform}</span>{selectedDraft.platforms.includes(platform) ? <CheckCircle2 className="h-4 w-4" /> : <span className="h-4 w-4 rounded-full border border-current" />}</button>)}</div></div>
               <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 text-sm font-semibold text-slate-700"><p>Original media</p><div className="mt-1.5 flex flex-wrap items-center gap-2"><label className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-100 ${uploadSocialMedia.isPending ? "cursor-wait opacity-70" : ""}`}><Upload className="h-4 w-4" />{uploadSocialMedia.isPending ? "Uploading…" : "Upload image or video"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" className="sr-only" disabled={uploadSocialMedia.isPending} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadOriginalMedia(file); event.currentTarget.value = ""; }} /></label>{selectedDraft.mediaUrl ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />Media attached</span> : null}</div><div className="relative mt-2"><ImageIcon className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input value={selectedDraft.mediaUrl} onChange={(event) => updateDraft({ mediaUrl: event.target.value })} placeholder="Optional existing image or video URL" className="pl-9" /></div><span className="block text-xs font-normal text-slate-500">JPG, PNG, WEBP, GIF, MP4, WEBM, or MOV up to 6 MB. Uploads attach to this browser-local draft.</span></div><label className="space-y-2 text-sm font-semibold text-slate-700">Planned date<input type="date" value={selectedDraft.plannedDate} onChange={(event) => updateDraft({ plannedDate: event.target.value, status: event.target.value ? "Scheduled" : selectedDraft.status })} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /><span className="block text-xs font-normal text-slate-500">Planning only; no automated post will be sent.</span></label></div>
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4"><div className="flex items-start gap-3"><Link2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" /><div><p className="text-sm font-bold text-indigo-950">Manual publishing safeguard</p><p className="mt-1 text-xs leading-5 text-indigo-900/80">Approved means the copy is ready for a person to publish on the selected sites. It does not connect an account, send a post, or grant an external platform permission.</p></div></div></div>
-              <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs text-slate-500">Last edited {formatUpdatedAt(selectedDraft.updatedAt)}</span><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => updateDraft({ status: "Draft" })}><Save className="mr-2 h-4 w-4" />Save Draft</Button>{selectedDraft.status === "Needs Review" ? <Button onClick={approveDraft} className="bg-emerald-600 text-white hover:bg-emerald-700"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button> : <Button onClick={requestReview} className="bg-indigo-600 text-white hover:bg-indigo-700"><Send className="mr-2 h-4 w-4" />Request Review</Button>}</div></div>
+              <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs text-slate-500">Last edited {formatUpdatedAt(selectedDraft.updatedAt)}</span><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={openPreview}><Eye className="mr-2 h-4 w-4" />Preview Post</Button><Button variant="outline" onClick={() => updateDraft({ status: "Draft" })}><Save className="mr-2 h-4 w-4" />Save Draft</Button>{selectedDraft.status === "Needs Review" ? <Button onClick={approveDraft} className="bg-emerald-600 text-white hover:bg-emerald-700"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button> : <Button onClick={requestReview} className="bg-indigo-600 text-white hover:bg-indigo-700"><Send className="mr-2 h-4 w-4" />Request Review</Button>}</div></div>
             </CardContent>
+            <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+              <DialogContent className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
+                <DialogHeader className="border-b border-slate-100 px-5 pt-5 sm:px-6 sm:pt-6">
+                  <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-indigo-600" />Post Preview</DialogTitle>
+                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 px-5 sm:px-6">
+                  <div className="flex flex-wrap gap-2" aria-label="Preview platform">
+                    {selectedDraft.platforms.map((platform) => <button key={platform} type="button" onClick={() => setPreviewPlatform(platform)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selectedPreviewPlatform === platform ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className={selectedPreviewPlatform === platform ? "" : "opacity-70"}>{platformIcon(platform)}</span>{platform}</button>)}
+                  </div>
+                  <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-label={`${selectedPreviewPlatform ?? "Social"} post preview`}>
+                    <div className={`flex items-center justify-between border-b px-4 py-3 ${selectedPreviewPlatform ? platformStyles[selectedPreviewPlatform] : "border-slate-200 bg-slate-50 text-slate-700"}`}>
+                      <div className="flex items-center gap-2 text-sm font-bold"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-slate-900">{selectedPreviewPlatform ? platformIcon(selectedPreviewPlatform) : <Megaphone className="h-3.5 w-3.5" />}</span>Tradebilia</div>
+                      <Badge className={`border bg-white/80 text-[10px] ${sourceStyles[selectedDraft.source]}`}>{selectedDraft.source}</Badge>
+                    </div>
+                    <div className="space-y-3 p-4">
+                      <div><h4 className="text-base font-bold text-slate-950">{selectedDraft.title || "Untitled social post"}</h4><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{selectedDraft.copy || "Your post copy will appear here."}</p></div>
+                      {selectedDraft.mediaUrl ? isVideoMediaUrl(selectedDraft.mediaUrl) ? <video className="max-h-80 w-full rounded-xl border border-slate-100 bg-slate-950" controls preload="metadata"><source src={selectedDraft.mediaUrl} /></video> : <img src={selectedDraft.mediaUrl} alt="Draft post media preview" className="max-h-80 w-full rounded-xl border border-slate-100 object-cover" /> : <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 text-center"><ImageIcon className="mb-2 h-8 w-8 text-slate-300" /><p className="text-sm font-semibold text-slate-600">No media attached</p><p className="mt-1 text-xs leading-5 text-slate-500">Upload an original image or video, or add an existing media URL, to include it in this preview.</p></div>}
+                      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500"><span>{selectedPreviewPlatform ?? "Social"} planning preview</span><span aria-hidden="true">•</span><span>{selectedDraft.status}</span>{selectedDraft.plannedDate ? <><span aria-hidden="true">•</span><span>Planned {selectedDraft.plannedDate}</span></> : null}</div>
+                    </div>
+                  </article>
+                  <p className="text-xs leading-5 text-slate-500">Platform layouts can vary after manual publishing. Review this draft, then use the existing approval workflow before posting outside Tradebilia.</p>
+                </div>
+                <DialogFooter className="border-t border-slate-100 px-5 pb-5 sm:px-6 sm:pb-6"><Button variant="outline" onClick={() => setIsPreviewOpen(false)}>Close Preview</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>}
         </Card>
       </div>

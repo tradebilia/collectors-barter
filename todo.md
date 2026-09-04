@@ -1369,3 +1369,7 @@
 - [x] Persist and validate the Auto-list toggle state alongside the Social Content Manager’s existing browser-local planning preferences.
 - [x] Add administrator-only original image/video upload to Social Content drafts through guarded durable storage, constrained to approved types and 6 MB files, without automatic publishing or a schema migration.
 - [ ] Confirm the Social Content Manager while signed in as an administrator at desktop and phone widths, including original-media upload, Auto-list off/on behavior, and draft creation from a promotion opportunity.
+
+- [x] Add an internal Preview Post action in Social Content Manager’s Create and Review area without enabling external publishing.
+- [x] Make the preview accurately reflect the selected platform, current caption, attached media, source label, and status with accessible dismissal.
+- [x] Add focused regression coverage for the Create and Review preview workflow. Signed-in desktop and phone visual confirmation remains a manual follow-up.
