@@ -38,10 +38,6 @@ import {
   Bookmark,
   MessageCircle,
   MessagesSquare,
-  Facebook,
-  Instagram,
-  Youtube,
-  X
 } from "lucide-react";
 import { ChangeEvent, FormEvent, useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -915,19 +911,19 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Tradebilia social media links">
                 <a href="https://www.facebook.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#1877f2]/60 bg-[#1877f2]/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1877f2]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#63a4ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Facebook (opens in a new tab)">
-                  <Facebook className="h-5 w-5 text-[#63a4ff]" aria-hidden="true" />
+                  <img src="/manus-storage/facebook_a1c8ae7d.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
                   Facebook
                 </a>
                 <a href="https://www.instagram.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-rose-500/15 to-amber-400/15 px-4 py-2 text-sm font-semibold text-white transition hover:from-fuchsia-500/30 hover:via-rose-500/30 hover:to-amber-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Instagram (opens in a new tab)">
-                  <Instagram className="h-5 w-5 text-fuchsia-300" aria-hidden="true" />
+                  <img src="/manus-storage/instagram_27917c8e.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
                   Instagram
                 </a>
                 <a href="https://x.com/Tradebilia66" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on X (opens in a new tab)">
-                  <X className="h-5 w-5 text-white" aria-hidden="true" />
+                  <img src="/manus-storage/x_bddf13f5.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
                   X
                 </a>
                 <span className="inline-flex min-h-12 cursor-not-allowed items-center gap-2 rounded-full border border-red-300/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-white/80" aria-label="Tradebilia YouTube channel link coming soon" title="Official YouTube channel link coming soon">
-                  <Youtube className="h-5 w-5 text-red-300" aria-hidden="true" />
+                  <img src="/manus-storage/youtube_40b8f30b.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
                   YouTube <span className="text-xs font-normal text-white/50">(coming soon)</span>
                 </span>
               </div>

@@ -1350,3 +1350,7 @@
 - [x] Add the YouTube icon to the homepage social-media section while preserving existing social links and responsive layout.
 - [x] Confirm the YouTube homepage destination behavior without inventing an official Tradebilia URL or exposing private information. Since Rich has not supplied the channel URL, the icon is a non-clickable “coming soon” placeholder.
 - [x] Add focused regression coverage and desktop/mobile validation for the homepage YouTube social icon. The focused homepage/social-content tests, TypeScript, production build, and 1280px/390px screenshots passed.
+
+- [x] Replace homepage social-section generic icons with recognizable official platform logo artwork while preserving current destinations and responsive behavior.
+- [x] Confirm brand-logo assets are durable, accessible, and consistently sized without inventing a YouTube channel destination. Uploaded assets are referenced from durable `/manus-storage/` paths; YouTube remains a non-clickable placeholder until its official channel URL is provided.
+- [x] Add focused regression coverage and desktop/mobile visual validation for the homepage social-logo refinement. Focused homepage tests, TypeScript, production build, and 1280px/390px screenshots passed.
