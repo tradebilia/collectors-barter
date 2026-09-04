@@ -664,7 +664,7 @@ export default function Inventory() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Button className="min-h-11 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/25 ring-1 ring-blue-300/30 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2" onClick={() => (window.location.href = "/inventory/new")}>
+                  <Button className="min-h-12 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-3.5 text-base font-bold text-white shadow-xl shadow-blue-900/30 ring-1 ring-blue-300/40 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 lg:mr-3" onClick={() => (window.location.href = "/inventory/new")}>
                     <Plus className="mr-2 h-5 w-5" />
                     Add Item
                   </Button>

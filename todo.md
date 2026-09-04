@@ -1303,3 +1303,5 @@
 - [x] Align the Show Only Items and Show Draft controls with the other left-side filter controls and normalize their statement typography and color treatment.
 - [x] Add focused regression coverage and validate the My Inventory refinements at desktop and phone widths. Focused regression, TypeScript, production build, and whitespace validation passed. The unauthenticated preview maps `/inventory` to the public homepage, so it cannot prove the signed-in inventory workspace visually.
 - [ ] Verify the signed-in My Inventory workspace on desktop and phone: hero/category-bar alignment, equal title edge spacing, prominent Add Item action, and aligned visibility filter labels/switches.
+- [x] Apply Rich’s selected inline Add Item hierarchy: keep it in the current action row, enlarge it modestly, and visibly separate it from bulk actions.
+- [x] Add focused regression coverage and validate the revised Add Item emphasis without changing inventory actions. Focused regression, TypeScript, production build, and whitespace validation passed.
