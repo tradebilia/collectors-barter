@@ -12,6 +12,8 @@ describe("mobile-only responsive layout contracts", () => {
     expect(source).toContain("md:static");
     expect(source).toContain("grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6");
     expect(source).toContain("aspect-[7/9] sm:aspect-[4/5]");
+    expect(source).toContain('className="h-full w-full object-contain"');
+    expect(source).not.toContain('<div className="h-full">\n                        <img');
     expect(source).toContain("h-7 min-w-0 flex-1 rounded-full");
     expect(source).toContain("md:grid-cols-6");
   });

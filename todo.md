@@ -1377,3 +1377,7 @@
 - [x] Compare Explore All, category-page, and My Inventory item-card markup at mobile width and preserve the existing desktop presentation.
 - [x] Reuse the Explore All mobile item-card layout for every category page and My Inventory while retaining page-specific actions and item behavior.
 - [x] Add focused regression coverage and desktop/mobile visual validation for the unified mobile item-card treatment. Category and Explore All phone cards were verified at 390px; desktop cards were verified at 1280px. The unauthenticated Inventory route remains at the existing sign-in boundary, so signed-in visual confirmation is retained separately.
+
+- [x] Compare Explore All and category-page mobile image frames to identify the source of visual image cutoff.
+- [x] Match category-page phone image frames to Explore All’s fully contained, uncropped image behavior without changing desktop sizing.
+- [x] Add focused regression coverage and before/after phone plus desktop visual validation for category image containment. Sports Cards and Comics cards were verified at 375px and 1280px with the direct `object-contain` image pattern used by Explore All.

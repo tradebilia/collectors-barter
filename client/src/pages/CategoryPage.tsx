@@ -1452,14 +1452,12 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`relative overflow-hidden ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
-                      <div className="h-full">
-                        <img
-                          src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
-                          alt={listing.title}
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
+                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "" : "block"} cursor-pointer transition hover:opacity-90 ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
+                      <img
+                        src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
+                        alt={listing.title}
+                        className="h-full w-full object-contain"
+                      />
                     </Link>
                       <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : "space-y-1 p-1.5 text-[#153746]"}`}>
                       {viewMode === "list" ? (
