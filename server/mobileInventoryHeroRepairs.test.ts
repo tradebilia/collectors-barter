@@ -38,8 +38,13 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).toContain('</section>\n\n      <CategoryBar />');
     expect(source).toContain('Show draft and unsaved items');
     expect(source).toContain('grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left');
-    expect(source).toContain('min-h-12 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-3.5 text-base');
-    expect(source).toContain('focus-visible:ring-offset-2 lg:mr-3');
+    expect(source).toContain('min-h-12 w-full rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-3.5 text-base');
+    expect(source).toContain('sm:w-auto lg:mr-3');
+    expect(source).toContain('aria-live="polite"');
+    expect(source).toContain('Selected: {selectedIds.size}');
+    expect(source).toContain('text-base font-bold leading-snug text-slate-900 line-clamp-2');
+    expect(source).toContain('Clear Filters');
+    expect(source).toContain('focus-visible:ring-offset-2 sm:w-auto lg:mr-3');
     expect(source).toContain('Add Item to Inventory');
     expect(source).not.toContain('+ Add Item to Inventory');
     expect(source).not.toContain('Show only items listed for trade');

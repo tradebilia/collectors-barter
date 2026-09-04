@@ -1311,3 +1311,8 @@
 - [x] Update the focused inventory regression and validate the revised primary-action label. Focused regression, TypeScript, production build, and whitespace validation passed.
 - [x] Remove the redundant text plus symbol so the My Inventory action shows one icon followed by “Add Item to Inventory”.
 - [x] Update the focused regression and validate the corrected single-plus primary action. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Make Add Item to Inventory full-width on phone layouts while preserving its desktop inline placement.
+- [x] Strengthen selected-item count feedback near the bulk actions without changing selection behavior.
+- [x] Increase inventory item-title font size and weight while leaving the remaining item-detail hierarchy unchanged.
+- [x] Rename the existing My Inventory filter-panel Reset button to Clear Filters without changing its behavior.
+- [x] Update focused regression coverage and validate the approved responsive controls, title typography, and Clear Filters label. Focused regression, TypeScript, production build, and whitespace validation passed after correcting the checklist trailing blank line.
