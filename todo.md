@@ -1307,3 +1307,5 @@
 - [x] Add focused regression coverage and validate the revised Add Item emphasis without changing inventory actions. Focused regression, TypeScript, production build, and whitespace validation passed.
 - [x] Remove the redundant “Show only items listed for trade” toggle and its duplicate status-filter state, retaining the Status dropdown as the sole listing-status filter.
 - [x] Preserve Show Drafts as a separate inventory-state control and add focused regression coverage for the simplified filter panel. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Change the My Inventory primary-action label to “+ Add Item to Inventory” while preserving its current size, placement, spacing, and behavior.
+- [x] Update the focused inventory regression and validate the revised primary-action label. Focused regression, TypeScript, production build, and whitespace validation passed.
