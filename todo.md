@@ -1297,3 +1297,9 @@
 - [x] Increase the Item Inquiry badge contrast so it is visibly distinct from the Direct Message badge on both light and dark message rows.
 - [x] Add regression coverage and validate the corrected Item Inquiry badge treatment without changing message behavior. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
 - [x] Configure the homepage social icons with Rich’s supplied official Facebook, Instagram, and X URLs, including secure external-link attributes. The active desktop and phone-size checks showed the links remain visible, contained, and readable.
+- [x] Align the My Inventory category bar vertically with the main homepage category bar while preserving the established hero background and height.
+- [x] Enlarge and precisely center the My Inventory SVG title using equal visible spacing to the page edges.
+- [x] Make the My Inventory Add Item action more prominent without reducing accessibility or responsive usability.
+- [x] Align the Show Only Items and Show Draft controls with the other left-side filter controls and normalize their statement typography and color treatment.
+- [x] Add focused regression coverage and validate the My Inventory refinements at desktop and phone widths. Focused regression, TypeScript, production build, and whitespace validation passed. The unauthenticated preview maps `/inventory` to the public homepage, so it cannot prove the signed-in inventory workspace visually.
+- [ ] Verify the signed-in My Inventory workspace on desktop and phone: hero/category-bar alignment, equal title edge spacing, prominent Add Item action, and aligned visibility filter labels/switches.

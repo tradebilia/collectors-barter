@@ -29,4 +29,16 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).toContain("video_games: { maxHeight: \"550px\"");
     expect(source).toContain("vintage_toys: { maxHeight: \"550px\"");
   });
+
+  it("aligns the My Inventory hero, primary action, and visibility controls with the homepage system", () => {
+    const source = read("client/src/pages/Inventory.tsx");
+    expect(source).toContain('className="container relative flex h-[400px] items-center justify-center py-0"');
+    expect(source).toContain('className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4"');
+    expect(source).toContain('className="h-auto w-full object-contain"');
+    expect(source).toContain('</section>\n\n      <CategoryBar />');
+    expect(source).toContain('Show only items listed for trade');
+    expect(source).toContain('Show draft and unsaved items');
+    expect(source).toContain('grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left');
+    expect(source).toContain('min-h-11 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700');
+  });
 });

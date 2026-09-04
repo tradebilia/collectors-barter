@@ -422,12 +422,12 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-4xl items-center justify-center">
+        <div className="container relative flex h-[400px] items-center justify-center py-0">
+          <div className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4">
             <img
               src="https://assets.tradebilia.com/Myinventory_a9168443.svg"
               alt="My Inventory"
-              className="h-auto w-full"
+              className="h-auto w-full object-contain"
             />
           </div>
         </div>
@@ -580,20 +580,18 @@ export default function Inventory() {
                   </Select>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2">
-                  <div>
-                    <p className="text-xs font-medium text-slate-900">Show Only Items</p>
-                    <p className="text-xs text-slate-600">Listed for Trade</p>
+                <div className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left">
+                    <p className="text-xs font-medium leading-5 text-slate-800">Show only items listed for trade</p>
+                    <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                   </div>
-                  <Switch checked={tradeOnly} onCheckedChange={setTradeOnly} />
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl border border-slate-300 bg-white px-3 py-2">
-                  <div>
-                    <p className="text-xs font-medium text-slate-900">Show Drafts</p>
-                    <p className="text-xs text-slate-600">Unsaved Items</p>
+                <div className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2">
+                  <div className="grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left">
+                    <p className="text-xs font-medium leading-5 text-slate-800">Show draft and unsaved items</p>
+                    <Switch checked={showDrafts} onCheckedChange={setShowDrafts} />
                   </div>
-                  <Switch checked={showDrafts} onCheckedChange={setShowDrafts} />
                 </div>
 
                 <Button
@@ -666,8 +664,8 @@ export default function Inventory() {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={() => (window.location.href = "/inventory/new")}>
-                    <Plus className="mr-2 h-4 w-4" />
+                  <Button className="min-h-11 rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-7 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/25 ring-1 ring-blue-300/30 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2" onClick={() => (window.location.href = "/inventory/new")}>
+                    <Plus className="mr-2 h-5 w-5" />
                     Add Item
                   </Button>
 
