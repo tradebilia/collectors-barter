@@ -1316,3 +1316,6 @@
 - [x] Increase inventory item-title font size and weight while leaving the remaining item-detail hierarchy unchanged.
 - [x] Rename the existing My Inventory filter-panel Reset button to Clear Filters without changing its behavior.
 - [x] Update focused regression coverage and validate the approved responsive controls, title typography, and Clear Filters label. Focused regression, TypeScript, production build, and whitespace validation passed after correcting the checklist trailing blank line.
+- [x] Remove the Selected count control from the My Inventory action area.
+- [x] Center Add Item to Inventory within the action area and increase its label size further while preserving phone usability.
+- [x] Update focused regression coverage and validate the revised centered action area and unchanged navigation behavior. Focused regression, TypeScript, production build, and whitespace validation passed. Desktop and phone-size captures completed without route-level errors; both unauthenticated captures reached the public homepage instead of the signed-in inventory workspace, so signed-in visual confirmation remains pending.

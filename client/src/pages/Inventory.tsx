@@ -653,15 +653,14 @@ Clear Filters
                     <p className="text-2xl font-bold text-green-900 mt-1">{formatWholeDollar(filteredListings.reduce((sum: number, l: any) => sum + (Number(l.estimatedValue) || 0), 0))}</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <Button className="min-h-12 w-full rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-3.5 text-base font-bold text-white shadow-xl shadow-blue-900/30 ring-1 ring-blue-300/40 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:w-auto lg:mr-3" onClick={() => (window.location.href = "/inventory/new")}>
+                <div className="flex w-full flex-wrap items-center justify-center gap-3 lg:relative">
+                  <Button className="min-h-14 w-full rounded-xl bg-gradient-to-r from-blue-700 to-indigo-700 px-8 py-4 text-lg font-bold text-white shadow-xl shadow-blue-900/30 ring-1 ring-blue-300/40 transition hover:from-blue-800 hover:to-indigo-800 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 sm:w-auto" onClick={() => (window.location.href = "/inventory/new")}>
                     <Plus className="mr-2 h-5 w-5" />
                     Add Item to Inventory
                   </Button>
 
-                  <span aria-live="polite" className="inline-flex min-h-10 w-full items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-950 sm:w-auto">Selected: {selectedIds.size}</span>
-
-                  <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
+                  <div className="flex w-full flex-wrap items-center justify-center gap-3 lg:absolute lg:right-0 lg:w-auto">
+                    <Button className="rounded-lg bg-red-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-red-700 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleBulkDelete} disabled={selectedIds.size === 0 || bulkUpdatingStatus}>
                     {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                       Delete Selected ({selectedIds.size})
                     </Button>
@@ -673,11 +672,12 @@ Clear Filters
                     {bulkUpdatingStatus ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <EyeOff className="mr-2 h-4 w-4" />}
                     Not Listed ({selectedIds.size})
                   </Button>
-                  {undoData && (
-                    <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={handleUndo} disabled={restoreMutation.isPending}>
-                      Undo ({Math.ceil((undoData.expiresAt - Date.now()) / 1000)}s)
-                    </Button>
-                  )}
+                    {undoData && (
+                      <Button className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 shadow-sm" onClick={handleUndo} disabled={restoreMutation.isPending}>
+                        Undo ({Math.ceil((undoData.expiresAt - Date.now()) / 1000)}s)
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
