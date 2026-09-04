@@ -118,6 +118,7 @@ import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { isLaunchUpdateRequestAllowed, normalizeLaunchUpdateEmail } from "./launchUpdatesRateLimit";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
+import { storagePut } from "./storage";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
@@ -2548,6 +2549,110 @@ export const appRouter = router({
   }),
 
   admin: router({
+    uploadSocialContentMedia: protectedProcedure
+      .input(z.object({
+        fileName: z.string().min(1).max(160),
+        contentType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "video/webm", "video/quicktime"]),
+        base64Data: z.string().min(1).max(8_500_000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const bytes = Buffer.from(input.base64Data, "base64");
+        if (!bytes.length || bytes.length > 6 * 1024 * 1024) {
+          throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Original media must be 6 MB or smaller." });
+        }
+        const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(-120) || "social-media";
+        const { url } = await storagePut(`social-content/admin-${ctx.user.id}/${Date.now()}-${safeFileName}`, bytes, input.contentType);
+        return { url, fileName: safeFileName, contentType: input.contentType };
+      }),
+    getPromotionOpportunities: protectedProcedure
+      .input(z.object({
+        listingValueMinimum: z.number().min(1).max(10000000).default(1000),
+        recentDays: z.number().int().min(1).max(90).default(30),
+        limit: z.number().int().min(1).max(24).default(12),
+      }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        const listingValueMinimum = input?.listingValueMinimum ?? 1000;
+        const recentDays = input?.recentDays ?? 30;
+        const limit = input?.limit ?? 12;
+        const recentBoundary = new Date(Date.now() - recentDays * 24 * 60 * 60 * 1000);
+
+        const [listingRows, tradeRows] = await Promise.all([
+          db.execute(sql`SELECT
+              l.title,
+              l.category,
+              l.condition,
+              l.grade,
+              l.certificationCompany,
+              l.itemDetails,
+              l.estimatedValue,
+              l.createdAt,
+              (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl
+            FROM listings l
+            WHERE l.status = 'active'
+              AND l.isActive = 1
+              AND l.estimatedValue >= ${listingValueMinimum}
+              AND ${isPublicMemberEligible(sql`l.ownerId`)}
+            ORDER BY l.createdAt DESC
+            LIMIT ${limit * 3}`),
+          db.execute(sql`SELECT
+              tp.completedAt,
+              l.title AS requestedListingTitle,
+              l.category AS requestedListingCategory,
+              l.condition AS requestedListingCondition,
+              l.grade AS requestedListingGrade,
+              l.certificationCompany AS requestedListingCertificationCompany,
+              l.itemDetails AS requestedListingItemDetails,
+              (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl,
+              (SELECT COUNT(*) FROM tradeProposalItems WHERE proposalId = tp.id) + CASE WHEN l.id IS NULL THEN 0 ELSE 1 END AS itemCount,
+              (SELECT COALESCE(SUM(ol.estimatedValue), 0) FROM listings ol JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id WHERE tpi.proposalId = tp.id)
+                + COALESCE(l.estimatedValue, 0) AS itemValue
+            FROM tradeProposals tp
+            LEFT JOIN listings l ON l.id = tp.requestedListingId
+            WHERE tp.status = 'completed'
+              AND tp.completedAt IS NOT NULL
+              AND ${isPublicMemberEligible(sql`tp.requesterId`)}
+              AND ${isPublicMemberEligible(sql`tp.recipientId`)}
+            ORDER BY tp.completedAt DESC
+            LIMIT ${limit * 3}`),
+        ]);
+
+        const highValueListings = ((listingRows[0] as unknown as any[]) || [])
+          .filter((listing) => new Date(listing.createdAt) >= recentBoundary)
+          .slice(0, limit)
+          .map((listing) => ({
+            source: "High-Value Listing" as const,
+            title: listing.title,
+            category: listing.category,
+            condition: listing.condition,
+            grade: listing.grade ?? null,
+            certificationCompany: listing.certificationCompany ?? null,
+            customGradingCompany: getCustomGradingCompany(listing.itemDetails),
+            estimatedValue: Number(listing.estimatedValue ?? 0),
+            createdAt: listing.createdAt,
+            imageUrl: listing.imageUrl ?? null,
+          }));
+
+        const completedTrades = ((tradeRows[0] as unknown as any[]) || [])
+          .filter((trade) => new Date(trade.completedAt) >= recentBoundary)
+          .slice(0, limit)
+          .map((trade) => ({
+            source: "Completed Trade" as const,
+            title: trade.requestedListingTitle || "Collector exchange",
+            category: trade.requestedListingCategory ?? null,
+            condition: trade.requestedListingCondition ?? null,
+            grade: trade.requestedListingGrade ?? null,
+            certificationCompany: trade.requestedListingCertificationCompany ?? null,
+            customGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails),
+            itemCount: Number(trade.itemCount ?? 0),
+            completedAt: trade.completedAt,
+            imageUrl: trade.imageUrl ?? null,
+          }));
+
+        return { highValueListings, completedTrades, listingValueMinimum, recentDays };
+      }),
     // Platform statistics
 	    getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });

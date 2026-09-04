@@ -1,8 +1,11 @@
 export type SocialPlatform = "Facebook" | "Instagram" | "X" | "LinkedIn" | "YouTube";
 export type DraftStatus = "Draft" | "Needs Review" | "Approved" | "Scheduled" | "Published";
+export type SocialDraftSource = "Original" | "High-Value Listing" | "Completed Trade";
 
 export type SocialDraft = {
   id: string;
+  source: SocialDraftSource;
+  sourceSummary: string;
   title: string;
   copy: string;
   platforms: SocialPlatform[];
@@ -16,7 +19,42 @@ export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X",
 export const SOCIAL_DRAFT_STATUSES: DraftStatus[] = ["Draft", "Needs Review", "Approved", "Scheduled", "Published"];
 
 export function createSocialDraft(id: string, now = new Date().toISOString()): SocialDraft {
-  return { id, title: "Untitled social post", copy: "", platforms: ["Facebook"], mediaUrl: "", plannedDate: "", status: "Draft", updatedAt: now };
+  return {
+    id,
+    source: "Original",
+    sourceSummary: "Original Tradebilia-created content",
+    title: "Untitled social post",
+    copy: "",
+    platforms: ["Facebook"],
+    mediaUrl: "",
+    plannedDate: "",
+    status: "Draft",
+    updatedAt: now,
+  };
+}
+
+export type PromotionDraftInput = {
+  source: Exclude<SocialDraftSource, "Original">;
+  sourceSummary: string;
+  title: string;
+  copy: string;
+  mediaUrl?: string | null;
+};
+
+export function createPromotionSocialDraft(
+  id: string,
+  input: PromotionDraftInput,
+  now = new Date().toISOString(),
+): SocialDraft {
+  return {
+    ...createSocialDraft(id, now),
+    source: input.source,
+    sourceSummary: input.sourceSummary,
+    title: input.title,
+    copy: input.copy,
+    mediaUrl: input.mediaUrl ?? "",
+    platforms: ["Facebook", "Instagram", "X"],
+  };
 }
 
 export function filterSocialDrafts(drafts: readonly SocialDraft[], status: "All" | DraftStatus) {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   approveSocialDraft,
+  createPromotionSocialDraft,
   createSocialDraft,
   filterSocialDrafts,
   requestSocialReview,
@@ -13,6 +14,26 @@ describe("social content manager draft workflow", () => {
     const draft = createSocialDraft("draft-1", "2026-09-04T12:00:00.000Z");
     expect(draft).toMatchObject({ id: "draft-1", status: "Draft", platforms: ["Facebook"], copy: "" });
     expect(draft).not.toHaveProperty("accessToken");
+    expect(draft).toMatchObject({ source: "Original", sourceSummary: "Original Tradebilia-created content" });
+  });
+
+  it("creates an editable high-value listing promotion draft without any publishing credentials", () => {
+    const draft = createPromotionSocialDraft("promotion-1", {
+      source: "High-Value Listing",
+      sourceSummary: "New public listing · Sep 4, 2026",
+      title: "New high-value listing: Example Item",
+      copy: "New to Tradebilia: Example Item. Now listed at $1,000.",
+      mediaUrl: "https://images.example/item.jpg",
+    }, "2026-09-04T12:00:00.000Z");
+
+    expect(draft).toMatchObject({
+      source: "High-Value Listing",
+      status: "Draft",
+      platforms: ["Facebook", "Instagram", "X"],
+      mediaUrl: "https://images.example/item.jpg",
+    });
+    expect(draft).not.toHaveProperty("accessToken");
+    expect(draft).not.toHaveProperty("publishAt");
   });
 
   it("includes YouTube as a selectable platform", () => {

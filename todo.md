@@ -1354,3 +1354,18 @@
 - [x] Replace homepage social-section generic icons with recognizable official platform logo artwork while preserving current destinations and responsive behavior.
 - [x] Confirm brand-logo assets are durable, accessible, and consistently sized without inventing a YouTube channel destination. Uploaded assets are referenced from durable `/manus-storage/` paths; YouTube remains a non-clickable placeholder until its official channel URL is provided.
 - [x] Add focused regression coverage and desktop/mobile visual validation for the homepage social-logo refinement. Focused homepage tests, TypeScript, production build, and 1280px/390px screenshots passed.
+
+- [x] Define privacy-safe eligibility for social-promotion opportunities: newly added public listings valued at $1,000 or more and recent completed trades.
+- [x] Reuse only public-safe listing and completed-trade fields for the Admin Social Content Manager’s promotion-opportunity view.
+- [x] Implement admin-reviewed promotion suggestions that create editable drafts but never publish automatically.
+- [x] Add focused coverage for promotion-opportunity eligibility and draft creation. Signed-in responsive visual confirmation remains a manual follow-up.
+
+- [x] Add distinct Social Content Manager entry paths for original content and promotion opportunities while retaining a shared editorial workflow.
+- [x] Surface only public-safe newly active $1,000-plus listings and recent completed trades as admin promotion opportunities.
+- [x] Create editable social drafts from promotion opportunities with visible source labels and no automatic external posting.
+- [x] Add regression coverage for the two-path Social Content Manager layout and promotion-draft safeguards. Signed-in responsive visual confirmation remains a manual follow-up.
+
+- [x] Add an admin-only Auto-list promotion opportunities toggle that controls automatic opportunity discovery without enabling automatic social-media publishing.
+- [x] Persist and validate the Auto-list toggle state alongside the Social Content Manager’s existing browser-local planning preferences.
+- [x] Add administrator-only original image/video upload to Social Content drafts through guarded durable storage, constrained to approved types and 6 MB files, without automatic publishing or a schema migration.
+- [ ] Confirm the Social Content Manager while signed in as an administrator at desktop and phone widths, including original-media upload, Auto-list off/on behavior, and draft creation from a promotion opportunity.
