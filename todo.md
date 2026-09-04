@@ -1323,3 +1323,5 @@
 - [x] Preserve a non-overlapping phone layout and update focused regression coverage for the single-row desktop action area. Focused regression, TypeScript, production build, and whitespace validation passed.
 - [x] Center Add Item to Inventory relative to the full My Inventory action section rather than only the flexible space beside the bulk controls.
 - [x] Keep all desktop actions on one line, preserve safe phone wrapping, and add focused regression coverage for the corrected full-section centering. Focused regression, TypeScript, production build, and whitespace validation passed after correcting the stale centering assertions.
+- [x] Increase the My Inventory item-card display-title font size while retaining bold weight, clean wrapping, and the existing card hierarchy.
+- [x] Update focused regression coverage and validate the larger item-title treatment at desktop and phone widths. Focused regression, TypeScript, production build, and whitespace validation passed.
