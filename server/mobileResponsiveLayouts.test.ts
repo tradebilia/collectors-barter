@@ -6,12 +6,23 @@ const root = resolve(import.meta.dirname, "..");
 const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 
 describe("mobile-only responsive layout contracts", () => {
-  it("keeps Category Page desktop filters while providing a phone drawer and one-column cards", () => {
+  it("keeps Category Page desktop filters while providing a phone drawer and Explore All-style two-column cards", () => {
     const source = read("client/src/pages/CategoryPage.tsx");
     expect(source).toContain("mobileFiltersOpen");
     expect(source).toContain("md:static");
-    expect(source).toContain("grid-cols-1");
+    expect(source).toContain("grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6");
+    expect(source).toContain("aspect-[7/9] sm:aspect-[4/5]");
+    expect(source).toContain("h-7 min-w-0 flex-1 rounded-full");
     expect(source).toContain("md:grid-cols-6");
+  });
+
+  it("uses the same compact two-column card treatment for My Inventory on phone widths while retaining richer desktop controls", () => {
+    const source = read("client/src/pages/Inventory.tsx");
+    expect(source).toContain("grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-6");
+    expect(source).toContain("aspect-[7/9] items-center justify-center");
+    expect(source).toContain("grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem] sm:hidden");
+    expect(source).toContain("hidden space-y-2 text-sm sm:block");
+    expect(source).toContain("Edit");
   });
 
   it("keeps Member Directory desktop sidebar while providing a mobile drawer", () => {

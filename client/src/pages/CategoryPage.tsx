@@ -1437,9 +1437,9 @@ export default function CategoryPage() {
               </div>
             ) : (
               <>
-                <div className={viewMode === "grid" ? "grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-6" : "space-y-3"}>
+                <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "space-y-3"}>
                   {pageListings.map(listing => (
-                    <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : "relative"} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-[2rem]"}`}>
+                    <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : "relative"} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-md shadow-sm sm:rounded-[2rem]"}`}>
                       {listing.ownerId && viewMode === "list" && (
                         <div className="px-3 py-0.5">
                           <OnlineIndicator sellerId={listing.ownerId} />
@@ -1452,7 +1452,7 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`relative overflow-hidden ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[4/5]"} bg-white p-0`}>
+                    <Link href={`/listings/${listing.id}`} className={`relative overflow-hidden ${viewMode === "list" ? "" : "block"} cursor-pointer hover:opacity-90 transition ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
                       <div className="h-full">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
@@ -1501,8 +1501,9 @@ export default function CategoryPage() {
                         </>
                       ) : (
                         <>
-                          <div className="flex items-start justify-between gap-3">
+                          <div className="flex items-start justify-between gap-2 sm:gap-3">
                             <div className="min-w-0 flex-1">
+                              <p className="mb-1 truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600 sm:hidden">{listing.categoryLabel}</p>
                               <Link href={`/listings/${listing.id}`} className="block min-h-[2rem] line-clamp-2 font-semibold leading-tight hover:opacity-75 text-xs">
                                 {listing.title}
                               </Link>
@@ -1520,15 +1521,15 @@ export default function CategoryPage() {
                             </div>
                             <div>
                               <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Value</p>
-                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.estimatedValue ? formatItemValue(listing.estimatedValue) : "—"}</p>
+                              <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight sm:text-[0.55rem] sm:font-semibold">{listing.estimatedValue ? formatItemValue(listing.estimatedValue) : "—"}</p>
                             </div>
                             <div>
                               <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Collector</p>
-                              <p className="mt-1 font-semibold truncate mt-0 text-[0.55rem]">{listing.owner.displayName}</p>
+                              <p className="mt-0 truncate text-[0.65rem] font-semibold sm:text-[0.55rem]">{listing.owner.displayName}</p>
                             </div>
                             <div>
                               <p className="whitespace-nowrap text-[0.5rem] font-semibold uppercase tracking-[0.06em] opacity-80">Trader Rating</p>
-                              <div className="mt-1 flex items-center gap-0.5 font-semibold mt-0 gap-0.5">
+                              <div className="mt-0 flex items-center gap-0.5 font-semibold">
                                 <Star className="fill-current h-2 w-2" />
                                 <span className="truncate text-[0.55rem]">{listing.ownerRating.averageRating.toFixed(1)}</span>
                               </div>
@@ -1542,7 +1543,7 @@ export default function CategoryPage() {
                           )}
                         </>
                       )}
-                      <div className="flex flex-wrap gap-0.5">
+                      <div className={`flex gap-1 ${viewMode === "list" ? "flex-wrap" : ""}`}>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
                           setProposalListingId(open ? listing.id : null);
                           if (!open) setProposalNote("");
@@ -1550,11 +1551,11 @@ export default function CategoryPage() {
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
-                              className="rounded-full bg-transparent px-2 py-0 text-xs h-auto"
+                              className={`${viewMode === "grid" ? "h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10 md:h-auto md:rounded-full md:border-current md:bg-transparent md:px-2 md:py-0 md:text-xs md:font-normal md:normal-case md:tracking-normal" : "h-auto rounded-full bg-transparent px-2 py-0 text-xs"}`}
                               disabled={!isAuthenticated || listing.ownerId === user?.id}
                               title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
                             >
-                              <MessageSquareText className="mr-1 h-2 w-2" /> Trade
+                              <MessageSquareText className={`${viewMode === "grid" ? "mr-1 h-3 w-3 md:h-2 md:w-2" : "mr-1 h-2 w-2"}`} /> Trade
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -1582,7 +1583,7 @@ export default function CategoryPage() {
                         </Dialog>
                         <Button
                           variant="outline"
-                          className="rounded-full bg-transparent px-1 py-0 text-xs h-auto"
+                          className={`${viewMode === "grid" ? "h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50 md:h-auto md:w-auto md:border-current md:bg-transparent md:px-1 md:py-0 md:text-xs" : "h-auto rounded-full bg-transparent px-1 py-0 text-xs"}`}
                           disabled={isAuthenticated && listing.ownerId === user?.id}
                           title={listing.ownerId === user?.id ? "You cannot favorite your own item" : listing.savedToWatchlist ? "Remove from favorites" : "Save to favorites"}
                           onClick={() => {
@@ -1593,7 +1594,7 @@ export default function CategoryPage() {
                             watchlistMutation.mutate({ listingId: listing.id });
                           }}
                         >
-                          <Heart className={`h-5 w-5 ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
+                          <Heart className={`${viewMode === "grid" ? "h-4 w-4 md:h-5 md:w-5" : "h-5 w-5"} ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
                         </Button>
                       </div>
                       </CardContent>

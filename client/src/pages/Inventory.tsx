@@ -695,11 +695,11 @@ Clear Filters
                 </div>
 
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-6">
               {filteredListings.map((listing: any) => (
-                <Card key={listing.id} className="overflow-hidden border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow rounded-lg">
+                <Card key={listing.id} className="overflow-hidden rounded-md border-slate-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:rounded-lg sm:hover:shadow-lg">
                   <CardContent className="p-0">
-                    <div className="flex items-center justify-between px-3 py-2 bg-slate-50 border-b border-slate-100">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-1.5 py-1 sm:px-3 sm:py-2">
                       <input
                         type="checkbox"
                         id={`item-${listing.id}`}
@@ -716,11 +716,11 @@ Clear Filters
                         className="w-4 h-4 cursor-pointer"
                       />
                       {showDrafts ? (
-                        <div className="rounded-full text-xs font-semibold px-3 py-1 bg-yellow-100 text-yellow-700">
+                        <div className="rounded-full bg-yellow-100 px-2 py-0.5 text-[0.6rem] font-semibold text-yellow-700 sm:px-3 sm:py-1 sm:text-xs">
                           <span>Draft</span>
                         </div>
                       ) : listing.status === 'traded' ? (
-                        <div className="rounded-full text-xs font-semibold px-3 py-1 bg-amber-100 text-amber-700 flex items-center gap-1">
+                        <div className="flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[0.6rem] font-semibold text-amber-700 sm:px-3 sm:py-1 sm:text-xs">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                           </svg>
@@ -733,7 +733,7 @@ Clear Filters
                               <button
                                 onClick={(e) => handleToggleListingStatus(listing.id, e)}
                                 disabled={togglingId === listing.id}
-                                className={`rounded-full text-xs font-semibold px-3 py-1 transition-all ${
+                                className={`rounded-full px-2 py-0.5 text-[0.6rem] font-semibold transition-all sm:px-3 sm:py-1 sm:text-xs ${
                                   listing.isActive
                                     ? "bg-green-100 text-green-700 hover:bg-green-200"
                                     : "bg-red-100 text-red-700 hover:bg-red-200"
@@ -757,7 +757,7 @@ Clear Filters
                       )}
                     </div>
                     <Link href={`/listings/${listing.id}`} className="block relative">
-                      <div className="flex aspect-square items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200">
+                      <div className="flex aspect-[7/9] items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 sm:aspect-square">
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
@@ -772,19 +772,26 @@ Clear Filters
                         )}
                       </div>
                     </Link>
-                    <div className="p-4 space-y-3">
+                    <div className="space-y-1 p-1.5 sm:space-y-3 sm:p-4">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
-                          <div className="text-xs text-slate-500 mb-1">Ref ID: <span className="font-semibold text-slate-700">#{listing.id}</span></div>
+                        <div className="min-w-0 flex-1">
+                          <div className="mb-1 hidden text-xs text-slate-500 sm:block">Ref ID: <span className="font-semibold text-slate-700">#{listing.id}</span></div>
+                          <p className="mb-1 truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600 sm:hidden">{listing.categoryLabel}</p>
                           <Link href={`/listings/${listing.id}`} className="block">
-                            <h3 className="text-lg font-bold leading-snug text-slate-900 line-clamp-2 hover:text-blue-600 transition">{listing.title}</h3>
+                            <h3 className="min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight text-slate-900 transition hover:text-blue-600 sm:min-h-0 sm:text-lg sm:font-bold sm:leading-snug">{listing.title}</h3>
                           </Link>
                         </div>
-                        <button type="button" onClick={() => shareListing(listing.id)} className="text-slate-400 hover:text-slate-600 transition flex-shrink-0" title="Share listing">
+                        <button type="button" onClick={() => shareListing(listing.id)} className="hidden flex-shrink-0 text-slate-400 transition hover:text-slate-600 sm:block" title="Share listing">
                           <Share2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <div className="space-y-2 text-sm">
+                      <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem] sm:hidden">
+                        <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{listing.grade && listing.grade !== 'ungraded' ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.grade && listing.grade !== 'ungraded' ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}` : listing.condition.replace(/_/g, ' ').charAt(0).toUpperCase() + listing.condition.replace(/_/g, ' ').slice(1)}</p></div>
+                        <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue !== null && listing.estimatedValue !== undefined ? formatItemValue(listing.estimatedValue) : '—'}</p></div>
+                        <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Category</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.categoryLabel}</p></div>
+                        <div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Listing status</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{showDrafts ? 'Draft' : listing.status === 'traded' ? 'Traded' : listing.isActive ? 'Active' : 'Not listed'}</p></div>
+                      </div>
+                      <div className="hidden space-y-2 text-sm sm:block">
                         <div><span className="text-slate-600"><strong>Category:</strong> {listing.categoryLabel}</span></div>
                         <div><span className="text-slate-600"><strong>Grade:</strong> {listing.grade && listing.grade !== 'ungraded' ? formatGrade(listing.grade) : 'Not graded'}</span></div>
                         {listing.certificationCompany ? (
@@ -794,16 +801,16 @@ Clear Filters
                         )}
                         <div><span className="text-slate-600"><strong>Value:</strong> {listing.estimatedValue !== null && listing.estimatedValue !== undefined ? formatItemValue(listing.estimatedValue) : 'Not specified'}</span></div>
                       </div>
-                      <div className="flex gap-2 mt-3">
+                      <div className="mt-1 flex gap-1 sm:mt-3 sm:gap-2">
                         <Link href={`/inventory/edit/${listing.id}`} className="flex-1">
-                          <Button variant="outline" className="w-full text-slate-700 border-slate-300 hover:bg-slate-50">
-                            <Pencil className="h-4 w-4 mr-2" />
+                          <Button variant="outline" className="h-7 w-full rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10 sm:h-10 sm:rounded-md sm:border-slate-300 sm:text-sm sm:normal-case sm:tracking-normal sm:text-slate-700 sm:hover:bg-slate-50">
+                            <Pencil className="mr-1 h-3 w-3 sm:mr-2 sm:h-4 sm:w-4" />
                             Edit
                           </Button>
                         </Link>
                         <Button
                           variant="outline"
-                          className="px-3 text-red-600 border-red-200 hover:bg-red-50"
+                          className="h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50 sm:h-10 sm:w-auto sm:rounded-md sm:px-3 sm:text-red-600"
                           onClick={() => {
                             setListingToDelete(listing.id);
                             setDeleteDialogOpen(true);

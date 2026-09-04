@@ -1373,3 +1373,7 @@
 - [x] Add an internal Preview Post action in Social Content Manager’s Create and Review area without enabling external publishing.
 - [x] Make the preview accurately reflect the selected platform, current caption, attached media, source label, and status with accessible dismissal.
 - [x] Add focused regression coverage for the Create and Review preview workflow. Signed-in desktop and phone visual confirmation remains a manual follow-up.
+
+- [x] Compare Explore All, category-page, and My Inventory item-card markup at mobile width and preserve the existing desktop presentation.
+- [x] Reuse the Explore All mobile item-card layout for every category page and My Inventory while retaining page-specific actions and item behavior.
+- [x] Add focused regression coverage and desktop/mobile visual validation for the unified mobile item-card treatment. Category and Explore All phone cards were verified at 390px; desktop cards were verified at 1280px. The unauthenticated Inventory route remains at the existing sign-in boundary, so signed-in visual confirmation is retained separately.

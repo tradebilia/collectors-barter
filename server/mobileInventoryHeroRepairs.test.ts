@@ -44,7 +44,7 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).toContain('flex w-full flex-wrap items-center justify-center gap-3 lg:relative lg:z-10 lg:ml-auto lg:w-auto lg:flex-nowrap');
     expect(source).not.toContain('Selected: {selectedIds.size}');
     expect(source).toContain('sm:w-auto');
-    expect(source).toContain('text-lg font-bold leading-snug text-slate-900 line-clamp-2');
+    expect(source).toContain('text-xs font-semibold leading-tight text-slate-900 transition hover:text-blue-600 sm:min-h-0 sm:text-lg sm:font-bold sm:leading-snug');
     expect(source).toContain('Clear Filters');
     expect(source).toContain('Add Item to Inventory');
     expect(source).not.toContain('+ Add Item to Inventory');
