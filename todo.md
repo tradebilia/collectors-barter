@@ -1398,3 +1398,15 @@
 - [x] Measure the actual visible wheel, divider, TRADE word, and rotating category bounds for each Coming Soon state. The live SVG group was sampled across nine rotating names after fonts and layout settled.
 - [x] Center the measured visible title group on one page center without another arbitrary canvas-width nudge. SVG-native `getBBox()` centering now converges the full group to the SVG midpoint.
 - [x] Verify BILIA, COMICS, COINS, and SPORTS CARDS against the same center with no clipping or residual right shift. Live deltas were within 0.51px across sampled states; focused geometry tests, TypeScript, production build, and whitespace checks passed.
+
+- [x] Inventory every dashboard tab and panel shown in the supplied screenshot.
+- [x] Map dashboard functions to existing left-side navigation entries and dedicated routes without changing code.
+- [x] Identify any critical navigation gaps or duplicate actions and document the safe removal boundary.
+
+- [x] Remove the authenticated Home subscriber dashboard tab bar and duplicate dashboard, listings, trade-proposals, watchlist, trade-history, ratings, and profile panels.
+- [x] Preserve the Home left-side navigation and dedicated routes for My Inventory, My Trades, Watchlist, Messages, Account Settings, and public profiles. Route references remain registered in App.tsx.
+- [x] Add focused regression coverage and desktop/mobile validation confirming the Home page no longer renders the duplicate subscriber dashboard section. Focused social/mobile suites passed, TypeScript, production build, whitespace checks passed, and source inspection confirmed dashboard labels are gone while preserved route references remain.
+
+- [x] Remove the authenticated Home subscriber dashboard tab bar and duplicate dashboard, listings, trade-proposals, watchlist, trade-history, ratings, and profile panels.
+- [x] Preserve the Home left-side navigation and dedicated routes for My Inventory, My Trades, Watchlist, Messages, Account Settings, and public profiles. Route references remain registered in App.tsx.
+- [x] Add focused regression coverage and desktop/mobile validation confirming the Home page no longer renders the duplicate subscriber dashboard section. Focused social/mobile suites passed, TypeScript, production build, whitespace checks passed, and source inspection confirmed dashboard labels are gone while preserved route references remain.
