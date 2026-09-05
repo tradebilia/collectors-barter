@@ -1476,6 +1476,10 @@
 - [x] Apply the smallest safe live compatibility repair without modifying existing forum posts.
 - [ ] Add precise regression coverage and verify signed-in topic creation end to end.
 
+- [x] Trace the live legacy forum table moderation update failure and current admin removal path.
+- [x] Implement legacy-compatible admin removal with safe member-facing feedback and preserve expanded-schema moderation behavior.
+- [ ] Add regression coverage and verify the signed-in administrator removal flow.
+
 - [x] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
 - [x] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
 
