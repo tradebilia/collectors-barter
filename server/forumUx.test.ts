@@ -143,7 +143,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("contentEditableToMarkdown");
     expect(topicSource).toContain("renderForumContent");
     expect(topicSource).toContain('Replying to <strong className="text-foreground">');
-    expect(topicSource).toContain("Photos / GIF");
+    expect(topicSource).toContain("Insert image");
     expect(topicSource).toContain('accept="video/mp4"');
     expect(topicSource).toContain("Choose one MP4 video up to 10 MB.");
     expect(topicSource).toContain('media.mimeType === "video/mp4"');

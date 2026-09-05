@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { MessageSquarePlus, Search, SlidersHorizontal, X } from "lucide-react";
+import { ImagePlus, MessageSquarePlus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -358,7 +358,7 @@ function NewTopicModal({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Enter topic title..."
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full rounded-md border bg-white px-3 py-2"
                 maxLength={255}
               />
             </div>
@@ -370,13 +370,13 @@ function NewTopicModal({
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 placeholder="Enter your message..."
-                className="w-full px-3 py-2 border rounded-md h-32"
+                className="h-32 w-full rounded-md border bg-white px-3 py-2"
                 maxLength={5000}
               />
             </div>
 
              <div>
-               <label htmlFor="forum-topic-photos" className="mb-2 block text-sm font-medium">Photos (up to 6)</label>
+               <label htmlFor="forum-topic-photos" className="mb-2 block text-sm font-medium">Insert an image (up to 6)</label>
                <input
                  id="forum-topic-photos"
                  type="file"
@@ -387,8 +387,11 @@ function NewTopicModal({
                    setPhotos(selected);
                    if (selected.length !== (event.target.files?.length || 0)) setFormError("Choose up to 6 image files, each 6 MB or smaller.");
                  }}
-                 className="w-full rounded-md border px-3 py-2 text-sm"
+                 className="sr-only"
                />
+               <button type="button" onClick={() => document.getElementById("forum-topic-photos")?.click()} className="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                 <ImagePlus className="h-4 w-4" aria-hidden="true" /> Insert image
+               </button>
                {photos.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{photos.length} photo{photos.length === 1 ? "" : "s"} ready to upload.</p>}
              </div>
 
