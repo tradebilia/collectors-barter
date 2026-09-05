@@ -28,6 +28,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("utils.market.getForumReplies.invalidate({ postId })");
     expect(topicSource).not.toContain("alert(\"Please enter a reply\")");
     expect(topicSource).not.toContain("alert(\"Failed to add reply\")");
+    expect(topicSource).toContain("Could not post your reply right now. Please refresh and try again.");
+    expect(routerSource).toContain("Could not post your reply right now. Please refresh and try again.");
   });
 
   it("enforces owner-only forum editing and deletion", () => {

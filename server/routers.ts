@@ -1879,8 +1879,16 @@ export const appRouter = router({
           content: z.string().min(1).max(2000),
         }),
       )
-      .mutation(({ ctx, input }) => {
-        return addForumReply({ id: ctx.user.id, name: ctx.user.name }, input);
+      .mutation(async ({ ctx, input }) => {
+        try {
+          return await addForumReply({ id: ctx.user.id, name: ctx.user.name }, input);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "";
+          if (/failed query|unknown column|forumrepl(?:y|ies)|database/i.test(message)) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Could not post your reply right now. Please refresh and try again." });
+          }
+          throw error;
+        }
       }),
     uploadForumReplyImage: protectedProcedure
       .input(z.object({

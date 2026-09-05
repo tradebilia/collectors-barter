@@ -201,7 +201,10 @@ export function ForumTopic() {
         utils.market.getForumReplies.invalidate({ postId }),
       ]);
     } catch (error) {
-      setReplyError(error instanceof Error ? error.message : "Failed to add reply. Please try again.");
+      const message = error instanceof Error ? error.message : "";
+      setReplyError(/failed query|unknown column|forumrepl(?:y|ies)|database/i.test(message)
+        ? "Could not post your reply right now. Please refresh and try again."
+        : message || "Failed to add reply. Please try again.");
     }
   };
 

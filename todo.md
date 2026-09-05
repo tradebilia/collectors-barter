@@ -1520,3 +1520,4 @@
 - [x] Add regression coverage for mixed image/GIF/video reply contracts and verify TypeScript, build, and whitespace checks; signed-in end-to-end media submission remains pending.
 - [x] Repair the live forum reply insert failure when the deployed forumReplies table lacks parentReplyId, while preserving threaded replies on expanded schemas.
 - [ ] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
+- [x] Sanitize unexpected forum reply database errors in the client and server response so raw SQL is never shown to members.
