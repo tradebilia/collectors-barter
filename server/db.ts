@@ -5231,32 +5231,10 @@ export async function createForumReport(userId: number, input: { postId: number;
 
 export async function moderateForumPost(adminId: number, input: { postId: number; action: "remove" | "restore" | "pin" | "unpin"; reason?: string }) {
   const db = await requireDb();
-  const { forumPosts, forumReplies, adminActivityLog } = await import("../drizzle/schema");
+  const { forumPosts, adminActivityLog } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
   const post = await db.select({ id: forumPosts.id }).from(forumPosts).where(eq(forumPosts.id, input.postId)).limit(1);
   if (!post[0]) throw new Error("Forum post not found.");
-  const schemaMode = await getForumPostsSchemaMode(db);
-
-  if (schemaMode === "legacy") {
-    if (input.action === "remove") {
-      // The live legacy table has no status/removal metadata columns. Remove the
-      // discussion and its replies so inappropriate content no longer appears.
-      await db.delete(forumReplies).where(eq(forumReplies.postId, input.postId));
-      await db.delete(forumPosts).where(eq(forumPosts.id, input.postId));
-    } else if (input.action === "restore") {
-      throw new Error("This older forum record cannot be restored after removal.");
-    } else {
-      await db.update(forumPosts).set({ isPinned: input.action === "pin" ? 1 : 0 }).where(eq(forumPosts.id, input.postId));
-    }
-
-    try {
-      await db.insert(adminActivityLog).values({ adminId, action: `forum_post_${input.action}`, targetType: "forum_post", targetReference: String(input.postId), summary: input.reason?.trim() || `Forum post ${input.action}` });
-    } catch (error) {
-      console.warn("[Forum] Moderation action completed but could not be recorded in the legacy audit log.", error instanceof Error ? error.message : error);
-    }
-    return { postId: input.postId, action: input.action, removalMode: "permanent" as const };
-  }
-
   const values = input.action === "remove"
     ? { status: "removed" as const, removedAt: new Date().toISOString().slice(0, 19).replace("T", " "), removedBy: adminId, removalReason: input.reason?.trim() || "Removed by moderation." }
     : input.action === "restore"

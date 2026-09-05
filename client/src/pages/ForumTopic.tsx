@@ -128,10 +128,7 @@ export function ForumTopic() {
       await moderatePostMutation.mutateAsync({ postId, action, reason: action === "remove" ? "Removed by administrator moderation." : undefined });
       await Promise.all([utils.market.getForumPostDetail.invalidate({ postId }), utils.market.getForumPosts.invalidate()]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      setTopicError(/failed query|forumposts|database|unknown column/i.test(message)
-        ? "Could not update this post right now. Please refresh and try again."
-        : message || "Could not update moderation status.");
+      setTopicError(error instanceof Error ? error.message : "Could not update moderation status.");
     }
   };
 
