@@ -1518,3 +1518,5 @@
 - [x] Audit reply attachment schema, storage validation, and upload procedures for video support.
 - [x] Extend reply media handling with validated MP4 video attachments and enable the inline Video shortcut.
 - [x] Add regression coverage for mixed image/GIF/video reply contracts and verify TypeScript, build, and whitespace checks; signed-in end-to-end media submission remains pending.
+- [x] Repair the live forum reply insert failure when the deployed forumReplies table lacks parentReplyId, while preserving threaded replies on expanded schemas.
+- [ ] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
