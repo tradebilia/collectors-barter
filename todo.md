@@ -1540,3 +1540,4 @@
 - [x] Remove any horizontal branch artifact beneath leaf replies and render horizontal connectors only for actual parent-to-child reply relationships.
 - [x] Match the Reddit-style L-shaped connector path: parent vertical guide continues to the child row, turns horizontally into the child avatar center, and the child guide continues only when that child has replies.
 - [x] Bound each parent’s vertical guide to its own child branch region so message 5 connects to message 3 and message 4 branches from message 2 without cross-connecting sibling rows.
+- [x] Rebuild forum connectors as the exact reference tree: bold parent trunk, rounded bends into each child avatar, child-level trunks for descendants, and collapse controls at the bends.

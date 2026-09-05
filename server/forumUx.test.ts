@@ -104,9 +104,9 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("const renderReplyTree = (parentReplyId: number | null, depth: number)");
     expect(topicSource).toContain("childReplies.length > 0");
     expect(topicSource).toContain("${depth > 0 ? \"ml-6\" : \"\"}");
-    expect(topicSource).toContain("pointer-events-none absolute bottom-0 left-5 top-9 border-l border-border/80");
-    expect(topicSource).toContain("pointer-events-none absolute left-[-28px] top-9 h-px w-12 bg-border/80");
-    expect(topicSource).toContain("left-[10px] top-5");
+    expect(topicSource).toContain("pointer-events-none absolute bottom-0 left-[44px] top-9 w-[3px] rounded-full bg-foreground/75");
+    expect(topicSource).toContain("pointer-events-none absolute left-5 top-9 h-[3px] w-6 rounded-full bg-foreground/75");
+    expect(topicSource).toContain("left-[34px] top-[26px]");
     expect(topicSource).toContain("collapsedReplyIds");
     expect(topicSource).toContain("aria-expanded={!collapsedReplyIds.has(reply.id)}");
     expect(topicSource).toContain("Show {childReplies.length}");
