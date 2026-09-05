@@ -1,4 +1,4 @@
-import { FormEvent, useState, type ReactNode } from "react";
+import { FormEvent, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -9,9 +9,13 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { ChevronDown, ChevronRight, FileText, ImagePlus, Video, X } from "lucide-react";
 import { forumSubcategoryLabels } from "@shared/forum";
 
-function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
+type ThreadPoint = { x: number; y: number };
+type ThreadPath = { id: string; d: string };
+type ThreadControl = { replyId: number; x: number; y: number; childCount: number };
+
+function AuthorAvatar({ name, avatarUrl, avatarRef }: { name?: string | null; avatarUrl?: string | null; avatarRef?: Ref<HTMLDivElement> }) {
   return (
-    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted" aria-hidden="true">
+    <div ref={avatarRef} className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted" aria-hidden="true">
       {avatarUrl ? (
         <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
       ) : (
@@ -42,6 +46,9 @@ export function ForumTopic() {
   const [replyParentName, setReplyParentName] = useState<string | null>(null);
   const [isReplyComposerOpen, setIsReplyComposerOpen] = useState(false);
   const [collapsedReplyIds, setCollapsedReplyIds] = useState<Set<number>>(() => new Set());
+  const threadContainerRef = useRef<HTMLDivElement>(null);
+  const replyAvatarRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [threadGeometry, setThreadGeometry] = useState<{ width: number; height: number; paths: ThreadPath[]; controls: ThreadControl[] }>({ width: 0, height: 0, paths: [], controls: [] });
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -252,6 +259,60 @@ export function ForumTopic() {
     );
   };
 
+  useLayoutEffect(() => {
+    const container = threadContainerRef.current;
+    if (!container || !replies || replies.length === 0) {
+      setThreadGeometry({ width: 0, height: 0, paths: [], controls: [] });
+      return;
+    }
+
+    const measure = () => {
+      const containerRect = container.getBoundingClientRect();
+      const points = new Map<number, ThreadPoint>();
+      for (const reply of replies) {
+        const avatar = replyAvatarRefs.current[reply.id];
+        if (!avatar) continue;
+        const rect = avatar.getBoundingClientRect();
+        points.set(reply.id, {
+          x: rect.left - containerRect.left + rect.width / 2,
+          y: rect.top - containerRect.top + rect.height / 2,
+        });
+      }
+
+      const paths: ThreadPath[] = [];
+      const controls: ThreadControl[] = [];
+      const childrenByParent = new Map<number, typeof replies>();
+      for (const reply of replies) {
+        if (reply.parentReplyId == null) continue;
+        const children = childrenByParent.get(reply.parentReplyId) || [];
+        children.push(reply);
+        childrenByParent.set(reply.parentReplyId, children);
+      }
+
+      for (const [parentReplyId, children] of childrenByParent.entries()) {
+        const parentPoint = points.get(parentReplyId);
+        if (!parentPoint) continue;
+        const visibleChildren = children.map((child) => ({ child, point: points.get(child.id) })).filter((entry): entry is { child: (typeof children)[number]; point: ThreadPoint } => Boolean(entry.point));
+        for (const { child, point } of visibleChildren) {
+          paths.push({ id: `${parentReplyId}-${child.id}`, d: `M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}` });
+        }
+        const firstChildPoint = visibleChildren[0]?.point;
+        controls.push({ replyId: parentReplyId, x: parentPoint.x, y: firstChildPoint?.y ?? parentPoint.y + 48, childCount: children.length });
+      }
+
+      setThreadGeometry({ width: containerRect.width, height: containerRect.height, paths, controls });
+    };
+
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    observer?.observe(container);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [replies, collapsedReplyIds]);
+
   if (!match) return null;
 
   return (
@@ -418,14 +479,9 @@ export function ForumTopic() {
                         const childReplies = replies.filter((child) => child.parentReplyId === reply.id);
                         return (
                           <div key={reply.id} className={`relative pl-6 ${depth > 0 ? "ml-6" : ""}`}>
-                            {childReplies.length > 0 && <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-[44px] top-9 w-[4px] rounded-full bg-foreground" />}
-                            {depth > 0 && <span aria-hidden="true" className="pointer-events-none absolute left-5 top-9 h-[4px] w-6 rounded-full bg-foreground" />}
-                            {childReplies.length > 0 && <button type="button" onClick={() => toggleReplyChildren(reply.id)} aria-expanded={!collapsedReplyIds.has(reply.id)} aria-label={`${collapsedReplyIds.has(reply.id) ? "Expand" : "Collapse"} ${childReplies.length} ${childReplies.length === 1 ? "reply" : "replies"}`} className="absolute left-[34px] top-[26px] z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-background text-foreground shadow-sm hover:text-primary">
-                              {collapsedReplyIds.has(reply.id) ? <ChevronRight className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
-                            </button>}
-                            <article className="py-4">
+                            <article className="relative z-10 py-4">
                               <div className="flex items-start gap-3">
-                                <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
+                                <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} avatarRef={(element) => { replyAvatarRefs.current[reply.id] = element; }} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                     <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
@@ -446,7 +502,17 @@ export function ForumTopic() {
                         );
                       });
                     };
-                    return <div>{renderReplyTree(null, 0)}</div>;
+                    return (
+                      <div ref={threadContainerRef} className="relative">
+                        {threadGeometry.width > 0 && <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible text-foreground" viewBox={`0 0 ${threadGeometry.width} ${threadGeometry.height}`} preserveAspectRatio="none">
+                          {threadGeometry.paths.map((path) => <path key={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />)}
+                        </svg>}
+                        <div className="relative z-10">{renderReplyTree(null, 0)}</div>
+                        {threadGeometry.controls.map((control) => <button key={control.replyId} type="button" onClick={() => toggleReplyChildren(control.replyId)} aria-expanded={!collapsedReplyIds.has(control.replyId)} aria-label={`${collapsedReplyIds.has(control.replyId) ? "Expand" : "Collapse"} ${control.childCount} ${control.childCount === 1 ? "reply" : "replies"}`} className="absolute z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-background bg-background text-foreground shadow-sm hover:text-primary" style={{ left: control.x, top: control.y }}>
+                          {collapsedReplyIds.has(control.replyId) ? <ChevronRight className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
+                        </button>)}
+                      </div>
+                    );
                   })()}
                 </div>
               ) : (
