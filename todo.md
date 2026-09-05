@@ -1521,3 +1521,4 @@
 - [x] Repair the live forum reply insert failure when the deployed forumReplies table lacks parentReplyId, while preserving threaded replies on expanded schemas.
 - [ ] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
 - [x] Sanitize unexpected forum reply database errors in the client and server response so raw SQL is never shown to members.
+- [x] Render forum replies as a hierarchical sub-thread tree with deeper indentation and thread guides for replies to replies, including responsive mobile spacing and regression coverage.

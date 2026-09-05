@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, type ReactNode } from "react";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -400,26 +400,38 @@ export function ForumTopic() {
               {repliesLoading ? (
                 <div className="text-center py-8">Loading replies...</div>
               ) : replies && replies.length > 0 ? (
-                <div className="mb-8 divide-y divide-border/70 border-y border-border/70">
-                  {replies.map(reply => (
-                    <article key={reply.id} className={`py-4 ${reply.parentReplyId ? "ml-6 border-l-2 border-l-primary/30 pl-4 sm:ml-10" : ""}`}>
-                      <div className="flex items-start gap-3">
-                        <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                            <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
-                            <span aria-hidden="true">·</span>
-                            <time dateTime={new Date(reply.createdAt).toISOString()}>{new Date(reply.createdAt).toLocaleString()}</time>
+                <div className="mb-8 border-y border-border/70">
+                  {(() => {
+                    const renderReplyTree = (parentReplyId: number | null, depth: number): ReactNode[] => {
+                      const branch = replies.filter((reply) => (reply.parentReplyId ?? null) === parentReplyId);
+                      return branch.map((reply) => {
+                        const childReplies = replies.filter((child) => child.parentReplyId === reply.id);
+                        return (
+                          <div key={reply.id} className={`relative ${depth > 0 ? "ml-4 border-l-2 border-primary/25 pl-4 sm:ml-8 sm:pl-5" : ""}`}>
+                            <article className="py-4">
+                              <div className="flex items-start gap-3">
+                                <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                    <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
+                                    <span aria-hidden="true">·</span>
+                                    <time dateTime={new Date(reply.createdAt).toISOString()}>{new Date(reply.createdAt).toLocaleString()}</time>
+                                  </div>
+                                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
+                                  {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
+                                  {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((media) => media.mimeType === "video/mp4" ? <video key={media.id} src={media.imageUrl} controls preload="metadata" className="aspect-video w-full rounded-md border bg-black" aria-label={media.altText || "Forum reply video"} /> : <img key={media.id} src={media.imageUrl} alt={media.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
+                                  {user && !post.isLocked && <button type="button" className="mt-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
+                                  {renderInlineReplyComposer(String(reply.id))}
+                                </div>
+                              </div>
+                            </article>
+                            {childReplies.length > 0 && <div className="divide-y divide-border/60">{renderReplyTree(reply.id, depth + 1)}</div>}
                           </div>
-                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
-                          {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
-                          {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((media) => media.mimeType === "video/mp4" ? <video key={media.id} src={media.imageUrl} controls preload="metadata" className="aspect-video w-full rounded-md border bg-black" aria-label={media.altText || "Forum reply video"} /> : <img key={media.id} src={media.imageUrl} alt={media.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
-                          {user && !post.isLocked && <button type="button" className="mt-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
-                          {renderInlineReplyComposer(String(reply.id))}
-                        </div>
-                      </div>
-                    </article>
-                  ))}
+                        );
+                      });
+                    };
+                    return <div className="divide-y divide-border/70">{renderReplyTree(null, 0)}</div>;
+                  })()}
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground mb-8">
