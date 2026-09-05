@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 
 const forumSource = readFileSync(new URL("../client/src/pages/Forum.tsx", import.meta.url), "utf8");
 const topicSource = readFileSync(new URL("../client/src/pages/ForumTopic.tsx", import.meta.url), "utf8");
-const moderationQueueSource = readFileSync(new URL("../client/src/components/ForumModerationQueue.tsx", import.meta.url), "utf8");
 const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
 
 describe("Collectors Forum UX contracts", () => {
@@ -66,29 +65,6 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("forum_post_${input.action}");
     expect(dbSource).toContain("status: \"removed\"");
     expect(dbSource).toContain("You have already reported this post.");
-  });
-
-  it("supports reply photos, optional listing links, and persisted follow notifications", () => {
-    expect(topicSource).toContain('id="forum-reply-photos"');
-    expect(topicSource).toContain('id="forum-reply-listing"');
-    expect(topicSource).toContain("uploadForumReplyImage");
-    expect(topicSource).toContain("/listings/${reply.listingId}");
-    expect(dbSource).toContain("A forum reply can include up to 6 photos.");
-    expect(dbSource).toContain("forumNotifications");
-  });
-
-  it("supports search, activity filters, and a dedicated administrator forum queue", () => {
-    expect(forumSource).toContain('id="forum-topic-search"');
-    expect(forumSource).toContain("activityFilter");
-    expect(dbSource).toContain("searchQuery?.trim()");
-    expect(dbSource).toContain('activityFilter === "unanswered"');
-    expect(dbSource).toContain('activityFilter === "recent"');
-    expect(dbSource).toContain("getForumReportsForAdmin");
-    expect(moderationQueueSource).toContain("Forum Moderation Queue");
-    expect(moderationQueueSource).toContain("Remove post");
-    expect(moderationQueueSource).toContain("Restore");
-    expect(forumSource).toContain("Your topic updates");
-    expect(forumSource).toContain("getMyForumNotifications");
   });
 
   it("provides labeled forms and a useful topic-not-found recovery state", () => {

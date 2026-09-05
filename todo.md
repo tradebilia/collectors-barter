@@ -1453,8 +1453,3 @@
 - [x] Add validated up-to-six-photo forum attachments using durable storage.
 - [x] Add admin-only moderation removal with audit reason, user reports, pinned announcements, and followed-topic foundations.
 - [x] Add regression tests, apply schema changes safely, and verify the expanded forum on desktop and mobile.
-
-- [x] Audit reply attachments, optional listing links, notification preferences, search filters, and admin dashboard patterns for the approved forum release.
-- [x] Add reply photos, optional Tradebilia listing links, followed-topic notifications, and topic search with unanswered/recent filters.
-- [x] Add an administrator moderation queue for reported forum posts with review actions and audit records.
-- [x] Apply any additive schema changes safely, add regression coverage, and verify member and admin forum flows on desktop and mobile.

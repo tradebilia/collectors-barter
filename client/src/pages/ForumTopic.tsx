@@ -20,23 +20,12 @@ function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: s
   );
 }
 
-function readForumFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Could not read the selected image."));
-    reader.readAsDataURL(file);
-  });
-}
-
 export function ForumTopic() {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/forum/:postId");
   const { user } = useAuth();
   const [replyContent, setReplyContent] = useState("");
   const [replyError, setReplyError] = useState("");
-  const [replyListingId, setReplyListingId] = useState("");
-  const [replyPhotos, setReplyPhotos] = useState<File[]>([]);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -62,7 +51,6 @@ export function ForumTopic() {
   );
 
   const addReplyMutation = trpc.market.addForumReply.useMutation();
-  const uploadReplyPhotoMutation = trpc.market.uploadForumReplyImage.useMutation();
   const updatePostMutation = trpc.market.updateForumPost.useMutation();
   const deletePostMutation = trpc.market.deleteForumPost.useMutation();
   const reportPostMutation = trpc.market.createForumReport.useMutation();
@@ -153,18 +141,11 @@ export function ForumTopic() {
     }
 
     try {
-      const created = await addReplyMutation.mutateAsync({
+      await addReplyMutation.mutateAsync({
         postId,
-        listingId: replyListingId.trim() ? Number(replyListingId) : undefined,
         content: replyContent.trim(),
       });
-      for (const [index, file] of replyPhotos.entries()) {
-        const dataUrl = await readForumFileAsDataUrl(file);
-        await uploadReplyPhotoMutation.mutateAsync({ replyId: created.replyId, fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif", dataBase64: dataUrl, sortOrder: index });
-      }
       setReplyContent("");
-      setReplyListingId("");
-      setReplyPhotos([]);
       await Promise.all([
         utils.market.getForumPostDetail.invalidate({ postId }),
         utils.market.getForumReplies.invalidate({ postId }),
@@ -342,8 +323,6 @@ export function ForumTopic() {
                             </span>
                           </div>
                           <p className="text-sm">{reply.content}</p>
-                          {reply.listingId && <button type="button" className="mt-3 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked Tradebilia item #{reply.listingId}</button>}
-                          {reply.attachments?.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
                         </div>
                       </div>
                     </Card>
@@ -371,17 +350,6 @@ export function ForumTopic() {
                     className="mb-4 h-24 w-full rounded-md border px-3 py-2"
                     maxLength={2000}
                   />
-                  <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="forum-reply-listing" className="mb-1 block text-sm font-medium">Optional Tradebilia item #</label>
-                      <input id="forum-reply-listing" inputMode="numeric" value={replyListingId} onChange={(event) => setReplyListingId(event.target.value.replace(/\D/g, ""))} placeholder="Item ID" className="w-full rounded-md border px-3 py-2 text-sm" />
-                    </div>
-                    <div>
-                      <label htmlFor="forum-reply-photos" className="mb-1 block text-sm font-medium">Photos (up to 6)</label>
-                      <input id="forum-reply-photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 6 * 1024 * 1024).slice(0, 6); setReplyPhotos(selected); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose up to 6 image files, each 6 MB or smaller."); }} className="w-full rounded-md border px-3 py-1.5 text-sm" />
-                      {replyPhotos.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{replyPhotos.length} photo{replyPhotos.length === 1 ? "" : "s"} ready to upload.</p>}
-                    </div>
-                  </div>
                   {replyError && <p className="mb-3 text-sm text-red-700" role="alert">{replyError}</p>}
                   <div className="flex justify-end gap-2">
                     <Button type="submit" disabled={addReplyMutation.isPending}>
