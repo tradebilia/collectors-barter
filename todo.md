@@ -1486,3 +1486,7 @@
 - [x] Audit the current forum discovery layout and research Facebook Groups and Reddit patterns relevant to search placement, navigation, and discussion hierarchy.
 - [x] Present a tailored comparable forum layout recommendation for approval before changing the interface.
 - [x] Implement the approved forum discovery layout, add regression coverage, and verify responsive usability.
+
+- [x] Add parent-reply support so members can reply to the main topic or to an individual reply.
+- [x] Add clear Reply actions and nested/threaded rendering on the topic page.
+- [ ] Add regression coverage and verify both main-topic and reply-to-reply flows on desktop and mobile; signed-in end-to-end validation remains pending.

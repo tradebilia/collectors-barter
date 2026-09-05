@@ -4810,8 +4810,9 @@ export async function addForumReply(
   input: {
     postId: number;
     content: string;
-    listingId?: number | null;
-  }
+		listingId?: number | null;
+		parentReplyId?: number | null;
+	}
 ) {
   const db = await requireDb();
   const { forumReplies, forumPosts, forumFollows, forumNotifications } = await import("../drizzle/schema");
@@ -4824,19 +4825,24 @@ export async function addForumReply(
     .where(eq(forumPosts.id, input.postId))
     .limit(1);
   if (!post[0]) throw new Error("Forum post not found.");
-  if (post[0].isLocked) throw new Error("This discussion is locked.");
+	if (post[0].isLocked) throw new Error("This discussion is locked.");
+	if (input.parentReplyId != null) {
+		const parent = await db.select({ id: forumReplies.id, postId: forumReplies.postId }).from(forumReplies).where(eq(forumReplies.id, input.parentReplyId)).limit(1);
+		if (!parent[0] || parent[0].postId !== input.postId) throw new Error("The reply you are responding to is no longer available.");
+	}
 
-  const result = isExpanded
-    ? await db.insert(forumReplies).values({
-        postId: input.postId,
-        userId: user.id,
-        listingId: input.listingId || null,
-        content: input.content.trim(),
-      })
-    : await db.execute(sql`
-        INSERT INTO forumReplies (postId, userId, content)
-        VALUES (${input.postId}, ${user.id}, ${input.content.trim()})
-      `);
+	const result = isExpanded
+	    ? await db.insert(forumReplies).values({
+	        postId: input.postId,
+	        userId: user.id,
+	        listingId: input.listingId || null,
+	        parentReplyId: input.parentReplyId || null,
+	        content: input.content.trim(),
+	      })
+	    : await db.execute(sql`
+	        INSERT INTO forumReplies (postId, userId, content, parentReplyId)
+	        VALUES (${input.postId}, ${user.id}, ${input.content.trim()}, ${input.parentReplyId || null})
+	      `);
   const replyId = getInsertId(result);
 
   // Increment reply count
@@ -4864,8 +4870,9 @@ export async function getForumReplies(postId: number) {
       id: forumReplies.id,
       postId: forumReplies.postId,
       userId: forumReplies.userId,
-      listingId: isExpanded ? forumReplies.listingId : sql<number | null>`NULL`,
-      content: forumReplies.content,
+	      listingId: isExpanded ? forumReplies.listingId : sql<number | null>`NULL`,
+	      parentReplyId: forumReplies.parentReplyId,
+	      content: forumReplies.content,
       createdAt: forumReplies.createdAt,
       updatedAt: forumReplies.updatedAt,
       author: {

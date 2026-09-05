@@ -1875,6 +1875,7 @@ export const appRouter = router({
         z.object({
           postId: z.number().int().positive(),
           listingId: z.number().int().positive().nullable().optional(),
+          parentReplyId: z.number().int().positive().nullable().optional(),
           content: z.string().min(1).max(2000),
         }),
       )

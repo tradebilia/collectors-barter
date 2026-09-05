@@ -37,6 +37,8 @@ export function ForumTopic() {
   const [replyError, setReplyError] = useState("");
   const [replyListingId, setReplyListingId] = useState("");
   const [replyPhotos, setReplyPhotos] = useState<File[]>([]);
+  const [replyParentId, setReplyParentId] = useState<number | null>(null);
+  const [replyParentName, setReplyParentName] = useState<string | null>(null);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -147,6 +149,18 @@ export function ForumTopic() {
     }
   };
 
+  const beginReplyTo = (replyId: number, authorName: string) => {
+    setReplyParentId(replyId);
+    setReplyParentName(authorName);
+    setReplyError("");
+    window.requestAnimationFrame(() => document.getElementById("forum-reply-content")?.focus());
+  };
+
+  const clearReplyTarget = () => {
+    setReplyParentId(null);
+    setReplyParentName(null);
+  };
+
   const handleAddReply = async (event: FormEvent) => {
     event.preventDefault();
     setReplyError("");
@@ -159,6 +173,7 @@ export function ForumTopic() {
       const created = await addReplyMutation.mutateAsync({
         postId,
         listingId: replyListingId.trim() ? Number(replyListingId) : undefined,
+        parentReplyId: replyParentId ?? undefined,
         content: replyContent.trim(),
       });
       for (const [index, file] of replyPhotos.entries()) {
@@ -168,6 +183,7 @@ export function ForumTopic() {
       setReplyContent("");
       setReplyListingId("");
       setReplyPhotos([]);
+      clearReplyTarget();
       await Promise.all([
         utils.market.getForumPostDetail.invalidate({ postId }),
         utils.market.getForumReplies.invalidate({ postId }),
@@ -334,7 +350,7 @@ export function ForumTopic() {
               ) : replies && replies.length > 0 ? (
                 <div className="space-y-4 mb-8">
                   {replies.map(reply => (
-                    <Card key={reply.id} className="p-4">
+                    <Card key={reply.id} className={`p-4 ${reply.parentReplyId ? "ml-6 border-l-4 border-l-primary/30 sm:ml-10" : ""}`}>
                       <div className="flex items-start gap-4">
                         <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
                         <div className="flex-1">
@@ -347,6 +363,7 @@ export function ForumTopic() {
                           <p className="text-sm">{reply.content}</p>
                           {reply.listingId && <button type="button" className="mt-3 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked Tradebilia item #{reply.listingId}</button>}
                           {reply.attachments?.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
+                          {user && !post.isLocked && <button type="button" className="mt-3 text-sm font-semibold text-primary underline underline-offset-2" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
                         </div>
                       </div>
                     </Card>
@@ -363,8 +380,9 @@ export function ForumTopic() {
             {user && !post.isLocked ? (
               <Card className="p-6">
                 <form onSubmit={handleAddReply}>
-                  <h3 className="mb-1 text-lg font-semibold">Add Your Reply</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">Keep the conversation useful and respectful for fellow collectors.</p>
+                  <h3 className="mb-1 text-lg font-semibold">{replyParentName ? `Reply to ${replyParentName}` : "Add Your Reply"}</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">{replyParentName ? "Your response will appear beneath that member’s reply." : "Your response will be added to the main topic."} Keep the conversation useful and respectful for fellow collectors.</p>
+                  {replyParentId && <div className="mb-4 flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm"><span>Replying to <strong>{replyParentName}</strong></span><Button type="button" variant="ghost" size="sm" onClick={clearReplyTarget}>Cancel target</Button></div>}
                   <label htmlFor="forum-reply-content" className="sr-only">Your reply</label>
                   <textarea
                     id="forum-reply-content"

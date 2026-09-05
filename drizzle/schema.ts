@@ -199,6 +199,7 @@ export const forumReplies = mysqlTable("forumReplies", {
 	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" } ),
 	userId: int().notNull().references(() => users.id),
 	listingId: int(),
+	parentReplyId: int(),
 	content: text().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
@@ -207,6 +208,7 @@ export const forumReplies = mysqlTable("forumReplies", {
 	index("forumReplies_postId_idx").on(table.postId),
 	index("forumReplies_userId_idx").on(table.userId),
 	index("forumReplies_listing_idx").on(table.listingId),
+	index("forumReplies_parent_idx").on(table.parentReplyId),
 	index("forumReplies_createdAt_idx").on(table.createdAt),
 ]);
 
