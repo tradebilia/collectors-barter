@@ -1544,3 +1544,4 @@
 - [x] Replace offset-based forum connector spans with deterministic parent-to-child connector paths whose endpoints are explicitly tied to the parent and child avatar centers.
 - [x] Stop each parent vertical trunk at its final child branch and ensure nested branches visibly join the correct avatar centers without extending beyond the last reply.
 - [x] Place each collapse control at the midpoint of its parent vertical connector segment rather than at the branch corner, while preserving connector paths.
+- [x] Reduce the measured forum connector stroke thickness while preserving avatar-centered paths and midpoint collapse controls.

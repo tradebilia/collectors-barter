@@ -108,7 +108,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("replyAvatarRefs");
     expect(topicSource).toContain("getBoundingClientRect");
     expect(topicSource).toContain("M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}");
-    expect(topicSource).toContain("strokeWidth=\"4\"");
+    expect(topicSource).toContain("strokeWidth=\"2\"");
     expect(topicSource).toContain("strokeLinecap=\"round\"");
     expect(topicSource).toContain("strokeLinejoin=\"round\"");
     expect(topicSource).toContain("threadGeometry.controls.map");

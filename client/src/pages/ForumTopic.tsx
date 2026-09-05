@@ -506,7 +506,7 @@ export function ForumTopic() {
                     return (
                       <div ref={threadContainerRef} className="relative">
                         {threadGeometry.width > 0 && <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible text-foreground" viewBox={`0 0 ${threadGeometry.width} ${threadGeometry.height}`} preserveAspectRatio="none">
-                          {threadGeometry.paths.map((path) => <path key={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />)}
+                          {threadGeometry.paths.map((path) => <path key={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />)}
                         </svg>}
                         <div className="relative z-10">{renderReplyTree(null, 0)}</div>
                         {threadGeometry.controls.map((control) => <button key={control.replyId} type="button" onClick={() => toggleReplyChildren(control.replyId)} aria-expanded={!collapsedReplyIds.has(control.replyId)} aria-label={`${collapsedReplyIds.has(control.replyId) ? "Expand" : "Collapse"} ${control.childCount} ${control.childCount === 1 ? "reply" : "replies"}`} className="absolute z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-background bg-background text-foreground shadow-sm hover:text-primary" style={{ left: control.x, top: control.y }}>
