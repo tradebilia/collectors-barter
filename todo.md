@@ -1472,6 +1472,10 @@
 - [x] Repair the active account relationship or topic creation compatibility so signed-in users can create forum topics.
 - [ ] Permanently suppress raw database errors in the new-topic form, add regression coverage, and verify the repaired flow with a signed-in user.
 
+- [x] Capture the exact deployed topic-creation constraint failure and compare the live forum schema with the active insert.
+- [x] Apply the smallest safe live compatibility repair without modifying existing forum posts.
+- [ ] Add precise regression coverage and verify signed-in topic creation end to end.
+
 - [x] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
 - [x] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
 

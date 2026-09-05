@@ -51,7 +51,9 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})");
     expect(dbSource).toContain("if (user.openId)");
     expect(dbSource).toContain("authorId = persistedUser.id;");
-    expect(dbSource).toContain("INSERT INTO forumPosts (userId, category, subcategory, title, content)");
+    expect(dbSource).toContain('const schemaMode = await getForumPostsSchemaMode(db);');
+    expect(dbSource).toContain('schemaMode === "expanded"');
+    expect(dbSource).toContain("INSERT INTO forumPosts (userId, category, title, content)");
     expect(dbSource).toContain("sameNameAccounts.length !== 1");
     expect(routerSource).toContain("[Forum] Topic creation failed");
     expect(routerSource).toContain("We could not create this topic right now. Please refresh the page and try again.");
@@ -83,6 +85,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("/listings/${reply.listingId}");
     expect(dbSource).toContain("A forum reply can include up to 6 photos.");
     expect(dbSource).toContain("forumNotifications");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, content)");
   });
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {
