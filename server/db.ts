@@ -4610,6 +4610,7 @@ let forumPostsSchemaMode: "legacy" | "expanded" | null = null;
 type ForumRepliesCapabilities = {
   hasParentReplyId: boolean;
   hasListingId: boolean;
+  hasAttachmentsTable: boolean;
 };
 
 let forumRepliesCapabilities: ForumRepliesCapabilities | null = null;
@@ -4626,13 +4627,21 @@ async function getForumRepliesCapabilities(db: Awaited<ReturnType<typeof require
     `);
     const rows = (Array.isArray(result) ? result[0] : []) as unknown as Array<{ columnName?: string }>;
     const columns = new Set(rows.map((row) => row.columnName));
+    const attachmentTableResult = await db.execute(sql`
+      SELECT COUNT(*) AS tableCount
+      FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forumReplyAttachments'
+    `);
+    const attachmentTableRows = (Array.isArray(attachmentTableResult) ? attachmentTableResult[0] : []) as unknown as Array<{ tableCount?: number | string }>;
     forumRepliesCapabilities = {
       hasParentReplyId: columns.has("parentReplyId"),
       hasListingId: columns.has("listingId"),
+      hasAttachmentsTable: Number(attachmentTableRows?.[0]?.tableCount ?? 0) === 1,
     };
   } catch (error) {
     console.warn("[Forum] Could not inspect forumReplies columns; using baseline reply mode.", error instanceof Error ? error.message : error);
-    forumRepliesCapabilities = { hasParentReplyId: false, hasListingId: false };
+    forumRepliesCapabilities = { hasParentReplyId: false, hasListingId: false, hasAttachmentsTable: false };
   }
   return forumRepliesCapabilities;
 }
@@ -4923,7 +4932,7 @@ export async function getForumReplies(postId: number) {
     .leftJoin(userProfiles, eq(forumReplies.userId, userProfiles.userId))
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
-  const attachments = replyCapabilities.hasParentReplyId || replyCapabilities.hasListingId
+  const attachments = replyCapabilities.hasAttachmentsTable
     ? await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id))
     : new Map<number, Array<{ id: number; imageUrl: string; mimeType: string | null; altText: string | null; sortOrder: number }>>();
   return replies.map((reply) => ({ ...reply, attachments: attachments.get(reply.id) || [] }));

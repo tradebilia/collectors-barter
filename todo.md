@@ -1528,3 +1528,5 @@
 - [x] Bind each inline reply composer to its explicit reply target at submit time, preventing a selected child reply from falling back to a null parent ID.
 - [ ] Diagnose and repair the backend child-reply persistence error now that parentReplyId is submitted, then verify the stored child relationship and rendered sub-thread.
 - [x] Handle the custom forumReplies table’s partial schema—parentReplyId exists but listingId does not—so child replies persist without querying optional unavailable columns.
+- [ ] Diagnose and repair the mismatch where a submitted reply increments the topic count but is not returned or rendered, then verify the full nested child-reply flow.
+- [x] Prevent the optional forumReplyAttachments lookup from hiding text replies when that attachment table is absent from the custom database.

@@ -128,6 +128,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("getForumRepliesCapabilities(db)");
     expect(dbSource).toContain("hasParentReplyId: columns.has(\"parentReplyId\")");
     expect(dbSource).toContain("hasListingId: columns.has(\"listingId\")");
+    expect(dbSource).toContain("hasAttachmentsTable: Number(attachmentTableRows?.[0]?.tableCount ?? 0) === 1");
+    expect(dbSource).toContain("const attachments = replyCapabilities.hasAttachmentsTable");
     expect(dbSource).toContain("parentReplyId: replyCapabilities.hasParentReplyId ? forumReplies.parentReplyId : sql<number | null>`NULL`");
   });
 
