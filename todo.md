@@ -1543,3 +1543,4 @@
 - [x] Rebuild forum connectors as the exact reference tree: bold parent trunk, rounded bends into each child avatar, child-level trunks for descendants, and collapse controls at the bends.
 - [x] Replace offset-based forum connector spans with deterministic parent-to-child connector paths whose endpoints are explicitly tied to the parent and child avatar centers.
 - [x] Stop each parent vertical trunk at its final child branch and ensure nested branches visibly join the correct avatar centers without extending beyond the last reply.
+- [x] Place each collapse control at the midpoint of its parent vertical connector segment rather than at the branch corner, while preserving connector paths.

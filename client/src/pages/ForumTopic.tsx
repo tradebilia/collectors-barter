@@ -296,8 +296,9 @@ export function ForumTopic() {
         for (const { child, point } of visibleChildren) {
           paths.push({ id: `${parentReplyId}-${child.id}`, d: `M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}` });
         }
-        const firstChildPoint = visibleChildren[0]?.point;
-        controls.push({ replyId: parentReplyId, x: parentPoint.x, y: firstChildPoint?.y ?? parentPoint.y + 48, childCount: children.length });
+        const lastChildPoint = visibleChildren[visibleChildren.length - 1]?.point;
+        const connectorEndY = lastChildPoint?.y ?? parentPoint.y + 48;
+        controls.push({ replyId: parentReplyId, x: parentPoint.x, y: parentPoint.y + (connectorEndY - parentPoint.y) / 2, childCount: children.length });
       }
 
       setThreadGeometry({ width: containerRect.width, height: containerRect.height, paths, controls });

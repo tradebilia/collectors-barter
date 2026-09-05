@@ -113,6 +113,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("strokeLinejoin=\"round\"");
     expect(topicSource).toContain("threadGeometry.controls.map");
     expect(topicSource).toContain("style={{ left: control.x, top: control.y }}");
+    expect(topicSource).toContain("parentPoint.y + (connectorEndY - parentPoint.y) / 2");
     expect(topicSource).toContain("collapsedReplyIds");
     expect(topicSource).toContain("aria-expanded={!collapsedReplyIds.has(control.replyId)}");
     expect(topicSource).toContain("Show {childReplies.length}");
