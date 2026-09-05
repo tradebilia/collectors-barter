@@ -98,7 +98,9 @@ describe("Collectors Forum UX contracts", () => {
   });
 
   it("uses a compact discussion-row hierarchy with inline reply actions", () => {
-    expect(topicSource).toContain("divide-y divide-border/70");
+    expect(topicSource).toContain("<div className=\"mb-8\">");
+    expect(topicSource).not.toContain("divide-y divide-border/70");
+    expect(topicSource).not.toContain("divide-y divide-border/60");
     expect(topicSource).toContain("const renderReplyTree = (parentReplyId: number | null, depth: number)");
     expect(topicSource).toContain("childReplies.length > 0");
     expect(topicSource).toContain("pointer-events-none absolute bottom-0 left-5 top-9 border-l border-border/80");

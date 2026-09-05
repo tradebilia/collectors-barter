@@ -410,7 +410,7 @@ export function ForumTopic() {
               {repliesLoading ? (
                 <div className="text-center py-8">Loading replies...</div>
               ) : replies && replies.length > 0 ? (
-                <div className="mb-8 border-y border-border/70">
+                <div className="mb-8">
                   {(() => {
                     const renderReplyTree = (parentReplyId: number | null, depth: number): ReactNode[] => {
                       const branch = replies.filter((reply) => (reply.parentReplyId ?? null) === parentReplyId);
@@ -440,13 +440,13 @@ export function ForumTopic() {
                                 </div>
                               </div>
                             </article>
-                            {childReplies.length > 0 && !collapsedReplyIds.has(reply.id) && <div className="divide-y divide-border/60">{renderReplyTree(reply.id, depth + 1)}</div>}
+                            {childReplies.length > 0 && !collapsedReplyIds.has(reply.id) && <div>{renderReplyTree(reply.id, depth + 1)}</div>}
                             {childReplies.length > 0 && collapsedReplyIds.has(reply.id) && <button type="button" onClick={() => toggleReplyChildren(reply.id)} className="mb-3 text-xs font-semibold text-primary hover:underline">Show {childReplies.length} {childReplies.length === 1 ? "reply" : "replies"}</button>}
                           </div>
                         );
                       });
                     };
-                    return <div className="divide-y divide-border/70">{renderReplyTree(null, 0)}</div>;
+                    return <div>{renderReplyTree(null, 0)}</div>;
                   })()}
                 </div>
               ) : (
