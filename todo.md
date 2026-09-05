@@ -1523,3 +1523,4 @@
 - [x] Sanitize unexpected forum reply database errors in the client and server response so raw SQL is never shown to members.
 - [x] Render forum replies as a hierarchical sub-thread tree with deeper indentation and thread guides for replies to replies, including responsive mobile spacing and regression coverage.
 - [x] Add connected vertical/branch thread guides and per-reply collapse/expand controls for nested forum reply sub-threads, with responsive regression coverage.
+- [x] Trace why a signed-in reply-to-reply is returned as a top-level reply, then repair parentReplyId persistence or retrieval and verify nested rendering with connected controls.

@@ -4607,6 +4607,26 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
 // only the capability of the forumPosts table and use baseline queries when the
 // optional expansion columns have not been added yet.
 let forumPostsSchemaMode: "legacy" | "expanded" | null = null;
+let forumRepliesSchemaMode: "legacy" | "expanded" | null = null;
+
+async function getForumRepliesSchemaMode(db: Awaited<ReturnType<typeof requireDb>>) {
+  if (forumRepliesSchemaMode) return forumRepliesSchemaMode;
+  try {
+    const result = await db.execute(sql`
+      SELECT COUNT(*) AS columnCount
+      FROM information_schema.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forumReplies'
+        AND COLUMN_NAME = 'parentReplyId'
+    `);
+    const rows = (Array.isArray(result) ? result[0] : []) as unknown as Array<{ columnCount?: number | string }>;
+    forumRepliesSchemaMode = Number(rows?.[0]?.columnCount ?? 0) === 1 ? "expanded" : "legacy";
+  } catch (error) {
+    console.warn("[Forum] Could not inspect forumReplies schema; using legacy reply mode.", error instanceof Error ? error.message : error);
+    forumRepliesSchemaMode = "legacy";
+  }
+  return forumRepliesSchemaMode;
+}
 
 async function getForumPostsSchemaMode(db: Awaited<ReturnType<typeof requireDb>>) {
   if (forumPostsSchemaMode) return forumPostsSchemaMode;
@@ -4818,6 +4838,7 @@ export async function addForumReply(
   const { forumReplies, forumPosts, forumFollows, forumNotifications } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
   const isExpanded = (await getForumPostsSchemaMode(db)) === "expanded";
+  const repliesExpanded = (await getForumRepliesSchemaMode(db)) === "expanded";
 
   const post = await db
     .select({ isLocked: forumPosts.isLocked })
@@ -4826,12 +4847,12 @@ export async function addForumReply(
     .limit(1);
   if (!post[0]) throw new Error("Forum post not found.");
 	if (post[0].isLocked) throw new Error("This discussion is locked.");
-		if (isExpanded && input.parentReplyId != null) {
+		if (repliesExpanded && input.parentReplyId != null) {
 			const parent = await db.select({ id: forumReplies.id, postId: forumReplies.postId }).from(forumReplies).where(eq(forumReplies.id, input.parentReplyId)).limit(1);
 			if (!parent[0] || parent[0].postId !== input.postId) throw new Error("The reply you are responding to is no longer available.");
 		}
 
-		const result = isExpanded
+		const result = repliesExpanded
 		    ? await db.insert(forumReplies).values({
 		        postId: input.postId,
 		        userId: user.id,
@@ -4863,15 +4884,15 @@ export async function getForumReplies(postId: number) {
   const db = await requireDb();
   const { forumReplies, users } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const isExpanded = (await getForumPostsSchemaMode(db)) === "expanded";
+  const repliesExpanded = (await getForumRepliesSchemaMode(db)) === "expanded";
 
   const replies = await db
     .select({
       id: forumReplies.id,
       postId: forumReplies.postId,
       userId: forumReplies.userId,
-	      listingId: isExpanded ? forumReplies.listingId : sql<number | null>`NULL`,
-	      parentReplyId: isExpanded ? forumReplies.parentReplyId : sql<number | null>`NULL`,
+	      listingId: repliesExpanded ? forumReplies.listingId : sql<number | null>`NULL`,
+	      parentReplyId: repliesExpanded ? forumReplies.parentReplyId : sql<number | null>`NULL`,
 	      content: forumReplies.content,
       createdAt: forumReplies.createdAt,
       updatedAt: forumReplies.updatedAt,
@@ -4886,7 +4907,7 @@ export async function getForumReplies(postId: number) {
     .leftJoin(userProfiles, eq(forumReplies.userId, userProfiles.userId))
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
-  const attachments = isExpanded ? await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id)) : new Map<number, Array<{ id: number; imageUrl: string; mimeType: string | null; altText: string | null; sortOrder: number }>>();
+  const attachments = repliesExpanded ? await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id)) : new Map<number, Array<{ id: number; imageUrl: string; mimeType: string | null; altText: string | null; sortOrder: number }>>();
   return replies.map((reply) => ({ ...reply, attachments: attachments.get(reply.id) || [] }));
 }
 

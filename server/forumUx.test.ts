@@ -123,7 +123,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("mimeType: string");
     expect(dbSource).toContain("parentReplyId?: number | null");
     expect(dbSource).toContain("The reply you are responding to is no longer available.");
-    expect(dbSource).toContain("parentReplyId: isExpanded ? forumReplies.parentReplyId : sql<number | null>`NULL`");
+    expect(dbSource).toContain("getForumRepliesSchemaMode(db)");
+    expect(dbSource).toContain("parentReplyId: repliesExpanded ? forumReplies.parentReplyId : sql<number | null>`NULL`");
   });
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {
