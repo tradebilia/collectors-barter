@@ -1398,3 +1398,6 @@
 - [x] Measure the actual visible wheel, divider, TRADE word, and rotating category bounds for each Coming Soon state. The live SVG group was sampled across nine rotating names after fonts and layout settled.
 - [x] Center the measured visible title group on one page center without another arbitrary canvas-width nudge. SVG-native `getBBox()` centering now converges the full group to the SVG midpoint.
 - [x] Verify BILIA, COMICS, COINS, and SPORTS CARDS against the same center with no clipping or residual right shift. Live deltas were within 0.51px across sampled states; focused geometry tests, TypeScript, production build, and whitespace checks passed.
+
+- [x] Remove the redundant homepage Follow Tradebilia section below the social-media icons while preserving the icons and all other homepage content. The heading, community copy, and labeled buttons were removed; a compact icon-only row remains.
+- [x] Validate homepage spacing, social-link preservation, and desktop/mobile rendering after the section removal. The focused social-link test, TypeScript, production build, whitespace check, and 1280px/390px plus full-page desktop screenshots passed.

@@ -902,33 +902,22 @@ export default function Home() {
               </div>
           </div>
 
-          <section className="border-t border-white/10 bg-[#0b102b] px-4 py-8 text-white sm:py-10" aria-labelledby="tradebilia-social-heading">
-            <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Collector community</p>
-                <h2 id="tradebilia-social-heading" className="mt-2 font-serif text-3xl font-medium sm:text-4xl">Follow Tradebilia</h2>
-                <p className="mt-2 text-sm leading-6 text-white/70">Find Tradebilia across the collector community.</p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4" aria-label="Tradebilia social media links">
-                <a href="https://www.facebook.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#1877f2]/60 bg-[#1877f2]/15 px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1877f2]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#63a4ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Facebook (opens in a new tab)">
-                  <img src="/manus-storage/facebook_a1c8ae7d.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
-                  Facebook
-                </a>
-                <a href="https://www.instagram.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-rose-500/15 to-amber-400/15 px-4 py-2 text-sm font-semibold text-white transition hover:from-fuchsia-500/30 hover:via-rose-500/30 hover:to-amber-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Instagram (opens in a new tab)">
-                  <img src="/manus-storage/instagram_27917c8e.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
-                  Instagram
-                </a>
-                <a href="https://x.com/Tradebilia66" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on X (opens in a new tab)">
-                  <img src="/manus-storage/x_bddf13f5.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
-                  X
-                </a>
-                <span className="inline-flex min-h-12 cursor-not-allowed items-center gap-2 rounded-full border border-red-300/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-white/80" aria-label="Tradebilia YouTube channel link coming soon" title="Official YouTube channel link coming soon">
-                  <img src="/manus-storage/youtube_40b8f30b.svg" alt="" aria-hidden="true" className="h-5 w-5 object-contain" />
-                  YouTube <span className="text-xs font-normal text-white/50">(coming soon)</span>
-                </span>
-              </div>
+          <div className="border-t border-white/10 px-4 py-5" aria-label="Tradebilia social media links">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <a href="https://www.facebook.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-full border border-[#1877f2]/60 bg-[#1877f2]/15 px-3 py-2 transition hover:bg-[#1877f2]/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#63a4ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Facebook (opens in a new tab)">
+                <img src="/manus-storage/facebook_a1c8ae7d.svg" alt="Facebook" className="h-5 w-5 object-contain" />
+              </a>
+              <a href="https://www.instagram.com/tradebilia" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-full border border-fuchsia-400/50 bg-gradient-to-r from-fuchsia-500/15 via-rose-500/15 to-amber-400/15 px-3 py-2 transition hover:from-fuchsia-500/30 hover:via-rose-500/30 hover:to-amber-400/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-300 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on Instagram (opens in a new tab)">
+                <img src="/manus-storage/instagram_27917c8e.svg" alt="Instagram" className="h-5 w-5 object-contain" />
+              </a>
+              <a href="https://x.com/Tradebilia66" target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center justify-center rounded-full border border-white/30 bg-white/10 px-3 py-2 transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0b102b]" aria-label="Follow Tradebilia on X (opens in a new tab)">
+                <img src="/manus-storage/x_bddf13f5.svg" alt="X" className="h-5 w-5 object-contain" />
+              </a>
+              <span className="inline-flex min-h-10 cursor-not-allowed items-center justify-center rounded-full border border-red-300/40 bg-red-500/10 px-3 py-2" aria-label="Tradebilia YouTube channel link coming soon" title="Official YouTube channel link coming soon">
+                <img src="/manus-storage/youtube_40b8f30b.svg" alt="YouTube" className="h-5 w-5 object-contain" />
+              </span>
             </div>
-          </section>
+          </div>
         </section>
 
         {/* Warning Banner — shown to users who have received admin warnings */}
