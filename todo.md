@@ -1568,3 +1568,4 @@
 - [x] Apply and verify the approved additive forumReplyAttachments table and indexes without altering existing replies.
 - [x] Correct forum topic and reply timestamps to use the viewer computer-local time and the actual stored posting time.
 - [x] Keep exact viewer-local timestamps for main topics but restore UTC-aware elapsed labels for forum replies.
+- [x] Give every forum category button a clearly distinct theme color and place the topic-list section on a white background.

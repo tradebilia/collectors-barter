@@ -23,17 +23,17 @@ function formatForumLocalTimestamp(value: string | number | Date): string {
 }
 
 const forumCategoryTones: Record<string, { active: string; inactive: string }> = {
-  general: { active: "bg-slate-700 text-white", inactive: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
-  comics: { active: "bg-rose-700 text-white", inactive: "bg-rose-50 text-rose-800 hover:bg-rose-100" },
-  "sports-cards": { active: "bg-blue-700 text-white", inactive: "bg-blue-50 text-blue-800 hover:bg-blue-100" },
-  "vintage-toys": { active: "bg-amber-600 text-white", inactive: "bg-amber-50 text-amber-900 hover:bg-amber-100" },
-  "video-games": { active: "bg-emerald-700 text-white", inactive: "bg-emerald-50 text-emerald-800 hover:bg-emerald-100" },
-  stamps: { active: "bg-violet-700 text-white", inactive: "bg-violet-50 text-violet-800 hover:bg-violet-100" },
-  coins: { active: "bg-stone-700 text-white", inactive: "bg-stone-100 text-stone-700 hover:bg-stone-200" },
-  pokemon: { active: "bg-yellow-500 text-slate-950", inactive: "bg-yellow-50 text-yellow-900 hover:bg-yellow-100" },
-  movies: { active: "bg-red-700 text-white", inactive: "bg-red-50 text-red-800 hover:bg-red-100" },
-  autographs: { active: "bg-orange-600 text-white", inactive: "bg-orange-50 text-orange-800 hover:bg-orange-100" },
-  "disney-pins": { active: "bg-cyan-700 text-white", inactive: "bg-cyan-50 text-cyan-800 hover:bg-cyan-100" },
+  general: { active: "bg-slate-700 text-white", inactive: "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200" },
+  comics: { active: "bg-rose-700 text-white", inactive: "border border-rose-300 bg-rose-100 text-rose-900 hover:bg-rose-200" },
+  "sports-cards": { active: "bg-blue-700 text-white", inactive: "border border-blue-300 bg-blue-100 text-blue-900 hover:bg-blue-200" },
+  "vintage-toys": { active: "bg-amber-600 text-white", inactive: "border border-amber-300 bg-amber-100 text-amber-950 hover:bg-amber-200" },
+  "video-games": { active: "bg-emerald-700 text-white", inactive: "border border-emerald-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-200" },
+  stamps: { active: "bg-violet-700 text-white", inactive: "border border-violet-300 bg-violet-100 text-violet-900 hover:bg-violet-200" },
+  coins: { active: "bg-teal-700 text-white", inactive: "border border-teal-300 bg-teal-100 text-teal-950 hover:bg-teal-200" },
+  pokemon: { active: "bg-yellow-500 text-slate-950", inactive: "border border-yellow-400 bg-yellow-100 text-yellow-950 hover:bg-yellow-200" },
+  movies: { active: "bg-red-700 text-white", inactive: "border border-red-300 bg-red-100 text-red-900 hover:bg-red-200" },
+  autographs: { active: "bg-orange-600 text-white", inactive: "border border-orange-300 bg-orange-100 text-orange-950 hover:bg-orange-200" },
+  "disney-pins": { active: "bg-cyan-700 text-white", inactive: "border border-cyan-300 bg-cyan-100 text-cyan-950 hover:bg-cyan-200" },
 };
 
 export function Forum() {
@@ -187,7 +187,7 @@ export function Forum() {
           <span>{posts?.length ?? 0} {posts?.length === 1 ? "topic" : "topics"} in this category</span>
           {!user && <span>Sign in to start a discussion.</span>}
         </div>
-        <div className="mb-8 overflow-hidden rounded-xl border border-border bg-card">
+        <div className="mb-8 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
           {isLoading ? (
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">Loading topics...</div>
           ) : posts && posts.length > 0 ? (
