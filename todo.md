@@ -1510,3 +1510,7 @@
 - [x] Audit the approved category-to-topic hierarchy and current forum presentation.
 - [x] Implement simplified category, subcategory, topic-row, and nested-reply presentation without Reddit-specific mechanics.
 - [x] Add regression coverage and verify the refined hierarchy at desktop and mobile widths.
+
+- [x] Audit the current per-message Reply actions, composer behavior, media limits, and available UI icons.
+- [x] Add inline composers beneath the selected topic or reply with image, GIF, video, and formatting shortcuts; Video is visibly marked as a future capability because the current storage mutation accepts images/GIFs only.
+- [ ] Add regression coverage and verify nested reply, media selection, cancel, and submit flows responsively; signed-in end-to-end validation remains pending.

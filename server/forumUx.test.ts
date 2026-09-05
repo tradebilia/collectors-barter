@@ -85,7 +85,7 @@ describe("Collectors Forum UX contracts", () => {
   });
 
   it("supports reply photos, optional listing links, and persisted follow notifications", () => {
-    expect(topicSource).toContain('id="forum-reply-photos"');
+    expect(topicSource).toContain('type="file" accept="image/jpeg,image/png,image/webp,image/gif"');
     expect(topicSource).toContain('id="forum-reply-listing"');
     expect(topicSource).toContain("uploadForumReplyImage");
     expect(topicSource).toContain("/listings/${reply.listingId}");
@@ -105,8 +105,10 @@ describe("Collectors Forum UX contracts", () => {
   it("supports direct replies to the topic and replies to individual members", () => {
     expect(topicSource).toContain("replyParentId");
     expect(topicSource).toContain("beginReplyTo");
-    expect(topicSource).toContain('Reply to ${replyParentName}');
-    expect(topicSource).toContain('Replying to <strong>{replyParentName}</strong>');
+    expect(topicSource).toContain("renderInlineReplyComposer");
+    expect(topicSource).toContain('Replying to <strong className="text-foreground">');
+    expect(topicSource).toContain("Photos / GIF");
+    expect(topicSource).toContain("Video replies will be supported in a future update");
     expect(dbSource).toContain("parentReplyId?: number | null");
     expect(dbSource).toContain("The reply you are responding to is no longer available.");
     expect(dbSource).toContain("parentReplyId: forumReplies.parentReplyId");

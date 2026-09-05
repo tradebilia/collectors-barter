@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
+import { FileText, ImagePlus, Video, X } from "lucide-react";
 import { forumSubcategoryLabels } from "@shared/forum";
 
 function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
@@ -39,6 +40,7 @@ export function ForumTopic() {
   const [replyPhotos, setReplyPhotos] = useState<File[]>([]);
   const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [replyParentName, setReplyParentName] = useState<string | null>(null);
+  const [isReplyComposerOpen, setIsReplyComposerOpen] = useState(false);
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -153,12 +155,22 @@ export function ForumTopic() {
     setReplyParentId(replyId);
     setReplyParentName(authorName);
     setReplyError("");
-    window.requestAnimationFrame(() => document.getElementById("forum-reply-content")?.focus());
+    setIsReplyComposerOpen(true);
+    window.requestAnimationFrame(() => document.getElementById(`forum-reply-content-${replyId}`)?.focus());
+  };
+
+  const beginReplyToTopic = () => {
+    setReplyParentId(null);
+    setReplyParentName(null);
+    setReplyError("");
+    setIsReplyComposerOpen(true);
+    window.requestAnimationFrame(() => document.getElementById("forum-reply-content-topic")?.focus());
   };
 
   const clearReplyTarget = () => {
     setReplyParentId(null);
     setReplyParentName(null);
+    setIsReplyComposerOpen(false);
   };
 
   const handleAddReply = async (event: FormEvent) => {
@@ -191,6 +203,38 @@ export function ForumTopic() {
     } catch (error) {
       setReplyError(error instanceof Error ? error.message : "Failed to add reply. Please try again.");
     }
+  };
+
+  const renderInlineReplyComposer = (targetKey: string) => {
+    const isTopicTarget = targetKey === "topic";
+    const isTargetOpen = isReplyComposerOpen && (isTopicTarget ? replyParentId === null : replyParentId === Number(targetKey));
+    if (!post || !isTargetOpen || !user || post.isLocked) return null;
+    const composerId = `forum-reply-content-${targetKey}`;
+    const mediaInputId = `forum-reply-media-${targetKey}`;
+    const insertFormatting = () => setReplyContent((current) => `${current}${current ? " " : ""}**bold text**`);
+    return (
+      <form onSubmit={handleAddReply} className="mt-3 rounded-xl border border-border bg-muted/25 p-3 shadow-sm">
+        <div className="mb-2 text-sm text-muted-foreground">Replying to <strong className="text-foreground">{isTopicTarget ? post.author?.name || "the topic" : replyParentName || "this member"}</strong></div>
+        <label htmlFor={composerId} className="sr-only">Your reply</label>
+        <textarea id={composerId} value={replyContent} onChange={(event) => setReplyContent(event.target.value)} placeholder="Write a reply..." className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm" maxLength={2000} />
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
+            <label htmlFor="forum-reply-listing" className="sr-only">Optional Tradebilia item number</label>
+            <input id="forum-reply-listing" inputMode="numeric" value={replyListingId} onChange={(event) => setReplyListingId(event.target.value.replace(/\D/g, ""))} placeholder="Item # (optional)" className="h-8 w-32 rounded-md border bg-background px-2 text-xs" />
+            <input id={mediaInputId} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 6 * 1024 * 1024).slice(0, 6); setReplyPhotos(selected); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose up to 6 image or GIF files, each 6 MB or smaller."); }} />
+            <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => document.getElementById(mediaInputId)?.click()}><ImagePlus className="h-4 w-4" aria-hidden="true" /> Photos / GIF</button>
+            <button type="button" disabled title="Video replies will be supported in a future update" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground/60"><Video className="h-4 w-4" aria-hidden="true" /> Video</button>
+            <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={insertFormatting}><FileText className="h-4 w-4" aria-hidden="true" /> Format</button>
+            {replyPhotos.length > 0 && <span className="text-xs text-muted-foreground">{replyPhotos.length} attached</span>}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={clearReplyTarget}><X className="mr-1 h-4 w-4" aria-hidden="true" />Cancel</Button>
+            <Button type="submit" size="sm" disabled={addReplyMutation.isPending}>{addReplyMutation.isPending ? "Posting..." : "Reply"}</Button>
+          </div>
+        </div>
+        {replyError && <p className="mt-2 text-sm text-red-700" role="alert">{replyError}</p>}
+      </form>
+    );
   };
 
   if (!match) return null;
@@ -298,6 +342,7 @@ export function ForumTopic() {
                   )}
 
                   <div className="mt-6 flex flex-wrap items-center gap-2 border-t pt-4">
+                    {user && !post.isLocked && <Button type="button" variant="outline" onClick={beginReplyToTopic}>Reply</Button>}
                     {user && <Button type="button" variant="outline" onClick={handleToggleFollow}>{followPostMutation.isPending ? "Saving..." : isFollowing ? "Following topic" : "Follow topic"}</Button>}
                     {user && !isPostOwner && <Button type="button" variant="outline" onClick={() => setShowReportForm((current) => !current)}>Report post</Button>}
                     {user?.role === "admin" && <>
@@ -311,6 +356,8 @@ export function ForumTopic() {
                     <textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} placeholder="Optional details" maxLength={2000} className="mb-3 h-20 w-full rounded-md border px-3 py-2 text-sm" />
                     <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setShowReportForm(false)}>Cancel</Button><Button type="submit" disabled={reportPostMutation.isPending}>{reportPostMutation.isPending ? "Sending..." : "Send report"}</Button></div>
                   </form>}
+
+                  {renderInlineReplyComposer("topic")}
 
                   {isPostOwner && (
                     <div className="mt-6 border-t pt-4">
@@ -362,7 +409,8 @@ export function ForumTopic() {
                           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
                           {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
                           {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
-                          {user && !post.isLocked && <button type="button" className="mt-2 text-xs font-semibold text-muted-foreground underline underline-offset-2 hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
+                          {user && !post.isLocked && <button type="button" className="mt-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
+                          {renderInlineReplyComposer(String(reply.id))}
                         </div>
                       </div>
                     </article>
@@ -375,51 +423,16 @@ export function ForumTopic() {
               )}
             </div>
 
-            {/* Add Reply */}
-            {user && !post.isLocked ? (
-              <Card className="p-6">
-                <form onSubmit={handleAddReply}>
-                  <h3 className="mb-1 text-lg font-semibold">{replyParentName ? `Reply to ${replyParentName}` : "Add Your Reply"}</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">{replyParentName ? "Your response will appear beneath that member’s reply." : "Your response will be added to the main topic."} Keep the conversation useful and respectful for fellow collectors.</p>
-                  {replyParentId && <div className="mb-4 flex items-center justify-between rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm"><span>Replying to <strong>{replyParentName}</strong></span><Button type="button" variant="ghost" size="sm" onClick={clearReplyTarget}>Cancel target</Button></div>}
-                  <label htmlFor="forum-reply-content" className="sr-only">Your reply</label>
-                  <textarea
-                    id="forum-reply-content"
-                    value={replyContent}
-                    onChange={e => setReplyContent(e.target.value)}
-                    placeholder="Enter your reply..."
-                    className="mb-4 h-24 w-full rounded-md border px-3 py-2"
-                    maxLength={2000}
-                  />
-                  <div className="mb-4 grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <label htmlFor="forum-reply-listing" className="mb-1 block text-sm font-medium">Optional Tradebilia item #</label>
-                      <input id="forum-reply-listing" inputMode="numeric" value={replyListingId} onChange={(event) => setReplyListingId(event.target.value.replace(/\D/g, ""))} placeholder="Item ID" className="w-full rounded-md border px-3 py-2 text-sm" />
-                    </div>
-                    <div>
-                      <label htmlFor="forum-reply-photos" className="mb-1 block text-sm font-medium">Photos (up to 6)</label>
-                      <input id="forum-reply-photos" type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 6 * 1024 * 1024).slice(0, 6); setReplyPhotos(selected); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose up to 6 image files, each 6 MB or smaller."); }} className="w-full rounded-md border px-3 py-1.5 text-sm" />
-                      {replyPhotos.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{replyPhotos.length} photo{replyPhotos.length === 1 ? "" : "s"} ready to upload.</p>}
-                    </div>
-                  </div>
-                  {replyError && <p className="mb-3 text-sm text-red-700" role="alert">{replyError}</p>}
-                  <div className="flex justify-end gap-2">
-                    <Button type="submit" disabled={addReplyMutation.isPending}>
-                      {addReplyMutation.isPending ? "Posting..." : "Post Reply"}
-                    </Button>
-                  </div>
-                </form>
-              </Card>
-            ) : !user ? (
+            {!user ? (
               <Card className="p-6 text-center">
                 <p className="mb-4">Sign in to reply to this topic</p>
                 <Button onClick={() => setLocation("/")}>Sign In</Button>
               </Card>
-            ) : (
+            ) : post.isLocked ? (
               <Card className="p-6 text-center bg-red-50">
                 <p>This topic is locked and no new replies can be added.</p>
               </Card>
-            )}
+            ) : null}
           </>
         ) : (
           <Card className="mx-auto max-w-xl p-8 text-center">
