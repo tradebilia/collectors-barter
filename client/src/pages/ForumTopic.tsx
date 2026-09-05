@@ -417,8 +417,8 @@ export function ForumTopic() {
                       return branch.map((reply) => {
                         const childReplies = replies.filter((child) => child.parentReplyId === reply.id);
                         return (
-                          <div key={reply.id} className={`relative pl-6 before:absolute before:bottom-0 before:left-2 before:top-0 before:border-l before:border-border/80 after:absolute after:left-2 after:top-8 after:w-4 after:border-t after:border-border/80 ${depth > 0 ? "ml-6 sm:ml-8" : ""}`}>
-                            {childReplies.length > 0 && <button type="button" onClick={() => toggleReplyChildren(reply.id)} aria-expanded={!collapsedReplyIds.has(reply.id)} aria-label={`${collapsedReplyIds.has(reply.id) ? "Expand" : "Collapse"} ${childReplies.length} ${childReplies.length === 1 ? "reply" : "replies"}`} className="absolute left-0 top-5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-background text-muted-foreground shadow-sm hover:text-primary">
+                          <div key={reply.id} className={`relative pl-6 before:absolute before:bottom-0 before:left-[44px] before:top-0 before:border-l before:border-border/80 ${depth > 0 ? "ml-6 after:absolute after:left-5 after:top-9 after:w-6 after:border-t after:border-border/80 sm:ml-8" : ""}`}>
+                            {childReplies.length > 0 && <button type="button" onClick={() => toggleReplyChildren(reply.id)} aria-expanded={!collapsedReplyIds.has(reply.id)} aria-label={`${collapsedReplyIds.has(reply.id) ? "Expand" : "Collapse"} ${childReplies.length} ${childReplies.length === 1 ? "reply" : "replies"}`} className="absolute left-[34px] top-5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-background text-muted-foreground shadow-sm hover:text-primary">
                               {collapsedReplyIds.has(reply.id) ? <ChevronRight className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
                             </button>}
                             <article className="py-4">

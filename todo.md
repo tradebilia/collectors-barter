@@ -1531,3 +1531,5 @@
 - [ ] Diagnose and repair the mismatch where a submitted reply increments the topic count but is not returned or rendered, then verify the full nested child-reply flow.
 - [x] Prevent the optional forumReplyAttachments lookup from hiding text replies when that attachment table is absent from the custom database.
 - [x] Refine nested forum thread geometry to use continuous vertical guides, short branch connectors, and collapse controls aligned to each guide level, matching the supplied reference on desktop and mobile.
+- [x] Diagnose the WebDev preview panel “Too many requests” message and repair only if the application is generating an excessive request loop; current app requests are healthy and no request loop was found.
+- [x] Connect each nested reply avatar to its parent avatar with precise vertical and horizontal branches, including sibling replies under the same parent, matching the supplied reference on desktop and mobile.
