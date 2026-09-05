@@ -418,8 +418,8 @@ export function ForumTopic() {
                         const childReplies = replies.filter((child) => child.parentReplyId === reply.id);
                         return (
                           <div key={reply.id} className={`relative pl-6 ${depth > 0 ? "ml-6" : ""}`}>
-                            {childReplies.length > 0 && <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-[44px] top-9 w-[3px] rounded-full bg-foreground/75" />}
-                            {depth > 0 && <span aria-hidden="true" className="pointer-events-none absolute left-5 top-9 h-[3px] w-6 rounded-full bg-foreground/75" />}
+                            {childReplies.length > 0 && <span aria-hidden="true" className="pointer-events-none absolute bottom-0 left-[44px] top-9 w-[4px] rounded-full bg-foreground" />}
+                            {depth > 0 && <span aria-hidden="true" className="pointer-events-none absolute left-5 top-9 h-[4px] w-6 rounded-full bg-foreground" />}
                             {childReplies.length > 0 && <button type="button" onClick={() => toggleReplyChildren(reply.id)} aria-expanded={!collapsedReplyIds.has(reply.id)} aria-label={`${collapsedReplyIds.has(reply.id) ? "Expand" : "Collapse"} ${childReplies.length} ${childReplies.length === 1 ? "reply" : "replies"}`} className="absolute left-[34px] top-[26px] z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-background text-foreground shadow-sm hover:text-primary">
                               {collapsedReplyIds.has(reply.id) ? <ChevronRight className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
                             </button>}
