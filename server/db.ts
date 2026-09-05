@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, like, lte, ne, or, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import { alias } from "drizzle-orm/mysql-core";
 import type { InsertUser, User } from "../drizzle/schema";
 import {
   users,
@@ -4661,10 +4662,10 @@ export async function deleteForumPost(userId: number, postId: number) {
   return { postId };
 }
 
-export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest", subcategory?: string | null) {
+export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest", subcategory?: string | null, searchQuery?: string, activityFilter: "all" | "unanswered" | "recent" = "all") {
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");
-  const { eq, desc, and } = await import("drizzle-orm");
+  const { eq, desc, and, like, or, gte } = await import("drizzle-orm");
 
   const baseQuery = db
     .select({
@@ -4696,6 +4697,9 @@ export async function getForumPosts(category?: string, sortBy: "newest" | "popul
     eq(forumPosts.status, "active"),
     category ? eq(forumPosts.category, category) : undefined,
     subcategory ? eq(forumPosts.subcategory, subcategory) : undefined,
+    searchQuery?.trim() ? or(like(forumPosts.title, `%${searchQuery.trim()}%`), like(forumPosts.content, `%${searchQuery.trim()}%`)) : undefined,
+    activityFilter === "unanswered" ? eq(forumPosts.replyCount, 0) : undefined,
+    activityFilter === "recent" ? gte(forumPosts.updatedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ")) : undefined,
   );
   if (sortBy === "newest") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
   if (sortBy === "popular") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
@@ -4748,10 +4752,11 @@ export async function addForumReply(
   input: {
     postId: number;
     content: string;
+    listingId?: number | null;
   }
 ) {
   const db = await requireDb();
-  const { forumReplies, forumPosts } = await import("../drizzle/schema");
+  const { forumReplies, forumPosts, forumFollows, forumNotifications } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
 
   const post = await db
@@ -4765,14 +4770,22 @@ export async function addForumReply(
   const result = await db.insert(forumReplies).values({
     postId: input.postId,
     userId: user.id,
+    listingId: input.listingId || null,
     content: input.content.trim(),
   });
+  const replyId = getInsertId(result);
 
   // Increment reply count
   const { sql } = await import("drizzle-orm");
   await db.update(forumPosts).set({ replyCount: sql`replyCount + 1` }).where(eq(forumPosts.id, input.postId));
 
-  return { replyId: getInsertId(result) };
+  const followers = await db.select({ userId: forumFollows.userId }).from(forumFollows).where(eq(forumFollows.postId, input.postId));
+  const recipients = [...new Set(followers.map((row) => row.userId).filter((userId) => userId !== user.id))];
+  if (recipients.length > 0) {
+    await db.insert(forumNotifications).values(recipients.map((userId) => ({ userId, postId: input.postId, replyId, kind: "topic_reply" as const })));
+  }
+
+  return { replyId };
 }
 
 export async function getForumReplies(postId: number) {
@@ -4780,11 +4793,12 @@ export async function getForumReplies(postId: number) {
   const { forumReplies, users } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
 
-  return db
+  const replies = await db
     .select({
       id: forumReplies.id,
       postId: forumReplies.postId,
       userId: forumReplies.userId,
+      listingId: forumReplies.listingId,
       content: forumReplies.content,
       createdAt: forumReplies.createdAt,
       updatedAt: forumReplies.updatedAt,
@@ -4799,6 +4813,8 @@ export async function getForumReplies(postId: number) {
     .leftJoin(userProfiles, eq(forumReplies.userId, userProfiles.userId))
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
+  const attachments = await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id));
+  return replies.map((reply) => ({ ...reply, attachments: attachments.get(reply.id) || [] }));
 }
 
 // ============================================================================
@@ -5182,4 +5198,101 @@ export async function isFollowingForumPost(userId: number, postId: number) {
   const { eq, and } = await import("drizzle-orm");
   const existing = await db.select({ id: forumFollows.id }).from(forumFollows).where(and(eq(forumFollows.userId, userId), eq(forumFollows.postId, postId))).limit(1);
   return Boolean(existing[0]);
+}
+
+export async function addForumReplyAttachment(input: {
+  replyId: number;
+  userId: number;
+  fileKey: string;
+  imageUrl: string;
+  altText?: string | null;
+  sortOrder: number;
+}) {
+  const db = await requireDb();
+  const { forumReplyAttachments, forumReplies } = await import("../drizzle/schema");
+  const { eq, count } = await import("drizzle-orm");
+  const reply = await db.select({ id: forumReplies.id, userId: forumReplies.userId }).from(forumReplies).where(eq(forumReplies.id, input.replyId)).limit(1);
+  if (!reply[0]) throw new Error("Forum reply not found.");
+  if (reply[0].userId !== input.userId) throw new Error("Only the reply author can add photos.");
+  const existing = await db.select({ total: count() }).from(forumReplyAttachments).where(eq(forumReplyAttachments.replyId, input.replyId));
+  if (Number(existing[0]?.total ?? 0) >= 6) throw new Error("A forum reply can include up to 6 photos.");
+  const result = await db.insert(forumReplyAttachments).values({ ...input, altText: input.altText?.trim() || null });
+  return { attachmentId: getInsertId(result) };
+}
+
+export async function getForumReplyAttachmentsForPosts(replyIds: number[]) {
+  if (!replyIds.length) return new Map<number, Array<{ id: number; imageUrl: string; altText: string | null; sortOrder: number }>>();
+  const db = await requireDb();
+  const { forumReplyAttachments } = await import("../drizzle/schema");
+  const { inArray, asc } = await import("drizzle-orm");
+  const rows = await db.select({ id: forumReplyAttachments.id, replyId: forumReplyAttachments.replyId, imageUrl: forumReplyAttachments.imageUrl, altText: forumReplyAttachments.altText, sortOrder: forumReplyAttachments.sortOrder }).from(forumReplyAttachments).where(inArray(forumReplyAttachments.replyId, replyIds)).orderBy(asc(forumReplyAttachments.sortOrder));
+  return rows.reduce((grouped, row) => {
+    const current = grouped.get(row.replyId) || [];
+    current.push({ id: row.id, imageUrl: row.imageUrl, altText: row.altText, sortOrder: row.sortOrder });
+    grouped.set(row.replyId, current);
+    return grouped;
+  }, new Map<number, Array<{ id: number; imageUrl: string; altText: string | null; sortOrder: number }>>());
+}
+
+export async function getForumReportsForAdmin() {
+  const db = await requireDb();
+  const { forumReports, forumPosts, users } = await import("../drizzle/schema");
+  const { eq, desc } = await import("drizzle-orm");
+  const reporter = alias(users, "forumReportReporter");
+  return db.select({
+    id: forumReports.id,
+    postId: forumReports.postId,
+    reason: forumReports.reason,
+    details: forumReports.details,
+    status: forumReports.status,
+    createdAt: forumReports.createdAt,
+    postTitle: forumPosts.title,
+    postStatus: forumPosts.status,
+    reporterName: sql<string>`COALESCE(NULLIF(${reporter.displayName}, ''), ${reporter.name}, 'Member')`,
+  }).from(forumReports)
+    .leftJoin(forumPosts, eq(forumReports.postId, forumPosts.id))
+    .leftJoin(reporter, eq(forumReports.reporterId, reporter.id))
+    .orderBy(desc(forumReports.createdAt));
+}
+
+export async function reviewForumReport(adminId: number, input: { reportId: number; action: "dismiss" | "remove" | "restore"; note?: string }) {
+  const db = await requireDb();
+  const { forumReports } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  const report = await db.select({ id: forumReports.id, postId: forumReports.postId }).from(forumReports).where(eq(forumReports.id, input.reportId)).limit(1);
+  if (!report[0]) throw new Error("Forum report not found.");
+  const status = input.action === "dismiss" ? "dismissed" as const : "action_taken" as const;
+  await db.update(forumReports).set({ status, reviewedBy: adminId, reviewedAt: new Date().toISOString().slice(0, 19).replace("T", " ") }).where(eq(forumReports.id, input.reportId));
+  if (input.action === "remove") await moderateForumPost(adminId, { postId: report[0].postId, action: "remove", reason: input.note || "Removed following community report." });
+  if (input.action === "restore") await moderateForumPost(adminId, { postId: report[0].postId, action: "restore", reason: input.note });
+  return { reportId: input.reportId, postId: report[0].postId, status };
+}
+
+export async function getMyForumNotifications(userId: number) {
+  const db = await requireDb();
+  const { forumNotifications, forumPosts, forumReplies, users } = await import("../drizzle/schema");
+  const { eq, desc } = await import("drizzle-orm");
+  return db.select({
+    id: forumNotifications.id,
+    postId: forumNotifications.postId,
+    replyId: forumNotifications.replyId,
+    isRead: forumNotifications.isRead,
+    createdAt: forumNotifications.createdAt,
+    postTitle: forumPosts.title,
+    replyAuthor: sql<string>`COALESCE(NULLIF(${users.displayName}, ''), ${users.name}, 'A member')`,
+  }).from(forumNotifications)
+    .leftJoin(forumPosts, eq(forumNotifications.postId, forumPosts.id))
+    .leftJoin(forumReplies, eq(forumNotifications.replyId, forumReplies.id))
+    .leftJoin(users, eq(forumReplies.userId, users.id))
+    .where(eq(forumNotifications.userId, userId))
+    .orderBy(desc(forumNotifications.createdAt))
+    .limit(20);
+}
+
+export async function markForumNotificationRead(userId: number, notificationId: number) {
+  const db = await requireDb();
+  const { forumNotifications } = await import("../drizzle/schema");
+  const { eq, and } = await import("drizzle-orm");
+  await db.update(forumNotifications).set({ isRead: 1 }).where(and(eq(forumNotifications.id, notificationId), eq(forumNotifications.userId, userId)));
+  return { notificationId };
 }

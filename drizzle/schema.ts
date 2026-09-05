@@ -126,6 +126,7 @@ export const forumPosts = mysqlTable("forumPosts", {
 	userId: int().notNull().references(() => users.id),
 	category: varchar({ length: 64 }).notNull(),
 	subcategory: varchar({ length: 64 }),
+	listingId: int(),
 	title: varchar({ length: 255 }).notNull(),
 	content: text().notNull(),
 	isPinned: tinyint().default(0).notNull(),
@@ -144,6 +145,7 @@ export const forumPosts = mysqlTable("forumPosts", {
 	index("forumPosts_userId_idx").on(table.userId),
 	index("forumPosts_category_idx").on(table.category),
 	index("forumPosts_subcategory_idx").on(table.subcategory),
+	index("forumPosts_listing_idx").on(table.listingId),
 	index("forumPosts_isPinned_idx").on(table.isPinned),
 	index("forumPosts_status_idx").on(table.status),
 	index("forumPosts_createdAt_idx").on(table.createdAt),
@@ -196,6 +198,7 @@ export const forumReplies = mysqlTable("forumReplies", {
 	id: int().autoincrement().notNull(),
 	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" } ),
 	userId: int().notNull().references(() => users.id),
+	listingId: int(),
 	content: text().notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
 	updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
@@ -203,7 +206,37 @@ export const forumReplies = mysqlTable("forumReplies", {
 (table) => [
 	index("forumReplies_postId_idx").on(table.postId),
 	index("forumReplies_userId_idx").on(table.userId),
+	index("forumReplies_listing_idx").on(table.listingId),
 	index("forumReplies_createdAt_idx").on(table.createdAt),
+]);
+
+export const forumReplyAttachments = mysqlTable("forumReplyAttachments", {
+	id: int().autoincrement().notNull(),
+	replyId: int().notNull().references(() => forumReplies.id, { onDelete: "cascade" }),
+	userId: int().notNull().references(() => users.id),
+	fileKey: varchar({ length: 255 }).notNull(),
+	imageUrl: text().notNull(),
+	altText: varchar({ length: 180 }),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("forumReplyAttachments_reply_idx").on(table.replyId),
+	index("forumReplyAttachments_user_idx").on(table.userId),
+]);
+
+export const forumNotifications = mysqlTable("forumNotifications", {
+	id: int().autoincrement().notNull(),
+	userId: int().notNull().references(() => users.id),
+	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
+	replyId: int().references(() => forumReplies.id, { onDelete: "cascade" }),
+	kind: mysqlEnum(['topic_reply']).notNull(),
+	isRead: tinyint().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("forumNotifications_user_read_idx").on(table.userId, table.isRead),
+	index("forumNotifications_post_idx").on(table.postId),
 ]);
 
 export const inquiryReplies = mysqlTable("inquiryReplies", {

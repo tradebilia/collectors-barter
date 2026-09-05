@@ -64,7 +64,12 @@ import {
   deleteForumPost,
   addForumPostAttachment,
   getForumPostAttachments,
+  addForumReplyAttachment,
   createForumReport,
+  getForumReportsForAdmin,
+  reviewForumReport,
+  getMyForumNotifications,
+  markForumNotificationRead,
   moderateForumPost,
   toggleForumFollow,
   isFollowingForumPost,
@@ -1807,11 +1812,25 @@ export const appRouter = router({
     isFollowingForumPost: protectedProcedure
       .input(z.object({ postId: z.number().int().positive() }))
       .query(({ ctx, input }) => isFollowingForumPost(ctx.user.id, input.postId)),
+    getMyForumNotifications: protectedProcedure.query(({ ctx }) => getMyForumNotifications(ctx.user.id)),
+    markForumNotificationRead: protectedProcedure
+      .input(z.object({ notificationId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) => markForumNotificationRead(ctx.user.id, input.notificationId)),
     moderateForumPost: protectedProcedure
       .input(z.object({ postId: z.number().int().positive(), action: z.enum(["remove", "restore", "pin", "unpin"]), reason: z.string().max(2000).optional() }))
       .mutation(({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         return moderateForumPost(ctx.user.id, input);
+      }),
+    getForumModerationQueue: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return getForumReportsForAdmin();
+    }),
+    reviewForumReport: protectedProcedure
+      .input(z.object({ reportId: z.number().int().positive(), action: z.enum(["dismiss", "remove", "restore"]), note: z.string().max(2000).optional() }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return reviewForumReport(ctx.user.id, input);
       }),
     updateForumPost: protectedProcedure
       .input(z.object({
@@ -1828,11 +1847,13 @@ export const appRouter = router({
         z.object({
           category: z.string().optional(),
           subcategory: z.string().nullable().optional(),
+          searchQuery: z.string().max(120).optional(),
+          activityFilter: z.enum(["all", "unanswered", "recent"]).default("all"),
           sortBy: z.enum(["newest", "popular", "replies"]).default("newest"),
         }),
       )
       .query(({ input }) => {
-        return getForumPosts(input.category, input.sortBy, input.subcategory);
+        return getForumPosts(input.category, input.sortBy, input.subcategory, input.searchQuery, input.activityFilter);
       }),
     getForumPostDetail: publicProcedure
       .input(z.object({ postId: z.number().int().positive() }))
@@ -1848,11 +1869,28 @@ export const appRouter = router({
       .input(
         z.object({
           postId: z.number().int().positive(),
+          listingId: z.number().int().positive().nullable().optional(),
           content: z.string().min(1).max(2000),
         }),
       )
       .mutation(({ ctx, input }) => {
         return addForumReply({ id: ctx.user.id, name: ctx.user.name }, input);
+      }),
+    uploadForumReplyImage: protectedProcedure
+      .input(z.object({
+        replyId: z.number().int().positive(),
+        fileName: z.string().min(1).max(160),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]),
+        dataBase64: z.string().min(1).max(8_500_000),
+        altText: z.string().max(180).optional(),
+        sortOrder: z.number().int().min(0).max(5),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.dataBase64.replace(/^data:[^;]+;base64,/, ""), "base64");
+        if (buffer.byteLength > 6 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Each forum photo must be 6 MB or smaller." });
+        const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+        const uploaded = await storagePut(`forum/${ctx.user.id}/replies/${input.replyId}/${safeName}`, buffer, input.mimeType);
+        return addForumReplyAttachment({ replyId: input.replyId, userId: ctx.user.id, fileKey: uploaded.key, imageUrl: uploaded.url, altText: input.altText, sortOrder: input.sortOrder });
       }),
     lookupUserByUsername: publicProcedure
       .input(z.object({ username: z.string().min(1).max(64) }))
