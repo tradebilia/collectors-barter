@@ -76,6 +76,11 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("forum_post_${input.action}");
     expect(dbSource).toContain("status: \"removed\"");
     expect(dbSource).toContain("You have already reported this post.");
+    expect(dbSource).toContain('if (schemaMode === "legacy")');
+    expect(dbSource).toContain('removalMode: "permanent" as const');
+    expect(dbSource).toContain("await db.delete(forumReplies).where(eq(forumReplies.postId, input.postId));");
+    expect(dbSource).toContain("This older forum record cannot be restored after removal.");
+    expect(topicSource).toContain('Could not update this post right now. Please refresh and try again.');
   });
 
   it("supports reply photos, optional listing links, and persisted follow notifications", () => {
