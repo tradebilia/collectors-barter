@@ -348,25 +348,24 @@ export function ForumTopic() {
               {repliesLoading ? (
                 <div className="text-center py-8">Loading replies...</div>
               ) : replies && replies.length > 0 ? (
-                <div className="space-y-4 mb-8">
+                <div className="mb-8 divide-y divide-border/70 border-y border-border/70">
                   {replies.map(reply => (
-                    <Card key={reply.id} className={`p-4 ${reply.parentReplyId ? "ml-6 border-l-4 border-l-primary/30 sm:ml-10" : ""}`}>
-                      <div className="flex items-start gap-4">
+                    <article key={reply.id} className={`py-4 ${reply.parentReplyId ? "ml-6 border-l-2 border-l-primary/30 pl-4 sm:ml-10" : ""}`}>
+                      <div className="flex items-start gap-3">
                         <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-semibold">{reply.author?.name || "Anonymous"}</h3>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(reply.createdAt).toLocaleString()}
-                            </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                            <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
+                            <span aria-hidden="true">·</span>
+                            <time dateTime={new Date(reply.createdAt).toISOString()}>{new Date(reply.createdAt).toLocaleString()}</time>
                           </div>
-                          <p className="text-sm">{reply.content}</p>
-                          {reply.listingId && <button type="button" className="mt-3 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked Tradebilia item #{reply.listingId}</button>}
-                          {reply.attachments?.length > 0 && <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
-                          {user && !post.isLocked && <button type="button" className="mt-3 text-sm font-semibold text-primary underline underline-offset-2" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
+                          {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
+                          {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
+                          {user && !post.isLocked && <button type="button" className="mt-2 text-xs font-semibold text-muted-foreground underline underline-offset-2 hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
                         </div>
                       </div>
-                    </Card>
+                    </article>
                   ))}
                 </div>
               ) : (

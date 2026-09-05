@@ -1493,3 +1493,7 @@
 
 - [x] Remove the forum topic message minimum-length rule while retaining non-empty validation and friendly errors.
 - [x] Add regression coverage and verify short non-empty topic messages can be submitted.
+
+- [x] Document the approved Reddit-inspired forum reply direction and audit the current reply layout.
+- [x] Refine reply cards, inline actions, and reply-target composition for a compact discussion flow.
+- [x] Add regression coverage and verify the refined discussion flow at desktop and mobile widths; signed-in end-to-end validation remains pending.

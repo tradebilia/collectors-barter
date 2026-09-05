@@ -95,6 +95,13 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("parentReplyId: input.parentReplyId || null");
   });
 
+  it("uses a compact discussion-row hierarchy with inline reply actions", () => {
+    expect(topicSource).toContain("divide-y divide-border/70 border-y border-border/70");
+    expect(topicSource).toContain("<article key={reply.id}");
+    expect(topicSource).toContain("whitespace-pre-wrap text-sm leading-6");
+    expect(topicSource).toContain("hover:text-primary");
+  });
+
   it("supports direct replies to the topic and replies to individual members", () => {
     expect(topicSource).toContain("replyParentId");
     expect(topicSource).toContain("beginReplyTo");
