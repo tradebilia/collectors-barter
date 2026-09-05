@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
-import { ChevronDown, ChevronRight, FileText, ImagePlus, Video, X } from "lucide-react";
+import { FileText, ImagePlus, Video, X } from "lucide-react";
 import { forumSubcategoryLabels } from "@shared/forum";
 
 type ThreadPoint = { x: number; y: number };
@@ -23,6 +23,23 @@ function AuthorAvatar({ name, avatarUrl, avatarRef }: { name?: string | null; av
       )}
     </div>
   );
+}
+
+function formatRelativeTime(value: string | number | Date): string {
+  const elapsedMs = Math.max(0, Date.now() - new Date(value).getTime());
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+  if (elapsedMs < minute) return "just now";
+  if (elapsedMs < hour) return `${Math.floor(elapsedMs / minute)}m ago`;
+  if (elapsedMs < day) return `${Math.floor(elapsedMs / hour)}h ago`;
+  if (elapsedMs < week) return `${Math.floor(elapsedMs / day)}d ago`;
+  if (elapsedMs < month) return `${Math.floor(elapsedMs / week)}w ago`;
+  if (elapsedMs < year) return `${Math.floor(elapsedMs / month)}mo ago`;
+  return `${Math.floor(elapsedMs / year)}y ago`;
 }
 
 function readForumFileAsDataUrl(file: File): Promise<string> {
@@ -234,7 +251,7 @@ export function ForumTopic() {
     const videoInputId = `forum-reply-video-${targetKey}`;
     const insertFormatting = () => setReplyContent((current) => `${current}${current ? " " : ""}**bold text**`);
     return (
-      <form onSubmit={(event) => handleAddReply(event, isTopicTarget ? null : Number(targetKey))} className="mt-3 rounded-xl border border-border bg-muted/25 p-3 shadow-sm">
+      <form onSubmit={(event) => handleAddReply(event, isTopicTarget ? null : Number(targetKey))} className="mt-3 rounded-xl border border-border bg-white p-3 shadow-sm">
         <div className="mb-2 text-sm text-muted-foreground">Replying to <strong className="text-foreground">{isTopicTarget ? post.author?.name || "the topic" : replyParentName || "this member"}</strong></div>
         <label htmlFor={composerId} className="sr-only">Your reply</label>
         <textarea id={composerId} value={replyContent} onChange={(event) => setReplyContent(event.target.value)} placeholder="Write a reply..." className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm" maxLength={2000} />
@@ -487,7 +504,7 @@ export function ForumTopic() {
                                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                     <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
                                     <span aria-hidden="true">·</span>
-                                    <time dateTime={new Date(reply.createdAt).toISOString()}>{new Date(reply.createdAt).toLocaleString()}</time>
+                                    <time dateTime={new Date(reply.createdAt).toISOString()}>{formatRelativeTime(reply.createdAt)}</time>
                                   </div>
                                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
                                   {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
@@ -505,12 +522,12 @@ export function ForumTopic() {
                     };
                     return (
                       <div ref={threadContainerRef} className="relative">
-                        {threadGeometry.width > 0 && <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible text-foreground" viewBox={`0 0 ${threadGeometry.width} ${threadGeometry.height}`} preserveAspectRatio="none">
-                          {threadGeometry.paths.map((path) => <path key={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />)}
+                        {threadGeometry.width > 0 && <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible text-muted-foreground" viewBox={`0 0 ${threadGeometry.width} ${threadGeometry.height}`} preserveAspectRatio="none">
+                          {threadGeometry.paths.map((path) => <path key={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />)}
                         </svg>}
                         <div className="relative z-10">{renderReplyTree(null, 0)}</div>
                         {threadGeometry.controls.map((control) => <button key={control.replyId} type="button" onClick={() => toggleReplyChildren(control.replyId)} aria-expanded={!collapsedReplyIds.has(control.replyId)} aria-label={`${collapsedReplyIds.has(control.replyId) ? "Expand" : "Collapse"} ${control.childCount} ${control.childCount === 1 ? "reply" : "replies"}`} className="absolute z-20 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-background bg-background text-foreground shadow-sm hover:text-primary" style={{ left: control.x, top: control.y }}>
-                          {collapsedReplyIds.has(control.replyId) ? <ChevronRight className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
+                          {collapsedReplyIds.has(control.replyId) ? "+" : "−"}
                         </button>)}
                       </div>
                     );

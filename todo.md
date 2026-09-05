@@ -1545,3 +1545,8 @@
 - [x] Stop each parent vertical trunk at its final child branch and ensure nested branches visibly join the correct avatar centers without extending beyond the last reply.
 - [x] Place each collapse control at the midpoint of its parent vertical connector segment rather than at the branch corner, while preserving connector paths.
 - [x] Reduce the measured forum connector stroke thickness while preserving avatar-centered paths and midpoint collapse controls.
+- [x] Replace collapse arrows with accessible +/− controls and reduce connector stroke weight.
+- [x] Show relative reply times instead of full reply timestamps while keeping the main topic date/time.
+- [x] Make inline reply composers white.
+- [x] Move Start a discussion left and give it a distinct accent color; give Search discussions a white backdrop.
+- [x] Give category bubbles distinct colors, remove the Discussion feed section, and relocate Sort items into the remaining forum toolbar.

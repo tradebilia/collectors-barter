@@ -108,7 +108,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("replyAvatarRefs");
     expect(topicSource).toContain("getBoundingClientRect");
     expect(topicSource).toContain("M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}");
-    expect(topicSource).toContain("strokeWidth=\"2\"");
+    expect(topicSource).toContain("strokeWidth=\"1.5\"");
+    expect(topicSource).toContain("formatRelativeTime");
+    expect(topicSource).toContain("bg-white p-3 shadow-sm");
+    expect(topicSource).toContain("collapsedReplyIds.has(control.replyId) ? \"+\" : \"−\"");
     expect(topicSource).toContain("strokeLinecap=\"round\"");
     expect(topicSource).toContain("strokeLinejoin=\"round\"");
     expect(topicSource).toContain("threadGeometry.controls.map");
@@ -150,7 +153,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(forumSource).toContain("submitDiscussionSearch");
     expect(forumSource).toContain("Start a discussion");
     expect(forumSource).toContain("Browse collector communities");
-    expect(forumSource).toContain("Discussion feed");
+    expect(forumSource).not.toContain("Discussion feed");
+    expect(forumSource).toContain('aria-label="Forum topic filters"');
+    expect(forumSource).toContain("bg-white p-1.5 shadow-sm");
+    expect(forumSource).toContain("forumCategoryTones");
     expect(forumSource).toContain("Most replies");
     expect(forumSource).toContain("activityFilter");
     expect(dbSource).toContain("searchQuery?.trim()");

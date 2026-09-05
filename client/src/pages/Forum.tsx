@@ -11,6 +11,20 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { collectibleCategories } from "@/lib/constants";
 import { forumCategoryLabels, getForumSubcategories, forumParentLevelSubcategory, forumParentLevelSubcategoryLabel } from "@shared/forum";
 
+const forumCategoryTones: Record<string, { active: string; inactive: string }> = {
+  general: { active: "bg-slate-700 text-white", inactive: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
+  comics: { active: "bg-rose-700 text-white", inactive: "bg-rose-50 text-rose-800 hover:bg-rose-100" },
+  "sports-cards": { active: "bg-blue-700 text-white", inactive: "bg-blue-50 text-blue-800 hover:bg-blue-100" },
+  "vintage-toys": { active: "bg-amber-600 text-white", inactive: "bg-amber-50 text-amber-900 hover:bg-amber-100" },
+  "video-games": { active: "bg-emerald-700 text-white", inactive: "bg-emerald-50 text-emerald-800 hover:bg-emerald-100" },
+  stamps: { active: "bg-violet-700 text-white", inactive: "bg-violet-50 text-violet-800 hover:bg-violet-100" },
+  coins: { active: "bg-stone-700 text-white", inactive: "bg-stone-100 text-stone-700 hover:bg-stone-200" },
+  pokemon: { active: "bg-fuchsia-700 text-white", inactive: "bg-fuchsia-50 text-fuchsia-800 hover:bg-fuchsia-100" },
+  movies: { active: "bg-red-700 text-white", inactive: "bg-red-50 text-red-800 hover:bg-red-100" },
+  autographs: { active: "bg-orange-600 text-white", inactive: "bg-orange-50 text-orange-800 hover:bg-orange-100" },
+  "disney-pins": { active: "bg-cyan-700 text-white", inactive: "bg-cyan-50 text-cyan-800 hover:bg-cyan-100" },
+};
+
 export function Forum() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
@@ -81,26 +95,26 @@ export function Forum() {
       <CategoryBar />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(21rem,28rem)] lg:items-end">
+        <div className="mb-7 flex flex-col gap-4">
           <div className="max-w-2xl">
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Collectors helping collectors</p>
             <h1 className="text-3xl font-serif font-medium tracking-tight">Forum Topics</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Ask questions, share collecting knowledge, and exchange ideas across every category.</p>
           </div>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             {user ? (
-              <Button onClick={() => setShowNewTopicModal(true)} className="h-11 w-full gap-2 bg-primary text-primary-foreground shadow-sm sm:w-auto sm:self-end">
+              <Button onClick={() => setShowNewTopicModal(true)} className="h-11 w-full gap-2 bg-[#0f766e] text-white shadow-sm hover:bg-[#115e59] sm:w-auto">
                 <MessageSquarePlus className="h-4 w-4" /> Start a discussion
               </Button>
             ) : (
-              <p className="text-sm text-muted-foreground lg:text-right">Sign in to start a discussion.</p>
+              <p className="text-sm text-muted-foreground">Sign in to start a discussion.</p>
             )}
-            <form onSubmit={submitDiscussionSearch} role="search" aria-label="Search forum discussions" className="flex items-center gap-2 rounded-lg border border-border bg-background p-1.5 shadow-sm">
+            <form onSubmit={submitDiscussionSearch} role="search" aria-label="Search forum discussions" className="flex w-full items-center gap-2 rounded-lg border border-border bg-white p-1.5 shadow-sm sm:max-w-md">
               <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               <label htmlFor="forum-topic-search" className="sr-only">Search discussions</label>
               <input id="forum-topic-search" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} maxLength={120} placeholder="Search discussions" className="h-9 min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground" />
               {searchDraft || searchQuery ? <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={clearDiscussionSearch} aria-label="Clear discussion search"><X className="h-4 w-4" /></Button> : null}
-              <Button type="submit" size="sm" className="h-9 shrink-0 px-3">Search</Button>
+              <Button type="submit" size="sm" className="h-9 shrink-0 bg-slate-800 px-3 text-white hover:bg-slate-700">Search</Button>
             </form>
           </div>
         </div>
@@ -124,11 +138,7 @@ export function Forum() {
                 }}
                 role="tab"
                 aria-selected={selectedCategory === cat.id}
-                className={`mr-2 rounded-md px-4 py-2 whitespace-nowrap text-sm transition ${
-                  selectedCategory === cat.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
+                className={`mr-2 rounded-md px-4 py-2 whitespace-nowrap text-sm font-medium transition ${selectedCategory === cat.id ? (forumCategoryTones[cat.id]?.active || "bg-slate-700 text-white") : (forumCategoryTones[cat.id]?.inactive || "bg-slate-100 text-slate-700 hover:bg-slate-200")}`}
               >
                 {cat.label}
               </button>
@@ -150,33 +160,14 @@ export function Forum() {
           </div>
         )}
 
-        <section className="mb-5 border-y border-border py-4" aria-labelledby="forum-feed-controls">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 id="forum-feed-controls" className="font-semibold">Discussion feed</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">Choose how the current community’s topics are shown.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Sort forum topics">
-              <span className="mr-1 text-xs font-medium text-muted-foreground">Sort:</span>
-              {(["newest", "popular", "replies"] as const).map(sort => (
-                <button
-                  key={sort}
-                  onClick={() => setSortBy(sort)}
-                  aria-pressed={sortBy === sort}
-                  className={`rounded-md px-3 py-1.5 text-sm transition ${
-                    sortBy === sort
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {sort === "replies" ? "Most replies" : sort.charAt(0).toUpperCase() + sort.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Topic activity filters">
+        <section className="mb-5 flex flex-col gap-3 border-y border-border py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" aria-label="Forum topic filters">
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Topic activity filters">
             <span className="mr-1 text-xs font-medium text-muted-foreground">Show:</span>
-            {(["all", "unanswered", "recent"] as const).map((filter) => <button key={filter} type="button" onClick={() => setActivityFilter(filter)} aria-pressed={activityFilter === filter} className={`rounded-md px-3 py-1.5 text-sm ${activityFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{filter === "all" ? "All topics" : filter === "unanswered" ? "Unanswered" : "Recently active"}</button>)}
+            {["all", "unanswered", "recent"].map((filter) => <button key={filter} type="button" onClick={() => setActivityFilter(filter as typeof activityFilter)} aria-pressed={activityFilter === filter} className={`rounded-md px-3 py-1.5 text-sm ${activityFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{filter === "all" ? "All topics" : filter === "unanswered" ? "Unanswered" : "Recently active"}</button>)}
+          </div>
+          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Sort forum topics">
+            <span className="mr-1 text-xs font-medium text-muted-foreground">Sort:</span>
+            {(["newest", "popular", "replies"] as const).map(sort => <button key={sort} type="button" onClick={() => setSortBy(sort)} aria-pressed={sortBy === sort} className={`rounded-md px-3 py-1.5 text-sm transition ${sortBy === sort ? "bg-slate-800 text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{sort === "replies" ? "Most replies" : sort.charAt(0).toUpperCase() + sort.slice(1)}</button>)}
           </div>
         </section>
 
