@@ -41,3 +41,7 @@ The unauthenticated preview continues to show Anonymous and a question-mark fall
 The forum index now exposes parent categories and, for collectible categories, a second item-type navigation row that includes Collections / Lots as the parent-level option. The new-topic form accepts up to six image files and validates the accepted image formats and 6 MB per-file limit before upload. Topic detail supports a photo gallery, follow/report actions, and admin moderation controls while preserving owner-only edit/delete controls.
 
 Desktop and phone screenshots were reviewed. The navigation wraps cleanly on desktop and remains readable on mobile; the signed-out preview correctly hides New Topic, follow, report, and admin controls. The preview currently has no forum rows in the isolated database, so signed-in creation and attachment rendering remain manual validation steps.
+
+## Second-release forum visual verification
+
+At phone width, the topic-search field and All topics, Unanswered, and Recently active filters remain contained and touch-friendly below the category selector. The unauthenticated topic route continues to show the existing not-found recovery card because the isolated forum database has no member-created topic rows; signed-in reply upload, listing-link, follow notification, and administrator queue workflows therefore require manual validation.

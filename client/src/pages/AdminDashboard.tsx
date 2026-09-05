@@ -24,6 +24,7 @@ import { R2StorageHealthTab } from "@/components/R2StorageHealthTab";
 import { AdminOperationsTab } from "@/components/AdminOperationsTab";
 import { AccountClosureRequestsTab } from "@/components/AccountClosureRequestsTab";
 import { SocialContentManagerTab } from "@/components/SocialContentManagerTab";
+import { ForumModerationQueue } from "@/components/ForumModerationQueue";
 import { Link, useLocation } from "wouter";
 import { DeleteConfirmationDialog } from "@/components/DeleteConfirmationDialog";
 
@@ -865,6 +866,10 @@ export default function AdminDashboard() {
               <Flag className="h-4 w-4" />
               Reports
             </TabsTrigger>
+            <TabsTrigger value="forum-moderation" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
+              <Flag className="h-4 w-4" />
+              Forum Queue
+            </TabsTrigger>
             <TabsTrigger value="referrals" className="flex items-center justify-center gap-1.5 text-xs font-medium py-2.5 whitespace-nowrap">
               <Mail className="h-4 w-4" />
               Referrals
@@ -1588,6 +1593,10 @@ export default function AdminDashboard() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="forum-moderation" className="space-y-4 mt-6">
+            <ForumModerationQueue />
           </TabsContent>
 
           {/* Referrals Tab */}

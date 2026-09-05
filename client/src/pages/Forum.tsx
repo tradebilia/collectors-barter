@@ -16,6 +16,8 @@ export function Forum() {
   const [selectedCategory, setSelectedCategory] = useState<string>("general");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "replies">("newest");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activityFilter, setActivityFilter] = useState<"all" | "unanswered" | "recent">("all");
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
   const utils = trpc.useUtils();
 
@@ -28,8 +30,18 @@ export function Forum() {
   const { data: posts, isLoading } = trpc.market.getForumPosts.useQuery({
     category: selectedCategory,
     subcategory: selectedSubcategory,
+    searchQuery: searchQuery.trim() || undefined,
+    activityFilter,
     sortBy,
   });
+  const { data: forumUpdates } = trpc.market.getMyForumNotifications.useQuery(undefined, { enabled: Boolean(user) });
+  const markForumNotificationRead = trpc.market.markForumNotificationRead.useMutation();
+
+  const openForumUpdate = async (notificationId: number, postId: number) => {
+    await markForumNotificationRead.mutateAsync({ notificationId });
+    await utils.market.getMyForumNotifications.invalidate();
+    setLocation(`/forum/${postId}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -70,6 +82,13 @@ export function Forum() {
           )}
         </div>
 
+        {user && forumUpdates?.length ? (
+          <div className="mb-6 rounded-lg border border-primary/25 bg-primary/5 p-4">
+            <div className="mb-2 flex items-center justify-between gap-3"><h2 className="font-semibold">Your topic updates</h2><span className="text-xs text-muted-foreground">{forumUpdates.filter((item) => !item.isRead).length} unread</span></div>
+            <div className="space-y-2">{forumUpdates.slice(0, 4).map((item) => <button key={item.id} type="button" onClick={() => openForumUpdate(item.id, item.postId)} className={`block w-full rounded-md px-3 py-2 text-left text-sm transition hover:bg-background ${item.isRead ? "text-muted-foreground" : "bg-background font-medium"}`}>{item.replyAuthor} replied to “{item.postTitle || `Topic #${item.postId}`}”</button>)}</div>
+          </div>
+        ) : null}
+
         {/* Category Tabs */}
         <div className="mb-6 overflow-x-auto pb-2" role="tablist" aria-label="Forum categories">
           {forumCategories.map(cat => (
@@ -105,6 +124,16 @@ export function Forum() {
             </div>
           </div>
         )}
+
+        <div className="mb-6 grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1fr_auto]" aria-label="Find forum topics">
+          <div>
+            <label htmlFor="forum-topic-search" className="sr-only">Search forum topics</label>
+            <input id="forum-topic-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={120} placeholder="Search titles and discussions" className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Topic activity filters">
+            {(["all", "unanswered", "recent"] as const).map((filter) => <button key={filter} type="button" onClick={() => setActivityFilter(filter)} aria-pressed={activityFilter === filter} className={`rounded px-3 py-2 text-sm ${activityFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{filter === "all" ? "All topics" : filter === "unanswered" ? "Unanswered" : "Recently active"}</button>)}
+          </div>
+        </div>
 
         {/* Sort Options */}
         <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Sort forum topics">
