@@ -1555,3 +1555,4 @@
 - [x] Lighten the forum connector stroke color while preserving its current geometry, thinner weight, and midpoint collapse controls.
 - [x] Align Explore All category colors, item card sizing, Grid/List toggle, category-page filter features including Location: nearest first, and grey metadata section alignment.
 - [x] Re-audit Explore All against a representative category page and correct any remaining shared formatting differences in hero, category bar, filter rail, toolbar, cards, and metadata alignment.
+- [x] Match Explore All List view to the category-page horizontal item layout and place the desktop filter rail flush against the page’s left edge.
