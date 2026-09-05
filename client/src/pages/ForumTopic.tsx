@@ -7,6 +7,18 @@ import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
+function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted" aria-hidden="true">
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-sm font-bold text-muted-foreground">{name?.trim().charAt(0).toUpperCase() || "?"}</span>
+      )}
+    </div>
+  );
+}
+
 export function ForumTopic() {
   const [, setLocation] = useLocation();
   const [match, params] = useRoute("/forum/:postId");
@@ -67,11 +79,11 @@ export function ForumTopic() {
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-4xl items-center justify-center">
+          <div className="flex w-full max-w-7xl scale-110 items-center justify-center">
             <img
               src="https://assets.tradebilia.com/Collectorsforum_7dba7bdd.svg"
               alt="Collector's Forum"
-              className="h-auto w-full max-h-[300px]"
+              className="h-auto w-full"
             />
           </div>
         </div>
@@ -90,13 +102,16 @@ export function ForumTopic() {
           <>
             {/* Original Post */}
             <Card className="p-6 mb-8">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h1 className="text-3xl font-bold mb-2">{post.title || "(Untitled)"}</h1>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span>{post.author?.name || "Anonymous"}</span>
-                    <span>{new Date(post.createdAt).toLocaleString()}</span>
-                    <span>{post.viewCount} views</span>
+              <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />
+                  <div className="min-w-0">
+                    <h1 className="mb-2 text-3xl font-bold">{post.title || "(Untitled)"}</h1>
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                      <span>{post.author?.name || "Anonymous"}</span>
+                      <span>{new Date(post.createdAt).toLocaleString()}</span>
+                      <span>{post.viewCount} views</span>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -122,17 +137,7 @@ export function ForumTopic() {
                   {replies.map(reply => (
                     <Card key={reply.id} className="p-4">
                       <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                          {reply.author?.avatarUrl ? (
-                          <img
-                              src={reply.author?.avatarUrl || ""}
-                              alt={reply.author?.name || "User"}
-                              className="w-full h-full rounded-full bg-muted object-contain"
-                            />
-                          ) : (
-                            <span className="text-xs font-bold">{reply.author?.name?.charAt(0) || "?"}</span>
-                          )}
-                        </div>
+                        <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-semibold">{reply.author?.name || "Anonymous"}</h3>

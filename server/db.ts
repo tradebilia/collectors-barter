@@ -4644,12 +4644,13 @@ export async function getForumPosts(category?: string, sortBy: "newest" | "popul
       updatedAt: forumPosts.updatedAt,
       author: {
         id: users.id,
-        name: users.displayName,
-        avatarUrl: users.avatarUrl,
+        name: sql<string>`COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')`,
+        avatarUrl: sql<string | null>`COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})`,
       },
     })
     .from(forumPosts)
-    .leftJoin(users, eq(forumPosts.userId, users.id));
+    .leftJoin(users, eq(forumPosts.userId, users.id))
+    .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId));
 
   if (category) {
     if (sortBy === "newest") {
@@ -4694,12 +4695,13 @@ export async function getForumPostById(postId: number) {
       updatedAt: forumPosts.updatedAt,
       author: {
         id: users.id,
-        name: users.displayName,
-        avatarUrl: users.avatarUrl,
+        name: sql<string>`COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')`,
+        avatarUrl: sql<string | null>`COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})`,
       },
     })
     .from(forumPosts)
     .leftJoin(users, eq(forumPosts.userId, users.id))
+    .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId))
     .where(eq(forumPosts.id, postId))
     .limit(1);
 
@@ -4753,12 +4755,13 @@ export async function getForumReplies(postId: number) {
       updatedAt: forumReplies.updatedAt,
       author: {
         id: users.id,
-        name: users.displayName,
-        avatarUrl: users.avatarUrl,
+        name: sql<string>`COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')`,
+        avatarUrl: sql<string | null>`COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})`,
       },
     })
     .from(forumReplies)
     .leftJoin(users, eq(forumReplies.userId, users.id))
+    .leftJoin(userProfiles, eq(forumReplies.userId, userProfiles.userId))
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
 }

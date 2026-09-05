@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const forumSource = readFileSync(new URL("../client/src/pages/Forum.tsx", import.meta.url), "utf8");
 const topicSource = readFileSync(new URL("../client/src/pages/ForumTopic.tsx", import.meta.url), "utf8");
+const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
 
 describe("Collectors Forum UX contracts", () => {
   it("exposes accessible category and sort controls and keyboard topic navigation", () => {
@@ -24,6 +25,15 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("utils.market.getForumReplies.invalidate({ postId })");
     expect(topicSource).not.toContain("alert(\"Please enter a reply\")");
     expect(topicSource).not.toContain("alert(\"Failed to add reply\")");
+  });
+
+  it("keeps hero sizing consistent and renders author identity data", () => {
+    expect(forumSource).toContain('className="flex w-full max-w-7xl scale-110 items-center justify-center"');
+    expect(topicSource).toContain('className="flex w-full max-w-7xl scale-110 items-center justify-center"');
+    expect(topicSource).toContain("<AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />");
+    expect(topicSource).toContain("<AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />");
+    expect(dbSource).toContain("COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')");
+    expect(dbSource).toContain("COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})");
   });
 
   it("provides labeled forms and a useful topic-not-found recovery state", () => {

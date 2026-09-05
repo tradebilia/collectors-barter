@@ -1434,3 +1434,7 @@
 - [x] Visually inspect Collectors Forum pages at desktop, tablet, and mobile widths.
 - [x] Implement the highest-priority Collectors Forum layout, navigation, responsiveness, accessibility, and usability refinements.
 - [x] Add or update forum regression tests and re-verify all forum pages.
+
+- [x] Trace the forum hero title sizing difference between index and topic/reply pages.
+- [x] Trace authoritative display-name and avatar fields for forum post and reply authors.
+- [x] Fix the hero title size and forum author identity rendering, then add regression coverage and verify signed-in presentation.

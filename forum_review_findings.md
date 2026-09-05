@@ -29,3 +29,9 @@ The forum index now has a clearer hierarchy and a useful one-line description. O
 The not-found detail state now uses a centered branded recovery card with an explanatory message and a Browse forum topics action. It remains contained and readable at both desktop and phone widths.
 
 The refinement pass passed its focused Vitest contract, TypeScript validation, production build, and whitespace checks. A signed-in real-topic detail and reply-flow check remains necessary because the unauthenticated preview only exposes the not-found detail state for `/forum/1`.
+
+## Hero and identity correction verification
+
+The forum index and topic route now use the same enlarged forum SVG wrapper and matching desktop/mobile hero proportions, eliminating the route-specific title-size difference. The original post and topic cards now render an avatar component from the returned author avatar URL, with an initials fallback. Replies use the same avatar component.
+
+The unauthenticated preview continues to show Anonymous and a question-mark fallback for the existing visible topic because the preview session is not the authenticated author and the current row does not expose a populated identity in that public response. The server query now joins the profile table and resolves profile display name first, then account display name/name, with profile avatar first and account avatar fallback. A signed-in post/reply test is still required to validate the real authenticated user identity end to end.

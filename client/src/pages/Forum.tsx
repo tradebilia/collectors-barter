@@ -43,7 +43,7 @@ export function Forum() {
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-7xl items-center justify-center scale-110">
+          <div className="flex w-full max-w-7xl scale-110 items-center justify-center">
             <img
               src="https://assets.tradebilia.com/Collectorsforum_7dba7bdd.svg"
               alt="Collector's Forum"
@@ -130,8 +130,10 @@ export function Forum() {
                 tabIndex={0}
                 aria-label={`Open topic ${post.title || "Untitled"}`}
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />
+                    <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       {!!post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
                       {!!post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
@@ -142,8 +144,9 @@ export function Forum() {
                       by {post.author?.name || "Anonymous"} • {new Date(post.createdAt).toLocaleDateString()}
                     </p>
                     <p className="text-sm line-clamp-2">{post.content}</p>
+                    </div>
                   </div>
-                  <div className="text-right ml-4">
+                  <div className="ml-4 shrink-0 text-right">
                     <div className="text-2xl font-bold text-primary">{post.replyCount}</div>
                     <div className="text-xs text-muted-foreground">replies</div>
                     <div className="text-xs text-muted-foreground mt-2">{post.viewCount} views</div>
@@ -169,6 +172,18 @@ export function Forum() {
             // Refresh posts
           }}
         />
+      )}
+    </div>
+  );
+}
+
+function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted" aria-hidden="true">
+      {avatarUrl ? (
+        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+      ) : (
+        <span className="text-sm font-bold text-muted-foreground">{name?.trim().charAt(0).toUpperCase() || "?"}</span>
       )}
     </div>
   );
