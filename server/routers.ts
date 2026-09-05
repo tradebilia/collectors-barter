@@ -1774,7 +1774,7 @@ export const appRouter = router({
           category: z.string().min(1).max(64),
           subcategory: z.string().max(64).nullable().optional(),
           title: z.string().min(3).max(255),
-          content: z.string().min(10).max(5000),
+          content: z.string().min(1).max(5000),
         }),
       )
       .mutation(async ({ ctx, input }) => {

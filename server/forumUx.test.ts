@@ -57,6 +57,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("sameNameAccounts.length !== 1");
     expect(routerSource).toContain("[Forum] Topic creation failed");
     expect(routerSource).toContain("We could not create this topic right now. Please refresh the page and try again.");
+    expect(routerSource).toContain("content: z.string().min(1).max(5000)");
   });
 
   it("supports item-type subcategories and validated photo attachments", () => {

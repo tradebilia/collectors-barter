@@ -1490,3 +1490,6 @@
 - [x] Add parent-reply support so members can reply to the main topic or to an individual reply.
 - [x] Add clear Reply actions and nested/threaded rendering on the topic page.
 - [ ] Add regression coverage and verify both main-topic and reply-to-reply flows on desktop and mobile; signed-in end-to-end validation remains pending.
+
+- [x] Remove the forum topic message minimum-length rule while retaining non-empty validation and friendly errors.
+- [x] Add regression coverage and verify short non-empty topic messages can be submitted.
