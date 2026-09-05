@@ -19,7 +19,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('const COMING_SOON_WHEEL_COLORS = [');
     expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
     expect(pageSource).toContain('className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8"');
-    expect(pageSource).toContain('className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:-mx-12 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4"');
+    expect(pageSource).toContain('className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:relative sm:left-1/2 sm:-translate-x-1/2 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
     expect(pageSource).toContain('className="mx-auto mt-6 max-w-md sm:mt-4"');

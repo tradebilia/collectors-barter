@@ -1425,3 +1425,7 @@
 
 - [x] Restore Recent Trades to its previous compact visual height while retaining a fixed height across trade rotations.
 - [x] Verify the compact fixed Recent Trades section at desktop and mobile widths, then update tests and save a checkpoint.
+
+- [x] Reproduce and inspect each Coming Soon rotating title state for phrase-specific centering drift.
+- [x] Correct any per-phrase text placement issue while preserving proportional wheel and divider geometry.
+- [x] Capture desktop and phone rotation-state checks, update tests, and save the verified correction.
