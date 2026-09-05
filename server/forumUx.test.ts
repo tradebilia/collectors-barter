@@ -112,6 +112,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("text-slate-400");
     expect(topicSource).toContain("parseForumTimestamp");
     expect(topicSource).toContain("formatForumLocalTimestamp");
+    expect(topicSource).toContain("formatRelativeForumTime");
     expect(topicSource).toContain('stringValue.replace(" ", "T")}Z');
     expect(forumSource).toContain("formatForumLocalTimestamp");
     expect(forumSource).not.toContain("toLocaleDateString");

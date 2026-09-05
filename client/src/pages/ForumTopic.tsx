@@ -51,6 +51,22 @@ function parseForumTimestamp(value: string | number | Date): Date {
 function formatForumLocalTimestamp(value: string | number | Date): string {
   return parseForumTimestamp(value).toLocaleString();
 }
+function formatRelativeForumTime(value: string | number | Date): string {
+  const elapsedMs = Math.max(0, Date.now() - parseForumTimestamp(value).getTime());
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  const week = 7 * day;
+  const month = 30 * day;
+  const year = 365 * day;
+  if (elapsedMs < minute) return "just now";
+  if (elapsedMs < hour) return `${Math.floor(elapsedMs / minute)}m ago`;
+  if (elapsedMs < day) return `${Math.floor(elapsedMs / hour)}h ago`;
+  if (elapsedMs < week) return `${Math.floor(elapsedMs / day)}d ago`;
+  if (elapsedMs < month) return `${Math.floor(elapsedMs / week)}w ago`;
+  if (elapsedMs < year) return `${Math.floor(elapsedMs / month)}mo ago`;
+  return `${Math.floor(elapsedMs / year)}y ago`;
+}
 
 function getForumMediaMimeType(file: File): "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4" {
   const normalizedType = file.type.toLowerCase();
@@ -531,7 +547,7 @@ export function ForumTopic() {
                                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                     <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
                                     <span aria-hidden="true">·</span>
-                                    <time dateTime={parseForumTimestamp(reply.createdAt).toISOString()}>{formatForumLocalTimestamp(reply.createdAt)}</time>
+                                    <time dateTime={parseForumTimestamp(reply.createdAt).toISOString()}>{formatRelativeForumTime(reply.createdAt)}</time>
                                   </div>
                                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{renderForumContent(reply.content)}</p>
                                   {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
