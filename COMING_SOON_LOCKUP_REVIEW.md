@@ -21,3 +21,11 @@ The final canvas was expanded to 4800 units after measuring the full enlarged Sp
 ## Reference Alignment Rebuild
 
 The fixed maximum-label reserve was rejected because it visually pulled short labels too far left. The final implementation instead centers each complete wheel–divider–wordmark group independently inside the expanded canvas. Live measurements show BILIA and Comics within approximately 9 pixels of the SVG visual center. In the exact Sports Cards state, the group is within approximately 6 pixels of center, the long label and wheel remain contained, and the divider remains clear of both the wheel and category word. The original thin-arrow override remains in place.
+
+## Post-fix live visible-group measurement
+
+After refreshing the development page, the complete outer SVG group—including the rotating wheel, divider, fixed TRADE word, and current category—measured from x=397.13 to x=976.92 at a 1280px viewport. Its center was 687.02px against an SVG center of 688.00px, a -0.98px delta. This confirms the complete rendered group, rather than text alone, is centered after the visible-group measurement correction. Text-only bounds can appear shifted because the wheel is excluded; the outer SVG group is the authoritative check.
+
+## SVG-native centering verification
+
+After replacing the viewport-pixel correction with the SVG group bounding box, live sampling measured the complete outer group against the SVG center: COMICS +0.45px, SPORTS CARDS -0.45px, POKEMON -0.51px, COINS -0.44px, STAMPS -0.51px, VIDEO GAMES -0.45px, AUTOGRAPHS -0.49px, TOYS -0.41px, and BILIA -0.49px. The group is therefore centered within approximately 0.51px across the sampled rotating names.

@@ -1394,3 +1394,7 @@
 - [x] Align the Coming Soon wheel and divider relative to the fixed TRADEBILIA wordmark rather than centering them independently. The live measured offsets now use the wordmark baseline and a single whole-lockup centering bias.
 - [x] Ensure the complete title lockup remains centered as one unit for every rotating category name, including Sports Cards. The geometry uses each rendered category width and the expanded canvas; a narrow-viewport mode scales the same centered unit for phones.
 - [x] Verify exact BILIA, Comics, and Sports Cards states for wordmark alignment, full-title centering, and unclipped presentation. Focused geometry tests passed 8/8, TypeScript, production build, whitespace validation, and desktop/phone screenshots passed.
+
+- [x] Measure the actual visible wheel, divider, TRADE word, and rotating category bounds for each Coming Soon state. The live SVG group was sampled across nine rotating names after fonts and layout settled.
+- [x] Center the measured visible title group on one page center without another arbitrary canvas-width nudge. SVG-native `getBBox()` centering now converges the full group to the SVG midpoint.
+- [x] Verify BILIA, COMICS, COINS, and SPORTS CARDS against the same center with no clipping or residual right shift. Live deltas were within 0.51px across sampled states; focused geometry tests, TypeScript, production build, and whitespace checks passed.

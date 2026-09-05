@@ -9,7 +9,7 @@ describe("Coming Soon logo containment", () => {
     expect(source).toContain("wheelOffsetX={-65} wheelOffsetY={-65}");
     expect(source).toContain("wheelStrokeWidth={0}");
     expect(source).toContain("dividerScale={1.55}");
-    expect(source).toContain("centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} lockupCenterBiasX={32}");
+    expect(source).toContain("centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} lockupCenterBiasX={-240}");
     expect(source).toContain("<AnimatedLogoSmall70");
   });
 

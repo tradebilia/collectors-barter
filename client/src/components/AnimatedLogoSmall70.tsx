@@ -66,7 +66,10 @@ const AnimatedLogoSmall70 = ({
   const [index, setIndex] = useState(0);
   const categoryTextRef = useRef<SVGTextElement>(null);
   const wordmarkTextRef = useRef<SVGTextElement>(null);
+  const lockupSvgRef = useRef<SVGSVGElement>(null);
+  const lockupGroupRef = useRef<SVGGElement>(null);
   const [lockupOffsetX, setLockupOffsetX] = useState(0);
+  const [measuredCenterOffsetX, setMeasuredCenterOffsetX] = useState(0);
   const [dynamicViewBoxWidth, setDynamicViewBoxWidth] = useState(1300);
   const [wordmarkTextWidth, setWordmarkTextWidth] = useState(fontSize * 3.8);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
@@ -119,6 +122,7 @@ const AnimatedLogoSmall70 = ({
     if (!centerLockup) {
       setLockupOffsetX(0);
       setDynamicViewBoxWidth(1300);
+      setMeasuredCenterOffsetX(0);
       return;
     }
 
@@ -134,9 +138,33 @@ const AnimatedLogoSmall70 = ({
     setLockupOffsetX(nextOffset);
   }, [activeCenteredViewBoxWidth, activeLockupScale, categoryWordX, centerLockup, currentCategory.name, fontSize, wheelVisualLeft, wordmarkTextWidth]);
 
+  useLayoutEffect(() => {
+    if (!centerLockup || !lockupSvgRef.current || !lockupGroupRef.current) return;
+    let cancelled = false;
+    const measureVisibleGroup = () => {
+      if (cancelled || !lockupSvgRef.current || !lockupGroupRef.current) return;
+      const groupBounds = lockupGroupRef.current.getBBox();
+      const groupCenterInLocalUnits = groupBounds.x + groupBounds.width / 2;
+      const currentTranslation = lockupOffsetX + lockupCenterBiasX;
+      const correction = dynamicViewBoxWidth / 2 - activeLockupScale * groupCenterInLocalUnits - currentTranslation;
+      if (Math.abs(correction - measuredCenterOffsetX) > 0.5) {
+        setMeasuredCenterOffsetX(correction);
+      }
+    };
+    const frame = window.requestAnimationFrame(() => {
+      const fontsReady = document.fonts?.ready ?? Promise.resolve();
+      void fontsReady.then(() => window.requestAnimationFrame(measureVisibleGroup));
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
+  }, [centerLockup, currentCategory.name, dynamicViewBoxWidth, lockupOffsetX, activeLockupScale, measuredCenterOffsetX]);
+
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
       <svg
+        ref={lockupSvgRef}
         xmlns="http://www.w3.org/2000/svg"
         viewBox={`0 0 ${dynamicViewBoxWidth} 216`}
         className="h-auto w-full flex-none drop-shadow-lg"
@@ -153,7 +181,7 @@ const AnimatedLogoSmall70 = ({
           </filter>
         </defs>
 
-        <g transform={`translate(${lockupOffsetX + lockupCenterBiasX}, ${108 * (1 - activeLockupScale)}) scale(${activeLockupScale})`}>
+        <g ref={lockupGroupRef} transform={`translate(${lockupOffsetX + lockupCenterBiasX + measuredCenterOffsetX}, ${108 * (1 - activeLockupScale)}) scale(${activeLockupScale})`}>
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />

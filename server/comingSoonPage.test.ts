@@ -10,7 +10,7 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 describe("Coming Soon experience", () => {
   it("uses the animated Tradebilia logo and has an opt-in email form", () => {
     expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} lockupCenterBiasX={32} />');
+    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} lockupCenterBiasX={-240} />');
     expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-extra-wide-parchment_9f77d258.png');
     expect(pageSource).toContain('COMING_SOON_CATEGORY_COLORS');
     expect(pageSource).toContain('COMICS: "#6f3b9e"');
