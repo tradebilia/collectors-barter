@@ -59,7 +59,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(recentlyAddedSource).not.toContain("Condition: ${item.conditionLabel");
     expect(databaseSource).toContain("customGradingCompany: getCustomGradingCompany(row.itemDetails)");
     expect(carouselSource).toContain("border-4 border-[#3974bb]");
-    expect(carouselSource).toContain('className="relative mt-4 h-[68rem] overflow-hidden px-0 sm:px-2 md:h-[31rem] lg:h-[33rem] lg:px-3"');
+    expect(carouselSource).toContain('className="relative mt-4 h-[60rem] overflow-hidden px-0 sm:px-2 md:h-[20rem] lg:h-[21rem] lg:px-3"');
     expect(carouselSource).toContain('className={`ticket-card mx-auto flex h-full w-full max-w-none flex-col overflow-hidden');
     expect(carouselSource).toContain('className="grid min-h-0 min-w-0 flex-1 gap-1 overflow-y-auto');
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");

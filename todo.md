@@ -1422,3 +1422,6 @@
 - [x] Re-inspect the Coming Soon text, wheel, and divider coordinate relationships after the user-reported alignment issue.
 - [x] Center only the complete rendered text phrase while preserving proportional wheel and divider anchoring.
 - [x] Verify every rotating phrase at desktop and phone widths, then update tests and save a checkpoint.
+
+- [x] Restore Recent Trades to its previous compact visual height while retaining a fixed height across trade rotations.
+- [x] Verify the compact fixed Recent Trades section at desktop and mobile widths, then update tests and save a checkpoint.
