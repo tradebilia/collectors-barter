@@ -1550,3 +1550,5 @@
 - [x] Make inline reply composers white.
 - [x] Move Start a discussion left and give it a distinct accent color; give Search discussions a white backdrop.
 - [x] Give category bubbles distinct colors, remove the Discussion feed section, and relocate Sort items into the remaining forum toolbar.
+- [x] Correct the reply composer color hierarchy so the typing textarea is white and the surrounding composer shell uses the contrasting softer tone.
+- [x] Make the forum Format shortcut apply actual bold formatting to selected reply text instead of inserting literal **bold text** markers.

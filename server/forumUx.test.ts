@@ -110,7 +110,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}");
     expect(topicSource).toContain("strokeWidth=\"1.5\"");
     expect(topicSource).toContain("formatRelativeTime");
-    expect(topicSource).toContain("bg-white p-3 shadow-sm");
+    expect(topicSource).toContain("bg-slate-100 p-3 shadow-sm");
+    expect(topicSource).toContain("border border-slate-300 bg-white px-3 py-2 text-sm");
     expect(topicSource).toContain("collapsedReplyIds.has(control.replyId) ? \"+\" : \"−\"");
     expect(topicSource).toContain("strokeLinecap=\"round\"");
     expect(topicSource).toContain("strokeLinejoin=\"round\"");
@@ -130,6 +131,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("renderInlineReplyComposer");
     expect(topicSource).toContain("handleAddReply = async (event: FormEvent, parentReplyId: number | null)");
     expect(topicSource).toContain("handleAddReply(event, isTopicTarget ? null : Number(targetKey))");
+    expect(topicSource).toContain("contentEditable");
+    expect(topicSource).toContain("document.execCommand(\"bold\")");
+    expect(topicSource).toContain("contentEditableToMarkdown");
+    expect(topicSource).toContain("renderForumContent");
     expect(topicSource).toContain('Replying to <strong className="text-foreground">');
     expect(topicSource).toContain("Photos / GIF");
     expect(topicSource).toContain('accept="video/mp4"');

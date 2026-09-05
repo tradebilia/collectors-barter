@@ -1,4 +1,4 @@
-import { FormEvent, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
+import { Fragment, FormEvent, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -23,6 +23,22 @@ function AuthorAvatar({ name, avatarUrl, avatarRef }: { name?: string | null; av
       )}
     </div>
   );
+}
+
+function contentEditableToMarkdown(root: HTMLElement): string {
+  const visit = (node: Node): string => {
+    if (node.nodeType === Node.TEXT_NODE) return node.textContent || "";
+    if (node.nodeName === "BR") return String.fromCharCode(10);
+    const content = Array.from(node.childNodes).map(visit).join("");
+    if (node.nodeType === Node.ELEMENT_NODE && ["STRONG", "B"].includes((node as HTMLElement).tagName)) return `**${content}**`;
+    if (node.nodeType === Node.ELEMENT_NODE && ["DIV", "P"].includes((node as HTMLElement).tagName)) return `${content}${String.fromCharCode(10)}`;
+    return content;
+  };
+  return visit(root).trimEnd().slice(0, 2000);
+}
+
+function renderForumContent(content: string): ReactNode {
+  return content.split(/(\\*\\*[^*]+\\*\\*)/g).map((part, index) => part.startsWith("**") && part.endsWith("**") ? <strong key={index}>{part.slice(2, -2)}</strong> : <Fragment key={index}>{part}</Fragment>);
 }
 
 function formatRelativeTime(value: string | number | Date): string {
@@ -65,6 +81,7 @@ export function ForumTopic() {
   const [collapsedReplyIds, setCollapsedReplyIds] = useState<Set<number>>(() => new Set());
   const threadContainerRef = useRef<HTMLDivElement>(null);
   const replyAvatarRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const replyEditorRef = useRef<HTMLDivElement>(null);
   const [threadGeometry, setThreadGeometry] = useState<{ width: number; height: number; paths: ThreadPath[]; controls: ThreadControl[] }>({ width: 0, height: 0, paths: [], controls: [] });
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editTitle, setEditTitle] = useState("");
@@ -196,6 +213,7 @@ export function ForumTopic() {
     setReplyParentId(null);
     setReplyParentName(null);
     setIsReplyComposerOpen(false);
+    if (replyEditorRef.current) replyEditorRef.current.innerHTML = "";
   };
 
   const toggleReplyChildren = (replyId: number) => {
@@ -227,6 +245,7 @@ export function ForumTopic() {
         await uploadReplyPhotoMutation.mutateAsync({ replyId: created.replyId, fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4", dataBase64: dataUrl, sortOrder: index });
       }
       setReplyContent("");
+      if (replyEditorRef.current) replyEditorRef.current.innerHTML = "";
       setReplyListingId("");
       setReplyPhotos([]);
       clearReplyTarget();
@@ -249,21 +268,25 @@ export function ForumTopic() {
     const composerId = `forum-reply-content-${targetKey}`;
     const mediaInputId = `forum-reply-media-${targetKey}`;
     const videoInputId = `forum-reply-video-${targetKey}`;
-    const insertFormatting = () => setReplyContent((current) => `${current}${current ? " " : ""}**bold text**`);
+    const applyBold = () => {
+      replyEditorRef.current?.focus();
+      document.execCommand("bold");
+      if (replyEditorRef.current) setReplyContent(contentEditableToMarkdown(replyEditorRef.current));
+    };
     return (
-      <form onSubmit={(event) => handleAddReply(event, isTopicTarget ? null : Number(targetKey))} className="mt-3 rounded-xl border border-border bg-white p-3 shadow-sm">
+      <form onSubmit={(event) => handleAddReply(event, isTopicTarget ? null : Number(targetKey))} className="mt-3 rounded-xl border border-border bg-slate-100 p-3 shadow-sm">
         <div className="mb-2 text-sm text-muted-foreground">Replying to <strong className="text-foreground">{isTopicTarget ? post.author?.name || "the topic" : replyParentName || "this member"}</strong></div>
         <label htmlFor={composerId} className="sr-only">Your reply</label>
-        <textarea id={composerId} value={replyContent} onChange={(event) => setReplyContent(event.target.value)} placeholder="Write a reply..." className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm" maxLength={2000} />
+        <div id={composerId} ref={replyEditorRef} contentEditable role="textbox" aria-multiline="true" aria-label="Your reply" data-placeholder="Write a reply..." suppressContentEditableWarning onInput={(event) => setReplyContent(contentEditableToMarkdown(event.currentTarget))} className="min-h-20 w-full resize-y overflow-y-auto rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm leading-6 outline-none empty:before:pointer-events-none empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" />
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
             <label htmlFor="forum-reply-listing" className="sr-only">Optional Tradebilia item number</label>
-            <input id="forum-reply-listing" inputMode="numeric" value={replyListingId} onChange={(event) => setReplyListingId(event.target.value.replace(/\D/g, ""))} placeholder="Item # (optional)" className="h-8 w-32 rounded-md border bg-background px-2 text-xs" />
+            <input id="forum-reply-listing" inputMode="numeric" value={replyListingId} onChange={(event) => setReplyListingId(event.target.value.replace(/\D/g, ""))} placeholder="Item # (optional)" className="h-8 w-32 rounded-md border border-slate-300 bg-white px-2 text-xs" />
             <input id={mediaInputId} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 10 * 1024 * 1024).slice(0, 6); setReplyPhotos((current) => [...current.filter((file) => file.type === "video/mp4"), ...selected].slice(0, 6)); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose up to 6 image or GIF files, each 10 MB or smaller."); }} />
             <input id={videoInputId} type="file" accept="video/mp4" className="sr-only" onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 10 * 1024 * 1024).slice(0, 1); setReplyPhotos((current) => [...current.filter((file) => file.type !== "video/mp4"), ...selected].slice(0, 6)); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose one MP4 video up to 10 MB."); }} />
             <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => document.getElementById(mediaInputId)?.click()}><ImagePlus className="h-4 w-4" aria-hidden="true" /> Photos / GIF</button>
             <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => document.getElementById(videoInputId)?.click()}><Video className="h-4 w-4" aria-hidden="true" /> Video</button>
-            <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={insertFormatting}><FileText className="h-4 w-4" aria-hidden="true" /> Format</button>
+            <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={applyBold}><FileText className="h-4 w-4" aria-hidden="true" /> Format</button>
             {replyPhotos.length > 0 && <span className="text-xs text-muted-foreground">{replyPhotos.length} attached</span>}
           </div>
           <div className="flex items-center gap-2">
@@ -506,7 +529,7 @@ export function ForumTopic() {
                                     <span aria-hidden="true">·</span>
                                     <time dateTime={new Date(reply.createdAt).toISOString()}>{formatRelativeTime(reply.createdAt)}</time>
                                   </div>
-                                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
+                                  <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{renderForumContent(reply.content)}</p>
                                   {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
                                   {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((media) => media.mimeType === "video/mp4" ? <video key={media.id} src={media.imageUrl} controls preload="metadata" className="aspect-video w-full rounded-md border bg-black" aria-label={media.altText || "Forum reply video"} /> : <img key={media.id} src={media.imageUrl} alt={media.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
                                   {user && !post.isLocked && <button type="button" className="mt-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
