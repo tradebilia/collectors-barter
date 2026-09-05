@@ -4604,7 +4604,7 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
 
 // Forum functions
 export async function createForumPost(
-  user: Pick<User, "id" | "name">,
+  user: Pick<User, "id" | "name" | "openId">,
   input: {
     category: string;
     subcategory?: string | null;
@@ -4615,8 +4615,21 @@ export async function createForumPost(
   const db = await requireDb();
   const { forumPosts } = await import("../drizzle/schema");
 
+  // The session's numeric ID can be stale in an isolated database. Resolve the
+  // authenticated account by its stable openId before satisfying the FK.
+  let authorId = user.id;
+  if (user.openId) {
+    let persistedUser = await getUserByOpenId(user.openId);
+    if (!persistedUser) {
+      await upsertUser({ openId: user.openId, name: user.name || null, lastSignedIn: new Date() });
+      persistedUser = await getUserByOpenId(user.openId);
+    }
+    if (!persistedUser) throw new Error("Your account could not be synchronized. Please sign in again.");
+    authorId = persistedUser.id;
+  }
+
   const result = await db.insert(forumPosts).values({
-    userId: user.id,
+    userId: authorId,
     category: input.category,
     subcategory: input.subcategory || null,
     title: input.title.trim().slice(0, 255),

@@ -47,6 +47,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("<AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />");
     expect(dbSource).toContain("COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')");
     expect(dbSource).toContain("COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})");
+    expect(dbSource).toContain("if (user.openId)");
+    expect(dbSource).toContain("authorId = persistedUser.id;");
   });
 
   it("supports item-type subcategories and validated photo attachments", () => {
@@ -89,6 +91,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(moderationQueueSource).toContain("Restore");
     expect(forumSource).toContain("Your topic updates");
     expect(forumSource).toContain("getMyForumNotifications");
+    expect(readFileSync(new URL("./routers.ts", import.meta.url), "utf8")).toContain("openId: ctx.user.openId");
   });
 
   it("provides labeled forms and a useful topic-not-found recovery state", () => {

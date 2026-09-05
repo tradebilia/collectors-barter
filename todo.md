@@ -1458,3 +1458,8 @@
 - [x] Add reply photos, optional Tradebilia listing links, followed-topic notifications, and topic search with unanswered/recent filters.
 - [x] Add an administrator moderation queue for reported forum posts with review actions and audit records.
 - [x] Apply any additive schema changes safely, add regression coverage, and verify member and admin forum flows on desktop and mobile.
+
+- [x] Inspect the forum post table, schema, migration history, and failing insert contract.
+- [x] Apply the smallest additive schema repair and align the topic creation contract; the database already contained listingId, so the repair resolves the authenticated account by openId instead.
+- [x] Add regression coverage and verify topic creation and existing forum flows.
+- [x] Save and deliver the forum topic-creation repair.
