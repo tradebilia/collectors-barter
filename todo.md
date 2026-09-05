@@ -1437,4 +1437,4 @@
 
 - [x] Trace the forum hero title sizing difference between index and topic/reply pages.
 - [x] Trace authoritative display-name and avatar fields for forum post and reply authors.
-- [x] Fix the hero title size and forum author identity rendering, then add regression coverage and verify signed-in presentation.
+- [x] Fix the hero title size and forum author identity rendering, then add regression coverage; signed-in end-to-end presentation remains pending user validation.
