@@ -1522,3 +1522,4 @@
 - [ ] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
 - [x] Sanitize unexpected forum reply database errors in the client and server response so raw SQL is never shown to members.
 - [x] Render forum replies as a hierarchical sub-thread tree with deeper indentation and thread guides for replies to replies, including responsive mobile spacing and regression coverage.
+- [x] Add connected vertical/branch thread guides and per-reply collapse/expand controls for nested forum reply sub-threads, with responsive regression coverage.

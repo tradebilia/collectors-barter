@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
-import { FileText, ImagePlus, Video, X } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, ImagePlus, Video, X } from "lucide-react";
 import { forumSubcategoryLabels } from "@shared/forum";
 
 function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
@@ -41,6 +41,7 @@ export function ForumTopic() {
   const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [replyParentName, setReplyParentName] = useState<string | null>(null);
   const [isReplyComposerOpen, setIsReplyComposerOpen] = useState(false);
+  const [collapsedReplyIds, setCollapsedReplyIds] = useState<Set<number>>(() => new Set());
   const [isEditingPost, setIsEditingPost] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -171,6 +172,15 @@ export function ForumTopic() {
     setReplyParentId(null);
     setReplyParentName(null);
     setIsReplyComposerOpen(false);
+  };
+
+  const toggleReplyChildren = (replyId: number) => {
+    setCollapsedReplyIds((current) => {
+      const next = new Set(current);
+      if (next.has(replyId)) next.delete(replyId);
+      else next.add(replyId);
+      return next;
+    });
   };
 
   const handleAddReply = async (event: FormEvent) => {
@@ -407,7 +417,10 @@ export function ForumTopic() {
                       return branch.map((reply) => {
                         const childReplies = replies.filter((child) => child.parentReplyId === reply.id);
                         return (
-                          <div key={reply.id} className={`relative ${depth > 0 ? "ml-4 border-l-2 border-primary/25 pl-4 sm:ml-8 sm:pl-5" : ""}`}>
+                          <div key={reply.id} className={`relative ${depth > 0 ? "ml-4 border-l-2 border-primary/30 pl-4 before:absolute before:-left-0.5 before:top-8 before:w-4 before:border-t-2 before:border-primary/30 sm:ml-8 sm:pl-5 sm:before:w-5" : ""}`}>
+                            {childReplies.length > 0 && <button type="button" onClick={() => toggleReplyChildren(reply.id)} aria-expanded={!collapsedReplyIds.has(reply.id)} aria-label={`${collapsedReplyIds.has(reply.id) ? "Expand" : "Collapse"} ${childReplies.length} ${childReplies.length === 1 ? "reply" : "replies"}`} className={`absolute z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-background bg-primary text-primary-foreground shadow-sm ${depth > 0 ? "-left-[11px] top-5 sm:-left-[12px]" : "left-0 top-5"}`}>
+                              {collapsedReplyIds.has(reply.id) ? <ChevronRight className="h-3 w-3" aria-hidden="true" /> : <ChevronDown className="h-3 w-3" aria-hidden="true" />}
+                            </button>}
                             <article className="py-4">
                               <div className="flex items-start gap-3">
                                 <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />
@@ -425,7 +438,8 @@ export function ForumTopic() {
                                 </div>
                               </div>
                             </article>
-                            {childReplies.length > 0 && <div className="divide-y divide-border/60">{renderReplyTree(reply.id, depth + 1)}</div>}
+                            {childReplies.length > 0 && !collapsedReplyIds.has(reply.id) && <div className="divide-y divide-border/60">{renderReplyTree(reply.id, depth + 1)}</div>}
+                            {childReplies.length > 0 && collapsedReplyIds.has(reply.id) && <button type="button" onClick={() => toggleReplyChildren(reply.id)} className="mb-3 text-xs font-semibold text-primary hover:underline">Show {childReplies.length} {childReplies.length === 1 ? "reply" : "replies"}</button>}
                           </div>
                         );
                       });

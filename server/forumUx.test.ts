@@ -101,7 +101,11 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("divide-y divide-border/70");
     expect(topicSource).toContain("const renderReplyTree = (parentReplyId: number | null, depth: number)");
     expect(topicSource).toContain("childReplies.length > 0");
-    expect(topicSource).toContain("ml-4 border-l-2 border-primary/25 pl-4 sm:ml-8 sm:pl-5");
+    expect(topicSource).toContain("ml-4 border-l-2 border-primary/30");
+    expect(topicSource).toContain("before:border-t-2 before:border-primary/30");
+    expect(topicSource).toContain("collapsedReplyIds");
+    expect(topicSource).toContain("aria-expanded={!collapsedReplyIds.has(reply.id)}");
+    expect(topicSource).toContain("Show {childReplies.length}");
     expect(topicSource).toContain("whitespace-pre-wrap text-sm leading-6");
     expect(topicSource).toContain("hover:text-primary");
   });
