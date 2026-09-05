@@ -1886,17 +1886,17 @@ export const appRouter = router({
       .input(z.object({
         replyId: z.number().int().positive(),
         fileName: z.string().min(1).max(160),
-        mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]),
-        dataBase64: z.string().min(1).max(8_500_000),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"]),
+        dataBase64: z.string().min(1).max(14_000_000),
         altText: z.string().max(180).optional(),
         sortOrder: z.number().int().min(0).max(5),
       }))
       .mutation(async ({ ctx, input }) => {
         const buffer = Buffer.from(input.dataBase64.replace(/^data:[^;]+;base64,/, ""), "base64");
-        if (buffer.byteLength > 6 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Each forum photo must be 6 MB or smaller." });
+        if (buffer.byteLength > 10 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Each forum image or video must be 10 MB or smaller." });
         const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
         const uploaded = await storagePut(`forum/${ctx.user.id}/replies/${input.replyId}/${safeName}`, buffer, input.mimeType);
-        return addForumReplyAttachment({ replyId: input.replyId, userId: ctx.user.id, fileKey: uploaded.key, imageUrl: uploaded.url, altText: input.altText, sortOrder: input.sortOrder });
+        return addForumReplyAttachment({ replyId: input.replyId, userId: ctx.user.id, fileKey: uploaded.key, imageUrl: uploaded.url, mimeType: input.mimeType, altText: input.altText, sortOrder: input.sortOrder });
       }),
     lookupUserByUsername: publicProcedure
       .input(z.object({ username: z.string().min(1).max(64) }))

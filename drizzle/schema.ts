@@ -218,6 +218,7 @@ export const forumReplyAttachments = mysqlTable("forumReplyAttachments", {
 	userId: int().notNull().references(() => users.id),
 	fileKey: varchar({ length: 255 }).notNull(),
 	imageUrl: text().notNull(),
+	mimeType: varchar({ length: 80 }),
 	altText: varchar({ length: 180 }),
 	sortOrder: int().default(0).notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),

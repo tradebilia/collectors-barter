@@ -190,7 +190,7 @@ export function ForumTopic() {
       });
       for (const [index, file] of replyPhotos.entries()) {
         const dataUrl = await readForumFileAsDataUrl(file);
-        await uploadReplyPhotoMutation.mutateAsync({ replyId: created.replyId, fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif", dataBase64: dataUrl, sortOrder: index });
+        await uploadReplyPhotoMutation.mutateAsync({ replyId: created.replyId, fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4", dataBase64: dataUrl, sortOrder: index });
       }
       setReplyContent("");
       setReplyListingId("");
@@ -211,6 +211,7 @@ export function ForumTopic() {
     if (!post || !isTargetOpen || !user || post.isLocked) return null;
     const composerId = `forum-reply-content-${targetKey}`;
     const mediaInputId = `forum-reply-media-${targetKey}`;
+    const videoInputId = `forum-reply-video-${targetKey}`;
     const insertFormatting = () => setReplyContent((current) => `${current}${current ? " " : ""}**bold text**`);
     return (
       <form onSubmit={handleAddReply} className="mt-3 rounded-xl border border-border bg-muted/25 p-3 shadow-sm">
@@ -221,9 +222,10 @@ export function ForumTopic() {
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1">
             <label htmlFor="forum-reply-listing" className="sr-only">Optional Tradebilia item number</label>
             <input id="forum-reply-listing" inputMode="numeric" value={replyListingId} onChange={(event) => setReplyListingId(event.target.value.replace(/\D/g, ""))} placeholder="Item # (optional)" className="h-8 w-32 rounded-md border bg-background px-2 text-xs" />
-            <input id={mediaInputId} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 6 * 1024 * 1024).slice(0, 6); setReplyPhotos(selected); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose up to 6 image or GIF files, each 6 MB or smaller."); }} />
+            <input id={mediaInputId} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple className="sr-only" onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 10 * 1024 * 1024).slice(0, 6); setReplyPhotos((current) => [...current.filter((file) => file.type === "video/mp4"), ...selected].slice(0, 6)); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose up to 6 image or GIF files, each 10 MB or smaller."); }} />
+            <input id={videoInputId} type="file" accept="video/mp4" className="sr-only" onChange={(event) => { const selected = Array.from(event.target.files || []).filter((file) => file.size <= 10 * 1024 * 1024).slice(0, 1); setReplyPhotos((current) => [...current.filter((file) => file.type !== "video/mp4"), ...selected].slice(0, 6)); if (selected.length !== (event.target.files?.length || 0)) setReplyError("Choose one MP4 video up to 10 MB."); }} />
             <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => document.getElementById(mediaInputId)?.click()}><ImagePlus className="h-4 w-4" aria-hidden="true" /> Photos / GIF</button>
-            <button type="button" disabled title="Video replies will be supported in a future update" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground/60"><Video className="h-4 w-4" aria-hidden="true" /> Video</button>
+            <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => document.getElementById(videoInputId)?.click()}><Video className="h-4 w-4" aria-hidden="true" /> Video</button>
             <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={insertFormatting}><FileText className="h-4 w-4" aria-hidden="true" /> Format</button>
             {replyPhotos.length > 0 && <span className="text-xs text-muted-foreground">{replyPhotos.length} attached</span>}
           </div>
@@ -408,7 +410,7 @@ export function ForumTopic() {
                           </div>
                           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{reply.content}</p>
                           {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
-                          {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
+                          {reply.attachments?.length > 0 && <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{reply.attachments.map((media) => media.mimeType === "video/mp4" ? <video key={media.id} src={media.imageUrl} controls preload="metadata" className="aspect-video w-full rounded-md border bg-black" aria-label={media.altText || "Forum reply video"} /> : <img key={media.id} src={media.imageUrl} alt={media.altText || "Forum reply photo"} className="aspect-square w-full rounded-md border object-cover" />)}</div>}
                           {user && !post.isLocked && <button type="button" className="mt-3 inline-flex items-center rounded-md px-2 py-1 text-xs font-semibold text-muted-foreground hover:bg-muted hover:text-primary" onClick={() => beginReplyTo(reply.id, reply.author?.name || "this member")}>Reply</button>}
                           {renderInlineReplyComposer(String(reply.id))}
                         </div>

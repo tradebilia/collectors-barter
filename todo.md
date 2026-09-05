@@ -1512,5 +1512,9 @@
 - [x] Add regression coverage and verify the refined hierarchy at desktop and mobile widths.
 
 - [x] Audit the current per-message Reply actions, composer behavior, media limits, and available UI icons.
-- [x] Add inline composers beneath the selected topic or reply with image, GIF, video, and formatting shortcuts; Video is visibly marked as a future capability because the current storage mutation accepts images/GIFs only.
-- [ ] Add regression coverage and verify nested reply, media selection, cancel, and submit flows responsively; signed-in end-to-end validation remains pending.
+- [x] Add inline composers beneath the selected topic or reply with image, GIF, video, and formatting shortcuts; Video now uses the validated MP4 upload path.
+- [ ] Verify nested reply, media selection, cancel, and submit flows with a signed-in user at desktop and mobile widths.
+
+- [x] Audit reply attachment schema, storage validation, and upload procedures for video support.
+- [x] Extend reply media handling with validated MP4 video attachments and enable the inline Video shortcut.
+- [x] Add regression coverage for mixed image/GIF/video reply contracts and verify TypeScript, build, and whitespace checks; signed-in end-to-end media submission remains pending.

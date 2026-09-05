@@ -1,0 +1,1 @@
+ALTER TABLE `forumReplyAttachments` ADD `mimeType` varchar(80);

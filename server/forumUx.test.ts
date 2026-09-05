@@ -108,7 +108,11 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("renderInlineReplyComposer");
     expect(topicSource).toContain('Replying to <strong className="text-foreground">');
     expect(topicSource).toContain("Photos / GIF");
-    expect(topicSource).toContain("Video replies will be supported in a future update");
+    expect(topicSource).toContain('accept="video/mp4"');
+    expect(topicSource).toContain("Choose one MP4 video up to 10 MB.");
+    expect(topicSource).toContain('media.mimeType === "video/mp4"');
+    expect(routerSource).toContain('"video/mp4"');
+    expect(dbSource).toContain("mimeType: string");
     expect(dbSource).toContain("parentReplyId?: number | null");
     expect(dbSource).toContain("The reply you are responding to is no longer available.");
     expect(dbSource).toContain("parentReplyId: forumReplies.parentReplyId");

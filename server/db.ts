@@ -4886,7 +4886,7 @@ export async function getForumReplies(postId: number) {
     .leftJoin(userProfiles, eq(forumReplies.userId, userProfiles.userId))
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
-  const attachments = isExpanded ? await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id)) : new Map<number, Array<{ id: number; imageUrl: string; altText: string | null; sortOrder: number }>>();
+  const attachments = isExpanded ? await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id)) : new Map<number, Array<{ id: number; imageUrl: string; mimeType: string | null; altText: string | null; sortOrder: number }>>();
   return replies.map((reply) => ({ ...reply, attachments: attachments.get(reply.id) || [] }));
 }
 
@@ -5300,6 +5300,7 @@ export async function addForumReplyAttachment(input: {
   userId: number;
   fileKey: string;
   imageUrl: string;
+  mimeType: string;
   altText?: string | null;
   sortOrder: number;
 }) {
@@ -5316,17 +5317,17 @@ export async function addForumReplyAttachment(input: {
 }
 
 export async function getForumReplyAttachmentsForPosts(replyIds: number[]) {
-  if (!replyIds.length) return new Map<number, Array<{ id: number; imageUrl: string; altText: string | null; sortOrder: number }>>();
+  if (!replyIds.length) return new Map<number, Array<{ id: number; imageUrl: string; mimeType: string | null; altText: string | null; sortOrder: number }>>();
   const db = await requireDb();
   const { forumReplyAttachments } = await import("../drizzle/schema");
   const { inArray, asc } = await import("drizzle-orm");
-  const rows = await db.select({ id: forumReplyAttachments.id, replyId: forumReplyAttachments.replyId, imageUrl: forumReplyAttachments.imageUrl, altText: forumReplyAttachments.altText, sortOrder: forumReplyAttachments.sortOrder }).from(forumReplyAttachments).where(inArray(forumReplyAttachments.replyId, replyIds)).orderBy(asc(forumReplyAttachments.sortOrder));
+  const rows = await db.select({ id: forumReplyAttachments.id, replyId: forumReplyAttachments.replyId, imageUrl: forumReplyAttachments.imageUrl, mimeType: forumReplyAttachments.mimeType, altText: forumReplyAttachments.altText, sortOrder: forumReplyAttachments.sortOrder }).from(forumReplyAttachments).where(inArray(forumReplyAttachments.replyId, replyIds)).orderBy(asc(forumReplyAttachments.sortOrder));
   return rows.reduce((grouped, row) => {
     const current = grouped.get(row.replyId) || [];
-    current.push({ id: row.id, imageUrl: row.imageUrl, altText: row.altText, sortOrder: row.sortOrder });
+    current.push({ id: row.id, imageUrl: row.imageUrl, mimeType: row.mimeType, altText: row.altText, sortOrder: row.sortOrder });
     grouped.set(row.replyId, current);
     return grouped;
-  }, new Map<number, Array<{ id: number; imageUrl: string; altText: string | null; sortOrder: number }>>());
+  }, new Map<number, Array<{ id: number; imageUrl: string; mimeType: string | null; altText: string | null; sortOrder: number }>>());
 }
 
 export async function getForumReportsForAdmin() {
