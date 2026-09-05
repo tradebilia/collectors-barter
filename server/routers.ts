@@ -1857,8 +1857,8 @@ export const appRouter = router({
           category: z.string().optional(),
           subcategory: z.string().nullable().optional(),
           searchQuery: z.string().max(120).optional(),
-          activityFilter: z.enum(["all", "unanswered", "recent"]).default("all"),
-          sortBy: z.enum(["newest", "popular", "replies"]).default("newest"),
+          activityFilter: z.enum(["all", "unanswered"]).default("all"),
+          sortBy: z.enum(["activity", "newest", "popular", "replies"]).default("activity"),
         }),
       )
       .query(({ input }) => {

@@ -1573,3 +1573,5 @@
 - [x] Replace default forum file-picker controls with an Insert image action and update the composer copy to Insert an image while preserving upload limits.
 - [x] Use white backgrounds for the forum composer input bubbles and Insert image control.
 - [x] Display selected reply attachment file names after the attachment count so users can verify each file before posting.
+- [x] Make Recently active the default forum view while retaining Newest as the topic-creation sort.
+- [x] Make Recently active sort by the latest topic or reply activity, not merely filter recent topics and retain creation-date ordering.

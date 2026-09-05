@@ -4764,10 +4764,10 @@ export async function deleteForumPost(userId: number, postId: number) {
   return { postId };
 }
 
-export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest", subcategory?: string | null, searchQuery?: string, activityFilter: "all" | "unanswered" | "recent" = "all") {
+export async function getForumPosts(category?: string, sortBy: "activity" | "newest" | "popular" | "replies" = "activity", subcategory?: string | null, searchQuery?: string, activityFilter: "all" | "unanswered" = "all") {
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");
-  const { eq, desc, and, like, or, gte } = await import("drizzle-orm");
+  const { eq, desc, and, like, or } = await import("drizzle-orm");
   const schemaMode = await getForumPostsSchemaMode(db);
   const isExpanded = schemaMode === "expanded";
 
@@ -4803,8 +4803,8 @@ export async function getForumPosts(category?: string, sortBy: "newest" | "popul
     isExpanded && subcategory ? eq(forumPosts.subcategory, subcategory) : undefined,
     searchQuery?.trim() ? or(like(forumPosts.title, `%${searchQuery.trim()}%`), like(forumPosts.content, `%${searchQuery.trim()}%`)) : undefined,
     activityFilter === "unanswered" ? eq(forumPosts.replyCount, 0) : undefined,
-    activityFilter === "recent" ? gte(forumPosts.updatedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ")) : undefined,
   );
+  if (sortBy === "activity") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.updatedAt));
   if (sortBy === "newest") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
   if (sortBy === "popular") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
   return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.replyCount));
@@ -4902,7 +4902,7 @@ export async function addForumReply(
   const replyId = getInsertId(result);
 
   // Increment reply count
-  await db.update(forumPosts).set({ replyCount: sql`replyCount + 1` }).where(eq(forumPosts.id, input.postId));
+  await db.update(forumPosts).set({ replyCount: sql`replyCount + 1`, updatedAt: mysqlNow() }).where(eq(forumPosts.id, input.postId));
 
   if (isExpanded) {
     const followers = await db.select({ userId: forumFollows.userId }).from(forumFollows).where(eq(forumFollows.postId, input.postId));

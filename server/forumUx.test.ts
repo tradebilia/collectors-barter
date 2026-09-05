@@ -145,6 +145,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain('Replying to <strong className="text-foreground">');
     expect(topicSource).toContain("Insert image");
     expect(topicSource).toContain("replyPhotos.map((file) => file.name)");
+    expect(forumSource).toContain('useState<"activity" | "newest" | "popular" | "replies">("activity")');
+    expect(forumSource).toContain('sort === "activity" ? "Recently active"');
+    expect(dbSource).toContain('desc(forumPosts.updatedAt)');
+    expect(dbSource).toContain('updatedAt: mysqlNow()');
     expect(topicSource).toContain('accept="video/mp4"');
     expect(topicSource).toContain("Choose one MP4 video up to 10 MB.");
     expect(topicSource).toContain('media.mimeType === "video/mp4"');
@@ -174,7 +178,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(forumSource).toContain("activityFilter");
     expect(dbSource).toContain("searchQuery?.trim()");
     expect(dbSource).toContain('activityFilter === "unanswered"');
-    expect(dbSource).toContain('activityFilter === "recent"');
+    expect(dbSource).toContain('sortBy === "activity"');
+    expect(dbSource).toContain('desc(forumPosts.updatedAt)');
     expect(dbSource).toContain("getForumReportsForAdmin");
     expect(moderationQueueSource).toContain("Forum Moderation Queue");
     expect(moderationQueueSource).toContain("Remove post");
