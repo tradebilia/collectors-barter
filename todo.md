@@ -1498,14 +1498,14 @@
 - [x] Refine reply cards, inline actions, and reply-target composition for a compact discussion flow.
 - [x] Add regression coverage and verify the refined discussion flow at desktop and mobile widths; signed-in end-to-end validation remains pending.
 
-- [ ] Audit and document the approved Reddit-style shortcut actions: reply, image insertion, sharing, and voting.
-- [ ] Add compact inline reply controls and composer shortcuts without exposing unauthorized actions.
-- [ ] Add regression coverage and verify the interaction model at desktop and mobile widths.
+- [x] Audit and document the approved Reddit-style shortcut actions: reviewed; Reddit-style voting, image insertion shortcuts, sharing, and extra mechanics are intentionally out of scope unless separately approved.
+- [x] Add compact inline reply controls and composer shortcuts without exposing unauthorized actions: not implemented because the user approved only the category/subcategory organization and simpler hierarchy.
+- [x] Add regression coverage and verify the interaction model at desktop and mobile widths: closed as out of scope by user direction.
 
-- [ ] Record the approved forum scope: retain parent categories and item-type subcategories; do not add Reddit-style voting, sharing, karma, anonymity, or extra interaction features unless separately approved.
+- [x] Record the approved forum scope: retain parent categories and item-type subcategories; do not add Reddit-style voting, sharing, karma, anonymity, or extra interaction features unless separately approved.
 
-- [ ] Continue comparing Reddit’s topic, reply, and page hierarchy patterns while retaining Tradebilia parent categories and item-type subcategories.
-- [ ] Document the approved Tradebilia adaptation and wait for explicit approval before further forum layout code changes.
+- [x] Continue comparing Reddit’s topic, reply, and page hierarchy patterns while retaining Tradebilia parent categories and item-type subcategories.
+- [x] Document the approved Tradebilia adaptation and wait for explicit approval before further forum layout code changes.
 
 - [x] Audit the approved category-to-topic hierarchy and current forum presentation.
 - [x] Implement simplified category, subcategory, topic-row, and nested-reply presentation without Reddit-specific mechanics.
