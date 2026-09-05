@@ -106,7 +106,6 @@ const AnimatedLogoSmall70 = ({
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
   const wheelOrbitRadius = 82 * wheelScale;
-  const wheelVisualLeft = 6 + wheelOffsetX + 0.441 * (104 - wheelOrbitRadius);
   const dividerCenterY = 129.9 + dividerOffsetY;
   const dividerHalfHeight = 48.6 * dividerScale;
 
@@ -131,11 +130,11 @@ const AnimatedLogoSmall70 = ({
       if (categoryWidth <= 0) return;
 
       const measuredCategoryWordX = Math.ceil(wordmarkX + (measuredWordmarkWidth || wordmarkTextWidth) + categoryGap);
-      const phraseLeft = Math.min(15, wheelVisualLeft);
-      const phraseRight = measuredCategoryWordX + categoryWidth;
-      const phraseCenter = (phraseLeft + phraseRight) / 2;
+      const textLeft = wordmarkX;
+      const textRight = measuredCategoryWordX + categoryWidth;
+      const textCenter = (textLeft + textRight) / 2;
       const targetCenter = activeCenteredViewBoxWidth / 2;
-      const nextOffset = targetCenter - activeLockupScale * phraseCenter;
+      const nextOffset = targetCenter - activeLockupScale * textCenter;
 
       setDynamicViewBoxWidth(activeCenteredViewBoxWidth);
       setPhraseCenterOffsetX(previousOffset => Math.abs(nextOffset - previousOffset) > 0.5 ? nextOffset : previousOffset);
@@ -150,7 +149,7 @@ const AnimatedLogoSmall70 = ({
       cancelled = true;
       window.cancelAnimationFrame(frame);
     };
-  }, [activeCenteredViewBoxWidth, activeLockupScale, centerLockup, categoryGap, currentCategory.name, fontSize, wheelVisualLeft, wordmarkX, wordmarkTextWidth]);
+  }, [activeCenteredViewBoxWidth, activeLockupScale, centerLockup, categoryGap, currentCategory.name, fontSize, wordmarkX, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>

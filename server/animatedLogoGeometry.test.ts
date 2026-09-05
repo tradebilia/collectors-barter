@@ -6,8 +6,9 @@ const source = readFileSync(new URL("../client/src/components/AnimatedLogoSmall7
 describe("animated logo geometry", () => {
   it("includes the scaled wheel orbit in centered lockup bounds", () => {
     expect(source).toContain("const wheelOrbitRadius = 82 * wheelScale;");
-    expect(source).toContain("const wheelVisualLeft = 6 + wheelOffsetX + 0.441 * (104 - wheelOrbitRadius);");
-    expect(source).toContain("const phraseLeft = Math.min(15, wheelVisualLeft);");
+    expect(source).toContain("const wheelTransform = wheelScale === 1");
+    expect(source).toContain("const wheelOrbitRadius = 82 * wheelScale;");
+    expect(source).not.toContain("const wheelVisualLeft =");
   });
 
   it("supports moving the divider and wordmark clear of an enlarged wheel without moving the wheel right", () => {
@@ -23,11 +24,13 @@ describe("animated logo geometry", () => {
     expect(source).toContain("const activeLockupScale = centerLockup && isNarrowViewport ? 0.36 : lockupScale;");
   });
 
-  it("centers each full rotating category label rather than reserving empty width after shorter words", () => {
-    expect(source).toContain("const phraseRight = measuredCategoryWordX + categoryWidth;");
-    expect(source).toContain("const phraseCenter = (phraseLeft + phraseRight) / 2;");
+  it("centers only the complete rendered text phrase and moves the attached lockup proportionally", () => {
+    expect(source).toContain("const textLeft = wordmarkX;");
+    expect(source).toContain("const textRight = measuredCategoryWordX + categoryWidth;");
+    expect(source).toContain("const textCenter = (textLeft + textRight) / 2;");
     expect(source).toContain("const targetCenter = activeCenteredViewBoxWidth / 2;");
-    expect(source).toContain("const nextOffset = targetCenter - activeLockupScale * phraseCenter;");
+    expect(source).toContain("const nextOffset = targetCenter - activeLockupScale * textCenter;");
+    expect(source).toContain("translate(${phraseCenterOffsetX + lockupCenterBiasX}");
     expect(source).not.toContain("categoryReserveWidth");
     expect(source).not.toContain("getBBox()");
   });

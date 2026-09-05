@@ -1418,3 +1418,7 @@
 - [x] Inspect the homepage Recent Trades section and its existing layout contracts for height changes between one and two trades.
 - [x] Keep the Recent Trades section height stable without removing or altering the displayed trade content.
 - [x] Verify the stable section at desktop and mobile widths, then update tests and save a checkpoint.
+
+- [x] Re-inspect the Coming Soon text, wheel, and divider coordinate relationships after the user-reported alignment issue.
+- [x] Center only the complete rendered text phrase while preserving proportional wheel and divider anchoring.
+- [x] Verify every rotating phrase at desktop and phone widths, then update tests and save a checkpoint.
