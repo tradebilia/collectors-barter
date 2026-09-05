@@ -1526,3 +1526,5 @@
 - [x] Trace why a signed-in reply-to-reply is returned as a top-level reply, then repair parentReplyId persistence or retrieval and verify nested rendering with connected controls.
 - [x] Apply the user-approved additive parentReplyId column and index migration to the custom forum database; real nested-reply submission validation remains pending.
 - [x] Bind each inline reply composer to its explicit reply target at submit time, preventing a selected child reply from falling back to a null parent ID.
+- [ ] Diagnose and repair the backend child-reply persistence error now that parentReplyId is submitted, then verify the stored child relationship and rendered sub-thread.
+- [x] Handle the custom forumReplies table’s partial schema—parentReplyId exists but listingId does not—so child replies persist without querying optional unavailable columns.

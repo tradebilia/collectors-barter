@@ -94,7 +94,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("A forum reply can include up to 6 photos.");
     expect(dbSource).toContain("forumNotifications");
     expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, content)");
-    expect(dbSource).toContain("parentReplyId: input.parentReplyId || null");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, parentReplyId, content)");
   });
 
   it("uses a compact discussion-row hierarchy with inline reply actions", () => {
@@ -125,8 +125,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("mimeType: string");
     expect(dbSource).toContain("parentReplyId?: number | null");
     expect(dbSource).toContain("The reply you are responding to is no longer available.");
-    expect(dbSource).toContain("getForumRepliesSchemaMode(db)");
-    expect(dbSource).toContain("parentReplyId: repliesExpanded ? forumReplies.parentReplyId : sql<number | null>`NULL`");
+    expect(dbSource).toContain("getForumRepliesCapabilities(db)");
+    expect(dbSource).toContain("hasParentReplyId: columns.has(\"parentReplyId\")");
+    expect(dbSource).toContain("hasListingId: columns.has(\"listingId\")");
+    expect(dbSource).toContain("parentReplyId: replyCapabilities.hasParentReplyId ? forumReplies.parentReplyId : sql<number | null>`NULL`");
   });
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {
