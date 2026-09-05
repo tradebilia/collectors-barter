@@ -1530,3 +1530,4 @@
 - [x] Handle the custom forumReplies table’s partial schema—parentReplyId exists but listingId does not—so child replies persist without querying optional unavailable columns.
 - [ ] Diagnose and repair the mismatch where a submitted reply increments the topic count but is not returned or rendered, then verify the full nested child-reply flow.
 - [x] Prevent the optional forumReplyAttachments lookup from hiding text replies when that attachment table is absent from the custom database.
+- [x] Refine nested forum thread geometry to use continuous vertical guides, short branch connectors, and collapse controls aligned to each guide level, matching the supplied reference on desktop and mobile.
