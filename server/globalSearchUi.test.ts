@@ -40,6 +40,9 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain('href={`/listings/${listing.id}`}');
     expect(searchPage).toContain("resolveTradebiliaListingImage");
     expect(searchPage).toContain("Verified merchants only");
+    expect(searchPage).toContain('flex min-h-[32rem] w-full flex-col gap-0 px-4 py-6');
+    expect(searchPage).toContain('lg:sticky lg:top-4 lg:w-56');
+    expect(searchPage).not.toContain('className="container flex min-h-[32rem] flex-col gap-0 py-6 lg:flex-row lg:py-8"');
     expect(searchPage).toContain("grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6");
     expect(searchPage).toContain('const { user, isAuthenticated } = useAuth();');
     expect(searchPage).toContain("trpc.market.createTradeProposal.useMutation");
