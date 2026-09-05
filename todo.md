@@ -1410,3 +1410,7 @@
 - [x] Remove the authenticated Home subscriber dashboard tab bar and duplicate dashboard, listings, trade-proposals, watchlist, trade-history, ratings, and profile panels.
 - [x] Preserve the Home left-side navigation and dedicated routes for My Inventory, My Trades, Watchlist, Messages, Account Settings, and public profiles. Route references remain registered in App.tsx.
 - [x] Add focused regression coverage and desktop/mobile validation confirming the Home page no longer renders the duplicate subscriber dashboard section. Focused social/mobile suites passed, TypeScript, production build, whitespace checks passed, and source inspection confirmed dashboard labels are gone while preserved route references remain.
+
+- [x] Re-read the current Coming Soon phrase list and geometry implementation after the dashboard rollback.
+- [x] Replace the unreliable centering correction with explicit per-phrase width and center positioning for the complete animated title.
+- [x] Verify all rotating phrases at desktop and phone widths, then preserve the thin arrows and divider geometry.

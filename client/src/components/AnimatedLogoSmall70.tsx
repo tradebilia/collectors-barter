@@ -66,10 +66,7 @@ const AnimatedLogoSmall70 = ({
   const [index, setIndex] = useState(0);
   const categoryTextRef = useRef<SVGTextElement>(null);
   const wordmarkTextRef = useRef<SVGTextElement>(null);
-  const lockupSvgRef = useRef<SVGSVGElement>(null);
-  const lockupGroupRef = useRef<SVGGElement>(null);
-  const [lockupOffsetX, setLockupOffsetX] = useState(0);
-  const [measuredCenterOffsetX, setMeasuredCenterOffsetX] = useState(0);
+  const [phraseCenterOffsetX, setPhraseCenterOffsetX] = useState(0);
   const [dynamicViewBoxWidth, setDynamicViewBoxWidth] = useState(1300);
   const [wordmarkTextWidth, setWordmarkTextWidth] = useState(fontSize * 3.8);
   const [isNarrowViewport, setIsNarrowViewport] = useState(false);
@@ -104,7 +101,7 @@ const AnimatedLogoSmall70 = ({
       : 348 + contentOffsetX;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : categoryColorOverrides[currentCategory.name] ?? currentCategory.color;
   const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 1100 : centeredViewBoxWidth;
-  const activeLockupScale = centerLockup && isNarrowViewport ? 0.52 : lockupScale;
+  const activeLockupScale = centerLockup && isNarrowViewport ? 0.36 : lockupScale;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
@@ -114,62 +111,55 @@ const AnimatedLogoSmall70 = ({
   const dividerHalfHeight = 48.6 * dividerScale;
 
   useLayoutEffect(() => {
-    const measuredWordmarkWidth = wordmarkTextRef.current?.getComputedTextLength();
-    if (measuredWordmarkWidth && Math.abs(measuredWordmarkWidth - wordmarkTextWidth) > 0.5) {
-      setWordmarkTextWidth(measuredWordmarkWidth);
-    }
-
-    if (!centerLockup) {
-      setLockupOffsetX(0);
-      setDynamicViewBoxWidth(1300);
-      setMeasuredCenterOffsetX(0);
-      return;
-    }
-
-    const categoryWidth = categoryTextRef.current?.getComputedTextLength() ?? 0;
-    const lockupLeft = Math.min(15, wheelVisualLeft);
-    const lockupRight = categoryWordX + categoryWidth;
-    const lockupWidth = Math.max(1, lockupRight - lockupLeft);
-    const scaledLockupWidth = lockupWidth * activeLockupScale;
-    const nextViewBoxWidth = activeCenteredViewBoxWidth;
-    const nextOffset = (nextViewBoxWidth - scaledLockupWidth) / 2 - lockupLeft * activeLockupScale;
-
-    setDynamicViewBoxWidth(nextViewBoxWidth);
-    setLockupOffsetX(nextOffset);
-  }, [activeCenteredViewBoxWidth, activeLockupScale, categoryWordX, centerLockup, currentCategory.name, fontSize, wheelVisualLeft, wordmarkTextWidth]);
-
-  useLayoutEffect(() => {
-    if (!centerLockup || !lockupSvgRef.current || !lockupGroupRef.current) return;
     let cancelled = false;
-    const measureVisibleGroup = () => {
-      if (cancelled || !lockupSvgRef.current || !lockupGroupRef.current) return;
-      const groupBounds = lockupGroupRef.current.getBBox();
-      const groupCenterInLocalUnits = groupBounds.x + groupBounds.width / 2;
-      const currentTranslation = lockupOffsetX + lockupCenterBiasX;
-      const correction = dynamicViewBoxWidth / 2 - activeLockupScale * groupCenterInLocalUnits - currentTranslation;
-      if (Math.abs(correction - measuredCenterOffsetX) > 0.5) {
-        setMeasuredCenterOffsetX(correction);
+
+    const measureAndCenterPhrase = () => {
+      if (cancelled) return;
+
+      const measuredWordmarkWidth = wordmarkTextRef.current?.getComputedTextLength() ?? 0;
+      const categoryWidth = categoryTextRef.current?.getComputedTextLength() ?? 0;
+      if (measuredWordmarkWidth > 0 && Math.abs(measuredWordmarkWidth - wordmarkTextWidth) > 0.5) {
+        setWordmarkTextWidth(measuredWordmarkWidth);
       }
+
+      if (!centerLockup) {
+        setDynamicViewBoxWidth(1300);
+        setPhraseCenterOffsetX(0);
+        return;
+      }
+
+      if (categoryWidth <= 0) return;
+
+      const measuredCategoryWordX = Math.ceil(wordmarkX + (measuredWordmarkWidth || wordmarkTextWidth) + categoryGap);
+      const phraseLeft = Math.min(15, wheelVisualLeft);
+      const phraseRight = measuredCategoryWordX + categoryWidth;
+      const phraseCenter = (phraseLeft + phraseRight) / 2;
+      const targetCenter = activeCenteredViewBoxWidth / 2;
+      const nextOffset = targetCenter - activeLockupScale * phraseCenter;
+
+      setDynamicViewBoxWidth(activeCenteredViewBoxWidth);
+      setPhraseCenterOffsetX(previousOffset => Math.abs(nextOffset - previousOffset) > 0.5 ? nextOffset : previousOffset);
     };
+
     const frame = window.requestAnimationFrame(() => {
       const fontsReady = document.fonts?.ready ?? Promise.resolve();
-      void fontsReady.then(() => window.requestAnimationFrame(measureVisibleGroup));
+      void fontsReady.then(() => window.requestAnimationFrame(measureAndCenterPhrase));
     });
+
     return () => {
       cancelled = true;
       window.cancelAnimationFrame(frame);
     };
-  }, [centerLockup, currentCategory.name, dynamicViewBoxWidth, lockupOffsetX, activeLockupScale, measuredCenterOffsetX]);
+  }, [activeCenteredViewBoxWidth, activeLockupScale, centerLockup, categoryGap, currentCategory.name, fontSize, wheelVisualLeft, wordmarkX, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
       <svg
-        ref={lockupSvgRef}
         xmlns="http://www.w3.org/2000/svg"
         viewBox={`0 0 ${dynamicViewBoxWidth} 216`}
         className="h-auto w-full flex-none drop-shadow-lg"
         style={{ width: `${canvasWidthScale * 100}%`, maxWidth: canvasWidthScale === 1 ? "100%" : "none", height: "100%" }}
-        preserveAspectRatio="xMinYMid meet"
+        preserveAspectRatio="xMidYMid meet"
       >
         <defs>
           <filter id="wheelGlowSmall" x="-20%" y="-20%" width="140%" height="140%">
@@ -181,7 +171,7 @@ const AnimatedLogoSmall70 = ({
           </filter>
         </defs>
 
-        <g ref={lockupGroupRef} transform={`translate(${lockupOffsetX + lockupCenterBiasX + measuredCenterOffsetX}, ${108 * (1 - activeLockupScale)}) scale(${activeLockupScale})`}>
+        <g transform={`translate(${phraseCenterOffsetX + lockupCenterBiasX}, ${108 * (1 - activeLockupScale)}) scale(${activeLockupScale})`}>
         <g transform={wheelTransform}>
           <g filter="url(#wheelGlowSmall)">
           <animateTransform attributeName="transform" type="rotate" from="0 104 110" to="360 104 110" dur="12s" repeatCount="indefinite" />
