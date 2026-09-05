@@ -1538,3 +1538,4 @@
 - [x] Place collapse and expand controls directly on the vertical thread connector line, separate from the reply avatar, with responsive alignment.
 - [x] Rebuild nested reply connectors around explicit parent and child avatar centers so message 3 connects to message 2, message 5 connects to message 3, and sibling message 4 branches independently from message 2.
 - [x] Remove any horizontal branch artifact beneath leaf replies and render horizontal connectors only for actual parent-to-child reply relationships.
+- [x] Match the Reddit-style L-shaped connector path: parent vertical guide continues to the child row, turns horizontally into the child avatar center, and the child guide continues only when that child has replies.
