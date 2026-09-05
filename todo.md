@@ -1414,3 +1414,7 @@
 - [x] Re-read the current Coming Soon phrase list and geometry implementation after the dashboard rollback.
 - [x] Replace the unreliable centering correction with explicit per-phrase width and center positioning for the complete animated title.
 - [x] Verify all rotating phrases at desktop and phone widths, then preserve the thin arrows and divider geometry.
+
+- [x] Inspect the homepage Recent Trades section and its existing layout contracts for height changes between one and two trades.
+- [x] Keep the Recent Trades section height stable without removing or altering the displayed trade content.
+- [x] Verify the stable section at desktop and mobile widths, then update tests and save a checkpoint.
