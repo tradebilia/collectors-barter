@@ -307,7 +307,7 @@ export function ForumTopic() {
             <button type="button" className="inline-flex items-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50" onClick={() => document.getElementById(mediaInputId)?.click()}><ImagePlus className="h-4 w-4" aria-hidden="true" /> Insert image</button>
             <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={() => document.getElementById(videoInputId)?.click()}><Video className="h-4 w-4" aria-hidden="true" /> Video</button>
             <button type="button" className="inline-flex items-center gap-1 rounded-md px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" onClick={applyBold}><FileText className="h-4 w-4" aria-hidden="true" /> Format</button>
-            {replyPhotos.length > 0 && <span className="text-xs text-muted-foreground">{replyPhotos.length} attached</span>}
+            {replyPhotos.length > 0 && <span className="max-w-full text-xs text-muted-foreground" aria-live="polite">{replyPhotos.length} attached <span aria-hidden="true">·</span> <span className="inline-block max-w-[18rem] truncate align-bottom" title={replyPhotos.map((file) => file.name).join(", ")}>{replyPhotos.map((file) => file.name).join(", ")}</span></span>}
           </div>
           <div className="flex items-center gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={clearReplyTarget}><X className="mr-1 h-4 w-4" aria-hidden="true" />Cancel</Button>
