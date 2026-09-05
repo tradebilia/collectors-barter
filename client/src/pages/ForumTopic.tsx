@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -12,6 +12,8 @@ export function ForumTopic() {
   const [match, params] = useRoute("/forum/:postId");
   const { user } = useAuth();
   const [replyContent, setReplyContent] = useState("");
+  const [replyError, setReplyError] = useState("");
+  const utils = trpc.useUtils();
 
   const postId = params?.postId ? parseInt(params.postId) : 0;
 
@@ -27,9 +29,11 @@ export function ForumTopic() {
 
   const addReplyMutation = trpc.market.addForumReply.useMutation();
 
-  const handleAddReply = async () => {
+  const handleAddReply = async (event: FormEvent) => {
+    event.preventDefault();
+    setReplyError("");
     if (!replyContent.trim()) {
-      alert("Please enter a reply");
+      setReplyError("Write a reply before posting.");
       return;
     }
 
@@ -39,9 +43,12 @@ export function ForumTopic() {
         content: replyContent.trim(),
       });
       setReplyContent("");
-      // Refresh replies
+      await Promise.all([
+        utils.market.getForumPostDetail.invalidate({ postId }),
+        utils.market.getForumReplies.invalidate({ postId }),
+      ]);
     } catch (error) {
-      alert("Failed to add reply");
+      setReplyError(error instanceof Error ? error.message : "Failed to add reply. Please try again.");
     }
   };
 
@@ -149,22 +156,25 @@ export function ForumTopic() {
             {/* Add Reply */}
             {user && !post.isLocked ? (
               <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Add Your Reply</h3>
-                <textarea
-                  value={replyContent}
-                  onChange={e => setReplyContent(e.target.value)}
-                  placeholder="Enter your reply..."
-                  className="w-full px-3 py-2 border rounded-md h-24 mb-4"
-                  maxLength={2000}
-                />
-                <div className="flex justify-end gap-2">
-                  <Button
-                    onClick={handleAddReply}
-                    disabled={addReplyMutation.isPending}
-                  >
-                    {addReplyMutation.isPending ? "Posting..." : "Post Reply"}
-                  </Button>
-                </div>
+                <form onSubmit={handleAddReply}>
+                  <h3 className="mb-1 text-lg font-semibold">Add Your Reply</h3>
+                  <p className="mb-4 text-sm text-muted-foreground">Keep the conversation useful and respectful for fellow collectors.</p>
+                  <label htmlFor="forum-reply-content" className="sr-only">Your reply</label>
+                  <textarea
+                    id="forum-reply-content"
+                    value={replyContent}
+                    onChange={e => setReplyContent(e.target.value)}
+                    placeholder="Enter your reply..."
+                    className="mb-4 h-24 w-full rounded-md border px-3 py-2"
+                    maxLength={2000}
+                  />
+                  {replyError && <p className="mb-3 text-sm text-red-700" role="alert">{replyError}</p>}
+                  <div className="flex justify-end gap-2">
+                    <Button type="submit" disabled={addReplyMutation.isPending}>
+                      {addReplyMutation.isPending ? "Posting..." : "Post Reply"}
+                    </Button>
+                  </div>
+                </form>
               </Card>
             ) : !user ? (
               <Card className="p-6 text-center">
@@ -178,7 +188,12 @@ export function ForumTopic() {
             )}
           </>
         ) : (
-          <div className="text-center py-8">Topic not found</div>
+          <Card className="mx-auto max-w-xl p-8 text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Collectors Forum</p>
+            <h1 className="mt-2 font-serif text-3xl">Topic not found</h1>
+            <p className="mt-2 text-sm text-muted-foreground">This discussion may have been removed or the link may be incomplete.</p>
+            <Button variant="outline" onClick={() => setLocation("/forum")} className="mt-6">Browse forum topics</Button>
+          </Card>
         )}
       </div>
     </div>

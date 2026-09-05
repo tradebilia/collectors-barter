@@ -1429,3 +1429,8 @@
 - [x] Reproduce and inspect each Coming Soon rotating title state for phrase-specific centering drift.
 - [x] Correct any per-phrase text placement issue while preserving proportional wheel and divider geometry.
 - [x] Capture desktop and phone rotation-state checks, update tests, and save the verified correction.
+
+- [x] Inventory Collectors Forum routes, components, data flow, and existing regression coverage.
+- [x] Visually inspect Collectors Forum pages at desktop, tablet, and mobile widths.
+- [x] Implement the highest-priority Collectors Forum layout, navigation, responsiveness, accessibility, and usability refinements.
+- [x] Add or update forum regression tests and re-verify all forum pages.

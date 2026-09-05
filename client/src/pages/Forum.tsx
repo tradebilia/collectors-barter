@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { FormEvent, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -15,6 +15,7 @@ export function Forum() {
   const [selectedCategory, setSelectedCategory] = useState<string>("general");
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "replies">("newest");
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
+  const utils = trpc.useUtils();
 
   const forumCategories = [
     { id: "general", label: "General Discussion" },
@@ -55,22 +56,28 @@ export function Forum() {
       <CategoryBar />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Forum Topics</h2>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Collectors helping collectors</p>
+            <h1 className="text-3xl font-serif font-medium tracking-tight">Forum Topics</h1>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Ask questions, share collecting knowledge, and exchange ideas across every category.</p>
+          </div>
           {user && (
-            <Button onClick={() => setShowNewTopicModal(true)}>
+            <Button onClick={() => setShowNewTopicModal(true)} className="shrink-0">
               New Topic
             </Button>
           )}
         </div>
 
         {/* Category Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div className="mb-6 overflow-x-auto pb-2" role="tablist" aria-label="Forum categories">
           {forumCategories.map(cat => (
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded whitespace-nowrap transition ${
+              role="tab"
+              aria-selected={selectedCategory === cat.id}
+              className={`mr-2 rounded px-4 py-2 whitespace-nowrap transition ${
                 selectedCategory === cat.id
                   ? "bg-primary text-primary-foreground"
                   : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
@@ -82,12 +89,13 @@ export function Forum() {
         </div>
 
         {/* Sort Options */}
-        <div className="flex gap-2 mb-6">
+        <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Sort forum topics">
           {(["newest", "popular", "replies"] as const).map(sort => (
             <button
               key={sort}
               onClick={() => setSortBy(sort)}
-              className={`px-3 py-1 text-sm rounded transition ${
+              aria-pressed={sortBy === sort}
+              className={`rounded px-3 py-1 text-sm transition ${
                 sortBy === sort
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground hover:bg-muted/80"
@@ -99,6 +107,10 @@ export function Forum() {
         </div>
 
         {/* Topics List */}
+        <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
+          <span>{posts?.length ?? 0} {posts?.length === 1 ? "topic" : "topics"} in this category</span>
+          {!user && <span>Sign in to start a discussion.</span>}
+        </div>
         <div className="space-y-4">
           {isLoading ? (
             <div className="text-center py-8">Loading topics...</div>
@@ -108,6 +120,15 @@ export function Forum() {
                 key={post.id}
                 className="p-4 cursor-pointer hover:shadow-lg transition"
                 onClick={() => setLocation(`/forum/${post.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setLocation(`/forum/${post.id}`);
+                  }
+                }}
+                role="link"
+                tabIndex={0}
+                aria-label={`Open topic ${post.title || "Untitled"}`}
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
@@ -164,11 +185,15 @@ function NewTopicModal({
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [formError, setFormError] = useState("");
+  const utils = trpc.useUtils();
   const createPostMutation = trpc.market.createForumPost.useMutation();
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setFormError("");
     if (!title.trim() || !content.trim()) {
-      alert("Please fill in all fields");
+      setFormError("Add a title and message before creating the topic.");
       return;
     }
 
@@ -178,23 +203,31 @@ function NewTopicModal({
         title: title.trim(),
         content: content.trim(),
       });
+      await utils.market.getForumPosts.invalidate();
       onSuccess();
     } catch (error) {
-      alert("Failed to create topic");
+      setFormError(error instanceof Error ? error.message : "Failed to create topic. Please try again.");
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          <h2 className="text-2xl font-bold mb-4">New Discussion Topic</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" role="dialog" aria-modal="true" aria-labelledby="new-topic-title">
+      <Card className="max-h-[90vh] w-full max-w-2xl overflow-y-auto">
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">Start a conversation</p>
+              <h2 id="new-topic-title" className="mt-1 text-2xl font-bold">New Discussion Topic</h2>
+            </div>
+            <Button type="button" variant="ghost" onClick={onClose} aria-label="Close new topic dialog">Close</Button>
+          </div>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Title</label>
+                <label htmlFor="forum-topic-title" className="mb-2 block text-sm font-medium">Title</label>
               <input
                 type="text"
+                id="forum-topic-title"
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Enter topic title..."
@@ -204,8 +237,9 @@ function NewTopicModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
+                <label htmlFor="forum-topic-content" className="mb-2 block text-sm font-medium">Message</label>
               <textarea
+                id="forum-topic-content"
                 value={content}
                 onChange={e => setContent(e.target.value)}
                 placeholder="Enter your message..."
@@ -214,19 +248,18 @@ function NewTopicModal({
               />
             </div>
 
-            <div className="flex gap-2 justify-end">
+            {formError && <p className="text-sm text-red-700" role="alert">{formError}</p>}
+
+            <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={createPostMutation.isPending}
-              >
+              <Button type="submit" disabled={createPostMutation.isPending}>
                 {createPostMutation.isPending ? "Creating..." : "Create Topic"}
               </Button>
             </div>
           </div>
-        </div>
+        </form>
       </Card>
     </div>
   );
