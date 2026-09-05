@@ -4613,8 +4613,6 @@ export async function createForumPost(
   }
 ) {
   const db = await requireDb();
-  const { forumPosts } = await import("../drizzle/schema");
-
   // The session's numeric ID can be stale in an isolated database. Resolve the
   // authenticated account by its stable openId before satisfying the FK.
   let authorId = user.id;
@@ -4628,13 +4626,12 @@ export async function createForumPost(
     authorId = persistedUser.id;
   }
 
-  const result = await db.insert(forumPosts).values({
-    userId: authorId,
-    category: input.category,
-    subcategory: input.subcategory || null,
-    title: input.title.trim().slice(0, 255),
-    content: input.content.trim(),
-  });
+  // Keep topic creation compatible with the original forumPosts table. Later
+  // optional columns are deliberately omitted and use their database defaults.
+  const result = await db.execute(sql`
+    INSERT INTO forumPosts (userId, category, subcategory, title, content)
+    VALUES (${authorId}, ${input.category}, ${input.subcategory || null}, ${input.title.trim().slice(0, 255)}, ${input.content.trim()})
+  `);
 
   return { postId: getInsertId(result) };
 }

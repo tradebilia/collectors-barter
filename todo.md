@@ -1463,3 +1463,7 @@
 - [x] Apply the smallest additive schema repair and align the topic creation contract; the database already contained listingId, so the repair resolves the authenticated account by openId instead.
 - [x] Add regression coverage and verify topic creation and existing forum flows.
 - [x] Save and deliver the forum topic-creation repair.
+
+- [x] Trace the active custom-auth topic-creation identity path and confirm the database used by the failing deployed form.
+- [x] Repair the active topic-creation procedure and replace raw database errors with an actionable message.
+- [x] Add a regression test for the active identity path, revalidate the forum flow, and save the confirmed fix.

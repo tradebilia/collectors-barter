@@ -22,6 +22,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(forumSource).toContain('role="alert"');
     expect(forumSource).not.toContain("alert(\"Please fill in all fields\")");
     expect(forumSource).not.toContain("alert(\"Failed to create topic\")");
+    expect(forumSource).toContain("We could not create this topic right now. Please refresh the page and try again.");
     expect(topicSource).toContain("utils.market.getForumPostDetail.invalidate({ postId })");
     expect(topicSource).toContain("utils.market.getForumReplies.invalidate({ postId })");
     expect(topicSource).not.toContain("alert(\"Please enter a reply\")");
@@ -49,6 +50,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})");
     expect(dbSource).toContain("if (user.openId)");
     expect(dbSource).toContain("authorId = persistedUser.id;");
+    expect(dbSource).toContain("INSERT INTO forumPosts (userId, category, subcategory, title, content)");
   });
 
   it("supports item-type subcategories and validated photo attachments", () => {

@@ -293,7 +293,11 @@ function NewTopicModal({
       await utils.market.getForumPosts.invalidate();
       onSuccess();
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : "Failed to create topic. Please try again.");
+      const message = error instanceof Error ? error.message : "";
+      const isUnexpectedServerError = /failed query|forumposts|database|foreign key/i.test(message);
+      setFormError(isUnexpectedServerError
+        ? "We could not create this topic right now. Please refresh the page and try again."
+        : message || "Failed to create topic. Please try again.");
     }
   };
 
