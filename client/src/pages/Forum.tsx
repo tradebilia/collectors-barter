@@ -11,6 +11,17 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { collectibleCategories } from "@/lib/constants";
 import { forumCategoryLabels, getForumSubcategories, forumParentLevelSubcategory, forumParentLevelSubcategoryLabel } from "@shared/forum";
 
+function parseForumTimestamp(value: string | number | Date): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value < 100000000000 ? value * 1000 : value);
+  const stringValue = String(value);
+  const mysqlDateTime = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
+  return new Date(mysqlDateTime.test(stringValue) ? `${stringValue.replace(" ", "T")}Z` : stringValue);
+}
+function formatForumLocalTimestamp(value: string | number | Date): string {
+  return parseForumTimestamp(value).toLocaleString();
+}
+
 const forumCategoryTones: Record<string, { active: string; inactive: string }> = {
   general: { active: "bg-slate-700 text-white", inactive: "bg-slate-100 text-slate-700 hover:bg-slate-200" },
   comics: { active: "bg-rose-700 text-white", inactive: "bg-rose-50 text-rose-800 hover:bg-rose-100" },
@@ -201,7 +212,7 @@ export function Forum() {
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span className="font-semibold text-foreground">{post.author?.name || "Anonymous"}</span>
                       <span aria-hidden="true">·</span>
-                      <time dateTime={new Date(post.createdAt).toISOString()}>{new Date(post.createdAt).toLocaleDateString()}</time>
+                      <time dateTime={parseForumTimestamp(post.createdAt).toISOString()}>{formatForumLocalTimestamp(post.createdAt)}</time>
                       {post.subcategory && <><span aria-hidden="true">·</span><span>{post.subcategory}</span></>}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-2">

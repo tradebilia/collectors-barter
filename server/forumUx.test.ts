@@ -110,7 +110,12 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}");
     expect(topicSource).toContain("strokeWidth=\"1.5\"");
     expect(topicSource).toContain("text-slate-400");
-    expect(topicSource).toContain("formatRelativeTime");
+    expect(topicSource).toContain("parseForumTimestamp");
+    expect(topicSource).toContain("formatForumLocalTimestamp");
+    expect(topicSource).toContain('stringValue.replace(" ", "T")}Z');
+    expect(forumSource).toContain("formatForumLocalTimestamp");
+    expect(forumSource).not.toContain("toLocaleDateString");
+    expect(topicSource).not.toContain("formatRelativeTime");
     expect(topicSource).toContain("bg-slate-100 p-3 shadow-sm");
     expect(topicSource).toContain("border border-slate-300 bg-white px-3 py-2 text-sm");
     expect(topicSource).toContain("collapsedReplyIds.has(control.replyId) ? \"+\" : \"−\"");

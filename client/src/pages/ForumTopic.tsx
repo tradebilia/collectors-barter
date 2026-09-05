@@ -41,23 +41,15 @@ function renderForumContent(content: string): ReactNode {
   return content.split(/(\\*\\*[^*]+\\*\\*)/g).map((part, index) => part.startsWith("**") && part.endsWith("**") ? <strong key={index}>{part.slice(2, -2)}</strong> : <Fragment key={index}>{part}</Fragment>);
 }
 
-function formatRelativeTime(value: string | number | Date): string {
-  const rawValue = value instanceof Date ? value.getTime() : typeof value === "number" ? value : /^\d+$/.test(String(value)) ? Number(value) : Date.parse(String(value).replace(" ", "T"));
-  const timestamp = Number.isFinite(rawValue) && rawValue > 0 && rawValue < 100000000000 ? rawValue * 1000 : rawValue;
-  const elapsedMs = Math.max(0, Date.now() - timestamp);
-  const minute = 60 * 1000;
-  const hour = 60 * minute;
-  const day = 24 * hour;
-  const week = 7 * day;
-  const month = 30 * day;
-  const year = 365 * day;
-  if (elapsedMs < minute) return "just now";
-  if (elapsedMs < hour) return `${Math.floor(elapsedMs / minute)}m ago`;
-  if (elapsedMs < day) return `${Math.floor(elapsedMs / hour)}h ago`;
-  if (elapsedMs < week) return `${Math.floor(elapsedMs / day)}d ago`;
-  if (elapsedMs < month) return `${Math.floor(elapsedMs / week)}w ago`;
-  if (elapsedMs < year) return `${Math.floor(elapsedMs / month)}mo ago`;
-  return `${Math.floor(elapsedMs / year)}y ago`;
+function parseForumTimestamp(value: string | number | Date): Date {
+  if (value instanceof Date) return value;
+  if (typeof value === "number") return new Date(value < 100000000000 ? value * 1000 : value);
+  const stringValue = String(value);
+  const mysqlDateTime = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/;
+  return new Date(mysqlDateTime.test(stringValue) ? `${stringValue.replace(" ", "T")}Z` : stringValue);
+}
+function formatForumLocalTimestamp(value: string | number | Date): string {
+  return parseForumTimestamp(value).toLocaleString();
 }
 
 function getForumMediaMimeType(file: File): "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4" {
@@ -444,7 +436,7 @@ export function ForumTopic() {
                         <h1 className="mb-2 text-3xl font-bold">{post.title || "(Untitled)"}</h1>
                         <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                           <span>{post.author?.name || "Anonymous"}</span>
-                          <span>{new Date(post.createdAt).toLocaleString()}</span>
+                          <time dateTime={parseForumTimestamp(post.createdAt).toISOString()}>{formatForumLocalTimestamp(post.createdAt)}</time>
                           <span>{post.viewCount} views</span>
                         </div>
                       </div>
@@ -539,7 +531,7 @@ export function ForumTopic() {
                                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
                                     <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
                                     <span aria-hidden="true">·</span>
-                                    <time dateTime={new Date(reply.createdAt).toISOString()}>{formatRelativeTime(reply.createdAt)}</time>
+                                    <time dateTime={parseForumTimestamp(reply.createdAt).toISOString()}>{formatForumLocalTimestamp(reply.createdAt)}</time>
                                   </div>
                                   <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{renderForumContent(reply.content)}</p>
                                   {reply.listingId && <button type="button" className="mt-2 text-xs font-semibold text-primary underline" onClick={() => setLocation(`/listings/${reply.listingId}`)}>View linked item #{reply.listingId}</button>}
