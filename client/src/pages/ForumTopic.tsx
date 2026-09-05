@@ -183,7 +183,7 @@ export function ForumTopic() {
     });
   };
 
-  const handleAddReply = async (event: FormEvent) => {
+  const handleAddReply = async (event: FormEvent, parentReplyId: number | null) => {
     event.preventDefault();
     setReplyError("");
     if (!replyContent.trim()) {
@@ -195,7 +195,7 @@ export function ForumTopic() {
       const created = await addReplyMutation.mutateAsync({
         postId,
         listingId: replyListingId.trim() ? Number(replyListingId) : undefined,
-        parentReplyId: replyParentId ?? undefined,
+        parentReplyId: parentReplyId ?? undefined,
         content: replyContent.trim(),
       });
       for (const [index, file] of replyPhotos.entries()) {
@@ -227,7 +227,7 @@ export function ForumTopic() {
     const videoInputId = `forum-reply-video-${targetKey}`;
     const insertFormatting = () => setReplyContent((current) => `${current}${current ? " " : ""}**bold text**`);
     return (
-      <form onSubmit={handleAddReply} className="mt-3 rounded-xl border border-border bg-muted/25 p-3 shadow-sm">
+      <form onSubmit={(event) => handleAddReply(event, isTopicTarget ? null : Number(targetKey))} className="mt-3 rounded-xl border border-border bg-muted/25 p-3 shadow-sm">
         <div className="mb-2 text-sm text-muted-foreground">Replying to <strong className="text-foreground">{isTopicTarget ? post.author?.name || "the topic" : replyParentName || "this member"}</strong></div>
         <label htmlFor={composerId} className="sr-only">Your reply</label>
         <textarea id={composerId} value={replyContent} onChange={(event) => setReplyContent(event.target.value)} placeholder="Write a reply..." className="min-h-20 w-full resize-y rounded-lg border bg-background px-3 py-2 text-sm" maxLength={2000} />

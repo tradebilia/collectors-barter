@@ -114,6 +114,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("replyParentId");
     expect(topicSource).toContain("beginReplyTo");
     expect(topicSource).toContain("renderInlineReplyComposer");
+    expect(topicSource).toContain("handleAddReply = async (event: FormEvent, parentReplyId: number | null)");
+    expect(topicSource).toContain("handleAddReply(event, isTopicTarget ? null : Number(targetKey))");
     expect(topicSource).toContain('Replying to <strong className="text-foreground">');
     expect(topicSource).toContain("Photos / GIF");
     expect(topicSource).toContain('accept="video/mp4"');

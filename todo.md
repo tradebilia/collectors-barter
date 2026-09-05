@@ -1524,3 +1524,5 @@
 - [x] Render forum replies as a hierarchical sub-thread tree with deeper indentation and thread guides for replies to replies, including responsive mobile spacing and regression coverage.
 - [x] Add connected vertical/branch thread guides and per-reply collapse/expand controls for nested forum reply sub-threads, with responsive regression coverage.
 - [x] Trace why a signed-in reply-to-reply is returned as a top-level reply, then repair parentReplyId persistence or retrieval and verify nested rendering with connected controls.
+- [x] Apply the user-approved additive parentReplyId column and index migration to the custom forum database; real nested-reply submission validation remains pending.
+- [x] Bind each inline reply composer to its explicit reply target at submit time, preventing a selected child reply from falling back to a null parent ID.
