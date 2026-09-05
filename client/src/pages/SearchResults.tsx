@@ -38,6 +38,7 @@ type SearchFilters = {
   valueMax: string;
   verifiedMerchantsOnly: boolean;
   sort: SearchSort;
+  distanceMiles?: number;
 };
 
 const emptySearchFilters: SearchFilters = {
@@ -47,6 +48,7 @@ const emptySearchFilters: SearchFilters = {
   valueMax: "",
   verifiedMerchantsOnly: false,
   sort: "newest",
+  distanceMiles: undefined,
 };
 
 const searchTheme = tradebiliaCategoryThemes.sports_cards;
@@ -107,6 +109,7 @@ export function SearchResults() {
       verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly || undefined,
       sort: submittedFilters.sort === "location" ? "newest" : submittedFilters.sort,
       locationSort: submittedFilters.sort === "location" ? true : undefined,
+      distanceMiles: submittedFilters.distanceMiles,
       limit: resultsPerPage,
       offset: (preliminaryPagination.currentPage - 1) * resultsPerPage,
     };
@@ -156,7 +159,7 @@ export function SearchResults() {
     setLocation("/search");
   };
 
-  const hasFilters = submittedFilters.category !== "all" || submittedFilters.condition !== "all" || submittedFilters.valueMin !== "" || submittedFilters.valueMax !== "" || submittedFilters.verifiedMerchantsOnly;
+  const hasFilters = submittedFilters.category !== "all" || submittedFilters.condition !== "all" || submittedFilters.valueMin !== "" || submittedFilters.valueMax !== "" || submittedFilters.verifiedMerchantsOnly || submittedFilters.distanceMiles !== undefined;
   const listings = resultsQuery.data?.listings ?? [];
 
   return (
@@ -164,7 +167,7 @@ export function SearchResults() {
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,16,11,0.58)_0%,rgba(24,16,11,0.28)_48%,rgba(24,16,11,0.58)_100%)]" />
-        <div className="container relative flex h-[400px] min-h-[400px] flex-col items-center justify-center py-4 text-center sm:py-4">
+        <div className="container relative flex h-[480px] min-h-[480px] flex-col items-center justify-center py-4 text-center sm:py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
           <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center sm:h-44 lg:h-56">
@@ -172,12 +175,17 @@ export function SearchResults() {
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
           <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>
+          <div className="absolute bottom-5 left-1/2 flex w-full -translate-x-1/2 flex-wrap justify-center gap-3 px-4 sm:gap-5">
+            <div className="min-w-[8rem] rounded-2xl border border-white/20 bg-black/25 px-5 py-3 text-center backdrop-blur-sm"><p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#fff4e0]/75">Listings</p><p className="mt-1 text-xl font-bold">{totalResults}</p></div>
+            <div className="min-w-[8rem] rounded-2xl border border-white/20 bg-black/25 px-5 py-3 text-center backdrop-blur-sm"><p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#fff4e0]/75">Categories</p><p className="mt-1 text-xl font-bold">{tradebiliaCategories.length}</p></div>
+            <div className="min-w-[8rem] rounded-2xl border border-white/20 bg-black/25 px-5 py-3 text-center backdrop-blur-sm"><p className="text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[#fff4e0]/75">View</p><p className="mt-1 text-xl font-bold">{viewMode === "grid" ? "Grid" : "List"}</p></div>
+          </div>
         </div>
       </section>
       <CategoryBar />
 
       <main className="flex min-h-[32rem] w-full flex-col gap-0 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:px-8 lg:py-8 2xl:px-12">
-        <aside className={`w-full shrink-0 border p-4 lg:sticky lg:top-4 lg:w-56 ${searchTheme.panelClassName}`}>
+        <aside className={`w-full shrink-0 border p-4 lg:sticky lg:top-4 lg:w-80 ${searchTheme.panelClassName}`}>
           <div className="mb-4 flex items-center gap-2">
             <Filter className={`h-4 w-4 ${searchTheme.accentClassName}`} />
             <h2 className="font-semibold">Filters</h2>
@@ -219,6 +227,21 @@ export function SearchResults() {
                 <Input type="number" min="0" inputMode="decimal" value={pendingFilters.valueMin} onChange={event => setPendingFilters(current => ({ ...current, valueMin: event.target.value }))} placeholder="Min" className="h-9 bg-white/85 text-xs text-black" />
                 <Input type="number" min="0" inputMode="decimal" value={pendingFilters.valueMax} onChange={event => setPendingFilters(current => ({ ...current, valueMax: event.target.value }))} placeholder="Max" className="h-9 bg-white/85 text-xs text-black" />
               </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs uppercase tracking-[0.12em] opacity-70">Distance</Label>
+              <Select value={pendingFilters.distanceMiles === undefined ? "all" : String(pendingFilters.distanceMiles)} onValueChange={value => setPendingFilters(current => ({ ...current, distanceMiles: value === "all" ? undefined : Number(value) }))}>
+                <SelectTrigger className="h-9 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any distance</SelectItem>
+                  <SelectItem value="25">Within 25 miles</SelectItem>
+                  <SelectItem value="50">Within 50 miles</SelectItem>
+                  <SelectItem value="100">Within 100 miles</SelectItem>
+                  <SelectItem value="250">Within 250 miles</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[0.68rem] opacity-65">Uses your saved town after Search or Enter.</p>
             </div>
 
             <label className="flex cursor-pointer items-start gap-2 text-xs leading-5">
