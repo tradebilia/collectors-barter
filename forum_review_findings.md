@@ -45,7 +45,3 @@ Desktop and phone screenshots were reviewed. The navigation wraps cleanly on des
 ## Second-release forum visual verification
 
 At phone width, the topic-search field and All topics, Unanswered, and Recently active filters remain contained and touch-friendly below the category selector. The unauthenticated topic route continues to show the existing not-found recovery card because the isolated forum database has no member-created topic rows; signed-in reply upload, listing-link, follow notification, and administrator queue workflows therefore require manual validation.
-
-## Familiar-community layout verification
-
-The approved redesign now keeps authoring, discovery, community navigation, and feed controls visibly separate. On desktop, the topic search is a compact right-aligned utility beside the page heading, rather than a composer-like field between categories and the feed. On phone, it remains a single compact row below the discussion action or signed-in guidance; community navigation and feed controls each have their own labeled section. The topic list starts immediately after the activity and sort controls, with no large search panel competing with it. No clipping or horizontal overflow was observed at 1280px or 375px.

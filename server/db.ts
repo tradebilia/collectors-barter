@@ -4603,33 +4603,8 @@ export async function deleteDraftsOlderThan(db: any, cutoffDate: Date): Promise<
 
 
 // Forum functions
-// The deployed Tradebilia custom database can lag the development schema. Cache
-// only the capability of the forumPosts table and use baseline queries when the
-// optional expansion columns have not been added yet.
-let forumPostsSchemaMode: "legacy" | "expanded" | null = null;
-
-async function getForumPostsSchemaMode(db: Awaited<ReturnType<typeof requireDb>>) {
-  if (forumPostsSchemaMode) return forumPostsSchemaMode;
-  try {
-    const result = await db.execute(sql`
-      SELECT COUNT(*) AS columnCount
-      FROM information_schema.COLUMNS
-      WHERE TABLE_SCHEMA = DATABASE()
-        AND TABLE_NAME = 'forumPosts'
-        AND COLUMN_NAME IN ('subcategory', 'status')
-    `);
-    const rows = (Array.isArray(result) ? result[0] : []) as unknown as Array<{ columnCount?: number | string }>;
-    forumPostsSchemaMode = Number(rows?.[0]?.columnCount ?? 0) === 2 ? "expanded" : "legacy";
-  } catch (error) {
-    // Retain current behavior if a database service disallows information_schema.
-    console.warn("[Forum] Could not inspect forumPosts schema; using expanded query mode.", error instanceof Error ? error.message : error);
-    forumPostsSchemaMode = "expanded";
-  }
-  return forumPostsSchemaMode;
-}
-
 export async function createForumPost(
-  user: Pick<User, "id" | "name" | "openId">,
+  user: Pick<User, "id" | "name">,
   input: {
     category: string;
     subcategory?: string | null;
@@ -4638,45 +4613,15 @@ export async function createForumPost(
   }
 ) {
   const db = await requireDb();
-  // The session's numeric ID can be stale in an isolated database. Resolve the
-  // authenticated account by its stable openId before satisfying the FK.
-  let authorId = user.id;
-  if (user.openId) {
-    let persistedUser = await getUserByOpenId(user.openId);
-    if (!persistedUser) {
-      await upsertUser({ openId: user.openId, name: user.name || null, lastSignedIn: new Date() });
-      persistedUser = await getUserByOpenId(user.openId);
-    }
-    if (!persistedUser) throw new Error("Your account could not be synchronized. Please sign in again.");
-    authorId = persistedUser.id;
-  }
+  const { forumPosts } = await import("../drizzle/schema");
 
-  // Custom-auth sessions can originate from a legacy account store. Confirm
-  // the numeric ID exists in the forum database and use one exact local name
-  // match only when that ID is absent; never guess between duplicate matches.
-  const directAuthor = await db.select({ id: users.id }).from(users).where(eq(users.id, authorId)).limit(1);
-  if (!directAuthor[0]) {
-    const sameNameAccounts = user.name
-      ? await db.select({ id: users.id }).from(users).where(eq(users.name, user.name)).limit(2)
-      : [];
-    if (sameNameAccounts.length !== 1) {
-      throw new Error("Your forum account could not be matched. Please sign out, sign back in, and try again.");
-    }
-    authorId = sameNameAccounts[0].id;
-  }
-
-  const schemaMode = await getForumPostsSchemaMode(db);
-  // The legacy live table only includes userId, category, title and content.
-  // An expanded database retains the selected item-type subcategory.
-  const result = schemaMode === "expanded"
-    ? await db.execute(sql`
-        INSERT INTO forumPosts (userId, category, subcategory, title, content)
-        VALUES (${authorId}, ${input.category}, ${input.subcategory || null}, ${input.title.trim().slice(0, 255)}, ${input.content.trim()})
-      `)
-    : await db.execute(sql`
-        INSERT INTO forumPosts (userId, category, title, content)
-        VALUES (${authorId}, ${input.category}, ${input.title.trim().slice(0, 255)}, ${input.content.trim()})
-      `);
+  const result = await db.insert(forumPosts).values({
+    userId: user.id,
+    category: input.category,
+    subcategory: input.subcategory || null,
+    title: input.title.trim().slice(0, 255),
+    content: input.content.trim(),
+  });
 
   return { postId: getInsertId(result) };
 }
@@ -4721,21 +4666,19 @@ export async function getForumPosts(category?: string, sortBy: "newest" | "popul
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");
   const { eq, desc, and, like, or, gte } = await import("drizzle-orm");
-  const schemaMode = await getForumPostsSchemaMode(db);
-  const isExpanded = schemaMode === "expanded";
 
   const baseQuery = db
     .select({
       id: forumPosts.id,
       userId: forumPosts.userId,
       category: forumPosts.category,
-      subcategory: isExpanded ? forumPosts.subcategory : sql<string | null>`NULL`,
+      subcategory: forumPosts.subcategory,
       title: forumPosts.title,
       content: forumPosts.content,
       isPinned: forumPosts.isPinned,
       isLocked: forumPosts.isLocked,
       isSolved: forumPosts.isSolved,
-      status: isExpanded ? forumPosts.status : sql<"active">`'active'`,
+      status: forumPosts.status,
       viewCount: forumPosts.viewCount,
       replyCount: forumPosts.replyCount,
       createdAt: forumPosts.createdAt,
@@ -4751,9 +4694,9 @@ export async function getForumPosts(category?: string, sortBy: "newest" | "popul
     .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId));
 
   const whereClause = and(
-    isExpanded ? eq(forumPosts.status, "active") : undefined,
+    eq(forumPosts.status, "active"),
     category ? eq(forumPosts.category, category) : undefined,
-    isExpanded && subcategory ? eq(forumPosts.subcategory, subcategory) : undefined,
+    subcategory ? eq(forumPosts.subcategory, subcategory) : undefined,
     searchQuery?.trim() ? or(like(forumPosts.title, `%${searchQuery.trim()}%`), like(forumPosts.content, `%${searchQuery.trim()}%`)) : undefined,
     activityFilter === "unanswered" ? eq(forumPosts.replyCount, 0) : undefined,
     activityFilter === "recent" ? gte(forumPosts.updatedAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ")) : undefined,
@@ -4767,7 +4710,6 @@ export async function getForumPostById(postId: number) {
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");
   const { eq, sql } = await import("drizzle-orm");
-  const isExpanded = (await getForumPostsSchemaMode(db)) === "expanded";
 
   // Increment view count
   await db.update(forumPosts).set({ viewCount: sql`viewCount + 1` }).where(eq(forumPosts.id, postId));
@@ -4777,13 +4719,13 @@ export async function getForumPostById(postId: number) {
       id: forumPosts.id,
       userId: forumPosts.userId,
       category: forumPosts.category,
-      subcategory: isExpanded ? forumPosts.subcategory : sql<string | null>`NULL`,
+      subcategory: forumPosts.subcategory,
       title: forumPosts.title,
       content: forumPosts.content,
       isPinned: forumPosts.isPinned,
       isLocked: forumPosts.isLocked,
       isSolved: forumPosts.isSolved,
-      status: isExpanded ? forumPosts.status : sql<"active">`'active'`,
+      status: forumPosts.status,
       viewCount: forumPosts.viewCount,
       replyCount: forumPosts.replyCount,
       createdAt: forumPosts.createdAt,
@@ -4801,7 +4743,7 @@ export async function getForumPostById(postId: number) {
     .limit(1);
 
   if (!result[0]) return null;
-  const attachments = isExpanded ? await getForumPostAttachments(postId) : [];
+  const attachments = await getForumPostAttachments(postId);
   return { ...result[0], attachments };
 }
 
@@ -4816,7 +4758,6 @@ export async function addForumReply(
   const db = await requireDb();
   const { forumReplies, forumPosts, forumFollows, forumNotifications } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const isExpanded = (await getForumPostsSchemaMode(db)) === "expanded";
 
   const post = await db
     .select({ isLocked: forumPosts.isLocked })
@@ -4826,28 +4767,22 @@ export async function addForumReply(
   if (!post[0]) throw new Error("Forum post not found.");
   if (post[0].isLocked) throw new Error("This discussion is locked.");
 
-  const result = isExpanded
-    ? await db.insert(forumReplies).values({
-        postId: input.postId,
-        userId: user.id,
-        listingId: input.listingId || null,
-        content: input.content.trim(),
-      })
-    : await db.execute(sql`
-        INSERT INTO forumReplies (postId, userId, content)
-        VALUES (${input.postId}, ${user.id}, ${input.content.trim()})
-      `);
+  const result = await db.insert(forumReplies).values({
+    postId: input.postId,
+    userId: user.id,
+    listingId: input.listingId || null,
+    content: input.content.trim(),
+  });
   const replyId = getInsertId(result);
 
   // Increment reply count
+  const { sql } = await import("drizzle-orm");
   await db.update(forumPosts).set({ replyCount: sql`replyCount + 1` }).where(eq(forumPosts.id, input.postId));
 
-  if (isExpanded) {
-    const followers = await db.select({ userId: forumFollows.userId }).from(forumFollows).where(eq(forumFollows.postId, input.postId));
-    const recipients = [...new Set(followers.map((row) => row.userId).filter((userId) => userId !== user.id))];
-    if (recipients.length > 0) {
-      await db.insert(forumNotifications).values(recipients.map((userId) => ({ userId, postId: input.postId, replyId, kind: "topic_reply" as const })));
-    }
+  const followers = await db.select({ userId: forumFollows.userId }).from(forumFollows).where(eq(forumFollows.postId, input.postId));
+  const recipients = [...new Set(followers.map((row) => row.userId).filter((userId) => userId !== user.id))];
+  if (recipients.length > 0) {
+    await db.insert(forumNotifications).values(recipients.map((userId) => ({ userId, postId: input.postId, replyId, kind: "topic_reply" as const })));
   }
 
   return { replyId };
@@ -4857,14 +4792,13 @@ export async function getForumReplies(postId: number) {
   const db = await requireDb();
   const { forumReplies, users } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
-  const isExpanded = (await getForumPostsSchemaMode(db)) === "expanded";
 
   const replies = await db
     .select({
       id: forumReplies.id,
       postId: forumReplies.postId,
       userId: forumReplies.userId,
-      listingId: isExpanded ? forumReplies.listingId : sql<number | null>`NULL`,
+      listingId: forumReplies.listingId,
       content: forumReplies.content,
       createdAt: forumReplies.createdAt,
       updatedAt: forumReplies.updatedAt,
@@ -4879,7 +4813,7 @@ export async function getForumReplies(postId: number) {
     .leftJoin(userProfiles, eq(forumReplies.userId, userProfiles.userId))
     .where(eq(forumReplies.postId, postId))
     .orderBy(asc(forumReplies.createdAt));
-  const attachments = isExpanded ? await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id)) : new Map<number, Array<{ id: number; imageUrl: string; altText: string | null; sortOrder: number }>>();
+  const attachments = await getForumReplyAttachmentsForPosts(replies.map((reply) => reply.id));
   return replies.map((reply) => ({ ...reply, attachments: attachments.get(reply.id) || [] }));
 }
 
@@ -5231,32 +5165,10 @@ export async function createForumReport(userId: number, input: { postId: number;
 
 export async function moderateForumPost(adminId: number, input: { postId: number; action: "remove" | "restore" | "pin" | "unpin"; reason?: string }) {
   const db = await requireDb();
-  const { forumPosts, forumReplies, adminActivityLog } = await import("../drizzle/schema");
+  const { forumPosts, adminActivityLog } = await import("../drizzle/schema");
   const { eq } = await import("drizzle-orm");
   const post = await db.select({ id: forumPosts.id }).from(forumPosts).where(eq(forumPosts.id, input.postId)).limit(1);
   if (!post[0]) throw new Error("Forum post not found.");
-  const schemaMode = await getForumPostsSchemaMode(db);
-
-  if (schemaMode === "legacy") {
-    if (input.action === "remove") {
-      // The live legacy table has no status/removal metadata columns. Remove the
-      // discussion and its replies so inappropriate content no longer appears.
-      await db.delete(forumReplies).where(eq(forumReplies.postId, input.postId));
-      await db.delete(forumPosts).where(eq(forumPosts.id, input.postId));
-    } else if (input.action === "restore") {
-      throw new Error("This older forum record cannot be restored after removal.");
-    } else {
-      await db.update(forumPosts).set({ isPinned: input.action === "pin" ? 1 : 0 }).where(eq(forumPosts.id, input.postId));
-    }
-
-    try {
-      await db.insert(adminActivityLog).values({ adminId, action: `forum_post_${input.action}`, targetType: "forum_post", targetReference: String(input.postId), summary: input.reason?.trim() || `Forum post ${input.action}` });
-    } catch (error) {
-      console.warn("[Forum] Moderation action completed but could not be recorded in the legacy audit log.", error instanceof Error ? error.message : error);
-    }
-    return { postId: input.postId, action: input.action, removalMode: "permanent" as const };
-  }
-
   const values = input.action === "remove"
     ? { status: "removed" as const, removedAt: new Date().toISOString().slice(0, 19).replace("T", " "), removedBy: adminId, removalReason: input.reason?.trim() || "Removed by moderation." }
     : input.action === "restore"
