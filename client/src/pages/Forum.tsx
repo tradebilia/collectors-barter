@@ -185,14 +185,14 @@ export function Forum() {
           <span>{posts?.length ?? 0} {posts?.length === 1 ? "topic" : "topics"} in this category</span>
           {!user && <span>Sign in to start a discussion.</span>}
         </div>
-        <div className="space-y-4">
+        <div className="mb-8 overflow-hidden rounded-xl border border-border bg-card">
           {isLoading ? (
-            <div className="text-center py-8">Loading topics...</div>
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">Loading topics...</div>
           ) : posts && posts.length > 0 ? (
-            posts.map(post => (
-              <Card
+            posts.map((post) => (
+              <article
                 key={post.id}
-                className="p-4 cursor-pointer hover:shadow-lg transition"
+                className="group border-b border-border/70 px-4 py-4 last:border-b-0 sm:px-5"
                 onClick={() => setLocation(`/forum/${post.id}`)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -204,34 +204,32 @@ export function Forum() {
                 tabIndex={0}
                 aria-label={`Open topic ${post.title || "Untitled"}`}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />
-                    <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      {!!post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
-                      {!!post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
-                      {!!post.isLocked && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">LOCKED</span>}
+                <div className="flex items-start gap-3">
+                  <AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">{post.author?.name || "Anonymous"}</span>
+                      <span aria-hidden="true">·</span>
+                      <time dateTime={new Date(post.createdAt).toISOString()}>{new Date(post.createdAt).toLocaleDateString()}</time>
+                      {post.subcategory && <><span aria-hidden="true">·</span><span>{post.subcategory}</span></>}
                     </div>
-                    <h3 className="text-lg font-semibold mb-1">{post.title || "(Untitled)"}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      by {post.author?.name || "Anonymous"} • {new Date(post.createdAt).toLocaleDateString()}
-                    </p>
-                    <p className="text-sm line-clamp-2">{post.content}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                      {!!post.isPinned && <span className="rounded bg-yellow-100 px-2 py-0.5 text-[11px] font-semibold text-yellow-800">Pinned</span>}
+                      {!!post.isSolved && <span className="rounded bg-green-100 px-2 py-0.5 text-[11px] font-semibold text-green-800">Solved</span>}
+                      {!!post.isLocked && <span className="rounded bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">Locked</span>}
                     </div>
-                  </div>
-                  <div className="ml-4 shrink-0 text-right">
-                    <div className="text-2xl font-bold text-primary">{post.replyCount}</div>
-                    <div className="text-xs text-muted-foreground">replies</div>
-                    <div className="text-xs text-muted-foreground mt-2">{post.viewCount} views</div>
+                    <h3 className="mt-1 text-base font-semibold leading-6 text-foreground group-hover:text-primary sm:text-lg">{post.title || "(Untitled)"}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted-foreground">{post.content}</p>
+                    <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span>{post.replyCount} {post.replyCount === 1 ? "reply" : "replies"}</span>
+                      <span>{post.viewCount} views</span>
+                    </div>
                   </div>
                 </div>
-              </Card>
+              </article>
             ))
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No topics yet. Be the first to start a discussion!
-            </div>
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">No topics yet. Be the first to start a discussion!</div>
           )}
         </div>
       </div>

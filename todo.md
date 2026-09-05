@@ -1497,3 +1497,16 @@
 - [x] Document the approved Reddit-inspired forum reply direction and audit the current reply layout.
 - [x] Refine reply cards, inline actions, and reply-target composition for a compact discussion flow.
 - [x] Add regression coverage and verify the refined discussion flow at desktop and mobile widths; signed-in end-to-end validation remains pending.
+
+- [ ] Audit and document the approved Reddit-style shortcut actions: reply, image insertion, sharing, and voting.
+- [ ] Add compact inline reply controls and composer shortcuts without exposing unauthorized actions.
+- [ ] Add regression coverage and verify the interaction model at desktop and mobile widths.
+
+- [ ] Record the approved forum scope: retain parent categories and item-type subcategories; do not add Reddit-style voting, sharing, karma, anonymity, or extra interaction features unless separately approved.
+
+- [ ] Continue comparing Reddit’s topic, reply, and page hierarchy patterns while retaining Tradebilia parent categories and item-type subcategories.
+- [ ] Document the approved Tradebilia adaptation and wait for explicit approval before further forum layout code changes.
+
+- [x] Audit the approved category-to-topic hierarchy and current forum presentation.
+- [x] Implement simplified category, subcategory, topic-row, and nested-reply presentation without Reddit-specific mechanics.
+- [x] Add regression coverage and verify the refined hierarchy at desktop and mobile widths.
