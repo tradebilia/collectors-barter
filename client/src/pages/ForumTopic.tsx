@@ -25,6 +25,12 @@ export function ForumTopic() {
   const { user } = useAuth();
   const [replyContent, setReplyContent] = useState("");
   const [replyError, setReplyError] = useState("");
+  const [isEditingPost, setIsEditingPost] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
+  const [editError, setEditError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const utils = trpc.useUtils();
 
   const postId = params?.postId ? parseInt(params.postId) : 0;
@@ -40,6 +46,50 @@ export function ForumTopic() {
   );
 
   const addReplyMutation = trpc.market.addForumReply.useMutation();
+  const updatePostMutation = trpc.market.updateForumPost.useMutation();
+  const deletePostMutation = trpc.market.deleteForumPost.useMutation();
+  const isPostOwner = Boolean(user && post && Number(user.id) === Number(post.userId));
+
+  const beginEditPost = () => {
+    if (!post) return;
+    setEditTitle(post.title || "");
+    setEditContent(post.content || "");
+    setEditError("");
+    setDeleteError("");
+    setIsEditingPost(true);
+  };
+
+  const handleUpdatePost = async (event: FormEvent) => {
+    event.preventDefault();
+    setEditError("");
+    if (editTitle.trim().length < 3 || editContent.trim().length < 10) {
+      setEditError("Use a title with at least 3 characters and a message with at least 10 characters.");
+      return;
+    }
+    try {
+      await updatePostMutation.mutateAsync({
+        postId,
+        title: editTitle.trim(),
+        content: editContent.trim(),
+      });
+      await utils.market.getForumPostDetail.invalidate({ postId });
+      setIsEditingPost(false);
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : "Failed to update your post. Please try again.");
+    }
+  };
+
+  const handleDeletePost = async () => {
+    setDeleteError("");
+    try {
+      await deletePostMutation.mutateAsync({ postId });
+      await utils.market.getForumPosts.invalidate();
+      setLocation("/forum");
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "Failed to delete your post. Please try again.");
+      setShowDeleteConfirm(false);
+    }
+  };
 
   const handleAddReply = async (event: FormEvent) => {
     event.preventDefault();
@@ -101,29 +151,89 @@ export function ForumTopic() {
         ) : post ? (
           <>
             {/* Original Post */}
-            <Card className="p-6 mb-8">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div className="flex min-w-0 items-start gap-3">
-                  <AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />
-                  <div className="min-w-0">
-                    <h1 className="mb-2 text-3xl font-bold">{post.title || "(Untitled)"}</h1>
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                      <span>{post.author?.name || "Anonymous"}</span>
-                      <span>{new Date(post.createdAt).toLocaleString()}</span>
-                      <span>{post.viewCount} views</span>
+            <Card className="mb-8 p-6">
+              {isEditingPost ? (
+                <form onSubmit={handleUpdatePost} className="space-y-4">
+                  <div>
+                    <label htmlFor="forum-edit-title" className="mb-2 block text-sm font-medium">Topic title</label>
+                    <input
+                      id="forum-edit-title"
+                      value={editTitle}
+                      onChange={(event) => setEditTitle(event.target.value)}
+                      className="w-full rounded-md border px-3 py-2"
+                      maxLength={255}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="forum-edit-content" className="mb-2 block text-sm font-medium">Message</label>
+                    <textarea
+                      id="forum-edit-content"
+                      value={editContent}
+                      onChange={(event) => setEditContent(event.target.value)}
+                      className="h-36 w-full rounded-md border px-3 py-2"
+                      maxLength={5000}
+                    />
+                  </div>
+                  {editError && <p className="text-sm text-red-700" role="alert">{editError}</p>}
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsEditingPost(false)}>Cancel</Button>
+                    <Button type="submit" disabled={updatePostMutation.isPending}>
+                      {updatePostMutation.isPending ? "Saving..." : "Save changes"}
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />
+                      <div className="min-w-0">
+                        <h1 className="mb-2 text-3xl font-bold">{post.title || "(Untitled)"}</h1>
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <span>{post.author?.name || "Anonymous"}</span>
+                          <span>{new Date(post.createdAt).toLocaleString()}</span>
+                          <span>{post.viewCount} views</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                      {!!post.isPinned && <span className="text-xs rounded bg-yellow-100 px-2 py-1 text-yellow-800">PINNED</span>}
+                      {!!post.isSolved && <span className="text-xs rounded bg-green-100 px-2 py-1 text-green-800">SOLVED</span>}
+                      {!!post.isLocked && <span className="text-xs rounded bg-red-100 px-2 py-1 text-red-800">LOCKED</span>}
                     </div>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  {!!post.isPinned && <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">PINNED</span>}
-                  {!!post.isSolved && <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">SOLVED</span>}
-                  {!!post.isLocked && <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">LOCKED</span>}
-                </div>
-              </div>
 
-              <div className="prose prose-sm max-w-none">
-                <p>{post.content}</p>
-              </div>
+                  <div className="prose prose-sm max-w-none">
+                    <p>{post.content}</p>
+                  </div>
+
+                  {isPostOwner && (
+                    <div className="mt-6 border-t pt-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <p className="text-xs text-muted-foreground">You can edit or delete your own topic.</p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button type="button" variant="outline" onClick={beginEditPost}>Edit post</Button>
+                          <Button type="button" variant="outline" onClick={() => setShowDeleteConfirm((current) => !current)}>
+                            Delete post
+                          </Button>
+                        </div>
+                      </div>
+                      {showDeleteConfirm && (
+                        <div className="mt-3 rounded-md border border-red-200 bg-red-50 p-3">
+                          <p className="text-sm text-red-900">Delete this topic and its replies? This cannot be undone.</p>
+                          <div className="mt-3 flex flex-wrap justify-end gap-2">
+                            <Button type="button" variant="outline" onClick={() => setShowDeleteConfirm(false)}>Keep post</Button>
+                            <Button type="button" onClick={handleDeletePost} disabled={deletePostMutation.isPending} className="bg-red-700 text-white hover:bg-red-800">
+                              {deletePostMutation.isPending ? "Deleting..." : "Confirm delete"}
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      {deleteError && <p className="mt-3 text-sm text-red-700" role="alert">{deleteError}</p>}
+                    </div>
+                  )}
+                </>
+              )}
             </Card>
 
             {/* Replies */}

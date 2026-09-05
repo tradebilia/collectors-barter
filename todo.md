@@ -1438,3 +1438,7 @@
 - [x] Trace the forum hero title sizing difference between index and topic/reply pages.
 - [x] Trace authoritative display-name and avatar fields for forum post and reply authors.
 - [x] Fix the hero title size and forum author identity rendering, then add regression coverage; signed-in end-to-end presentation remains pending user validation.
+
+- [x] Trace forum post ownership and current topic/post UI controls.
+- [x] Add server-enforced edit and delete operations restricted to the submitting user.
+- [x] Add owner/non-owner regression tests and verify the forum edit/delete flow before saving.

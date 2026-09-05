@@ -27,6 +27,18 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).not.toContain("alert(\"Failed to add reply\")");
   });
 
+  it("enforces owner-only forum editing and deletion", () => {
+    expect(topicSource).toContain("const isPostOwner = Boolean(user && post && Number(user.id) === Number(post.userId));");
+    expect(topicSource).toContain("updatePostMutation.mutateAsync");
+    expect(topicSource).toContain("deletePostMutation.mutateAsync");
+    expect(dbSource).toContain("You can only edit your own post.");
+    expect(dbSource).toContain("You can only delete your own post.");
+    expect(topicSource).toContain("Edit post");
+    expect(topicSource).toContain("Delete post");
+    expect(dbSource).toContain("if (existing[0].userId !== userId) throw new Error(\"You can only edit your own post.\");");
+    expect(dbSource).toContain("if (existing[0].userId !== userId) throw new Error(\"You can only delete your own post.\");");
+  });
+
   it("keeps hero sizing consistent and renders author identity data", () => {
     expect(forumSource).toContain('className="flex w-full max-w-7xl scale-110 items-center justify-center"');
     expect(topicSource).toContain('className="flex w-full max-w-7xl scale-110 items-center justify-center"');

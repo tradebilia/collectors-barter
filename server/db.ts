@@ -4623,6 +4623,42 @@ export async function createForumPost(
   return { postId: getInsertId(result) };
 }
 
+export async function updateForumPost(
+  userId: number,
+  input: { postId: number; title: string; content: string },
+) {
+  const db = await requireDb();
+  const { forumPosts } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  const existing = await db
+    .select({ userId: forumPosts.userId })
+    .from(forumPosts)
+    .where(eq(forumPosts.id, input.postId))
+    .limit(1);
+  if (!existing[0]) throw new Error("Forum post not found.");
+  if (existing[0].userId !== userId) throw new Error("You can only edit your own post.");
+  await db.update(forumPosts).set({
+    title: input.title.trim().slice(0, 255),
+    content: input.content.trim(),
+  }).where(eq(forumPosts.id, input.postId));
+  return { postId: input.postId };
+}
+
+export async function deleteForumPost(userId: number, postId: number) {
+  const db = await requireDb();
+  const { forumPosts } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  const existing = await db
+    .select({ userId: forumPosts.userId })
+    .from(forumPosts)
+    .where(eq(forumPosts.id, postId))
+    .limit(1);
+  if (!existing[0]) throw new Error("Forum post not found.");
+  if (existing[0].userId !== userId) throw new Error("You can only delete your own post.");
+  await db.delete(forumPosts).where(eq(forumPosts.id, postId));
+  return { postId };
+}
+
 export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest") {
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");

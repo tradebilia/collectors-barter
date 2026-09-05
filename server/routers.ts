@@ -60,6 +60,8 @@ import {
   getDeletedInquiries,
   emptyDeletedInquiries,
   createForumPost,
+  updateForumPost,
+  deleteForumPost,
   getForumPosts,
   getForumPostById,
   addForumReply,
@@ -1765,6 +1767,16 @@ export const appRouter = router({
       .mutation(({ ctx, input }) => {
         return createForumPost({ id: ctx.user.id, name: ctx.user.name }, input);
       }),
+    updateForumPost: protectedProcedure
+      .input(z.object({
+        postId: z.number().int().positive(),
+        title: z.string().min(3).max(255),
+        content: z.string().min(10).max(5000),
+      }))
+      .mutation(({ ctx, input }) => updateForumPost(ctx.user.id, input)),
+    deleteForumPost: protectedProcedure
+      .input(z.object({ postId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) => deleteForumPost(ctx.user.id, input.postId)),
     getForumPosts: publicProcedure
       .input(
         z.object({
