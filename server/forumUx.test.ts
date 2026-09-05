@@ -5,6 +5,7 @@ const forumSource = readFileSync(new URL("../client/src/pages/Forum.tsx", import
 const topicSource = readFileSync(new URL("../client/src/pages/ForumTopic.tsx", import.meta.url), "utf8");
 const moderationQueueSource = readFileSync(new URL("../client/src/components/ForumModerationQueue.tsx", import.meta.url), "utf8");
 const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 
 describe("Collectors Forum UX contracts", () => {
   it("exposes accessible category and sort controls and keyboard topic navigation", () => {
@@ -22,6 +23,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(forumSource).toContain('role="alert"');
     expect(forumSource).not.toContain("alert(\"Please fill in all fields\")");
     expect(forumSource).not.toContain("alert(\"Failed to create topic\")");
+    expect(forumSource).toContain("We could not create this topic right now. Please refresh the page and try again.");
     expect(topicSource).toContain("utils.market.getForumPostDetail.invalidate({ postId })");
     expect(topicSource).toContain("utils.market.getForumReplies.invalidate({ postId })");
     expect(topicSource).not.toContain("alert(\"Please enter a reply\")");
@@ -47,6 +49,14 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("<AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} />");
     expect(dbSource).toContain("COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')");
     expect(dbSource).toContain("COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})");
+    expect(dbSource).toContain("if (user.openId)");
+    expect(dbSource).toContain("authorId = persistedUser.id;");
+    expect(dbSource).toContain('const schemaMode = await getForumPostsSchemaMode(db);');
+    expect(dbSource).toContain('schemaMode === "expanded"');
+    expect(dbSource).toContain("INSERT INTO forumPosts (userId, category, title, content)");
+    expect(dbSource).toContain("sameNameAccounts.length !== 1");
+    expect(routerSource).toContain("[Forum] Topic creation failed");
+    expect(routerSource).toContain("We could not create this topic right now. Please refresh the page and try again.");
   });
 
   it("supports item-type subcategories and validated photo attachments", () => {
@@ -66,6 +76,11 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("forum_post_${input.action}");
     expect(dbSource).toContain("status: \"removed\"");
     expect(dbSource).toContain("You have already reported this post.");
+    expect(dbSource).toContain('if (schemaMode === "legacy")');
+    expect(dbSource).toContain('removalMode: "permanent" as const');
+    expect(dbSource).toContain("await db.delete(forumReplies).where(eq(forumReplies.postId, input.postId));");
+    expect(dbSource).toContain("This older forum record cannot be restored after removal.");
+    expect(topicSource).toContain('Could not update this post right now. Please refresh and try again.');
   });
 
   it("supports reply photos, optional listing links, and persisted follow notifications", () => {
@@ -75,10 +90,17 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("/listings/${reply.listingId}");
     expect(dbSource).toContain("A forum reply can include up to 6 photos.");
     expect(dbSource).toContain("forumNotifications");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, content)");
   });
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {
     expect(forumSource).toContain('id="forum-topic-search"');
+    expect(forumSource).toContain('role="search" aria-label="Search forum discussions"');
+    expect(forumSource).toContain("submitDiscussionSearch");
+    expect(forumSource).toContain("Start a discussion");
+    expect(forumSource).toContain("Browse collector communities");
+    expect(forumSource).toContain("Discussion feed");
+    expect(forumSource).toContain("Most replies");
     expect(forumSource).toContain("activityFilter");
     expect(dbSource).toContain("searchQuery?.trim()");
     expect(dbSource).toContain('activityFilter === "unanswered"');
@@ -89,6 +111,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(moderationQueueSource).toContain("Restore");
     expect(forumSource).toContain("Your topic updates");
     expect(forumSource).toContain("getMyForumNotifications");
+    expect(readFileSync(new URL("./routers.ts", import.meta.url), "utf8")).toContain("openId: ctx.user.openId");
   });
 
   it("provides labeled forms and a useful topic-not-found recovery state", () => {

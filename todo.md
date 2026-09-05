@@ -1458,3 +1458,31 @@
 - [x] Add reply photos, optional Tradebilia listing links, followed-topic notifications, and topic search with unanswered/recent filters.
 - [x] Add an administrator moderation queue for reported forum posts with review actions and audit records.
 - [x] Apply any additive schema changes safely, add regression coverage, and verify member and admin forum flows on desktop and mobile.
+
+- [x] Inspect the forum post table, schema, migration history, and failing insert contract.
+- [x] Apply the smallest additive schema repair and align the topic creation contract; the database already contained listingId, so the repair resolves the authenticated account by openId instead.
+- [x] Add regression coverage and verify topic creation and existing forum flows.
+- [x] Save and deliver the forum topic-creation repair.
+
+- [x] Trace the active custom-auth topic-creation identity path and confirm the database used by the failing deployed form.
+- [x] Repair the active topic-creation procedure and replace raw database errors with an actionable message.
+- [x] Add a regression test for the active identity path, revalidate the forum flow, and save the confirmed fix.
+
+- [x] Trace the deployed custom-auth account ID and forumPosts foreign-key relationship behind the repeated topic-creation error.
+- [x] Repair the active account relationship or topic creation compatibility so signed-in users can create forum topics.
+- [ ] Permanently suppress raw database errors in the new-topic form, add regression coverage, and verify the repaired flow with a signed-in user.
+
+- [x] Capture the exact deployed topic-creation constraint failure and compare the live forum schema with the active insert.
+- [x] Apply the smallest safe live compatibility repair without modifying existing forum posts.
+- [ ] Add precise regression coverage and verify signed-in topic creation end to end.
+
+- [x] Trace the live legacy forum table moderation update failure and current admin removal path.
+- [x] Implement legacy-compatible admin removal with safe member-facing feedback and preserve expanded-schema moderation behavior.
+- [ ] Add regression coverage and verify the signed-in administrator removal flow.
+
+- [x] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
+- [x] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
+
+- [x] Audit the current forum discovery layout and research Facebook Groups and Reddit patterns relevant to search placement, navigation, and discussion hierarchy.
+- [x] Present a tailored comparable forum layout recommendation for approval before changing the interface.
+- [x] Implement the approved forum discovery layout, add regression coverage, and verify responsive usability.

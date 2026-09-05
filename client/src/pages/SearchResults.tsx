@@ -157,8 +157,8 @@ export function SearchResults() {
       </section>
       <CategoryBar />
 
-      <main className="container flex min-h-[32rem] flex-col gap-0 py-6 lg:flex-row lg:py-8">
-        <aside className={`w-full shrink-0 border p-4 lg:w-56 ${searchTheme.panelClassName}`}>
+      <main className="flex min-h-[32rem] w-full flex-col gap-0 px-4 py-6 sm:px-6 lg:flex-row lg:items-start lg:px-8 lg:py-8 2xl:px-12">
+        <aside className={`w-full shrink-0 border p-4 lg:sticky lg:top-4 lg:w-56 ${searchTheme.panelClassName}`}>
           <div className="mb-4 flex items-center gap-2">
             <Filter className={`h-4 w-4 ${searchTheme.accentClassName}`} />
             <h2 className="font-semibold">Filters</h2>
