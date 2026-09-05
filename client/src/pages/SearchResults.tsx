@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Filter, Heart, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
+import { Filter, Grid2X2, Heart, List, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,7 +29,7 @@ import { getCategoryPaginationState } from "@shared/categoryPagination";
 import { getGlobalSearchQuery, parseGlobalSearchValue } from "@shared/globalSearch";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
-type SearchSort = "newest" | "title" | "value_low_high" | "value_high_low";
+type SearchSort = "newest" | "title" | "value_low_high" | "value_high_low" | "location";
 
 type SearchFilters = {
   category: "all" | TradebiliaCategorySlug;
@@ -65,6 +65,8 @@ export function SearchResults() {
   const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>(emptySearchFilters);
   const [resultsPerPage, setResultsPerPage] = useState(24);
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [locationSortNotice, setLocationSortNotice] = useState<string | null>(null);
   const [proposalListingId, setProposalListingId] = useState<number | null>(null);
   const [proposalNote, setProposalNote] = useState("");
 
@@ -103,7 +105,8 @@ export function SearchResults() {
       valueMin: parseGlobalSearchValue(submittedFilters.valueMin),
       valueMax: parseGlobalSearchValue(submittedFilters.valueMax),
       verifiedMerchantsOnly: submittedFilters.verifiedMerchantsOnly || undefined,
-      sort: submittedFilters.sort,
+      sort: submittedFilters.sort === "location" ? "newest" : submittedFilters.sort,
+      locationSort: submittedFilters.sort === "location" ? true : undefined,
       limit: resultsPerPage,
       offset: (preliminaryPagination.currentPage - 1) * resultsPerPage,
     };
@@ -112,6 +115,22 @@ export function SearchResults() {
   const resultsQuery = trpc.market.search.useQuery(searchInput);
   const totalResults = resultsQuery.data?.highlights.totalListings ?? 0;
   const pagination = getCategoryPaginationState(totalResults, currentPage, resultsPerPage);
+
+  useEffect(() => {
+    if (submittedFilters.sort !== "location" || resultsQuery.isLoading || resultsQuery.isFetching) return;
+    if (resultsQuery.data?.locationSort?.applied) {
+      setLocationSortNotice("Sorted by proximity to your saved town.");
+      return;
+    }
+    const messages = {
+      sign_in_required: "Sign in to sort listings by proximity to your saved town.",
+      saved_town_required: "Add your town to your Profile before using nearest-location sorting.",
+      location_unavailable: "Nearest-location sorting is temporarily unavailable. Showing newest listings instead.",
+    } as const;
+    setLocationSortNotice(messages[resultsQuery.data?.locationSort?.reason ?? "location_unavailable"]);
+    setPendingFilters(current => ({ ...current, sort: "newest" }));
+    setSubmittedFilters(current => ({ ...current, sort: "newest" }));
+  }, [resultsQuery.data?.locationSort?.applied, resultsQuery.data?.locationSort?.reason, resultsQuery.isFetching, resultsQuery.isLoading, submittedFilters.sort]);
 
   useEffect(() => {
     if (pagination.currentPage !== currentPage) setCurrentPage(pagination.currentPage);
@@ -222,18 +241,24 @@ export function SearchResults() {
                 <p className="mt-1 text-xs opacity-65">{submittedQuery ? <>Results for <span className="font-semibold">{submittedQuery}</span></> : "All active listings across the exchange"}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <Select value={submittedFilters.sort} onValueChange={value => { const sort = value as SearchSort; setPendingFilters(current => ({ ...current, sort })); setSubmittedFilters(current => ({ ...current, sort })); setCurrentPage(1); }}>
-                  <SelectTrigger className="h-9 w-40 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
+                <div className="flex items-center gap-1 rounded-md bg-white/70 p-1 text-xs text-slate-700" aria-label="View mode">
+                  <button type="button" onClick={() => setViewMode("grid")} className={`inline-flex items-center gap-1 rounded px-2 py-1 ${viewMode === "grid" ? "bg-[#0f5563] text-white" : "hover:bg-slate-100"}`}><Grid2X2 className="h-3.5 w-3.5" />Grid</button>
+                  <button type="button" onClick={() => setViewMode("list")} className={`inline-flex items-center gap-1 rounded px-2 py-1 ${viewMode === "list" ? "bg-[#0f5563] text-white" : "hover:bg-slate-100"}`}><List className="h-3.5 w-3.5" />List</button>
+                </div>
+                <Select value={submittedFilters.sort} onValueChange={value => { const sort = value as SearchSort; setLocationSortNotice(null); setPendingFilters(current => ({ ...current, sort })); setSubmittedFilters(current => ({ ...current, sort })); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-9 w-48 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="newest">Newly listed</SelectItem>
                     <SelectItem value="title">Title</SelectItem>
                     <SelectItem value="value_low_high">Value: Low to high</SelectItem>
                     <SelectItem value="value_high_low">Value: High to low</SelectItem>
+                    <SelectItem value="location">Location: Nearest first</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-2 text-xs opacity-75"><span>Per page:</span><Select value={String(resultsPerPage)} onValueChange={value => { setResultsPerPage(Number(value)); setCurrentPage(1); }}><SelectTrigger className="h-9 w-18 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="12">12</SelectItem><SelectItem value="24">24</SelectItem><SelectItem value="48">48</SelectItem></SelectContent></Select></div>
               </div>
             </div>
+            {locationSortNotice && <p role="status" className="mt-3 text-xs font-medium opacity-75">{locationSortNotice}</p>}
           </div>
 
           {resultsQuery.isLoading ? (
@@ -244,11 +269,11 @@ export function SearchResults() {
             <div className={`mt-6 rounded-[2rem] border p-8 text-center ${searchTheme.panelClassName}`}><Sparkles className={`mx-auto h-10 w-10 ${searchTheme.accentClassName}`} /><h2 className="mt-4 text-2xl font-semibold" style={{ fontFamily: searchTheme.headingFont }}>No listings match this search yet.</h2><p className="mt-3 text-sm opacity-75">Try a broader term, remove a filter, or explore a specific category exchange.</p></div>
           ) : (
             <>
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+              <div className={viewMode === "grid" ? "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "mt-6 space-y-3"}>
                 {listings.map(listing => (
-                  <Card key={listing.id} className="overflow-hidden rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
-                    <Link href={`/listings/${listing.id}`} className="block aspect-[7/9] bg-white p-0"><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
-                    <CardContent className="space-y-1 p-1.5">
+                  <Card key={listing.id} className={`${viewMode === "list" ? "flex items-stretch" : "overflow-hidden"} rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}>
+                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "w-40 shrink-0" : "block aspect-[7/9]"} bg-white p-0`}><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
+                    <CardContent className={`${viewMode === "list" ? "min-w-0 flex-1 p-4" : "space-y-1 p-1.5"}`}>
                       <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
                        <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{listing.grade && Number(listing.grade) > 0 ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.grade && Number(listing.grade) > 0 ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}` : listing.conditionLabel}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue === null ? "—" : formatItemValue(listing.estimatedValue)}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Collector</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.owner.displayName}</p></div><div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Trader Rating</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.65rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
                        {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}

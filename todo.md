@@ -1553,3 +1553,4 @@
 - [x] Correct the reply composer color hierarchy so the typing textarea is white and the surrounding composer shell uses the contrasting softer tone.
 - [x] Make the forum Format shortcut apply actual bold formatting to selected reply text instead of inserting literal **bold text** markers.
 - [x] Lighten the forum connector stroke color while preserving its current geometry, thinner weight, and midpoint collapse controls.
+- [x] Align Explore All category colors, item card sizing, Grid/List toggle, category-page filter features including Location: nearest first, and grey metadata section alignment.
