@@ -125,11 +125,16 @@ export const forumPosts = mysqlTable("forumPosts", {
 	id: int().autoincrement().notNull(),
 	userId: int().notNull().references(() => users.id),
 	category: varchar({ length: 64 }).notNull(),
+	subcategory: varchar({ length: 64 }),
 	title: varchar({ length: 255 }).notNull(),
 	content: text().notNull(),
 	isPinned: tinyint().default(0).notNull(),
 	isLocked: tinyint().default(0).notNull(),
 	isSolved: tinyint().default(0).notNull(),
+	status: mysqlEnum(['active','removed']).default('active').notNull(),
+	removedAt: timestamp({ mode: 'string' }),
+	removedBy: int().references(() => users.id),
+	removalReason: text(),
 	viewCount: int().default(0).notNull(),
 	replyCount: int().default(0).notNull(),
 	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
@@ -138,8 +143,53 @@ export const forumPosts = mysqlTable("forumPosts", {
 (table) => [
 	index("forumPosts_userId_idx").on(table.userId),
 	index("forumPosts_category_idx").on(table.category),
+	index("forumPosts_subcategory_idx").on(table.subcategory),
 	index("forumPosts_isPinned_idx").on(table.isPinned),
+	index("forumPosts_status_idx").on(table.status),
 	index("forumPosts_createdAt_idx").on(table.createdAt),
+]);
+
+export const forumPostAttachments = mysqlTable("forumPostAttachments", {
+	id: int().autoincrement().notNull(),
+	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
+	userId: int().notNull().references(() => users.id),
+	fileKey: varchar({ length: 255 }).notNull(),
+	imageUrl: text().notNull(),
+	altText: varchar({ length: 180 }),
+	sortOrder: int().default(0).notNull(),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("forumPostAttachments_post_idx").on(table.postId),
+	index("forumPostAttachments_user_idx").on(table.userId),
+]);
+
+export const forumReports = mysqlTable("forumReports", {
+	id: int().autoincrement().notNull(),
+	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
+	reporterId: int().notNull().references(() => users.id),
+	reason: varchar({ length: 80 }).notNull(),
+	details: text(),
+	status: mysqlEnum(['pending','reviewed','dismissed','action_taken']).default('pending').notNull(),
+	reviewedBy: int().references(() => users.id),
+	reviewedAt: timestamp({ mode: 'string' }),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	index("forumReports_post_idx").on(table.postId),
+	index("forumReports_reporter_idx").on(table.reporterId),
+	index("forumReports_status_idx").on(table.status),
+]);
+
+export const forumFollows = mysqlTable("forumFollows", {
+	id: int().autoincrement().notNull(),
+	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
+	userId: int().notNull().references(() => users.id),
+	createdAt: timestamp({ mode: 'string' }).default('CURRENT_TIMESTAMP').notNull(),
+},
+(table) => [
+	uniqueIndex("forumFollows_post_user_unique").on(table.postId, table.userId),
+	index("forumFollows_user_idx").on(table.userId),
 ]);
 
 export const forumReplies = mysqlTable("forumReplies", {

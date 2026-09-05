@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
+import { forumSubcategoryLabels } from "@shared/forum";
 
 function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
   return (
@@ -31,6 +32,10 @@ export function ForumTopic() {
   const [editError, setEditError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showReportForm, setShowReportForm] = useState(false);
+  const [reportReason, setReportReason] = useState("inappropriate");
+  const [reportDetails, setReportDetails] = useState("");
+  const [topicError, setTopicError] = useState("");
   const utils = trpc.useUtils();
 
   const postId = params?.postId ? parseInt(params.postId) : 0;
@@ -48,6 +53,10 @@ export function ForumTopic() {
   const addReplyMutation = trpc.market.addForumReply.useMutation();
   const updatePostMutation = trpc.market.updateForumPost.useMutation();
   const deletePostMutation = trpc.market.deleteForumPost.useMutation();
+  const reportPostMutation = trpc.market.createForumReport.useMutation();
+  const followPostMutation = trpc.market.toggleForumFollow.useMutation();
+  const moderatePostMutation = trpc.market.moderateForumPost.useMutation();
+  const { data: isFollowing } = trpc.market.isFollowingForumPost.useQuery({ postId }, { enabled: Boolean(user && postId) });
   const isPostOwner = Boolean(user && post && Number(user.id) === Number(post.userId));
 
   const beginEditPost = () => {
@@ -76,6 +85,38 @@ export function ForumTopic() {
       setIsEditingPost(false);
     } catch (error) {
       setEditError(error instanceof Error ? error.message : "Failed to update your post. Please try again.");
+    }
+  };
+
+  const handleReportPost = async (event: FormEvent) => {
+    event.preventDefault();
+    setTopicError("");
+    try {
+      await reportPostMutation.mutateAsync({ postId, reason: reportReason, details: reportDetails.trim() || undefined });
+      setReportDetails("");
+      setShowReportForm(false);
+    } catch (error) {
+      setTopicError(error instanceof Error ? error.message : "Could not submit the report.");
+    }
+  };
+
+  const handleToggleFollow = async () => {
+    setTopicError("");
+    try {
+      await followPostMutation.mutateAsync({ postId });
+      await utils.market.isFollowingForumPost.invalidate({ postId });
+    } catch (error) {
+      setTopicError(error instanceof Error ? error.message : "Could not update topic follow status.");
+    }
+  };
+
+  const handleModerate = async (action: "remove" | "restore" | "pin" | "unpin") => {
+    setTopicError("");
+    try {
+      await moderatePostMutation.mutateAsync({ postId, action, reason: action === "remove" ? "Removed by administrator moderation." : undefined });
+      await Promise.all([utils.market.getForumPostDetail.invalidate({ postId }), utils.market.getForumPosts.invalidate()]);
+    } catch (error) {
+      setTopicError(error instanceof Error ? error.message : "Could not update moderation status.");
     }
   };
 
@@ -152,6 +193,7 @@ export function ForumTopic() {
           <>
             {/* Original Post */}
             <Card className="mb-8 p-6">
+              {topicError && <p className="mb-4 text-sm text-red-700" role="alert">{topicError}</p>}
               {isEditingPost ? (
                 <form onSubmit={handleUpdatePost} className="space-y-4">
                   <div>
@@ -203,9 +245,34 @@ export function ForumTopic() {
                     </div>
                   </div>
 
-                  <div className="prose prose-sm max-w-none">
-                    <p>{post.content}</p>
+                  {post.subcategory && <span className="mb-4 inline-flex rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">{forumSubcategoryLabels[post.subcategory] || post.subcategory}</span>}
+                  {post.status === "removed" ? (
+                    <div className="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-900">This post was removed by moderation.</div>
+                  ) : (
+                    <>
+                      <div className="prose prose-sm max-w-none"><p>{post.content}</p></div>
+                      {post.attachments?.length > 0 && (
+                        <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Post photos">
+                          {post.attachments.map((photo) => <img key={photo.id} src={photo.imageUrl} alt={photo.altText || "Forum post photo"} className="aspect-square w-full rounded-lg border object-cover" />)}
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  <div className="mt-6 flex flex-wrap items-center gap-2 border-t pt-4">
+                    {user && <Button type="button" variant="outline" onClick={handleToggleFollow}>{followPostMutation.isPending ? "Saving..." : isFollowing ? "Following topic" : "Follow topic"}</Button>}
+                    {user && !isPostOwner && <Button type="button" variant="outline" onClick={() => setShowReportForm((current) => !current)}>Report post</Button>}
+                    {user?.role === "admin" && <>
+                      <Button type="button" variant="outline" onClick={() => handleModerate(post.status === "removed" ? "restore" : "remove")}>{post.status === "removed" ? "Restore post" : "Remove post"}</Button>
+                      <Button type="button" variant="outline" onClick={() => handleModerate(post.isPinned ? "unpin" : "pin")}>{post.isPinned ? "Unpin announcement" : "Pin announcement"}</Button>
+                    </>}
                   </div>
+                  {showReportForm && <form onSubmit={handleReportPost} className="mt-4 rounded-md border bg-muted/30 p-4">
+                    <label htmlFor="forum-report-reason" className="mb-2 block text-sm font-medium">Why are you reporting this post?</label>
+                    <select id="forum-report-reason" value={reportReason} onChange={(event) => setReportReason(event.target.value)} className="mb-3 w-full rounded-md border px-3 py-2 text-sm"><option value="inappropriate">Inappropriate content</option><option value="spam">Spam or promotion</option><option value="harassment">Harassment</option><option value="misinformation">Misleading information</option></select>
+                    <textarea value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} placeholder="Optional details" maxLength={2000} className="mb-3 h-20 w-full rounded-md border px-3 py-2 text-sm" />
+                    <div className="flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setShowReportForm(false)}>Cancel</Button><Button type="submit" disabled={reportPostMutation.isPending}>{reportPostMutation.isPending ? "Sending..." : "Send report"}</Button></div>
+                  </form>}
 
                   {isPostOwner && (
                     <div className="mt-6 border-t pt-4">

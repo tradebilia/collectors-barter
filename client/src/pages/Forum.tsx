@@ -8,25 +8,26 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
 import { collectibleCategories } from "@/lib/constants";
+import { forumCategoryLabels, getForumSubcategories, forumParentLevelSubcategory, forumParentLevelSubcategoryLabel } from "@shared/forum";
 
 export function Forum() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>("general");
+  const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "replies">("newest");
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
   const utils = trpc.useUtils();
 
   const forumCategories = [
-    { id: "general", label: "General Discussion" },
-    ...collectibleCategories.map((cat) => ({
-      id: cat,
-      label: cat.split("_").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
-    })),
+    { id: "general", label: forumCategoryLabels.general },
+    ...collectibleCategories.map((cat) => ({ id: cat, label: forumCategoryLabels[cat] || cat })),
   ];
+  const activeSubcategories = getForumSubcategories(selectedCategory);
 
   const { data: posts, isLoading } = trpc.market.getForumPosts.useQuery({
     category: selectedCategory,
+    subcategory: selectedSubcategory,
     sortBy,
   });
 
@@ -74,7 +75,10 @@ export function Forum() {
           {forumCategories.map(cat => (
             <button
               key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
+              onClick={() => {
+                setSelectedCategory(cat.id);
+                setSelectedSubcategory(null);
+              }}
               role="tab"
               aria-selected={selectedCategory === cat.id}
               className={`mr-2 rounded px-4 py-2 whitespace-nowrap transition ${
@@ -87,6 +91,20 @@ export function Forum() {
             </button>
           ))}
         </div>
+
+        {activeSubcategories.length > 0 && (
+          <div className="mb-6 rounded-lg border bg-card p-4" aria-label="Forum item types">
+            <div className="mb-3 text-sm font-semibold">Browse {forumCategoryLabels[selectedCategory]} by item type</div>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => setSelectedSubcategory(null)} className={`rounded px-3 py-1.5 text-sm ${selectedSubcategory === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>All {forumCategoryLabels[selectedCategory]}</button>
+              {activeSubcategories.map((sub) => (
+                <button key={sub.value} type="button" onClick={() => setSelectedSubcategory(sub.value)} className={`rounded px-3 py-1.5 text-sm ${selectedSubcategory === sub.value ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                  {sub.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Sort Options */}
         <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Sort forum topics">
@@ -166,6 +184,7 @@ export function Forum() {
       {showNewTopicModal && user && (
         <NewTopicModal
           category={selectedCategory}
+          subcategory={selectedSubcategory}
           onClose={() => setShowNewTopicModal(false)}
           onSuccess={() => {
             setShowNewTopicModal(false);
@@ -175,6 +194,15 @@ export function Forum() {
       )}
     </div>
   );
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read the selected image."));
+    reader.readAsDataURL(file);
+  });
 }
 
 function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: string | null }) {
@@ -191,18 +219,22 @@ function AuthorAvatar({ name, avatarUrl }: { name?: string | null; avatarUrl?: s
 
 function NewTopicModal({
   category,
+  subcategory,
   onClose,
   onSuccess,
 }: {
   category: string;
+  subcategory: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [formError, setFormError] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
   const utils = trpc.useUtils();
   const createPostMutation = trpc.market.createForumPost.useMutation();
+  const uploadPhotoMutation = trpc.market.uploadForumPostImage.useMutation();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -213,11 +245,22 @@ function NewTopicModal({
     }
 
     try {
-      await createPostMutation.mutateAsync({
+      const created = await createPostMutation.mutateAsync({
         category,
+        subcategory,
         title: title.trim(),
         content: content.trim(),
       });
+      for (const [index, file] of photos.entries()) {
+        const dataUrl = await readFileAsDataUrl(file);
+        await uploadPhotoMutation.mutateAsync({
+          postId: created.postId,
+          fileName: file.name,
+          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
+          dataBase64: dataUrl,
+          sortOrder: index,
+        });
+      }
       await utils.market.getForumPosts.invalidate();
       onSuccess();
     } catch (error) {
@@ -251,8 +294,8 @@ function NewTopicModal({
               />
             </div>
 
-            <div>
-                <label htmlFor="forum-topic-content" className="mb-2 block text-sm font-medium">Message</label>
+                         <div>
+                 <label htmlFor="forum-topic-content" className="mb-2 block text-sm font-medium">Message</label>
               <textarea
                 id="forum-topic-content"
                 value={content}
@@ -263,9 +306,26 @@ function NewTopicModal({
               />
             </div>
 
-            {formError && <p className="text-sm text-red-700" role="alert">{formError}</p>}
+             <div>
+               <label htmlFor="forum-topic-photos" className="mb-2 block text-sm font-medium">Photos (up to 6)</label>
+               <input
+                 id="forum-topic-photos"
+                 type="file"
+                 accept="image/jpeg,image/png,image/webp,image/gif"
+                 multiple
+                 onChange={(event) => {
+                   const selected = Array.from(event.target.files || []).filter((file) => file.size <= 6 * 1024 * 1024).slice(0, 6);
+                   setPhotos(selected);
+                   if (selected.length !== (event.target.files?.length || 0)) setFormError("Choose up to 6 image files, each 6 MB or smaller.");
+                 }}
+                 className="w-full rounded-md border px-3 py-2 text-sm"
+               />
+               {photos.length > 0 && <p className="mt-1 text-xs text-muted-foreground">{photos.length} photo{photos.length === 1 ? "" : "s"} ready to upload.</p>}
+             </div>
 
-            <div className="flex justify-end gap-2">
+             {formError && <p className="text-sm text-red-700" role="alert">{formError}</p>}
+
+             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onClose}>
                 Cancel
               </Button>

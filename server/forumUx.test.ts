@@ -48,6 +48,25 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("COALESCE(${userProfiles.avatarUrl}, ${users.avatarUrl})");
   });
 
+  it("supports item-type subcategories and validated photo attachments", () => {
+    expect(forumSource).toContain("getForumSubcategories(selectedCategory)");
+    expect(forumSource).toContain('id="forum-topic-photos"');
+    expect(forumSource).toContain('accept="image/jpeg,image/png,image/webp,image/gif"');
+    expect(forumSource).toContain("slice(0, 6)");
+    expect(topicSource).toContain("post.attachments?.length > 0");
+    expect(dbSource).toContain("A forum post can include up to 6 photos.");
+  });
+
+  it("supports reporting, following, and admin moderation without weakening ownership checks", () => {
+    expect(topicSource).toContain("createForumReport");
+    expect(topicSource).toContain("toggleForumFollow");
+    expect(topicSource).toContain("moderateForumPost");
+    expect(topicSource).toContain('user?.role === "admin"');
+    expect(dbSource).toContain("forum_post_${input.action}");
+    expect(dbSource).toContain("status: \"removed\"");
+    expect(dbSource).toContain("You have already reported this post.");
+  });
+
   it("provides labeled forms and a useful topic-not-found recovery state", () => {
     expect(forumSource).toContain('aria-modal="true"');
     expect(forumSource).toContain('htmlFor="forum-topic-title"');

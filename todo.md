@@ -1442,3 +1442,14 @@
 - [x] Trace forum post ownership and current topic/post UI controls.
 - [x] Add server-enforced edit and delete operations restricted to the submitting user.
 - [x] Add owner/non-owner regression tests and verify the forum edit/delete flow before saving.
+
+- [x] Audit forum category definitions, post schema, media upload helpers, and admin moderation patterns.
+- [x] Define category-specific item-type subcategories while keeping collections/lots at the parent category level.
+- [x] Implement subcategory-aware posts, user photo uploads, and admin-only post removal with ownership safeguards.
+- [x] Add regression tests and verify the expanded forum flows responsively.
+- [x] Document prioritized recommendations for additional popular forum features.
+
+- [x] Implement approved forum subcategory taxonomy with collections/lots kept at parent category level.
+- [x] Add validated up-to-six-photo forum attachments using durable storage.
+- [x] Add admin-only moderation removal with audit reason, user reports, pinned announcements, and followed-topic foundations.
+- [x] Add regression tests, apply schema changes safely, and verify the expanded forum on desktop and mobile.

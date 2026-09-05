@@ -4606,6 +4606,7 @@ export async function createForumPost(
   user: Pick<User, "id" | "name">,
   input: {
     category: string;
+    subcategory?: string | null;
     title: string;
     content: string;
   }
@@ -4616,6 +4617,7 @@ export async function createForumPost(
   const result = await db.insert(forumPosts).values({
     userId: user.id,
     category: input.category,
+    subcategory: input.subcategory || null,
     title: input.title.trim().slice(0, 255),
     content: input.content.trim(),
   });
@@ -4659,21 +4661,23 @@ export async function deleteForumPost(userId: number, postId: number) {
   return { postId };
 }
 
-export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest") {
+export async function getForumPosts(category?: string, sortBy: "newest" | "popular" | "replies" = "newest", subcategory?: string | null) {
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");
-  const { eq, desc } = await import("drizzle-orm");
+  const { eq, desc, and } = await import("drizzle-orm");
 
   const baseQuery = db
     .select({
       id: forumPosts.id,
       userId: forumPosts.userId,
       category: forumPosts.category,
+      subcategory: forumPosts.subcategory,
       title: forumPosts.title,
       content: forumPosts.content,
       isPinned: forumPosts.isPinned,
       isLocked: forumPosts.isLocked,
       isSolved: forumPosts.isSolved,
+      status: forumPosts.status,
       viewCount: forumPosts.viewCount,
       replyCount: forumPosts.replyCount,
       createdAt: forumPosts.createdAt,
@@ -4688,23 +4692,14 @@ export async function getForumPosts(category?: string, sortBy: "newest" | "popul
     .leftJoin(users, eq(forumPosts.userId, users.id))
     .leftJoin(userProfiles, eq(forumPosts.userId, userProfiles.userId));
 
-  if (category) {
-    if (sortBy === "newest") {
-      return baseQuery.where(eq(forumPosts.category, category)).orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
-    } else if (sortBy === "popular") {
-      return baseQuery.where(eq(forumPosts.category, category)).orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
-    } else {
-      return baseQuery.where(eq(forumPosts.category, category)).orderBy(desc(forumPosts.isPinned), desc(forumPosts.replyCount));
-    }
-  } else {
-    if (sortBy === "newest") {
-      return baseQuery.orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
-    } else if (sortBy === "popular") {
-      return baseQuery.orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
-    } else {
-      return baseQuery.orderBy(desc(forumPosts.isPinned), desc(forumPosts.replyCount));
-    }
-  }
+  const whereClause = and(
+    eq(forumPosts.status, "active"),
+    category ? eq(forumPosts.category, category) : undefined,
+    subcategory ? eq(forumPosts.subcategory, subcategory) : undefined,
+  );
+  if (sortBy === "newest") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
+  if (sortBy === "popular") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.viewCount));
+  return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.replyCount));
 }
 
 export async function getForumPostById(postId: number) {
@@ -4720,11 +4715,13 @@ export async function getForumPostById(postId: number) {
       id: forumPosts.id,
       userId: forumPosts.userId,
       category: forumPosts.category,
+      subcategory: forumPosts.subcategory,
       title: forumPosts.title,
       content: forumPosts.content,
       isPinned: forumPosts.isPinned,
       isLocked: forumPosts.isLocked,
       isSolved: forumPosts.isSolved,
+      status: forumPosts.status,
       viewCount: forumPosts.viewCount,
       replyCount: forumPosts.replyCount,
       createdAt: forumPosts.createdAt,
@@ -4741,7 +4738,9 @@ export async function getForumPostById(postId: number) {
     .where(eq(forumPosts.id, postId))
     .limit(1);
 
-  return result[0] || null;
+  if (!result[0]) return null;
+  const attachments = await getForumPostAttachments(postId);
+  return { ...result[0], attachments };
 }
 
 export async function addForumReply(
@@ -5106,4 +5105,81 @@ export async function getSuspendedUsers() {
     .orderBy(desc(users.suspendedAt));
   
   return suspendedUsers;
+}
+
+
+export async function addForumPostAttachment(input: {
+  postId: number;
+  userId: number;
+  fileKey: string;
+  imageUrl: string;
+  altText?: string | null;
+  sortOrder: number;
+}) {
+  const db = await requireDb();
+  const { forumPostAttachments, forumPosts } = await import("../drizzle/schema");
+  const { eq, count } = await import("drizzle-orm");
+  const post = await db.select({ id: forumPosts.id, userId: forumPosts.userId }).from(forumPosts).where(eq(forumPosts.id, input.postId)).limit(1);
+  if (!post[0]) throw new Error("Forum post not found.");
+  if (post[0].userId !== input.userId) throw new Error("Only the post author can add photos.");
+  const existing = await db.select({ total: count() }).from(forumPostAttachments).where(eq(forumPostAttachments.postId, input.postId));
+  if (Number(existing[0]?.total ?? 0) >= 6) throw new Error("A forum post can include up to 6 photos.");
+  const result = await db.insert(forumPostAttachments).values({ ...input, altText: input.altText?.trim() || null });
+  return { attachmentId: getInsertId(result) };
+}
+
+export async function getForumPostAttachments(postId: number) {
+  const db = await requireDb();
+  const { forumPostAttachments } = await import("../drizzle/schema");
+  const { eq, asc } = await import("drizzle-orm");
+  return db.select().from(forumPostAttachments).where(eq(forumPostAttachments.postId, postId)).orderBy(asc(forumPostAttachments.sortOrder));
+}
+
+export async function createForumReport(userId: number, input: { postId: number; reason: string; details?: string }) {
+  const db = await requireDb();
+  const { forumReports, forumPosts } = await import("../drizzle/schema");
+  const { eq, and, count } = await import("drizzle-orm");
+  const post = await db.select({ id: forumPosts.id }).from(forumPosts).where(eq(forumPosts.id, input.postId)).limit(1);
+  if (!post[0]) throw new Error("Forum post not found.");
+  const prior = await db.select({ total: count() }).from(forumReports).where(and(eq(forumReports.postId, input.postId), eq(forumReports.reporterId, userId), eq(forumReports.status, "pending")));
+  if (Number(prior[0]?.total ?? 0) > 0) throw new Error("You have already reported this post.");
+  const result = await db.insert(forumReports).values({ postId: input.postId, reporterId: userId, reason: input.reason.trim().slice(0, 80), details: input.details?.trim() || null });
+  return { reportId: getInsertId(result) };
+}
+
+export async function moderateForumPost(adminId: number, input: { postId: number; action: "remove" | "restore" | "pin" | "unpin"; reason?: string }) {
+  const db = await requireDb();
+  const { forumPosts, adminActivityLog } = await import("../drizzle/schema");
+  const { eq } = await import("drizzle-orm");
+  const post = await db.select({ id: forumPosts.id }).from(forumPosts).where(eq(forumPosts.id, input.postId)).limit(1);
+  if (!post[0]) throw new Error("Forum post not found.");
+  const values = input.action === "remove"
+    ? { status: "removed" as const, removedAt: new Date().toISOString().slice(0, 19).replace("T", " "), removedBy: adminId, removalReason: input.reason?.trim() || "Removed by moderation." }
+    : input.action === "restore"
+      ? { status: "active" as const, removedAt: null, removedBy: null, removalReason: null }
+      : { isPinned: input.action === "pin" ? 1 : 0 };
+  await db.update(forumPosts).set(values).where(eq(forumPosts.id, input.postId));
+  await db.insert(adminActivityLog).values({ adminId, action: `forum_post_${input.action}`, targetType: "forum_post", targetReference: String(input.postId), summary: input.reason?.trim() || `Forum post ${input.action}` });
+  return { postId: input.postId, action: input.action };
+}
+
+export async function toggleForumFollow(userId: number, postId: number) {
+  const db = await requireDb();
+  const { forumFollows } = await import("../drizzle/schema");
+  const { eq, and } = await import("drizzle-orm");
+  const existing = await db.select({ id: forumFollows.id }).from(forumFollows).where(and(eq(forumFollows.userId, userId), eq(forumFollows.postId, postId))).limit(1);
+  if (existing[0]) {
+    await db.delete(forumFollows).where(eq(forumFollows.id, existing[0].id));
+    return { following: false };
+  }
+  await db.insert(forumFollows).values({ userId, postId });
+  return { following: true };
+}
+
+export async function isFollowingForumPost(userId: number, postId: number) {
+  const db = await requireDb();
+  const { forumFollows } = await import("../drizzle/schema");
+  const { eq, and } = await import("drizzle-orm");
+  const existing = await db.select({ id: forumFollows.id }).from(forumFollows).where(and(eq(forumFollows.userId, userId), eq(forumFollows.postId, postId))).limit(1);
+  return Boolean(existing[0]);
 }

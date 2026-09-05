@@ -62,6 +62,12 @@ import {
   createForumPost,
   updateForumPost,
   deleteForumPost,
+  addForumPostAttachment,
+  getForumPostAttachments,
+  createForumReport,
+  moderateForumPost,
+  toggleForumFollow,
+  isFollowingForumPost,
   getForumPosts,
   getForumPostById,
   addForumReply,
@@ -111,6 +117,8 @@ import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { setIdentityRestrictionStatus } from "./identityRegistry";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
+import { storagePut } from "./storage";
+import { forumTaxonomy, forumParentLevelSubcategory } from "@shared/forum";
 import { eq, sql, desc, asc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { TRPCError } from "@trpc/server";
@@ -120,7 +128,6 @@ import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { isLaunchUpdateRequestAllowed, normalizeLaunchUpdateEmail } from "./launchUpdatesRateLimit";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
-import { storagePut } from "./storage";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
@@ -1760,12 +1767,51 @@ export const appRouter = router({
       .input(
         z.object({
           category: z.string().min(1).max(64),
+          subcategory: z.string().max(64).nullable().optional(),
           title: z.string().min(3).max(255),
           content: z.string().min(10).max(5000),
         }),
       )
       .mutation(({ ctx, input }) => {
+        const allowed = input.category in forumTaxonomy
+          ? [...forumTaxonomy[input.category as keyof typeof forumTaxonomy], forumParentLevelSubcategory]
+          : [];
+        if (input.category !== "general" && !allowed.length) throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid forum category." });
+        if (input.subcategory && input.category !== "general" && !allowed.includes(input.subcategory as never)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid item-type subcategory." });
+        }
         return createForumPost({ id: ctx.user.id, name: ctx.user.name }, input);
+      }),
+    uploadForumPostImage: protectedProcedure
+      .input(z.object({
+        postId: z.number().int().positive(),
+        fileName: z.string().min(1).max(160),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/gif"]),
+        dataBase64: z.string().min(1).max(8_500_000),
+        altText: z.string().max(180).optional(),
+        sortOrder: z.number().int().min(0).max(5),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const buffer = Buffer.from(input.dataBase64.replace(/^data:[^;]+;base64,/, ""), "base64");
+        if (buffer.byteLength > 6 * 1024 * 1024) throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "Each forum photo must be 6 MB or smaller." });
+        const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
+        const uploaded = await storagePut(`forum/${ctx.user.id}/${input.postId}/${safeName}`, buffer, input.mimeType);
+        return addForumPostAttachment({ postId: input.postId, userId: ctx.user.id, fileKey: uploaded.key, imageUrl: uploaded.url, altText: input.altText, sortOrder: input.sortOrder });
+      }),
+    createForumReport: protectedProcedure
+      .input(z.object({ postId: z.number().int().positive(), reason: z.string().min(3).max(80), details: z.string().max(2000).optional() }))
+      .mutation(({ ctx, input }) => createForumReport(ctx.user.id, input)),
+    toggleForumFollow: protectedProcedure
+      .input(z.object({ postId: z.number().int().positive() }))
+      .mutation(({ ctx, input }) => toggleForumFollow(ctx.user.id, input.postId)),
+    isFollowingForumPost: protectedProcedure
+      .input(z.object({ postId: z.number().int().positive() }))
+      .query(({ ctx, input }) => isFollowingForumPost(ctx.user.id, input.postId)),
+    moderateForumPost: protectedProcedure
+      .input(z.object({ postId: z.number().int().positive(), action: z.enum(["remove", "restore", "pin", "unpin"]), reason: z.string().max(2000).optional() }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return moderateForumPost(ctx.user.id, input);
       }),
     updateForumPost: protectedProcedure
       .input(z.object({
@@ -1781,11 +1827,12 @@ export const appRouter = router({
       .input(
         z.object({
           category: z.string().optional(),
+          subcategory: z.string().nullable().optional(),
           sortBy: z.enum(["newest", "popular", "replies"]).default("newest"),
         }),
       )
       .query(({ input }) => {
-        return getForumPosts(input.category, input.sortBy);
+        return getForumPosts(input.category, input.sortBy, input.subcategory);
       }),
     getForumPostDetail: publicProcedure
       .input(z.object({ postId: z.number().int().positive() }))

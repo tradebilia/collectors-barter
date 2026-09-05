@@ -35,3 +35,9 @@ The refinement pass passed its focused Vitest contract, TypeScript validation, p
 The forum index and topic route now use the same enlarged forum SVG wrapper and matching desktop/mobile hero proportions, eliminating the route-specific title-size difference. The original post and topic cards now render an avatar component from the returned author avatar URL, with an initials fallback. Replies use the same avatar component.
 
 The unauthenticated preview continues to show Anonymous and a question-mark fallback for the existing visible topic because the preview session is not the authenticated author and the current row does not expose a populated identity in that public response. The server query now joins the profile table and resolves profile display name first, then account display name/name, with profile avatar first and account avatar fallback. A signed-in post/reply test is still required to validate the real authenticated user identity end to end.
+
+## Forum expansion visual verification
+
+The forum index now exposes parent categories and, for collectible categories, a second item-type navigation row that includes Collections / Lots as the parent-level option. The new-topic form accepts up to six image files and validates the accepted image formats and 6 MB per-file limit before upload. Topic detail supports a photo gallery, follow/report actions, and admin moderation controls while preserving owner-only edit/delete controls.
+
+Desktop and phone screenshots were reviewed. The navigation wraps cleanly on desktop and remains readable on mobile; the signed-out preview correctly hides New Topic, follow, report, and admin controls. The preview currently has no forum rows in the isolated database, so signed-in creation and attachment rendering remain manual validation steps.
