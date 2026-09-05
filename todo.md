@@ -1539,3 +1539,4 @@
 - [x] Rebuild nested reply connectors around explicit parent and child avatar centers so message 3 connects to message 2, message 5 connects to message 3, and sibling message 4 branches independently from message 2.
 - [x] Remove any horizontal branch artifact beneath leaf replies and render horizontal connectors only for actual parent-to-child reply relationships.
 - [x] Match the Reddit-style L-shaped connector path: parent vertical guide continues to the child row, turns horizontally into the child avatar center, and the child guide continues only when that child has replies.
+- [x] Bound each parent’s vertical guide to its own child branch region so message 5 connects to message 3 and message 4 branches from message 2 without cross-connecting sibling rows.

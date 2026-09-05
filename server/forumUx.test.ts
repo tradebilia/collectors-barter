@@ -105,7 +105,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("childReplies.length > 0");
     expect(topicSource).toContain("${depth > 0 ? \"ml-6\" : \"\"}");
     expect(topicSource).toContain("pointer-events-none absolute bottom-0 left-5 top-9 border-l border-border/80");
-    expect(topicSource).toContain("pointer-events-none absolute -left-1 top-9 h-px w-6 bg-border/80");
+    expect(topicSource).toContain("pointer-events-none absolute left-[-28px] top-9 h-px w-12 bg-border/80");
     expect(topicSource).toContain("left-[10px] top-5");
     expect(topicSource).toContain("collapsedReplyIds");
     expect(topicSource).toContain("aria-expanded={!collapsedReplyIds.has(reply.id)}");
