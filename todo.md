@@ -1467,3 +1467,14 @@
 - [x] Trace the active custom-auth topic-creation identity path and confirm the database used by the failing deployed form.
 - [x] Repair the active topic-creation procedure and replace raw database errors with an actionable message.
 - [x] Add a regression test for the active identity path, revalidate the forum flow, and save the confirmed fix.
+
+- [x] Trace the deployed custom-auth account ID and forumPosts foreign-key relationship behind the repeated topic-creation error.
+- [x] Repair the active account relationship or topic creation compatibility so signed-in users can create forum topics.
+- [ ] Permanently suppress raw database errors in the new-topic form, add regression coverage, and verify the repaired flow with a signed-in user.
+
+- [ ] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
+- [ ] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
+
+- [ ] Audit the current forum discovery layout and research Facebook Groups and Reddit patterns relevant to search placement, navigation, and discussion hierarchy.
+- [ ] Present a tailored comparable forum layout recommendation for approval before changing the interface.
+- [ ] Implement the approved forum discovery layout, add regression coverage, and verify responsive usability.

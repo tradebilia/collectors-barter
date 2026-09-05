@@ -4626,6 +4626,20 @@ export async function createForumPost(
     authorId = persistedUser.id;
   }
 
+  // Custom-auth sessions can originate from a legacy account store. Confirm
+  // the numeric ID exists in the forum database and use one exact local name
+  // match only when that ID is absent; never guess between duplicate matches.
+  const directAuthor = await db.select({ id: users.id }).from(users).where(eq(users.id, authorId)).limit(1);
+  if (!directAuthor[0]) {
+    const sameNameAccounts = user.name
+      ? await db.select({ id: users.id }).from(users).where(eq(users.name, user.name)).limit(2)
+      : [];
+    if (sameNameAccounts.length !== 1) {
+      throw new Error("Your forum account could not be matched. Please sign out, sign back in, and try again.");
+    }
+    authorId = sameNameAccounts[0].id;
+  }
+
   // Keep topic creation compatible with the original forumPosts table. Later
   // optional columns are deliberately omitted and use their database defaults.
   const result = await db.execute(sql`

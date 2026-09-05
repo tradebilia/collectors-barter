@@ -5,6 +5,7 @@ const forumSource = readFileSync(new URL("../client/src/pages/Forum.tsx", import
 const topicSource = readFileSync(new URL("../client/src/pages/ForumTopic.tsx", import.meta.url), "utf8");
 const moderationQueueSource = readFileSync(new URL("../client/src/components/ForumModerationQueue.tsx", import.meta.url), "utf8");
 const dbSource = readFileSync(new URL("./db.ts", import.meta.url), "utf8");
+const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 
 describe("Collectors Forum UX contracts", () => {
   it("exposes accessible category and sort controls and keyboard topic navigation", () => {
@@ -51,6 +52,9 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("if (user.openId)");
     expect(dbSource).toContain("authorId = persistedUser.id;");
     expect(dbSource).toContain("INSERT INTO forumPosts (userId, category, subcategory, title, content)");
+    expect(dbSource).toContain("sameNameAccounts.length !== 1");
+    expect(routerSource).toContain("[Forum] Topic creation failed");
+    expect(routerSource).toContain("We could not create this topic right now. Please refresh the page and try again.");
   });
 
   it("supports item-type subcategories and validated photo attachments", () => {

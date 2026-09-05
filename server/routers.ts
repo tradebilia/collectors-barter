@@ -1777,7 +1777,7 @@ export const appRouter = router({
           content: z.string().min(10).max(5000),
         }),
       )
-      .mutation(({ ctx, input }) => {
+      .mutation(async ({ ctx, input }) => {
         const allowed = input.category in forumTaxonomy
           ? [...forumTaxonomy[input.category as keyof typeof forumTaxonomy], forumParentLevelSubcategory]
           : [];
@@ -1785,7 +1785,12 @@ export const appRouter = router({
         if (input.subcategory && input.category !== "general" && !allowed.includes(input.subcategory as never)) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Choose a valid item-type subcategory." });
         }
-        return createForumPost({ id: ctx.user.id, name: ctx.user.name, openId: ctx.user.openId }, input);
+        try {
+          return await createForumPost({ id: ctx.user.id, name: ctx.user.name, openId: ctx.user.openId }, input);
+        } catch (error) {
+          console.error("[Forum] Topic creation failed", { userId: ctx.user.id, error });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "We could not create this topic right now. Please refresh the page and try again." });
+        }
       }),
     uploadForumPostImage: protectedProcedure
       .input(z.object({
