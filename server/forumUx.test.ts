@@ -109,6 +109,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("getBoundingClientRect");
     expect(topicSource).toContain("M ${parentPoint.x} ${parentPoint.y} V ${point.y} H ${point.x}");
     expect(topicSource).toContain("strokeWidth=\"1.5\"");
+    expect(topicSource).toContain("text-slate-400");
     expect(topicSource).toContain("formatRelativeTime");
     expect(topicSource).toContain("bg-slate-100 p-3 shadow-sm");
     expect(topicSource).toContain("border border-slate-300 bg-white px-3 py-2 text-sm");

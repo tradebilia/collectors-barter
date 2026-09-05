@@ -545,7 +545,7 @@ export function ForumTopic() {
                     };
                     return (
                       <div ref={threadContainerRef} className="relative">
-                        {threadGeometry.width > 0 && <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible text-muted-foreground" viewBox={`0 0 ${threadGeometry.width} ${threadGeometry.height}`} preserveAspectRatio="none">
+                        {threadGeometry.width > 0 && <svg aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible text-slate-400" viewBox={`0 0 ${threadGeometry.width} ${threadGeometry.height}`} preserveAspectRatio="none">
                           {threadGeometry.paths.map((path) => <path key={path.id} d={path.d} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />)}
                         </svg>}
                         <div className="relative z-10">{renderReplyTree(null, 0)}</div>

@@ -1552,3 +1552,4 @@
 - [x] Give category bubbles distinct colors, remove the Discussion feed section, and relocate Sort items into the remaining forum toolbar.
 - [x] Correct the reply composer color hierarchy so the typing textarea is white and the surrounding composer shell uses the contrasting softer tone.
 - [x] Make the forum Format shortcut apply actual bold formatting to selected reply text instead of inserting literal **bold text** markers.
+- [x] Lighten the forum connector stroke color while preserving its current geometry, thinner weight, and midpoint collapse controls.
