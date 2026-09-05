@@ -19,7 +19,7 @@ const forumCategoryTones: Record<string, { active: string; inactive: string }> =
   "video-games": { active: "bg-emerald-700 text-white", inactive: "bg-emerald-50 text-emerald-800 hover:bg-emerald-100" },
   stamps: { active: "bg-violet-700 text-white", inactive: "bg-violet-50 text-violet-800 hover:bg-violet-100" },
   coins: { active: "bg-stone-700 text-white", inactive: "bg-stone-100 text-stone-700 hover:bg-stone-200" },
-  pokemon: { active: "bg-fuchsia-700 text-white", inactive: "bg-fuchsia-50 text-fuchsia-800 hover:bg-fuchsia-100" },
+  pokemon: { active: "bg-yellow-500 text-slate-950", inactive: "bg-yellow-50 text-yellow-900 hover:bg-yellow-100" },
   movies: { active: "bg-red-700 text-white", inactive: "bg-red-50 text-red-800 hover:bg-red-100" },
   autographs: { active: "bg-orange-600 text-white", inactive: "bg-orange-50 text-orange-800 hover:bg-orange-100" },
   "disney-pins": { active: "bg-cyan-700 text-white", inactive: "bg-cyan-50 text-cyan-800 hover:bg-cyan-100" },

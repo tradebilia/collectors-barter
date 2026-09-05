@@ -1556,3 +1556,6 @@
 - [x] Align Explore All category colors, item card sizing, Grid/List toggle, category-page filter features including Location: nearest first, and grey metadata section alignment.
 - [x] Re-audit Explore All against a representative category page and correct any remaining shared formatting differences in hero, category bar, filter rail, toolbar, cards, and metadata alignment.
 - [x] Match Explore All List view to the category-page horizontal item layout and place the desktop filter rail flush against the page’s left edge.
+- [x] Fix reply relative-time rendering so older replies show elapsed hours, days, weeks, months, or years instead of always “just now.”
+- [x] Apply the established category theme colors to Forum category bubbles, including yellow for Pokémon.
+- [x] Remove Explore All hero statistics, start the filter panel directly below the category bar, and match category-page horizontal List cards.

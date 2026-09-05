@@ -42,7 +42,9 @@ function renderForumContent(content: string): ReactNode {
 }
 
 function formatRelativeTime(value: string | number | Date): string {
-  const elapsedMs = Math.max(0, Date.now() - new Date(value).getTime());
+  const rawValue = value instanceof Date ? value.getTime() : typeof value === "number" ? value : /^\d+$/.test(String(value)) ? Number(value) : Date.parse(String(value).replace(" ", "T"));
+  const timestamp = Number.isFinite(rawValue) && rawValue > 0 && rawValue < 100000000000 ? rawValue * 1000 : rawValue;
+  const elapsedMs = Math.max(0, Date.now() - timestamp);
   const minute = 60 * 1000;
   const hour = 60 * minute;
   const day = 24 * hour;
