@@ -1569,3 +1569,4 @@
 - [x] Correct forum topic and reply timestamps to use the viewer computer-local time and the actual stored posting time.
 - [x] Keep exact viewer-local timestamps for main topics but restore UTC-aware elapsed labels for forum replies.
 - [x] Give every forum category button a clearly distinct theme color and place the topic-list section on a white background.
+- [x] Add a visible outline to every forum category bubble and clearly separate the Sports Cards, Vintage Toys, and Video Games palettes.

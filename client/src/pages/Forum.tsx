@@ -23,17 +23,17 @@ function formatForumLocalTimestamp(value: string | number | Date): string {
 }
 
 const forumCategoryTones: Record<string, { active: string; inactive: string }> = {
-  general: { active: "bg-slate-700 text-white", inactive: "border border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200" },
-  comics: { active: "bg-rose-700 text-white", inactive: "border border-rose-300 bg-rose-100 text-rose-900 hover:bg-rose-200" },
-  "sports-cards": { active: "bg-blue-700 text-white", inactive: "border border-blue-300 bg-blue-100 text-blue-900 hover:bg-blue-200" },
-  "vintage-toys": { active: "bg-amber-600 text-white", inactive: "border border-amber-300 bg-amber-100 text-amber-950 hover:bg-amber-200" },
-  "video-games": { active: "bg-emerald-700 text-white", inactive: "border border-emerald-300 bg-emerald-100 text-emerald-950 hover:bg-emerald-200" },
-  stamps: { active: "bg-violet-700 text-white", inactive: "border border-violet-300 bg-violet-100 text-violet-900 hover:bg-violet-200" },
-  coins: { active: "bg-teal-700 text-white", inactive: "border border-teal-300 bg-teal-100 text-teal-950 hover:bg-teal-200" },
-  pokemon: { active: "bg-yellow-500 text-slate-950", inactive: "border border-yellow-400 bg-yellow-100 text-yellow-950 hover:bg-yellow-200" },
-  movies: { active: "bg-red-700 text-white", inactive: "border border-red-300 bg-red-100 text-red-900 hover:bg-red-200" },
-  autographs: { active: "bg-orange-600 text-white", inactive: "border border-orange-300 bg-orange-100 text-orange-950 hover:bg-orange-200" },
-  "disney-pins": { active: "bg-cyan-700 text-white", inactive: "border border-cyan-300 bg-cyan-100 text-cyan-950 hover:bg-cyan-200" },
+  general: { active: "border-2 border-slate-900 bg-slate-700 text-white", inactive: "border-2 border-slate-400 bg-slate-100 text-slate-900 hover:bg-slate-200" },
+  comics: { active: "border-2 border-rose-900 bg-rose-700 text-white", inactive: "border-2 border-rose-400 bg-rose-100 text-rose-950 hover:bg-rose-200" },
+  sports_cards: { active: "border-2 border-blue-900 bg-blue-700 text-white", inactive: "border-2 border-blue-500 bg-blue-200 text-blue-950 hover:bg-blue-300" },
+  vintage_toys: { active: "border-2 border-orange-900 bg-orange-600 text-white", inactive: "border-2 border-orange-500 bg-orange-200 text-orange-950 hover:bg-orange-300" },
+  video_games: { active: "border-2 border-emerald-900 bg-emerald-700 text-white", inactive: "border-2 border-emerald-500 bg-emerald-200 text-emerald-950 hover:bg-emerald-300" },
+  stamps: { active: "border-2 border-violet-900 bg-violet-700 text-white", inactive: "border-2 border-violet-400 bg-violet-100 text-violet-950 hover:bg-violet-200" },
+  coins: { active: "border-2 border-teal-900 bg-teal-700 text-white", inactive: "border-2 border-teal-500 bg-teal-200 text-teal-950 hover:bg-teal-300" },
+  pokemon: { active: "border-2 border-yellow-700 bg-yellow-400 text-slate-950", inactive: "border-2 border-yellow-500 bg-yellow-200 text-yellow-950 hover:bg-yellow-300" },
+  movies: { active: "border-2 border-red-900 bg-red-700 text-white", inactive: "border-2 border-red-400 bg-red-100 text-red-950 hover:bg-red-200" },
+  autographs: { active: "border-2 border-orange-900 bg-orange-600 text-white", inactive: "border-2 border-orange-500 bg-orange-200 text-orange-950 hover:bg-orange-300" },
+  disney_pins: { active: "border-2 border-cyan-900 bg-cyan-700 text-white", inactive: "border-2 border-cyan-500 bg-cyan-200 text-cyan-950 hover:bg-cyan-300" },
 };
 
 export function Forum() {
