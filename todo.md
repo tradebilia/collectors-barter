@@ -1559,3 +1559,10 @@
 - [x] Fix reply relative-time rendering so older replies show elapsed hours, days, weeks, months, or years instead of always “just now.”
 - [x] Apply the established category theme colors to Forum category bubbles, including yellow for Pokémon.
 - [x] Remove Explore All hero statistics, start the filter panel directly below the category bar, and match category-page horizontal List cards.
+- [x] Repair forum image attachments for new discussion topics and replies so upload failures do not leave a text-only post with an error.
+- [x] Add regression coverage and verify photo upload/display in both a new topic and a reply using the signed-in flow.
+- [x] Apply the approved additive forumPostAttachments table and indexes to the custom database without altering existing forum content.
+- [x] Verify and safely handle topic/reply image upload errors, then confirm stored and rendered photos in both flows.
+- [x] Prevent a missing optional forumFollows table from blanking the signed-in topic page; fall back safely to an unfollowed state.
+- [x] Confirm whether the custom database may receive the approved additive forumReplyAttachments table migration so reply media can be persisted and tested end to end.
+- [x] Apply and verify the approved additive forumReplyAttachments table and indexes without altering existing replies.

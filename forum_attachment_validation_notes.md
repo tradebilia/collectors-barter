@@ -1,0 +1,6 @@
+# Forum attachment validation notes
+
+The custom database now contains `forumPostAttachments` with the expected columns and indexes. Topic 150005 has one persisted attachment row with a PNG URL. After removing the legacy `forumPosts` expansion gate, the signed-in topic detail page rendered the stored image successfully. The signed-in topic page also stopped blanking after adding a narrow fallback for the optional missing `forumFollows` table. Reply attachment validation remains to be completed.
+The corrected topic 150005 now renders the persisted PNG inline from `/manus-storage/...png`. The reply composer opens correctly, and the disposable reply message is entered; reply attachment submission remains pending confirmation.
+The approved forumReplyAttachments migration is applied and verified. The earlier disposable reply row exists without an attachment because it was submitted before the migration. A fresh post-migration reply message is currently prepared in the signed-in composer; its PNG still needs to be queued and submitted.
+Final signed-in verification passed: topic 150005 renders its persisted PNG, and the fresh reply 90007 renders its persisted PNG at `/manus-storage/forum/30002/replies/90007/forum-reply-upload-test-2_ba63c864.png`. The earlier pre-migration reply remains text-only as expected; the post-migration reply succeeds with media.

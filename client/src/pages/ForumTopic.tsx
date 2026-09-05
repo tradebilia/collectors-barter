@@ -60,6 +60,16 @@ function formatRelativeTime(value: string | number | Date): string {
   return `${Math.floor(elapsedMs / year)}y ago`;
 }
 
+function getForumMediaMimeType(file: File): "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4" {
+  const normalizedType = file.type.toLowerCase();
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"] as const;
+  if ((allowedTypes as readonly string[]).includes(normalizedType)) return normalizedType as typeof allowedTypes[number];
+  const extension = file.name.toLowerCase().split(".").pop();
+  const byExtension: Record<string, typeof allowedTypes[number]> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif", mp4: "video/mp4" };
+  const fallback = extension ? byExtension[extension] : undefined;
+  if (!fallback) throw new Error("Choose a JPEG, PNG, WebP, GIF, or MP4 file.");
+  return fallback;
+}
 function readForumFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -244,7 +254,7 @@ export function ForumTopic() {
       });
       for (const [index, file] of replyPhotos.entries()) {
         const dataUrl = await readForumFileAsDataUrl(file);
-        await uploadReplyPhotoMutation.mutateAsync({ replyId: created.replyId, fileName: file.name, mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif" | "video/mp4", dataBase64: dataUrl, sortOrder: index });
+        await uploadReplyPhotoMutation.mutateAsync({ replyId: created.replyId, fileName: file.name, mimeType: getForumMediaMimeType(file), dataBase64: dataUrl, sortOrder: index });
       }
       setReplyContent("");
       if (replyEditorRef.current) replyEditorRef.current.innerHTML = "";

@@ -241,6 +241,15 @@ export function Forum() {
   );
 }
 
+function getForumImageMimeType(file: File): "image/jpeg" | "image/png" | "image/webp" | "image/gif" {
+  const normalizedType = file.type.toLowerCase();
+  if (["image/jpeg", "image/png", "image/webp", "image/gif"].includes(normalizedType)) return normalizedType as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+  const extension = file.name.toLowerCase().split(".").pop();
+  const byExtension: Record<string, "image/jpeg" | "image/png" | "image/webp" | "image/gif"> = { jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp", gif: "image/gif" };
+  const fallback = extension ? byExtension[extension] : undefined;
+  if (!fallback) throw new Error("Choose a JPEG, PNG, WebP, or GIF image.");
+  return fallback;
+}
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -301,7 +310,7 @@ function NewTopicModal({
         await uploadPhotoMutation.mutateAsync({
           postId: created.postId,
           fileName: file.name,
-          mimeType: file.type as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
+          mimeType: getForumImageMimeType(file),
           dataBase64: dataUrl,
           sortOrder: index,
         });

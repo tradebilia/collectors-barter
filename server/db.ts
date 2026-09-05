@@ -4611,6 +4611,7 @@ type ForumRepliesCapabilities = {
   hasParentReplyId: boolean;
   hasListingId: boolean;
   hasAttachmentsTable: boolean;
+  hasPostAttachmentsTable: boolean;
 };
 
 let forumRepliesCapabilities: ForumRepliesCapabilities | null = null;
@@ -4634,14 +4635,22 @@ async function getForumRepliesCapabilities(db: Awaited<ReturnType<typeof require
         AND TABLE_NAME = 'forumReplyAttachments'
     `);
     const attachmentTableRows = (Array.isArray(attachmentTableResult) ? attachmentTableResult[0] : []) as unknown as Array<{ tableCount?: number | string }>;
+    const postAttachmentTableResult = await db.execute(sql`
+      SELECT COUNT(*) AS tableCount
+      FROM information_schema.TABLES
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME = 'forumPostAttachments'
+    `);
+    const postAttachmentTableRows = (Array.isArray(postAttachmentTableResult) ? postAttachmentTableResult[0] : []) as unknown as Array<{ tableCount?: number | string }>;
     forumRepliesCapabilities = {
       hasParentReplyId: columns.has("parentReplyId"),
       hasListingId: columns.has("listingId"),
       hasAttachmentsTable: Number(attachmentTableRows?.[0]?.tableCount ?? 0) === 1,
+      hasPostAttachmentsTable: Number(postAttachmentTableRows?.[0]?.tableCount ?? 0) === 1,
     };
   } catch (error) {
     console.warn("[Forum] Could not inspect forumReplies columns; using baseline reply mode.", error instanceof Error ? error.message : error);
-    forumRepliesCapabilities = { hasParentReplyId: false, hasListingId: false, hasAttachmentsTable: false };
+    forumRepliesCapabilities = { hasParentReplyId: false, hasListingId: false, hasAttachmentsTable: false, hasPostAttachmentsTable: false };
   }
   return forumRepliesCapabilities;
 }
@@ -4839,7 +4848,8 @@ export async function getForumPostById(postId: number) {
     .limit(1);
 
   if (!result[0]) return null;
-  const attachments = isExpanded ? await getForumPostAttachments(postId) : [];
+  const forumCapabilities = await getForumRepliesCapabilities(db);
+  const attachments = forumCapabilities.hasPostAttachmentsTable ? await getForumPostAttachments(postId) : [];
   return { ...result[0], attachments };
 }
 
@@ -5254,6 +5264,8 @@ export async function addForumPostAttachment(input: {
   sortOrder: number;
 }) {
   const db = await requireDb();
+  const capabilities = await getForumRepliesCapabilities(db);
+  if (!capabilities.hasPostAttachmentsTable) throw new Error("Forum photo storage is not available yet. Please try again shortly.");
   const { forumPostAttachments, forumPosts } = await import("../drizzle/schema");
   const { eq, count } = await import("drizzle-orm");
   const post = await db.select({ id: forumPosts.id, userId: forumPosts.userId }).from(forumPosts).where(eq(forumPosts.id, input.postId)).limit(1);
@@ -5267,6 +5279,8 @@ export async function addForumPostAttachment(input: {
 
 export async function getForumPostAttachments(postId: number) {
   const db = await requireDb();
+  const capabilities = await getForumRepliesCapabilities(db);
+  if (!capabilities.hasPostAttachmentsTable) return [];
   const { forumPostAttachments } = await import("../drizzle/schema");
   const { eq, asc } = await import("drizzle-orm");
   return db.select().from(forumPostAttachments).where(eq(forumPostAttachments.postId, postId)).orderBy(asc(forumPostAttachments.sortOrder));
@@ -5339,8 +5353,17 @@ export async function isFollowingForumPost(userId: number, postId: number) {
   const db = await requireDb();
   const { forumFollows } = await import("../drizzle/schema");
   const { eq, and } = await import("drizzle-orm");
-  const existing = await db.select({ id: forumFollows.id }).from(forumFollows).where(and(eq(forumFollows.userId, userId), eq(forumFollows.postId, postId))).limit(1);
-  return Boolean(existing[0]);
+  try {
+    const existing = await db.select({ id: forumFollows.id }).from(forumFollows).where(and(eq(forumFollows.userId, userId), eq(forumFollows.postId, postId))).limit(1);
+    return Boolean(existing[0]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (/forumFollows|doesn't exist|does not exist|unknown table/i.test(message)) {
+      console.warn("[Forum] Optional follow table is unavailable; treating topic as not followed.");
+      return false;
+    }
+    throw error;
+  }
 }
 
 export async function addForumReplyAttachment(input: {
