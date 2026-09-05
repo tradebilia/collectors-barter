@@ -1536,3 +1536,4 @@
 - [x] Keep sibling replies connected to their shared parent only, with independent branch segments that do not visually connect one sibling to another; preserve deeper child branches.
 - [x] Stop vertical connector lines at leaf reply avatars when there are no child replies, while preserving the parent-to-child branch and sibling geometry.
 - [x] Place collapse and expand controls directly on the vertical thread connector line, separate from the reply avatar, with responsive alignment.
+- [x] Rebuild nested reply connectors around explicit parent and child avatar centers so message 3 connects to message 2, message 5 connects to message 3, and sibling message 4 branches independently from message 2.
