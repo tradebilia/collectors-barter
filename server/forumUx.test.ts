@@ -87,6 +87,12 @@ describe("Collectors Forum UX contracts", () => {
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {
     expect(forumSource).toContain('id="forum-topic-search"');
+    expect(forumSource).toContain('role="search" aria-label="Search forum discussions"');
+    expect(forumSource).toContain("submitDiscussionSearch");
+    expect(forumSource).toContain("Start a discussion");
+    expect(forumSource).toContain("Browse collector communities");
+    expect(forumSource).toContain("Discussion feed");
+    expect(forumSource).toContain("Most replies");
     expect(forumSource).toContain("activityFilter");
     expect(dbSource).toContain("searchQuery?.trim()");
     expect(dbSource).toContain('activityFilter === "unanswered"');

@@ -1475,6 +1475,6 @@
 - [ ] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
 - [ ] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
 
-- [ ] Audit the current forum discovery layout and research Facebook Groups and Reddit patterns relevant to search placement, navigation, and discussion hierarchy.
-- [ ] Present a tailored comparable forum layout recommendation for approval before changing the interface.
-- [ ] Implement the approved forum discovery layout, add regression coverage, and verify responsive usability.
+- [x] Audit the current forum discovery layout and research Facebook Groups and Reddit patterns relevant to search placement, navigation, and discussion hierarchy.
+- [x] Present a tailored comparable forum layout recommendation for approval before changing the interface.
+- [x] Implement the approved forum discovery layout, add regression coverage, and verify responsive usability.

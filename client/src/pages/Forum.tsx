@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { MessageSquarePlus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -16,6 +17,7 @@ export function Forum() {
   const [selectedCategory, setSelectedCategory] = useState<string>("general");
   const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<"newest" | "popular" | "replies">("newest");
+  const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activityFilter, setActivityFilter] = useState<"all" | "unanswered" | "recent">("all");
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
@@ -41,6 +43,16 @@ export function Forum() {
     await markForumNotificationRead.mutateAsync({ notificationId });
     await utils.market.getMyForumNotifications.invalidate();
     setLocation(`/forum/${postId}`);
+  };
+
+  const submitDiscussionSearch = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearchQuery(searchDraft.trim());
+  };
+
+  const clearDiscussionSearch = () => {
+    setSearchDraft("");
+    setSearchQuery("");
   };
 
   return (
@@ -69,17 +81,28 @@ export function Forum() {
       <CategoryBar />
 
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
+        <div className="mb-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(21rem,28rem)] lg:items-end">
+          <div className="max-w-2xl">
             <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-primary">Collectors helping collectors</p>
             <h1 className="text-3xl font-serif font-medium tracking-tight">Forum Topics</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Ask questions, share collecting knowledge, and exchange ideas across every category.</p>
           </div>
-          {user && (
-            <Button onClick={() => setShowNewTopicModal(true)} className="shrink-0">
-              New Topic
-            </Button>
-          )}
+          <div className="flex flex-col gap-3">
+            {user ? (
+              <Button onClick={() => setShowNewTopicModal(true)} className="h-11 w-full gap-2 bg-primary text-primary-foreground shadow-sm sm:w-auto sm:self-end">
+                <MessageSquarePlus className="h-4 w-4" /> Start a discussion
+              </Button>
+            ) : (
+              <p className="text-sm text-muted-foreground lg:text-right">Sign in to start a discussion.</p>
+            )}
+            <form onSubmit={submitDiscussionSearch} role="search" aria-label="Search forum discussions" className="flex items-center gap-2 rounded-lg border border-border bg-background p-1.5 shadow-sm">
+              <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <label htmlFor="forum-topic-search" className="sr-only">Search discussions</label>
+              <input id="forum-topic-search" value={searchDraft} onChange={(event) => setSearchDraft(event.target.value)} maxLength={120} placeholder="Search discussions" className="h-9 min-w-0 flex-1 bg-transparent px-1 text-sm outline-none placeholder:text-muted-foreground" />
+              {searchDraft || searchQuery ? <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={clearDiscussionSearch} aria-label="Clear discussion search"><X className="h-4 w-4" /></Button> : null}
+              <Button type="submit" size="sm" className="h-9 shrink-0 px-3">Search</Button>
+            </form>
+          </div>
         </div>
 
         {user && forumUpdates?.length ? (
@@ -89,27 +112,29 @@ export function Forum() {
           </div>
         ) : null}
 
-        {/* Category Tabs */}
-        <div className="mb-6 overflow-x-auto pb-2" role="tablist" aria-label="Forum categories">
-          {forumCategories.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => {
-                setSelectedCategory(cat.id);
-                setSelectedSubcategory(null);
-              }}
-              role="tab"
-              aria-selected={selectedCategory === cat.id}
-              className={`mr-2 rounded px-4 py-2 whitespace-nowrap transition ${
-                selectedCategory === cat.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </div>
+        <section className="mb-6" aria-labelledby="forum-community-navigation">
+          <div className="mb-3 flex items-center gap-2"><SlidersHorizontal className="h-4 w-4 text-primary" aria-hidden="true" /><h2 id="forum-community-navigation" className="text-sm font-semibold">Browse collector communities</h2></div>
+          <div className="overflow-x-auto pb-2" role="tablist" aria-label="Forum categories">
+            {forumCategories.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  setSelectedSubcategory(null);
+                }}
+                role="tab"
+                aria-selected={selectedCategory === cat.id}
+                className={`mr-2 rounded-md px-4 py-2 whitespace-nowrap text-sm transition ${
+                  selectedCategory === cat.id
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </section>
 
         {activeSubcategories.length > 0 && (
           <div className="mb-6 rounded-lg border bg-card p-4" aria-label="Forum item types">
@@ -125,33 +150,35 @@ export function Forum() {
           </div>
         )}
 
-        <div className="mb-6 grid gap-3 rounded-lg border bg-card p-4 md:grid-cols-[1fr_auto]" aria-label="Find forum topics">
-          <div>
-            <label htmlFor="forum-topic-search" className="sr-only">Search forum topics</label>
-            <input id="forum-topic-search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} maxLength={120} placeholder="Search titles and discussions" className="w-full rounded-md border bg-background px-3 py-2 text-sm" />
+        <section className="mb-5 border-y border-border py-4" aria-labelledby="forum-feed-controls">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 id="forum-feed-controls" className="font-semibold">Discussion feed</h2>
+              <p className="mt-0.5 text-xs text-muted-foreground">Choose how the current community’s topics are shown.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Sort forum topics">
+              <span className="mr-1 text-xs font-medium text-muted-foreground">Sort:</span>
+              {(["newest", "popular", "replies"] as const).map(sort => (
+                <button
+                  key={sort}
+                  onClick={() => setSortBy(sort)}
+                  aria-pressed={sortBy === sort}
+                  className={`rounded-md px-3 py-1.5 text-sm transition ${
+                    sortBy === sort
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {sort === "replies" ? "Most replies" : sort.charAt(0).toUpperCase() + sort.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2" role="group" aria-label="Topic activity filters">
-            {(["all", "unanswered", "recent"] as const).map((filter) => <button key={filter} type="button" onClick={() => setActivityFilter(filter)} aria-pressed={activityFilter === filter} className={`rounded px-3 py-2 text-sm ${activityFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>{filter === "all" ? "All topics" : filter === "unanswered" ? "Unanswered" : "Recently active"}</button>)}
+          <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label="Topic activity filters">
+            <span className="mr-1 text-xs font-medium text-muted-foreground">Show:</span>
+            {(["all", "unanswered", "recent"] as const).map((filter) => <button key={filter} type="button" onClick={() => setActivityFilter(filter)} aria-pressed={activityFilter === filter} className={`rounded-md px-3 py-1.5 text-sm ${activityFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{filter === "all" ? "All topics" : filter === "unanswered" ? "Unanswered" : "Recently active"}</button>)}
           </div>
-        </div>
-
-        {/* Sort Options */}
-        <div className="mb-6 flex flex-wrap gap-2" role="group" aria-label="Sort forum topics">
-          {(["newest", "popular", "replies"] as const).map(sort => (
-            <button
-              key={sort}
-              onClick={() => setSortBy(sort)}
-              aria-pressed={sortBy === sort}
-              className={`rounded px-3 py-1 text-sm transition ${
-                sortBy === sort
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {sort.charAt(0).toUpperCase() + sort.slice(1)}
-            </button>
-          ))}
-        </div>
+        </section>
 
         {/* Topics List */}
         <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
