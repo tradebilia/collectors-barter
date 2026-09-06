@@ -1512,12 +1512,14 @@ export default function AccountSettings() {
 
                   {/* Privacy Settings */}
                   <div className="border-t border-slate-200 pt-4 space-y-4">
-                    <h3 className="font-semibold text-slate-900">Privacy Settings</h3>
-
+                                        <h3 className="font-semibold text-slate-900">Privacy Settings</h3>
+                    <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-blue-900">
+                      Your profile helps other collectors verify who they are trading with. When public visibility is off, signed-in Tradebilia members can still view your profile, but non-members and public discovery cannot.
+                    </div>
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-slate-900">Show Profile</p>
-                        <p className="text-xs text-slate-600">Allow others to view your public profile</p>
+                        <p className="font-medium text-slate-900">Public Profile</p>
+                        <p className="text-xs text-slate-600">Let non-members discover your profile; signed-in members can view it either way</p>
                       </div>
                       <Switch
                         checked={preferences.showProfile}

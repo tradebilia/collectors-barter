@@ -925,8 +925,10 @@ export const appRouter = router({
           sql`SELECT displayName, avatarUrl, bio, contactTown, contactState, preferredCategories, connectedAccounts, showProfile, hideInventoryValue FROM userProfiles WHERE userId = ${input.userId}`
         );
         const profileRow = Array.isArray(profileRows) ? (profileRows as any[])[0] : profileRows;
+        const viewerIsSignedIn = Boolean(ctx.user);
         const viewerMayBypassProfilePrivacy = ctx.user?.id === input.userId || ctx.user?.role === "admin";
-        if (profileRow?.showProfile === 0 && !viewerMayBypassProfilePrivacy) {
+        const viewerMayAccessHiddenProfile = viewerIsSignedIn || viewerMayBypassProfilePrivacy;
+        if (profileRow?.showProfile === 0 && !viewerMayAccessHiddenProfile) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Profile not available" });
         }
         const shouldHideInventoryValue = profileRow?.hideInventoryValue === 1 && !viewerMayBypassProfilePrivacy;

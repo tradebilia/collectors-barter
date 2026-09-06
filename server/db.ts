@@ -1561,14 +1561,9 @@ export async function searchMembers(input: {
     whereClauses.push(eq(userProfiles.contactState, input.region.trim()));
   }
 
-  // Hidden profiles remain available to their owner and administrators, but
-  // are removed from all other public/member discovery results.
-  if (viewer?.role !== "admin") {
-    whereClauses.push(
-      originUserId
-        ? or(eq(userProfiles.showProfile, 1), eq(userProfiles.userId, originUserId))
-        : eq(userProfiles.showProfile, 1),
-    );
+  // Hidden profiles are private from non-members but remain discoverable to signed-in Tradebilia members.
+  if (!viewer) {
+    whereClauses.push(eq(userProfiles.showProfile, 1));
   }
 
   const members = await db

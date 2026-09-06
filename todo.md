@@ -1626,3 +1626,5 @@
 - [x] Merge payment-method persistence into Save Profile Changes, remove the redundant payment-save button, and add regression coverage for one combined save action. Eight focused tests, TypeScript, production build, modified-file whitespace validation, and route-shell capture passed; authenticated Profile visual capture redirected to signed out.
 
 - [x] Remove PayPal and Pending Connections from the Profile Integrations tab, and rewrite the verification/trust explanation for members and other users. Four focused Profile tests, TypeScript, production build, modified-file whitespace validation, and route-shell capture passed; authenticated Integrations content redirected to signed out.
+
+- [x] Implement profile visibility levels so a hidden profile is visible to signed-in Tradebilia members but not non-members or public discovery, while preserving existing trades, messages, reviews, verification, and safety records. Seven focused tests, TypeScript, production build, git diff whitespace validation, and mobile route-shell verification passed; authenticated Profile content redirected to signed out.
