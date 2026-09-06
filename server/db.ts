@@ -4624,6 +4624,14 @@ type ForumRepliesCapabilities = {
 
 let forumRepliesCapabilities: ForumRepliesCapabilities | null = null;
 
+export function getForumCapabilityRows<T>(result: unknown): T[] {
+  if (!Array.isArray(result)) return [];
+  // mysql2 returns [rows, fields], while some managed drivers return rows
+  // directly. Support both shapes so an available parentReplyId column is not
+  // accidentally treated as missing and child replies are not flattened.
+  return (Array.isArray(result[0]) ? result[0] : result) as T[];
+}
+
 async function getForumRepliesCapabilities(db: Awaited<ReturnType<typeof requireDb>>) {
   if (forumRepliesCapabilities) return forumRepliesCapabilities;
   try {
@@ -4634,7 +4642,7 @@ async function getForumRepliesCapabilities(db: Awaited<ReturnType<typeof require
         AND TABLE_NAME = 'forumReplies'
         AND COLUMN_NAME IN ('parentReplyId', 'listingId')
     `);
-    const rows = (Array.isArray(result) ? result[0] : []) as unknown as Array<{ columnName?: string }>;
+    const rows = getForumCapabilityRows<{ columnName?: string }>(result);
     const columns = new Set(rows.map((row) => row.columnName));
     const attachmentTableResult = await db.execute(sql`
       SELECT COUNT(*) AS tableCount
@@ -4642,14 +4650,14 @@ async function getForumRepliesCapabilities(db: Awaited<ReturnType<typeof require
       WHERE TABLE_SCHEMA = DATABASE()
         AND TABLE_NAME = 'forumReplyAttachments'
     `);
-    const attachmentTableRows = (Array.isArray(attachmentTableResult) ? attachmentTableResult[0] : []) as unknown as Array<{ tableCount?: number | string }>;
+    const attachmentTableRows = getForumCapabilityRows<{ tableCount?: number | string }>(attachmentTableResult);
     const postAttachmentTableResult = await db.execute(sql`
       SELECT COUNT(*) AS tableCount
       FROM information_schema.TABLES
       WHERE TABLE_SCHEMA = DATABASE()
         AND TABLE_NAME = 'forumPostAttachments'
     `);
-    const postAttachmentTableRows = (Array.isArray(postAttachmentTableResult) ? postAttachmentTableResult[0] : []) as unknown as Array<{ tableCount?: number | string }>;
+    const postAttachmentTableRows = getForumCapabilityRows<{ tableCount?: number | string }>(postAttachmentTableResult);
     forumRepliesCapabilities = {
       hasParentReplyId: columns.has("parentReplyId"),
       hasListingId: columns.has("listingId"),

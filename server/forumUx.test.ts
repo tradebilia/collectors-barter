@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { getForumCapabilityRows } from "./db";
 
 const forumSource = readFileSync(new URL("../client/src/pages/Forum.tsx", import.meta.url), "utf8");
 const topicSource = readFileSync(new URL("../client/src/pages/ForumTopic.tsx", import.meta.url), "utf8");
@@ -160,6 +161,8 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("getForumRepliesCapabilities(db)");
     expect(dbSource).toContain("hasParentReplyId: columns.has(\"parentReplyId\")");
     expect(dbSource).toContain("hasListingId: columns.has(\"listingId\")");
+    expect(dbSource).toContain("function getForumCapabilityRows<T>(result: unknown): T[]");
+    expect(dbSource).toContain("return (Array.isArray(result[0]) ? result[0] : result) as T[];");
     expect(dbSource).toContain("hasAttachmentsTable: Number(attachmentTableRows?.[0]?.tableCount ?? 0) === 1");
     expect(dbSource).toContain("const attachments = replyCapabilities.hasAttachmentsTable");
     expect(dbSource).toContain("parentReplyId: replyCapabilities.hasParentReplyId ? forumReplies.parentReplyId : sql<number | null>`NULL`");
@@ -167,6 +170,14 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, parentReplyId, content)");
     expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, listingId, content)");
     expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, content)");
+  });
+
+  it("recognizes forum capability rows from both direct and mysql tuple execution results", () => {
+    const directRows = [{ columnName: "parentReplyId" }];
+    const mysqlTuple = [directRows, [{ name: "columnName" }]];
+    expect(getForumCapabilityRows<{ columnName: string }>(directRows)).toEqual(directRows);
+    expect(getForumCapabilityRows<{ columnName: string }>(mysqlTuple)).toEqual(directRows);
+    expect(getForumCapabilityRows<{ columnName: string }>({})).toEqual([]);
   });
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {

@@ -1526,9 +1526,9 @@
 - [x] Trace why a signed-in reply-to-reply is returned as a top-level reply, then repair parentReplyId persistence or retrieval and verify nested rendering with connected controls.
 - [x] Apply the user-approved additive parentReplyId column and index migration to the custom forum database; real nested-reply submission validation remains pending.
 - [x] Bind each inline reply composer to its explicit reply target at submit time, preventing a selected child reply from falling back to a null parent ID.
-- [ ] Diagnose and repair the backend child-reply persistence error now that parentReplyId is submitted, then verify the stored child relationship and rendered sub-thread.
+- [x] Diagnose and repair the backend child-reply persistence error now that parentReplyId is submitted, then verify the stored child relationship and rendered sub-thread. Live signed-in verification confirmed a child reply persisted under its intended parent, rendered as a nested sub-thread, and collapsed/expanded correctly at desktop and mobile widths.
 - [x] Handle the custom forumReplies table’s partial schema—parentReplyId exists but listingId does not—so child replies persist without querying optional unavailable columns.
-- [ ] Diagnose and repair the mismatch where a submitted reply increments the topic count but is not returned or rendered, then verify the full nested child-reply flow.
+- [x] Diagnose and repair the mismatch where a submitted reply increments the topic count but is not returned or rendered, then verify the full nested child-reply flow. Capability detection now handles direct rows and mysql tuple results, preventing parentReplyId from being treated as unavailable; executable regression coverage and live nested rendering passed.
 - [x] Prevent the optional forumReplyAttachments lookup from hiding text replies when that attachment table is absent from the custom database.
 - [x] Refine nested forum thread geometry to use continuous vertical guides, short branch connectors, and collapse controls aligned to each guide level, matching the supplied reference on desktop and mobile.
 - [x] Diagnose the WebDev preview panel “Too many requests” message and repair only if the application is generating an excessive request loop; current app requests are healthy and no request loop was found.
