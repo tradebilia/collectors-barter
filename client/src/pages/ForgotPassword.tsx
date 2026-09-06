@@ -22,6 +22,13 @@ export function ForgotPassword() {
   const requestPhoneRecovery = trpc.auth.requestPhonePasswordRecovery.useMutation();
   const completePhoneRecovery = trpc.auth.completePhonePasswordRecovery.useMutation();
 
+  const recoveryErrorMessage = (fallback: string, err: unknown) => {
+    const message = err instanceof Error ? err.message : "";
+    return message.startsWith("Password recovery email is temporarily unavailable") || message.startsWith("SMS verification") || message.startsWith("Could not send the verification code") || message.startsWith("That phone number") || message.startsWith("Too many")
+      ? message
+      : fallback;
+  };
+
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -31,7 +38,7 @@ export function ForgotPassword() {
       await requestEmailRecovery.mutateAsync({ email });
       setSuccess(true);
     } catch (err) {
-      setError("We could not start recovery. Please try again later.");
+      setError(recoveryErrorMessage("We could not start recovery. Please try again later.", err));
     } finally {
       setIsLoading(false);
     }
@@ -44,8 +51,8 @@ export function ForgotPassword() {
     try {
       await requestPhoneRecovery.mutateAsync({ phone });
       setPhoneCodeSent(true);
-    } catch {
-      setError("We could not start recovery. Please try again later.");
+    } catch (err) {
+      setError(recoveryErrorMessage("We could not start recovery. Please try again later.", err));
     } finally {
       setIsLoading(false);
     }
@@ -74,7 +81,7 @@ export function ForgotPassword() {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Reset Your Password</CardTitle>
-          <CardDescription>Recover your account using a verified Tradebilia email or phone number.</CardDescription>
+          <CardDescription>Recover your account using your Tradebilia account email or a verified phone number.</CardDescription>
         </CardHeader>
         <CardContent>
           {success ? (

@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -11,6 +11,7 @@ import {
   resetRecoveryRateLimitForTest,
   timingSafeTextEquals,
 } from "./accountRecovery";
+import { sendPasswordRecoveryEmail } from "./_core/email";
 
 describe("account recovery security helpers", () => {
   beforeEach(() => resetRecoveryRateLimitForTest());
@@ -56,5 +57,63 @@ describe("recovery source-integrity", () => {
     expect(router).toContain("requestPasswordRecovery");
     expect(router).toContain("completePhonePasswordRecovery");
     expect(router).not.toContain("saveSecurityQuestion:");
+  });
+
+  it("does not report recovery delivery as successful when the provider rejects it", () => {
+    const router = read("server/routers.ts");
+    const forgotPassword = read("client/src/pages/ForgotPassword.tsx");
+    expect(router).toContain("const delivered = await sendPasswordRecoveryEmail({ recipientEmail: email, token });");
+    expect(router).toContain("if (!delivered) {");
+    expect(router).toContain("await deletePasswordResetTokensForUser(account.id);");
+    expect(router).toContain("const result = await sendVerificationCode(phone);");
+    expect(router).toContain("if (!result.ok) {");
+    expect(forgotPassword).toContain("recoveryErrorMessage");
+  });
+
+  it("allows registered account email recovery for legacy profiles that predate profile verification flags", () => {
+    const router = read("server/routers.ts");
+    const emailRecovery = router.slice(router.indexOf("requestPasswordRecovery:"), router.indexOf("requestPhonePasswordRecovery:"));
+    const forgotPassword = read("client/src/pages/ForgotPassword.tsx");
+    expect(emailRecovery).toContain("where(eq(users.email, email))");
+    expect(emailRecovery).not.toContain("userProfiles.emailVerified");
+    expect(emailRecovery).not.toContain("profile?.emailVerified");
+    expect(forgotPassword).toContain("Tradebilia account email or a verified phone number");
+  });
+
+  it("matches legacy formatted verified phones for recovery without weakening verification", () => {
+    const router = read("server/routers.ts");
+    expect(router).toContain("function verifiedPhoneRecoveryCondition(e164Phone: string)");
+    expect(router).toContain("const nationalDigits = e164Phone.startsWith(\"+1\") ? e164Phone.slice(2) : fullDigits;");
+    expect(router).toContain("where(verifiedPhoneRecoveryCondition(phone))");
+    expect(router).toContain("eq(userProfiles.phoneVerified, 1)");
+  });
+});
+
+describe("password recovery email delivery", () => {
+  const originalResendApiKey = process.env.RESEND_API_KEY;
+  const originalStagingMode = process.env.TRADEBILIA_STAGING_MODE;
+
+  beforeEach(() => {
+    process.env.RESEND_API_KEY = "test-sending-key";
+    delete process.env.TRADEBILIA_STAGING_MODE;
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    if (originalResendApiKey === undefined) delete process.env.RESEND_API_KEY;
+    else process.env.RESEND_API_KEY = originalResendApiKey;
+    if (originalStagingMode === undefined) delete process.env.TRADEBILIA_STAGING_MODE;
+    else process.env.TRADEBILIA_STAGING_MODE = originalStagingMode;
+  });
+
+  it("dispatches the one-time reset link through the transactional email provider", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify({ id: "email_test" }), { status: 200 }));
+    await expect(sendPasswordRecoveryEmail({ recipientEmail: "member@example.com", token: "safe_test_token" })).resolves.toBe(true);
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "https://api.resend.com/emails",
+      expect.objectContaining({ method: "POST" }),
+    );
+    const request = fetchSpy.mock.calls[0]?.[1] as RequestInit;
+    expect(String(request.body)).toContain("https://tradebilia.manus.space/reset-password?token=safe_test_token");
   });
 });

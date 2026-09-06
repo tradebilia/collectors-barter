@@ -228,6 +228,21 @@ function normalizeExternalPaymentMethods(input: z.infer<typeof externalPaymentMe
   };
 }
 
+/**
+ * Phone verification stores E.164 for new profiles, but older verified profiles
+ * can retain formatted national numbers. Recovery must recognize both forms so a
+ * verified member is not silently denied a code because of punctuation or +1.
+ */
+function verifiedPhoneRecoveryCondition(e164Phone: string) {
+  const fullDigits = e164Phone.replace(/\D/g, "");
+  const nationalDigits = e164Phone.startsWith("+1") ? e164Phone.slice(2) : fullDigits;
+  const storedDigits = sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${userProfiles.contactPhone}, '+', ''), '-', ''), '(', ''), ')', ''), ' ', ''), '.', '')`;
+  return and(
+    eq(userProfiles.phoneVerified, 1),
+    sql`${storedDigits} IN (${fullDigits}, ${nationalDigits})`,
+  );
+}
+
 type PaymentMethodMember = {
   id: number;
   displayName: string | null;
@@ -667,17 +682,24 @@ export const appRouter = router({
           .where(eq(users.email, email))
           .limit(1);
         if (!account?.email) return genericResult;
-        const [profile] = await db
-          .select({ contactEmail: userProfiles.contactEmail, emailVerified: userProfiles.emailVerified })
-          .from(userProfiles)
-          .where(eq(userProfiles.userId, account.id))
-          .limit(1);
-        if (profile?.emailVerified !== 1 || normalizeRecoveryEmail(profile.contactEmail || "") !== email) return genericResult;
+
+        // The registered login email is a sufficient recovery proof: possession
+        // of the inbox is required to use the opaque, one-time reset token.
+        // Legacy members predate the profile emailVerified field, so requiring
+        // that newer flag silently prevented every one of those accounts from
+        // receiving a reset link despite using their own registered email.
 
         const token = createOpaqueRecoveryToken();
         await deletePasswordResetTokensForUser(account.id);
         await createPasswordResetToken(account.id, hashRecoveryToken(token), new Date(Date.now() + PASSWORD_RECOVERY_TOKEN_TTL_MS));
-        await sendPasswordRecoveryEmail({ recipientEmail: email, token });
+        const delivered = await sendPasswordRecoveryEmail({ recipientEmail: email, token });
+        if (!delivered) {
+          await deletePasswordResetTokensForUser(account.id);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Password recovery email is temporarily unavailable. Please try your verified phone number or contact support.",
+          });
+        }
         return genericResult;
       }),
     requestPhonePasswordRecovery: publicProcedure
@@ -690,10 +712,13 @@ export const appRouter = router({
         const [profile] = await db
           .select({ phoneVerified: userProfiles.phoneVerified })
           .from(userProfiles)
-          .where(and(eq(userProfiles.contactPhone, phone), eq(userProfiles.phoneVerified, 1)))
+          .where(verifiedPhoneRecoveryCondition(phone))
           .limit(1);
         if (profile?.phoneVerified === 1) {
-          await sendVerificationCode(phone);
+          const result = await sendVerificationCode(phone);
+          if (!result.ok) {
+            throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
+          }
         }
         return genericResult;
       }),
@@ -708,7 +733,7 @@ export const appRouter = router({
         const [profile] = await db
           .select({ userId: userProfiles.userId })
           .from(userProfiles)
-          .where(and(eq(userProfiles.contactPhone, phone), eq(userProfiles.phoneVerified, 1)))
+          .where(verifiedPhoneRecoveryCondition(phone))
           .limit(1);
         const result = await checkVerificationCode(phone, input.code.replace(/\D/g, ""));
         if (!profile || !result.ok || !result.approved) {
