@@ -120,7 +120,7 @@ import { testAIRouter } from "./testAIRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
-import { setIdentityRestrictionStatus } from "./identityRegistry";
+import { claimIdentity, setIdentityRestrictionStatus } from "./identityRegistry";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { forumTaxonomy, forumParentLevelSubcategory } from "@shared/forum";
@@ -229,18 +229,17 @@ function normalizeExternalPaymentMethods(input: z.infer<typeof externalPaymentMe
 }
 
 /**
- * Phone verification stores E.164 for new profiles, but older verified profiles
- * can retain formatted national numbers. Recovery must recognize both forms so a
- * verified member is not silently denied a code because of punctuation or +1.
+ * Phone verification stores E.164 for new profiles, but older completed profiles
+ * can retain formatted national numbers without an historic verification flag.
+ * Recovery matches only a phone already stored on one account, then relies on
+ * Twilio proof of current possession before allowing a password reset.
  */
-function verifiedPhoneRecoveryCondition(e164Phone: string) {
+function storedPhoneRecoveryCondition(e164Phone: string, requireVerified = false) {
   const fullDigits = e164Phone.replace(/\D/g, "");
   const nationalDigits = e164Phone.startsWith("+1") ? e164Phone.slice(2) : fullDigits;
   const storedDigits = sql`REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(${userProfiles.contactPhone}, '+', ''), '-', ''), '(', ''), ')', ''), ' ', ''), '.', '')`;
-  return and(
-    eq(userProfiles.phoneVerified, 1),
-    sql`${storedDigits} IN (${fullDigits}, ${nationalDigits})`,
-  );
+  const phoneMatch = sql`${storedDigits} IN (${fullDigits}, ${nationalDigits})`;
+  return requireVerified ? and(eq(userProfiles.phoneVerified, 1), phoneMatch) : phoneMatch;
 }
 
 type PaymentMethodMember = {
@@ -709,12 +708,14 @@ export const appRouter = router({
         const genericResult = { success: true };
         if (!phone || !isRecoveryRequestAllowed(`password-phone:${phone}`)) return genericResult;
         const db = await requireDb();
-        const [profile] = await db
-          .select({ phoneVerified: userProfiles.phoneVerified })
+        const profiles = await db
+          .select({ userId: userProfiles.userId })
           .from(userProfiles)
-          .where(verifiedPhoneRecoveryCondition(phone))
-          .limit(1);
-        if (profile?.phoneVerified === 1) {
+          .where(storedPhoneRecoveryCondition(phone))
+          .limit(2);
+        // Suppress delivery for no match or ambiguous legacy data. A valid
+        // recipient proves possession in Twilio before any password is changed.
+        if (profiles.length === 1) {
           const result = await sendVerificationCode(phone);
           if (!result.ok) {
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
@@ -733,14 +734,22 @@ export const appRouter = router({
         const [profile] = await db
           .select({ userId: userProfiles.userId })
           .from(userProfiles)
-          .where(verifiedPhoneRecoveryCondition(phone))
+          .where(storedPhoneRecoveryCondition(phone))
           .limit(1);
-        const result = await checkVerificationCode(phone, input.code.replace(/\D/g, ""));
-        if (!profile || !result.ok || !result.approved) {
+        if (!profile) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "We could not complete password recovery. Request a new verification code and try again." });
         }
-        await updateUserPassword(profile.userId, await hashPassword(input.newPassword));
-        await deletePasswordResetTokensForUser(profile.userId);
+        const result = await checkVerificationCode(phone, input.code.replace(/\D/g, ""));
+        if (!result.ok || !result.approved) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "We could not complete password recovery. Request a new verification code and try again." });
+        }
+        const passwordHash = await hashPassword(input.newPassword);
+        await db.transaction(async tx => {
+          await claimIdentity(tx, { userId: profile.userId, identityType: "phone", value: phone });
+          await tx.update(users).set({ passwordHash }).where(eq(users.id, profile.userId));
+          await tx.update(userProfiles).set({ contactPhone: phone, phoneVerified: 1 }).where(eq(userProfiles.userId, profile.userId));
+          await tx.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, profile.userId));
+        });
         return { success: true };
       }),
     completePasswordRecovery: publicProcedure

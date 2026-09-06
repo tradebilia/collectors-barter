@@ -80,12 +80,16 @@ describe("recovery source-integrity", () => {
     expect(forgotPassword).toContain("Tradebilia account email or a verified phone number");
   });
 
-  it("matches legacy formatted verified phones for recovery without weakening verification", () => {
+  it("matches only a stored legacy phone and requires Twilio proof before a recovery reset", () => {
     const router = read("server/routers.ts");
-    expect(router).toContain("function verifiedPhoneRecoveryCondition(e164Phone: string)");
+    expect(router).toContain("function storedPhoneRecoveryCondition(e164Phone: string, requireVerified = false)");
     expect(router).toContain("const nationalDigits = e164Phone.startsWith(\"+1\") ? e164Phone.slice(2) : fullDigits;");
-    expect(router).toContain("where(verifiedPhoneRecoveryCondition(phone))");
-    expect(router).toContain("eq(userProfiles.phoneVerified, 1)");
+    expect(router).toContain("where(storedPhoneRecoveryCondition(phone))");
+    expect(router).toContain("limit(2)");
+    expect(router).toContain("if (profiles.length === 1)");
+    expect(router).toContain("const result = await checkVerificationCode(phone");
+    expect(router).toContain("await claimIdentity(tx, { userId: profile.userId, identityType: \"phone\", value: phone });");
+    expect(router).toContain("phoneVerified: 1");
   });
 });
 
