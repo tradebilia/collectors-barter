@@ -1592,3 +1592,5 @@
 - [x] Keep only the inventory search field white while restoring the picker section background.
 - [x] Hide items already included in the trade from the user-inventory picker until they are removed from the trade.
 - [x] Preserve a selected compatible cash payment method when trade-room cash amounts change, with automatic retention when only one method is available.
+- [x] Ensure the inventory picker outline visibly wraps both bottom corners.
+- [x] Let each Step 3 side use the larger single-item layout independently, and enlarge Shipping Information content for readability.

@@ -862,6 +862,8 @@ export default function WarRoom() {
 
             const acceptedAt = (trade?.proposal as any)?.acceptedAt;
             const acceptedDate = acceptedAt ? new Date(acceptedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
+            const myReviewHasSingleItem = myItems.length === 1;
+            const theirReviewHasSingleItem = theirItems.length === 1;
             const tradeRef = (trade?.proposal as any)?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`;
 
             return (
@@ -896,19 +898,19 @@ export default function WarRoom() {
                   </div>
                   <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
                     {/* Your Items */}
-                    <div className="flex-1 space-y-2">
+                    <div className={`flex-1 space-y-2 ${myReviewHasSingleItem ? 'lg:min-w-0' : ''}`}>
                       <div className="flex items-center gap-2 mb-3">
                         {myAvatarUrl ? <TradeRoomAvatar src={myAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
                         <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">{myDisplayName}</p>
                       </div>
                       {myItems.map((item: any) => (
-                        <div key={item.id} className="flex items-center gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg p-2">
+                        <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${myReviewHasSingleItem ? 'flex-col p-4' : 'items-center p-2'}`}>
                           {item.photos?.[0]?.imageUrl
-                            ? <img src={item.photos[0].imageUrl} className="w-28 h-28 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
-                            : <div className="w-28 h-28 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
+                            ? <img src={item.photos[0].imageUrl} className={`${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
+                            : <div className={`${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? 'text-lg' : 'text-xs'}`}>{item.title}</p>
                             <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
@@ -925,19 +927,19 @@ export default function WarRoom() {
                       </svg>
                     </div>
                     {/* Their Items */}
-                    <div className="flex-1 space-y-2">
+                    <div className={`flex-1 space-y-2 ${theirReviewHasSingleItem ? 'lg:min-w-0' : ''}`}>
                       <div className="flex items-center gap-2 mb-3">
                         {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                         <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
                       </div>
                       {theirItems.map((item: any) => (
-                        <div key={item.id} className="flex items-center gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg p-2">
+                        <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${theirReviewHasSingleItem ? 'flex-col p-4' : 'items-center p-2'}`}>
                           {item.photos?.[0]?.imageUrl
-                            ? <img src={item.photos[0].imageUrl} className="w-28 h-28 object-contain rounded-lg bg-[#0a0a1a] shrink-0" alt={item.title} />
-                            : <div className="w-28 h-28 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0">No image</div>
+                            ? <img src={item.photos[0].imageUrl} className={`${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
+                            : <div className={`${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-xs font-semibold leading-tight">{item.title}</p>
+                            <p className={`text-white font-semibold leading-tight ${theirReviewHasSingleItem ? 'text-lg' : 'text-xs'}`}>{item.title}</p>
                             <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
@@ -951,7 +953,7 @@ export default function WarRoom() {
                 </div>}
 
                 {/* Contact Info Card — hidden on Shipping stage */}
-                {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-7 shadow-xl">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-9 h-9 rounded-lg bg-blue-900/30 border border-blue-500/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-400">
@@ -959,30 +961,30 @@ export default function WarRoom() {
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-white font-bold text-lg">Shipping Information</h2>
-                      <p className="text-gray-400 text-xs">Contact details for arranging shipment. Keep this information confidential.</p>
+                      <h2 className="text-white font-bold text-2xl">Shipping Information</h2>
+                      <p className="text-gray-300 text-sm">Contact details for arranging shipment. Keep this information confidential.</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {[{ label: 'Your Info', contact: myContact, color: 'purple' }, { label: `${theirDisplayName}'s Info`, contact: theirContact, color: 'blue' }].map(({ label, contact, color }) => (
-                      <div key={label} className={`bg-[#0f0f1a] border border-${color}-500/20 rounded-xl p-4`}>
-                        <p className={`text-${color}-400 text-xs font-bold uppercase tracking-wide mb-3`}>{label}</p>
+                      <div key={label} className={`bg-[#0f0f1a] border border-${color}-500/20 rounded-xl p-6`}>
+                        <p className={`text-${color}-400 text-sm font-bold uppercase tracking-wide mb-4`}>{label}</p>
                         {contact ? (
-                          <div className="space-y-2 text-sm">
+                          <div className="space-y-3 text-base">
                             {/* Full Name */}
                             <div className="flex items-start gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                               </svg>
                               <p className="text-white font-semibold">{contact.contactFullName || contact.name || <span className="text-gray-600 italic">Name not provided</span>}</p>
                             </div>
                             {/* Address */}
                             <div className="flex items-start gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                               </svg>
-                              <div className="text-gray-300 text-xs">
+                              <div className="text-gray-200 text-sm">
                                 {contact.contactAddress ? (
                                   <>
                                     <p>{contact.contactAddress}</p>
@@ -996,17 +998,17 @@ export default function WarRoom() {
                             </div>
                             {/* Email */}
                             <div className="flex items-start gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                               </svg>
-                              <p className="text-gray-300 text-xs">{contact.contactEmail || <span className="text-gray-600 italic">Email not provided</span>}</p>
+                              <p className="text-gray-200 text-sm">{contact.contactEmail || <span className="text-gray-600 italic">Email not provided</span>}</p>
                             </div>
                             {/* Phone */}
                             <div className="flex items-start gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 text-gray-500 mt-0.5 shrink-0">
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 6.75Z" />
                               </svg>
-                              <p className="text-gray-300 text-xs">{contact.contactPhone || <span className="text-gray-600 italic">Phone not provided</span>}</p>
+                              <p className="text-gray-200 text-sm">{contact.contactPhone || <span className="text-gray-600 italic">Phone not provided</span>}</p>
                             </div>
                           </div>
                         ) : (
@@ -2427,7 +2429,7 @@ export default function WarRoom() {
 
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#16213e] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex overflow-hidden" style={{ height: '85vh' }}>
+            <div className="bg-[#16213e] border-2 border-white/80 rounded-xl w-11/12 max-w-6xl shadow-2xl flex overflow-hidden" style={{ height: '85vh' }}>
 
               {/* Main inventory browser */}
               <div className="flex flex-col flex-1 min-w-0">
@@ -2657,7 +2659,7 @@ export default function WarRoom() {
 
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#16213e] border border-gray-600 rounded-xl w-11/12 max-w-6xl shadow-2xl flex flex-col" style={{ height: '85vh' }}>
+            <div className="bg-[#16213e] border-2 border-white/80 rounded-xl w-11/12 max-w-6xl shadow-2xl flex flex-col" style={{ height: '85vh' }}>
 
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">

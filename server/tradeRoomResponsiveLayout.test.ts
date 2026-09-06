@@ -33,6 +33,13 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('existingTheirTradeItemIds');
     expect(warRoomSource).toContain('existingMyTradeItemIds');
     expect(warRoomSource).toContain('bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold');
+    expect(warRoomSource).toContain('border-2 border-white/80 rounded-xl w-11/12 max-w-6xl');
+    expect(warRoomSource).toContain('const myReviewHasSingleItem = myItems.length === 1;');
+    expect(warRoomSource).toContain('const theirReviewHasSingleItem = theirItems.length === 1;');
+    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
+    expect(warRoomSource).toContain("${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
+    expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
+    expect(warRoomSource).toContain('className="space-y-3 text-base"');
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
