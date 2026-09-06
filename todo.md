@@ -1606,3 +1606,8 @@
 - [x] Audit shared page shells and affected pages so layouts auto-adjust to browser width and height without clipping, hidden sections, or requiring browser resizing.
 - [x] Implement responsive reflow, stacking, and natural scrolling fixes for affected desktop and mobile layouts.
 - [ ] Add regression coverage and verify representative pages at desktop, tablet, and mobile viewport sizes.
+
+- [x] Keep each Step 5 tracking number visually associated with its item, center the swap arrows vertically between the two users, and maximize item, tracking, and contact typography within available space.
+- [x] Add mutual receipt confirmation for items and any cash, then show a new post-delivery user-review step only after both members verify receipt.
+- [x] Make the dispute stage conditional in the stepper, showing Step 7 only when a dispute exists; otherwise omit it from the visible flow.
+- [ ] Add regression coverage and verify the revised Trade Room flow at desktop and mobile widths. Automated coverage and production build pass; authenticated viewport verification remains pending.

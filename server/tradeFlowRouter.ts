@@ -1425,6 +1425,10 @@ export const tradeFlowRouter = router({
         sql`SELECT id, rating, review, createdAt FROM tradeReviews WHERE proposalId = ${input.proposalId} AND reviewerId = ${viewerUserId} LIMIT 1`
       );
       const myReview = (myReviewRows as unknown as any[])?.[0] || null;
+      const [reviewCountRows] = await db.execute(
+        sql`SELECT COUNT(*) AS reviewCount FROM tradeReviews WHERE proposalId = ${input.proposalId}`
+      );
+      const reviewCount = Number((reviewCountRows as unknown as any[])?.[0]?.reviewCount ?? 0);
 
       // Fetch tracking numbers for shipping/shipped/completed trades
       let trackingNumbers: any[] = [];
@@ -1495,6 +1499,7 @@ export const tradeFlowRouter = router({
         partnerHasAccepted,
         myHasAccepted,
         myReview,
+        reviewCount,
       };
     }),
 

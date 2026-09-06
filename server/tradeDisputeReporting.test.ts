@@ -26,7 +26,7 @@ describe('Trade Room dispute reporting contracts', () => {
     expect(warRoomSource).toContain('Request Dispute Review');
     expect(warRoomSource).toContain('Request dispute review?');
     expect(warRoomSource).toContain('Mark Trade Disputed');
-    expect(warRoomSource).toContain("case 'disputed': return 'disputed'");
+    expect(warRoomSource).toContain("case 'disputed':  return 'disputed'");
     expect(warRoomSource).toContain('Trade changes and completion actions are paused.');
     expect(warRoomSource).toContain('canRequestDisputeReview');
   });

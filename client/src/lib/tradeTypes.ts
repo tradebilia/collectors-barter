@@ -1,1 +1,1 @@
-export type TradeStage = "proposed" | "negotiating" | "accepted" | "shipping" | "shipped" | "completed" | "disputed";
+export type TradeStage = "proposed" | "negotiating" | "accepted" | "shipping" | "shipped" | "review" | "completed" | "disputed";

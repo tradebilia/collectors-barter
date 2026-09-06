@@ -21,17 +21,18 @@ import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
 import { getTradeProposalRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
 import { getLockedShipmentItems } from "@/lib/shippingItems";
 
-type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'completed' | 'disputed';
+type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'review' | 'completed' | 'disputed';
 
-function getStageFromStatus(status: string): TradeStage {
+function getStageFromStatus(status: string, reviewCount = 0): TradeStage {
   switch (status) {
     case 'pending': return 'proposed';       // Stage 1: initial inquiry
     case 'negotiating': return 'negotiating'; // Stage 2: proposals being exchanged
     case 'accepted': return 'accepted';       // Stage 3: review & finalize
     case 'shipping': return 'shipping';       // Stage 4: enter tracking numbers
     case 'shipped': return 'shipped';         // Stage 5: confirm receipt
-    case 'completed': return 'completed';     // Stage 6: trade complete
-    case 'disputed': return 'disputed';       // Administrator dispute review
+        case 'completed': return reviewCount >= 2 ? 'completed' : 'review'; // Stage 6: mutual review, then completion
+    case 'disputed':  return 'disputed';       // Conditional administrator dispute review
+
     default: return 'proposed';
   }
 }
@@ -42,12 +43,13 @@ const formatTradeRoomStatus = (status: unknown) => String(status ?? 'unknown').r
 const stages: { key: TradeStage; label: string; sub: string }[] = [
   { key: 'proposed',    label: 'Propose',   sub: 'Trade Created'   },
   { key: 'negotiating', label: 'Negotiate', sub: 'Refine Details'  },
-  { key: 'accepted',    label: 'Review',    sub: 'Finalize Terms'  },
+  { key: 'accepted',    label: 'Finalize',  sub: 'Finalize Terms'  },
   { key: 'shipping',    label: 'Shipping & Payment',  sub: 'Fulfill Agreement'  },
-  { key: 'shipped',     label: 'Confirm',   sub: 'Confirm Receipt' },
+    { key: 'shipped',     label: 'Confirm',   sub: 'Confirm Receipt' },
+  { key: 'review',      label: 'Review',   sub: 'Rate Your Trade'  },
   { key: 'completed',   label: 'Complete',  sub: 'Trade Complete'  },
-  { key: 'disputed',    label: 'Disputed',  sub: 'Under Review'    },
 ];
+
 
 function TradeRoomAvatar({ src, alt, className }: { src: string; alt: string; className: string }) {
   return (
@@ -382,8 +384,9 @@ export default function WarRoom() {
   const isAdminReadOnly = adminViewRequested && currentUser?.role === 'admin';
   const trade = tradeDetailsQuery.data;
   const hasOfferedItems = (trade?.offeredListings?.length ?? 0) > 0;
-  const currentStage = trade ? getStageFromStatus(trade.proposal.status) : 'proposed';
-  const currentStageIndex = stages.findIndex(s => s.key === currentStage);
+  const currentStage = trade ? getStageFromStatus(trade.proposal.status, Number((trade as any).reviewCount ?? 0)) : 'proposed';
+  const visibleStages = currentStage === 'disputed' ? [...stages, { key: 'disputed' as const, label: 'Disputed', sub: 'Under Review' }] : stages;
+  const currentStageIndex = visibleStages.findIndex(s => s.key === currentStage);
   const isRequester = trade?.isRequester ?? false;
   const otherUser = trade?.otherUser;
   const messages = (messagesQuery.data?.messages || []) as any[];
@@ -795,9 +798,9 @@ export default function WarRoom() {
             </span>
           </div>
 
-          {/* Center: 5-stage progress tracker */}
+          {/* Center: trade progress tracker; dispute is appended only when applicable */}
           <div className="flex min-w-max items-center overflow-x-auto pb-2 lg:pb-0">
-            {stages.map((stage, i) => (
+            {visibleStages.map((stage, i) => (
               <div key={stage.key} className="flex items-center">
                 <div className="flex items-center gap-2">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${
@@ -816,7 +819,7 @@ export default function WarRoom() {
                     }`}>{stage.sub}</p>
                   </div>
                 </div>
-                {i < stages.length - 1 && (
+                {i < visibleStages.length - 1 && (
                   <div className={`w-12 h-px mx-3 border-t border-dashed ${
                     i < currentStageIndex ? 'border-gray-500' : 'border-gray-700'
                   }`} />
@@ -859,10 +862,12 @@ export default function WarRoom() {
           )}
 
           {/* ── STAGE 3+: Review / Shipping / Confirm / Completed ── */}
-          {(currentStage === 'accepted' || currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'completed') && (() => {
+          {(currentStage === 'accepted' || currentStage === 'shipping' || currentStage === 'shipped' || currentStage === 'review' || currentStage === 'completed') && (() => {
             const allItems = [...myItems, ...theirItems];
             const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
             const theirTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId !== myUserId);
+            const tradeItemTitleById = new Map([...myItems, ...theirItems].map((item: any) => [Number(item.id), item.title]));
+            const getTrackingItemTitle = (tracking: any) => tracking.itemTitle || tradeItemTitleById.get(Number(tracking.listingId)) || 'Trade item';
             const myContact = (trade as any)?.myContactInfo;
             const theirContact = (trade as any)?.theirContactInfo;
             const myReceiptConfirmed = (trade as any)?.myReceiptConfirmed;
@@ -913,7 +918,7 @@ export default function WarRoom() {
                     <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
                     <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
                   </div>
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
                     {/* Your Items */}
                     <div className={`flex-1 space-y-2 ${myReviewHasSingleItem ? 'lg:min-w-0' : ''}`}>
                       <div className="flex items-center gap-2 mb-3">
@@ -927,8 +932,8 @@ export default function WarRoom() {
                             : <div className={`${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
-                            <p className="text-gray-300 text-sm font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
+                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? 'text-xl' : 'text-base'}`}>{item.title}</p>
+                            <p className="text-gray-200 text-base font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
                         </div>
@@ -938,8 +943,8 @@ export default function WarRoom() {
                       )}
                     </div>
                     {/* Exchange Arrow */}
-                    <div className="flex shrink-0 items-center justify-center lg:pt-10">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.75} stroke="currentColor" className="w-10 h-10 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]">
+                    <div className="flex shrink-0 items-center justify-center lg:self-stretch">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.75} stroke="currentColor" className="my-auto h-12 w-12 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                       </svg>
                     </div>
@@ -957,7 +962,7 @@ export default function WarRoom() {
                           }
                           <div className="flex-1 min-w-0">
                             <p className={`text-white font-semibold leading-tight ${theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
-                            <p className="text-gray-300 text-sm font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
+                            <p className="text-gray-200 text-base font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
                         </div>
@@ -993,7 +998,7 @@ export default function WarRoom() {
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                               </svg>
-                              <p className="text-white font-semibold">{contact.contactFullName || contact.name || <span className="text-gray-600 italic">Name not provided</span>}</p>
+                              <p className="text-white text-lg font-semibold">{contact.contactFullName || contact.name || <span className="text-gray-600 italic">Name not provided</span>}</p>
                             </div>
                             {/* Address */}
                             <div className="flex items-start gap-2">
@@ -1001,7 +1006,7 @@ export default function WarRoom() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
                               </svg>
-                              <div className="text-gray-200 text-sm">
+                              <div className="text-gray-200 text-base leading-7">
                                 {contact.contactAddress ? (
                                   <>
                                     <p>{contact.contactAddress}</p>
@@ -1018,14 +1023,14 @@ export default function WarRoom() {
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                               </svg>
-                              <p className="text-gray-200 text-sm">{contact.contactEmail || <span className="text-gray-600 italic">Email not provided</span>}</p>
+                              <p className="text-gray-200 text-base break-words">{contact.contactEmail || <span className="text-gray-600 italic">Email not provided</span>}</p>
                             </div>
                             {/* Phone */}
                             <div className="flex items-start gap-2">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-gray-400 mt-0.5 shrink-0">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 6.75Z" />
                               </svg>
-                              <p className="text-gray-200 text-sm">{contact.contactPhone || <span className="text-gray-600 italic">Phone not provided</span>}</p>
+                              <p className="text-gray-200 text-base">{contact.contactPhone || <span className="text-gray-600 italic">Phone not provided</span>}</p>
                             </div>
                           </div>
                         ) : (
@@ -1171,9 +1176,9 @@ export default function WarRoom() {
                                   <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-3">
                                     <div className="flex items-center gap-2 mb-1">
                                       <span className="px-2 py-0.5 bg-blue-900/40 text-blue-400 text-[10px] font-bold rounded">{t.carrier}</span>
-                                      {t.itemTitle && <span className="text-gray-400 text-xs truncate">{t.itemTitle}</span>}
+                                      <span className="text-gray-200 text-sm font-semibold truncate">{getTrackingItemTitle(t)}</span>
                                     </div>
-                                    <p className="text-white text-xs font-mono mb-2">{t.trackingNumber}</p>
+                                    <p className="text-white text-base font-mono font-semibold mb-2 break-all">{t.trackingNumber}</p>
                                     {url && (
                                       <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-400 text-xs hover:underline">
                                         Track on {t.carrier} →
@@ -1223,7 +1228,7 @@ export default function WarRoom() {
                 })()}
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
-                {(currentStage === 'shipped' || currentStage === 'completed') && (
+                {(currentStage === 'shipped' || currentStage === 'review' || currentStage === 'completed') && (
                   <div className="relative z-0 w-full flex-none bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                     <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center">
                       <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
@@ -1246,7 +1251,8 @@ export default function WarRoom() {
                             <div key={i} className="bg-green-900/10 border border-green-500/20 rounded-lg p-2 mb-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-green-400 text-[10px] font-bold">{t.carrier}</span>
-                                <span className="text-gray-300 text-xs font-mono flex-1 truncate">{t.trackingNumber}</span>
+                                <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
+                                <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
                             </div>
@@ -1261,7 +1267,8 @@ export default function WarRoom() {
                             <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-2 mb-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-blue-400 text-[10px] font-bold">{t.carrier}</span>
-                                <span className="text-gray-300 text-xs font-mono flex-1 truncate">{t.trackingNumber}</span>
+                                <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
+                                <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
                             </div>
@@ -1292,7 +1299,7 @@ export default function WarRoom() {
                     )}
 
                     {/* Completed — leave review */}
-                    {currentStage === 'completed' && (
+                    {(currentStage === 'review' || currentStage === 'completed') && (
                       <div className="pt-4 border-t border-gray-700">
                         <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
                         {myReview ? (
@@ -2372,7 +2379,7 @@ export default function WarRoom() {
           })()}
 
           {/* Stage 5: Completed — leave review */}
-          {currentStage === 'completed' && (myReview ? (
+          {(currentStage === 'review' || currentStage === 'completed') && (myReview ? (
             <p className="text-green-300 text-sm flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>Review submitted and locked</p>
           ) : (
             <>

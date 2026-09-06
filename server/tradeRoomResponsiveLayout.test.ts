@@ -43,9 +43,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('bg-[#0f0f1a] border border-white/40 rounded-xl p-6');
     expect(warRoomSource).toContain('formatTimelineDetails(event, cfg.label)');
     expect(warRoomSource).toContain('Selected ${method} as payment method');
-    expect(warRoomSource).toContain('w-10 h-10 text-cyan-300');
-    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'text-xl' : 'text-sm'}");
-    expect(warRoomSource).toContain('text-gray-300 text-sm font-mono mt-1');
+    expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
+    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'text-xl' : 'text-base'}");
+    expect(warRoomSource).toContain('text-gray-200 text-base font-mono mt-1');
     expect(warRoomSource).toContain('w-full min-h-[38rem]');
     expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
     expect(warRoomSource).toContain('Cash payment & shipping tasks');
@@ -58,6 +58,13 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('>Enter</button>');
     expect(warRoomSource).toContain('>Reset</button>');
     expect(warRoomSource).toContain('myShippingItems.length > 0 && (myTracking.length === 0 || resetTrackingIds.length > 0)');
+    expect(warRoomSource).toContain("case 'completed': return reviewCount >= 2 ? 'completed' : 'review'");
+    expect(warRoomSource).toContain("const visibleStages = currentStage === 'disputed' ? [...stages, { key: 'disputed' as const, label: 'Disputed', sub: 'Under Review' }] : stages;");
+    expect(warRoomSource).toContain("getTrackingItemTitle = (tracking: any) => tracking.itemTitle || tradeItemTitleById.get(Number(tracking.listingId)) || 'Trade item'");
+    expect(warRoomSource).toContain('lg:flex-row lg:items-stretch');
+    expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
+    expect(warRoomSource).toContain('text-gray-200 text-base font-mono font-semibold flex-1 break-all');
+    expect(warRoomSource).toContain('text-white text-lg font-semibold');
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
