@@ -1576,3 +1576,4 @@
 - [x] Make Recently active the default forum view while retaining Newest as the topic-creation sort.
 - [x] Make Recently active sort by the latest topic or reply activity, not merely filter recent topics and retain creation-date ordering.
 - [x] Remove the forum Show controls for All topics and Unanswered, leaving sorting controls only.
+- [x] Make forum reply usernames bold and slightly larger while preserving thread readability.

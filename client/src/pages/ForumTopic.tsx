@@ -545,7 +545,7 @@ export function ForumTopic() {
                                 <AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} avatarRef={(element) => { replyAvatarRefs.current[reply.id] = element; }} />
                                 <div className="min-w-0 flex-1">
                                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                    <h3 className="font-semibold text-foreground">{reply.author?.name || "Anonymous"}</h3>
+                                    <h3 className="text-sm font-bold leading-5 text-foreground">{reply.author?.name || "Anonymous"}</h3>
                                     <span aria-hidden="true">·</span>
                                     <time dateTime={parseForumTimestamp(reply.createdAt).toISOString()}>{formatRelativeForumTime(reply.createdAt)}</time>
                                   </div>

@@ -145,6 +145,7 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain('Replying to <strong className="text-foreground">');
     expect(topicSource).toContain("Insert image");
     expect(topicSource).toContain("replyPhotos.map((file) => file.name)");
+    expect(topicSource).toContain('text-sm font-bold leading-5 text-foreground');
     expect(forumSource).toContain('useState<"activity" | "newest" | "popular" | "replies">("activity")');
     expect(forumSource).toContain('sort === "activity" ? "Recently active"');
     expect(dbSource).toContain('desc(forumPosts.updatedAt)');
