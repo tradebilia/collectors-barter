@@ -242,6 +242,14 @@ function storedPhoneRecoveryCondition(e164Phone: string, requireVerified = false
   return requireVerified ? and(eq(userProfiles.phoneVerified, 1), phoneMatch) : phoneMatch;
 }
 
+/**
+ * Recovery logs must never include contact values, tokens, codes, passwords,
+ * or member identifiers. The outcomes only identify a technical branch.
+ */
+function logPasswordRecoveryDiagnostic(channel: "email" | "phone", outcome: string) {
+  console.info(`[PasswordRecovery] channel=${channel} outcome=${outcome}`);
+}
+
 type PaymentMethodMember = {
   id: number;
   displayName: string | null;
@@ -672,15 +680,32 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const email = normalizeRecoveryEmail(input.email);
         const genericResult = { success: true };
-        if (!isRecoveryRequestAllowed(`password-email:${email}`)) return genericResult;
+        if (!isRecoveryRequestAllowed(`password-email:${email}`)) {
+          logPasswordRecoveryDiagnostic("email", "rate_limited");
+          return genericResult;
+        }
 
         const db = await requireDb();
-        const [account] = await db
-          .select({ id: users.id, email: users.email })
+        const accounts = await db
+          .select({ id: users.id, email: users.email, profileEmail: userProfiles.contactEmail })
           .from(users)
-          .where(eq(users.email, email))
-          .limit(1);
-        if (!account?.email) return genericResult;
+          .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
+          .where(or(eq(users.email, email), eq(userProfiles.contactEmail, email)))
+          .limit(2);
+        // Recovery must identify only one account. A matching inbox remains the
+        // sole recovery proof because the opaque reset token is sent there.
+        if (accounts.length !== 1) {
+          logPasswordRecoveryDiagnostic("email", accounts.length === 0 ? "no_account_match" : "ambiguous_account_match");
+          return genericResult;
+        }
+        const [account] = accounts;
+        const accountEmail = normalizeRecoveryEmail(account.email || "");
+        const profileEmail = normalizeRecoveryEmail(account.profileEmail || "");
+        const recipientEmail = accountEmail === email ? accountEmail : profileEmail === email ? profileEmail : "";
+        if (!recipientEmail) {
+          logPasswordRecoveryDiagnostic("email", "invalid_destination");
+          return genericResult;
+        }
 
         // The registered login email is a sufficient recovery proof: possession
         // of the inbox is required to use the opaque, one-time reset token.
@@ -691,14 +716,17 @@ export const appRouter = router({
         const token = createOpaqueRecoveryToken();
         await deletePasswordResetTokensForUser(account.id);
         await createPasswordResetToken(account.id, hashRecoveryToken(token), new Date(Date.now() + PASSWORD_RECOVERY_TOKEN_TTL_MS));
-        const delivered = await sendPasswordRecoveryEmail({ recipientEmail: email, token });
+        logPasswordRecoveryDiagnostic("email", "provider_dispatch_started");
+        const delivered = await sendPasswordRecoveryEmail({ recipientEmail, token });
         if (!delivered) {
           await deletePasswordResetTokensForUser(account.id);
+          logPasswordRecoveryDiagnostic("email", "provider_dispatch_failed");
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Password recovery email is temporarily unavailable. Please try your verified phone number or contact support.",
           });
         }
+        logPasswordRecoveryDiagnostic("email", "provider_dispatch_succeeded");
         return genericResult;
       }),
     requestPhonePasswordRecovery: publicProcedure
@@ -706,7 +734,14 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const phone = normalizePhone(input.phone);
         const genericResult = { success: true };
-        if (!phone || !isRecoveryRequestAllowed(`password-phone:${phone}`)) return genericResult;
+        if (!phone) {
+          logPasswordRecoveryDiagnostic("phone", "invalid_phone");
+          return genericResult;
+        }
+        if (!isRecoveryRequestAllowed(`password-phone:${phone}`)) {
+          logPasswordRecoveryDiagnostic("phone", "rate_limited");
+          return genericResult;
+        }
         const db = await requireDb();
         const profiles = await db
           .select({ userId: userProfiles.userId })
@@ -716,10 +751,15 @@ export const appRouter = router({
         // Suppress delivery for no match or ambiguous legacy data. A valid
         // recipient proves possession in Twilio before any password is changed.
         if (profiles.length === 1) {
+          logPasswordRecoveryDiagnostic("phone", "provider_dispatch_started");
           const result = await sendVerificationCode(phone);
           if (!result.ok) {
+            logPasswordRecoveryDiagnostic("phone", "provider_dispatch_failed");
             throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: result.error });
           }
+          logPasswordRecoveryDiagnostic("phone", "provider_dispatch_succeeded");
+        } else {
+          logPasswordRecoveryDiagnostic("phone", profiles.length === 0 ? "no_account_match" : "ambiguous_account_match");
         }
         return genericResult;
       }),

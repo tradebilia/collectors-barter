@@ -62,7 +62,7 @@ describe("recovery source-integrity", () => {
   it("does not report recovery delivery as successful when the provider rejects it", () => {
     const router = read("server/routers.ts");
     const forgotPassword = read("client/src/pages/ForgotPassword.tsx");
-    expect(router).toContain("const delivered = await sendPasswordRecoveryEmail({ recipientEmail: email, token });");
+    expect(router).toContain("const delivered = await sendPasswordRecoveryEmail({ recipientEmail, token });");
     expect(router).toContain("if (!delivered) {");
     expect(router).toContain("await deletePasswordResetTokensForUser(account.id);");
     expect(router).toContain("const result = await sendVerificationCode(phone);");
@@ -70,11 +70,15 @@ describe("recovery source-integrity", () => {
     expect(forgotPassword).toContain("recoveryErrorMessage");
   });
 
-  it("allows registered account email recovery for legacy profiles that predate profile verification flags", () => {
+  it("allows legacy recovery through either the account email or saved Tradebilia contact email", () => {
     const router = read("server/routers.ts");
     const emailRecovery = router.slice(router.indexOf("requestPasswordRecovery:"), router.indexOf("requestPhonePasswordRecovery:"));
     const forgotPassword = read("client/src/pages/ForgotPassword.tsx");
-    expect(emailRecovery).toContain("where(eq(users.email, email))");
+    expect(emailRecovery).toContain("leftJoin(userProfiles, eq(userProfiles.userId, users.id))");
+    expect(emailRecovery).toContain("where(or(eq(users.email, email), eq(userProfiles.contactEmail, email)))");
+    expect(emailRecovery).toContain("if (accounts.length !== 1) {");
+    expect(emailRecovery).toContain('logPasswordRecoveryDiagnostic("email", accounts.length === 0 ? "no_account_match" : "ambiguous_account_match");');
+    expect(emailRecovery).toContain("const recipientEmail = accountEmail === email ? accountEmail : profileEmail === email ? profileEmail : \"\";");
     expect(emailRecovery).not.toContain("userProfiles.emailVerified");
     expect(emailRecovery).not.toContain("profile?.emailVerified");
     expect(forgotPassword).toContain("Tradebilia account email or a verified phone number");
@@ -90,6 +94,16 @@ describe("recovery source-integrity", () => {
     expect(router).toContain("const result = await checkVerificationCode(phone");
     expect(router).toContain("await claimIdentity(tx, { userId: profile.userId, identityType: \"phone\", value: phone });");
     expect(router).toContain("phoneVerified: 1");
+  });
+
+  it("records only sanitized recovery branch outcomes for production diagnosis", () => {
+    const router = read("server/routers.ts");
+    expect(router).toContain("function logPasswordRecoveryDiagnostic(channel: \"email\" | \"phone\", outcome: string)");
+    expect(router).toContain("[PasswordRecovery] channel=${channel} outcome=${outcome}");
+    expect(router).toContain('logPasswordRecoveryDiagnostic("email", "provider_dispatch_started")');
+    expect(router).toContain('logPasswordRecoveryDiagnostic("phone", "provider_dispatch_started")');
+    expect(router).not.toContain("console.info(`[PasswordRecovery] email=${email}");
+    expect(router).not.toContain("console.info(`[PasswordRecovery] phone=${phone}");
   });
 });
 

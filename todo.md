@@ -1632,3 +1632,7 @@
 - [ ] Investigate and repair verified email and phone password recovery delivery, including account lookup, throttling, token/code creation, provider dispatch, reset completion, and safe errors. Completed code repair and 16 automated checks; one user-controlled live email/SMS delivery confirmation remains pending. Aggregate audit found that all three legacy profiles have registered contact email/phone values but no persisted profile verification flags.
 
 - [ ] Allow legacy recovery through the phone stored on the account only after Twilio proves current possession, then persist the verified-phone status safely. Completed implementation, 16 recovery/setup tests, TypeScript, production build, and whitespace diff validation; one user-controlled SMS receipt/reset confirmation remains pending.
+
+- [ ] Diagnose and repair the confirmed post-release password-recovery non-delivery affecting both the user-tested email and phone paths, using non-sensitive live diagnostics and verified end-to-end delivery confirmation.
+
+- [ ] Trace and repair the deployed password-recovery early exit that prevents requests from reaching Resend or Twilio, using privacy-safe request diagnostics and real provider confirmation.
