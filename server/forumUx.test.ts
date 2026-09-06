@@ -171,13 +171,11 @@ describe("Collectors Forum UX contracts", () => {
     expect(forumSource).toContain("Start a discussion");
     expect(forumSource).toContain("Browse collector communities");
     expect(forumSource).not.toContain("Discussion feed");
-    expect(forumSource).toContain('aria-label="Forum topic filters"');
+    expect(forumSource).toContain('aria-label="Forum topic sorting"');
     expect(forumSource).toContain("bg-white p-1.5 shadow-sm");
     expect(forumSource).toContain("forumCategoryTones");
     expect(forumSource).toContain("Most replies");
-    expect(forumSource).toContain("activityFilter");
     expect(dbSource).toContain("searchQuery?.trim()");
-    expect(dbSource).toContain('activityFilter === "unanswered"');
     expect(dbSource).toContain('sortBy === "activity"');
     expect(dbSource).toContain('desc(forumPosts.updatedAt)');
     expect(dbSource).toContain("getForumReportsForAdmin");

@@ -44,7 +44,6 @@ export function Forum() {
   const [sortBy, setSortBy] = useState<"activity" | "newest" | "popular" | "replies">("activity");
   const [searchDraft, setSearchDraft] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [activityFilter, setActivityFilter] = useState<"all" | "unanswered">("all");
   const [showNewTopicModal, setShowNewTopicModal] = useState(false);
   const utils = trpc.useUtils();
 
@@ -58,7 +57,6 @@ export function Forum() {
     category: selectedCategory,
     subcategory: selectedSubcategory,
     searchQuery: searchQuery.trim() || undefined,
-    activityFilter,
     sortBy,
   });
   const { data: forumUpdates } = trpc.market.getMyForumNotifications.useQuery(undefined, { enabled: Boolean(user) });
@@ -171,11 +169,7 @@ export function Forum() {
           </div>
         )}
 
-        <section className="mb-5 flex flex-col gap-3 border-y border-border py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between" aria-label="Forum topic filters">
-          <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Topic activity filters">
-            <span className="mr-1 text-xs font-medium text-muted-foreground">Show:</span>
-            {["all", "unanswered"].map((filter) => <button key={filter} type="button" onClick={() => setActivityFilter(filter as typeof activityFilter)} aria-pressed={activityFilter === filter} className={`rounded-md px-3 py-1.5 text-sm ${activityFilter === filter ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{filter === "all" ? "All topics" : "Unanswered"}</button>)}
-          </div>
+        <section className="mb-5 flex flex-wrap items-center justify-end gap-2 border-y border-border py-3" aria-label="Forum topic sorting">
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Sort forum topics">
             <span className="mr-1 text-xs font-medium text-muted-foreground">Sort:</span>
             {(["activity", "newest", "popular", "replies"] as const).map(sort => <button key={sort} type="button" onClick={() => setSortBy(sort)} aria-pressed={sortBy === sort} className={`rounded-md px-3 py-1.5 text-sm transition ${sortBy === sort ? "bg-slate-800 text-white" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>{sort === "activity" ? "Recently active" : sort === "replies" ? "Most replies" : sort.charAt(0).toUpperCase() + sort.slice(1)}</button>)}

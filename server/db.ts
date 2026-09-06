@@ -4764,7 +4764,7 @@ export async function deleteForumPost(userId: number, postId: number) {
   return { postId };
 }
 
-export async function getForumPosts(category?: string, sortBy: "activity" | "newest" | "popular" | "replies" = "activity", subcategory?: string | null, searchQuery?: string, activityFilter: "all" | "unanswered" = "all") {
+export async function getForumPosts(category?: string, sortBy: "activity" | "newest" | "popular" | "replies" = "activity", subcategory?: string | null, searchQuery?: string) {
   const db = await requireDb();
   const { forumPosts, users } = await import("../drizzle/schema");
   const { eq, desc, and, like, or } = await import("drizzle-orm");
@@ -4802,7 +4802,6 @@ export async function getForumPosts(category?: string, sortBy: "activity" | "new
     category ? eq(forumPosts.category, category) : undefined,
     isExpanded && subcategory ? eq(forumPosts.subcategory, subcategory) : undefined,
     searchQuery?.trim() ? or(like(forumPosts.title, `%${searchQuery.trim()}%`), like(forumPosts.content, `%${searchQuery.trim()}%`)) : undefined,
-    activityFilter === "unanswered" ? eq(forumPosts.replyCount, 0) : undefined,
   );
   if (sortBy === "activity") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.updatedAt));
   if (sortBy === "newest") return baseQuery.where(whereClause).orderBy(desc(forumPosts.isPinned), desc(forumPosts.createdAt));
