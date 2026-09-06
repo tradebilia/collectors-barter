@@ -163,6 +163,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("hasAttachmentsTable: Number(attachmentTableRows?.[0]?.tableCount ?? 0) === 1");
     expect(dbSource).toContain("const attachments = replyCapabilities.hasAttachmentsTable");
     expect(dbSource).toContain("parentReplyId: replyCapabilities.hasParentReplyId ? forumReplies.parentReplyId : sql<number | null>`NULL`");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, listingId, parentReplyId, content)");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, parentReplyId, content)");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, listingId, content)");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, content)");
   });
 
   it("supports search, activity filters, and a dedicated administrator forum queue", () => {

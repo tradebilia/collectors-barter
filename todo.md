@@ -1519,7 +1519,7 @@
 - [x] Extend reply media handling with validated MP4 video attachments and enable the inline Video shortcut.
 - [x] Add regression coverage for mixed image/GIF/video reply contracts and verify TypeScript, build, and whitespace checks; signed-in end-to-end media submission remains pending.
 - [x] Repair the live forum reply insert failure when the deployed forumReplies table lacks parentReplyId, while preserving threaded replies on expanded schemas.
-- [ ] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
+- [x] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
 - [x] Sanitize unexpected forum reply database errors in the client and server response so raw SQL is never shown to members.
 - [x] Render forum replies as a hierarchical sub-thread tree with deeper indentation and thread guides for replies to replies, including responsive mobile spacing and regression coverage.
 - [x] Add connected vertical/branch thread guides and per-reply collapse/expand controls for nested forum reply sub-threads, with responsive regression coverage.
@@ -1602,3 +1602,7 @@
 - [x] Make Step 4 Ship By date prominent and flashing, and use white carrier/tracking controls.
 - [x] Show red Tracking Numbers not submitted until all required tracking is entered, then green Tracking Numbers submitted.
 - [x] Add a per-item Enter/Reset tracking workflow so submitted numbers are locked until intentionally reset.
+
+- [x] Audit shared page shells and affected pages so layouts auto-adjust to browser width and height without clipping, hidden sections, or requiring browser resizing.
+- [x] Implement responsive reflow, stacking, and natural scrolling fixes for affected desktop and mobile layouts.
+- [ ] Add regression coverage and verify representative pages at desktop, tablet, and mobile viewport sizes.

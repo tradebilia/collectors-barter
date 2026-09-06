@@ -2468,7 +2468,7 @@ export default function WarRoom() {
 
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#16213e] border-2 border-white/80 rounded-xl w-11/12 max-w-6xl shadow-2xl flex overflow-hidden" style={{ height: '85vh' }}>
+            <div className="bg-[#16213e] border-2 border-white/80 rounded-xl w-11/12 max-w-6xl h-[min(85dvh,52rem)] max-h-[calc(100dvh-2rem)] shadow-2xl flex overflow-hidden">
 
               {/* Main inventory browser */}
               <div className="flex flex-col flex-1 min-w-0">
@@ -2631,7 +2631,7 @@ export default function WarRoom() {
       {/* Item Detail Popup Modal — opens when clicking an item image in the inventory browser */}
       {quickViewItemId !== null && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[60]">
-          <div className="bg-white rounded-xl w-11/12 max-w-5xl shadow-2xl overflow-hidden flex flex-col" style={{ height: '90vh' }}>
+          <div className="bg-white rounded-xl w-11/12 max-w-5xl h-[min(90dvh,52rem)] max-h-[calc(100dvh-2rem)] shadow-2xl overflow-hidden flex flex-col">
             {/* Modal header bar */}
             <div className="flex items-center justify-between px-5 py-3 bg-gray-900 border-b border-gray-700 flex-shrink-0">
               <p className="text-white text-sm font-semibold">Item Detail</p>
@@ -2698,7 +2698,7 @@ export default function WarRoom() {
 
         return (
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-[#16213e] border-2 border-white/80 rounded-xl w-11/12 max-w-6xl shadow-2xl flex flex-col" style={{ height: '85vh' }}>
+            <div className="bg-[#16213e] border-2 border-white/80 rounded-xl w-11/12 max-w-6xl h-[min(85dvh,52rem)] max-h-[calc(100dvh-2rem)] shadow-2xl flex flex-col">
 
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700 flex-shrink-0">

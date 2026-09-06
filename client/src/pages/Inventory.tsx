@@ -420,7 +420,7 @@ export default function Inventory() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
         }} />
-        <div className="container relative flex h-[400px] items-center justify-center py-0">
+        <div className="container relative flex min-h-[16rem] h-[clamp(16rem,32vw,25rem)] items-center justify-center py-0">
           <div className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4">
             <img
               src="https://assets.tradebilia.com/Myinventory_a9168443.svg"

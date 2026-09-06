@@ -402,7 +402,7 @@ export default function Messages() {
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
       }}>
-        <div className="container relative flex h-[400px] items-center justify-center py-0 text-center">
+        <div className="container relative flex min-h-[16rem] h-[clamp(16rem,32vw,25rem)] items-center justify-center py-0 text-center">
           <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto w-full max-w-6xl object-contain" style={{ transform: "translateX(-2.34375%)" }} />
         </div>
       </section>
@@ -590,7 +590,7 @@ export default function Messages() {
 
           <section className="rounded-[2rem] border border-slate-300/70 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
             {activeInquiry ? (
-              <div className="flex min-h-[34rem] flex-col sm:h-[70vh] sm:min-h-0">
+              <div className="flex min-h-[34rem] flex-col">
                 <div className="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-4">
@@ -675,7 +675,7 @@ export default function Messages() {
                 </div>
               </div>
             ) : activeThread ? (
-              <div className="flex min-h-[34rem] flex-col sm:h-[70vh] sm:min-h-0">
+              <div className="flex min-h-[34rem] flex-col">
                 <div className="border-b border-slate-200 px-4 py-4 sm:px-6 sm:py-5">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex items-center gap-4">
@@ -807,7 +807,7 @@ export default function Messages() {
                 </div>
               </div>
             ) : (
-              <div className="flex min-h-[26rem] items-center justify-center px-5 text-center sm:h-[70vh] sm:min-h-0 sm:px-8">
+              <div className="flex min-h-[26rem] items-center justify-center px-5 py-8 text-center sm:px-8">
                 <div className="max-w-md space-y-4">
                   <MailOpen className="mx-auto h-10 w-10 text-slate-500" />
                   <h2 className="text-3xl font-semibold text-slate-900">Select a message thread.</h2>
