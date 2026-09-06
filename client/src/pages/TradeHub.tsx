@@ -156,7 +156,7 @@ export default function TradeHub() {
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
         }}>
-          <div className="container relative flex h-48 items-center justify-center py-0 sm:h-56 lg:h-64">
+          <div className="container relative flex h-[400px] items-center justify-center py-0">
             <div className="flex w-full items-center justify-center" style={{ maxWidth: '1200px' }}>
               <img
                 src={TRADE_HUB_LOGO_URL}

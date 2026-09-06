@@ -1614,3 +1614,5 @@
 
 - [x] Redesign the homepage Recent Trades cards so multi-item swaps fit inside the existing fixed section height without vertical scrolling, clipping, or layout shifts.
 - [x] Add regression coverage and verify the multi-item Recent Trades presentation at desktop and mobile widths. The focused test, TypeScript check, production build, whitespace validation, and desktop/mobile screenshots passed; each side now shows up to four compact item previews plus a remaining-item count.
+
+- [x] Match the Trade Hub hero section height and category-bar position to the main homepage at desktop and mobile widths.
