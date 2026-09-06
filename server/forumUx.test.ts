@@ -198,6 +198,10 @@ describe("Collectors Forum UX contracts", () => {
     expect(moderationQueueSource).toContain("Forum Moderation Queue");
     expect(moderationQueueSource).toContain("Remove post");
     expect(moderationQueueSource).toContain("Restore");
+    expect(moderationQueueSource).toContain('trpc.market.reviewForumReport.useMutation()');
+    expect(moderationQueueSource).toContain('review(report.id, "remove")');
+    expect(dbSource).toContain('if (input.action === "remove") await moderateForumPost');
+    expect(readFileSync(new URL("./routers.ts", import.meta.url), "utf8")).toContain("reviewForumReport: protectedProcedure");
     expect(forumSource).toContain("Your topic updates");
     expect(forumSource).toContain("getMyForumNotifications");
     expect(readFileSync(new URL("./routers.ts", import.meta.url), "utf8")).toContain("openId: ctx.user.openId");
