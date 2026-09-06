@@ -699,11 +699,11 @@ export default function CategoryPage() {
     setCurrentPage(1);
   };
 
-  const createProposalMutation = trpc.market.createTradeProposal.useMutation({
+  const createProposalMutation = trpc.tradeFlow.initiateTradeProposal.useMutation({
     onSuccess: async () => {
       setProposalListingId(null);
       setProposalNote("");
-      toast.success("Trade Proposal sent.");
+      toast.success("Trade Proposal sent. The listing owner has been notified.");
       await utils.market.feed.invalidate();
     },
     onError: error => toast.error(error.message),
@@ -1566,13 +1566,13 @@ export default function CategoryPage() {
                             <div className="space-y-4">
                               <div className="space-y-2">
                                 <Label>Requested listing</Label>
-                                <Input value={listing.title} readOnly />
+                                <Input value={listing.title} readOnly className="bg-white text-slate-900 border-slate-200" />
                               </div>
                               <div className="space-y-2">
                                 <Label>Your personalized message</Label>
-                                <Textarea value={proposalNote} onChange={event => setProposalNote(event.target.value)} placeholder="Share why you would like to trade for this collectible." maxLength={1000} />
+                                <Textarea value={proposalNote} onChange={event => setProposalNote(event.target.value)} placeholder="Share why you would like to trade for this collectible." maxLength={1000} className="bg-white text-slate-900 border-slate-200" />
                               </div>
-                              <Button className="w-full rounded-full" disabled={createProposalMutation.isPending || !proposalNote.trim()} onClick={() => createProposalMutation.mutate({ requestedListingId: listing.id, note: proposalNote.trim() })}>
+                              <Button className="w-full rounded-full" disabled={createProposalMutation.isPending || !proposalNote.trim()} onClick={() => createProposalMutation.mutate({ listingId: listing.id, message: proposalNote.trim() })}>
                                 {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 Send Trade Proposal
                               </Button>

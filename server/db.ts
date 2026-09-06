@@ -1277,6 +1277,14 @@ export async function createTradeProposal(
     note: input.note?.trim() ? input.note.trim().slice(0, 1000) : null,
   });
   const proposalId = getInsertId(proposalInsert);
+  const now = mysqlNow();
+
+  // Keep the legacy category-page entry point aligned with the full trade-flow path:
+  // the proposal must be visible in the recipient's Trade Alerts folder immediately.
+  await db.execute(
+    sql`INSERT INTO tradeAlerts (proposalId, recipientUserId, alertType, message, isRead, createdAt)
+        VALUES (${proposalId}, ${requestedListing[0].ownerId}, 'initiated', ${`${user.name || "A collector"} sent you a trade proposal for: ${requestedListing[0].title}`}, 0, ${now})`
+  );
 
   return {
     proposalId,

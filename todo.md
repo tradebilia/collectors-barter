@@ -1584,3 +1584,5 @@
 - [x] Use white subject and message fields plus blue Send Message and mail-icon styling in the public-profile New Message composer.
 - [x] Make safe provider-returned Facebook, LinkedIn, eBay, and Etsy public profile URLs clickable from public member verification cards, opening in a new tab.
 - [x] Keep verified-account badges non-clickable when no safe public URL is available and cover URL privacy/domain safeguards with tests.
+- [x] Give the requested listing and personalized message fields in the trade-proposal modal white backgrounds.
+- [x] Trace and repair missing recipient trade alerts for proposals submitted from category-page Trade buttons, with regression coverage.
