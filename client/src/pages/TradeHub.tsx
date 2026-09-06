@@ -233,12 +233,12 @@ export default function TradeHub() {
             {/* Center — Inbox Feed */}
             <main className="overflow-hidden rounded-lg bg-[#1a1a4a] lg:col-span-5">
               <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
-                <h2 className="text-white font-semibold text-sm uppercase tracking-wider">
+                <h2 className="flex items-center gap-2 text-white font-semibold text-sm uppercase tracking-wider">
                   {folderLabels[activeFolder]}
-                      {filteredTrades.length > 0 && (
+                  {filteredTrades.length > 0 && (
                     activeFolder === "completed" ? (
-                      <span className="ml-2 rounded-md border border-blue-400/50 bg-blue-500/20 px-2 py-0.5 text-sm font-bold text-blue-100">
-                        ; {filteredTrades.length}
+                      <span className="inline-flex h-6 min-w-7 items-center justify-center rounded-full border border-blue-300/70 bg-blue-600 px-2 text-sm font-bold leading-none text-white">
+                        {filteredTrades.length}
                       </span>
                     ) : (
                       <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">

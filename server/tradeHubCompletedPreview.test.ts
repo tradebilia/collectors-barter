@@ -26,7 +26,8 @@ describe("Trade Hub completed exchange preview", () => {
     expect(routerSource).toContain("paymentMethod: payment.paymentMethod");
     expect(hubSource).toContain("Cash exchanged");
     expect(hubSource).toContain("navigate(`/profile/${selectedTrade.otherUser.id}`)");
-    expect(hubSource).toContain("; {filteredTrades.length}");
+    expect(hubSource).not.toContain("; {filteredTrades.length}");
+    expect(hubSource).toContain("inline-flex h-6 min-w-7 items-center justify-center");
     expect(hubSource).toContain("bg-white px-4 py-2 text-gray-900");
     expect(hubSource).toContain("from-blue-600 to-cyan-500");
     expect(hubSource).toContain("activeFolder === \"completed\"");

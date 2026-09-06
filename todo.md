@@ -1618,3 +1618,5 @@
 - [x] Match the Trade Hub hero section height and category-bar position to the main homepage at desktop and mobile widths.
 
 - [x] Update Trade Hub completed-trade counts, member avatar/profile linking, cash preview, search-field styling, and blue status/action emphasis. Focused tests, TypeScript, production build, and modified-file whitespace checks passed; authenticated preview capture was rate-limited after restart.
+
+- [x] Remove the Trade Hub Completed count semicolon and center the highlighted count badge beside the label.
