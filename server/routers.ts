@@ -730,9 +730,10 @@ export const appRouter = router({
         return genericResult;
       }),
     requestPhonePasswordRecovery: publicProcedure
-      .input(z.object({ phone: z.string().min(7).max(25) }))
+      .input(z.object({ phone: z.string().min(7).max(25), email: z.string().email().max(320).optional() }))
       .mutation(async ({ input }) => {
         const phone = normalizePhone(input.phone);
+        const email = input.email ? normalizeRecoveryEmail(input.email) : "";
         const genericResult = { success: true };
         if (!phone) {
           logPasswordRecoveryDiagnostic("phone", "invalid_phone");
@@ -743,13 +744,20 @@ export const appRouter = router({
           throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many recovery code requests. Please wait a few minutes before trying again." });
         }
         const db = await requireDb();
+        const phoneConditions = [storedPhoneRecoveryCondition(phone)];
+        if (email) phoneConditions.push(or(eq(users.email, email), eq(userProfiles.contactEmail, email))!);
         const profiles = await db
           .select({ userId: userProfiles.userId })
           .from(userProfiles)
-          .where(storedPhoneRecoveryCondition(phone))
+          .innerJoin(users, eq(users.id, userProfiles.userId))
+          .where(and(...phoneConditions))
           .limit(2);
         // Suppress delivery for no match or ambiguous legacy data. A valid
         // recipient proves possession in Twilio before any password is changed.
+        if (profiles.length > 1) {
+          logPasswordRecoveryDiagnostic("phone", "ambiguous_account_match");
+          throw new TRPCError({ code: "BAD_REQUEST", message: "For security, enter the email used on your Tradebilia account to identify the correct account." });
+        }
         if (profiles.length === 1) {
           logPasswordRecoveryDiagnostic("phone", "provider_dispatch_started");
           const result = await sendVerificationCode(phone);
@@ -764,18 +772,23 @@ export const appRouter = router({
         return genericResult;
       }),
     completePhonePasswordRecovery: publicProcedure
-      .input(z.object({ phone: z.string().min(7).max(25), code: z.string().min(4).max(10), newPassword: z.string().min(8).max(255) }))
+      .input(z.object({ phone: z.string().min(7).max(25), email: z.string().email().max(320).optional(), code: z.string().min(4).max(10), newPassword: z.string().min(8).max(255) }))
       .mutation(async ({ input }) => {
         const phone = normalizePhone(input.phone);
+        const email = input.email ? normalizeRecoveryEmail(input.email) : "";
         if (!phone || !isValidPassword(input.newPassword) || !isRecoveryRequestAllowed(`password-phone-verify:${phone}`)) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "We could not complete password recovery. Request a new verification code and try again." });
         }
         const db = await requireDb();
-        const [profile] = await db
+        const phoneConditions = [storedPhoneRecoveryCondition(phone)];
+        if (email) phoneConditions.push(or(eq(users.email, email), eq(userProfiles.contactEmail, email))!);
+        const profiles = await db
           .select({ userId: userProfiles.userId })
           .from(userProfiles)
-          .where(storedPhoneRecoveryCondition(phone))
-          .limit(1);
+          .innerJoin(users, eq(users.id, userProfiles.userId))
+          .where(and(...phoneConditions))
+          .limit(2);
+        const [profile] = profiles.length === 1 ? profiles : [];
         if (!profile) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "We could not complete password recovery. Request a new verification code and try again." });
         }

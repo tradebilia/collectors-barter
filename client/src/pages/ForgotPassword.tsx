@@ -11,6 +11,7 @@ export function ForgotPassword() {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneEmail, setPhoneEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,7 +50,7 @@ export function ForgotPassword() {
     setIsLoading(true);
     setError(undefined);
     try {
-      await requestPhoneRecovery.mutateAsync({ phone });
+      await requestPhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined });
       setPhoneCodeSent(true);
     } catch (err) {
       setError(recoveryErrorMessage("We could not start recovery. Please try again later.", err));
@@ -67,7 +68,7 @@ export function ForgotPassword() {
     }
     setIsLoading(true);
     try {
-      await completePhoneRecovery.mutateAsync({ phone, code, newPassword });
+      await completePhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined, code, newPassword });
       setSuccess(true);
     } catch {
       setError("We could not complete recovery. Request a new code and try again.");
@@ -133,6 +134,10 @@ export function ForgotPassword() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Verified Phone Number</label>
                     <Input type="tel" placeholder="Your verified phone number" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isLoading || phoneCodeSent} required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Tradebilia Account Email <span className="font-normal text-muted-foreground">(use if prompted)</span></label>
+                    <Input type="email" placeholder="you@example.com" value={phoneEmail} onChange={(e) => setPhoneEmail(e.target.value)} disabled={isLoading || phoneCodeSent} />
                   </div>
                   {phoneCodeSent && <>
                     <div className="space-y-2"><label className="text-sm font-medium">Text Message Code</label><Input inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} required /></div>

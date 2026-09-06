@@ -1640,3 +1640,5 @@
 - [x] Repair the post-reset sign-in redirect loop so successful new-password authentication returns to the main homepage instead of reopening the password-recovery screen. User confirmed the new password sign-in reaches the homepage successfully.
 
 - [ ] Diagnose and repair the confirmed SMS password-recovery non-delivery after email recovery and post-reset sign-in were verified.
+
+- [ ] Diagnose and repair the confirmed SMS recovery failure after a clean single retry beyond the rate-limit window still produced no message.

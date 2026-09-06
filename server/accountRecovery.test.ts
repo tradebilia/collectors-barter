@@ -86,13 +86,19 @@ describe("recovery source-integrity", () => {
 
   it("matches only a stored legacy phone and requires Twilio proof before a recovery reset", () => {
     const router = read("server/routers.ts");
+    const forgotPassword = read("client/src/pages/ForgotPassword.tsx");
     expect(router).toContain("function storedPhoneRecoveryCondition(e164Phone: string, requireVerified = false)");
     expect(router).toContain("const nationalDigits = e164Phone.startsWith(\"+1\") ? e164Phone.slice(2) : fullDigits;");
-    expect(router).toContain("where(storedPhoneRecoveryCondition(phone))");
+    expect(router).toContain("const phoneConditions = [storedPhoneRecoveryCondition(phone)]");
+    expect(router).toContain("innerJoin(users, eq(users.id, userProfiles.userId))");
+    expect(router).toContain("where(and(...phoneConditions))");
     expect(router).toContain("limit(2)");
-    expect(router).toContain("if (profiles.length === 1)");
+    expect(router).toContain("if (profiles.length > 1)");
+    expect(router).toContain("For security, enter the email used on your Tradebilia account");
     expect(router).toContain("const result = await checkVerificationCode(phone");
     expect(router).toContain("await claimIdentity(tx, { userId: profile.userId, identityType: \"phone\", value: phone });");
+    expect(forgotPassword).toContain("requestPhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined })");
+    expect(forgotPassword).toContain("completePhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined, code, newPassword })");
     expect(router).toContain("phoneVerified: 1");
   });
 
