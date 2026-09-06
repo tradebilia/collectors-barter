@@ -923,8 +923,8 @@ export default function WarRoom() {
                             : <div className={`${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? 'text-lg' : 'text-xs'}`}>{item.title}</p>
-                            <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
+                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
+                            <p className="text-gray-300 text-sm font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
                         </div>
@@ -935,7 +935,7 @@ export default function WarRoom() {
                     </div>
                     {/* Exchange Arrow */}
                     <div className="flex shrink-0 items-center justify-center lg:pt-10">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-gray-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.75} stroke="currentColor" className="w-10 h-10 text-cyan-300 drop-shadow-[0_0_8px_rgba(34,211,238,0.45)]">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 21 3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
                       </svg>
                     </div>
@@ -943,7 +943,7 @@ export default function WarRoom() {
                     <div className={`flex-1 space-y-2 ${theirReviewHasSingleItem ? 'lg:min-w-0' : ''}`}>
                       <div className="flex items-center gap-2 mb-3">
                         {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
-                        <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
+                        <p className="text-gray-200 text-sm font-bold uppercase tracking-wide">{theirDisplayName}</p>
                       </div>
                       {theirItems.map((item: any) => (
                         <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${theirReviewHasSingleItem ? 'flex-col p-4' : 'items-center p-2'}`}>
@@ -952,8 +952,8 @@ export default function WarRoom() {
                             : <div className={`${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className={`text-white font-semibold leading-tight ${theirReviewHasSingleItem ? 'text-lg' : 'text-xs'}`}>{item.title}</p>
-                            <p className="text-gray-500 text-[10px] font-mono mt-0.5">Ref # {String(item.id).padStart(5, '0')}</p>
+                            <p className={`text-white font-semibold leading-tight ${theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
+                            <p className="text-gray-300 text-sm font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
                         </div>
@@ -1045,7 +1045,7 @@ export default function WarRoom() {
                   const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => theirTrackingByListingId.has(item.id));
                   const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
                   return (
-                    <div className="bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
+                    <div className="w-full min-h-[38rem] bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
                       {/* Header */}
                       <div className="flex items-center justify-between px-6 py-4 border-b border-orange-500/20">
                         <div className="flex items-center gap-3">
@@ -1066,10 +1066,10 @@ export default function WarRoom() {
                       <div className="grid grid-cols-1 divide-y divide-gray-700 lg:grid-cols-2 lg:divide-x lg:divide-y-0">
 
                         {/* LEFT: Your shipment */}
-                        <div className="min-w-0 p-5">
+                        <div className="min-w-0 p-6 lg:p-7">
                           <div className="flex items-center gap-2 mb-4">
                             {myAvatarUrl ? <TradeRoomAvatar src={myAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
-                            <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">You — {myDisplayName}</p>
+                            <p className="text-blue-300 text-sm font-bold uppercase tracking-wide">You — {myDisplayName}</p>
                             {myItemsShipped ? <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span> : <span className="ml-auto text-orange-300 text-xs font-bold">{myTrackingByListingId.size}/{myShippingItems.length} tracked</span>}
                           </div>
 
@@ -1086,22 +1086,22 @@ export default function WarRoom() {
                                 </div>;
                               }
                               return (
-                                  <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-lg p-3">
+                                  <div key={item.id} className="bg-[#0f0f1a] border border-gray-700 rounded-xl p-5">
                                     <div className="flex items-center gap-2 mb-2">
                                       {item.photos?.[0]?.imageUrl
-                                        ? <img src={item.photos[0].imageUrl} className="w-8 h-8 object-contain rounded bg-[#0a0a1a]" alt={item.title} />
-                                        : <div className="w-8 h-8 bg-[#0a0a1a] rounded flex items-center justify-center text-gray-600 text-[10px]">?</div>
+                                        ? <img src={item.photos[0].imageUrl} className="w-20 h-20 object-contain rounded-lg bg-[#0a0a1a]" alt={item.title} />
+                                        : <div className="w-20 h-20 bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs">?</div>
                                       }
-                                      <p className="text-white text-xs font-medium leading-tight flex-1 min-w-0 truncate">{item.title}</p>
+                                      <p className="text-white text-base font-semibold leading-snug flex-1 min-w-0">{item.title}</p>
                                     </div>
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-2 mt-3">
                                       <select
                                         value={inp.carrier}
                                         onChange={(e) => setTrackingInputs(prev => {
                                           const existing = prev.filter(t => t.listingId !== item.id);
                                           return [...existing, { ...inp, carrier: e.target.value }];
                                         })}
-                                        className="bg-[#16213e] border border-gray-600 text-white text-xs rounded px-2 py-1.5 focus:outline-none focus:border-blue-500 shrink-0"
+                                        className="bg-[#16213e] border border-gray-600 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 shrink-0"
                                       >
                                         {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
                                       </select>
@@ -1122,7 +1122,7 @@ export default function WarRoom() {
                                             return [...existing, { ...inp, trackingNumber: val, carrier: detectedCarrier }];
                                           });
                                         }}
-                                        className="flex-1 bg-[#16213e] border border-gray-600 text-white text-xs rounded px-3 py-1.5 focus:outline-none focus:border-blue-500 font-mono"
+                                        className="flex-1 bg-[#16213e] border border-gray-600 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 font-mono"
                                       />
                                     </div>
                                   </div>
@@ -1133,19 +1133,22 @@ export default function WarRoom() {
                         </div>
 
                         {/* RIGHT: Their shipment */}
-                        <div className="min-w-0 p-5">
+                        <div className="min-w-0 p-6 lg:p-7">
                           <div className="flex items-center gap-2 mb-4">
                             {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
-                            <p className="text-gray-300 text-xs font-bold uppercase tracking-wide">{theirDisplayName}</p>
+                            <p className="text-gray-200 text-sm font-bold uppercase tracking-wide">{theirDisplayName}</p>
                             {theirItemsShipped ? <span className="ml-auto text-green-400 text-xs font-bold">✓ Shipped</span> : <span className="ml-auto text-gray-500 text-xs font-bold">{theirTrackingByListingId.size}/{theirShippingItems.length} tracked</span>}
                           </div>
 
-                          <div data-testid="shipping-counterparty-locked-items" className="mb-3 space-y-1.5 rounded-lg border border-gray-700 bg-[#0f0f1a] p-2.5">
-                            <p className="text-[10px] font-bold uppercase tracking-wide text-gray-400">Items {theirDisplayName} is sending</p>
+                          <div data-testid="shipping-counterparty-locked-items" className="mb-4 space-y-3 rounded-xl border border-gray-700 bg-[#0f0f1a] p-5">
+                            <p className="text-sm font-bold uppercase tracking-wide text-gray-300">Items {theirDisplayName} is sending</p>
                             {theirShippingItems.length > 0 ? theirShippingItems.map((item: any) => {
                               const itemTracking = theirTrackingByListingId.get(item.id) as any;
-                              return <div key={item.id} className="flex items-center justify-between gap-2 text-xs"><span className="min-w-0 truncate text-gray-200">{item.title}</span><span className={itemTracking ? "shrink-0 text-green-400" : "shrink-0 text-gray-500"}>{itemTracking ? "Tracking submitted" : "Awaiting tracking"}</span></div>;
-                            }) : <p className="text-xs italic text-gray-600">No locked items recorded for this side.</p>}
+                              return <div key={item.id} className="flex items-center gap-4 rounded-lg border border-gray-700 bg-[#16213e] p-4">
+                                {item.photos?.[0]?.imageUrl ? <img src={item.photos[0].imageUrl} className="h-20 w-20 shrink-0 rounded-lg bg-[#0a0a1a] object-contain" alt={item.title} /> : <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-lg bg-[#0a0a1a] text-sm text-gray-500">No image</div>}
+                                <div className="min-w-0 flex-1"><p className="text-base font-semibold leading-snug text-white">{item.title}</p><p className="mt-1 font-mono text-sm text-gray-300">Ref # {String(item.id).padStart(5, '0')}</p><p className={itemTracking ? "mt-2 text-sm font-semibold text-green-400" : "mt-2 text-sm font-semibold text-gray-400"}>{itemTracking ? "Tracking submitted" : "Awaiting tracking"}</p></div>
+                              </div>;
+                            }) : <p className="text-sm italic text-gray-500">No locked items recorded for this side.</p>}
                           </div>
 
                           {theirTracking.length > 0 ? (
@@ -2207,9 +2210,9 @@ export default function WarRoom() {
               {/* Step 4: Shipping — direct cash settlement and shipment fulfilment. */}
               {(myCash > 0 || theirCash > 0) && (() => {
                 const obligations = (cashAdjustmentContextQuery.data?.obligations ?? []) as Array<any>;
-                const pendingObligations = obligations.filter((obligation) => !['sent', 'received', 'verified'].includes(obligation.payment?.status ?? 'pending'));
+
                 return <div className="mb-3 flex w-full flex-col gap-3">
-                  <div className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-200"><p className="font-bold text-white">Payment & Shipping Checklist</p><ul className="mt-1 list-disc space-y-1 pl-4 text-slate-300">{obligations.map((obligation) => { const status = obligation.payment?.status ?? 'pending'; const direction = obligation.role === 'payer' ? `Send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}`; const step = status === 'received' || status === 'verified' ? 'Recipient confirmed cash received' : status === 'sent' ? 'Payment sent — cash receipt is confirmed in Step 5' : status === 'method_selected' ? obligation.role === 'payer' ? 'Send payment and mark it sent' : `Waiting for ${theirDisplayName} to send payment` : 'Payment method must be selected in Step 2'; return <li key={obligation.payerId}><span className="font-medium text-white">{direction}:</span> {step}</li>; })}</ul>{pendingObligations.length > 0 && <p className="mt-2 border-t border-slate-700 pt-2 text-amber-200">Complete each remaining payment-sent action below during Shipping & Payment.</p>}</div>
+                  <div className="rounded-xl border border-blue-500/40 bg-[#16213e] px-5 py-4 text-sm text-slate-200"><p className="text-base font-bold text-white">Cash payment & shipping tasks</p><p className="mt-1 text-sm leading-relaxed text-slate-300">The member sending cash must complete the payment and mark it sent. The receiving member confirms the cash in Step 5. Each member’s card below shows the current amount, method, and next action.</p></div>
                   {cashAdjustmentContextQuery.isLoading && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">Loading payment steps…</p>}
                   {cashAdjustmentContextQuery.isError && <p className="rounded-lg border border-red-600/40 bg-red-900/20 px-4 py-3 text-xs text-red-200">Payment steps could not be loaded. Please refresh the Trade Room or try again.</p>}
                   {cashAdjustmentContextQuery.isSuccess && obligations.length === 0 && <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-4 py-3 text-xs text-slate-300">No direct cash settlement is required for this trade.</p>}

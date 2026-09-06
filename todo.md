@@ -1596,3 +1596,6 @@
 - [x] Let each Step 3 side use the larger single-item layout independently, and enlarge Shipping Information content for readability.
 - [x] Give both Step 3 Shipping Information cards the same visible border treatment.
 - [x] Render cash payment-method timeline events as readable text such as “Selected PayPal as payment method” instead of raw JSON.
+- [x] Make Step 3 swap arrows more prominent and enlarge item titles, reference numbers, and shipping details where space permits.
+- [x] Maximize Step 4 shipping-stage layout, enlarge item/tracking presentation, and ensure the other member’s single item is displayed.
+- [x] Combine Step 4 payment checklist and cash task into clearer per-member send/receive summaries.

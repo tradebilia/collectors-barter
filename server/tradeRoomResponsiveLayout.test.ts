@@ -43,6 +43,13 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('bg-[#0f0f1a] border border-white/40 rounded-xl p-6');
     expect(warRoomSource).toContain('formatTimelineDetails(event, cfg.label)');
     expect(warRoomSource).toContain('Selected ${method} as payment method');
+    expect(warRoomSource).toContain('w-10 h-10 text-cyan-300');
+    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'text-xl' : 'text-sm'}");
+    expect(warRoomSource).toContain('text-gray-300 text-sm font-mono mt-1');
+    expect(warRoomSource).toContain('w-full min-h-[38rem]');
+    expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
+    expect(warRoomSource).toContain('Cash payment & shipping tasks');
+    expect(warRoomSource).toContain('The member sending cash must complete the payment and mark it sent.');
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
