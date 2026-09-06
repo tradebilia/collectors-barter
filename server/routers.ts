@@ -353,6 +353,18 @@ const referralRequestSchema = z.object({
   message: z.string().min(20).max(2000),
 });
 
+const getSafeVerifiedProfileUrl = (value: unknown, allowedHosts: string[]) => {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const parsed = new URL(value.trim());
+    const hostname = parsed.hostname.toLowerCase();
+    const isAllowedHost = allowedHosts.some((host) => hostname === host || hostname.endsWith(`.${host}`));
+    return parsed.protocol === "https:" && isAllowedHost ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+};
+
 export const appRouter = router({
   system: systemRouter,
   tradeFlow: tradeFlowRouter,
@@ -965,7 +977,12 @@ export const appRouter = router({
         const etsyVerification = getPublicEtsyVerification(profileRow?.connectedAccounts);
 
         return {
-          user: { ...userRow, ...etsyVerification },
+          user: {
+            ...userRow,
+            ...etsyVerification,
+            facebookLink: getSafeVerifiedProfileUrl(userRow.facebookLink, ["facebook.com", "fb.com"]),
+            linkedinProfileUrl: getSafeVerifiedProfileUrl(userRow.linkedinProfileUrl, ["linkedin.com"]),
+          },
           profile: profileRow ? {
             displayName: profileRow.displayName,
             avatarUrl: profileRow.avatarUrl,

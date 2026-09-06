@@ -954,6 +954,7 @@ export default function PublicProfile() {
                       </div>
                       <ConnectionDate connectedAt={user.facebookConnectedAt} />
                       {user.facebookLocation && <div><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Location</p><p className="mt-1 text-sm font-semibold text-slate-700">{user.facebookLocation}</p></div>}
+                      {user.facebookLink && <a href={user.facebookLink} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 underline-offset-2 hover:underline">View Facebook profile <ExternalLink className="h-3 w-3" /></a>}
                     </div>
                   </section>
                 )}
@@ -979,6 +980,7 @@ export default function PublicProfile() {
                         </div>
                       </div>
                       <ConnectionDate connectedAt={user.linkedinConnectedAt} />
+                      {user.linkedinProfileUrl && <a href={user.linkedinProfileUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-sky-700 underline-offset-2 hover:underline">View LinkedIn profile <ExternalLink className="h-3 w-3" /></a>}
                     </div>
                   </section>
                 )}

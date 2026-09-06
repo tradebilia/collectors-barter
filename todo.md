@@ -1582,3 +1582,5 @@
 - [x] Keep a selected direct-message thread visible in Unread after it is marked seen, until the member leaves the conversation or folder.
 - [x] Keep members on a public profile after they send a direct message, with a clear in-place success confirmation.
 - [x] Use white subject and message fields plus blue Send Message and mail-icon styling in the public-profile New Message composer.
+- [x] Make safe provider-returned Facebook, LinkedIn, eBay, and Etsy public profile URLs clickable from public member verification cards, opening in a new tab.
+- [x] Keep verified-account badges non-clickable when no safe public URL is available and cover URL privacy/domain safeguards with tests.

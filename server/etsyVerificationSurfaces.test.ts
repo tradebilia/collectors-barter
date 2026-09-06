@@ -32,6 +32,10 @@ describe("Etsy verification display coverage", () => {
     expect(source).toContain("user.etsyUserId");
     expect(source).toContain("user.etsyDisplayName");
     expect(source).toContain("user.etsyShopName");
+    expect(source).toContain("View Facebook profile");
+    expect(source).toContain("View LinkedIn profile");
+    expect(source).toContain('target="_blank"');
+    expect(source).toContain('rel="noopener noreferrer"');
     expect(source).toContain("This verified Etsy account does not have a shop linked.");
     expect(source).not.toContain("user.etsyEmail");
     const headerSource = source.slice(source.indexOf("{/* User Info */"), source.indexOf("{/* Navigation Tabs */"));
@@ -48,6 +52,9 @@ describe("Etsy verification display coverage", () => {
 
     expect(profileStart).toBeGreaterThan(-1);
     expect(publicProfileSource).toContain("getPublicEtsyVerification");
+    expect(publicProfileSource).toContain("getSafeVerifiedProfileUrl");
+    expect(publicProfileSource).toContain('["facebook.com", "fb.com"]');
+    expect(publicProfileSource).toContain('["linkedin.com"]');
     expect(publicProfileSource).not.toContain("etsyAccessToken");
     expect(publicProfileSource).not.toContain("etsyRefreshToken");
   });
