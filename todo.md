@@ -1589,3 +1589,5 @@
 - [x] Increase trade-room participant names and online/offline status readability, and make Your side / Their side labels clearer.
 - [x] Make requested-inventory picker category/search/footer surfaces white and style Clear light red.
 - [x] Make the trade-room start-proposal Send button blue.
+- [x] Keep only the inventory search field white while restoring the picker section background.
+- [x] Hide items already included in the trade from the user-inventory picker until they are removed from the trade.

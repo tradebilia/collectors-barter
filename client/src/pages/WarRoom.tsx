@@ -2388,7 +2388,8 @@ export default function WarRoom() {
         const formatCat = (cat: string) =>
           cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
-        const allItems: any[] = theirInventoryQuery.data?.items || [];
+        const existingTheirTradeItemIds = new Set(theirItems.map((item: any) => item?.id).filter(Boolean));
+        const allItems: any[] = (theirInventoryQuery.data?.items || []).filter((item: any) => !existingTheirTradeItemIds.has(item?.id));
 
         // Build category list from ALL items (regardless of current filter)
         const rawCategories = Array.from(new Set(allItems.map((i: any) => i.category).filter(Boolean))) as string[];
@@ -2455,15 +2456,15 @@ export default function WarRoom() {
               </div>
 
               {/* Category Tabs — always all visible, click to filter in-place */}
-              <div className="flex flex-wrap border-b border-slate-200 flex-shrink-0 bg-white">
+              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#16213e]">
                 {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-blue-700 border-blue-600 bg-blue-50'
-                        : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-50'
+                        ? 'text-blue-300 border-blue-400 bg-blue-950/40'
+                        : 'text-slate-300 border-transparent hover:text-white hover:bg-slate-800/60'
                     }`}
                   >
                     {formatCat(cat)}
@@ -2472,7 +2473,7 @@ export default function WarRoom() {
               </div>
 
               {/* Search */}
-              <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0 bg-white">
+              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0 bg-[#16213e]">
                 <input
                   type="text"
                   placeholder={`Search ${theirDisplayName}'s inventory...`}
@@ -2547,7 +2548,7 @@ export default function WarRoom() {
               </div>
 
               {/* Footer: add requested items */}
-              <div className="px-6 py-4 border-t border-slate-200 flex-shrink-0 flex items-center justify-between bg-white">
+              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#16213e]">
                 <p className="text-gray-400 text-sm">
                   {selectedInventoryItems.length > 0
                     ? <span className="text-blue-400 font-semibold">{selectedInventoryItems.length} requested item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
@@ -2617,8 +2618,9 @@ export default function WarRoom() {
         const formatCat = (cat: string) =>
           cat.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 
+        const existingMyTradeItemIds = new Set(myItems.map((item: any) => item?.id).filter(Boolean));
         const allMyItems: any[] = (myDashboardQuery.data?.ownListings || []).filter(
-          (l: any) => l.status === 'active' || l.isActive
+          (l: any) => (l.status === 'active' || l.isActive) && !existingMyTradeItemIds.has(l?.id)
         );
 
         // Build category list from all my items
@@ -2688,8 +2690,8 @@ export default function WarRoom() {
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-blue-700 border-blue-600 bg-blue-50'
-                        : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-50'
+                        ? 'text-blue-300 border-blue-400 bg-blue-950/40'
+                        : 'text-slate-300 border-transparent hover:text-white hover:bg-slate-800/60'
                     }`}
                   >
                     {formatCat(cat)}
@@ -2698,7 +2700,7 @@ export default function WarRoom() {
               </div>
 
               {/* Search */}
-              <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0 bg-white">
+              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0 bg-[#16213e]">
                 <input
                   type="text"
                   placeholder="Search your inventory..."

@@ -27,9 +27,11 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('size="large" className="scale-75 origin-left"');
     expect(warRoomSource).toContain('text-blue-200 text-xs font-bold uppercase tracking-wider">Your Side</p>');
     expect(warRoomSource).toContain('text-blue-200 text-xs font-bold uppercase tracking-wider">Their Side</p>');
-    expect(warRoomSource).toContain('border-slate-200 flex-shrink-0 bg-white');
+    expect(warRoomSource).toContain('border-gray-700 flex-shrink-0 bg-[#16213e]');
     expect(warRoomSource).toContain('bg-white text-slate-900 border border-slate-300');
     expect(warRoomSource).toContain('border-red-200 bg-red-50 text-red-700');
+    expect(warRoomSource).toContain('existingTheirTradeItemIds');
+    expect(warRoomSource).toContain('existingMyTradeItemIds');
     expect(warRoomSource).toContain('bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold');
   });
 
