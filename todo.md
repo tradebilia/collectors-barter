@@ -1591,4 +1591,3 @@
 - [x] Make the trade-room start-proposal Send button blue.
 - [x] Keep only the inventory search field white while restoring the picker section background.
 - [x] Hide items already included in the trade from the user-inventory picker until they are removed from the trade.
-- [x] Preserve a selected compatible cash payment method when trade-room cash amounts change, with automatic retention when only one method is available.

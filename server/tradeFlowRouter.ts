@@ -537,7 +537,6 @@ export const tradeFlowRouter = router({
         if (nextTradeListingIds.length === 0 && nextCashObligations.length === 0) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "A proposal must include at least one collectible or a positive cash amount." });
         }
-        let paymentMemberById = new Map<number, any>();
         if (nextCashObligations.length > 0) {
           const [paymentMemberRows] = await tx.execute(sql`SELECT
             u.id,
@@ -550,7 +549,7 @@ export const tradeFlowRouter = router({
             FROM users u
             LEFT JOIN userProfiles up ON up.userId = u.id
             WHERE u.id IN (${proposal.requesterId}, ${proposal.recipientId})`);
-          paymentMemberById = new Map((((paymentMemberRows as unknown as any[]) || []).map((member) => [Number(member.id), member])));
+          const paymentMemberById = new Map((((paymentMemberRows as unknown as any[]) || []).map((member) => [Number(member.id), member])));
           for (const obligation of nextCashObligations) {
             const payer = paymentMemberById.get(obligation.payerId);
             const payee = paymentMemberById.get(obligation.payeeId);
@@ -589,45 +588,7 @@ export const tradeFlowRouter = router({
           );
         }
         if (cashTermsChanged) {
-          const existingPayments = await tx.select({
-            id: tradePayments.id,
-            payerId: tradePayments.payerId,
-            payeeId: tradePayments.payeeId,
-            paymentMethod: tradePayments.paymentMethod,
-            paymentIdentifier: tradePayments.paymentIdentifier,
-          }).from(tradePayments).where(eq(tradePayments.proposalId, input.proposalId));
-          const nextObligationByPayer = new Map(nextCashObligations.map((obligation) => [obligation.payerId, obligation]));
-          for (const existingPayment of existingPayments) {
-            const obligation = nextObligationByPayer.get(existingPayment.payerId);
-            if (!obligation) {
-              await tx.delete(tradePayments).where(eq(tradePayments.id, existingPayment.id));
-              continue;
-            }
-            const payer = paymentMemberById.get(obligation.payerId);
-            const payee = paymentMemberById.get(obligation.payeeId);
-            const methodStillCompatible = Boolean(
-              existingPayment.paymentMethod
-              && existingPayment.paymentIdentifier
-              && existingPayment.payeeId === obligation.payeeId
-              && payer
-              && payee
-              && getSharedExternalPaymentMethods(payer, payee).some((method) => method.method === existingPayment.paymentMethod)
-            );
-            await tx.execute(sql`UPDATE tradePayments SET
-              payeeId = ${obligation.payeeId},
-              amount = ${obligation.amount.toFixed(2)},
-              status = ${methodStillCompatible ? 'method_selected' : 'pending'},
-              transactionId = NULL,
-              sentAt = NULL,
-              receivedAt = NULL,
-              verifiedAt = NULL,
-              disputeOpenedAt = NULL,
-              disputeOpenedBy = NULL,
-              disputeReason = NULL,
-              verificationResult = ${methodStillCompatible ? JSON.stringify({ source: 'payment_method_preserved_after_cash_change', directPaymentDisclosureAcknowledged: true }) : null},
-              updatedAt = ${now}
-              WHERE id = ${existingPayment.id}`);
-          }
+          await tx.execute(sql`DELETE FROM tradePayments WHERE proposalId = ${input.proposalId}`);
         }
         for (const item of [...itemRows, ...requestedItemRows]) {
           await tx.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'item_added', ${`Added: ${item.title}`}, ${now})`);
