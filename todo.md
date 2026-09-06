@@ -1586,3 +1586,6 @@
 - [x] Keep verified-account badges non-clickable when no safe public URL is available and cover URL privacy/domain safeguards with tests.
 - [x] Give the requested listing and personalized message fields in the trade-proposal modal white backgrounds.
 - [x] Trace and repair missing recipient trade alerts for proposals submitted from category-page Trade buttons, with regression coverage.
+- [x] Increase trade-room participant names and online/offline status readability, and make Your side / Their side labels clearer.
+- [x] Make requested-inventory picker category/search/footer surfaces white and style Clear light red.
+- [x] Make the trade-room start-proposal Send button blue.

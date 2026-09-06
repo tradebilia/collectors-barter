@@ -1396,10 +1396,10 @@ export default function WarRoom() {
                       )}
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <p className="text-white text-sm font-bold leading-tight">{myDisplayName}</p>
-                          {myUserId && <OnlineIndicator sellerId={myUserId} className="scale-75 origin-left" />}
+                          <p className="text-white text-base font-extrabold leading-tight">{myDisplayName}</p>
+                          {myUserId && <OnlineIndicator sellerId={myUserId} size="large" className="scale-75 origin-left" />}
                         </div>
-                        <p className="text-blue-400 text-[10px] uppercase tracking-wide">Your Side</p>
+                          <p className="text-blue-200 text-xs font-bold uppercase tracking-wider">Your Side</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -1862,10 +1862,10 @@ export default function WarRoom() {
                       )}
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <p className="text-white text-sm font-bold leading-tight">{theirDisplayName}</p>
-                          {otherUser?.id && <OnlineIndicator sellerId={otherUser.id} className="scale-75 origin-left" />}
+                          <p className="text-white text-base font-extrabold leading-tight">{theirDisplayName}</p>
+                          {otherUser?.id && <OnlineIndicator sellerId={otherUser.id} size="large" className="scale-75 origin-left" />}
                         </div>
-                        <p className="text-gray-400 text-[10px] uppercase tracking-wide">Their Side</p>
+                        <p className="text-blue-200 text-xs font-bold uppercase tracking-wider">Their Side</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -2123,7 +2123,7 @@ export default function WarRoom() {
               {canSubmitProposal ? (
                 <button
                   onClick={handleUpdateProposal}
-                  className="px-14 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
+                  className="px-14 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold transition flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.4)]"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
@@ -2455,15 +2455,15 @@ export default function WarRoom() {
               </div>
 
               {/* Category Tabs — always all visible, click to filter in-place */}
-              <div className="flex flex-wrap border-b border-gray-700 flex-shrink-0 bg-[#0f0f1a]">
+              <div className="flex flex-wrap border-b border-slate-200 flex-shrink-0 bg-white">
                 {categories.map(cat => (
                   <button
                     key={cat}
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-blue-400 border-blue-500 bg-[#16213e]'
-                        : 'text-gray-500 border-transparent hover:text-gray-300'
+                        ? 'text-blue-700 border-blue-600 bg-blue-50'
+                        : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
                     {formatCat(cat)}
@@ -2472,11 +2472,11 @@ export default function WarRoom() {
               </div>
 
               {/* Search */}
-              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
+              <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0 bg-white">
                 <input
                   type="text"
                   placeholder={`Search ${theirDisplayName}'s inventory...`}
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white text-slate-900 border border-slate-300 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none text-sm"
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                 />
@@ -2547,7 +2547,7 @@ export default function WarRoom() {
               </div>
 
               {/* Footer: add requested items */}
-              <div className="px-6 py-4 border-t border-gray-700 flex-shrink-0 flex items-center justify-between bg-[#0f0f1a]">
+              <div className="px-6 py-4 border-t border-slate-200 flex-shrink-0 flex items-center justify-between bg-white">
                 <p className="text-gray-400 text-sm">
                   {selectedInventoryItems.length > 0
                     ? <span className="text-blue-400 font-semibold">{selectedInventoryItems.length} requested item{selectedInventoryItems.length > 1 ? 's' : ''} selected</span>
@@ -2557,7 +2557,7 @@ export default function WarRoom() {
                   <button
                     type="button"
                     onClick={() => setSelectedInventoryItems([])}
-                    className="px-4 py-2 border border-gray-700 text-gray-400 rounded-lg text-sm hover:bg-gray-800 transition"
+                    className="px-4 py-2 border border-red-200 bg-red-50 text-red-700 rounded-lg text-sm hover:bg-red-100 transition"
                   >
                     Clear
                   </button>
@@ -2688,8 +2688,8 @@ export default function WarRoom() {
                     onClick={() => setInventoryCategory(cat)}
                     className={`px-5 py-3 text-sm font-semibold whitespace-nowrap transition flex-shrink-0 border-b-2 ${
                       inventoryCategory === cat
-                        ? 'text-blue-400 border-blue-500 bg-[#16213e]'
-                        : 'text-gray-500 border-transparent hover:text-gray-300'
+                        ? 'text-blue-700 border-blue-600 bg-blue-50'
+                        : 'text-slate-600 border-transparent hover:text-slate-900 hover:bg-slate-50'
                     }`}
                   >
                     {formatCat(cat)}
@@ -2698,11 +2698,11 @@ export default function WarRoom() {
               </div>
 
               {/* Search */}
-              <div className="px-4 py-3 border-b border-gray-700 flex-shrink-0">
+              <div className="px-4 py-3 border-b border-slate-200 flex-shrink-0 bg-white">
                 <input
                   type="text"
                   placeholder="Search your inventory..."
-                  className="w-full px-4 py-2.5 rounded-lg bg-[#0f0f1a] text-white border border-gray-700 focus:border-blue-500 focus:outline-none text-sm"
+                  className="w-full px-4 py-2.5 rounded-lg bg-white text-slate-900 border border-slate-300 placeholder:text-slate-500 focus:border-blue-500 focus:outline-none text-sm"
                   value={inventorySearch}
                   onChange={(e) => setInventorySearch(e.target.value)}
                 />

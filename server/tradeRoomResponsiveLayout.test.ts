@@ -21,6 +21,18 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('flex flex-col gap-3 sm:flex-row');
   });
 
+  it("keeps participant names and side labels readable and uses the requested inventory modal surface treatments", () => {
+    expect(warRoomSource).toContain('text-base font-extrabold leading-tight">{myDisplayName}</p>');
+    expect(warRoomSource).toContain('text-base font-extrabold leading-tight">{theirDisplayName}</p>');
+    expect(warRoomSource).toContain('size="large" className="scale-75 origin-left"');
+    expect(warRoomSource).toContain('text-blue-200 text-xs font-bold uppercase tracking-wider">Your Side</p>');
+    expect(warRoomSource).toContain('text-blue-200 text-xs font-bold uppercase tracking-wider">Their Side</p>');
+    expect(warRoomSource).toContain('border-slate-200 flex-shrink-0 bg-white');
+    expect(warRoomSource).toContain('bg-white text-slate-900 border border-slate-300');
+    expect(warRoomSource).toContain('border-red-200 bg-red-50 text-red-700');
+    expect(warRoomSource).toContain('bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold');
+  });
+
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
     expect(warRoomSource).toContain('trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a]');
     expect(warRoomSource).toContain('trade-room-workspace flex min-h-0 flex-1 flex-col overflow-visible');
