@@ -1629,18 +1629,18 @@
 
 - [x] Implement profile visibility levels so a hidden profile is visible to signed-in Tradebilia members but not non-members or public discovery, while preserving existing trades, messages, reviews, verification, and safety records. Seven focused tests, TypeScript, production build, git diff whitespace validation, and mobile route-shell verification passed; authenticated Profile content redirected to signed out.
 
-- [ ] Investigate and repair verified email and phone password recovery delivery, including account lookup, throttling, token/code creation, provider dispatch, reset completion, and safe errors. Completed code repair and 16 automated checks; one user-controlled live email/SMS delivery confirmation remains pending. Aggregate audit found that all three legacy profiles have registered contact email/phone values but no persisted profile verification flags.
+- [x] Investigate and repair verified email and phone password recovery delivery, including account lookup, throttling, token/code creation, provider dispatch, reset completion, and safe errors. User verified email delivery/reset and conditional phone SMS delivery/reset; automated coverage, TypeScript, build, and whitespace checks passed. Aggregate audit found all three legacy profiles had registered contact values but no persisted historic verification flags.
 
-- [ ] Allow legacy recovery through the phone stored on the account only after Twilio proves current possession, then persist the verified-phone status safely. Completed implementation, 16 recovery/setup tests, TypeScript, production build, and whitespace diff validation; one user-controlled SMS receipt/reset confirmation remains pending.
+- [x] Allow legacy recovery through the phone stored on the account only after Twilio proves current possession, then persist the verified-phone status safely. User confirmed the conditional email disambiguation, SMS receipt, code acceptance, and password reset; automated coverage and build checks passed.
 
-- [ ] Diagnose and repair the confirmed post-release password-recovery non-delivery affecting both the user-tested email and phone paths, using non-sensitive live diagnostics and verified end-to-end delivery confirmation.
+- [x] Diagnose and repair the confirmed post-release password-recovery non-delivery affecting both the user-tested email and phone paths, using non-sensitive live diagnostics and verified end-to-end delivery confirmation. Live diagnostics identified the email/profile mismatch and ambiguous phone match; both methods were subsequently user-verified.
 
-- [ ] Trace and repair the deployed password-recovery early exit that prevents requests from reaching Resend or Twilio, using privacy-safe request diagnostics and real provider confirmation.
+- [x] Trace and repair the deployed password-recovery early exit that prevents requests from reaching Resend or Twilio, using privacy-safe request diagnostics and real provider confirmation. Email and SMS provider dispatch were user-verified after the lookup and ambiguity repairs.
 
 - [x] Repair the post-reset sign-in redirect loop so successful new-password authentication returns to the main homepage instead of reopening the password-recovery screen. User confirmed the new password sign-in reaches the homepage successfully.
 
-- [ ] Diagnose and repair the confirmed SMS password-recovery non-delivery after email recovery and post-reset sign-in were verified.
+- [x] Diagnose and repair the confirmed SMS password-recovery non-delivery after email recovery and post-reset sign-in were verified. User confirmed SMS arrived and the phone reset worked correctly after conditional email disambiguation.
 
-- [ ] Diagnose and repair the confirmed SMS recovery failure after a clean single retry beyond the rate-limit window still produced no message.
+- [x] Diagnose and repair the confirmed SMS recovery failure after a clean single retry beyond the rate-limit window still produced no message. Live logs showed ambiguous_account_match; the corrected conditional email flow delivered the SMS and completed reset successfully.
 
-- [x] Show the account-email field only after an ambiguous phone match, replace the generic error with a truthful disambiguation prompt, and cover the resubmission flow with tests. Focused recovery tests, TypeScript, production build, whitespace validation, and initial-form visual verification passed; live SMS resubmission remains user-testable.
+- [x] Show the account-email field only after an ambiguous phone match, replace the generic error with a truthful disambiguation prompt, and cover the resubmission flow with tests. Focused recovery tests, TypeScript, production build, whitespace validation, initial-form visual verification, and user-confirmed SMS delivery/reset passed.
