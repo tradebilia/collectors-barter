@@ -4,10 +4,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { getLoginUrl } from "@/const";
+import { getHomeLoginUrl } from "@/const";
 
 export function ForgotPassword() {
-  const startLogin = () => { window.location.href = getLoginUrl(); };
+  const startLogin = () => { window.location.href = getHomeLoginUrl(); };
   const [method, setMethod] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");

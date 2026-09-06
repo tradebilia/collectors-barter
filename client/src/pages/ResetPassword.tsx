@@ -4,10 +4,10 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { getLoginUrl } from "@/const";
+import { getHomeLoginUrl } from "@/const";
 
 export function ResetPassword() {
-  const startLogin = () => { window.location.href = getLoginUrl(); };
+  const startLogin = () => { window.location.href = getHomeLoginUrl(); };
   const token = new URLSearchParams(window.location.search).get("token") || "";
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
