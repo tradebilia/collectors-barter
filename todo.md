@@ -1599,3 +1599,6 @@
 - [x] Make Step 3 swap arrows more prominent and enlarge item titles, reference numbers, and shipping details where space permits.
 - [x] Maximize Step 4 shipping-stage layout, enlarge item/tracking presentation, and ensure the other member’s single item is displayed.
 - [x] Combine Step 4 payment checklist and cash task into clearer per-member send/receive summaries.
+- [x] Make Step 4 Ship By date prominent and flashing, and use white carrier/tracking controls.
+- [x] Show red Tracking Numbers not submitted until all required tracking is entered, then green Tracking Numbers submitted.
+- [x] Add a per-item Enter/Reset tracking workflow so submitted numbers are locked until intentionally reset.

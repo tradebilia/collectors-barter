@@ -184,6 +184,8 @@ export default function WarRoom() {
   const [removedItemIds, setRemovedItemIds] = useState<number[]>([]);
   // Tracking number inputs for Stage 3
   const [trackingInputs, setTrackingInputs] = useState<{listingId: number; carrier: string; trackingNumber: string}[]>([]);
+  const [confirmedTrackingIds, setConfirmedTrackingIds] = useState<number[]>([]);
+  const [resetTrackingIds, setResetTrackingIds] = useState<number[]>([]);
   // Review/rating form for Stage 5
   const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
   const [reviewText, setReviewText] = useState('');
@@ -305,6 +307,8 @@ export default function WarRoom() {
       toast.success('Tracking information submitted!');
       utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
       setTrackingInputs([]);
+      setConfirmedTrackingIds([]);
+      setResetTrackingIds([]);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -1041,9 +1045,8 @@ export default function WarRoom() {
                   });
                   const myTrackingByListingId = new Map(myTracking.map((tracking: any) => [tracking.listingId, tracking]));
                   const theirTrackingByListingId = new Map(theirTracking.map((tracking: any) => [tracking.listingId, tracking]));
-                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => myTrackingByListingId.has(item.id));
+                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => myTrackingByListingId.has(item.id) && !resetTrackingIds.includes(item.id));
                   const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => theirTrackingByListingId.has(item.id));
-                  const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
                   return (
                     <div className="w-full min-h-[38rem] bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
                       {/* Header */}
@@ -1075,14 +1078,22 @@ export default function WarRoom() {
 
                           <div data-testid="shipping-my-items" className="space-y-3">
                             {myShippingItems.map((item: any) => {
-                              const submittedTracking = myTrackingByListingId.get(item.id) as any;
+                              const submittedTracking = resetTrackingIds.includes(item.id) ? undefined : myTrackingByListingId.get(item.id) as any;
                               const inp = trackingInputs.find(t => t.listingId === item.id) || { listingId: item.id, carrier: 'USPS', trackingNumber: '' };
+                              const isConfirmed = !resetTrackingIds.includes(item.id) && confirmedTrackingIds.includes(item.id);
                               if (submittedTracking) {
                                 const url = getTrackingUrl(submittedTracking.carrier, submittedTracking.trackingNumber);
-                                return <div key={item.id} className="rounded-lg border border-green-500/20 bg-green-900/10 p-3">
-                                  <div className="mb-1 flex items-center gap-2"><span className="rounded bg-green-900/40 px-2 py-0.5 text-[10px] font-bold text-green-400">{submittedTracking.carrier}</span><span className="min-w-0 truncate text-xs text-gray-300">{item.title}</span></div>
-                                  <p className="mb-2 text-xs font-mono text-white">{submittedTracking.trackingNumber}</p>
-                                  {url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">Track on {submittedTracking.carrier} →</a>}
+                                return <div key={item.id} className="rounded-lg border border-green-500/20 bg-green-900/10 p-4">
+                                  <div className="mb-1 flex items-center gap-2"><span className="rounded bg-green-900/40 px-2 py-0.5 text-xs font-bold text-green-400">{submittedTracking.carrier}</span><span className="min-w-0 flex-1 text-base font-semibold text-gray-200">{item.title}</span></div>
+                                  <p className="mb-2 font-mono text-sm text-white">{submittedTracking.trackingNumber}</p>
+                                  <div className="flex items-center justify-between gap-3"><div>{url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-400 hover:underline">Track on {submittedTracking.carrier} →</a>}</div><button type="button" onClick={() => { setResetTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); setConfirmedTrackingIds(prev => prev.filter(id => id !== item.id)); setTrackingInputs(prev => [...prev.filter(t => t.listingId !== item.id), { listingId: item.id, carrier: submittedTracking.carrier, trackingNumber: submittedTracking.trackingNumber }]); }} className="rounded-lg border border-amber-400/50 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20">Reset</button></div>
+                                </div>;
+                              }
+                              if (isConfirmed) {
+                                return <div key={item.id} className="rounded-xl border border-blue-400/40 bg-blue-900/10 p-5">
+                                  <div className="mb-2 flex items-center gap-3"><span className="rounded bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-blue-200">Ready</span><span className="min-w-0 flex-1 text-base font-semibold text-white">{item.title}</span></div>
+                                  <p className="font-mono text-sm text-blue-100">{inp.carrier} · {inp.trackingNumber}</p>
+                                  <button type="button" onClick={() => { setConfirmedTrackingIds(prev => prev.filter(id => id !== item.id)); setResetTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); }} className="mt-3 rounded-lg border border-amber-400/50 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20">Reset</button>
                                 </div>;
                               }
                               return (
@@ -1101,7 +1112,7 @@ export default function WarRoom() {
                                           const existing = prev.filter(t => t.listingId !== item.id);
                                           return [...existing, { ...inp, carrier: e.target.value }];
                                         })}
-                                        className="bg-[#16213e] border border-gray-600 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 shrink-0"
+                                        className="bg-white border border-slate-300 text-slate-900 text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 shrink-0"
                                       >
                                         {['USPS', 'UPS', 'FedEx', 'DHL', 'Other'].map(c => <option key={c} value={c}>{c}</option>)}
                                       </select>
@@ -1122,8 +1133,9 @@ export default function WarRoom() {
                                             return [...existing, { ...inp, trackingNumber: val, carrier: detectedCarrier }];
                                           });
                                         }}
-                                        className="flex-1 bg-[#16213e] border border-gray-600 text-white text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 font-mono"
+                                        className="flex-1 bg-white border border-slate-300 text-slate-900 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 font-mono"
                                       />
+                                      <button type="button" disabled={!inp.trackingNumber.trim()} onClick={() => { setConfirmedTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); setResetTrackingIds(prev => prev.filter(id => id !== item.id)); }} className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40">Enter</button>
                                     </div>
                                   </div>
                                 );
@@ -1187,21 +1199,21 @@ export default function WarRoom() {
                       {/* Status bar */}
                       <div className="flex items-center gap-3 px-6 py-3 bg-[#0f0f1a] border-t border-gray-700">
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          myTracking.length > 0 ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-orange-900/20 border border-orange-500/30 text-orange-400'
+                          myItemsShipped ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {myTracking.length > 0 ? '✓' : '⏳'} {myDisplayName}: {myTracking.length > 0 ? 'Shipped' : 'Awaiting shipment'}
+                          {myItemsShipped ? '✓' : '⏳'} {myDisplayName}: <span className={myItemsShipped ? 'text-green-400' : 'text-red-300'}>{myItemsShipped ? 'Tracking Numbers submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         <div className="w-px h-4 bg-gray-700" />
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          theirTracking.length > 0 ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-gray-800 border border-gray-700 text-gray-500'
+                          theirItemsShipped ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {theirTracking.length > 0 ? '✓' : '○'} {theirDisplayName}: {theirTracking.length > 0 ? 'Shipped' : 'Not yet shipped'}
+                          {theirItemsShipped ? '✓' : '○'} {theirDisplayName}: <span className={theirItemsShipped ? 'text-green-400' : 'text-red-300'}>{theirItemsShipped ? 'Tracking Numbers submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
-                        {myTracking.length > 0 && theirTracking.length > 0 && (
+                        {myItemsShipped && theirItemsShipped && (
                           <p className="ml-auto text-green-400 text-xs font-bold">🚚 Both packages on the way!</p>
                         )}
-                        {shippingDeadline && (myTracking.length === 0 || theirTracking.length === 0) && (
-                          <p className={`ml-auto text-xs font-semibold ${shippingDeadline.getTime() < Date.now() ? 'text-red-300' : 'text-orange-300'}`}>
+                        {shippingDeadline && (!myItemsShipped || !theirItemsShipped) && (
+                            <p className={`ml-auto text-lg font-extrabold uppercase tracking-wide animate-pulse ${shippingDeadline.getTime() < Date.now() ? 'text-red-300' : 'text-orange-200'}`}>
                             Ship by {shippingDeadline.toLocaleDateString()}
                           </p>
                         )}
@@ -2282,7 +2294,13 @@ export default function WarRoom() {
           {/* Stage 4: Shipping — submit tracking */}
           {currentStage === 'shipping' && (() => {
             const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
-            const hasNewTracking = trackingInputs.some(t => t.trackingNumber.trim().length > 0);
+            const { myItems: myShippingItems } = getLockedShipmentItems({ requestedListing, offeredListings: trade?.offeredListings || [], viewerUserId: myUserId });
+            const myTrackingById = new Map(myTracking.map((entry: any) => [entry.listingId, entry]));
+            const allMyTrackingReady = myShippingItems.length > 0 && myShippingItems.every((item: any) => {
+              const saved = myTrackingById.has(item.id) && !resetTrackingIds.includes(item.id);
+              const draft = confirmedTrackingIds.includes(item.id) && Boolean(trackingInputs.find(t => t.listingId === item.id)?.trackingNumber.trim());
+              return saved || draft;
+            });
             const pendingCashSteps = (cashAdjustmentContextQuery.data?.obligations ?? []).filter((obligation: any) => !['received', 'verified'].includes(obligation.payment?.status ?? 'pending')).length;
             return (
               <>
@@ -2292,14 +2310,19 @@ export default function WarRoom() {
                   </svg>
                   {myTracking.length > 0 ? pendingCashSteps > 0 ? `Tracking submitted — ${pendingCashSteps} cash step${pendingCashSteps === 1 ? '' : 's'} still required above` : `Tracking submitted — waiting for ${theirDisplayName} to finish Shipping` : 'Ship your items and enter your tracking number above'}
                 </p>
-                {myTracking.length === 0 && (
+                {(myTracking.length === 0 || resetTrackingIds.length > 0) && (
                   <button
                     onClick={() => {
-                      const validTracking = trackingInputs.filter(t => t.trackingNumber.trim().length > 0);
-                      if (validTracking.length === 0) { toast.error('Please enter at least one tracking number.'); return; }
-                      submitTrackingMutation.mutate({ proposalId, trackingNumbers: validTracking.map(t => ({ listingId: t.listingId, carrier: t.carrier as any, trackingNumber: t.trackingNumber })) });
+                      if (!allMyTrackingReady) { toast.error('Press Enter to lock every tracking number before submitting.'); return; }
+                      const validTracking = myShippingItems.map((item: any) => {
+                        const draft = trackingInputs.find(t => t.listingId === item.id);
+                        const saved = myTrackingById.get(item.id) as any;
+                        return draft && confirmedTrackingIds.includes(item.id) ? { listingId: item.id, carrier: draft.carrier as any, trackingNumber: draft.trackingNumber } : saved ? { listingId: item.id, carrier: saved.carrier as any, trackingNumber: saved.trackingNumber } : null;
+                      }).filter(Boolean) as Array<{listingId: number; carrier: any; trackingNumber: string}>;
+                      if (validTracking.length !== myShippingItems.length) { toast.error('Enter and confirm a tracking number for every item.'); return; }
+                      submitTrackingMutation.mutate({ proposalId, trackingNumbers: validTracking });
                     }}
-                    disabled={!hasNewTracking || submitTrackingMutation.isPending}
+                    disabled={!allMyTrackingReady || submitTrackingMutation.isPending}
                     className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
