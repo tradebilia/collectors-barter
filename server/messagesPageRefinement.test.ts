@@ -44,6 +44,12 @@ describe("Messages page refinements", () => {
     expect(messagesSource).not.toContain("Collector direct line");
   });
 
+  it("keeps the selected direct conversation visible while the Unread folder refreshes it to seen", () => {
+    expect(messagesSource).toContain('const retainActiveDirectThread = thread.kind === "direct" && thread.key === activeThreadKey');
+    expect(messagesSource).toContain('return thread.unread || retainActiveDirectThread;');
+    expect(messagesSource).toContain('folder, directDirectionFilter, user?.id, activeThreadKey');
+  });
+
   it("uses the approved subject-first inbox hierarchy with inquiry-only Item # links and compact context", () => {
     expect(messagesSource).toContain(">Inbox Folders</h2>");
     expect(messagesSource).toContain("`Messages with ${activeThread.counterpartName}`");

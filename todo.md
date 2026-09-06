@@ -1578,3 +1578,5 @@
 - [x] Remove the forum Show controls for All topics and Unanswered, leaving sorting controls only.
 - [x] Make forum reply usernames bold and slightly larger while preserving thread readability.
 - [x] Increase reply username size and boldness enough to visibly distinguish it from the elapsed time label.
+- [x] Prevent a newly opened unread direct message from disappearing from the current list before the member can read it.
+- [x] Keep a selected direct-message thread visible in Unread after it is marked seen, until the member leaves the conversation or folder.

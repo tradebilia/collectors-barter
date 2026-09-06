@@ -259,10 +259,13 @@ export default function Messages() {
           directDirectionFilter,
         );
       }
-      if (folder === "unread") return thread.unread;
+      if (folder === "unread") {
+        const retainActiveDirectThread = thread.kind === "direct" && thread.key === activeThreadKey;
+        return thread.unread || retainActiveDirectThread;
+      }
       return true;
     });
-  }, [allThreads, archivedThreads, folder, directDirectionFilter, user?.id]);
+  }, [allThreads, archivedThreads, folder, directDirectionFilter, user?.id, activeThreadKey]);
 
   const filteredInquiries = useMemo(() => {
     if (folder === "deleted") return deletedInquiriesQuery.data ?? [];
