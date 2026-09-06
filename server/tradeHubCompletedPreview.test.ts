@@ -21,5 +21,14 @@ describe("Trade Hub completed exchange preview", () => {
     expect(hubSource).not.toContain("Items actually swapped");
     expect(hubSource).toContain("Mutual Exchange");
     expect(hubSource).toContain("completedItemCount");
+    expect(routerSource).toContain("oup.avatarUrl as otherAvatarUrl");
+    expect(routerSource).toContain("paymentRows");
+    expect(routerSource).toContain("paymentMethod: payment.paymentMethod");
+    expect(hubSource).toContain("Cash exchanged");
+    expect(hubSource).toContain("navigate(`/profile/${selectedTrade.otherUser.id}`)");
+    expect(hubSource).toContain("; {filteredTrades.length}");
+    expect(hubSource).toContain("bg-white px-4 py-2 text-gray-900");
+    expect(hubSource).toContain("from-blue-600 to-cyan-500");
+    expect(hubSource).toContain("activeFolder === \"completed\"");
   });
 });

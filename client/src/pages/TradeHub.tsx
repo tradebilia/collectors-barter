@@ -1,11 +1,11 @@
 /**
  * Trade Hub — The central dashboard for all trade activity.
- * 
+ *
  * Layout: TopBar → Hero Section (TradeHub.svg) → CategoryBar → 3-Column Interface
  * - Sidebar (Left): 5 Folders (Negotiating, Accepted, Shipped, Declined, Completed)
  * - Inbox (Center): High-density card list with search/filters
  * - Preview (Right): Item image, trader reputation, "Enter Trade Room" button
- * 
+ *
  * Reference: FINAL_TRADE_FLOW_IMPLEMENTATION_BLUEPRINT.md (Page 1)
  */
 
@@ -54,9 +54,14 @@ function timeAgo(dateStr: string | null): string {
   return `${Math.floor(diffDays / 30)}mo ago`;
 }
 
-function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; sent?: any[] } }) {
+function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; sent?: any[]; cash?: Array<{ amount: string; direction: string; paymentMethod?: string | null }> } }) {
   const receivedItems = exchange.received || [];
   const sentItems = exchange.sent || [];
+  const cash = exchange.cash || [];
+  const paymentMethodLabel = (method?: string | null) => {
+    if (!method) return "payment method not recorded";
+    return method === "cash_app" ? "Cash App" : method.charAt(0).toUpperCase() + method.slice(1);
+  };
   const renderItems = (items: any[], emptyLabel: string) => {
     if (!items.length) return <p className="py-3 text-center text-xs text-gray-500">{emptyLabel}</p>;
     return <div className="space-y-2">{items.map((item: any) => (
@@ -77,9 +82,10 @@ function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; 
   };
 
   return (
-    <section className="space-y-3 rounded-lg border border-purple-900/40 bg-[#11113a] p-3">
+    <section className="space-y-3 rounded-lg border border-blue-900/50 bg-[#11113a] p-3">
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-white">Completed Exchange</h4>
+        {cash.length > 0 && <span className="rounded-md border border-blue-400/40 bg-blue-500/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-200">Cash included</span>}
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
@@ -91,6 +97,18 @@ function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; 
           {renderItems(sentItems, "No collectible item sent")}
         </div>
       </div>
+      {cash.length > 0 && (
+        <div className="rounded-md border border-blue-400/30 bg-blue-950/40 px-3 py-2">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-blue-200">Cash exchanged</p>
+          <div className="mt-1 space-y-1">
+            {cash.map((payment, index) => (
+              <p key={`${payment.direction}-${payment.amount}-${index}`} className="text-xs font-semibold text-white">
+                {payment.direction}: ${Number(payment.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="font-normal text-blue-200">via {paymentMethodLabel(payment.paymentMethod)}</span>
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </section>
   );
 }
@@ -179,7 +197,7 @@ export default function TradeHub() {
               placeholder="Search by User or TR#..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 max-w-sm bg-[#1a1a4a] border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-purple-500"
+              className="flex-1 max-w-sm rounded-lg border border-blue-200 bg-white px-4 py-2 text-gray-900 placeholder-gray-500 focus:border-blue-500 focus:outline-none"
             />
             <div className="flex items-center gap-2 text-sm text-gray-400">
               {unreadCountQuery.data?.count ? (
@@ -192,7 +210,7 @@ export default function TradeHub() {
 
           {/* 3-Column Layout */}
           <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-12">
-            
+
             {/* Sidebar — Folders */}
             <aside className="space-y-1 lg:col-span-2">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Trade Status</h3>
@@ -201,8 +219,8 @@ export default function TradeHub() {
                   key={folder}
                   onClick={() => { setActiveFolder(folder); setSelectedTradeId(null); }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors ${
-                    activeFolder === folder
-                      ? 'bg-purple-600 text-white font-medium'
+                      activeFolder === folder
+                      ? 'bg-blue-600 text-white font-medium'
                       : 'text-gray-300 hover:bg-[#1a1a4a]'
                   }`}
                 >
@@ -217,10 +235,16 @@ export default function TradeHub() {
               <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
                 <h2 className="text-white font-semibold text-sm uppercase tracking-wider">
                   {folderLabels[activeFolder]}
-                  {filteredTrades.length > 0 && (
-                    <span className="ml-2 bg-purple-600 text-white text-xs px-2 py-0.5 rounded-full">
-                      {filteredTrades.length}
-                    </span>
+                      {filteredTrades.length > 0 && (
+                    activeFolder === "completed" ? (
+                      <span className="ml-2 rounded-md border border-blue-400/50 bg-blue-500/20 px-2 py-0.5 text-sm font-bold text-blue-100">
+                        ; {filteredTrades.length}
+                      </span>
+                    ) : (
+                      <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
+                        {filteredTrades.length}
+                      </span>
+                    )
                   )}
                 </h2>
                 <span className="text-xs text-gray-400">Sort by: Last Active</span>
@@ -248,8 +272,12 @@ export default function TradeHub() {
                     >
                       <div className="flex items-center gap-3">
                         {/* Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                          {trade.otherUser?.displayName?.[0] || trade.otherUser?.username?.[0] || '?'}
+                        <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-sm">
+                          {trade.otherUser?.avatarUrl ? (
+                            <img src={trade.otherUser.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            trade.otherUser?.displayName?.[0] || trade.otherUser?.username?.[0] || '?'
+                          )}
                         </div>
 
                         {/* Details */}
@@ -334,9 +362,19 @@ export default function TradeHub() {
                   <div className="border-t border-gray-700 pt-4">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold">
-                          {selectedTrade.otherUser?.displayName?.[0] || selectedTrade.otherUser?.username?.[0] || '?'}
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => selectedTrade.otherUser?.id && navigate(`/profile/${selectedTrade.otherUser.id}`)}
+                          disabled={!selectedTrade.otherUser?.id}
+                          aria-label={`View ${selectedTrade.otherUser?.displayName || selectedTrade.otherUser?.username || "member"}'s public profile`}
+                          className="h-12 w-12 overflow-hidden rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold transition hover:ring-2 hover:ring-blue-300 disabled:cursor-default"
+                        >
+                          {selectedTrade.otherUser?.avatarUrl ? (
+                            <img src={selectedTrade.otherUser.avatarUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            selectedTrade.otherUser?.displayName?.[0] || selectedTrade.otherUser?.username?.[0] || '?'
+                          )}
+                        </button>
                         {/* Online Status: Green = online, Red = offline */}
                         <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#1a1a4a] bg-red-500" title="Offline" />
                       </div>
@@ -443,7 +481,7 @@ export default function TradeHub() {
                   {/* Enter Trade Room Button */}
                   <button
                     onClick={() => handleEnterWarRoom(selectedTrade.id)}
-                    className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-purple-500/25 text-center"
+                    className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-blue-500/25 text-center"
                   >
                     {activeFolder === 'proposal' ? '📨 View Proposal' : '⚔️ Enter Trade Room'}
                   </button>

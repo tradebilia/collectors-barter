@@ -1,6 +1,6 @@
 /**
  * Trade Flow Router — Full Implementation
- * 
+ *
  * Reference: FINAL_TRADE_FLOW_IMPLEMENTATION_BLUEPRINT.md
  * Reference: COMPLETE_TRADE_FLOW_SPECIFICATION.md
  */
@@ -1235,6 +1235,7 @@ export const tradeFlowRouter = router({
           CASE WHEN tp.requesterId = ${userId} THEN tp.recipientId ELSE tp.requesterId END as otherUserId,
           ou.username as otherUsername,
           oup.displayName as otherDisplayName,
+          oup.avatarUrl as otherAvatarUrl,
           -- Requested listing info
           l.title as listingTitle,
           l.estimatedValue as listingValue,
@@ -1282,6 +1283,7 @@ export const tradeFlowRouter = router({
           id: row.otherUserId,
           username: row.otherUsername,
           displayName: row.otherDisplayName || row.otherUsername,
+          avatarUrl: row.otherAvatarUrl || null,
           avgRating: row.otherAvgRating ? String(row.otherAvgRating) : null,
           reviewCount: Number(row.otherReviewCount) || 0,
           ebayVerified: !!row.otherEbayVerified,
@@ -1322,9 +1324,24 @@ export const tradeFlowRouter = router({
           image: item.image,
         }));
 
+        const paymentRows = await db.select({
+          payerId: tradePayments.payerId,
+          amount: tradePayments.amount,
+          paymentMethod: tradePayments.paymentMethod,
+        }).from(tradePayments).where(eq(tradePayments.proposalId, trade.id)) as unknown as Array<{ payerId: number; amount: string; paymentMethod: string | null }>;
+
+        const cash = (paymentRows || []).map((payment: any) => ({
+          amount: String(payment.amount ?? "0"),
+          direction: Number(payment.payerId) === Number(userId) ? "You pay" : "You receive",
+          paymentMethod: payment.paymentMethod || null,
+        }));
+
         return {
           ...trade,
-          completedExchange: buildCompletedTradeExchange(trade.direction, requestedItem, offeredItems),
+          completedExchange: {
+            ...buildCompletedTradeExchange(trade.direction, requestedItem, offeredItems),
+            cash,
+          },
         };
       }));
 
@@ -1677,12 +1694,12 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review. Both parties confirmed, proceeding to Shipping stage.', ${now})`
         );
-        
+
         // Clean up the confirmation records
         await db.execute(
           sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`
         );
-        
+
         return { success: true, mutualConfirmation: true };
       } else {
         // First confirmation — record it and notify other party
@@ -1696,7 +1713,7 @@ export const tradeFlowRouter = router({
         await db.execute(
           sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_accepted', 'Confirmed review — awaiting partner confirmation to proceed to Shipping.', ${now})`
         );
-        
+
         return { success: true, mutualConfirmation: false };
       }
     }),
@@ -2584,7 +2601,7 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
       };
 
       if (analysis.summary) analysis.summary = stripCitations(analysis.summary);
-      
+
       // Strip citations from per-item insights (objects keyed by item name)
       if (typeof analysis.myItemInsights === 'object' && !Array.isArray(analysis.myItemInsights)) {
         Object.keys(analysis.myItemInsights).forEach(key => {
@@ -2606,10 +2623,10 @@ Respond with ONLY this JSON object — no markdown, no code blocks, just raw JSO
           analysis.theirItemFuturePotential[key] = stripCitations(analysis.theirItemFuturePotential[key]);
         });
       }
-      
+
       if (analysis.negotiationTip) analysis.negotiationTip = stripCitations(analysis.negotiationTip);
       if (analysis.crossCategoryComparison) analysis.crossCategoryComparison = stripCitations(analysis.crossCategoryComparison);
-      
+
       // Strip citations from strength/weakness objects (keyed by item name, values are arrays)
       if (typeof analysis.myItemStrengths === 'object' && !Array.isArray(analysis.myItemStrengths)) {
         Object.keys(analysis.myItemStrengths).forEach(key => {

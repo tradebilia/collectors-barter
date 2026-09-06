@@ -1616,3 +1616,5 @@
 - [x] Add regression coverage and verify the multi-item Recent Trades presentation at desktop and mobile widths. The focused test, TypeScript check, production build, whitespace validation, and desktop/mobile screenshots passed; each side now shows up to four compact item previews plus a remaining-item count.
 
 - [x] Match the Trade Hub hero section height and category-bar position to the main homepage at desktop and mobile widths.
+
+- [x] Update Trade Hub completed-trade counts, member avatar/profile linking, cash preview, search-field styling, and blue status/action emphasis. Focused tests, TypeScript, production build, and modified-file whitespace checks passed; authenticated preview capture was rate-limited after restart.
