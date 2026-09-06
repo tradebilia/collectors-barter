@@ -1470,11 +1470,11 @@
 
 - [x] Trace the deployed custom-auth account ID and forumPosts foreign-key relationship behind the repeated topic-creation error.
 - [x] Repair the active account relationship or topic creation compatibility so signed-in users can create forum topics.
-- [ ] Permanently suppress raw database errors in the new-topic form, add regression coverage, and verify the repaired flow with a signed-in user.
+- [x] Permanently suppress raw database errors in the new-topic form, add regression coverage, and verify the repaired flow with a signed-in user.
 
 - [x] Capture the exact deployed topic-creation constraint failure and compare the live forum schema with the active insert.
 - [x] Apply the smallest safe live compatibility repair without modifying existing forum posts.
-- [ ] Add precise regression coverage and verify signed-in topic creation end to end.
+- [x] Add precise regression coverage and verify signed-in topic creation end to end.
 
 - [x] Trace the live legacy forum table moderation update failure and current admin removal path.
 - [x] Implement legacy-compatible admin removal with safe member-facing feedback and preserve expanded-schema moderation behavior.

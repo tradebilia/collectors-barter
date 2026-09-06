@@ -2310,7 +2310,7 @@ export default function WarRoom() {
                   </svg>
                   {myTracking.length > 0 ? pendingCashSteps > 0 ? `Tracking submitted — ${pendingCashSteps} cash step${pendingCashSteps === 1 ? '' : 's'} still required above` : `Tracking submitted — waiting for ${theirDisplayName} to finish Shipping` : 'Ship your items and enter your tracking number above'}
                 </p>
-                {(myTracking.length === 0 || resetTrackingIds.length > 0) && (
+                {myShippingItems.length > 0 && (myTracking.length === 0 || resetTrackingIds.length > 0) && (
                   <button
                     onClick={() => {
                       if (!allMyTrackingReady) { toast.error('Press Enter to lock every tracking number before submitting.'); return; }

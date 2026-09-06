@@ -57,6 +57,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('Press Enter to lock every tracking number before submitting.');
     expect(warRoomSource).toContain('>Enter</button>');
     expect(warRoomSource).toContain('>Reset</button>');
+    expect(warRoomSource).toContain('myShippingItems.length > 0 && (myTracking.length === 0 || resetTrackingIds.length > 0)');
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
