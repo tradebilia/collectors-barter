@@ -740,7 +740,7 @@ export const appRouter = router({
         }
         if (!isRecoveryRequestAllowed(`password-phone:${phone}`)) {
           logPasswordRecoveryDiagnostic("phone", "rate_limited");
-          return genericResult;
+          throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Too many recovery code requests. Please wait a few minutes before trying again." });
         }
         const db = await requireDb();
         const profiles = await db

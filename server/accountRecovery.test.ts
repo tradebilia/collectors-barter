@@ -102,6 +102,8 @@ describe("recovery source-integrity", () => {
     expect(router).toContain("[PasswordRecovery] channel=${channel} outcome=${outcome}");
     expect(router).toContain('logPasswordRecoveryDiagnostic("email", "provider_dispatch_started")');
     expect(router).toContain('logPasswordRecoveryDiagnostic("phone", "provider_dispatch_started")');
+    expect(router).toContain('code: "TOO_MANY_REQUESTS"');
+    expect(router).toContain("Too many recovery code requests. Please wait a few minutes before trying again.");
     expect(router).not.toContain("console.info(`[PasswordRecovery] email=${email}");
     expect(router).not.toContain("console.info(`[PasswordRecovery] phone=${phone}");
   });
