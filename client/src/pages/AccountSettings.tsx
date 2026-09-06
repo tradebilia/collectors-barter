@@ -108,7 +108,7 @@ export default function AccountSettings() {
   const urlTab = new URLSearchParams(window.location.search).get("tab");
   const initialTab = validTabs.includes(urlTab as any) ? (urlTab as typeof validTabs[number]) : "profile";
   const [activeTab, setActiveTab] = useState<"profile" | "membership" | "security" | "integrations" | "communications" | "preferences">(initialTab);
-  
+
   // Profile Form State
   const [confirmationDialog, setConfirmationDialog] = useState<{
     isOpen: boolean;
@@ -244,7 +244,7 @@ export default function AccountSettings() {
     hideInventoryValue: false,
     receiveContactRequests: true,
   });
-  
+
   // Use ref to track if preferences have been initialized to prevent re-renders from resetting checkboxes
   const preferencesInitializedRef = useRef(false);
 
@@ -292,7 +292,7 @@ export default function AccountSettings() {
       // Parse the combined address to extract street (everything before first comma)
       const fullAddress = profile.contactAddress || "";
       const streetOnly = fullAddress.split(",")[0].trim();
-      
+
       setIdentityInfo({
         firstName: (profile as any).firstName || "",
         lastName: (profile as any).lastName || "",
@@ -547,7 +547,7 @@ export default function AccountSettings() {
           businessWebsite: merchantForm.businessWebsite || undefined,
         }),
       };
-      
+
       // Handle avatar upload if a new preview was set
       if (profileForm.avatarPreview && profileForm.avatarPreview.startsWith('data:')) {
         console.log("[AccountSettings] Avatar preview detected, converting to upload format");
@@ -559,15 +559,29 @@ export default function AccountSettings() {
           contentBase64: base64Data,
         };
       }
-      
+
       console.log("[AccountSettings] Payload being sent:", JSON.stringify(payload, null, 2));
       console.log("[AccountSettings] User role:", user?.role);
       await saveProfileMutation.mutateAsync(payload);
       console.log("[AccountSettings] Profile saved successfully");
+
+      setExternalPaymentSaving(true);
+      const paymentResult = await saveExternalPaymentMethodsMutation.mutateAsync({
+        enabledMethods: enabledPaymentMethods,
+        paypalEmail: enabledPaymentMethods.paypal ? externalPaymentForm.paypalEmail.trim() || null : null,
+        venmoUsername: enabledPaymentMethods.venmo ? externalPaymentForm.venmoUsername.trim() || null : null,
+        cashAppCashtag: enabledPaymentMethods.cash_app ? externalPaymentForm.cashAppCashtag.trim() || null : null,
+        zelleEmail: enabledPaymentMethods.zelle ? externalPaymentForm.zelleEmail.trim() || null : null,
+        zellePhone: enabledPaymentMethods.zelle ? externalPaymentForm.zellePhone.trim() || null : null,
+      });
+      await externalPaymentMethodsQuery.refetch();
+      setExternalPaymentSaving(false);
       setConfirmationDialog({
         isOpen: true,
         title: "Success",
-        message: "Profile updated successfully!",
+        message: paymentResult.preferencesChanged
+          ? "Profile and payment methods updated successfully!"
+          : "Profile updated successfully!",
       });
       // Refresh the dashboard data and auth context
       await utils.market.dashboard.refetch();
@@ -580,6 +594,7 @@ export default function AccountSettings() {
       await utils.admin.getAllUsers.refetch();
       await utils.admin.getPlatformStatistics.refetch();
     } catch (error: any) {
+      setExternalPaymentSaving(false);
       console.error("[AccountSettings] Error saving profile:", error);
       setConfirmationDialog({
         isOpen: true,
@@ -614,26 +629,6 @@ export default function AccountSettings() {
     } catch (error: any) {
       toast.dismiss(toastId);
       toast.error(error.message || "Failed to change password");
-    }
-  };
-
-  const handleSaveExternalPaymentMethods = async () => {
-    setExternalPaymentSaving(true);
-    try {
-      const result = await saveExternalPaymentMethodsMutation.mutateAsync({
-        enabledMethods: enabledPaymentMethods,
-        paypalEmail: enabledPaymentMethods.paypal ? externalPaymentForm.paypalEmail.trim() || null : null,
-        venmoUsername: enabledPaymentMethods.venmo ? externalPaymentForm.venmoUsername.trim() || null : null,
-        cashAppCashtag: enabledPaymentMethods.cash_app ? externalPaymentForm.cashAppCashtag.trim() || null : null,
-        zelleEmail: enabledPaymentMethods.zelle ? externalPaymentForm.zelleEmail.trim() || null : null,
-        zellePhone: enabledPaymentMethods.zelle ? externalPaymentForm.zellePhone.trim() || null : null,
-      });
-      await externalPaymentMethodsQuery.refetch();
-      toast.success(result.preferencesChanged ? "Payment methods saved privately. Accepted trade payment details are unchanged." : "Payment methods saved privately.");
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to save payment destinations.");
-    } finally {
-      setExternalPaymentSaving(false);
     }
   };
 
@@ -765,8 +760,8 @@ export default function AccountSettings() {
                           onDragLeave={handleDragLeave}
                           onDrop={handleDrop}
                           className={`rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
-                            isDragging 
-                              ? 'border-amber-500 bg-amber-50/50' 
+                            isDragging
+                              ? 'border-amber-500 bg-amber-50/50'
                               : 'border-slate-300 hover:border-slate-400'
                           }`}
                         >
@@ -793,102 +788,102 @@ export default function AccountSettings() {
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <Label htmlFor="firstName">First Name</Label>
-                        <Input 
+                        <Input
                           id="firstName"
                           name="firstName"
-                          value={identityInfo.firstName} 
+                          value={identityInfo.firstName}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, firstName: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="lastName">Last Name</Label>
-                        <Input 
+                        <Input
                           id="lastName"
                           name="lastName"
-                          value={identityInfo.lastName} 
+                          value={identityInfo.lastName}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, lastName: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
-                        <Input 
+                        <Input
                           id="email"
                           name="email"
                           type="email"
-                          value={identityInfo.email} 
+                          value={identityInfo.email}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, email: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="country">Country</Label>
-                        <Input 
+                        <Input
                           id="country"
                           name="country"
-                          value={identityInfo.country} 
+                          value={identityInfo.country}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, country: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="street">Street Address</Label>
-                        <Input 
+                        <Input
                           id="street"
                           name="street"
-                          value={identityInfo.street} 
+                          value={identityInfo.street}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, street: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="town">Town/City</Label>
-                        <Input 
+                        <Input
                           id="town"
                           name="town"
-                          value={identityInfo.town} 
+                          value={identityInfo.town}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, town: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="state">State</Label>
-                        <Input 
+                        <Input
                           id="state"
                           name="state"
-                          value={identityInfo.state} 
+                          value={identityInfo.state}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, state: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="zipCode">Zip Code</Label>
-                        <Input 
+                        <Input
                           id="zipCode"
                           name="zipCode"
-                          value={identityInfo.zipCode} 
+                          value={identityInfo.zipCode}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, zipCode: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                       <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="phoneNumber">Phone Number</Label>
-                        <Input 
+                        <Input
                           id="phoneNumber"
                           name="phoneNumber"
-                          value={identityInfo.phoneNumber} 
+                          value={identityInfo.phoneNumber}
                           onChange={(e) => setIdentityInfo(prev => ({ ...prev, phoneNumber: e.target.value }))}
                           disabled={user?.role !== 'admin'}
-                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed' 
+                          className='rounded-lg border-slate-200 border bg-white disabled:opacity-50 disabled:cursor-not-allowed'
                         />
                       </div>
                     </div>
@@ -995,12 +990,12 @@ export default function AccountSettings() {
                       <div className="rounded-lg border border-slate-200 p-4"><label className="flex cursor-pointer items-center gap-3" htmlFor="payment-enable-zelle"><input id="payment-enable-zelle" type="checkbox" checked={enabledPaymentMethods.zelle} onChange={(event) => handlePaymentMethodToggle("zelle", event.target.checked)} className="h-4 w-4 rounded border-slate-300" /><img src={externalPaymentMethodOptions[3].logo} alt="Zelle" className="h-8 w-auto max-w-[11rem] object-contain object-left" /></label>{enabledPaymentMethods.zelle && <div className="mt-3 space-y-1.5"><Label htmlFor="payment-zelle">Zelle email or U.S. mobile number</Label><Input id="payment-zelle" inputMode="text" placeholder="Email address or U.S. mobile number" value={zelleDestination} onChange={(event) => { const destination = event.target.value; const isEmailDestination = destination.includes("@"); setExternalPaymentForm((current) => ({ ...current, zelleEmail: isEmailDestination ? destination : "", zellePhone: isEmailDestination ? "" : destination })); }} /></div>}</div>
                     </div>
                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-relaxed text-amber-950"><strong>Important:</strong> Tradebilia does not process, hold, insure, refund, or guarantee direct payments. Enabled methods are member-provided, not platform-verified. Your private destination is shared only with the agreed payer after both members accept the final terms.</div>
-                    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">You may change these private preferences at any time, except while a selected cash payment is awaiting your receipt confirmation.</p><Button type="button" onClick={handleSaveExternalPaymentMethods} disabled={externalPaymentSaving || externalPaymentMethodsQuery.isLoading} className="rounded-lg">{externalPaymentSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}<span className="ml-1">Save payment methods</span></Button></div>
+                    <div className="flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-slate-500">These private payment preferences are saved together with your Profile Changes. You may change them at any time, except while a selected cash payment is awaiting your receipt confirmation.</p></div>
                   </div>
 
-                  <Button 
-                    onClick={handleSaveProfile} 
-                    disabled={saveProfileMutation.isPending}
+                  <Button
+                    onClick={handleSaveProfile}
+                    disabled={saveProfileMutation.isPending || externalPaymentSaving}
                     className="w-full rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
                   >
                     {saveProfileMutation.isPending ? (
@@ -1181,8 +1176,8 @@ export default function AccountSettings() {
                         className="flex flex-col items-stretch gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex items-center gap-3">
-                          <img 
-                            src={source.logo} 
+                          <img
+                            src={source.logo}
                             alt={source.label}
                             className="h-12 w-auto object-contain"
                           />
@@ -1216,7 +1211,7 @@ export default function AccountSettings() {
                   { key: 'whatnot', label: 'WhatNot', logo: 'https://assets.tradebilia.com/WhatNot_ab669ac9.png', isConnected: false },
                 ];
                 const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
-                
+
                 return pendingPlatforms.length > 0 ? (
                   <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                     <CardHeader>
@@ -1533,7 +1528,7 @@ export default function AccountSettings() {
                               className="h-4 w-4 rounded accent-blue-600 cursor-pointer"
                               style={{ pointerEvents: 'none' }}
                             />
-                            <label 
+                            <label
                               htmlFor={checkboxId}
                               className="text-sm text-slate-700 cursor-pointer flex-1 pointer-events-none"
                             >
