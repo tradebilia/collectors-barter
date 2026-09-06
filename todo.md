@@ -1637,4 +1637,4 @@
 
 - [ ] Trace and repair the deployed password-recovery early exit that prevents requests from reaching Resend or Twilio, using privacy-safe request diagnostics and real provider confirmation.
 
-- [ ] Repair the post-reset sign-in redirect loop so successful new-password authentication returns to the main homepage instead of reopening the password-recovery screen.
+- [x] Repair the post-reset sign-in redirect loop so successful new-password authentication returns to the main homepage instead of reopening the password-recovery screen. User confirmed the new password sign-in reaches the homepage successfully.
