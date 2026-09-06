@@ -45,13 +45,11 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
   });
 
   const sendDirectMessageMutation = trpc.market.sendDirectMessage.useMutation({
-    onSuccess: (data) => {
+    onSuccess: () => {
       toast.success(`Message sent to ${recipient.displayName}!`);
       setSubject("");
       setBody("");
       onClose();
-      // Navigate to the thread in the inbox
-      setLocation(`/messages?direct=${recipient.id}`);
     },
     onError: (err) => {
       toast.error(err.message || "Failed to send message");
@@ -102,8 +100,8 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
         {/* Header */}
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#7f31ff]/10">
-              <Mail className="h-5 w-5 text-[#7f31ff]" />
+            <div className="rounded-xl bg-blue-100 p-2">
+              <Mail className="h-5 w-5 text-blue-700" />
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-slate-900">New Message</DialogTitle>
@@ -131,7 +129,7 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
               placeholder="What is this about?"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="rounded-xl border-slate-200 focus-visible:ring-[#7f31ff]/30"
+              className="rounded-xl border-slate-200 bg-white focus-visible:ring-blue-500/30"
               maxLength={255}
             />
           </div>
@@ -144,7 +142,7 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
               placeholder="Write your message here..."
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="rounded-xl border-slate-200 focus-visible:ring-[#7f31ff]/30 min-h-[140px] resize-none"
+              className="min-h-[140px] resize-none rounded-xl border-slate-200 bg-white focus-visible:ring-blue-500/30"
               maxLength={5000}
             />
             <p className="text-right text-xs text-slate-400">{body.length}/5000</p>
@@ -162,7 +160,7 @@ export function ComposeMessageModal({ isOpen, onClose, recipient, defaultSubject
             Cancel
           </Button>
           <Button
-            className="rounded-xl bg-[#7f31ff] hover:bg-[#6a29d6] font-bold px-6"
+            className="rounded-xl bg-blue-700 px-6 font-bold text-white hover:bg-blue-800"
             onClick={handleSend}
             disabled={sendMutation.isPending || !subject.trim() || !body.trim()}
           >

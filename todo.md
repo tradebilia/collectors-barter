@@ -1580,3 +1580,5 @@
 - [x] Increase reply username size and boldness enough to visibly distinguish it from the elapsed time label.
 - [x] Prevent a newly opened unread direct message from disappearing from the current list before the member can read it.
 - [x] Keep a selected direct-message thread visible in Unread after it is marked seen, until the member leaves the conversation or folder.
+- [x] Keep members on a public profile after they send a direct message, with a clear in-place success confirmation.
+- [x] Use white subject and message fields plus blue Send Message and mail-icon styling in the public-profile New Message composer.

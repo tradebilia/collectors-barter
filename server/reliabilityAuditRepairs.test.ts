@@ -10,6 +10,14 @@ describe("verified reliability-audit repairs", () => {
     expect(source("client/src/components/ComposeMessageModal.tsx")).toContain("/messages?inquiry=${data.id}");
   });
 
+  it("keeps a sender on the public profile after a direct message is sent and uses the approved composer colors", () => {
+    const composeSource = source("client/src/components/ComposeMessageModal.tsx");
+    expect(composeSource).not.toContain("/messages?direct=${recipient.id}");
+    expect(composeSource).toContain('bg-white focus-visible:ring-blue-500/30');
+    expect(composeSource).toContain('text-blue-700');
+    expect(composeSource).toContain('bg-blue-700 px-6 font-bold text-white hover:bg-blue-800');
+  });
+
   it("persists the Messages communication preference", () => {
     const routerSource = source("server/routers.ts");
     expect(routerSource).toContain("messages: z.object({ email: z.boolean(), text: z.boolean() })");
