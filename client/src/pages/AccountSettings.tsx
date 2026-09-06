@@ -47,7 +47,6 @@ const categoryOptions = [
 ] as const;
 
 const accountSources = [
-  { value: "paypal", label: "PayPal", logo: "https://assets.tradebilia.com/Paypal_25ebc114.png" },
   { value: "whatnot", label: "Whatnot", logo: "https://assets.tradebilia.com/WhatNot_ab669ac9.png" },
 ] as const;
 
@@ -1155,7 +1154,7 @@ export default function AccountSettings() {
               <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
                 <CardHeader>
                   <CardTitle>Connected Accounts</CardTitle>
-                  <CardDescription>Link external accounts to verify your trading history and build trust</CardDescription>
+                  <CardDescription>Verified accounts and references help confirm your information, demonstrate your trading history, and give other members more confidence when deciding whether to trade with you.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
@@ -1202,36 +1201,7 @@ export default function AccountSettings() {
                 </CardContent>
               </Card>
 
-              {/* Pending Connections Quick Links */}
-              {(() => {
-                const allPlatforms = [
-                  { key: 'facebook', label: 'Facebook', logo: 'https://assets.tradebilia.com/Facebooklogo_0c02c2d1.png', isConnected: !!user?.facebookId },
-                  { key: 'linkedin', label: 'LinkedIn', logo: 'https://assets.tradebilia.com/LinkedIn_df1e2c1e.webp', isConnected: !!user?.linkedinId },
-                  { key: 'ebay', label: 'eBay', logo: 'https://assets.tradebilia.com/Ebaylogo_12a10426.png', isConnected: !!user?.ebayUsername },
-                  { key: 'whatnot', label: 'WhatNot', logo: 'https://assets.tradebilia.com/WhatNot_ab669ac9.png', isConnected: false },
-                ];
-                const pendingPlatforms = allPlatforms.filter(p => !p.isConnected);
 
-                return pendingPlatforms.length > 0 ? (
-                  <Card className="rounded-[1.5rem] border-slate-200 bg-white shadow-sm">
-                    <CardHeader>
-                      <CardTitle>Pending Connections</CardTitle>
-                      <CardDescription>Connect these accounts to expand your trading profile</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {pendingPlatforms.map(p => (
-                          <div key={p.key} className="flex flex-col items-center justify-center p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:bg-slate-100/50 transition-colors cursor-pointer">
-                            <img src={p.logo} alt={p.label} className="h-8 mb-2 object-contain" />
-                            <p className="text-sm font-semibold text-slate-900 text-center">{p.label}</p>
-                            <p className="text-xs text-slate-500 mt-1">Not connected</p>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ) : null;
-              })()}
 
             </TabsContent>
 

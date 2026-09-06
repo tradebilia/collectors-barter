@@ -22,4 +22,11 @@ describe("Profile save persistence", () => {
   it("keeps the combined action disabled while either save operation is active", () => {
     expect(settingsSource).toContain("disabled={saveProfileMutation.isPending || externalPaymentSaving}");
   });
+
+  it("keeps Integrations focused on connected accounts and member trust", () => {
+    expect(settingsSource).not.toContain('{ value: "paypal", label: "PayPal", logo: "https://assets.tradebilia.com/Paypal_25ebc114.png" }');
+    expect(settingsSource).not.toContain("Pending Connections");
+    expect(settingsSource).toContain("Verified accounts and references help confirm your information");
+    expect(settingsSource).toContain("give other members more confidence when deciding whether to trade with you");
+  });
 });
