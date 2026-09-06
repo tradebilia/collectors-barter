@@ -99,6 +99,9 @@ describe("recovery source-integrity", () => {
     expect(router).toContain("await claimIdentity(tx, { userId: profile.userId, identityType: \"phone\", value: phone });");
     expect(forgotPassword).toContain("requestPhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined })");
     expect(forgotPassword).toContain("completePhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined, code, newPassword })");
+    expect(forgotPassword).toContain('message.startsWith("For security")');
+    expect(forgotPassword).toContain("(needsPhoneEmail || phoneCodeSent)");
+    expect(forgotPassword).toContain('required={needsPhoneEmail}');
     expect(router).toContain("phoneVerified: 1");
   });
 

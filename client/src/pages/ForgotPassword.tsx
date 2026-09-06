@@ -12,6 +12,7 @@ export function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [phoneEmail, setPhoneEmail] = useState("");
+  const [needsPhoneEmail, setNeedsPhoneEmail] = useState(false);
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -25,7 +26,7 @@ export function ForgotPassword() {
 
   const recoveryErrorMessage = (fallback: string, err: unknown) => {
     const message = err instanceof Error ? err.message : "";
-    return message.startsWith("Password recovery email is temporarily unavailable") || message.startsWith("SMS verification") || message.startsWith("Could not send the verification code") || message.startsWith("That phone number") || message.startsWith("Too many")
+    return message.startsWith("Password recovery email is temporarily unavailable") || message.startsWith("SMS verification") || message.startsWith("Could not send the verification code") || message.startsWith("That phone number") || message.startsWith("Too many") || message.startsWith("For security")
       ? message
       : fallback;
   };
@@ -52,7 +53,10 @@ export function ForgotPassword() {
     try {
       await requestPhoneRecovery.mutateAsync({ phone, email: phoneEmail || undefined });
       setPhoneCodeSent(true);
+      setNeedsPhoneEmail(Boolean(phoneEmail));
     } catch (err) {
+      const message = err instanceof Error ? err.message : "";
+      if (message.startsWith("For security")) setNeedsPhoneEmail(true);
       setError(recoveryErrorMessage("We could not start recovery. Please try again later.", err));
     } finally {
       setIsLoading(false);
@@ -102,7 +106,7 @@ export function ForgotPassword() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1">
                 <Button type="button" variant={method === "email" ? "default" : "ghost"} onClick={() => { setMethod("email"); setError(undefined); }}>Verified Email</Button>
-                <Button type="button" variant={method === "phone" ? "default" : "ghost"} onClick={() => { setMethod("phone"); setError(undefined); }}>Verified Phone</Button>
+                <Button type="button" variant={method === "phone" ? "default" : "ghost"} onClick={() => { setMethod("phone"); setError(undefined); setNeedsPhoneEmail(false); setPhoneCodeSent(false); }}>Verified Phone</Button>
               </div>
               {method === "email" ? (
             <form onSubmit={handleEmailSubmit} className="space-y-4">
@@ -135,10 +139,10 @@ export function ForgotPassword() {
                     <label className="text-sm font-medium">Verified Phone Number</label>
                     <Input type="tel" placeholder="Your verified phone number" value={phone} onChange={(e) => setPhone(e.target.value)} disabled={isLoading || phoneCodeSent} required />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Tradebilia Account Email <span className="font-normal text-muted-foreground">(use if prompted)</span></label>
-                    <Input type="email" placeholder="you@example.com" value={phoneEmail} onChange={(e) => setPhoneEmail(e.target.value)} disabled={isLoading || phoneCodeSent} />
-                  </div>
+                  {(needsPhoneEmail || phoneCodeSent) && <div className="space-y-2">
+                    <label className="text-sm font-medium">Tradebilia Account Email</label>
+                    <Input type="email" placeholder="you@example.com" value={phoneEmail} onChange={(e) => setPhoneEmail(e.target.value)} disabled={isLoading || phoneCodeSent} required={needsPhoneEmail} />
+                  </div>}
                   {phoneCodeSent && <>
                     <div className="space-y-2"><label className="text-sm font-medium">Text Message Code</label><Input inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} required /></div>
                     <div className="space-y-2"><label className="text-sm font-medium">New Password</label><Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required /></div>

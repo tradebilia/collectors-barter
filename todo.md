@@ -1642,3 +1642,5 @@
 - [ ] Diagnose and repair the confirmed SMS password-recovery non-delivery after email recovery and post-reset sign-in were verified.
 
 - [ ] Diagnose and repair the confirmed SMS recovery failure after a clean single retry beyond the rate-limit window still produced no message.
+
+- [x] Show the account-email field only after an ambiguous phone match, replace the generic error with a truthful disambiguation prompt, and cover the resubmission flow with tests. Focused recovery tests, TypeScript, production build, whitespace validation, and initial-form visual verification passed; live SMS resubmission remains user-testable.
