@@ -48,4 +48,11 @@ describe("Traders Showcase ownership-transfer layout", () => {
     expect(recentTradesSource).toContain('h-[60rem] overflow-hidden');
     expect(recentTradesSource).not.toContain('flex-1 gap-1 overflow-y-auto px-4 py-4');
   });
+
+  it("renders completed-trade items as non-clickable historical snapshots", () => {
+    expect(recentTradesSource).not.toContain('import { Link } from "wouter"');
+    expect(recentTradesSource).not.toContain('href={`/listings/${item.id}`}');
+    expect(recentTradesSource).not.toContain('focus-visible:ring-2 focus-visible:ring-violet-600');
+    expect(recentTradesSource).toContain('return <div key={`${item.id || item.title}-${index}`} className={className}>{content}</div>;');
+  });
 });

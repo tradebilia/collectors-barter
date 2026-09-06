@@ -1620,3 +1620,5 @@
 - [x] Update Trade Hub completed-trade counts, member avatar/profile linking, cash preview, search-field styling, and blue status/action emphasis. Focused tests, TypeScript, production build, and modified-file whitespace checks passed; authenticated preview capture was rate-limited after restart.
 
 - [x] Remove the Trade Hub Completed count semicolon and center the highlighted count badge beside the label.
+
+- [x] Remove item-detail navigation from historical Recent Trades cards while keeping the completed-trade snapshots visible and clearly non-clickable.

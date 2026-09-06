@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, ShieldCheck, Star, UserRound } from "lucide-react";
-import { Link } from "wouter";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { formatItemValue } from "@/lib/tradebilia";
@@ -108,8 +107,8 @@ function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPa
             </div>
           </>
         );
-        const className = `group grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center ${isMultiItemTrade ? "gap-2 rounded-lg border border-[#c9d8eb] bg-white/65 p-2" : "gap-3 rounded-md p-1"} overflow-hidden text-left transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600`;
-        return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
+        const className = `grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center ${isMultiItemTrade ? "gap-2 rounded-lg border border-[#c9d8eb] bg-white/65 p-2" : "gap-3 rounded-md p-1"} overflow-hidden text-left`;
+        return <div key={`${item.id || item.title}-${index}`} className={className}>{content}</div>;
       })}
       {hiddenItemCount > 0 && <span className="flex min-h-[4.5rem] items-center justify-center rounded-lg border border-dashed border-[#8ba9ca] bg-[#edf4fb] px-2 text-center text-xs font-extrabold text-[#2458a6]">+{hiddenItemCount} more item{hiddenItemCount === 1 ? "" : "s"}</span>}
       {cashPaid > 0 && <span className={`${isMultiItemTrade ? "col-span-2 text-xs" : "text-sm"} rounded-md bg-emerald-100 px-3 py-1.5 text-center font-extrabold text-emerald-800 ring-1 ring-emerald-200`}>+ {formatEstimatedValue(cashPaid)} Cash paid</span>}
