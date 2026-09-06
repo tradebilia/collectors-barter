@@ -4557,7 +4557,7 @@ export const appRouter = router({
         else await db.insert(tradePayments).values(paymentData);
         await db.execute(sql`DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'`);
         await db.execute(sql`UPDATE tradeProposals SET lastProposedBy = ${ctx.user.id}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId} AND status = 'negotiating'`);
-        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_method_selected", details: JSON.stringify({ method: input.method, amount: obligation.amount }), createdAt: now });
+        await db.insert(tradeActivityLog).values({ proposalId: input.proposalId, actorId: ctx.user.id, actorName: ctx.user.name ?? ctx.user.username ?? "Member", eventType: "cash_payment_method_selected", details: `Selected ${getExternalPaymentMethodLabel(input.method)} as payment method`, createdAt: now });
         return { success: true, status: "method_selected" as const, method: input.method };
       }),
 

@@ -1594,3 +1594,5 @@
 - [x] Preserve a selected compatible cash payment method when trade-room cash amounts change, with automatic retention when only one method is available.
 - [x] Ensure the inventory picker outline visibly wraps both bottom corners.
 - [x] Let each Step 3 side use the larger single-item layout independently, and enlarge Shipping Information content for readability.
+- [x] Give both Step 3 Shipping Information cards the same visible border treatment.
+- [x] Render cash payment-method timeline events as readable text such as “Selected PayPal as payment method” instead of raw JSON.

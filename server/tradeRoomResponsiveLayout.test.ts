@@ -40,6 +40,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain("${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
     expect(warRoomSource).toContain('className="space-y-3 text-base"');
+    expect(warRoomSource).toContain('bg-[#0f0f1a] border border-white/40 rounded-xl p-6');
+    expect(warRoomSource).toContain('formatTimelineDetails(event, cfg.label)');
+    expect(warRoomSource).toContain('Selected ${method} as payment method');
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {

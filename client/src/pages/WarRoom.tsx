@@ -59,6 +59,19 @@ function TradeRoomAvatar({ src, alt, className }: { src: string; alt: string; cl
 }
 
 // ── Event type config ────────────────────────────────────────────────────────
+const formatTimelineDetails = (event: any, fallbackLabel: string) => {
+  if (event.eventType === 'cash_payment_method_selected') {
+    try {
+      const parsed = typeof event.details === 'string' ? JSON.parse(event.details) : event.details;
+      const method = parsed?.method ? formatTradeRoomStatus(parsed.method) : 'payment method';
+      return `Selected ${method} as payment method`;
+    } catch {
+      return 'Selected payment method';
+    }
+  }
+  return event.details || fallbackLabel;
+};
+
 const eventConfig: Record<string, { color: string; icon: string; label: string }> = {
   trade_created:      { color: 'bg-blue-500',   icon: '🤝', label: 'Trade Created' },
   partner_joined:     { color: 'bg-indigo-500', icon: '🚪', label: 'Entered Trade Room' },
@@ -108,7 +121,7 @@ function TimelineTab({ proposalId, adminView = false }: { proposalId: number; ad
               <div className={`w-2 h-2 rounded-full ${cfg.color} mt-1.5 shrink-0`} />
               <div className="flex-1 min-w-0">
                 <p className="text-white text-xs font-semibold">{event.actorName}</p>
-                <p className="text-gray-300 text-xs">{event.details || cfg.label}</p>
+                <p className="text-gray-300 text-xs">{formatTimelineDetails(event, cfg.label)}</p>
                 <p className="text-gray-600 text-[10px] mt-0.5">{time}</p>
               </div>
             </div>
@@ -967,7 +980,7 @@ export default function WarRoom() {
                   </div>
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                     {[{ label: 'Your Info', contact: myContact, color: 'purple' }, { label: `${theirDisplayName}'s Info`, contact: theirContact, color: 'blue' }].map(({ label, contact, color }) => (
-                      <div key={label} className={`bg-[#0f0f1a] border border-${color}-500/20 rounded-xl p-6`}>
+                      <div key={label} className="bg-[#0f0f1a] border border-white/40 rounded-xl p-6">
                         <p className={`text-${color}-400 text-sm font-bold uppercase tracking-wide mb-4`}>{label}</p>
                         {contact ? (
                           <div className="space-y-3 text-base">
