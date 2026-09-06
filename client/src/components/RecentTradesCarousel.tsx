@@ -14,6 +14,7 @@ type RecentTrade = TradeShowcaseTrade & {
 
 const FADE_DURATION_MS = 350;
 const ROTATION_INTERVAL_MS = 5_000;
+const MAX_VISIBLE_ITEM_PREVIEWS = 4;
 
 function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"] | RecentTrade["totalValue"]) {
   return formatItemValue(value, "Value unavailable");
@@ -79,13 +80,17 @@ function DirectionMarker({ side }: { side: "left" | "right" }) {
 function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPaid: number }) {
   if (!items.length && cashPaid <= 0) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
+  const visibleItems = items.slice(0, MAX_VISIBLE_ITEM_PREVIEWS);
+  const hiddenItemCount = Math.max(0, items.length - visibleItems.length);
+  const isMultiItemTrade = visibleItems.length > 1;
+
   return (
-    <div className="mx-auto grid w-full min-w-0 grid-cols-1 justify-items-center items-center gap-2">
-      {items.map((item, index) => {
+    <div className={`mx-auto grid w-full min-w-0 items-stretch gap-2 ${isMultiItemTrade ? "grid-cols-2" : "grid-cols-1"}`}>
+      {visibleItems.map((item, index) => {
         const grade = getGradePresentation(item);
         const content = (
           <>
-            <div className="h-40 w-24 shrink-0 overflow-hidden rounded bg-transparent sm:h-44 sm:w-28">
+            <div className={`${isMultiItemTrade ? "h-16 w-14 sm:h-[4.5rem] sm:w-16" : "h-32 w-20 sm:h-36 sm:w-24"} shrink-0 overflow-hidden rounded bg-transparent`}>
               {item.imageUrl ? (
                 <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" loading="lazy" />
               ) : (
@@ -93,20 +98,21 @@ function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPa
               )}
             </div>
             <div className="min-w-0 max-w-full text-left">
-              <p className="break-words text-sm font-bold leading-snug text-[#153d7a] sm:text-base">{item.title || "Collectible"}</p>
+              <p className={`${isMultiItemTrade ? "line-clamp-2 text-xs leading-tight" : "text-sm leading-snug sm:text-base"} break-words font-bold text-[#153d7a]`} title={item.title || "Collectible"}>{item.title || "Collectible"}</p>
               {grade ? (
-                <div className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${grade.company} grade ${grade.grade}`}>
-                  <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{grade.company} {grade.grade}</span>
+                <div className={`${isMultiItemTrade ? "mt-1" : "mt-2"} flex flex-wrap items-center gap-1.5`} aria-label={`${grade.company} grade ${grade.grade}`}>
+                  <span className={`inline-flex items-center rounded-md px-1.5 py-0.5 ${isMultiItemTrade ? "text-[0.65rem]" : "text-sm"} font-extrabold ring-1 ${getCategoryBadgeClass(item.category)}`}>{grade.company} {grade.grade}</span>
                 </div>
-              ) : <p className="mt-2 break-words text-sm font-semibold text-[#315ea7]">{formatCondition(item)}</p>}
-              <p className="mt-1 text-base font-bold text-[#2458a6]">{formatEstimatedValue(item.estimatedValue)}</p>
+              ) : <p className={`${isMultiItemTrade ? "mt-1 text-[0.65rem] line-clamp-1" : "mt-2 text-sm"} break-words font-semibold text-[#315ea7]`}>{formatCondition(item)}</p>}
+              <p className={`${isMultiItemTrade ? "mt-1 text-xs" : "mt-1 text-base"} font-bold text-[#2458a6]`}>{formatEstimatedValue(item.estimatedValue)}</p>
             </div>
           </>
         );
-        const className = "group grid w-fit max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 overflow-hidden rounded-md p-1 text-left transition hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600";
+        const className = `group grid w-full max-w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center ${isMultiItemTrade ? "gap-2 rounded-lg border border-[#c9d8eb] bg-white/65 p-2" : "gap-3 rounded-md p-1"} overflow-hidden text-left transition hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-600`;
         return item.id ? <Link key={`${item.id}-${index}`} href={`/listings/${item.id}`} className={className}>{content}</Link> : <div key={`${item.title}-${index}`} className={className}>{content}</div>;
       })}
-      {cashPaid > 0 && <span className="rounded-md bg-emerald-100 px-3 py-1.5 text-sm font-extrabold text-emerald-800 ring-1 ring-emerald-200">+ {formatEstimatedValue(cashPaid)} Cash paid</span>}
+      {hiddenItemCount > 0 && <span className="flex min-h-[4.5rem] items-center justify-center rounded-lg border border-dashed border-[#8ba9ca] bg-[#edf4fb] px-2 text-center text-xs font-extrabold text-[#2458a6]">+{hiddenItemCount} more item{hiddenItemCount === 1 ? "" : "s"}</span>}
+      {cashPaid > 0 && <span className={`${isMultiItemTrade ? "col-span-2 text-xs" : "text-sm"} rounded-md bg-emerald-100 px-3 py-1.5 text-center font-extrabold text-emerald-800 ring-1 ring-emerald-200`}>+ {formatEstimatedValue(cashPaid)} Cash paid</span>}
     </div>
   );
 }
@@ -204,7 +210,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
 
       {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 h-[60rem] rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600 md:h-[20rem] lg:h-[21rem]">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 h-[60rem] overflow-hidden px-0 sm:px-2 md:h-[20rem] lg:h-[21rem] lg:px-3">
         <article key={trade.id} className={`ticket-card mx-auto flex h-full w-full max-w-none flex-col overflow-hidden border-4 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">
-        <div className="grid min-h-0 min-w-0 flex-1 gap-1 overflow-y-auto px-4 py-4 md:grid-cols-[minmax(10rem,0.95fr)_1px_minmax(12rem,1.1fr)_auto_1px_minmax(7rem,0.7fr)_1px_auto_minmax(12rem,1.1fr)_1px_minmax(10rem,0.95fr)] md:items-center md:gap-1 lg:px-4 lg:py-5">
+        <div className="grid min-h-0 min-w-0 flex-1 gap-1 overflow-hidden px-4 py-4 md:grid-cols-[minmax(10rem,0.95fr)_1px_minmax(12rem,1.1fr)_auto_1px_minmax(7rem,0.7fr)_1px_auto_minmax(12rem,1.1fr)_1px_minmax(10rem,0.95fr)] md:items-center md:gap-1 lg:px-4 lg:py-5">
           <TradeMember member={exchange.left.member} />
           <TicketDivider />
           <TradeItemList items={exchange.left.items} cashPaid={exchange.left.cashPaid} />

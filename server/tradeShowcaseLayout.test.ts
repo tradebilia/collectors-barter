@@ -38,4 +38,14 @@ describe("Traders Showcase ownership-transfer layout", () => {
     expect(showcaseSource).not.toContain("paymentIdentifier");
     expect(recentTradesSource).not.toContain("paymentIdentifier");
   });
+
+  it("keeps multi-item recent trades inside the fixed carousel card without vertical scrolling", () => {
+    expect(recentTradesSource).toContain("const MAX_VISIBLE_ITEM_PREVIEWS = 4");
+    expect(recentTradesSource).toContain("const visibleItems = items.slice(0, MAX_VISIBLE_ITEM_PREVIEWS)");
+    expect(recentTradesSource).toContain("const hiddenItemCount = Math.max(0, items.length - visibleItems.length)");
+    expect(recentTradesSource).toContain('isMultiItemTrade ? "grid-cols-2" : "grid-cols-1"');
+    expect(recentTradesSource).toContain('+{hiddenItemCount} more item');
+    expect(recentTradesSource).toContain('h-[60rem] overflow-hidden');
+    expect(recentTradesSource).not.toContain('flex-1 gap-1 overflow-y-auto px-4 py-4');
+  });
 });

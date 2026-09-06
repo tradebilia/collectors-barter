@@ -1611,3 +1611,6 @@
 - [x] Add mutual receipt confirmation for items and any cash, then show a new post-delivery user-review step only after both members verify receipt.
 - [x] Make the dispute stage conditional in the stepper, showing Step 7 only when a dispute exists; otherwise omit it from the visible flow.
 - [ ] Add regression coverage and verify the revised Trade Room flow at desktop and mobile widths. Automated coverage and production build pass; authenticated viewport verification remains pending.
+
+- [x] Redesign the homepage Recent Trades cards so multi-item swaps fit inside the existing fixed section height without vertical scrolling, clipping, or layout shifts.
+- [x] Add regression coverage and verify the multi-item Recent Trades presentation at desktop and mobile widths. The focused test, TypeScript check, production build, whitespace validation, and desktop/mobile screenshots passed; each side now shows up to four compact item previews plus a remaining-item count.
