@@ -32,7 +32,10 @@ describe("administrator guide tab", () => {
     expect(adminSource).toContain("Moderation &amp; Support");
     expect(adminSource).toContain("Communications &amp; Growth");
     expect(adminSource).toContain("Platform &amp; Reference Tools");
-    expect(adminSource.indexOf('<TabsTrigger value="operations"')).toBeLessThan(adminSource.indexOf('<TabsTrigger value="billing"'));
+    expect(adminSource.indexOf('<TabsTrigger value="api-health"')).toBeLessThan(adminSource.indexOf('<TabsTrigger value="billing"'));
+    expect(adminSource.indexOf('<TabsTrigger value="approvals"')).toBeLessThan(adminSource.indexOf('<TabsTrigger value="deleted"'));
+    expect(adminSource.indexOf('<TabsTrigger value="tickets"')).toBeLessThan(adminSource.indexOf('<TabsTrigger value="referrals"'));
+    expect(adminSource.indexOf('<TabsTrigger value="settings"')).toBeGreaterThan(adminSource.indexOf('<TabsTrigger value="social-content"'));
     expect(adminSource).toContain('className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"');
   });
 

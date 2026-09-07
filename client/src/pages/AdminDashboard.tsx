@@ -836,114 +836,48 @@ export default function AdminDashboard() {
             <div className="flex min-w-0 flex-col self-start">
               <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Overview &amp; Monitoring</div>
               <div className="flex flex-col gap-1.5 pt-1.5">
-            <TabsTrigger value="statistics" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <BarChart3 className="h-4 w-4" />
-              Stats
-            </TabsTrigger>
-            <TabsTrigger value="operations" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <ClipboardList className="h-4 w-4" />
-              Operations
-            </TabsTrigger>
+            <TabsTrigger value="statistics" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><BarChart3 className="h-4 w-4" />Stats</TabsTrigger>
+            <TabsTrigger value="operations" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><ClipboardList className="h-4 w-4" />Operations</TabsTrigger>
+            <TabsTrigger value="api-health" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><AlertTriangle className="h-4 w-4" />API Health</TabsTrigger>
               </div>
             </div>
             <div className="flex min-w-0 flex-col self-start">
               <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Marketplace Management</div>
               <div className="flex flex-col gap-1.5 pt-1.5">
-            <TabsTrigger value="billing" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Settings className="h-4 w-4" />
-              Billing
-            </TabsTrigger>
-            <TabsTrigger value="users" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Users className="h-4 w-4" />
-              Users
-            </TabsTrigger>
-            <TabsTrigger value="listings" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Package className="h-4 w-4" />
-              Listings
-            </TabsTrigger>
-            <TabsTrigger value="trades" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Package className="h-4 w-4" />
-              Trades
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Settings className="h-4 w-4" />
-              Settings
-            </TabsTrigger>
+            <TabsTrigger value="billing" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Settings className="h-4 w-4" />Billing</TabsTrigger>
+            <TabsTrigger value="users" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Users className="h-4 w-4" />Users</TabsTrigger>
+            <TabsTrigger value="listings" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Package className="h-4 w-4" />Listings</TabsTrigger>
+            <TabsTrigger value="trades" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Package className="h-4 w-4" />Trades</TabsTrigger>
+            <TabsTrigger value="approvals" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><CheckCircle className="h-4 w-4" />Approvals</TabsTrigger>
               </div>
             </div>
             <div className="flex min-w-0 flex-col self-start">
               <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Moderation &amp; Support</div>
               <div className="flex flex-col gap-1.5 pt-1.5">
-            <TabsTrigger value="deleted" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Users className="h-4 w-4" />
-              Deleted
-            </TabsTrigger>
-            <TabsTrigger value="account-closures" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <ShieldOff className="h-4 w-4" />
-              Closure Requests
-            </TabsTrigger>
-            <TabsTrigger value="reports" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Flag className="h-4 w-4" />
-              Reports
-            </TabsTrigger>
-            <TabsTrigger value="forum-moderation" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Flag className="h-4 w-4" />
-              Forum Queue
-            </TabsTrigger>
+            <TabsTrigger value="deleted" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Users className="h-4 w-4" />Deleted</TabsTrigger>
+            <TabsTrigger value="account-closures" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><ShieldOff className="h-4 w-4" />Closure Requests</TabsTrigger>
+            <TabsTrigger value="reports" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Flag className="h-4 w-4" />Reports</TabsTrigger>
+            <TabsTrigger value="forum-moderation" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Flag className="h-4 w-4" />Forum Queue</TabsTrigger>
+            <TabsTrigger value="tickets" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><TicketCheck className="h-4 w-4" />Tickets</TabsTrigger>
+            <TabsTrigger value="flagged" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Flag className="h-4 w-4" />Flagged</TabsTrigger>
+            <TabsTrigger value="modlog" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><ClipboardList className="h-4 w-4" />Mod Log</TabsTrigger>
               </div>
             </div>
             <div className="flex min-w-0 flex-col self-start">
               <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Communications &amp; Growth</div>
               <div className="flex flex-col gap-1.5 pt-1.5">
-            <TabsTrigger value="referrals" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Mail className="h-4 w-4" />
-              Referrals
-            </TabsTrigger>
-            <TabsTrigger value="pre-launch-email" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Send className="h-4 w-4" />
-              Pre-Launch Email
-            </TabsTrigger>
-            <TabsTrigger value="social-content" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Share2 className="h-4 w-4" />
-              Social Content
-            </TabsTrigger>
+            <TabsTrigger value="referrals" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Mail className="h-4 w-4" />Referrals</TabsTrigger>
+            <TabsTrigger value="pre-launch-email" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Send className="h-4 w-4" />Pre-Launch Email</TabsTrigger>
+            <TabsTrigger value="social-content" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Share2 className="h-4 w-4" />Social Content</TabsTrigger>
               </div>
             </div>
             <div className="flex min-w-0 flex-col self-start">
               <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Platform &amp; Reference Tools</div>
               <div className="flex flex-col gap-1.5 pt-1.5">
-            <TabsTrigger value="media-storage" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <CloudUpload className="h-4 w-4" />
-              Media Storage
-            </TabsTrigger>
-            <TabsTrigger value="conventions" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Calendar className="h-4 w-4" />
-              Conventions
-            </TabsTrigger>
-            <TabsTrigger value="modlog" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <ClipboardList className="h-4 w-4" />
-              Mod Log
-            </TabsTrigger>
-            <TabsTrigger value="tickets" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <TicketCheck className="h-4 w-4" />
-              Tickets
-            </TabsTrigger>
-            <TabsTrigger value="flagged" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <Flag className="h-4 w-4" />
-              Flagged
-            </TabsTrigger>
-            <TabsTrigger value="approvals" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <CheckCircle className="h-4 w-4" />
-              Approvals
-            </TabsTrigger>
-            <TabsTrigger value="api-health" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <AlertTriangle className="h-4 w-4" />
-              API Health
-            </TabsTrigger>
-            <TabsTrigger value="admin-guide" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
-              <BookOpen className="h-4 w-4" />
-              Admin Guide
-            </TabsTrigger>
+            <TabsTrigger value="settings" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Settings className="h-4 w-4" />Settings</TabsTrigger>
+            <TabsTrigger value="media-storage" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><CloudUpload className="h-4 w-4" />Media Storage</TabsTrigger>
+            <TabsTrigger value="conventions" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><Calendar className="h-4 w-4" />Conventions</TabsTrigger>
+            <TabsTrigger value="admin-guide" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"><BookOpen className="h-4 w-4" />Admin Guide</TabsTrigger>
               </div>
             </div>
           </TabsList>

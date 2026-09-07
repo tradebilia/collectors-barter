@@ -1713,3 +1713,6 @@
 - [x] Arrange Admin navigation group names horizontally as columns, with each group’s tabs vertically aligned beneath its heading and responsive wrapping on narrow screens.
 
 - [x] Make all Admin navigation group headings larger and bold, and align them to the same horizontal baseline above their vertical tab lists. Focused Admin navigation tests, TypeScript, and production build passed; the final authenticated preview retry was temporarily rate-limited after the source-level layout checks.
+
+- [x] Audit every Admin navigation grouping against the actual purpose of its tabs and correct any misclassified tabs before finalizing the layout. Reviewed each tab’s Admin Guide purpose and identified the approved functional reclassification.
+- [x] Apply approved Admin regrouping: API Health under Overview & Monitoring; Settings under Platform & Reference Tools; Tickets, Flagged, and Mod Log under Moderation & Support; Approvals under Marketplace Management. Focused navigation and Operations tests passed, TypeScript passed, and the production build passed.
