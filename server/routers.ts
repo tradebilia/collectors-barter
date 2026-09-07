@@ -3,7 +3,7 @@ import { verifyPayPalTransaction } from "./paypal";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable } from "./db";
+import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable, ensureSupportTicketsTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
@@ -3719,6 +3719,7 @@ export const appRouter = router({
     // Support Tickets
     getAllTickets: protectedProcedure.input(z.object({ includeArchived: z.boolean().optional() }).optional()).query(async ({ ctx, input }) => {
       if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      await ensureSupportTicketsTable();
       const db = await requireDb();
       const [rows] = await db.execute(
         sql`SELECT st.*, u.username, u.displayName, u.email,
@@ -3900,6 +3901,7 @@ export const appRouter = router({
         if (!isRecoveryRequestAllowed(`public-contact:${clientAddress}`, Date.now(), 3)) {
           throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Please wait before sending another message." });
         }
+        await ensureSupportTicketsTable();
         const db = await requireDb();
         const ticketId = 'TKT-' + Date.now().toString(36).toUpperCase();
         const userId = ctx.user?.id;

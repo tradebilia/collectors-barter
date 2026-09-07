@@ -123,7 +123,7 @@ export default function Contact() {
                           placeholder="Your name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          className="border-white/20 bg-white/10 text-white placeholder:text-white/50"
+                          className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-500"
                         />
                       </div>
                       <div className="space-y-2">
@@ -134,7 +134,7 @@ export default function Contact() {
                           placeholder="your@email.com"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          className="border-white/20 bg-white/10 text-white placeholder:text-white/50"
+                          className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-500"
                         />
                       </div>
                     </>
@@ -143,10 +143,10 @@ export default function Contact() {
                   <div className="space-y-2">
                     <Label htmlFor="category" className="text-white">Category *</Label>
                     <Select value={category} onValueChange={setCategory}>
-                      <SelectTrigger className="border-white/20 bg-white/10 text-white">
+                      <SelectTrigger className="border-slate-200 bg-white text-slate-900">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="border-white/20 bg-slate-950">
+                      <SelectContent className="z-50 border-slate-200 bg-white text-slate-900 shadow-xl">
                         <SelectItem value="suggestion">💡 Suggestion</SelectItem>
                         <SelectItem value="question">❓ Question</SelectItem>
                         <SelectItem value="feedback">💭 Feedback</SelectItem>
@@ -163,7 +163,7 @@ export default function Contact() {
                       placeholder="Brief summary of your message"
                       value={subjectText}
                       onChange={(e) => setSubjectText(e.target.value)}
-                      className="border-white/20 bg-white/10 text-white placeholder:text-white/50"
+                      className="border-slate-200 bg-white text-slate-900 placeholder:text-slate-500"
                     />
                   </div>
 
@@ -175,7 +175,7 @@ export default function Contact() {
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
                       rows={6}
-                      className="border-white/20 bg-white/10 text-white placeholder:text-white/50 resize-none"
+                      className="resize-none border-slate-200 bg-white text-slate-900 placeholder:text-slate-500"
                     />
                   </div>
 
