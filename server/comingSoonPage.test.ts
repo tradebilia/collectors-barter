@@ -18,10 +18,10 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('"SPORTS CARDS": "#b0221a"');
     expect(pageSource).toContain('const COMING_SOON_WHEEL_COLORS = [');
     expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
-    expect(pageSource).toContain('className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8"');
+    expect(pageSource).toContain('className="w-full max-w-xl text-center sm:max-w-2xl"');
     expect(pageSource).toContain('className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:relative sm:left-1/2 sm:-translate-x-1/2 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
-    expect(pageSource).toContain('className="-translate-y-6 pb-4 pt-2 sm:-translate-y-6 sm:pb-10 sm:pt-4"');
+    expect(pageSource).toContain('className="-translate-y-4 pb-4 pt-2 sm:-translate-y-4 sm:pb-10 sm:pt-4"');
     expect(pageSource).not.toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
     expect(pageSource).toContain('className="mx-auto mt-0 max-w-md sm:mt-4"');
     expect(pageSource).toContain('/manus-storage/launching-soon-navy-clean_0cf4707a.png');

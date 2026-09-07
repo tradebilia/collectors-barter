@@ -52,12 +52,12 @@ export default function ComingSoon() {
       <div className="absolute inset-0 bg-[#24160f]/10" aria-hidden="true" />
 
       <section className="relative flex min-h-screen items-center justify-center px-5 py-8 sm:px-10 sm:py-16">
-        <div className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8">
+        <div className="w-full max-w-xl text-center sm:max-w-2xl">
           <div className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:relative sm:left-1/2 sm:-translate-x-1/2 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4">
             <AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} />
           </div>
 
-          <div className="-translate-y-6 pb-4 pt-2 sm:-translate-y-6 sm:pb-10 sm:pt-4">
+          <div className="-translate-y-4 pb-4 pt-2 sm:-translate-y-4 sm:pb-10 sm:pt-4">
             <div className="mx-auto mt-2 max-w-lg sm:mt-8">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
               <h1 className="mt-1 font-serif text-3xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"><span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span></h1>
