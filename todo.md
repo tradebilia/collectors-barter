@@ -1722,3 +1722,7 @@
 - [x] Change the Report a User page View My Reports button to a clear blue style while preserving placement, icon, link behavior, and readable contrast. Header and post-submission actions now use blue backgrounds with white text; focused navigation/style tests, TypeScript, and production build passed.
 
 - [x] Make all editable input fields on the Refer a Collector page white with dark readable text while preserving validation, submission behavior, and responsive layout. Collector name, collector email, collection focus, and personal invite message now use white bubbles with dark text and muted placeholders; the referral information panel remains dark. Focused referral/mobile tests, TypeScript, and production build passed.
+
+- [x] Change the Refer a Collector Send Referral Request button to a blue style with white text while preserving its icon, loading state, submission behavior, and responsive layout. The button now uses a blue background and darker blue hover state; focused referral/mobile tests, TypeScript, and production build passed.
+
+- [x] Make the Refer a Collector left-panel Referral Request title high contrast and clearly readable against the dark card background. The title now explicitly uses white text; focused referral/mobile tests, TypeScript, and production build passed.

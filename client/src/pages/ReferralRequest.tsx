@@ -93,7 +93,7 @@ export default function ReferralRequest() {
             <Card className="rounded-[1.75rem] border-white/10 bg-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
               <CardHeader className="pb-4">
                 <Badge className="w-fit rounded-full bg-white/10 px-3 py-1 text-white/80 hover:bg-white/10">Community growth</Badge>
-                <CardTitle className="mt-3 text-2xl">Referral Request</CardTitle>
+                <CardTitle className="mt-3 text-2xl text-white">Referral Request</CardTitle>
                 <CardDescription className="text-white/65">
                   Invite trusted collectors into the same high-trust trade ecosystem with a referral flow that feels native to Tradebilia.
                 </CardDescription>
@@ -223,7 +223,7 @@ export default function ReferralRequest() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                  <Button type="submit" className="rounded-full bg-white text-slate-950 hover:bg-white/90" disabled={referralMutation.isPending}>
+                  <Button type="submit" className="rounded-full bg-blue-600 text-white hover:bg-blue-700" disabled={referralMutation.isPending}>
                     <Send className="mr-2 h-4 w-4" />
                     {referralMutation.isPending ? "Sending referral..." : "Send referral request"}
                   </Button>

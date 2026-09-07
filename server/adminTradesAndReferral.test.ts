@@ -45,6 +45,10 @@ describe("Admin Trades and Refer a Collector refinements", () => {
     expect(referralSource).not.toContain("ReferralRequest_2e59ce3c.webp");
     expect(referralSource).toContain("border-slate-200 bg-white text-slate-900 placeholder:text-slate-500");
     expect(referralSource).toContain('rounded-[1.75rem] border-white/10 bg-white/5');
+    expect(referralSource).toContain('<CardTitle className="mt-3 text-2xl text-white">Referral Request</CardTitle>');
     expect(referralSource).not.toContain("border-white/10 bg-white/5 text-white\" placeholder");
+    expect(referralSource).toContain('className="rounded-full bg-blue-600 text-white hover:bg-blue-700" disabled={referralMutation.isPending}');
+    expect(referralSource).toContain("Sending referral...");
+    expect(referralSource).toContain("<Send className=\"mr-2 h-4 w-4\" />");
   });
 });
