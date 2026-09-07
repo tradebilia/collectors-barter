@@ -57,12 +57,12 @@ export default function ComingSoon() {
             <AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} />
           </div>
 
-          <div className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6">
+          <div className="-translate-y-6 pb-4 pt-2 sm:-translate-y-6 sm:pb-10 sm:pt-4">
             <div className="mx-auto mt-2 max-w-lg sm:mt-8">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
-              <h1 className="mt-2 font-serif text-4xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"><span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span></h1>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-[#4d3c2e]/80 sm:mt-5 sm:text-base">A home for remarkable collectibles—and the collectors who know their worth.</p>
-              <div className="relative mx-auto mt-6 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-5 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
+              <h1 className="mt-1 font-serif text-3xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"><span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span></h1>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-5 text-[#4d3c2e]/80 sm:mt-5 sm:text-base sm:leading-6">A home for remarkable collectibles—and the collectors who know their worth.</p>
+              <div className="relative mx-auto mt-2 grid max-w-xl grid-cols-1 gap-2 text-left sm:mt-5 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-2" aria-label="Why collectors will use Tradebilia">
                 <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="pointer-events-none absolute -left-52 top-[38%] hidden w-44 -translate-y-1/2 rotate-[-4deg] object-contain drop-shadow-[0_3px_2px_rgba(43,33,25,0.12)] sm:block" />
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade without fees.</strong> No fees are charged to complete a trade.</p>
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Build trust faster.</strong> Connect more verified accounts to strengthen user authenticity.</p>
@@ -70,7 +70,7 @@ export default function ComingSoon() {
                 <p className="border-l-2 border-[#184b92]/55 pl-3 text-[11px] leading-4 text-[#4d3c2e]/85 sm:text-xs"><strong className="font-bold text-[#2b2119]">Trade across categories.</strong> Swap sports cards for comics, toys, games, and more.</p>
               </div>
               <img src="/manus-storage/launching-soon-navy-clean_0cf4707a.png" alt="Launching Soon" className="mx-auto -mt-2 block w-36 rotate-[-2deg] object-contain drop-shadow-[0_2px_2px_rgba(43,33,25,0.12)] sm:hidden" />
-              <div aria-label="Collections on the exchange" className="mx-auto mt-3 grid max-w-md grid-cols-2 gap-x-5 gap-y-0 border-y border-[#6c503c]/20 py-0 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-1 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1 sm:py-1.5 sm:text-[9px]">
+              <div aria-label="Collections on the exchange" className="mx-auto mt-1 grid max-w-md grid-cols-2 gap-x-5 gap-y-0 border-y border-[#6c503c]/20 py-0 text-[8px] font-bold uppercase tracking-[0.12em] text-[#4d3c2e]/72 sm:mt-1 sm:max-w-2xl sm:grid-cols-5 sm:gap-x-3 sm:gap-y-1 sm:py-1.5 sm:text-[9px]">
                 <span>Comics</span>
                 <span>Sports Cards</span>
                 <span>Vintage Toys</span>
@@ -84,12 +84,12 @@ export default function ComingSoon() {
               </div>
             </div>
 
-            <div className="mx-auto mt-6 max-w-md sm:mt-4">
+            <div className="mx-auto mt-0 max-w-md sm:mt-4">
               <div className="relative">
                 <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
                   <div className="relative">
                 <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-2">
-                  <div className="order-2 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+                  <div className="order-2 flex flex-row gap-2 sm:items-stretch">
                     <div className="relative flex-1 border border-[#6c503c]/35 bg-[#fffaf0]/80">
                       <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5a4536]/50" aria-hidden="true" />
                       <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email for early access" autoComplete="email" required className="h-10 border-0 bg-transparent pl-8 text-xs text-[#2b2119] placeholder:text-[#5a4536]/50 focus-visible:ring-0" />

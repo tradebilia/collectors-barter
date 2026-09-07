@@ -26,3 +26,9 @@ The authenticated Trade Hub showed three completed trades. The newest completed 
 25. The authenticated My Inventory Status filter exposed exactly `All Status`, `Active`, `Not Listed`, and `Traded`. Selecting `Active` returned 8 active, non-traded listings; selecting `Not Listed` returned 0 items in this dataset; selecting `Traded` returned 5 traded listings. These results matched the implemented predicates and did not mutate inventory data.
 
 26. The category-page desktop screenshot now matches the Explore All toggle treatment: the selected Grid option uses the rounded pill with the Grid2X2 icon, and List is paired with the List icon in the same control. The authenticated Trade Hub browser view showed the dark blue root background continuing to the bottom of the viewport instead of ending in a light strip.
+
+27. Coming Soon desktop verification: the non-animated paper content moved upward, while the animated logo remained in its existing wrapper. The signup row now has visible bottom space inside the paper at the desktop viewport.
+
+28. Coming Soon mobile verification exposed one remaining issue: the content group moved upward, but the email input and Notify Me button still extend onto the wood below the paper. The mobile signup needs additional bottom containment or a smaller mobile spacing/scale treatment before this change can be checkpointed.
+
+29. The second Coming Soon mobile capture confirms the horizontal signup row reduced the height, but the row still begins at the parchment’s lower edge. The email field and Notify Me button need to move upward further on mobile; the desktop composition remains separately verified.

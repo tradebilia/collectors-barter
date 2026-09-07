@@ -21,8 +21,9 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('className="w-full max-w-xl -translate-y-8 text-center sm:max-w-2xl sm:-translate-y-8"');
     expect(pageSource).toContain('className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:relative sm:left-1/2 sm:-translate-x-1/2 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4"');
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
-    expect(pageSource).toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
-    expect(pageSource).toContain('className="mx-auto mt-6 max-w-md sm:mt-4"');
+    expect(pageSource).toContain('className="-translate-y-6 pb-4 pt-2 sm:-translate-y-6 sm:pb-10 sm:pt-4"');
+    expect(pageSource).not.toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
+    expect(pageSource).toContain('className="mx-auto mt-0 max-w-md sm:mt-4"');
     expect(pageSource).toContain('/manus-storage/launching-soon-navy-clean_0cf4707a.png');
     expect(pageSource).toContain('<div className="relative">');
     expect(pageSource).toContain('role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3');
@@ -32,6 +33,9 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('className={submitted ? "invisible" : undefined}');
     expect(pageSource).toContain('role="status" aria-live="polite" className="absolute inset-x-0 top-0');
     expect(pageSource).not.toContain("Background_23084d14.jpg");
+    expect(pageSource).toContain('className="mt-1 font-serif text-3xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"');
+    expect(pageSource).toContain('className="mx-auto mt-2 max-w-md text-sm leading-5 text-[#4d3c2e]/80 sm:mt-5 sm:text-base sm:leading-6"');
+    expect(pageSource).toContain('className="relative mx-auto mt-2 grid max-w-xl');
     expect(pageSource).toContain('<span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span>');
     expect(pageSource).toContain("The Collectors Trading Exchange");
     expect(pageSource).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
@@ -48,9 +52,10 @@ describe("Coming Soon experience", () => {
     expect(pageSource).not.toContain("Launch updates only · unsubscribe anytime.");
     expect(pageSource).not.toContain("Yes, I&apos;d like to receive launch updates");
     expect(pageSource).not.toContain("Checkbox");
+    expect(pageSource).toContain('className="order-2 flex flex-row gap-2 sm:items-stretch"');
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
     expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0 text-[8px]');
-    expect(pageSource).toContain('className="mx-auto mt-6 max-w-md sm:mt-4"');
+    expect(pageSource).toContain('className="mx-auto mt-0 max-w-md sm:mt-4"');
     expect(pageSource).toContain('sm:grid-cols-5');
     expect(pageSource).toContain("<span>Vintage Toys</span>");
     expect(pageSource).toContain("<span>Disney Pins</span>");

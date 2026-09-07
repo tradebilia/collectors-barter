@@ -1681,3 +1681,7 @@
 
 - [x] Make every category page use the Explore All Grid/List toggle appearance, including both Grid/List icons, pill geometry, selected-state styling, spacing, and typography. Category UI tests passed 3/3, TypeScript and production build passed, and desktop/mobile screenshots confirmed the icon-based control.
 - [x] Extend the Trade Hub dark blue content background to fill the viewport height so no light strip appears at the bottom. Trade Hub regression coverage passed, TypeScript and production build passed, and the authenticated browser view confirmed the dark background reaches the viewport bottom.
+
+- [x] Move the non-animated Coming Soon paper content upward as a group while leaving the animated logo unchanged, and add enough bottom padding around the email signup section. Coming Soon regressions passed 6/6, TypeScript and production build passed, and desktop/mobile visual checks passed.
+
+- [x] Keep the Coming Soon mobile email signup fully inside the paper by tightening the lower content spacing or adding a mobile-specific bottom containment adjustment; preserve the animated logo and desktop composition. The compact horizontal form and mobile-specific spacing keep the controls inside the paper in the final screenshot.
