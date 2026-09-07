@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, ShieldCheck, Star, UserRound } from "lucide-react";
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatItemValue } from "@/lib/tradebilia";
 
 type RecentTrade = TradeShowcaseTrade & {
@@ -142,10 +143,24 @@ export function TradeMember({ member }: { member: TradeShowcaseParty }) {
       </div>
       <div className="mt-2 w-fit max-w-full space-y-1.5 text-left">
         {member.verificationLabels?.length ? member.verificationLabels.map((verification) => (
-          <span key={verification} className="flex items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
-            <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
-            {verification}
-          </span>
+          verification === "Tradebilia Merchant Verified" ? (
+            <Tooltip key={verification}>
+              <TooltipTrigger asChild>
+                <span className="flex cursor-help items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] underline decoration-dotted underline-offset-2 sm:text-base" aria-label="Tradebilia Merchant Verified">
+                  <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
+                  {verification}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs text-center text-xs leading-relaxed">
+                This member has completed Tradebilia&apos;s merchant verification process.
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <span key={verification} className="flex items-center gap-1 whitespace-normal break-words text-sm font-semibold text-[#31568f] sm:text-base" title={verification}>
+              <ShieldCheck className="h-4 w-4 shrink-0 text-[#3974bb]" aria-hidden="true" />
+              {verification}
+            </span>
+          )
         )) : <span className="text-sm text-[#6a82a4] sm:text-base">No verifications shown</span>}
       </div>
     </section>

@@ -80,7 +80,7 @@ function buildVerificationLabels(trade: TradeShowcaseTrade, role: "requester" | 
   if (isVerified(`${role}LinkedinVerified` as keyof TradeShowcaseTrade)) labels.push("LinkedIn Verified");
   if (isVerified(`${role}PaypalVerified` as keyof TradeShowcaseTrade)) labels.push("PayPal Verified");
   if (isVerified(`${role}EtsyVerified` as keyof TradeShowcaseTrade)) labels.push("Etsy Verified");
-  if (isVerified(`${role}MerchantVerified` as keyof TradeShowcaseTrade)) labels.push("Tradebilia Verified");
+  if (isVerified(`${role}MerchantVerified` as keyof TradeShowcaseTrade)) labels.push("Tradebilia Merchant Verified");
   return labels;
 }
 

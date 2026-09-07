@@ -61,7 +61,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("border-4 border-[#3974bb]");
     expect(carouselSource).toContain('className="relative mt-4 h-[60rem] overflow-hidden px-0 sm:px-2 md:h-[20rem] lg:h-[21rem] lg:px-3"');
     expect(carouselSource).toContain('className={`ticket-card mx-auto flex h-full w-full max-w-none flex-col overflow-hidden');
-    expect(carouselSource).toContain('className="grid min-h-0 min-w-0 flex-1 gap-1 overflow-y-auto');
+    expect(carouselSource).toContain('className="grid min-h-0 min-w-0 flex-1 gap-1 overflow-hidden');
     expect(carouselSource).toContain("ROTATION_INTERVAL_MS = 5_000");
     expect(carouselSource).toContain("window.setInterval");
     expect(carouselSource).toContain("requestAnimationFrame");
@@ -73,8 +73,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("TicketDivider");
     expect(carouselSource).toContain("absolute inset-0 h-full w-full scale-125 object-cover opacity-70 blur-md");
     expect(carouselSource).toContain("relative z-10 h-full w-full object-fill");
-    expect(carouselSource).toContain("h-40 w-24");
-    expect(carouselSource).toContain("sm:h-44 sm:w-28");
+    expect(carouselSource).toContain("h-32 w-20");
+    expect(carouselSource).toContain("sm:h-36 sm:w-24");
     expect(carouselSource).toContain("bg-[#f8fafc]");
     expect(carouselSource).toContain("bg-[#dce8f7]");
     expect(carouselSource).toContain("formatEstimatedValue");
@@ -82,7 +82,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("getCategoryBadgeClass");
     expect(carouselSource).toContain("getDisplayedGradingCompany");
     expect(carouselSource).toContain("item.customGradingCompany");
-    expect(carouselSource).toContain("inline-flex items-center rounded-md px-2 py-0.5 text-sm font-extrabold ring-1");
+    expect(carouselSource).toContain("inline-flex items-center rounded-md px-1.5 py-0.5");
     expect(carouselSource).toContain("Condition: ${condition.replaceAll");
     expect(carouselSource).toContain("text-[2.45rem]");
     expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
@@ -103,8 +103,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).not.toContain('<svg viewBox="0 0 240 220"');
     expect(carouselSource).not.toContain("textPath");
     expect(carouselSource).toContain("bg-transparent");
-    expect(carouselSource).toContain('className="h-40 w-24');
-    expect(carouselSource).toContain('sm:h-44 sm:w-28');
+    expect(carouselSource).toContain('h-32 w-20');
+    expect(carouselSource).toContain('sm:h-36 sm:w-24');
     expect(carouselSource).not.toContain("mix-blend-multiply");
     expect(carouselSource).not.toContain("trade-complete-stamp-transparent_9ec4b748.png");
     expect(carouselSource).toContain("ticket-card");
@@ -121,6 +121,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("mt-2 w-fit max-w-full space-y-1.5 text-left");
     expect(carouselSource).toContain("text-base text-slate-700");
     expect(carouselSource).toContain("verificationLabels");
+    expect(carouselSource).toContain("Tradebilia Merchant Verified");
+    expect(carouselSource).toContain("This member has completed Tradebilia&apos;s merchant verification process.");
+    expect(carouselSource).toContain("TooltipContent");
     expect(carouselSource).toContain("averageRating");
     expect(carouselSource).not.toContain('title="You gave"');
     expect(carouselSource).not.toContain('title="You received"');

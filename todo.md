@@ -1729,3 +1729,5 @@
 
 - [x] Mark traded items on Watchlist with a bold TRADED banner, keep them manually removable, and remove their detail-page links while preserving active-item behavior. Traded cards now show a red bold banner, use a plain title, hide View listing/Trade proposal actions, and retain Remove.
 - [x] Mark traded Watchlist items with a bold TRADED banner, preserve manual removal, and suppress all listing-detail/trade links for traded records while keeping active records unchanged. Targeted Watchlist regression passed, TypeScript passed, and the production build passed; two unrelated pre-existing SearchResults assertions remain stale in the broader safeguards file.
+
+- [x] Replace Tradebilia Verified with Tradebilia Merchant Verified and add an explanatory tooltip wherever the merchant verification badge is displayed. Recent-trade member badges now use the approved wording with an accessible tooltip explaining the Tradebilia merchant verification process; focused showcase/homepage tests, TypeScript, and production build passed.

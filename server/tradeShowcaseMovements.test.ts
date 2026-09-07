@@ -35,7 +35,7 @@ describe("buildTradeShowcaseMovements", () => {
           displayName: "Administrator Profile",
           username: "Administrator",
           averageRating: "4.8",
-          verificationLabels: ["eBay Verified", "Tradebilia Verified"],
+          verificationLabels: ["eBay Verified", "Tradebilia Merchant Verified"],
         }),
       }),
       expect.objectContaining({
