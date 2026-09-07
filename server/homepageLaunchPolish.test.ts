@@ -14,6 +14,10 @@ describe("homepage launch polish", () => {
     expect(homepageSource).not.toContain("Shipping Supplies");
   });
 
+  it("extends the Follow Tradebilia background through the homepage bottom padding", () => {
+    expect(homepageSource).toContain('className="relative z-10 -mb-24 border-t border-white/10 bg-[#0b102b] px-4 pb-32 pt-8 text-white sm:pt-10"');
+  });
+
   it("links Facebook, Instagram, and X icons to Rich's supplied official Tradebilia destinations", () => {
     expect(homepageSource).toContain('aria-labelledby="tradebilia-social-heading"');
     expect(homepageSource).toContain('id="tradebilia-social-heading"');
@@ -26,9 +30,9 @@ describe("homepage launch polish", () => {
     expect(homepageSource).toContain('aria-label="Follow Tradebilia on Instagram (opens in a new tab)"');
     expect(homepageSource).toContain('aria-label="Follow Tradebilia on X (opens in a new tab)"');
     expect(homepageSource).toContain('target="_blank" rel="noopener noreferrer"');
-    expect(homepageSource).toContain("<Facebook");
-    expect(homepageSource).toContain("<Instagram");
-    expect(homepageSource).toContain("<X");
-    expect(homepageSource).not.toContain("link coming soon");
+    expect(homepageSource).toContain("/manus-storage/facebook_a1c8ae7d.svg");
+    expect(homepageSource).toContain("/manus-storage/instagram_27917c8e.svg");
+    expect(homepageSource).toContain("/manus-storage/x_bddf13f5.svg");
+    expect(homepageSource).not.toContain('href="https://www.youtube.com');
   });
 });

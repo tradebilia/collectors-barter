@@ -1701,3 +1701,7 @@
 - [x] Repair Contact Us category-dropdown readability, make form input bubbles white, and make Send Message persist a contact record visible to administrators with clear success/error feedback. Added readable light dropdown/options and white inputs, additive supportTickets/supportTicketReplies tables plus application bootstrap, and verified live submission TKT-MTRKRFMK appears in Admin → Tickets as an open ticket under AdminTavani. Contact Us tests passed 3/3, TypeScript and production build passed.
 
 - [x] Add Contact Us support-ticket counts and recent suggestion activity to the Admin Operations consolidated summary while preserving the full Tickets queue. Operations now shows open/total counts, recent ticket subject/ID/submitter/category/status, and a link to Tickets; live verification showed 3 open and 3 total tickets including TKT-MTRKRFMK. Operations/Contact Us tests passed 5/5, TypeScript and production build passed.
+
+- [ ] Reorganize Admin Dashboard tabs into clear functional groups while preserving every existing tab, route, permission boundary, and current behavior.
+
+- [x] Extend the homepage Follow Tradebilia section background to fill the negative cream space while preserving social links, content, and responsive behavior. The section now extends through the former main bottom padding; homepage and responsive regressions passed, TypeScript and production build passed, and desktop/mobile screenshots confirmed the cream strip is filled.

@@ -902,7 +902,7 @@ export default function Home() {
               </div>
           </div>
 
-          <section className="border-t border-white/10 bg-[#0b102b] px-4 py-8 text-white sm:py-10" aria-labelledby="tradebilia-social-heading">
+          <section className="relative z-10 -mb-24 border-t border-white/10 bg-[#0b102b] px-4 pb-32 pt-8 text-white sm:pt-10" aria-labelledby="tradebilia-social-heading">
             <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Collector community</p>
