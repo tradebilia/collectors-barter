@@ -1718,3 +1718,5 @@
 - [x] Apply approved Admin regrouping: API Health under Overview & Monitoring; Settings under Platform & Reference Tools; Tickets, Flagged, and Mod Log under Moderation & Support; Approvals under Marketplace Management. Focused navigation and Operations tests passed, TypeScript passed, and the production build passed.
 
 - [x] Make all Report a User form input and textarea bubbles white while preserving validation, contrast, and responsive behavior. Member username, listing/trade reference, concern type, contact email, details, and evidence notes now use white bubbles with dark text and muted placeholders; focused mobile/report styling tests, TypeScript, and production build passed.
+
+- [x] Change the Report a User page View My Reports button to a clear blue style while preserving placement, icon, link behavior, and readable contrast. Header and post-submission actions now use blue backgrounds with white text; focused navigation/style tests, TypeScript, and production build passed.

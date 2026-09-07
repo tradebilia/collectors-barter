@@ -18,6 +18,7 @@ describe("Report a User navigation", () => {
     expect(header).toContain('href="/my-reports"');
     expect(header).toContain("View My Reports");
     expect(header).toContain("FileText");
+    expect(header).toContain("bg-blue-600 text-white hover:bg-blue-700");
   });
 
   it("keeps the primary form action focused on submitting the report", () => {
