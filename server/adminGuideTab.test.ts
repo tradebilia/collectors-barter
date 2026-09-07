@@ -23,6 +23,17 @@ describe("administrator guide tab", () => {
     expect(adminSource).toContain("Before you act");
   });
 
+  it("groups the navigation by functional area and wraps responsively", () => {
+    expect(adminSource).toContain('className="flex w-full flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-border/60 bg-muted/50 p-2 h-auto"');
+    expect(adminSource).toContain("Overview &amp; Monitoring");
+    expect(adminSource).toContain("Marketplace Management");
+    expect(adminSource).toContain("Moderation &amp; Support");
+    expect(adminSource).toContain("Communications &amp; Growth");
+    expect(adminSource).toContain("Platform &amp; Reference Tools");
+    expect(adminSource.indexOf('<TabsTrigger value="operations"')).toBeLessThan(adminSource.indexOf('<TabsTrigger value="billing"'));
+    expect(adminSource).toContain('className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"');
+  });
+
   it("explains every currently visible administrator workspace in plain language", () => {
     expect(adminSource).toContain("There are {adminGuideEntries.length} current administrator workspaces");
     for (const tab of visibleTabs) expect(adminSource).toContain(`tab: "${tab}"`);
