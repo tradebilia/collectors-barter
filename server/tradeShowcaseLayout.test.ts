@@ -8,18 +8,21 @@ const exchangeSource = readFileSync(resolve(process.cwd(), "client/src/lib/trade
 const completedTradeQuerySource = readFileSync(resolve(process.cwd(), "server/routers.ts"), "utf8");
 
 describe("Traders Showcase ownership-transfer layout", () => {
-  it("keeps all items from both sides visible in large responsive side panels", () => {
+  it("uses the compact homepage exchange format across the full Showcase width", () => {
     expect(showcaseSource).toContain('buildTradeShowcaseExchange(trade)');
-    expect(showcaseSource).toContain('grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]');
-    expect(showcaseSource).toContain('<TradeParty member={exchange.left.member} />');
-    expect(showcaseSource).toContain('<TradeItems items={exchange.left.items} />');
-    expect(showcaseSource).toContain('<TradeParty member={exchange.right.member} reverse />');
-    expect(showcaseSource).toContain('<TradeItems items={exchange.right.items} />');
-    expect(showcaseSource).toContain('h-12 w-12 shrink-0 text-purple-500');
-    expect(showcaseSource).toContain('grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2');
-    expect(showcaseSource).toContain('line-clamp-2 text-sm font-semibold leading-5');
+    expect(showcaseSource).toContain('<TradeMember member={exchange.left.member} />');
+    expect(showcaseSource).toContain('<TradeItemList items={exchange.left.items} cashPaid={exchange.left.cashPaid} />');
+    expect(showcaseSource).toContain('<DirectionMarker side="left" />');
+    expect(showcaseSource).toContain('<TradeItemList items={exchange.right.items} cashPaid={exchange.right.cashPaid} />');
+    expect(showcaseSource).toContain('<DirectionMarker side="right" />');
+    expect(showcaseSource).toContain('<TradeMember member={exchange.right.member} />');
+    expect(showcaseSource).toContain('ticket-card w-full overflow-hidden border-4 border-[#3974bb]');
+    expect(showcaseSource).toContain('md:grid-cols-[minmax(9rem,0.9fr)_1px_minmax(12rem,1.25fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(12rem,1.25fr)_1px_minmax(9rem,0.9fr)]');
+    expect(showcaseSource).toContain('w-full px-4 pb-16 sm:px-6 lg:px-8');
     expect(showcaseSource).not.toContain('overflow-x-auto');
     expect(showcaseSource).not.toContain('min-w-[1120px]');
+    expect(showcaseSource).not.toContain('<TradeParty');
+    expect(showcaseSource).not.toContain('<TradeItems');
     expect(showcaseSource).toContain('grid grid-cols-1 gap-5');
   });
 
@@ -29,9 +32,8 @@ describe("Traders Showcase ownership-transfer layout", () => {
     expect(exchangeSource).toContain("cashPaid: Number(trade.cashFromRecipient ?? 0) || 0");
     expect(exchangeSource).toContain("cashPaid: Number(trade.cashFromRequester ?? 0) || 0");
     expect(recentTradesSource).toContain("Cash paid");
-    expect(showcaseSource).toContain("function CashPaid");
-    expect(showcaseSource).toContain("<CashPaid amount={exchange.left.cashPaid} />");
-    expect(showcaseSource).toContain("<CashPaid amount={exchange.right.cashPaid} />");
+    expect(showcaseSource).toContain('<TradeItemList items={exchange.left.items} cashPaid={exchange.left.cashPaid} />');
+    expect(showcaseSource).toContain('<TradeItemList items={exchange.right.items} cashPaid={exchange.right.cashPaid} />');
     expect(completedTradeQuerySource).toContain("tp.cashFromRequester,");
     expect(completedTradeQuerySource).toContain("tp.cashFromRecipient,");
     expect(completedTradeQuerySource).toContain("+ COALESCE(tp.cashFromRequester, 0)");

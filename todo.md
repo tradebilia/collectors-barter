@@ -1646,3 +1646,7 @@
 - [x] Show the account-email field only after an ambiguous phone match, replace the generic error with a truthful disambiguation prompt, and cover the resubmission flow with tests. Focused recovery tests, TypeScript, production build, whitespace validation, initial-form visual verification, and user-confirmed SMS delivery/reset passed.
 
 - [x] Give Traders Showcase completed-trade cards a larger page-specific layout that shows all multi-item exchanges and cash without horizontal scrolling or overlap. Focused showcase tests, TypeScript, production build, whitespace validation, and desktop/mobile visual verification passed.
+
+- [x] Replace the compact homepage Recent Trades card with the larger full-width responsive trade layout used by Traders Showcase, showing all multi-item exchanges and cash without horizontal scrolling. Superseded by user clarification: no homepage change was requested; the larger layout belongs to Traders Showcase and is already implemented in checkpoint fd7924e1.
+
+- [x] Align Traders Showcase cards with the compact homepage Recent Trades format while allowing the Showcase card to use the full available page width for multi-item trades. Focused tests, TypeScript, production build, and desktop/mobile visual verification passed.

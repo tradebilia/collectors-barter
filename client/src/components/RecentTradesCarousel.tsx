@@ -65,7 +65,7 @@ function getMemberName(member: TradeShowcaseParty) {
   return member.displayName?.trim() || member.username?.trim() || "Member";
 }
 
-function DirectionMarker({ side }: { side: "left" | "right" }) {
+export function DirectionMarker({ side }: { side: "left" | "right" }) {
   const DirectionIcon = side === "left" ? ArrowRight : ArrowLeft;
   const directionLabel = side === "left" ? "Item moves toward the right member" : "Item moves toward the left member";
 
@@ -76,7 +76,7 @@ function DirectionMarker({ side }: { side: "left" | "right" }) {
   );
 }
 
-function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPaid: number }) {
+export function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPaid: number }) {
   if (!items.length && cashPaid <= 0) return <p className="text-center text-xs italic text-slate-500">No public item details available.</p>;
 
   const visibleItems = items.slice(0, MAX_VISIBLE_ITEM_PREVIEWS);
@@ -116,7 +116,7 @@ function TradeItemList({ items, cashPaid }: { items: TradeShowcaseItem[]; cashPa
   );
 }
 
-function TradeMember({ member }: { member: TradeShowcaseParty }) {
+export function TradeMember({ member }: { member: TradeShowcaseParty }) {
   const memberName = getMemberName(member);
   const rating = formatMemberRating(member.averageRating);
   const initials = memberName.slice(0, 2).toUpperCase();
@@ -152,7 +152,7 @@ function TradeMember({ member }: { member: TradeShowcaseParty }) {
   );
 }
 
-function TicketDivider() {
+export function TicketDivider() {
   return <div className="h-px w-full border-t border-dashed border-slate-300 md:h-full md:w-px md:border-l md:border-t-0" aria-hidden="true" />;
 }
 
