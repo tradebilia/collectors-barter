@@ -164,7 +164,7 @@ export default function TradeHub() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f4ee] text-foreground">
+    <div className="min-h-screen bg-[#0a0a2a] text-foreground">
       <TopBar logoUrl="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg" searchPlaceholder="Search Tradebilia..." />
 
       <main className="pb-24">

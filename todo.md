@@ -1678,3 +1678,6 @@
 
 - [x] Correct the Trade Hub Completed count badge baseline, font, and centering; replace the Enter Trade Room clashing-swords icon with a more appropriate trade-room icon. Focused regression tests passed, TypeScript and production build passed, and the authenticated Trade Hub preview confirmed the updated action.
 - [x] Update My Inventory Status filtering to Active, Not Listed, and Traded, with each option filtering the displayed inventory correctly. Focused regression tests passed, TypeScript and production build passed, and authenticated live checks returned 8 Active, 0 Not Listed, and 5 Traded items without mutating data.
+
+- [x] Make every category page use the Explore All Grid/List toggle appearance, including both Grid/List icons, pill geometry, selected-state styling, spacing, and typography. Category UI tests passed 3/3, TypeScript and production build passed, and desktop/mobile screenshots confirmed the icon-based control.
+- [x] Extend the Trade Hub dark blue content background to fill the viewport height so no light strip appears at the bottom. Trade Hub regression coverage passed, TypeScript and production build passed, and the authenticated browser view confirmed the dark background reaches the viewport bottom.

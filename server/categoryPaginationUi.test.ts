@@ -15,6 +15,9 @@ describe("Category Page pagination presentation", () => {
   });
 
   it("uses the same rounded-pill Grid/List control geometry as Explore All", () => {
+    expect(categoryPageSource).toContain('import { ArrowRight, Grid2X2, Heart, List, Loader2');
+    expect(categoryPageSource).toContain('<Grid2X2 className="mr-1 h-3.5 w-3.5" />Grid');
+    expect(categoryPageSource).toContain('<List className="mr-1 h-3.5 w-3.5" />List');
     expect(categoryPageSource).toContain('flex gap-0.5 rounded-full bg-white/10 p-1 shadow-sm');
     expect(categoryPageSource).toContain('rounded-full transition ${viewMode === "grid" ? "bg-white text-slate-950 shadow-sm"');
     expect(categoryPageSource).toContain('rounded-full transition ${viewMode === "list" ? "bg-white text-slate-950 shadow-sm"');

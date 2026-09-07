@@ -24,3 +24,5 @@ The authenticated Trade Hub showed three completed trades. The newest completed 
 24. The authenticated Trade Hub Completed folder displayed three completed trades. The count appeared inline as `Completed 3`, and the selected completed trade showed the updated `Enter Trade Room` action in the live browser. The completed trade preview loaded its exchange items and cash details without a runtime error.
 
 25. The authenticated My Inventory Status filter exposed exactly `All Status`, `Active`, `Not Listed`, and `Traded`. Selecting `Active` returned 8 active, non-traded listings; selecting `Not Listed` returned 0 items in this dataset; selecting `Traded` returned 5 traded listings. These results matched the implemented predicates and did not mutate inventory data.
+
+26. The category-page desktop screenshot now matches the Explore All toggle treatment: the selected Grid option uses the rounded pill with the Grid2X2 icon, and List is paired with the List icon in the same control. The authenticated Trade Hub browser view showed the dark blue root background continuing to the bottom of the viewport instead of ending in a light strip.

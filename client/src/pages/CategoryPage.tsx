@@ -23,7 +23,7 @@ import {
   tradebiliaConditionOptions,
   type TradebiliaCategorySlug,
 } from "@/lib/tradebilia";
-import { ArrowRight, Heart, Loader2, MapPin, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
+import { ArrowRight, Grid2X2, Heart, List, Loader2, MapPin, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -1354,15 +1354,15 @@ export default function CategoryPage() {
                   <div className="flex gap-0.5 rounded-full bg-white/10 p-1 shadow-sm">
                     <button
                       onClick={() => setViewMode("grid")}
-                      className={`px-3 py-1 text-xs font-medium rounded-full transition ${viewMode === "grid" ? "bg-white text-slate-950 shadow-sm" : "text-white hover:bg-white/20"}`}
+                      className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full transition ${viewMode === "grid" ? "bg-white text-slate-950 shadow-sm" : "text-white hover:bg-white/20"}`}
                     >
-                      Grid
+                      <Grid2X2 className="mr-1 h-3.5 w-3.5" />Grid
                     </button>
                     <button
                       onClick={() => setViewMode("list")}
-                      className={`px-3 py-1 text-xs font-medium rounded-full transition ${viewMode === "list" ? "bg-white text-slate-950 shadow-sm" : "text-white hover:bg-white/20"}`}
+                      className={`inline-flex items-center px-3 py-1 text-xs font-medium rounded-full transition ${viewMode === "list" ? "bg-white text-slate-950 shadow-sm" : "text-white hover:bg-white/20"}`}
                     >
-                      List
+                      <List className="mr-1 h-3.5 w-3.5" />List
                     </button>
                   </div>
                   {/* Sort dropdown */}

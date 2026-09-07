@@ -17,6 +17,10 @@ describe("Trade Hub and Inventory status presentation", () => {
     expect(tradeHubSource).toContain("folderLabels[activeFolder]");
   });
 
+  it("keeps the Trade Hub dark background through the viewport root", () => {
+    expect(tradeHubSource).toContain('<div className="min-h-screen bg-[#0a0a2a] text-foreground">');
+  });
+
   it("uses a trade-appropriate icon for the Enter Trade Room action", () => {
     expect(tradeHubSource).toContain('import { ArrowLeftRight, Mail } from "lucide-react";');
     expect(tradeHubSource).toContain("<ArrowLeftRight className=");
