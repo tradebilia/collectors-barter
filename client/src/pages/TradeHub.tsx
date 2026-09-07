@@ -10,6 +10,7 @@
  */
 
 import { useState } from "react";
+import { ArrowLeftRight, Mail } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { TopBar } from "@/components/TopBar";
@@ -237,7 +238,7 @@ export default function TradeHub() {
                   {folderLabels[activeFolder]}
                   {filteredTrades.length > 0 && (
                     activeFolder === "completed" ? (
-                      <span className="inline-flex h-6 min-w-7 items-center justify-center rounded-full border border-blue-300/70 bg-blue-600 px-2 text-sm font-bold leading-none text-white">
+                      <span className="inline-flex h-6 min-w-7 shrink-0 items-center justify-center rounded-full border border-blue-300/70 bg-blue-600 px-2 font-sans text-[13px] font-semibold leading-none text-white align-middle">
                         {filteredTrades.length}
                       </span>
                     ) : (
@@ -483,7 +484,7 @@ export default function TradeHub() {
                     onClick={() => handleEnterWarRoom(selectedTrade.id)}
                     className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-blue-500/25 text-center"
                   >
-                    {activeFolder === 'proposal' ? '📨 View Proposal' : '⚔️ Enter Trade Room'}
+                    {activeFolder === 'proposal' ? <><Mail className="mr-2 inline-block h-4 w-4 align-[-2px]" />View Proposal</> : <><ArrowLeftRight className="mr-2 inline-block h-4 w-4 align-[-2px]" />Enter Trade Room</>}
                   </button>
                   <p className="text-center text-xs text-gray-500">
                     {activeFolder === 'proposal' ? 'Review and respond to this trade proposal' : 'Secure negotiation space'}

@@ -1675,3 +1675,6 @@
 - [x] Apply the same rounded-pill Grid/List toggle styling used on Explore All to every category page, preserving selected states, view switching, and responsive behavior. Shared toggle tests passed 6/6, TypeScript, production build, and desktop/mobile visual checks passed.
 
 - [x] Prevent the category-page controls row from clipping on narrow mobile widths by allowing the verified chip, rounded Grid/List toggle, sort dropdown, and per-page selector to wrap cleanly. Mobile screenshot confirmed the controls wrap without clipping.
+
+- [x] Correct the Trade Hub Completed count badge baseline, font, and centering; replace the Enter Trade Room clashing-swords icon with a more appropriate trade-room icon. Focused regression tests passed, TypeScript and production build passed, and the authenticated Trade Hub preview confirmed the updated action.
+- [x] Update My Inventory Status filtering to Active, Not Listed, and Traded, with each option filtering the displayed inventory correctly. Focused regression tests passed, TypeScript and production build passed, and authenticated live checks returned 8 Active, 0 Not Listed, and 5 Traded items without mutating data.
