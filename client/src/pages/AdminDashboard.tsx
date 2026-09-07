@@ -832,10 +832,10 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/50 p-3 h-auto sm:grid-cols-2 lg:grid-cols-5">
-            <div className="min-w-0 space-y-2">
-              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Overview &amp; Monitoring</div>
-              <div className="flex flex-col gap-1.5">
+          <TabsList className="grid w-full grid-cols-1 items-start gap-4 rounded-xl border border-border/60 bg-muted/50 p-3 h-auto sm:grid-cols-2 lg:grid-cols-5">
+            <div className="flex min-w-0 flex-col self-start">
+              <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Overview &amp; Monitoring</div>
+              <div className="flex flex-col gap-1.5 pt-1.5">
             <TabsTrigger value="statistics" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Stats
@@ -846,9 +846,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
               </div>
             </div>
-            <div className="min-w-0 space-y-2">
-              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Marketplace Management</div>
-              <div className="flex flex-col gap-1.5">
+            <div className="flex min-w-0 flex-col self-start">
+              <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Marketplace Management</div>
+              <div className="flex flex-col gap-1.5 pt-1.5">
             <TabsTrigger value="billing" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <Settings className="h-4 w-4" />
               Billing
@@ -871,9 +871,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
               </div>
             </div>
-            <div className="min-w-0 space-y-2">
-              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Moderation &amp; Support</div>
-              <div className="flex flex-col gap-1.5">
+            <div className="flex min-w-0 flex-col self-start">
+              <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Moderation &amp; Support</div>
+              <div className="flex flex-col gap-1.5 pt-1.5">
             <TabsTrigger value="deleted" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Deleted
@@ -892,9 +892,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
               </div>
             </div>
-            <div className="min-w-0 space-y-2">
-              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Communications &amp; Growth</div>
-              <div className="flex flex-col gap-1.5">
+            <div className="flex min-w-0 flex-col self-start">
+              <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Communications &amp; Growth</div>
+              <div className="flex flex-col gap-1.5 pt-1.5">
             <TabsTrigger value="referrals" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <Mail className="h-4 w-4" />
               Referrals
@@ -909,9 +909,9 @@ export default function AdminDashboard() {
             </TabsTrigger>
               </div>
             </div>
-            <div className="min-w-0 space-y-2">
-              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Platform &amp; Reference Tools</div>
-              <div className="flex flex-col gap-1.5">
+            <div className="flex min-w-0 flex-col self-start">
+              <div className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground">Platform &amp; Reference Tools</div>
+              <div className="flex flex-col gap-1.5 pt-1.5">
             <TabsTrigger value="media-storage" className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <CloudUpload className="h-4 w-4" />
               Media Storage

@@ -24,8 +24,9 @@ describe("administrator guide tab", () => {
   });
 
   it("groups the navigation by functional area and wraps responsively", () => {
-    expect(adminSource).toContain('className="grid w-full grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/50 p-3 h-auto sm:grid-cols-2 lg:grid-cols-5"');
-    expect(adminSource).toContain('className="flex flex-col gap-1.5"');
+    expect(adminSource).toContain('className="grid w-full grid-cols-1 items-start gap-4 rounded-xl border border-border/60 bg-muted/50 p-3 h-auto sm:grid-cols-2 lg:grid-cols-5"');
+    expect(adminSource).toContain('className="flex flex-col gap-1.5 pt-1.5"');
+    expect(adminSource).toContain('className="flex min-h-10 items-center px-2 text-sm font-bold uppercase tracking-[0.14em] text-foreground"');
     expect(adminSource).toContain("Overview &amp; Monitoring");
     expect(adminSource).toContain("Marketplace Management");
     expect(adminSource).toContain("Moderation &amp; Support");

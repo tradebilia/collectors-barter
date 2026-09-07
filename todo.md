@@ -1711,3 +1711,5 @@
 
 - [x] Correct Admin navigation so each group’s individual tabs stack vertically beneath its headline, matching the provided reference rather than only stacking the group containers. Focused Admin navigation tests, TypeScript, production build, and authenticated browser inspection passed.
 - [x] Arrange Admin navigation group names horizontally as columns, with each group’s tabs vertically aligned beneath its heading and responsive wrapping on narrow screens.
+
+- [x] Make all Admin navigation group headings larger and bold, and align them to the same horizontal baseline above their vertical tab lists. Focused Admin navigation tests, TypeScript, and production build passed; the final authenticated preview retry was temporarily rate-limited after the source-level layout checks.
