@@ -3336,6 +3336,8 @@ export async function getReportsByReporter(reporterUserId: number) {
     .select({
       reportId: userReports.reportId,
       reason: userReports.reason,
+      description: userReports.description,
+      evidence: userReports.evidence,
       status: userReports.status,
       createdAt: userReports.createdAt,
       reportedMember: sql<string>`COALESCE(NULLIF(${userProfiles.displayName}, ''), ${users.username})`,
@@ -3361,6 +3363,8 @@ export async function getUserReports(options: {
   reporterUserId: number;
   reporterUserName: string;
   reason: string;
+  description: string;
+  evidence?: string;
   status: string;
   createdAt: Date;
 }>> {
@@ -3384,6 +3388,8 @@ export async function getUserReports(options: {
       reporterUserId: userReports.reporterUserId,
       reporterUserName: sql<string>`(SELECT username FROM users WHERE id = ${userReports.reporterUserId})`,
       reason: userReports.reason,
+      description: userReports.description,
+      evidence: userReports.evidence,
       status: userReports.status,
       createdAt: userReports.createdAt,
     })

@@ -1547,6 +1547,8 @@ export default function AdminDashboard() {
                           <th className="py-2 px-4 font-semibold text-xs">Report ID</th>
                           <th className="py-2 px-4 font-semibold text-xs">Reported User</th>
                           <th className="py-2 px-4 font-semibold text-xs">Reason</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Submitted Details</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Evidence</th>
                           <th className="py-2 px-4 font-semibold text-xs">Status</th>
                           <th className="py-2 px-4 font-semibold text-xs">Date</th>
                           <th className="py-2 px-4 font-semibold text-xs">Actions</th>
@@ -1557,7 +1559,9 @@ export default function AdminDashboard() {
                           <tr key={report.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs font-semibold text-blue-500">{report.reportId}</td>
                             <td className="py-2 px-4">{report.reportedUserName}</td>
-                            <td className="py-2 px-4 text-xs">{report.reason}</td>
+                            <td className="py-2 px-4 text-xs">{report.reason || "—"}</td>
+                            <td className="max-w-[280px] py-2 px-4 text-xs text-muted-foreground"><span className="line-clamp-2">{report.description || "No description provided"}</span></td>
+                            <td className="py-2 px-4 text-xs">{report.evidence ? "Included" : "None"}</td>
                             <td className="py-2 px-4">
                               <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
                                 report.status === 'pending' ? 'bg-yellow-500/20 text-yellow-700' :
