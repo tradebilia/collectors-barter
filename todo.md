@@ -1720,3 +1720,5 @@
 - [x] Make all Report a User form input and textarea bubbles white while preserving validation, contrast, and responsive behavior. Member username, listing/trade reference, concern type, contact email, details, and evidence notes now use white bubbles with dark text and muted placeholders; focused mobile/report styling tests, TypeScript, and production build passed.
 
 - [x] Change the Report a User page View My Reports button to a clear blue style while preserving placement, icon, link behavior, and readable contrast. Header and post-submission actions now use blue backgrounds with white text; focused navigation/style tests, TypeScript, and production build passed.
+
+- [x] Make all editable input fields on the Refer a Collector page white with dark readable text while preserving validation, submission behavior, and responsive layout. Collector name, collector email, collection focus, and personal invite message now use white bubbles with dark text and muted placeholders; the referral information panel remains dark. Focused referral/mobile tests, TypeScript, and production build passed.

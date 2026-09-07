@@ -90,7 +90,7 @@ export default function ReferralRequest() {
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 bg-[radial-gradient(circle_at_top,rgba(90,132,255,0.16),transparent_28%),linear-gradient(180deg,#050814_0%,#0b1220_35%,#101827_100%)]">
         <div className="grid gap-6 lg:grid-cols-[330px_minmax(0,1fr)]">
           <aside className="space-y-6">
-            <Card className="rounded-[1.75rem] border-white/10 bg-white/5 text-white shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
+            <Card className="rounded-[1.75rem] border-white/10 bg-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.28)] backdrop-blur">
               <CardHeader className="pb-4">
                 <Badge className="w-fit rounded-full bg-white/10 px-3 py-1 text-white/80 hover:bg-white/10">Community growth</Badge>
                 <CardTitle className="mt-3 text-2xl">Referral Request</CardTitle>
@@ -163,17 +163,17 @@ export default function ReferralRequest() {
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="friend-name" className="text-white/80">Collector name</Label>
-                    <Input id="friend-name" value={friendName} onChange={event => setFriendName(event.target.value)} className="h-12 rounded-[1rem] border-white/10 bg-white/5 text-white" placeholder="Friend or collector alias" />
+                    <Input id="friend-name" value={friendName} onChange={event => setFriendName(event.target.value)} className="h-12 rounded-[1rem] border-slate-200 bg-white text-slate-900 placeholder:text-slate-500" placeholder="Friend or collector alias" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="friend-email" className="text-white/80">Collector email</Label>
-                    <Input id="friend-email" type="email" value={friendEmail} onChange={event => setFriendEmail(event.target.value)} className="h-12 rounded-[1rem] border-white/10 bg-white/5 text-white" placeholder="collector@example.com" />
+                    <Input id="friend-email" type="email" value={friendEmail} onChange={event => setFriendEmail(event.target.value)} className="h-12 rounded-[1rem] border-slate-200 bg-white text-slate-900 placeholder:text-slate-500" placeholder="collector@example.com" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="collector-focus" className="text-white/80">What do they collect?</Label>
-                  <Input id="collector-focus" value={collectorFocus} onChange={event => setCollectorFocus(event.target.value)} className="h-12 rounded-[1rem] border-white/10 bg-white/5 text-white" placeholder="Example: vintage toys, autographs, graded cards" />
+                  <Input id="collector-focus" value={collectorFocus} onChange={event => setCollectorFocus(event.target.value)} className="h-12 rounded-[1rem] border-slate-200 bg-white text-slate-900 placeholder:text-slate-500" placeholder="Example: vintage toys, autographs, graded cards" />
                 </div>
 
                 <div className="space-y-2">
@@ -206,7 +206,7 @@ export default function ReferralRequest() {
 
                 <div className="space-y-2">
                   <Label htmlFor="invite-message" className="text-white/80">Personal invite message</Label>
-                  <Textarea id="invite-message" value={message} onChange={event => setMessage(event.target.value)} className="min-h-[180px] rounded-[1.25rem] border-white/10 bg-white/5 text-white" placeholder="Explain why they are a strong fit for the community." />
+                  <Textarea id="invite-message" value={message} onChange={event => setMessage(event.target.value)} className="min-h-[180px] rounded-[1.25rem] border-slate-200 bg-white text-slate-900 placeholder:text-slate-500" placeholder="Explain why they are a strong fit for the community." />
                 </div>
 
                 <div className="grid gap-4 rounded-[1.5rem] border border-white/10 bg-black/20 p-5 sm:grid-cols-3">
