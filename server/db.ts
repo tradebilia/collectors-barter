@@ -313,7 +313,7 @@ export async function ensureUserReportsTable() {
         reason VARCHAR(100) NOT NULL,
         description TEXT NOT NULL,
         evidence TEXT,
-        status ENUM('pending','reviewed','dismissed','action_taken') NOT NULL DEFAULT 'pending',
+        status ENUM('pending','reviewed','dismissed','action_taken','reviewing','resolved') NOT NULL DEFAULT 'pending',
         adminNotes TEXT,
         createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -326,6 +326,7 @@ export async function ensureUserReportsTable() {
         KEY userReports_status_idx (status),
         KEY userReports_createdAt_idx (createdAt)
       )`);
+      await db.execute(sql`ALTER TABLE userReports MODIFY COLUMN status ENUM('pending','reviewed','dismissed','action_taken','reviewing','resolved') NOT NULL DEFAULT 'pending'`);
     })().catch((error) => {
       userReportsTableReady = null;
       throw error;
@@ -3362,6 +3363,7 @@ export async function getUserReports(options: {
   reportedUserDisplayName: string;
   reporterUserId: number;
   reporterUserName: string;
+  reporterUserDisplayName: string;
   reason: string;
   description: string;
   evidence?: string;
@@ -3387,6 +3389,7 @@ export async function getUserReports(options: {
       reportedUserDisplayName: users.displayName,
       reporterUserId: userReports.reporterUserId,
       reporterUserName: sql<string>`(SELECT username FROM users WHERE id = ${userReports.reporterUserId})`,
+      reporterUserDisplayName: sql<string>`COALESCE((SELECT NULLIF(displayName, '') FROM userProfiles WHERE userId = ${userReports.reporterUserId} LIMIT 1), (SELECT NULLIF(displayName, '') FROM users WHERE id = ${userReports.reporterUserId}), (SELECT username FROM users WHERE id = ${userReports.reporterUserId}), 'Member')`,
       reason: userReports.reason,
       description: userReports.description,
       evidence: userReports.evidence,
@@ -3487,17 +3490,17 @@ export async function updateReportStatus(input: {
   adminNotes?: string;
   reviewedBy: number;
 }): Promise<void> {
-  const db = await requireDb();
-  
-  await db
-    .update(userReports)
-    .set({
-      status: input.status,
-      adminNotes: input.adminNotes,
-      reviewedAt: mysqlNow(),
-      reviewedBy: input.reviewedBy,
-    })
-    .where(eq(userReports.reportId, input.reportId));
+    const db = await requireDb();
+  const now = toMysqlDateTime(new Date());
+  await db.execute(sql`
+    UPDATE userReports
+    SET status = ${input.status},
+        adminNotes = ${input.adminNotes ?? null},
+        reviewedAt = ${now},
+        reviewedBy = ${input.reviewedBy},
+        updatedAt = ${now}
+    WHERE reportId = ${input.reportId}
+  `);
 }
 
 

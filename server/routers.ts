@@ -3378,6 +3378,7 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        await ensureUserReportsTable();
         await updateReportStatus({
           reportId: input.reportId,
           status: input.status,

@@ -714,10 +714,13 @@ export default function AdminDashboard() {
         status: status as 'pending' | 'reviewed' | 'dismissed' | 'action_taken',
         adminNotes: reportResolutionNotes.trim() || undefined,
       });
+      await reportsQuery.refetch();
       setSelectedReport(null);
       setReportResolutionNotes("");
-      reportsQuery.refetch();
+      toast.success(`Report marked as ${status.replace('_', ' ')}`);
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unable to update report status';
+      toast.error(message);
       console.error('[handleUpdateReportStatus] Failed to update report status', error);
     }
   };
@@ -1546,6 +1549,7 @@ export default function AdminDashboard() {
                         <tr className="border-b border-border bg-muted/50">
                           <th className="py-2 px-4 font-semibold text-xs">Report ID</th>
                           <th className="py-2 px-4 font-semibold text-xs">Reported User</th>
+                          <th className="py-2 px-4 font-semibold text-xs">Submitted By</th>
                           <th className="py-2 px-4 font-semibold text-xs">Reason</th>
                           <th className="py-2 px-4 font-semibold text-xs">Submitted Details</th>
                           <th className="py-2 px-4 font-semibold text-xs">Evidence</th>
@@ -1558,7 +1562,8 @@ export default function AdminDashboard() {
                         {(reportsQuery.data as any[]).map((report: any) => (
                           <tr key={report.id} className="border-b border-border hover:bg-accent/50">
                             <td className="py-2 px-4 font-mono text-xs font-semibold text-blue-500">{report.reportId}</td>
-                            <td className="py-2 px-4">{report.reportedUserName}</td>
+                            <td className="py-2 px-4">{report.reportedUserName || report.reportedUserDisplayName || "Member"}</td>
+                            <td className="py-2 px-4 text-xs font-medium">{report.reporterUserDisplayName || report.reporterUserName || "Member"}</td>
                             <td className="py-2 px-4 text-xs">{report.reason || "—"}</td>
                             <td className="max-w-[280px] py-2 px-4 text-xs text-muted-foreground"><span className="line-clamp-2">{report.description || "No description provided"}</span></td>
                             <td className="py-2 px-4 text-xs">{report.evidence ? "Included" : "None"}</td>
@@ -2333,7 +2338,11 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Reported User</p>
-                  <p className="text-base">{selectedReport.reportedUserName}</p>
+                  <p className="text-base">{selectedReport.reportedUserName || selectedReport.reportedUserDisplayName || "Member"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-muted-foreground">Submitted By</p>
+                  <p className="text-base">{selectedReport.reporterUserDisplayName || selectedReport.reporterUserName || "Member"}</p>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-muted-foreground">Reason</p>
