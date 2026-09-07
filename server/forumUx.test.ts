@@ -214,4 +214,25 @@ describe("Collectors Forum UX contracts", () => {
     expect(topicSource).toContain("Topic not found");
     expect(topicSource).toContain("Browse forum topics");
   });
+
+  it("regresses administrator removal through the report-review path", () => {
+    expect(moderationQueueSource).toContain('trpc.market.reviewForumReport.useMutation()');
+    expect(moderationQueueSource).toContain('review(report.id, "remove")');
+    expect(routerSource).toContain("reviewForumReport: protectedProcedure");
+    expect(dbSource).toContain('if (input.action === "remove") await moderateForumPost');
+    expect(dbSource).toContain('status: "removed"');
+    expect(dbSource).toContain("await db.delete(forumReplies).where(eq(forumReplies.postId, input.postId));");
+  });
+
+  it("regresses topic-level and nested reply targeting with media controls", () => {
+    expect(topicSource).toContain("handleAddReply = async (event: FormEvent, parentReplyId: number | null)");
+    expect(topicSource).toContain("handleAddReply(event, isTopicTarget ? null : Number(targetKey))");
+    expect(topicSource).toContain("renderReplyTree = (parentReplyId: number | null, depth: number)");
+    expect(topicSource).toContain('type="file" accept="image/jpeg,image/png,image/webp,image/gif"');
+    expect(topicSource).toContain('accept="video/mp4"');
+    expect(topicSource).toContain("replyPhotos.map((file) => file.name)");
+    expect(topicSource).toContain("Cancel");
+    expect(dbSource).toContain("parentReplyId?: number | null");
+    expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, parentReplyId, content)");
+  });
 });

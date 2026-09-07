@@ -8,8 +8,9 @@ const compactTopBarSource = topBarSource.slice(compactTopBarStart, topBarSource.
 
 describe("compact TopBar animated logo", () => {
   it("uses the shared desktop animated-logo geometry rather than a smaller compact logo", () => {
-    expect(compactTopBarSource).toContain("absolute left-2 h-16 hidden items-center sm:flex");
-    expect(compactTopBarSource).toContain("style={{ width: '650px', top: '-10px' }}");
+    expect(compactTopBarSource).toContain("absolute left-2 z-0 hidden h-16 items-center sm:flex sm:w-[200px] lg:w-[650px]");
+    expect(compactTopBarSource).toContain("style={{ top: '-10px' }}");
     expect(compactTopBarSource).toContain('<AnimatedLogoSmall70 />');
+    expect(topBarSource).toContain('ml-[180px] mr-[110px]');
   });
 });

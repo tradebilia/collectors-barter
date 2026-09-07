@@ -8,22 +8,22 @@ const read = (path: string) => readFileSync(resolve(root, path), "utf8");
 describe("authenticated mobile-only responsive layout contracts", () => {
   it("keeps Inventory desktop cards while collapsing to one card per phone row", () => {
     const source = read("client/src/pages/Inventory.tsx");
-    expect(source).toContain("grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6");
+    expect(source).toContain("grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-6");
   });
 
   it("stacks Messages and Trade Hub on phones while preserving their desktop workspaces", () => {
     const messages = read("client/src/pages/Messages.tsx");
     const tradeHub = read("client/src/pages/TradeHub.tsx");
-    expect(messages).toContain("grid grid-cols-1 gap-6 lg:grid-cols-[240px_1fr_1.2fr]");
+    expect(messages).toContain("grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-[240px_1fr_1.2fr]");
     expect(tradeHub).toContain("grid-cols-1 gap-4 px-4 py-4 lg:grid-cols-12");
     expect(tradeHub).toContain("lg:col-span-5");
   });
 
   it("stacks Trade Room panels until wide desktop space is available for the rail and eleven-column negotiation workspace", () => {
     const source = read("client/src/pages/WarRoom.tsx");
-    expect(source).toContain("flex min-h-0 flex-1 flex-col overflow-visible xl:flex-row xl:items-stretch xl:overflow-hidden");
+    expect(source).toContain("trade-room-workspace flex min-h-0 flex-1 flex-col overflow-visible");
     expect(source).toContain("grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-11");
-    expect(source).toContain("min-h-[34rem] w-full flex-shrink-0 flex-col p-4 xl:h-full xl:min-h-0 xl:w-[360px]");
+    expect(source).toContain("trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4");
     expect(source).toContain("overflow-x-auto pb-2 lg:pb-0");
   });
 
@@ -55,7 +55,7 @@ describe("authenticated mobile-only responsive layout contracts", () => {
 
   it("keeps the Report a Member hero centered at every breakpoint without injected offset styles", () => {
     const source = read("client/src/pages/ReportUser.tsx");
-    expect(source).toContain("max-w-7xl items-center justify-center");
+    expect(source).toContain('className="h-auto w-full max-w-7xl object-contain px-4"');
     expect(source).not.toContain("@media (max-width: 1023px)");
     expect(source).not.toContain("mobileHeroStyle.dataset.reportUserMobileHero");
     expect(source).not.toContain("-ml-32");

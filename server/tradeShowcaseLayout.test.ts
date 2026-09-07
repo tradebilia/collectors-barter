@@ -17,7 +17,7 @@ describe("Traders Showcase ownership-transfer layout", () => {
     expect(showcaseSource).toContain('<DirectionMarker side="right" />');
     expect(showcaseSource).toContain('<TradeMember member={exchange.right.member} />');
     expect(showcaseSource).toContain('ticket-card w-full overflow-hidden border-4 border-[#3974bb]');
-    expect(showcaseSource).toContain('md:grid-cols-[minmax(9rem,0.9fr)_1px_minmax(12rem,1.25fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(12rem,1.25fr)_1px_minmax(9rem,0.9fr)]');
+    expect(showcaseSource).toContain('lg:grid-cols-[minmax(9rem,0.9fr)_1px_minmax(12rem,1.25fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(12rem,1.25fr)_1px_minmax(9rem,0.9fr)]');
     expect(showcaseSource).toContain('w-full px-4 pb-16 sm:px-6 lg:px-8');
     expect(showcaseSource).not.toContain('overflow-x-auto');
     expect(showcaseSource).not.toContain('min-w-[1120px]');

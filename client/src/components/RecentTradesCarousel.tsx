@@ -152,8 +152,9 @@ export function TradeMember({ member }: { member: TradeShowcaseParty }) {
   );
 }
 
-export function TicketDivider() {
-  return <div className="h-px w-full border-t border-dashed border-slate-300 md:h-full md:w-px md:border-l md:border-t-0" aria-hidden="true" />;
+export function TicketDivider({ wide = false }: { wide?: boolean }) {
+  const desktopDividerClass = wide ? "lg:h-full lg:w-px lg:border-l lg:border-t-0" : "md:h-full md:w-px md:border-l md:border-t-0";
+  return <div className={`h-px w-full border-t border-dashed border-slate-300 ${desktopDividerClass}`} aria-hidden="true" />;
 }
 
 export function RecentTradesCarousel({ trades, isLoading = false }: { trades: RecentTrade[]; isLoading?: boolean }) {

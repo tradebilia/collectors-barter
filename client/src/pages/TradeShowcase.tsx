@@ -59,19 +59,19 @@ function TradeCard({ trade }: { trade: any }) {
       {!hasItems && !hasCash ? (
         <div className="flex min-h-32 items-center justify-center px-4 py-8 text-sm text-slate-500">No public item details available.</div>
       ) : (
-        <div className="grid min-w-0 gap-2 overflow-hidden px-4 py-5 sm:px-5 lg:px-8 lg:py-6 md:grid-cols-[minmax(9rem,0.9fr)_1px_minmax(12rem,1.25fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(12rem,1.25fr)_1px_minmax(9rem,0.9fr)] md:items-center md:gap-1">
+        <div className="grid min-w-0 gap-2 overflow-hidden px-4 py-5 sm:px-5 lg:px-8 lg:py-6 lg:grid-cols-[minmax(9rem,0.9fr)_1px_minmax(12rem,1.25fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(12rem,1.25fr)_1px_minmax(9rem,0.9fr)] lg:items-center lg:gap-1">
           <TradeMember member={exchange.left.member} />
-          <TicketDivider />
+          <TicketDivider wide />
           <TradeItemList items={exchange.left.items} cashPaid={exchange.left.cashPaid} />
           <DirectionMarker side="left" />
-          <TicketDivider />
+          <TicketDivider wide />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
             <img src="/manus-storage/trade-quality-seal-transparent_fdff2d58.png" alt="Trade Quality seal" className="h-36 w-40 object-contain sm:h-44 sm:w-48 lg:h-48 lg:w-52" loading="lazy" />
           </div>
-          <TicketDivider />
+          <TicketDivider wide />
           <DirectionMarker side="right" />
           <TradeItemList items={exchange.right.items} cashPaid={exchange.right.cashPaid} />
-          <TicketDivider />
+          <TicketDivider wide />
           <TradeMember member={exchange.right.member} />
         </div>
       )}

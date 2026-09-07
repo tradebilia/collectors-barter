@@ -78,7 +78,7 @@ export function TopBar({
       <div className="border-b border-white/10 bg-black relative z-0">
         <div className="flex min-h-14 items-center justify-between pl-2 pr-4 py-1 relative">
           {/* Desktop logo uses the same full shared geometry as pages with search. */}
-          <div className="absolute left-2 h-16 hidden items-center sm:flex" style={{ width: '650px', top: '-10px' }}>
+          <div className="absolute left-2 z-0 hidden h-16 items-center sm:flex sm:w-[200px] lg:w-[650px]" style={{ top: '-10px' }}>
             <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
               <div className="h-16 w-full flex items-center">
                 <AnimatedLogoSmall70 />
@@ -153,7 +153,7 @@ export function TopBar({
 
       <div className="hidden min-h-14 items-center justify-center gap-4 px-2 py-2 sm:flex sm:pl-2 sm:pr-4 relative">
         {/* Animated Logo on left */}
-        <div className="absolute left-2 h-16 hidden items-center sm:flex" style={{ width: '650px', top: '-10px' }}>
+        <div className="absolute left-2 z-0 hidden h-16 items-center sm:flex sm:w-[200px] lg:w-[650px]" style={{ top: '-10px' }}>
           <a href="/" className="flex items-center hover:opacity-80 transition h-full w-full">
             <div className="h-16 w-full flex items-center">
               <AnimatedLogoSmall70 />
@@ -162,7 +162,7 @@ export function TopBar({
         </div>
 
         {/* Search in center */}
-        <div className="flex items-center gap-0 bg-white rounded-lg px-4 py-2 max-w-2xl w-full mr-16 sm:mx-0">
+        <div className="relative z-10 ml-[180px] mr-[110px] flex w-full items-center gap-0 rounded-lg bg-white px-4 py-2 sm:max-w-none lg:mx-0 lg:max-w-2xl">
           <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
           <input
             type="text"

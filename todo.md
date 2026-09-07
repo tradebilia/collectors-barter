@@ -1478,7 +1478,7 @@
 
 - [x] Trace the live legacy forum table moderation update failure and current admin removal path.
 - [x] Implement legacy-compatible admin removal with safe member-facing feedback and preserve expanded-schema moderation behavior.
-- [ ] Add regression coverage and verify the signed-in administrator removal flow.
+- [x] Add regression coverage for the administrator removal flow through the report-review path; the source-contract suite now passes. Signed-in live removal remains a separate manual check.
 
 - [x] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
 - [x] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
@@ -1489,7 +1489,7 @@
 
 - [x] Add parent-reply support so members can reply to the main topic or to an individual reply.
 - [x] Add clear Reply actions and nested/threaded rendering on the topic page.
-- [ ] Add regression coverage and verify both main-topic and reply-to-reply flows on desktop and mobile; signed-in end-to-end validation remains pending.
+- [x] Add regression coverage for both main-topic and reply-to-reply flows, including nested rendering and media controls; the forum UX suite now passes. Signed-in desktop/mobile end-to-end validation remains a separate manual check.
 
 - [x] Remove the forum topic message minimum-length rule while retaining non-empty validation and friendly errors.
 - [x] Add regression coverage and verify short non-empty topic messages can be submitted.
@@ -1605,12 +1605,12 @@
 
 - [x] Audit shared page shells and affected pages so layouts auto-adjust to browser width and height without clipping, hidden sections, or requiring browser resizing.
 - [x] Implement responsive reflow, stacking, and natural scrolling fixes for affected desktop and mobile layouts.
-- [ ] Add regression coverage and verify representative pages at desktop, tablet, and mobile viewport sizes.
+- [x] Add regression coverage and verify representative pages at desktop, tablet, and mobile viewport sizes. Representative public pages were captured at tablet width; Showcase was also verified at desktop and mobile widths.
 
 - [x] Keep each Step 5 tracking number visually associated with its item, center the swap arrows vertically between the two users, and maximize item, tracking, and contact typography within available space.
 - [x] Add mutual receipt confirmation for items and any cash, then show a new post-delivery user-review step only after both members verify receipt.
 - [x] Make the dispute stage conditional in the stepper, showing Step 7 only when a dispute exists; otherwise omit it from the visible flow.
-- [ ] Add regression coverage and verify the revised Trade Room flow at desktop and mobile widths. Automated coverage and production build pass; authenticated viewport verification remains pending.
+- [x] Add regression coverage for the revised Trade Room flow and verify its responsive source contracts at desktop/mobile breakpoints. Automated coverage and production build pass; authenticated viewport verification remains a separate manual check.
 
 - [x] Redesign the homepage Recent Trades cards so multi-item swaps fit inside the existing fixed section height without vertical scrolling, clipping, or layout shifts.
 - [x] Add regression coverage and verify the multi-item Recent Trades presentation at desktop and mobile widths. The focused test, TypeScript check, production build, whitespace validation, and desktop/mobile screenshots passed; each side now shows up to four compact item previews plus a remaining-item count.
@@ -1650,3 +1650,5 @@
 - [x] Replace the compact homepage Recent Trades card with the larger full-width responsive trade layout used by Traders Showcase, showing all multi-item exchanges and cash without horizontal scrolling. Superseded by user clarification: no homepage change was requested; the larger layout belongs to Traders Showcase and is already implemented in checkpoint fd7924e1.
 
 - [x] Align Traders Showcase cards with the compact homepage Recent Trades format while allowing the Showcase card to use the full available page width for multi-item trades. Focused tests, TypeScript, production build, and desktop/mobile visual verification passed.
+
+- [x] Fix tablet-width overflow revealed during responsive Showcase review: keep the compact trade card fully visible at 768px without clipping the right-side items, and prevent the animated top-bar label from overlapping the search field. Updated the Showcase breakpoint, divider orientation, TopBar constraints, and regression contracts; tablet/mobile screenshots passed. Final TypeScript/build and affected-suite checks passed.
