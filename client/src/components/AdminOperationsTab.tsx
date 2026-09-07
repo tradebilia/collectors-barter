@@ -94,6 +94,21 @@ export function AdminOperationsTab({ onNavigate }: { onNavigate: (tab: AdminTab)
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2"><AlertTriangle className="h-5 w-5 text-primary" /> Support Activity</CardTitle>
+          <CardDescription>Consolidated Contact Us and support-ticket activity. Open tickets remain actionable in the Tickets workspace.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Open or in progress</p><p className="mt-1 text-2xl font-semibold">{snapshot?.supportTickets?.open ?? 0}</p><p className="mt-1 text-xs text-muted-foreground">Needs administrator attention.</p></div>
+            <div className="rounded-lg border p-4"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">All support tickets</p><p className="mt-1 text-2xl font-semibold">{snapshot?.supportTickets?.total ?? 0}</p><p className="mt-1 text-xs text-muted-foreground">Includes resolved and closed records.</p></div>
+          </div>
+          {snapshot?.supportTickets?.recent?.length ? <div className="space-y-2">{snapshot.supportTickets.recent.map((ticket: any) => <div key={ticket.ticketId} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3 text-sm"><div><p className="font-medium">{ticket.subject}</p><p className="text-xs text-muted-foreground">{ticket.ticketId} · {ticket.submitterDisplayName} · {String(ticket.category).replaceAll("_", " ")}</p></div><Badge variant={ticket.status === "open" ? "default" : "secondary"}>{String(ticket.status).replaceAll("_", " ")}</Badge></div>)}</div> : <p className="text-sm text-muted-foreground">No Contact Us or support-ticket activity has been submitted.</p>}
+          <Button variant="link" className="h-auto px-0 text-xs" onClick={() => onNavigate("tickets")}>Open Tickets workspace <ExternalLink className="ml-1 h-3 w-3" /></Button>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-5 xl:grid-cols-2">
         <Card>
           <CardHeader><CardTitle className="flex items-center gap-2"><Clock3 className="h-5 w-5 text-primary" /> Active Trade Lifecycle</CardTitle><CardDescription>Participant names and milestone state only; no shipping addresses, payment details, or tracking numbers are shown.</CardDescription></CardHeader>

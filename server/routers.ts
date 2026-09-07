@@ -2962,6 +2962,7 @@ export const appRouter = router({
       }),
     getOperationsSnapshot: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      await ensureSupportTicketsTable();
       const db = await requireDb();
       const [queueRows] = await db.execute(sql`
         SELECT
@@ -2972,6 +2973,8 @@ export const appRouter = router({
           (SELECT COUNT(*) FROM flaggedContent WHERE status = 'pending') AS pendingFlags,
           (SELECT COUNT(*) FROM lowFeedbackFlags WHERE status = 'pending') AS pendingFeedbackFlags,
           (SELECT COUNT(*) FROM supportTickets WHERE status IN ('open','in_progress') AND priority IN ('high','urgent')) AS urgentTickets,
+          (SELECT COUNT(*) FROM supportTickets WHERE status IN ('open','in_progress')) AS openSupportTickets,
+          (SELECT COUNT(*) FROM supportTickets) AS totalSupportTickets,
           (SELECT COUNT(*) FROM tradeProposals WHERE status = 'disputed') AS disputedTrades,
           (SELECT COUNT(*) FROM tradeProposals WHERE status IN ('accepted','shipping','shipped') AND ((shippingDeadline IS NOT NULL AND shippingDeadline < NOW()) OR (receiptDeadline IS NOT NULL AND receiptDeadline < NOW()))) AS overdueTradeMilestones,
           (SELECT COUNT(*) FROM apiHealthEvents WHERE occurredAt >= DATE_SUB(NOW(), INTERVAL 24 HOUR)) AS recentApiFailures,
@@ -2980,6 +2983,10 @@ export const appRouter = router({
           (SELECT COUNT(*) FROM tradeProposals WHERE completedAt >= DATE_SUB(NOW(), INTERVAL 30 DAY)) AS completedTrades30d
       `);
       const counts = (queueRows as unknown as any[])[0] ?? {};
+      const [recentSupportRows] = await db.execute(sql`SELECT st.ticketId, st.subject, st.category, st.status, st.createdAt,
+        COALESCE(NULLIF(u.displayName, ''), u.username, st.submittedByName, 'Anonymous visitor') AS submitterDisplayName
+        FROM supportTickets st LEFT JOIN users u ON u.id = st.userId
+        ORDER BY st.createdAt DESC LIMIT 5`);
       let schedule: Awaited<ReturnType<typeof listHeartbeatJobs>>["jobs"][number] | null = null;
       try {
         const schedules = await listHeartbeatJobs("", { page: 1, pageSize: 100 });
@@ -2992,6 +2999,11 @@ export const appRouter = router({
       return {
         schedule,
         recentApiFailures: Number(counts.recentApiFailures ?? 0),
+        supportTickets: {
+          open: Number(counts.openSupportTickets ?? 0),
+          total: Number(counts.totalSupportTickets ?? 0),
+          recent: Array.isArray(recentSupportRows) ? recentSupportRows : [],
+        },
         actionQueue: [
           { key: 'approvals', label: 'Pending approvals', count: Number(counts.pendingApprovals ?? 0), description: 'Accounts awaiting marketplace approval.', tab: 'approvals' },
           { key: 'closureRequests', label: 'Closure requests', count: Number(counts.pendingClosureRequests ?? 0), description: 'Member account-closure requests awaiting review.', tab: 'account-closures' },
@@ -2999,7 +3011,7 @@ export const appRouter = router({
           { key: 'reports', label: 'Member reports', count: Number(counts.pendingReports ?? 0), description: 'Community reports awaiting review.', tab: 'reports' },
           { key: 'flags', label: 'Content flags', count: Number(counts.pendingFlags ?? 0), description: 'Flagged content awaiting review.', tab: 'flagged' },
           { key: 'feedbackFlags', label: 'Feedback safety', count: Number(counts.pendingFeedbackFlags ?? 0), description: 'Low-feedback safety records awaiting review.', tab: 'flagged' },
-          { key: 'tickets', label: 'Urgent support', count: Number(counts.urgentTickets ?? 0), description: 'Open or in-progress high-priority tickets.', tab: 'tickets' },
+          { key: 'tickets', label: 'Support tickets', count: Number(counts.openSupportTickets ?? 0), description: 'Open or in-progress Contact Us and support requests.', tab: 'tickets' },
           { key: 'trades', label: 'Trade follow-up', count: Number(counts.disputedTrades ?? 0) + Number(counts.overdueTradeMilestones ?? 0), description: 'Disputed or overdue trade milestones.', tab: 'trades' },
         ],
         launch: { newMembers30d: Number(counts.newMembers30d ?? 0), newListings30d: Number(counts.newListings30d ?? 0), completedTrades30d: Number(counts.completedTrades30d ?? 0) },
