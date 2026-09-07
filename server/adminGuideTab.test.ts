@@ -24,15 +24,15 @@ describe("administrator guide tab", () => {
   });
 
   it("groups the navigation by functional area and wraps responsively", () => {
-    expect(adminSource).toContain('className="flex w-full flex-col gap-3 rounded-xl border border-border/60 bg-muted/50 p-2 h-auto"');
-    expect(adminSource).toContain('className="flex w-full flex-wrap gap-2"');
+    expect(adminSource).toContain('className="grid w-full grid-cols-1 gap-4 rounded-xl border border-border/60 bg-muted/50 p-3 h-auto sm:grid-cols-2 lg:grid-cols-5"');
+    expect(adminSource).toContain('className="flex flex-col gap-1.5"');
     expect(adminSource).toContain("Overview &amp; Monitoring");
     expect(adminSource).toContain("Marketplace Management");
     expect(adminSource).toContain("Moderation &amp; Support");
     expect(adminSource).toContain("Communications &amp; Growth");
     expect(adminSource).toContain("Platform &amp; Reference Tools");
     expect(adminSource.indexOf('<TabsTrigger value="operations"')).toBeLessThan(adminSource.indexOf('<TabsTrigger value="billing"'));
-    expect(adminSource).toContain('className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"');
+    expect(adminSource).toContain('className="w-full justify-start flex items-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap"');
   });
 
   it("explains every currently visible administrator workspace in plain language", () => {

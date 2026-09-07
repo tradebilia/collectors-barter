@@ -1708,3 +1708,6 @@
 
 - [x] Reformat Admin navigation groups vertically so each group headline sits above its related full-width tab row, preserving routes, permissions, and responsive behavior. Focused Admin navigation tests passed 2/2, Operations regression passed, TypeScript passed, production build passed, and authenticated browser inspection confirmed the requested stacked arrangement.
 - [ ] Resolve the 24 unrelated pre-existing failures in the full Vitest suite; this Admin navigation change did not introduce them.
+
+- [x] Correct Admin navigation so each group’s individual tabs stack vertically beneath its headline, matching the provided reference rather than only stacking the group containers. Focused Admin navigation tests, TypeScript, production build, and authenticated browser inspection passed.
+- [x] Arrange Admin navigation group names horizontally as columns, with each group’s tabs vertically aligned beneath its heading and responsive wrapping on narrow screens.
