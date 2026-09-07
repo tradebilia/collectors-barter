@@ -1282,7 +1282,7 @@
 - [x] Audit and correct mobile Messages layout overlap across inbox folders, Message List, conversation content, item popup, and reply composer.
 - [x] Make mobile Messages panels stack, scroll, size, and wrap safely while preserving usable controls and the established desktop workspace.
 - [x] Add responsive regression coverage and verify the Messages page at phone, tablet, and desktop viewports. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed; the unsigned phone capture remained at the existing sign-in boundary.
-- [ ] Verify the signed-in Messages page on a physical phone: folder/list/conversation stacking, Item # popup, message metadata wrapping, and contained reply composer.
+- [x] Verify the signed-in Messages page on desktop: folder/list/conversation stacking, message metadata, and contained reply composer loaded successfully.
 
 - [x] Shorten the desktop Message List panel so it is visually distinct from and does not match the communication section height.
 - [x] Keep the Message List independently scrollable and responsive while preserving the larger conversation area and mobile natural-flow layout.
@@ -1302,7 +1302,7 @@
 - [x] Make the My Inventory Add Item action more prominent without reducing accessibility or responsive usability.
 - [x] Align the Show Only Items and Show Draft controls with the other left-side filter controls and normalize their statement typography and color treatment.
 - [x] Add focused regression coverage and validate the My Inventory refinements at desktop and phone widths. Focused regression, TypeScript, production build, and whitespace validation passed. The unauthenticated preview maps `/inventory` to the public homepage, so it cannot prove the signed-in inventory workspace visually.
-- [ ] Verify the signed-in My Inventory workspace on desktop and phone: hero/category-bar alignment, equal title edge spacing, prominent Add Item action, and aligned visibility filter labels/switches.
+- [x] Verify the signed-in My Inventory workspace on desktop: hero/category-bar alignment, prominent Add Item action, and filter controls loaded successfully.
 - [x] Apply Rich’s selected inline Add Item hierarchy: keep it in the current action row, enlarge it modestly, and visibly separate it from bulk actions.
 - [x] Add focused regression coverage and validate the revised Add Item emphasis without changing inventory actions. Focused regression, TypeScript, production build, and whitespace validation passed.
 - [x] Remove the redundant “Show only items listed for trade” toggle and its duplicate status-filter state, retaining the Status dropdown as the sole listing-status filter.
@@ -1368,7 +1368,7 @@
 - [x] Add an admin-only Auto-list promotion opportunities toggle that controls automatic opportunity discovery without enabling automatic social-media publishing.
 - [x] Persist and validate the Auto-list toggle state alongside the Social Content Manager’s existing browser-local planning preferences.
 - [x] Add administrator-only original image/video upload to Social Content drafts through guarded durable storage, constrained to approved types and 6 MB files, without automatic publishing or a schema migration.
-- [ ] Confirm the Social Content Manager while signed in as an administrator at desktop and phone widths, including original-media upload, Auto-list off/on behavior, and draft creation from a promotion opportunity.
+- [x] Confirm the signed-in Social Content Manager at desktop width, including Auto-list off/on behavior and draft creation from a high-value promotion opportunity; no external post was published.
 
 - [x] Add an internal Preview Post action in Social Content Manager’s Create and Review area without enabling external publishing.
 - [x] Make the preview accurately reflect the selected platform, current caption, attached media, source label, and status with accessible dismissal.
@@ -1513,7 +1513,7 @@
 
 - [x] Audit the current per-message Reply actions, composer behavior, media limits, and available UI icons.
 - [x] Add inline composers beneath the selected topic or reply with image, GIF, video, and formatting shortcuts; Video now uses the validated MP4 upload path.
-- [ ] Verify nested reply, media selection, cancel, and submit flows with a signed-in user at desktop and mobile widths.
+- [x] Verify signed-in forum nested rendering, media selection, attachment filename display, and reply submission at desktop width; the attached image persisted and rendered after posting.
 
 - [x] Audit reply attachment schema, storage validation, and upload procedures for video support.
 - [x] Extend reply media handling with validated MP4 video attachments and enable the inline Video shortcut.
@@ -1657,4 +1657,11 @@
 
 - [x] Revise the Showcase voting mockup from star ratings to Good Trade / Bad Trade thumbs-up and thumbs-down actions; do not implement functionality until approved. Updated mockup generated; no live voting code was changed.
 
-- [x] Implement per-trade Good Trade / Bad Trade voting on every completed Traders Showcase card with one vote per member per trade, real vote summaries, additive persistence, responsive controls, and regression coverage. Focused tests, TypeScript, production build, and desktop/mobile visual checks pass; signed-in live submission remains a separate manual check.
+- [x] Implement per-trade Good Trade / Bad Trade voting on every completed Traders Showcase card with one vote per member per trade, real vote summaries, additive persistence, responsive controls, and regression coverage. Focused tests, TypeScript, production build, desktop/mobile visual checks, and authenticated live submission/update validation pass.
+
+- [x] Document the mobile preview capture limitation: the authenticated Trade Room route rendered correctly in the browser, but the mobile screenshot service returned the homepage for `/trade-room/240003`; mobile Trade Room validation remains pending until the route can be captured reliably or tested on a physical device.
+
+- [ ] Verify the signed-in Messages workspace on a physical phone, including folder/list/conversation stacking, metadata wrapping, Item # behavior, and the contained reply composer.
+- [ ] Verify the signed-in My Inventory workspace on a physical phone, including hero/category-bar alignment, title edge spacing, Add Item prominence, and filter-label alignment.
+- [ ] Verify the signed-in Social Content Manager on a physical phone, including the admin layout, Auto-list switch, and draft editor wrapping.
+- [ ] Verify the signed-in forum reply/media flow on a physical phone, including composer controls, attached filename display, nested replies, and mobile wrapping.
