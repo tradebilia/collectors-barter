@@ -34,16 +34,17 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
     expect(searchPage).toContain("globalSearchHeroCollageUrl");
     expect(searchPage).toContain("tradebilia-warm-archival-hero-04_cdf269c5.png");
-    expect(searchPage).toContain('min-h-[400px]');
+    expect(searchPage).toContain('min-h-[480px]');
     expect(searchPage).toContain('rgba(24,16,11,0.58)');
     expect(searchPage).toContain("Search the Exchange");
     expect(searchPage).toContain('href={`/listings/${listing.id}`}');
     expect(searchPage).toContain("resolveTradebiliaListingImage");
     expect(searchPage).toContain("Verified merchants only");
-    expect(searchPage).toContain('flex min-h-[32rem] w-full flex-col gap-0 px-4 py-6');
-    expect(searchPage).toContain('lg:sticky lg:top-4 lg:w-56');
+    expect(searchPage).toContain('flex min-h-[32rem] w-full flex-col gap-0 px-4 py-0 sm:px-6');
+    expect(searchPage).toContain('min-w-0 flex-1 px-0 py-6 md:py-8 lg:px-6 lg:py-10');
+    expect(searchPage).toContain('lg:sticky lg:top-4 lg:w-80');
     expect(searchPage).not.toContain('className="container flex min-h-[32rem] flex-col gap-0 py-6 lg:flex-row lg:py-8"');
-    expect(searchPage).toContain("grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6");
+    expect(searchPage).toContain('mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6');
     expect(searchPage).toContain('const { user, isAuthenticated } = useAuth();');
     expect(searchPage).toContain("trpc.market.createTradeProposal.useMutation");
     expect(searchPage).toContain("disabled={!isAuthenticated || listing.ownerId === user?.id}");
@@ -53,8 +54,9 @@ describe("unified global search contracts", () => {
     expect(searchPage).toContain("Trader Rating");
     expect(searchPage).toContain("text-slate-600");
     expect(searchPage).toContain('text-[0.75rem] font-bold leading-tight');
-    expect(searchPage).toContain('className="block aspect-[7/9] bg-white p-0"');
-    expect(searchPage).not.toContain('className="block aspect-[7/9] border-b border-current/10 bg-white p-0"');
+    expect(searchPage).toContain('"block aspect-[7/9]"');
+    expect(searchPage).toContain('bg-white p-0');
+    expect(searchPage).not.toContain('border-b border-current/10 bg-white p-0');
   });
 
   it("uses a typed, paginated all-category server contract and searches all persisted listing fields", () => {

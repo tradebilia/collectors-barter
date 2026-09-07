@@ -1667,3 +1667,5 @@
 - [ ] Verify the signed-in forum reply/media flow on a physical phone, including composer controls, attached filename display, nested replies, and mobile wrapping.
 
 - [x] Move the Traders Showcase Good Trade / Bad Trade voting section below the completed exchange/item exchange summary on each card, preserving vote behavior and responsive layout. Focused layout/voting tests passed 8/8, TypeScript, production build, and desktop/mobile screenshots passed.
+
+- [x] Add category-page-style vertical spacing between the Explore All Category Bar and the Grid/List, sort, and per-page control row, preserving responsive behavior and control functionality. Focused Explore All tests passed 3/3, TypeScript, production build, and desktop/mobile screenshots passed.

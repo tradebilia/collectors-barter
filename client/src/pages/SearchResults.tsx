@@ -251,7 +251,7 @@ export function SearchResults() {
           </form>
         </aside>
 
-        <section className="min-w-0 flex-1 px-0 py-6 lg:px-6 lg:py-0">
+        <section className="min-w-0 flex-1 px-0 py-6 md:py-8 lg:px-6 lg:py-10">
           <div className="border-b border-current/10 pb-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
