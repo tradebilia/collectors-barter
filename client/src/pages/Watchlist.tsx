@@ -137,7 +137,8 @@ export default function Watchlist() {
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                   {filteredWatchlist.map(listing => (
                     <Card key={listing.id} className="overflow-hidden rounded-[1.5rem] border-white/10 bg-white/5 text-white shadow-none">
-                      <div className="aspect-[4/5] overflow-hidden bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)] bg-white p-2">
+                      <div className="relative aspect-[4/5] overflow-hidden bg-[linear-gradient(135deg,#f6efe3_0%,#ece5d7_100%)] bg-white p-2">
+                        {listing.status === "traded" && <div className="absolute inset-x-0 top-0 z-10 bg-red-600 px-3 py-2 text-center text-sm font-extrabold tracking-[0.2em] text-white">TRADED</div>}
                         <img
                           src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                           alt={listing.title}
@@ -147,17 +148,13 @@ export default function Watchlist() {
                       <CardContent className="space-y-3 p-5">
                         <div>
                           <p className="text-xs uppercase tracking-[0.24em] text-white/45">{listing.categoryLabel}</p>
-                          <Link href={`/listings/${listing.id}`} className="mt-2 block text-xl font-semibold leading-tight text-white transition hover:text-indigo-200">
-                            {listing.title}
-                          </Link>
+                          {listing.status === "traded" ? <p className="mt-2 text-xl font-semibold leading-tight text-white">{listing.title}</p> : <Link href={`/listings/${listing.id}`} className="mt-2 block text-xl font-semibold leading-tight text-white transition hover:text-indigo-200">{listing.title}</Link>}
                           <p className="mt-2 text-sm text-white/65">{listing.categoryLabel} · {listing.conditionLabel}</p>
                           <p className="mt-3 text-sm font-medium text-indigo-200">Saved collectible for later review</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Button asChild className="rounded-full bg-white text-slate-950 hover:bg-white/90">
-                            <Link href={`/listings/${listing.id}`}>View listing</Link>
-                          </Button>
-                          <Dialog>
+                          {listing.status !== "traded" && <Button asChild className="rounded-full bg-white text-slate-950 hover:bg-white/90"><Link href={`/listings/${listing.id}`}>View listing</Link></Button>}
+                          {listing.status !== "traded" && <Dialog>
                             <DialogTrigger asChild>
                               <Button variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10">Trade proposal</Button>
                             </DialogTrigger>
@@ -172,7 +169,7 @@ export default function Watchlist() {
                                 <Link href={`/listings/${listing.id}`}>Open listing detail</Link>
                               </Button>
                             </DialogContent>
-                          </Dialog>
+                          </Dialog>}
                           <Button variant="outline" className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/10" disabled={watchlistMutation.isPending} onClick={() => watchlistMutation.mutate({ listingId: listing.id })}>
                             <Heart className="mr-2 h-4 w-4 fill-current text-pink-300" />
                             Remove

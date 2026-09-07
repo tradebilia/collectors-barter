@@ -6,6 +6,15 @@ const projectRoot = process.cwd();
 const read = (relativePath: string) => readFileSync(join(projectRoot, relativePath), "utf8");
 
 describe("listing owner interaction safeguards", () => {
+  it("marks traded Watchlist items and removes their detail and trade actions", () => {
+    const source = read("client/src/pages/Watchlist.tsx");
+    expect(source).toContain('listing.status === "traded"');
+    expect(source).toContain(">TRADED</div>");
+    expect(source).toContain('listing.status === "traded" ? <p');
+    expect(source).toContain('listing.status !== "traded" && <Button asChild');
+    expect(source).toContain('listing.status !== "traded" && <Dialog>');
+    expect(source).toContain('onClick={() => watchlistMutation.mutate({ listingId: listing.id })}');
+  });
   it("blocks self-trades and self-messages at the server boundary", () => {
     const flowSource = read("server/tradeFlowRouter.ts");
     const legacyProposalSource = read("server/db.ts");

@@ -1726,3 +1726,6 @@
 - [x] Change the Refer a Collector Send Referral Request button to a blue style with white text while preserving its icon, loading state, submission behavior, and responsive layout. The button now uses a blue background and darker blue hover state; focused referral/mobile tests, TypeScript, and production build passed.
 
 - [x] Make the Refer a Collector left-panel Referral Request title high contrast and clearly readable against the dark card background. The title now explicitly uses white text; focused referral/mobile tests, TypeScript, and production build passed.
+
+- [x] Mark traded items on Watchlist with a bold TRADED banner, keep them manually removable, and remove their detail-page links while preserving active-item behavior. Traded cards now show a red bold banner, use a plain title, hide View listing/Trade proposal actions, and retain Remove.
+- [x] Mark traded Watchlist items with a bold TRADED banner, preserve manual removal, and suppress all listing-detail/trade links for traded records while keeping active records unchanged. Targeted Watchlist regression passed, TypeScript passed, and the production build passed; two unrelated pre-existing SearchResults assertions remain stale in the broader safeguards file.
