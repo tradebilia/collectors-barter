@@ -298,6 +298,31 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   return _db;
 }
 
+let tradeShowcaseVotesTableReady: Promise<void> | null = null;
+
+export async function ensureTradeShowcaseVotesTable() {
+  if (!tradeShowcaseVotesTableReady) {
+    tradeShowcaseVotesTableReady = (async () => {
+      const db = await requireDb();
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS tradeShowcaseVotes (
+        id INT AUTO_INCREMENT NOT NULL,
+        proposalId INT NOT NULL,
+        voterId INT NOT NULL,
+        vote ENUM('good','bad') NOT NULL,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY tradeShowcaseVotes_proposal_voter_unique (proposalId, voterId),
+        KEY tradeShowcaseVotes_proposal_idx (proposalId),
+        KEY tradeShowcaseVotes_voter_idx (voterId)
+      )`);
+    })().catch((error) => {
+      tradeShowcaseVotesTableReady = null;
+      throw error;
+    });
+  }
+  return tradeShowcaseVotesTableReady;
+}
+
 function getInsertId(result: any) {
   // Drizzle ORM with MySQL returns an array with ResultSetHeader
   // Extract insertId from the first element if it's an array

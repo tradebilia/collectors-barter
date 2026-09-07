@@ -1652,3 +1652,9 @@
 - [x] Align Traders Showcase cards with the compact homepage Recent Trades format while allowing the Showcase card to use the full available page width for multi-item trades. Focused tests, TypeScript, production build, and desktop/mobile visual verification passed.
 
 - [x] Fix tablet-width overflow revealed during responsive Showcase review: keep the compact trade card fully visible at 768px without clipping the right-side items, and prevent the animated top-bar label from overlapping the search field. Updated the Showcase breakpoint, divider orientation, TopBar constraints, and regression contracts; tablet/mobile screenshots passed. Final TypeScript/build and affected-suite checks passed.
+
+- [x] Create a visual-only mockup showing per-trade voting on Traders Showcase cards; do not implement voting until the concept is approved. Mockup generated; no live voting code was changed.
+
+- [x] Revise the Showcase voting mockup from star ratings to Good Trade / Bad Trade thumbs-up and thumbs-down actions; do not implement functionality until approved. Updated mockup generated; no live voting code was changed.
+
+- [x] Implement per-trade Good Trade / Bad Trade voting on every completed Traders Showcase card with one vote per member per trade, real vote summaries, additive persistence, responsive controls, and regression coverage. Focused tests, TypeScript, production build, and desktop/mobile visual checks pass; signed-in live submission remains a separate manual check.

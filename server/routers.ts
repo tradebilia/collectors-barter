@@ -3,7 +3,7 @@ import { verifyPayPalTransaction } from "./paypal";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
+import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
@@ -121,7 +121,7 @@ import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
 import { claimIdentity, setIdentityRestrictionStatus } from "./identityRegistry";
-import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
+import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, tradeShowcaseVotes, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { forumTaxonomy, forumParentLevelSubcategory } from "@shared/forum";
 import { eq, sql, desc, asc, or, inArray, and, isNull } from "drizzle-orm";
@@ -4054,8 +4054,13 @@ export const appRouter = router({
         limit: z.number().min(1).max(100).default(20),
         offset: z.number().min(0).default(0),
       }).optional())
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         const db = await requireDb();
+        try {
+          await ensureTradeShowcaseVotesTable();
+        } catch (error) {
+          console.warn("[TradeShowcase] Vote table bootstrap unavailable; votes remain disabled for this connection.", error instanceof Error ? error.message : error);
+        }
         const category = input?.category;
         const sortBy = input?.sortBy ?? 'recent';
         const limit = input?.limit ?? 20;
@@ -4158,14 +4163,53 @@ export const appRouter = router({
             ...item,
             customGradingCompany: getCustomGradingCompany(item.itemDetails),
           }));
+          let voteSummary: { goodVotes?: number | string; badVotes?: number | string; totalVotes?: number | string } = {};
+          let viewerVote: "good" | "bad" | null = null;
+          try {
+            const [voteRows] = await db.execute(
+              sql`SELECT
+                SUM(CASE WHEN vote = 'good' THEN 1 ELSE 0 END) AS goodVotes,
+                SUM(CASE WHEN vote = 'bad' THEN 1 ELSE 0 END) AS badVotes,
+                COUNT(*) AS totalVotes
+              FROM tradeShowcaseVotes
+              WHERE proposalId = ${trade.id}`
+            );
+            const [viewerVoteRows] = ctx.user?.id
+              ? await db.execute(sql`SELECT vote FROM tradeShowcaseVotes WHERE proposalId = ${trade.id} AND voterId = ${ctx.user.id} LIMIT 1`)
+              : [[]];
+            voteSummary = ((voteRows as unknown as any[]) || [])[0] || {};
+            const storedVote = (((viewerVoteRows as unknown as any[]) || [])[0] as { vote?: string } | undefined)?.vote;
+            viewerVote = storedVote === "good" || storedVote === "bad" ? storedVote : null;
+          } catch (error) {
+            console.warn("[TradeShowcase] Vote summary unavailable; rendering the trade without fabricated counts.", error instanceof Error ? error.message : error);
+          }
           return {
             ...trade,
             requestedListingCustomGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails),
             offeredItems,
+            goodVotes: Number(voteSummary.goodVotes ?? 0),
+            badVotes: Number(voteSummary.badVotes ?? 0),
+            totalVotes: Number(voteSummary.totalVotes ?? 0),
+            viewerVote: viewerVote === 'good' || viewerVote === 'bad' ? viewerVote : null,
           };
         }));
 
         return { trades: enriched };
+      }),
+    voteOnCompletedTrade: protectedProcedure
+      .input(z.object({
+        proposalId: z.number().int().positive(),
+        vote: z.enum(['good', 'bad']),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await requireDb();
+        await ensureTradeShowcaseVotesTable();
+        await db.execute(sql`
+          INSERT INTO tradeShowcaseVotes (proposalId, voterId, vote)
+          VALUES (${input.proposalId}, ${ctx.user.id}, ${input.vote})
+          ON DUPLICATE KEY UPDATE vote = VALUES(vote), updatedAt = CURRENT_TIMESTAMP
+        `);
+        return { success: true, vote: input.vote };
       }),
   }),
   onlineStatus: router({

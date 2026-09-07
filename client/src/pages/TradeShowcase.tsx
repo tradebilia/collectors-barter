@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { startLogin } from "@/const";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { tradebiliaCategories, type TradebiliaCategorySlug } from "@/lib/tradebilia";
-import { Handshake, ArrowUpDown } from "lucide-react";
+import { Handshake, ArrowUpDown, ThumbsDown, ThumbsUp } from "lucide-react";
 import { DirectionMarker, TicketDivider, TradeItemList, TradeMember } from "@/components/RecentTradesCarousel";
 import { buildTradeShowcaseExchange } from "@/lib/tradeShowcaseMovements";
 
@@ -41,6 +43,62 @@ function formatTradeDate(dateStr: string | null): string {
   return `${Math.floor(months / 12)} year${Math.floor(months / 12) > 1 ? "s" : ""} ago`;
 }
 
+function TradeVoteControls({ trade }: { trade: any }) {
+  const { isAuthenticated } = useAuth();
+  const utils = trpc.useUtils();
+  const voteMutation = trpc.favorites.voteOnCompletedTrade.useMutation({
+    onSuccess: async () => {
+      await utils.favorites.getCompletedTrades.invalidate();
+    },
+  });
+  const goodVotes = Number(trade.goodVotes ?? 0);
+  const badVotes = Number(trade.badVotes ?? 0);
+  const totalVotes = Number(trade.totalVotes ?? goodVotes + badVotes);
+  const goodPercent = totalVotes > 0 ? Math.round((goodVotes / totalVotes) * 100) : null;
+  const submitVote = (vote: "good" | "bad") => {
+    if (!isAuthenticated) {
+      startLogin();
+      return;
+    }
+    voteMutation.mutate({ proposalId: Number(trade.id), vote });
+  };
+  return (
+    <section className="border-t border-[#b5cbe5] bg-white px-4 py-4 sm:px-5 lg:px-8" aria-label="Community trade vote">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+        <span className="text-sm font-semibold text-[#31568f]">How was this trade?</span>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => submitVote("good")}
+            disabled={voteMutation.isPending}
+            aria-pressed={trade.viewerVote === "good"}
+            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3974bb] disabled:cursor-wait disabled:opacity-60 ${trade.viewerVote === "good" ? "border-emerald-600 bg-emerald-100 text-emerald-800" : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"}`}
+          >
+            <ThumbsUp className="h-4 w-4" aria-hidden="true" />
+            <span>Good Trade</span>
+            <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs">{goodVotes}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => submitVote("bad")}
+            disabled={voteMutation.isPending}
+            aria-pressed={trade.viewerVote === "bad"}
+            className={`inline-flex min-h-10 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3974bb] disabled:cursor-wait disabled:opacity-60 ${trade.viewerVote === "bad" ? "border-rose-600 bg-rose-100 text-rose-800" : "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"}`}
+          >
+            <ThumbsDown className="h-4 w-4" aria-hidden="true" />
+            <span>Bad Trade</span>
+            <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs">{badVotes}</span>
+          </button>
+        </div>
+      </div>
+      <p className="mt-2 text-center text-xs text-slate-500">
+        {totalVotes > 0 ? `Community votes: ${goodPercent}% Good Trade · ${totalVotes} vote${totalVotes === 1 ? "" : "s"}` : "No community votes yet"}
+        {!isAuthenticated ? " · Sign in to vote" : ""}
+      </p>
+    </section>
+  );
+}
+
 function TradeCard({ trade }: { trade: any }) {
   const exchange = buildTradeShowcaseExchange(trade);
   const hasItems = exchange.left.items.length > 0 || exchange.right.items.length > 0;
@@ -76,6 +134,7 @@ function TradeCard({ trade }: { trade: any }) {
         </div>
       )}
 
+      <TradeVoteControls trade={trade} />
       <footer className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-[#b5cbe5] bg-[#edf4fb] px-4 py-3 text-xs font-semibold text-[#31568f] sm:text-sm">
         <span>Completed exchange</span>
         {hasItems ? <span>{exchange.left.items.length + exchange.right.items.length} item{exchange.left.items.length + exchange.right.items.length === 1 ? "" : "s"} exchanged</span> : null}

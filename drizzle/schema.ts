@@ -619,6 +619,20 @@ export const tradeReviews = mysqlTable("tradeReviews", {
   index("tradeReviews_reviewee_idx").on(table.revieweeId),
 ]);
 
+export const tradeShowcaseVotes = mysqlTable("tradeShowcaseVotes", {
+  id: int().autoincrement().notNull(),
+  proposalId: int().notNull().references(() => tradeProposals.id, { onDelete: "cascade" }),
+  voterId: int().notNull().references(() => users.id, { onDelete: "cascade" }),
+  vote: mysqlEnum(['good', 'bad']).notNull(),
+  createdAt: timestamp({ mode: 'string' }).default(sql`CURRENT_TIMESTAMP`).notNull(),
+  updatedAt: timestamp({ mode: 'string' }).defaultNow().onUpdateNow().notNull(),
+},
+(table) => [
+  uniqueIndex("tradeShowcaseVotes_proposal_voter_unique").on(table.proposalId, table.voterId),
+  index("tradeShowcaseVotes_proposal_idx").on(table.proposalId),
+  index("tradeShowcaseVotes_voter_idx").on(table.voterId),
+]);
+
 export const tradeTrackingNumbers = mysqlTable("tradeTrackingNumbers", {
 	id: int().autoincrement().notNull(),
 	proposalId: int().notNull().references(() => tradeProposals.id),
