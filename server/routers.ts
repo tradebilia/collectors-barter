@@ -3,7 +3,7 @@ import { verifyPayPalTransaction } from "./paypal";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
-import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable } from "./db";
+import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
@@ -2043,6 +2043,7 @@ export const appRouter = router({
         if (input.attachments.some((attachment) => !ownsReportAttachment(ctx.user.id, attachment))) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'An evidence attachment does not belong to your report.' });
         }
+        await ensureUserReportsTable();
         const reporter = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         return submitUserReport({
           reportedUserId: input.reportedUserId,

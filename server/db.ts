@@ -299,6 +299,40 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
 }
 
 let tradeShowcaseVotesTableReady: Promise<void> | null = null;
+let userReportsTableReady: Promise<void> | null = null;
+
+export async function ensureUserReportsTable() {
+  if (!userReportsTableReady) {
+    userReportsTableReady = (async () => {
+      const db = await requireDb();
+      await db.execute(sql`CREATE TABLE IF NOT EXISTS userReports (
+        id INT AUTO_INCREMENT NOT NULL,
+        reportId VARCHAR(20) NOT NULL,
+        reportedUserId INT NOT NULL,
+        reporterUserId INT NOT NULL,
+        reason VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        evidence TEXT,
+        status ENUM('pending','reviewed','dismissed','action_taken') NOT NULL DEFAULT 'pending',
+        adminNotes TEXT,
+        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        reviewedAt TIMESTAMP NULL,
+        reviewedBy INT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY userReports_reportId_unique (reportId),
+        KEY userReports_reportedUserId_idx (reportedUserId),
+        KEY userReports_reporterUserId_idx (reporterUserId),
+        KEY userReports_status_idx (status),
+        KEY userReports_createdAt_idx (createdAt)
+      )`);
+    })().catch((error) => {
+      userReportsTableReady = null;
+      throw error;
+    });
+  }
+  return userReportsTableReady;
+}
 
 export async function ensureTradeShowcaseVotesTable() {
   if (!tradeShowcaseVotesTableReady) {
@@ -3244,6 +3278,16 @@ export async function generateReportId(): Promise<string> {
   return `RPT-${String(nextNumber).padStart(6, '0')}`;
 }
 
+function reportCategoryForReason(reason: string): "spam" | "inappropriate" | "scam" | "counterfeit" | "harassment" | "other" {
+  const normalized = reason.toLowerCase();
+  if (normalized.includes("counterfeit")) return "counterfeit";
+  if (normalized.includes("harassment") || normalized.includes("abusive")) return "harassment";
+  if (normalized.includes("spam") || normalized.includes("solicitation")) return "spam";
+  if (normalized.includes("scam") || normalized.includes("unsafe")) return "scam";
+  if (normalized.includes("unauthorized") || normalized.includes("inappropriate")) return "inappropriate";
+  return "other";
+}
+
 // Submit a user report
 export async function submitUserReport(input: {
   reportedUserId: number;
@@ -3253,25 +3297,24 @@ export async function submitUserReport(input: {
   evidence?: string;
 }): Promise<{ reportId: string }> {
   const db = await requireDb();
-
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const reportId = await generateReportId();
+    const now = toMysqlDateTime(new Date());
     try {
-      await db.insert(userReports).values({
-        reportId,
-        reportedUserId: input.reportedUserId,
-        reporterUserId: input.reporterUserId,
-        reason: input.reason,
-        description: input.description,
-        evidence: input.evidence,
-        status: 'pending',
-      });
+      // The runtime custom database contains a legacy-compatible userReports table
+      // with required reporterId/category columns in addition to the newer fields.
+      // Use an explicit column list so both schema generations remain writable.
+      await db.execute(sql`
+        INSERT INTO userReports
+          (reportId, reporterId, reportedUserId, category, description, evidence, status, adminNotes, createdAt, updatedAt, reporterUserId, reason, reviewedAt, reviewedBy)
+        VALUES
+          (${reportId}, ${input.reporterUserId}, ${input.reportedUserId}, ${reportCategoryForReason(input.reason)}, ${input.description}, ${input.evidence ?? null}, 'pending', NULL, ${now}, ${now}, ${input.reporterUserId}, ${input.reason}, NULL, NULL)
+      `);
       return { reportId };
     } catch (error) {
       if (!isDuplicateKeyError(error) || attempt === 2) throw error;
     }
   }
-
   throw new Error("Unable to allocate a report reference. Please try again.");
 }
 

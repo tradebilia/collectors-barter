@@ -1687,3 +1687,5 @@
 - [x] Keep the Coming Soon mobile email signup fully inside the paper by tightening the lower content spacing or adding a mobile-specific bottom containment adjustment; preserve the animated logo and desktop composition. The compact horizontal form and mobile-specific spacing keep the controls inside the paper in the final screenshot.
 
 - [x] Restore the Coming Soon animated logo to its original vertical position while keeping only the non-animated paper content moved upward and preserving signup containment. Coming Soon regressions passed 6/6, TypeScript and production build passed, and desktop/mobile screenshots confirmed the logo/content separation.
+
+- [x] Diagnose and repair the Report a Member submission database insert failure without modifying existing reports; add regression coverage and validate a safe submission path. The runtime table contained required legacy reporterId/category columns not represented by the ORM insert; the writer now maps those fields explicitly, preserves report metadata, and the authenticated test submission succeeded as RPT-000001. Focused tests passed 8/8, TypeScript and production build passed.

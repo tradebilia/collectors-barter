@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS `userReports` (
+  `id` int AUTO_INCREMENT NOT NULL,
+  `reportId` varchar(20) NOT NULL,
+  `reportedUserId` int NOT NULL,
+  `reporterUserId` int NOT NULL,
+  `reason` varchar(100) NOT NULL,
+  `description` text NOT NULL,
+  `evidence` text,
+  `status` enum('pending','reviewed','dismissed','action_taken') NOT NULL DEFAULT 'pending',
+  `adminNotes` text,
+  `createdAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `reviewedAt` timestamp NULL,
+  `reviewedBy` int NULL,
+  UNIQUE KEY `userReports_reportId_unique` (`reportId`),
+  KEY `userReports_reportedUserId_idx` (`reportedUserId`),
+  KEY `userReports_reporterUserId_idx` (`reporterUserId`),
+  KEY `userReports_status_idx` (`status`),
+  KEY `userReports_createdAt_idx` (`createdAt`),
+  PRIMARY KEY (`id`)
+);
