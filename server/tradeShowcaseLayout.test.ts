@@ -26,6 +26,13 @@ describe("Traders Showcase ownership-transfer layout", () => {
     expect(showcaseSource).toContain('grid grid-cols-1 gap-5');
   });
 
+  it("places community voting below the completed exchange summary", () => {
+    const completedSummaryIndex = showcaseSource.indexOf('<span>Completed exchange</span>');
+    const votingIndex = showcaseSource.indexOf('<TradeVoteControls trade={trade} />');
+    expect(completedSummaryIndex).toBeGreaterThan(-1);
+    expect(votingIndex).toBeGreaterThan(completedSummaryIndex);
+  });
+
   it("includes completed cash directions and cash-inclusive value without revealing payment destinations", () => {
     expect(exchangeSource).toContain("cashFromRequester?: string | number | null;");
     expect(exchangeSource).toContain("cashFromRecipient?: string | number | null;");

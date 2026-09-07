@@ -134,12 +134,12 @@ function TradeCard({ trade }: { trade: any }) {
         </div>
       )}
 
-      <TradeVoteControls trade={trade} />
       <footer className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 border-t border-[#b5cbe5] bg-[#edf4fb] px-4 py-3 text-xs font-semibold text-[#31568f] sm:text-sm">
         <span>Completed exchange</span>
         {hasItems ? <span>{exchange.left.items.length + exchange.right.items.length} item{exchange.left.items.length + exchange.right.items.length === 1 ? "" : "s"} exchanged</span> : null}
         {hasCash ? <span>Cash included</span> : null}
       </footer>
+      <TradeVoteControls trade={trade} />
     </article>
   );
 }

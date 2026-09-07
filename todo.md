@@ -1665,3 +1665,5 @@
 - [ ] Verify the signed-in My Inventory workspace on a physical phone, including hero/category-bar alignment, title edge spacing, Add Item prominence, and filter-label alignment.
 - [ ] Verify the signed-in Social Content Manager on a physical phone, including the admin layout, Auto-list switch, and draft editor wrapping.
 - [ ] Verify the signed-in forum reply/media flow on a physical phone, including composer controls, attached filename display, nested replies, and mobile wrapping.
+
+- [x] Move the Traders Showcase Good Trade / Bad Trade voting section below the completed exchange/item exchange summary on each card, preserving vote behavior and responsive layout. Focused layout/voting tests passed 8/8, TypeScript, production build, and desktop/mobile screenshots passed.
