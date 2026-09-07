@@ -62,10 +62,10 @@ function TradeItems({ items }: { items: TradeShowcaseItem[] }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
       {items.map((item, index) => (
-        <div key={`${item.id ?? item.title}-${index}`} className="flex shrink-0 items-center gap-2 rounded-lg border border-gray-100 bg-white px-2 py-1.5">
-          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-gray-50">
+        <div key={`${item.id ?? item.title}-${index}`} className="flex min-w-0 items-center gap-2 rounded-lg border border-gray-100 bg-white px-2.5 py-2">
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-gray-50">
             {item.imageUrl ? (
               <img src={item.imageUrl} alt={item.title || "Traded collectible"} className="h-full w-full object-contain" />
             ) : (
@@ -74,7 +74,7 @@ function TradeItems({ items }: { items: TradeShowcaseItem[] }) {
               </div>
             )}
           </div>
-          <p className="whitespace-nowrap text-xs font-semibold text-gray-800">{item.title || "Collectible"}</p>
+          <p className="min-w-0 line-clamp-2 text-sm font-semibold leading-5 text-gray-800">{item.title || "Collectible"}</p>
         </div>
       ))}
     </div>
@@ -87,10 +87,11 @@ function CashPaid({ amount }: { amount: number }) {
 
 function TradeParty({ member, reverse = false }: { member: TradeShowcaseParty; reverse?: boolean }) {
   return (
-    <div className={`flex shrink-0 items-center gap-2 ${reverse ? "flex-row-reverse text-right" : ""}`}>
+    <div className={`flex items-center gap-3 ${reverse ? "flex-row-reverse text-right" : ""}`}>
       <Avatar url={member.avatarUrl} name={member.displayName} size="md" />
       <div className="min-w-0">
-        <p className="max-w-28 truncate text-sm font-semibold text-gray-700">{member.displayName || "Member"}</p>
+        <p className="text-base font-bold text-gray-700">{member.displayName || "Member"}</p>
+        <p className="text-xs text-gray-400">Completed exchange</p>
       </div>
     </div>
   );
@@ -117,18 +118,26 @@ function TradeCard({ trade }: { trade: any }) {
         {!hasItems && !hasCash ? (
           <div className="h-24 flex items-center justify-center text-gray-400 text-sm">No item details available</div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-gray-50/70">
-            <div className="flex min-w-[1120px] items-center gap-5 p-4">
-              <div className="flex flex-1 items-center gap-3">
+          <div className="rounded-xl border border-gray-200 bg-gray-50/70 p-4 sm:p-5 lg:p-6">
+            <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <TradeParty member={exchange.left.member} />
-                <TradeItems items={exchange.left.items} />
-                <CashPaid amount={exchange.left.cashPaid} />
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-gray-500">They sent</p>
+                  <TradeItems items={exchange.left.items} />
+                  <div className="mt-3"><CashPaid amount={exchange.left.cashPaid} /></div>
+                </div>
               </div>
-              <ArrowLeftRight className="h-10 w-10 shrink-0 text-purple-500" strokeWidth={2.6} aria-label="Completed exchange between both members" />
-              <div className="flex flex-1 flex-row-reverse items-center gap-3">
+              <div className="flex items-center justify-center px-1">
+                <ArrowLeftRight className="h-12 w-12 shrink-0 text-purple-500" strokeWidth={2.4} aria-label="Completed exchange between both members" />
+              </div>
+              <div className="min-w-0 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
                 <TradeParty member={exchange.right.member} reverse />
-                <TradeItems items={exchange.right.items} />
-                <CashPaid amount={exchange.right.cashPaid} />
+                <div className="mt-4 border-t border-gray-100 pt-4">
+                  <p className="mb-2 text-right text-xs font-bold uppercase tracking-wide text-gray-500">They sent</p>
+                  <TradeItems items={exchange.right.items} />
+                  <div className="mt-3 flex justify-end"><CashPaid amount={exchange.right.cashPaid} /></div>
+                </div>
               </div>
             </div>
           </div>

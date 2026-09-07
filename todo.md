@@ -1644,3 +1644,5 @@
 - [x] Diagnose and repair the confirmed SMS recovery failure after a clean single retry beyond the rate-limit window still produced no message. Live logs showed ambiguous_account_match; the corrected conditional email flow delivered the SMS and completed reset successfully.
 
 - [x] Show the account-email field only after an ambiguous phone match, replace the generic error with a truthful disambiguation prompt, and cover the resubmission flow with tests. Focused recovery tests, TypeScript, production build, whitespace validation, initial-form visual verification, and user-confirmed SMS delivery/reset passed.
+
+- [x] Give Traders Showcase completed-trade cards a larger page-specific layout that shows all multi-item exchanges and cash without horizontal scrolling or overlap. Focused showcase tests, TypeScript, production build, whitespace validation, and desktop/mobile visual verification passed.
