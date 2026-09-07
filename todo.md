@@ -1669,3 +1669,9 @@
 - [x] Move the Traders Showcase Good Trade / Bad Trade voting section below the completed exchange/item exchange summary on each card, preserving vote behavior and responsive layout. Focused layout/voting tests passed 8/8, TypeScript, production build, and desktop/mobile screenshots passed.
 
 - [x] Add category-page-style vertical spacing between the Explore All Category Bar and the Grid/List, sort, and per-page control row, preserving responsive behavior and control functionality. Focused Explore All tests passed 3/3, TypeScript, production build, and desktop/mobile screenshots passed.
+
+- [x] Refine the Explore All Grid/List toggle so the selected option uses consistent rounded-pill geometry instead of a square rectangle inside the outer rounded control. Shared toggle tests passed 6/6, TypeScript, production build, and desktop/mobile visual checks passed.
+
+- [x] Apply the same rounded-pill Grid/List toggle styling used on Explore All to every category page, preserving selected states, view switching, and responsive behavior. Shared toggle tests passed 6/6, TypeScript, production build, and desktop/mobile visual checks passed.
+
+- [x] Prevent the category-page controls row from clipping on narrow mobile widths by allowing the verified chip, rounded Grid/List toggle, sort dropdown, and per-page selector to wrap cleanly. Mobile screenshot confirmed the controls wrap without clipping.

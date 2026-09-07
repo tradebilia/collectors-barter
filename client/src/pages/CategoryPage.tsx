@@ -1321,7 +1321,7 @@ export default function CategoryPage() {
 
             {/* Sorting bar - always visible */}
             <div className="pb-4 border-b border-current/10">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-medium opacity-70">
                   {listings.length === 0
                     ? "0 listings"
@@ -1349,25 +1349,25 @@ export default function CategoryPage() {
                   </svg>
                   Verified Merchants Only
                 </button>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2">
                   {/* View toggle */}
-                  <div className="flex gap-1 bg-white/10 rounded p-1">
+                  <div className="flex gap-0.5 rounded-full bg-white/10 p-1 shadow-sm">
                     <button
                       onClick={() => setViewMode("grid")}
-                      className={`px-3 py-1 text-xs font-medium rounded transition ${viewMode === "grid" ? "bg-white text-slate-950" : "text-white hover:bg-white/20"}`}
+                      className={`px-3 py-1 text-xs font-medium rounded-full transition ${viewMode === "grid" ? "bg-white text-slate-950 shadow-sm" : "text-white hover:bg-white/20"}`}
                     >
                       Grid
                     </button>
                     <button
                       onClick={() => setViewMode("list")}
-                      className={`px-3 py-1 text-xs font-medium rounded transition ${viewMode === "list" ? "bg-white text-slate-950" : "text-white hover:bg-white/20"}`}
+                      className={`px-3 py-1 text-xs font-medium rounded-full transition ${viewMode === "list" ? "bg-white text-slate-950 shadow-sm" : "text-white hover:bg-white/20"}`}
                     >
                       List
                     </button>
                   </div>
                   {/* Sort dropdown */}
                   <Select value={sortBy} onValueChange={value => { setSortBy(value); setLocationSortNotice(null); setCurrentPage(1); }}>
-                    <SelectTrigger className="w-48 h-9 bg-white/80 text-sm">
+                    <SelectTrigger className="w-40 sm:w-48 h-9 bg-white/80 text-sm">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>

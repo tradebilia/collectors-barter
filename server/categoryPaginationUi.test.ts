@@ -14,6 +14,15 @@ describe("Category Page pagination presentation", () => {
     expect(categoryPageSource).toContain("Page {pagination.currentPage} of {pagination.totalPages}");
   });
 
+  it("uses the same rounded-pill Grid/List control geometry as Explore All", () => {
+    expect(categoryPageSource).toContain('flex gap-0.5 rounded-full bg-white/10 p-1 shadow-sm');
+    expect(categoryPageSource).toContain('rounded-full transition ${viewMode === "grid" ? "bg-white text-slate-950 shadow-sm"');
+    expect(categoryPageSource).toContain('rounded-full transition ${viewMode === "list" ? "bg-white text-slate-950 shadow-sm"');
+    expect(categoryPageSource).toContain('flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between');
+    expect(categoryPageSource).toContain('flex flex-wrap items-center gap-2');
+    expect(categoryPageSource).toContain('w-40 sm:w-48 h-9 bg-white/80 text-sm');
+  });
+
   it("prevents invalid navigation and returns to page one for submitted discovery changes", () => {
     expect(categoryPageSource).toContain("disabled={pagination.currentPage === 1}");
     expect(categoryPageSource).toContain("disabled={pagination.currentPage === pagination.totalPages}");

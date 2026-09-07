@@ -259,9 +259,9 @@ export function SearchResults() {
                 <p className="mt-1 text-xs opacity-65">{submittedQuery ? <>Results for <span className="font-semibold">{submittedQuery}</span></> : "All active listings across the exchange"}</p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1 rounded-md bg-white/70 p-1 text-xs text-slate-700" aria-label="View mode">
-                  <button type="button" onClick={() => setViewMode("grid")} className={`inline-flex items-center gap-1 rounded px-2 py-1 ${viewMode === "grid" ? "bg-[#0f5563] text-white" : "hover:bg-slate-100"}`}><Grid2X2 className="h-3.5 w-3.5" />Grid</button>
-                  <button type="button" onClick={() => setViewMode("list")} className={`inline-flex items-center gap-1 rounded px-2 py-1 ${viewMode === "list" ? "bg-[#0f5563] text-white" : "hover:bg-slate-100"}`}><List className="h-3.5 w-3.5" />List</button>
+                <div className="flex items-center gap-0.5 rounded-full bg-white/70 p-1 text-xs text-slate-700 shadow-sm" aria-label="View mode">
+                  <button type="button" onClick={() => setViewMode("grid")} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${viewMode === "grid" ? "bg-[#0f5563] text-white shadow-sm" : "hover:bg-slate-100"}`}><Grid2X2 className="h-3.5 w-3.5" />Grid</button>
+                  <button type="button" onClick={() => setViewMode("list")} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${viewMode === "list" ? "bg-[#0f5563] text-white shadow-sm" : "hover:bg-slate-100"}`}><List className="h-3.5 w-3.5" />List</button>
                 </div>
                 <Select value={submittedFilters.sort} onValueChange={value => { const sort = value as SearchSort; setLocationSortNotice(null); setPendingFilters(current => ({ ...current, sort })); setSubmittedFilters(current => ({ ...current, sort })); setCurrentPage(1); }}>
                   <SelectTrigger className="h-9 w-48 bg-white/85 text-xs text-black"><SelectValue /></SelectTrigger>
