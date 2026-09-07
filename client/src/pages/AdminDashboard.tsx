@@ -832,8 +832,10 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex w-full flex-wrap items-center gap-x-2 gap-y-1.5 rounded-xl border border-border/60 bg-muted/50 p-2 h-auto">
-            <div className="basis-full px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Overview &amp; Monitoring</div>
+          <TabsList className="flex w-full flex-col gap-3 rounded-xl border border-border/60 bg-muted/50 p-2 h-auto">
+            <div className="w-full space-y-2">
+              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Overview &amp; Monitoring</div>
+              <div className="flex w-full flex-wrap gap-2">
             <TabsTrigger value="statistics" className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <BarChart3 className="h-4 w-4" />
               Stats
@@ -842,7 +844,11 @@ export default function AdminDashboard() {
               <ClipboardList className="h-4 w-4" />
               Operations
             </TabsTrigger>
-            <div className="basis-full px-2 pt-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Marketplace Management</div>
+              </div>
+            </div>
+            <div className="w-full space-y-2">
+              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Marketplace Management</div>
+              <div className="flex w-full flex-wrap gap-2">
             <TabsTrigger value="billing" className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <Settings className="h-4 w-4" />
               Billing
@@ -863,7 +869,11 @@ export default function AdminDashboard() {
               <Settings className="h-4 w-4" />
               Settings
             </TabsTrigger>
-            <div className="basis-full px-2 pt-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Moderation &amp; Support</div>
+              </div>
+            </div>
+            <div className="w-full space-y-2">
+              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Moderation &amp; Support</div>
+              <div className="flex w-full flex-wrap gap-2">
             <TabsTrigger value="deleted" className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <Users className="h-4 w-4" />
               Deleted
@@ -880,7 +890,11 @@ export default function AdminDashboard() {
               <Flag className="h-4 w-4" />
               Forum Queue
             </TabsTrigger>
-            <div className="basis-full px-2 pt-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Communications &amp; Growth</div>
+              </div>
+            </div>
+            <div className="w-full space-y-2">
+              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Communications &amp; Growth</div>
+              <div className="flex w-full flex-wrap gap-2">
             <TabsTrigger value="referrals" className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <Mail className="h-4 w-4" />
               Referrals
@@ -893,7 +907,11 @@ export default function AdminDashboard() {
               <Share2 className="h-4 w-4" />
               Social Content
             </TabsTrigger>
-            <div className="basis-full px-2 pt-3 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Platform &amp; Reference Tools</div>
+              </div>
+            </div>
+            <div className="w-full space-y-2">
+              <div className="px-2 pt-1 text-[0.65rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">Platform &amp; Reference Tools</div>
+              <div className="flex w-full flex-wrap gap-2">
             <TabsTrigger value="media-storage" className="min-w-[8rem] flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium py-2.5 whitespace-nowrap">
               <CloudUpload className="h-4 w-4" />
               Media Storage
@@ -926,6 +944,8 @@ export default function AdminDashboard() {
               <BookOpen className="h-4 w-4" />
               Admin Guide
             </TabsTrigger>
+              </div>
+            </div>
           </TabsList>
 
           {/* Statistics Tab */}
