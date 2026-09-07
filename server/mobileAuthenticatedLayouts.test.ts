@@ -59,5 +59,7 @@ describe("authenticated mobile-only responsive layout contracts", () => {
     expect(source).not.toContain("@media (max-width: 1023px)");
     expect(source).not.toContain("mobileHeroStyle.dataset.reportUserMobileHero");
     expect(source).not.toContain("-ml-32");
+    expect(source).toContain("bg-white text-slate-900 placeholder:text-slate-500");
+    expect(source).not.toContain("border-white/10 bg-white/5 text-white");
   });
 });
