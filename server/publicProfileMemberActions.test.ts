@@ -32,5 +32,6 @@ describe("public-profile member action access", () => {
     expect(source).toContain("Sign in to trade");
     expect(source).toContain("Sign in to message");
     expect(source).toContain("{listing && isAuthenticated && isEmailModalOpen && (");
+    expect(source).toContain("<Dialog open={isAuthenticated && isProposalDialogOpen}");
   });
 });

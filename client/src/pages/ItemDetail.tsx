@@ -521,7 +521,7 @@ export default function ItemDetail() {
                   </Button>
                 </div>
 
-                <Dialog open={isProposalDialogOpen} onOpenChange={open => {
+                <Dialog open={isAuthenticated && isProposalDialogOpen} onOpenChange={open => {
                   setIsProposalDialogOpen(open);
                   if (!open) setProposalMessage("");
                 }}>
