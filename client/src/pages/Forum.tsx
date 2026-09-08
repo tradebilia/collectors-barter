@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { ImagePlus, MessageSquarePlus, Search, SlidersHorizontal, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { startLogin } from "@/const";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -117,7 +118,9 @@ export function Forum() {
                 <MessageSquarePlus className="h-4 w-4" /> Start a discussion
               </Button>
             ) : (
-              <p className="text-sm text-muted-foreground">Sign in to start a discussion.</p>
+              <Button type="button" onClick={startLogin} className="h-11 w-full gap-2 bg-[#0f766e] text-white shadow-sm hover:bg-[#115e59] sm:w-auto">
+                <MessageSquarePlus className="h-4 w-4" /> Sign in to start a discussion
+              </Button>
             )}
             <form onSubmit={submitDiscussionSearch} role="search" aria-label="Search forum discussions" className="flex w-full items-center gap-2 rounded-lg border border-border bg-white p-1.5 shadow-sm sm:max-w-md">
               <Search className="ml-2 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />

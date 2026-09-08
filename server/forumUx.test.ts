@@ -235,4 +235,12 @@ describe("Collectors Forum UX contracts", () => {
     expect(dbSource).toContain("parentReplyId?: number | null");
     expect(dbSource).toContain("INSERT INTO forumReplies (postId, userId, parentReplyId, content)");
   });
+  it("requires sign-in before a visitor can start a discussion", () => {
+    expect(forumSource).toContain('import { startLogin } from "@/const";');
+    expect(forumSource).toContain('onClick={startLogin}');
+    expect(forumSource).toContain("Sign in to start a discussion");
+    expect(forumSource).toContain("{user ? (");
+    expect(forumSource).toContain("setShowNewTopicModal(true)");
+  });
 });
+
