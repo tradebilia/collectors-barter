@@ -57,6 +57,9 @@ const getItemDetailPageClassName = (category: string): string => {
   if (category === 'movies') {
     return 'bg-[#ead7bf] text-[#24150f]';
   }
+  if (category === 'music') {
+    return 'bg-[#ead9bf] text-[#24130d]';
+  }
   if (category === 'autographs') {
     return 'bg-[#f5e9dc] text-[#1a1410]';
   }
@@ -130,6 +133,8 @@ const getCategoryWallpaperUrl = (category: string): string => {
       return 'https://assets.tradebilia.com/AutoBackground_a5b49e15.png';
     case 'movies':
       return 'https://assets.tradebilia.com/MoviesBackground_8ecc4916.png';
+    case 'music':
+      return '/manus-storage/tradebilia-music-hero_484c76a8.png';
     case 'comics':
       return 'https://assets.tradebilia.com/ComicsBackground_80eb606d.webp';
     case 'pokemon':

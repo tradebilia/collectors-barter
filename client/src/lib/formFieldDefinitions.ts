@@ -59,6 +59,7 @@ export const COLLECTIBLE_CATEGORIES = [
   'stamps',
   'video_games',
   'movies',
+  'music',
   'autographs',
   'vintage_toys',
   'disney_pins',
@@ -185,6 +186,7 @@ export const GRADING_COMPANIES_BY_CATEGORY: Record<CollectibleCategory, string[]
   stamps: ['PSE', 'ASG', 'PSAG'],
   video_games: ['WATA', 'PSA', 'CGC Video Games', 'VGA', 'CGC Home Video', 'IGS'],
   movies: ['CGC Home Video', 'VHS Grading', 'IGS'],
+  music: ['Audio Media Grading', 'Vintage Media Grading'],
   autographs: [], // Autographs don't have grading companies for Signed Item
   vintage_toys: ['AFA', 'CAS', 'UKG'],
   disney_pins: [],
@@ -234,6 +236,12 @@ export const CATEGORY_DEFINITIONS: Record<CollectibleCategory, CategoryDefinitio
     displayName: 'Movies',
     itemTypes: [],
     gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.movies,
+  },
+  music: {
+    name: 'music',
+    displayName: 'Music',
+    itemTypes: [],
+    gradingCompanies: GRADING_COMPANIES_BY_CATEGORY.music,
   },
   autographs: {
     name: 'autographs',

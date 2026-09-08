@@ -12,6 +12,7 @@ import {
   SPORTS_CARDS_SINGLE_CARD_FIELDS,
 } from "./fieldDefinitionsGenerated";
 import type { FieldDefinition } from "./formFieldDefinitions";
+import { MUSIC_FORMAT_OPTIONS } from "./fieldDefinitionsMusic";
 import { COUNTRIES_LIST } from "./countries";
 
 export interface FilterOption {
@@ -73,6 +74,9 @@ export const moviesFormatOptions: FilterOption[] = mergedOptions([
   { fields: MOVIES_INDIVIDUAL_MOVIE_FIELDS, fieldName: "format" },
   { fields: MOVIES_BOX_SET_FIELDS, fieldName: "format" },
 ]);
+
+// Music: derived from the same format options used by the Music item-type selector.
+export const musicFormatOptions: FilterOption[] = MUSIC_FORMAT_OPTIONS.map(option => ({ ...option }));
 
 // Autographs: Medium — from the signed item form's signedItemType field
 export const autographsMediumOptions: FilterOption[] = optionsFromField(

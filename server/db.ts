@@ -39,7 +39,7 @@ import { encrypt } from "./_core/crypto";
 import { isPublicMemberEligible } from "./publicVisibility";
 import { claimIdentity } from "./identityRegistry";
 
-export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'autographs', 'disney_pins'] as const;
+export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
 
 export function normalizeListingEstimatedValue(value?: number | null): number | null {
@@ -61,6 +61,7 @@ const categoryLabels: Record<(typeof collectibleCategories)[number], string> = {
   coins: "Coins",
   pokemon: "Pokemon",
   movies: "Movies",
+  music: "Music",
   autographs: "Autographs",
   disney_pins: "Disney Pins",
 };
@@ -712,7 +713,7 @@ export async function getMarketplaceFeed(
   }
   if (filters.year?.trim()) {
     // Year is stored under different keys depending on category/item type:
-    // year (sports_cards, stamps, vintage_toys), releaseYear (video_games, movies),
+    // year (sports_cards, stamps, vintage_toys), releaseYear (video_games, movies, music),
     // publicationYear (comics), yearsIncluded (coins collection lots)
     whereClauses.push(sql`(${jsonLikeAny(["year", "releaseYear", "publicationYear", "yearsIncluded"], filters.year)})`);
   }
@@ -727,8 +728,8 @@ export async function getMarketplaceFeed(
   }
   // ---- Dedicated per-filter parameters (each filter owns its own channel) ----
   if (filters.title?.trim()) {
-    // Title filter (comics comicTitle, video games gameTitle, movies title) + listing title
-    whereClauses.push(sql`(${jsonLikeAny(["comicTitle", "gameTitle", "title"], filters.title)} OR ${like(listings.title, `%${filters.title.trim()}%`)})`);
+    // Title filter (comics comicTitle, video games gameTitle, movies title, music releaseTitle) + listing title
+    whereClauses.push(sql`(${jsonLikeAny(["comicTitle", "gameTitle", "title", "releaseTitle"], filters.title)} OR ${like(listings.title, `%${filters.title.trim()}%`)})`);
   }
   if (filters.system?.trim()) {
     whereClauses.push(sql`(${jsonLike("platform", filters.system)})`);
@@ -740,7 +741,7 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`(${jsonLikeAny(["country", "countriesIncluded"], filters.country)})`);
   }
   if (filters.format?.trim()) {
-    whereClauses.push(sql`(${jsonLike("format", filters.format)})`);
+    whereClauses.push(sql`(${jsonLike("format", filters.format)} OR ${like(listings.itemType, `%${filters.format.trim()}%`)})`);
   }
   if (filters.medium?.trim()) {
     whereClauses.push(sql`(${jsonLikeAny(["signedItemType", "autographCategory"], filters.medium)})`);
@@ -768,7 +769,7 @@ export async function getMarketplaceFeed(
     whereClauses.push(sql`(${jsonLikeAny(["rarity", "customRarity"], filters.rarity)})`);
   }
   if (filters.publisher?.trim()) {
-    whereClauses.push(sql`(${jsonLike("publisher", filters.publisher)})`);
+    whereClauses.push(sql`(${jsonLikeAny(["publisher", "recordLabel"], filters.publisher)})`);
   }
   if (filters.brand?.trim()) {
     whereClauses.push(sql`(${jsonLike("brand", filters.brand)})`);

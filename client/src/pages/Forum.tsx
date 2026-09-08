@@ -32,6 +32,7 @@ const forumCategoryTones: Record<string, { active: string; inactive: string }> =
   coins: { active: "border-2 border-teal-900 bg-teal-700 text-white", inactive: "border-2 border-teal-500 bg-teal-200 text-teal-950 hover:bg-teal-300" },
   pokemon: { active: "border-2 border-yellow-700 bg-yellow-400 text-slate-950", inactive: "border-2 border-yellow-500 bg-yellow-200 text-yellow-950 hover:bg-yellow-300" },
   movies: { active: "border-2 border-red-900 bg-red-700 text-white", inactive: "border-2 border-red-400 bg-red-100 text-red-950 hover:bg-red-200" },
+  music: { active: "border-2 border-amber-900 bg-amber-700 text-white", inactive: "border-2 border-amber-500 bg-amber-100 text-amber-950 hover:bg-amber-200" },
   autographs: { active: "border-2 border-orange-900 bg-orange-600 text-white", inactive: "border-2 border-orange-500 bg-orange-200 text-orange-950 hover:bg-orange-300" },
   disney_pins: { active: "border-2 border-cyan-900 bg-cyan-700 text-white", inactive: "border-2 border-cyan-500 bg-cyan-200 text-cyan-950 hover:bg-cyan-300" },
 };

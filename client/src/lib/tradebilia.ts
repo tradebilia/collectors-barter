@@ -9,6 +9,7 @@ export const tradebiliaCategories = [
   { value: "coins", label: "Coins" },
   { value: "pokemon", label: "Pokemon" },
   { value: "movies", label: "Movies" },
+  { value: "music", label: "Music" },
   { value: "autographs", label: "Autographs" },
   { value: "disney_pins", label: "Disney Pins" },
 ] as const;
@@ -154,6 +155,20 @@ export const tradebiliaCategoryThemes: Record<TradebiliaCategorySlug, {
     cardClassName: "bg-[#efd7b7] border-[#8d392f]/16 text-[#22140d] shadow-[0_18px_50px_rgba(65,17,29,0.14)]",
     headingFont: "Bebas Neue, Inter, sans-serif",
     textureClassName: "bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.18),transparent_34%)]",
+  },
+  music: {
+    eyebrow: "Pressings, tapes, and recorded sound",
+    heading: "Vinyl, tapes, CDs, and graded media for collectors who listen closely.",
+    description: "Music pairs warm record-store amber with deep listening-room shadows for certified albums, rare pressings, and physical formats worth trading.",
+    heroClassName: "bg-[linear-gradient(135deg,#1d0d08_0%,#6a2d13_50%,#d78d35_100%)] text-[#fff0d6]",
+    pageClassName: "bg-[linear-gradient(180deg,#24130d_0%,#4b2415_14%,#ead9bf_14%,#ead9bf_100%)] text-[#24130d]",
+    panelClassName: "bg-[#f7ead6]/92 border-[#7c4020]/20",
+    accentClassName: "text-[#8b3e1f]",
+    chipClassName: "bg-[#6e2d17] text-[#fff0d7] border-[#6e2d17]/30",
+    borderClassName: "border-[#8f4a27]/18",
+    cardClassName: "bg-[#f0dcc0] border-[#8b4827]/18 text-[#23130d] shadow-[0_18px_50px_rgba(59,25,11,0.14)]",
+    headingFont: "'Bebas Neue', 'Oswald', sans-serif",
+    textureClassName: "bg-[radial-gradient(circle_at_top,rgba(255,216,164,0.24),transparent_38%)]",
   },
   autographs: {
     eyebrow: "Ink and provenance",

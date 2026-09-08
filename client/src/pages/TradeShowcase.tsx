@@ -18,6 +18,7 @@ const CATEGORY_ICONS: Record<string, string> = {
   coins: "🪙",
   pokemon: "⚡",
   movies: "🎬",
+  music: "🎵",
   autographs: "✍️",
   disney_pins: "🏰",
 };

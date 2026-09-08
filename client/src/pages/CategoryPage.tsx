@@ -37,6 +37,7 @@ import {
   autographsMediumOptions,
   countryOptions,
   moviesFormatOptions,
+  musicFormatOptions,
   pokemonRarityOptions,
   videoGameRegionOptions,
   videoGameSystemOptions,
@@ -129,6 +130,16 @@ const categoryFilterPresets: Record<TradebiliaCategorySlug, Array<{ label: strin
     { label: "Grade", placeholder: "Enter grade (e.g., 9.4)", type: "input" },
     { label: "Value Range", placeholder: "Min - Max", type: "input" },
   ],
+  music: [
+    { label: "Keyword", placeholder: "Artist, release, genre" },
+    { label: "Format", placeholder: "Select music format", type: "select" },
+    { label: "Title", placeholder: "Album or release title" },
+    { label: "Record Label", placeholder: "Label or imprint" },
+    { label: "Year", placeholder: "1967, 1984, 2001" },
+    { label: "Grading company", placeholder: "Select grading company", type: "select" },
+    { label: "Grade", placeholder: "Select grade", type: "select" },
+    { label: "Value Range", placeholder: "Min - Max", type: "input" },
+  ],
   autographs: [
     { label: "Keyword", placeholder: "Search by keyword" },
     { label: "Medium", placeholder: "Photo, comic, baseball", type: "select" },
@@ -157,6 +168,7 @@ const categoryHeroBackgroundUrls: Record<TradebiliaCategorySlug, string> = {
   comics: "https://assets.tradebilia.com/ComicsBackground_80eb606d.webp",
   disney_pins: "https://assets.tradebilia.com/DisneyPinsBackground_cfc008bc.webp",
   movies: "https://assets.tradebilia.com/MoviesBackground_8ecc4916.png",
+  music: "/manus-storage/tradebilia-music-hero_484c76a8.png",
   pokemon: "https://assets.tradebilia.com/PokemonBackground_bce9fc91.webp",
   sports_cards: "https://assets.tradebilia.com/SportsCardBackground_06cd6816.webp",
   stamps: "https://assets.tradebilia.com/StampsBackground_580a838e.png",
@@ -164,7 +176,7 @@ const categoryHeroBackgroundUrls: Record<TradebiliaCategorySlug, string> = {
   vintage_toys: "https://assets.tradebilia.com/VintageToysBackground_46983e1a.png",
 };
 
-const categoryHeroTitleUrls: Record<TradebiliaCategorySlug, string> = {
+const categoryHeroTitleUrls: Partial<Record<TradebiliaCategorySlug, string>> = {
   autographs: "https://assets.tradebilia.com/AutographsTitle_32ad8e27.png",
   coins: "https://assets.tradebilia.com/CoinsTitle_04674a85.webp",
   comics: "https://assets.tradebilia.com/ComicsTitle_74805d30.png",
@@ -177,7 +189,7 @@ const categoryHeroTitleUrls: Record<TradebiliaCategorySlug, string> = {
   vintage_toys: "https://assets.tradebilia.com/VintageToysTitle_d0af50b4.png",
 };
 
-const categoryHeroTitleStyles: Record<TradebiliaCategorySlug, CSSProperties> = {
+const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSProperties>> = {
   autographs: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-100px)", marginLeft: "-25px" },
   coins: { maxHeight: "225px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-75px)", marginLeft: "-15px" },
   comics: { maxHeight: "300px", width: "auto", objectFit: "contain", marginBottom: "-40px" },
@@ -201,6 +213,7 @@ const getCategoryFont = (slug: TradebiliaCategorySlug): string => {
     coins: "'Cinzel', serif",
     pokemon: "'Pokemon', sans-serif",
     movies: "'Bebas Neue', sans-serif",
+    music: "'Bebas Neue', 'Oswald', sans-serif",
     autographs: "'Brush Script MT', cursive",
     disney_pins: "'Disney', sans-serif",
   };
@@ -236,6 +249,7 @@ const gradingServicesByCategory: Record<TradebiliaCategorySlug, string[]> = {
   coins: getGradingCompanyNamesForCategory("coins"),
   pokemon: getGradingCompanyNamesForCategory("pokemon"),
   movies: getGradingCompanyNamesForCategory("movies"),
+  music: getGradingCompanyNamesForCategory("music"),
   autographs: getGradingCompanyNamesForCategory("autographs"),
   disney_pins: getGradingCompanyNamesForCategory("disney_pins"),
 };
@@ -787,7 +801,8 @@ export default function CategoryPage() {
       <style>{`
         @media (max-width: 639px) {
           .category-hero-title-shell-video_games,
-          .category-hero-title-shell-vintage_toys {
+          .category-hero-title-shell-vintage_toys,
+          .category-hero-title-shell-music {
             height: 156px !important;
             align-items: center !important;
             padding-top: 0 !important;
@@ -800,11 +815,13 @@ export default function CategoryPage() {
             transform: none !important;
           }
           .category-hero-divider-video_games,
-          .category-hero-divider-vintage_toys {
+          .category-hero-divider-vintage_toys,
+          .category-hero-divider-music {
             margin-top: 20px !important;
           }
           .category-hero-exchange-video_games,
-          .category-hero-exchange-vintage_toys {
+          .category-hero-exchange-vintage_toys,
+          .category-hero-exchange-music {
             margin-top: 16px !important;
             top: 0 !important;
           }
@@ -823,13 +840,13 @@ export default function CategoryPage() {
         <div className={`relative overflow-hidden ${theme.textureClassName}`} style={{
           backgroundImage: `url(${categoryHeroBackgroundUrls[slug]})`,
           backgroundSize: 'cover',
-          backgroundPosition: slug === 'movies' ? 'center top' : 'center',
+          backgroundPosition: slug === 'movies' ? 'center top' : slug === 'music' ? 'center 45%' : 'center',
           backgroundAttachment: 'scroll',
           backgroundRepeat: 'no-repeat',
           height: '400px',
-          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none'
+          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'music' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
-          <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : 'bg-black/30'}`}></div>
+          <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : slug === 'music' ? 'bg-black/45' : 'bg-black/30'}`}></div>
           <div className="container relative py-6 lg:py-8 z-10">
             <div className="max-w-4xl mx-auto text-center">
               <p className="mt-2 text-xs font-semibold uppercase tracking-[0.36em] text-white" style={{ visibility: slug === "pokemon" ? "hidden" : "visible", position: "relative", top: "-24px", color: "#ffffff", opacity: 1 }}>{theme.eyebrow}</p>
@@ -849,11 +866,11 @@ export default function CategoryPage() {
                   position: "relative",
                   zIndex: 50
                 }}>
-                  <img
-                    src={categoryHeroTitleUrls[slug]}
-                    alt={categoryLabel}
-                    style={categoryHeroTitleStyles[slug]}
-                  />
+                  {categoryHeroTitleUrls[slug] ? (
+                    <img src={categoryHeroTitleUrls[slug]} alt={categoryLabel} style={categoryHeroTitleStyles[slug]} />
+                  ) : (
+                    <span className="drop-shadow-[0_3px_12px_rgba(0,0,0,0.72)]" style={{ letterSpacing: '0.12em' }}>{categoryLabel}</span>
+                  )}
                 </h1>
                 <div className={`category-hero-divider category-hero-divider-${slug} mt-8 h-px bg-white/50 mx-auto`} style={{ maxWidth: "100%", width: "100%", marginTop: "64px" }}></div>
                 <p className={`category-hero-exchange category-hero-exchange-${slug} mt-8 text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-[0.1em]`} style={{
@@ -1045,7 +1062,7 @@ export default function CategoryPage() {
                         {filter.label === "Country" && countryOptions.map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
-                        {filter.label === "Format" && moviesFormatOptions.map(option => (
+                        {filter.label === "Format" && (slug === 'music' ? musicFormatOptions : moviesFormatOptions).map(option => (
                           <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                         ))}
                         {filter.label === "Medium" && autographsMediumOptions.map(option => (
@@ -1224,6 +1241,8 @@ export default function CategoryPage() {
                       className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`}
                     />
                   ) : filter.label === "Publisher" ? (
+                    <FilterInput placeholder={filter.placeholder} value={publisher} onChange={(e) => setPublisher(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
+                  ) : filter.label === "Record Label" ? (
                     <FilterInput placeholder={filter.placeholder} value={publisher} onChange={(e) => setPublisher(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />
                   ) : filter.label === "Brand" ? (
                     <FilterInput placeholder={filter.placeholder} value={brand} onChange={(e) => setBrand(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSubmitFilters()} className={`h-8 ${isSportsCardsPage ? "bg-white/80" : "bg-white"} text-xs text-black`} />

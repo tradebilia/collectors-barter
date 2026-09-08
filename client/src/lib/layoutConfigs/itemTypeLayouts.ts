@@ -45,6 +45,7 @@ import { pokemonSinglecardLayout } from './layouts/pokemon_single_card';
 import { pokemonUnopenedproductLayout } from './layouts/pokemon_unopened_product';
 import { pokemonSetLayout } from './layouts/pokemon_set';
 import { pokemonCollectionlotLayout } from './layouts/pokemon_collection_lot';
+import { musicCassetteTapeLayout, musicCompactDiscLayout, musicEightTrackTapeLayout, musicOtherFormatLayout, musicVinylRecordLayout } from './layouts/music_formats';
 
 /**
  * Master layout configuration map
@@ -80,6 +81,11 @@ export const ITEM_TYPE_LAYOUTS: Record<string, any> = {
   'movies_individual_movie': moviesIndividualmovieLayout,
   'movies_box_set': moviesBoxsetLayout,
   'movies_collection_lot': moviesCollectionlotLayout,
+  'music_vinyl_record': musicVinylRecordLayout,
+  'music_cassette_tape': musicCassetteTapeLayout,
+  'music_compact_disc': musicCompactDiscLayout,
+  'music_eight_track_tape': musicEightTrackTapeLayout,
+  'music_other_music_format': musicOtherFormatLayout,
   'autographs_signed_item': autographsSigneditemLayout,
   'autographs_collection_lot': autographsCollectionlotLayout,
   'disney_pins_individual_pin': disney_pinsIndividualpinLayout,

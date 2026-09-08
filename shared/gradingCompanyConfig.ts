@@ -3,7 +3,7 @@
  * Based on official grading company standards and verified increment structures
  */
 
-export type CollectibleCategory = "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "autographs" | "disney_pins";
+export type CollectibleCategory = "comics" | "sports_cards" | "vintage_toys" | "video_games" | "stamps" | "coins" | "pokemon" | "movies" | "music" | "autographs" | "disney_pins";
 
 export interface GradingCompanyConfig {
   name: string;
@@ -511,6 +511,28 @@ export const gradingCompanyConfigs: GradingCompanyConfig[] = [
     specialDesignations: [],
   },
 
+  // MUSIC
+  {
+    name: "Audio Media Grading",
+    categories: ["music"],
+    gradeScale: "1-10",
+    validGrades: Array.from({ length: 91 }, (_, index) => (1 + index / 10).toFixed(1)),
+    increment: "0.1",
+    hasSubgrades: false,
+    hasSealGrade: false,
+    specialDesignations: [],
+  },
+  {
+    name: "Vintage Media Grading",
+    categories: ["music"],
+    gradeScale: "1-10",
+    validGrades: Array.from({ length: 91 }, (_, index) => (1 + index / 10).toFixed(1)),
+    increment: "0.1",
+    hasSubgrades: false,
+    hasSealGrade: false,
+    specialDesignations: [],
+  },
+
   // STAMPS
   {
     name: "PSE",
@@ -610,7 +632,7 @@ export const gradingCompanyConfigs: GradingCompanyConfig[] = [
   // RAW/UNGRADED (all categories)
   {
     name: "Raw",
-    categories: ["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "autographs", "disney_pins"],
+    categories: ["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "music", "autographs", "disney_pins"],
     gradeScale: "Ungraded",
     validGrades: ["raw", "ungraded"],
     increment: "N/A",

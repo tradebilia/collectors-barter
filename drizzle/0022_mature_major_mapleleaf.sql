@@ -1,0 +1,4 @@
+ALTER TABLE `conventionCategories` MODIFY COLUMN `category` enum('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins','all') NOT NULL;--> statement-breakpoint
+ALTER TABLE `conventions` MODIFY COLUMN `category` enum('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins','all') NOT NULL DEFAULT 'all';--> statement-breakpoint
+ALTER TABLE `draftListings` MODIFY COLUMN `category` enum('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins') NOT NULL;--> statement-breakpoint
+ALTER TABLE `listings` MODIFY COLUMN `category` enum('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins') NOT NULL;

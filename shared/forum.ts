@@ -7,6 +7,7 @@ export const forumTaxonomy = {
   coins: ["us_coins", "world_coins", "currency", "tokens_medals", "errors_varieties"] as const,
   pokemon: ["singles", "sealed_product", "graded_cards", "accessories"] as const,
   movies: ["dvds_bluray", "vhs", "posters", "memorabilia"] as const,
+  music: ["vinyl_records", "cassette_tapes", "compact_discs", "eight_tracks", "other_music_formats"] as const,
   autographs: ["sports", "entertainment", "historical", "authentication"] as const,
   disney_pins: ["open_edition", "limited_edition", "event_pins", "mystery_trading"] as const,
 } as const;
@@ -24,6 +25,7 @@ export const forumCategoryLabels: Record<string, string> = {
   coins: "Coins",
   pokemon: "Pokémon",
   movies: "Movies",
+  music: "Music",
   autographs: "Autographs",
   disney_pins: "Disney Pins",
 };
@@ -64,6 +66,11 @@ export const forumSubcategoryLabels: Record<string, string> = {
   vhs: "VHS",
   posters: "Posters",
   memorabilia: "Memorabilia",
+  vinyl_records: "Vinyl Records",
+  cassette_tapes: "Cassette Tapes",
+  compact_discs: "CDs",
+  eight_tracks: "8-Track Tapes",
+  other_music_formats: "Other Music Formats",
   sports: "Sports",
   entertainment: "Entertainment",
   historical: "Historical",

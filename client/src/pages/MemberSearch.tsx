@@ -23,6 +23,7 @@ const categoryOptions = [
   ["vintage_toys", "Vintage Toys"],
   ["video_games", "Video Games"],
   ["movies", "Movies"],
+  ["music", "Music"],
   ["autographs", "Autographs"],
   ["disney_pins", "Disney Pins"],
 ] as const;

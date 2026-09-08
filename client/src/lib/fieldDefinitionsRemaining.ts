@@ -1,6 +1,13 @@
 import { FieldDefinition } from './formFieldDefinitions';
 import { VINTAGE_TOYS_LEGO_FIELDS } from './fieldDefinitionsLego';
 import {
+  MUSIC_CASSETTE_TAPE_FIELDS,
+  MUSIC_COMPACT_DISC_FIELDS,
+  MUSIC_EIGHT_TRACK_TAPE_FIELDS,
+  MUSIC_OTHER_FORMAT_FIELDS,
+  MUSIC_VINYL_RECORD_FIELDS,
+} from './fieldDefinitionsMusic';
+import {
   SPORTS_CARDS_SINGLE_CARD_FIELDS,
   SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS,
   SPORTS_CARDS_COLLECTION_LOT_FIELDS,
@@ -77,6 +84,13 @@ export const CATEGORY_ITEM_TYPES = {
     individual_movie: MOVIES_INDIVIDUAL_MOVIE_FIELDS,
     box_set: MOVIES_BOX_SET_FIELDS,
     collection_lot: MOVIES_COLLECTION_LOT_FIELDS,
+  },
+  music: {
+    vinyl_record: MUSIC_VINYL_RECORD_FIELDS,
+    cassette_tape: MUSIC_CASSETTE_TAPE_FIELDS,
+    compact_disc: MUSIC_COMPACT_DISC_FIELDS,
+    eight_track_tape: MUSIC_EIGHT_TRACK_TAPE_FIELDS,
+    other_music_format: MUSIC_OTHER_FORMAT_FIELDS,
   },
   autographs: {
     signed_item: AUTOGRAPHS_SIGNED_ITEM_FIELDS,

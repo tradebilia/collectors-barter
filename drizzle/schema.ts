@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm"
 export const conventionCategories = mysqlTable("conventionCategories", {
 	id: int().autoincrement().notNull(),
 	conventionId: int().notNull(),
-	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','all']).notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins','all']).notNull(),
 },
 (table) => [
 	index("cc_convention_idx").on(table.conventionId),
@@ -15,7 +15,7 @@ export const conventionCategories = mysqlTable("conventionCategories", {
 export const conventions = mysqlTable("conventions", {
 	id: int().autoincrement().notNull(),
 	name: varchar({ length: 255 }).notNull(),
-	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','all']).default('all').notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins','all']).default('all').notNull(),
 	startDate: varchar({ length: 20 }).notNull(),
 	endDate: varchar({ length: 20 }),
 	city: varchar({ length: 100 }),
@@ -62,7 +62,7 @@ export const draftListings = mysqlTable("draftListings", {
 	id: int().autoincrement().notNull(),
 	userId: int().notNull().references(() => users.id),
 	title: varchar({ length: 160 }).notNull(),
-	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins']).notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins']).notNull(),
 	grade: varchar({ length: 50 }).default('ungraded').notNull(),
 	graderCompany: varchar({ length: 100 }),
 	certificationNumber: varchar({ length: 100 }),
@@ -297,7 +297,7 @@ export const listings = mysqlTable("listings", {
 	id: int().autoincrement().notNull(),
 	ownerId: int().notNull().references(() => users.id),
 	title: varchar({ length: 160 }).notNull(),
-	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins']).notNull(),
+	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins']).notNull(),
 	condition: mysqlEnum(['mint','near_mint','excellent','very_good','good','fair','poor']).notNull(),
 	grade: decimal({ precision: 5, scale: 2 }).default('0').notNull(),
 	certificationCompany: varchar({ length: 50 }),

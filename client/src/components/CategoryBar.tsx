@@ -1,5 +1,5 @@
 import { Link, useRoute } from "wouter";
-import { BookOpen, Clapperboard, Coins, Gamepad2, Grid3X3, House, LucideIcon, Medal, Package, PenLine, Search, Sparkles, Stamp } from "lucide-react";
+import { BookOpen, Clapperboard, Coins, Disc3, Gamepad2, Grid3X3, House, LucideIcon, Medal, Package, PenLine, Search, Sparkles, Stamp } from "lucide-react";
 import type { SVGProps } from "react";
 import { tradebiliaCategories } from "@/lib/tradebilia";
 
@@ -43,6 +43,7 @@ const categoryIcons: Record<string, LucideIcon | typeof PostageStampIcon | typeo
   coins: Coins,
   pokemon: PokemonSilhouetteIcon,
   movies: Clapperboard,
+  music: Disc3,
   autographs: PenLine,
   disney_pins: MickeyEarsIcon,
 };

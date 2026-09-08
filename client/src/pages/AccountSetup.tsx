@@ -1024,7 +1024,7 @@ export default function AccountSetup() {
                     <Label>Preferred Collecting Categories</Label>
                     <p className="text-xs text-slate-600">Select the categories you're most interested in</p>
                     <div className="grid grid-cols-2 gap-2">
-                      {["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "autographs", "disney_pins"].map((cat) => (
+                      {["comics", "sports_cards", "vintage_toys", "video_games", "stamps", "coins", "pokemon", "movies", "music", "autographs", "disney_pins"].map((cat) => (
                         <label key={cat} className="flex items-center gap-2 cursor-pointer">
                           <input
                             type="checkbox"

@@ -42,6 +42,7 @@ const categoryLinks = [
   { value: "coins", label: "Coins" },
   { value: "pokemon", label: "Pokemon" },
   { value: "movies", label: "Movies" },
+  { value: "music", label: "Music" },
   { value: "autographs", label: "Autographs" },
   { value: "disney_pins", label: "Disney Pins" },
 ] as const;

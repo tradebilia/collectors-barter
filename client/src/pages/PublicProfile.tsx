@@ -51,6 +51,7 @@ const categoryMeta: Record<string, { bg: string; text: string; border: string; l
   coins:        { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-100",  label: "Coins" },
   pokemon:      { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-100", label: "Pokemon" },
   movies:       { bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-100",   label: "Movies" },
+  music:        { bg: "bg-amber-50",  text: "text-amber-800",  border: "border-amber-200",  label: "Music" },
   autographs:   { bg: "bg-pink-50",   text: "text-pink-700",   border: "border-pink-100",   label: "Autographs" },
   disney_pins:  { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-100", label: "Disney Pins" },
 };

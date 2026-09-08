@@ -1707,7 +1707,7 @@
 - [x] Extend the homepage Follow Tradebilia section background to fill the negative cream space while preserving social links, content, and responsive behavior. The section now extends through the former main bottom padding; homepage and responsive regressions passed, TypeScript and production build passed, and desktop/mobile screenshots confirmed the cream strip is filled.
 
 - [x] Reformat Admin navigation groups vertically so each group headline sits above its related full-width tab row, preserving routes, permissions, and responsive behavior. Focused Admin navigation tests passed 2/2, Operations regression passed, TypeScript passed, production build passed, and authenticated browser inspection confirmed the requested stacked arrangement.
-- [ ] Resolve the 24 unrelated pre-existing failures in the full Vitest suite; this Admin navigation change did not introduce them.
+- [ ] Resolve the 20 unrelated pre-existing or environment-dependent failures in the full Vitest suite; the latest run passed 697 tests, while the remaining failures are concentrated in stale UI/source assertions and provider/network-dependent checks. The LEGO and Submit Collectible changes are not implicated.
 
 - [x] Correct Admin navigation so each group’s individual tabs stack vertically beneath its headline, matching the provided reference rather than only stacking the group containers. Focused Admin navigation tests, TypeScript, production build, and authenticated browser inspection passed.
 - [x] Arrange Admin navigation group names horizontally as columns, with each group’s tabs vertically aligned beneath its heading and responsive wrapping on narrow screens.
@@ -1745,3 +1745,7 @@
 - [x] Add AFA and CAS to every applicable Grading Company dropdown while preserving the Other/custom-company conditional field and existing grading workflows. LEGO now offers AFA, CAS, UKG, and Other; existing Vintage Toys grading dropdowns already included AFA and CAS. Focused grading/LEGO tests, TypeScript, and production build passed.
 
 - [x] Change the Add Inventory Submit Collectible button to a blue style with white text while preserving its icon, validation, loading/disabled state, submission behavior, and responsive layout. The submit action now uses a blue background and darker blue hover state; focused Add Inventory regression, LEGO regression, TypeScript, and production build passed.
+
+- [x] User-confirmed manual LEGO listing submission completed successfully through Add Inventory; dropdown, field mapping, validation, and submission behavior all appeared to work as expected.
+
+- [x] Add Music as a first-class Tradebilia category with the supplied hero image, category page, navigation/discovery coverage, Add Inventory item types, compact format-specific fields, and regression validation. Music now supports Vinyl Record, Cassette Tape, CD, 8-Track Tape, and Other Music Format; category, forum, preferences, inventory, profiles, member search, detail pages, and trade showcase are covered. Focused Music/LEGO tests passed 9/9, TypeScript and production build passed, desktop/mobile Music page screenshots passed, and authenticated Add Inventory verification confirmed format selection plus graded conditional fields.
