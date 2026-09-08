@@ -155,13 +155,6 @@
       "when": 1788746282363,
       "tag": "0021_yummy_phantom_reporter",
       "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "5",
-      "when": 1788885490606,
-      "tag": "0022_mature_major_mapleleaf",
-      "breakpoints": true
     }
   ]
 }
