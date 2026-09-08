@@ -163,7 +163,7 @@ const sortOptions = [
 ];
 
 const categoryHeroBackgroundUrls: Record<TradebiliaCategorySlug, string> = {
-  autographs: "https://assets.tradebilia.com/AutoBackground_a5b49e15.png",
+  autographs: "/manus-storage/AutoBackground1_91f46550.png",
   coins: "https://assets.tradebilia.com/CoinsBackground_cea1e610.png",
   comics: "https://assets.tradebilia.com/ComicsBackground_80eb606d.webp",
   disney_pins: "https://assets.tradebilia.com/DisneyPinsBackground_cfc008bc.webp",
