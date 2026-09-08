@@ -724,7 +724,7 @@ export default function AddInventory() {
                 {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save as Draft
               </Button>
-              <Button type="submit" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
+              <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
                 {(createListingMutation.isPending || updateListingMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditMode ? "Update Listing" : "Submit Collectible"}
               </Button>
