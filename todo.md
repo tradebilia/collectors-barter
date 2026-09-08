@@ -1741,3 +1741,5 @@
 - [x] Map the simplified LEGO fields into Tradebilia’s existing sections, clearly identifying required, recommended, optional, and conditional fields without implementing them yet. The proposed map keeps LEGO as one item type and limits conditional logic to completeness, packaging, instructions, and grading.
 
 - [x] Add LEGO to the Vintage Toys item-type dropdown and map the approved simplified required, recommended, optional, and conditional fields using the existing field-definition architecture. Focused LEGO regression passed 3/3, TypeScript passed, production build passed, and the independent layout is registered.
+
+- [x] Add AFA and CAS to every applicable Grading Company dropdown while preserving the Other/custom-company conditional field and existing grading workflows. LEGO now offers AFA, CAS, UKG, and Other; existing Vintage Toys grading dropdowns already included AFA and CAS. Focused grading/LEGO tests, TypeScript, and production build passed.

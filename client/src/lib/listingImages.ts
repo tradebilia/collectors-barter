@@ -30,7 +30,8 @@ function normalizeListingImageUrl(url: string) {
   const encodedPath = path.split('/').map(part => encodeURIComponent(part)).join('/').replace(/%2F/g, '/');
   // Convert relative paths to absolute URLs using the current origin
   if (encodedPath.startsWith('/')) {
-    return `${window.location.origin}${encodedPath}`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}${encodedPath}`;
   }
   return encodedPath;
 }

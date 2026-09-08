@@ -23,6 +23,8 @@ describe('Vintage Toys LEGO item type', () => {
     expect(field('isGraded')?.requirement).toBe('required');
     expect(field('condition')?.conditionalLogic).toBe('Is Graded = no');
     expect(field('gradingCompany')?.conditionalLogic).toBe('Is Graded = yes');
+    expect(field('gradingCompany')?.dropdownOptions).toEqual(['AFA', 'CAS', 'UKG', 'Other']);
+    expect(field('gradingCompany')?.supportsOther).toBe(true);
     expect(field('missingDetails')?.conditionalLogic).toBe('Complete = no');
     expect(field('boxCondition')?.conditionalLogic).toBe('Packaging Type = opened');
     expect(field('instructionCondition')?.conditionalLogic).toBe('Instructions Included = yes');

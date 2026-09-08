@@ -17,7 +17,7 @@ export const VINTAGE_TOYS_LEGO_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'gradingCompany', label: 'Grading Company', inputType: 'dropdown', requirement: 'required',
-    conditionalLogic: 'Is Graded = yes', dropdownOptions: ['Other'], supportsOther: true,
+    conditionalLogic: 'Is Graded = yes', dropdownOptions: ['AFA', 'CAS', 'UKG', 'Other'], supportsOther: true,
     inlineCustomField: true, otherFieldName: 'Custom Grading Company',
   },
   { name: 'grade', label: 'Grade', inputType: 'text', requirement: 'required', conditionalLogic: 'Is Graded = yes', maxLength: 20 },
