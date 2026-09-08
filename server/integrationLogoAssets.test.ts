@@ -8,12 +8,16 @@ const linkedInConnection = readFileSync(new URL("../client/src/components/Linked
 const publicProfile = readFileSync(new URL("../client/src/pages/PublicProfile.tsx", import.meta.url), "utf8");
 
 describe("Profile Integrations provider logos", () => {
-  it("uses each supplied provider logo in the Integration tab", () => {
-    expect(accountSettings).toContain("https://assets.tradebilia.com/Paypal_25ebc114.png");
+  it("uses modular provider connection cards and the approved Whatnot source in the Integration tab", () => {
     expect(accountSettings).toContain("https://assets.tradebilia.com/WhatNot_ab669ac9.png");
-    expect(accountSettings).toContain("https://assets.tradebilia.com/Facebooklogo_0c02c2d1.png");
-    expect(accountSettings).toContain("https://assets.tradebilia.com/LinkedIn_df1e2c1e.webp");
-    expect(accountSettings).toContain("https://assets.tradebilia.com/Ebaylogo_12a10426.png");
+    expect(accountSettings).toContain('import { EbayConnection } from "@/components/EbayConnection"');
+    expect(accountSettings).toContain('import { FacebookConnection } from "@/components/FacebookConnection"');
+    expect(accountSettings).toContain('import { LinkedInConnection } from "@/components/LinkedInConnection"');
+    expect(accountSettings).toContain('import { EtsyConnection } from "@/components/EtsyConnection"');
+    expect(accountSettings).toContain("<EbayConnection />");
+    expect(accountSettings).toContain("<FacebookConnection />");
+    expect(accountSettings).toContain("<LinkedInConnection />");
+    expect(accountSettings).toContain("<EtsyConnection />");
   });
 
   it("uses the supplied logos in the primary connection cards", () => {

@@ -70,7 +70,8 @@ export default function AddInventory() {
   const [, navigate] = useLocation();
   const isEditMode = !!params.listingId;
   const isDraftMode = params.listingId?.startsWith('draft-');
-  const draftId = isDraftMode ? parseInt(params.listingId!.replace('draft-', '')) : null;
+  const parsedDraftId = isDraftMode ? Number.parseInt(params.listingId!.replace('draft-', ''), 10) : null;
+  const draftId = parsedDraftId && parsedDraftId > 0 ? parsedDraftId : null;
 
   // Always scroll to top when the page loads (both add and edit mode)
   useEffect(() => {
@@ -116,8 +117,8 @@ export default function AddInventory() {
     },
   });
   const getDraftByIdQuery = trpc.market.getDraftById.useQuery(
-    { draftId: draftId || 0 },
-    { enabled: isDraftMode && !!draftId }
+    { draftId: draftId ?? 1 },
+    { enabled: isDraftMode && draftId !== null }
   );
 
   const updateDraftMutation = trpc.market.updateDraft.useMutation();

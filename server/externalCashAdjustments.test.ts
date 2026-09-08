@@ -24,7 +24,8 @@ describe("External cash-adjustment safeguards", () => {
     expect(routerSource).toContain("externalPaymentMethodsInputSchema");
     expect(routerSource).toContain("saveExternalPaymentMethods");
     expect(routerSource).toContain("preferencesChanged: methodChanged");
-    expect(settingsSource).toContain("Accepted trade payment details are unchanged");
+    expect(settingsSource).toContain("These private payment preferences are saved together with your Profile Changes.");
+    expect(settingsSource).toContain("except while a selected cash payment is awaiting your receipt confirmation.");
   });
 
   it("matches member-enabled methods in Step 2 and reveals destinations only to the payer after acceptance", () => {

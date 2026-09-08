@@ -48,10 +48,10 @@ describe("Trade Room safeguards", () => {
 
   it("renders every Shipping-stage cash obligation separately before item receipt confirmation", () => {
     expect(warRoomSource).toContain("const obligations = (cashAdjustmentContextQuery.data?.obligations ?? [])");
-    expect(warRoomSource).toContain("Payment & Shipping Checklist");
-    expect(warRoomSource).toContain("Payment sent — cash receipt is confirmed in Step 5");
+    expect(warRoomSource).toContain("label: 'Shipping & Payment'");
+    expect(warRoomSource).toContain("Your partner marked this payment sent. Confirm that the cash arrived in Step 5, Confirm Receipt.");
     expect(warRoomSource).not.toContain("Step 5, Confirm Receipt, opens automatically");
-    expect(warRoomSource).toContain("Complete each remaining payment-sent action below during Shipping & Payment.");
+    expect(warRoomSource).toContain("Payment marked sent. {theirDisplayName} confirms cash receipt in Step 5.");
     expect(warRoomSource).toContain("transactionReferenceByPayer");
     expect(warRoomSource).toContain("markCashAdjustmentSentMutation.mutate({ proposalId");
   });
@@ -73,7 +73,7 @@ describe("Trade Room safeguards", () => {
     expect(warRoomSource).toContain("lg:grid-cols-2 lg:divide-x lg:divide-y-0");
     expect(warRoomSource).toContain("myTrackingByListingId");
     expect(warRoomSource).toContain("trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4");
-    expect(warRoomSource).toContain("Payment sent — cash receipt is confirmed in Step 5");
+    expect(warRoomSource).toContain("Payment marked sent. {theirDisplayName} confirms cash receipt in Step 5.");
     expect(warRoomSource).toContain("pendingCashSteps");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isLoading");
     expect(warRoomSource).toContain("cashAdjustmentContextQuery.isError");

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
 describe("UPS OAuth credentials", () => {
-  it.skipIf(!process.env.UPS_CLIENT_ID || !process.env.UPS_CLIENT_SECRET)("authenticates through the UPS token endpoint without exposing credentials", async () => {
+  const runLiveCredentialProbe = process.env.RUN_EXTERNAL_CREDENTIAL_TESTS === "true" && Boolean(process.env.UPS_CLIENT_ID) && Boolean(process.env.UPS_CLIENT_SECRET);
+
+  it.skipIf(!runLiveCredentialProbe)("authenticates through the UPS token endpoint without exposing credentials when live provider checks are enabled", async () => {
     const basicAuth = Buffer.from(`${process.env.UPS_CLIENT_ID}:${process.env.UPS_CLIENT_SECRET}`).toString("base64");
     const response = await fetch("https://onlinetools.ups.com/security/v1/oauth/token", {
       method: "POST",

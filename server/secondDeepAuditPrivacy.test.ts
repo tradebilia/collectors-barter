@@ -13,7 +13,7 @@ describe("second deep-audit privacy repairs", () => {
     const searchBlock = source.slice(searchStart, searchEnd);
 
     expect(searchBlock).toContain("eq(userProfiles.showProfile, 1)");
-    expect(searchBlock).toContain("members: orderedMembers.map(({ privateLocation, ...member }) => member)");
+    expect(searchBlock).toContain("members: orderedMembers.map(({ privateLocation, username: _username, ...member }) => member)");
     expect(searchBlock).toContain("m.hideInventoryValue === 1 ? null");
     expect(searchBlock).toContain("member.activeListingValue === null");
   });
@@ -24,9 +24,9 @@ describe("second deep-audit privacy repairs", () => {
     const end = source.indexOf("search: publicProcedure", start);
     const block = source.slice(start, end);
 
-    expect(block).toContain("profileRow?.showProfile === 0 && !viewerMayBypassProfilePrivacy");
+    expect(block).toContain("profileRow?.showProfile === 0 && !viewerMayAccessHiddenProfile");
     expect(block).toContain("shouldHideInventoryValue");
-    expect(block).toContain("estimatedValue: null");
+    expect(block).toContain("recentListingsArr.map((listing: any) => ({ ...listing, estimatedValue: null }))");
   });
 
   it("honors a recipient contact-request opt-out before creating a thread or inquiry", () => {

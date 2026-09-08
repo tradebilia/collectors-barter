@@ -50,6 +50,8 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).not.toContain('+ Add Item to Inventory');
     expect(source).not.toContain('Show only items listed for trade');
     expect(source).not.toContain('const [tradeOnly, setTradeOnly]');
-    expect(source).toContain('status === "all" || (status === "listed" ? listing.isActive : !listing.isActive)');
+    expect(source).toContain('status === "active" && listing.status !== "traded" && Boolean(listing.isActive)');
+    expect(source).toContain('status === "not-listed" && listing.status !== "traded" && !listing.isActive');
+    expect(source).toContain('status === "traded" && listing.status === "traded"');
   });
 });
