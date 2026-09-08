@@ -187,6 +187,7 @@ const categoryHeroTitleUrls: Partial<Record<TradebiliaCategorySlug, string>> = {
   stamps: "https://assets.tradebilia.com/StampsTitle_e766d861.webp",
   video_games: "https://assets.tradebilia.com/VideoGamesTitle_7dc7fe49.webp",
   vintage_toys: "https://assets.tradebilia.com/VintageToysTitle_d0af50b4.png",
+  music: "/manus-storage/music-title-original-transparent_86495941.png",
 };
 
 const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSProperties>> = {
@@ -200,6 +201,7 @@ const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSPropert
   stamps: { maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" },
   video_games: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
   vintage_toys: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
+  music: { maxWidth: "min(82vw, 760px)", width: "100%", height: "auto", objectFit: "contain", marginBottom: "20px", transform: "translateY(-8px)" },
 };
 
 // Helper function to get category-specific font
@@ -844,7 +846,7 @@ export default function CategoryPage() {
           backgroundAttachment: 'scroll',
           backgroundRepeat: 'no-repeat',
           height: '400px',
-          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'music' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none'
+          filter: (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none'
         }}>
           <div className={`absolute inset-0 ${slug === 'movies' ? 'bg-black/10' : slug === 'music' ? 'bg-black/45' : 'bg-black/30'}`}></div>
           <div className="container relative py-6 lg:py-8 z-10">
