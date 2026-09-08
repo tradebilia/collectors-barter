@@ -25,6 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { startLogin } from "@/const";
 import { Link } from "wouter";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { tradebiliaConditionOptions, formatGrade, formatItemValue } from "@/lib/tradebilia";
@@ -270,6 +271,8 @@ export default function PublicProfile() {
   const totalReviews = reviews.length;
   const histogram = stats.histogram;
   const totalHistogram = (histogram.five || 0) + (histogram.four || 0) + (histogram.three || 0) + (histogram.two || 0) + (histogram.one || 0);
+  const isOwnProfile = currentUser?.id === user.id;
+  const canUseMemberActions = Boolean(currentUser) && !isOwnProfile;
 
   return (
     <div className="min-h-screen bg-[#f8fafc] pb-20">
@@ -377,7 +380,7 @@ export default function PublicProfile() {
 
             {/* Actions */}
             <div className="flex items-start gap-2 w-full md:w-auto shrink-0">
-              {currentUser?.id !== user.id ? (
+              {canUseMemberActions ? (
                 <>
                   <Button
                     className="flex-1 md:flex-none rounded-xl bg-[#7f31ff] hover:bg-[#6a29d6] font-bold px-6"
@@ -397,9 +400,13 @@ export default function PublicProfile() {
                     <Heart className={`h-4 w-4 ${isFollowing ? 'fill-current' : ''}`} />
                   </Button>
                 </>
-              ) : (
+              ) : isOwnProfile ? (
                 <Button variant="outline" className="flex-1 md:flex-none rounded-xl border-slate-200 text-slate-600 font-bold px-6" onClick={() => setLocation("/account-settings")}>
                   Edit Profile
+                </Button>
+              ) : (
+                <Button className="flex-1 md:flex-none rounded-xl bg-[#7f31ff] px-6 font-bold hover:bg-[#6a29d6]" onClick={startLogin}>
+                  Sign in to connect
                 </Button>
               )}
               <Button
@@ -1033,7 +1040,7 @@ export default function PublicProfile() {
       </div>
 
       {/* Compose Message Modal */}
-      {composeOpen && profileData && (
+      {composeOpen && currentUser && profileData && (
         <ComposeMessageModal
           isOpen={composeOpen}
           onClose={() => setComposeOpen(false)}
