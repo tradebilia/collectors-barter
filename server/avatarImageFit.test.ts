@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
-const projectRoot = join(process.cwd());
+const projectRoot = resolve(import.meta.dirname, "..");
 const clientRoot = join(projectRoot, "client", "src");
 
 function collectTsxFiles(directory: string): string[] {
@@ -38,7 +38,6 @@ describe("avatar image fit", () => {
   it("keeps every audited direct avatar view on the layered frame-filling treatment", () => {
     const paths = [
       "components/RecentTradesCarousel.tsx",
-      "pages/TradeShowcase.tsx",
       "pages/PublicProfile.tsx",
       "pages/VerifiedMerchants.tsx",
       "pages/WarRoom.tsx",

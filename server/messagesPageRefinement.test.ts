@@ -9,7 +9,7 @@ const timestampSource = readFileSync(resolve(process.cwd(), "client/src/lib/mess
 
 describe("Messages page refinements", () => {
   it("uses a centered, expanded hero and prominent unlabeled subjects", () => {
-    expect(messagesSource).toContain("h-[400px] items-center justify-center");
+    expect(messagesSource).toContain("min-h-[16rem] h-[clamp(16rem,32vw,25rem)] items-center justify-center");
     expect(messagesSource).toContain("w-full max-w-6xl object-contain");
     expect(messagesSource).toContain('transform: "translateX(-2.34375%)"');
     expect(messagesSource).not.toContain("Direct Lines, Trusted Conversations</p>");
@@ -80,8 +80,8 @@ describe("Messages page refinements", () => {
   });
 
   it("keeps reply composers inside their conversation panel while the message body scrolls", () => {
-    expect(messagesSource).toContain('className="flex min-h-[34rem] flex-col sm:h-[70vh] sm:min-h-0"');
-    expect(messagesSource).toContain('className="min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-5"');
+    expect(messagesSource).toContain('className="flex min-h-[34rem] flex-col"');
+    expect(messagesSource).toContain('className="min-h-0 flex-1 overflow-hidden px-4 py-4 sm:px-6 sm:py-5"');
     expect(messagesSource).toContain('className="shrink-0 border-t border-slate-200 bg-slate-100 px-4 py-3 sm:px-6 sm:py-5"');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto]');
     expect(messagesSource).toContain('lg:grid-cols-[minmax(0,1fr)_auto_auto]');

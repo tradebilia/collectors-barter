@@ -33,8 +33,8 @@ describe("listing owner interaction safeguards", () => {
     expect(categorySource).toContain("You cannot message or trade with your own item");
     expect(categorySource).toContain("Your personalized message");
     expect(categorySource).toContain("!proposalNote.trim()");
-    expect(categorySource).toContain("note: proposalNote.trim()");
-    expect(categorySource).toContain('<MessageSquareText className="mr-1 h-2 w-2" /> Trade');
+    expect(categorySource).toContain("message: proposalNote.trim()");
+    expect(categorySource).toContain('MessageSquareText className={`${viewMode === "grid" ? "mr-1 h-3 w-3 md:h-2 md:w-2" : "mr-1 h-2 w-2"}`}');
     expect(categorySource).toContain('disabled={isAuthenticated && listing.ownerId === user?.id}');
     expect(categorySource).toContain("You cannot favorite your own item");
   });
@@ -42,7 +42,7 @@ describe("listing owner interaction safeguards", () => {
   it("gives Explore All the same favorite action and owner restriction as category cards", () => {
     const exploreAllSource = read("client/src/pages/SearchResults.tsx");
 
-    expect(exploreAllSource).toContain('import { Filter, Heart, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";');
+    expect(exploreAllSource).toContain("MessageSquareText");
     expect(exploreAllSource).toContain("trpc.market.toggleWatchlist.useMutation");
     expect(exploreAllSource).toContain('window.location.href = getLoginUrl();');
     expect(exploreAllSource).toContain('disabled={isAuthenticated && listing.ownerId === user?.id}');

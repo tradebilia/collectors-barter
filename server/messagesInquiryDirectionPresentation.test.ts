@@ -11,13 +11,15 @@ describe("Messages item inquiry direction controls", () => {
   });
 
   it("renders explicit direction labels in inquiry cards and details", () => {
-    expect(source).toContain("inquiryPresentation.listLabel");
+    expect(source).toContain("const inquiryDirectionLabel = inquiryDirection === \"sent\" ? \"To:\" : \"From:\"");
+    expect(source).toContain("getInquiryDirectionPresentation(inquiryDirection, inquiryCounterpartName)");
     expect(source).toContain("activeInquiryPresentation?.detailHeading");
     expect(source).toContain("activeInquiryPresentation?.detailPrefix");
   });
 
-  it("shows the status badge only for received inquiries so outgoing cards do not repeat Sent", () => {
-    expect(source).toContain('{inquiryDirection === "received" && (');
-    expect(source).not.toContain("const inquiryStatus =");
+  it("uses the shared direction presentation badge while keeping unread status limited to received inquiries", () => {
+    expect(source).toContain('inquiryDirection === "received" && !inquiry.isRead');
+    expect(source).toContain("{inquiryPresentation.badge}");
+    expect(source).toContain('inquiryDirection === "sent" ? "border-blue-700 bg-blue-700 text-white hover:bg-blue-800"');
   });
 });

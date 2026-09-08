@@ -20,7 +20,7 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain("dividerStrokeWidth?: number;");
     expect(logoSource).toContain('scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)');
     expect(logoSource).toContain('viewBox={`0 0 ${dynamicViewBoxWidth} 216`}');
-    expect(logoSource).toContain('preserveAspectRatio="xMinYMid meet"');
+    expect(logoSource).toContain('preserveAspectRatio="xMidYMid meet"');
   });
 
   it("keeps Global Search category rotations on one fixed-size, fixed-baseline track", () => {
@@ -35,10 +35,10 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;');
     expect(logoSource).toContain('centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,');
     expect(logoSource).toContain('const dividerHalfHeight = 48.6 * dividerScale;');
-    expect(logoSource).toContain('setDynamicViewBoxWidth(nextViewBoxWidth);');
+    expect(logoSource).toContain('setDynamicViewBoxWidth(activeCenteredViewBoxWidth);');
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
     expect(logoSource).toContain('const categoryGap = currentCategory.name === "BILIA" ? fontSize * 0.04 : fontSize * 0.22;');
-    expect(logoSource).toContain('Math.ceil(132 + wordmarkTextWidth + categoryGap)');
+    expect(logoSource).toContain('Math.ceil(wordmarkX + (measuredWordmarkWidth || wordmarkTextWidth) + categoryGap)');
     expect(logoSource).toContain('dividerOffsetY?: number;');
     expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
   });
@@ -54,9 +54,10 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('canvasWidthScale = 1,');
     expect(logoSource).toContain('width: `${canvasWidthScale * 100}%`');
     expect(logoSource).toContain('lockupScale = 1,');
-    expect(logoSource).toContain('const scaledLockupWidth = lockupWidth * lockupScale;');
+    expect(logoSource).toContain('const activeLockupScale = centerLockup && isNarrowViewport ? 0.36 : lockupScale;');
     expect(logoSource).toContain('wheelColors = DEFAULT_WHEEL_COLORS,');
     expect(logoSource).toContain('fill={wheelColors[0]} stroke={wheelColors[0]}');
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={196} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-30} dividerScale={1.55} dividerOffsetY={-20} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={3000} canvasWidthScale={1.25} />');
+    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45}');
+    expect(comingSoonSource).toContain('fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56}');
   });
 });
