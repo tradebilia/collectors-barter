@@ -24,4 +24,13 @@ describe("public-profile member action access", () => {
     expect(source).toContain("sendDirectMessage: protectedProcedure");
     expect(source).toContain("createTradeProposal: protectedProcedure");
   });
+
+  it("uses sign-in entry actions rather than message or trade dialogs for visitors on profile-linked listings", () => {
+    const source = read("client/src/pages/ItemDetail.tsx");
+
+    expect(source).toContain("const startMessageOwner = () => {");
+    expect(source).toContain("Sign in to trade");
+    expect(source).toContain("Sign in to message");
+    expect(source).toContain("{listing && isAuthenticated && isEmailModalOpen && (");
+  });
 });

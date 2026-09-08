@@ -229,6 +229,15 @@ export default function ItemDetail() {
     setIsProposalDialogOpen(true);
   };
 
+  const startMessageOwner = () => {
+    if (!listing || isOwnListing) return;
+    if (!isAuthenticated) {
+      window.location.href = getLoginUrl();
+      return;
+    }
+    setIsEmailModalOpen(true);
+  };
+
   const submitTradeProposal = () => {
     if (!listing || isOwnListing || !proposalMessage.trim()) return;
     createProposalMutation.mutate({ listingId: listing.id, message: proposalMessage.trim() });
@@ -482,7 +491,7 @@ export default function ItemDetail() {
                   <Button 
                     onClick={startTradeProposal} 
                     disabled={createProposalMutation.isPending || isOwnListing}
-                    title={isOwnListing ? "You cannot message or trade with your own item" : "Start a trade proposal"}
+                    title={isOwnListing ? "You cannot message or trade with your own item" : !isAuthenticated ? "Sign in to propose a trade" : "Start a trade proposal"}
                     className={`h-12 rounded-[1rem] text-sm font-semibold text-white ${
                       createProposalMutation.isSuccess 
                         ? 'bg-yellow-600 hover:bg-yellow-700 cursor-default' 
@@ -490,11 +499,11 @@ export default function ItemDetail() {
                     }`}
                   >
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
-                    {isOwnListing ? 'Your Listing' : createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
+                    {isOwnListing ? 'Your Listing' : !isAuthenticated ? 'Sign in to trade' : createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
                   </Button>
-                  <Button onClick={() => { if (!isOwnListing) setIsEmailModalOpen(true); }} disabled={isOwnListing} title={isOwnListing ? "You cannot message your own item" : "Message owner"} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
+                  <Button onClick={startMessageOwner} disabled={isOwnListing} title={isOwnListing ? "You cannot message your own item" : !isAuthenticated ? "Sign in to message the owner" : "Message owner"} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
-                    {isOwnListing ? 'Your Listing' : 'Message Owner'}
+                    {isOwnListing ? 'Your Listing' : !isAuthenticated ? 'Sign in to message' : 'Message Owner'}
                   </Button>
                   <Button 
                     onClick={toggleWatchlist} 
@@ -765,7 +774,7 @@ export default function ItemDetail() {
           </div>
         </section>
       </main>
-      {listing && isEmailModalOpen && (
+      {listing && isAuthenticated && isEmailModalOpen && (
         <ComposeMessageModal
           isOpen={isEmailModalOpen}
           onClose={() => setIsEmailModalOpen(false)}
