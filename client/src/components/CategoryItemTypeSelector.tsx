@@ -59,6 +59,7 @@ const ITEM_TYPE_DISPLAY_NAMES: Record<string, string> = {
   box_set: 'Box Set',
   movies_collection_lot: 'Collection / Lot',
   signed_item: 'Signed Item',
+  lego: 'LEGO',
   action_figure: 'Action Figure / Doll',
   vehicle: 'Vehicle',
   playset: 'Playset',

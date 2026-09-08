@@ -1731,3 +1731,13 @@
 - [x] Mark traded Watchlist items with a bold TRADED banner, preserve manual removal, and suppress all listing-detail/trade links for traded records while keeping active records unchanged. Targeted Watchlist regression passed, TypeScript passed, and the production build passed; two unrelated pre-existing SearchResults assertions remain stale in the broader safeguards file.
 
 - [x] Replace Tradebilia Verified with Tradebilia Merchant Verified and add an explanatory tooltip wherever the merchant verification badge is displayed. Recent-trade member badges now use the approved wording with an accessible tooltip explaining the Tradebilia merchant verification process; focused showcase/homepage tests, TypeScript, and production build passed.
+
+- [x] Reformat the LEGO field proposal into separate Required, Recommended, Optional, and Conditional grids, including section, applicable listing type, trigger, and rationale. The review document now includes all four grids, listing-type applicability, conditional triggers, statuses, rationale, first-release layout, and references.
+
+- [x] Simplify the LEGO item-type proposal into a short low-friction form with only essential universal fields and a small number of useful conditional fields; do not implement until approved. The approved compact design was used for implementation.
+
+- [x] Refine the simplified LEGO proposal so LEGO Set is the primary item type, with only minimal handling for genuinely distinct exceptions such as loose pieces or mixed lots; do not implement until approved. LEGO is implemented as one Vintage Toys item type without separate technical subtypes.
+
+- [x] Map the simplified LEGO fields into Tradebilia’s existing sections, clearly identifying required, recommended, optional, and conditional fields without implementing them yet. The proposed map keeps LEGO as one item type and limits conditional logic to completeness, packaging, instructions, and grading.
+
+- [x] Add LEGO to the Vintage Toys item-type dropdown and map the approved simplified required, recommended, optional, and conditional fields using the existing field-definition architecture. Focused LEGO regression passed 3/3, TypeScript passed, production build passed, and the independent layout is registered.

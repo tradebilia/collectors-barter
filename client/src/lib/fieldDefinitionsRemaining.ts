@@ -1,4 +1,5 @@
 import { FieldDefinition } from './formFieldDefinitions';
+import { VINTAGE_TOYS_LEGO_FIELDS } from './fieldDefinitionsLego';
 import {
   SPORTS_CARDS_SINGLE_CARD_FIELDS,
   SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS,
@@ -82,6 +83,7 @@ export const CATEGORY_ITEM_TYPES = {
     collection_lot: AUTOGRAPHS_COLLECTION_LOT_FIELDS,
   },
   vintage_toys: {
+    lego: VINTAGE_TOYS_LEGO_FIELDS,
     plush_toy: VINTAGE_TOYS_PLUSH_STUFFED_TOY_FIELDS,
     electronic_toy: VINTAGE_TOYS_ELECTRONIC_TOY_FIELDS,
     model_kit: VINTAGE_TOYS_MODEL_KIT_FIELDS,

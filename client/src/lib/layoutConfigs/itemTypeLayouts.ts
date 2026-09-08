@@ -19,6 +19,7 @@ import { video_gamesConsoleLayout } from './layouts/video_games_console';
 import { video_gamesAccessoryLayout } from './layouts/video_games_accessory';
 import { video_gamesCollectionlotLayout } from './layouts/video_games_collection_lot';
 import { vintage_toysActionfiguredollLayout } from './layouts/vintage_toys_action_figure___doll';
+import { vintage_toysLegoLayout } from './layouts/vintage_toys_lego';
 import { vintage_toysVehicleLayout } from './layouts/vintage_toys_vehicle';
 import { vintage_toysPlaysetLayout } from './layouts/vintage_toys_playset';
 import { vintage_toysBoardgamepuzzleLayout } from './layouts/vintage_toys_board_game___puzzle';
@@ -62,6 +63,7 @@ export const ITEM_TYPE_LAYOUTS: Record<string, any> = {
   'video_games_accessory': video_gamesAccessoryLayout,
   'video_games_collection_lot': video_gamesCollectionlotLayout,
   'vintage_toys_action_figure___doll': vintage_toysActionfiguredollLayout,
+  'vintage_toys_lego': vintage_toysLegoLayout,
   'vintage_toys_vehicle': vintage_toysVehicleLayout,
   'vintage_toys_playset': vintage_toysPlaysetLayout,
   'vintage_toys_board_game___puzzle': vintage_toysBoardgamepuzzleLayout,
