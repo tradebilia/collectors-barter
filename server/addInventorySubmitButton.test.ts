@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const source = readFileSync(resolve(process.cwd(), 'client/src/pages/AddInventory.tsx'), 'utf8');
+const selectorSource = readFileSync(resolve(process.cwd(), 'client/src/components/CategoryItemTypeSelector.tsx'), 'utf8');
 
 describe('Add Inventory submit action', () => {
   it('uses the blue Submit Collectible action without changing submit behavior', () => {
@@ -13,8 +14,10 @@ describe('Add Inventory submit action', () => {
   });
 
   it('uses the enlarged responsive Add To Your Inventory hero artwork', () => {
-    expect(source).toContain('className="h-auto w-[118%] max-w-none sm:w-[112%] lg:w-[118%]"');
+    expect(source).toContain('className="h-auto w-[140%] max-w-none sm:w-[130%] lg:w-[140%]"');
     expect(source).toContain('alt="Add To Your Inventory"');
+    expect(selectorSource).toContain('bg-white text-slate-900 placeholder:text-slate-500 border-slate-300');
+    expect(selectorSource).toContain('disabled:bg-white disabled:text-slate-500 disabled:opacity-100');
   });
 
   it('does not issue an invalid draft query when a member opens a new inventory form', () => {

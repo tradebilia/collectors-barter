@@ -145,7 +145,7 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
           <Select value={selectedCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger 
               id="category"
-              className={error && !selectedCategory ? 'border-red-500' : ''}
+              className={`bg-white text-slate-900 placeholder:text-slate-500 border-slate-300 hover:bg-white data-[placeholder]:text-slate-500 ${error && !selectedCategory ? 'border-red-500' : ''}`}
             >
               <SelectValue placeholder="Select a category" />
             </SelectTrigger>
@@ -171,7 +171,7 @@ export const CategoryItemTypeSelector: React.FC<CategoryItemTypeSelectorProps> =
           >
             <SelectTrigger 
               id="itemType"
-              className={error && !selectedItemType ? 'border-red-500' : ''}
+              className={`bg-white text-slate-900 placeholder:text-slate-500 border-slate-300 hover:bg-white disabled:bg-white disabled:text-slate-500 disabled:opacity-100 data-[placeholder]:text-slate-500 ${error && !selectedItemType ? 'border-red-500' : ''}`}
             >
               <SelectValue placeholder={selectedCategory ? "Select an item type" : "Select category first"} />
             </SelectTrigger>
