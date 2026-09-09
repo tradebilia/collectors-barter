@@ -1777,3 +1777,5 @@
 - [x] Reposition the transparent skyline MUSIC wordmark above the Music hero divider so it does not cover the Exchange text, with responsive desktop/mobile spacing.
 
 - [x] Regenerate the MUSIC headphone wordmark with white lettering, a white headphone outline, and a true transparent background, then update the Music hero after verification.
+
+- [x] Move the Music hero logo higher to create the same visible gap above the divider used by the other category pages, without moving Exchange or the divider.

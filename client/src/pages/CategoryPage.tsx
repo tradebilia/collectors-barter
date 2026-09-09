@@ -201,7 +201,7 @@ const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSPropert
   stamps: { maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" },
   video_games: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
   vintage_toys: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
-  music: { maxWidth: "min(70vw, 680px)", maxHeight: "190px", width: "100%", height: "auto", objectFit: "contain", marginBottom: "0", transform: "translateY(-28px)" },
+  music: { maxWidth: "min(70vw, 680px)", maxHeight: "190px", width: "100%", height: "auto", objectFit: "contain", marginBottom: "0", transform: "translateY(-52px)" },
 };
 
 // Helper function to get category-specific font
@@ -822,7 +822,7 @@ export default function CategoryPage() {
             width: 100% !important;
             height: auto !important;
             margin: 0 !important;
-            transform: translateY(-14px) !important;
+            transform: translateY(-26px) !important;
           }
           .category-hero-divider-video_games,
           .category-hero-divider-vintage_toys,
