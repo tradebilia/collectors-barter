@@ -1785,3 +1785,5 @@
 - [x] Repair stale Coming Soon restoration-workbench assertions, then validate the current responsive page and early-access subscription flow.
 
 - [x] Improve Coming Soon signup spacing, add privacy reassurance, and show a clear duplicate-email response while preserving responsive behavior.
+
+- [x] Add Music imagery such as records or cassette tapes to Coming Soon and include Music in the category-name list with responsive-safe layout.

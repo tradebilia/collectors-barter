@@ -64,7 +64,7 @@ export default function ComingSoon() {
           </div>
 
           <div className="-translate-y-4 pb-4 pt-2 sm:-translate-y-4 sm:pb-10 sm:pt-4">
-            <div className="mx-auto mt-2 max-w-lg sm:mt-8">
+            <div className="relative mx-auto mt-2 max-w-lg sm:mt-8">
               <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#7b4f2f] sm:text-[10px]">The Collectors Trading Exchange</p>
               <h1 className="mt-1 font-serif text-3xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"><span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span></h1>
               <p className="mx-auto mt-2 max-w-md text-sm leading-5 text-[#4d3c2e]/80 sm:mt-5 sm:text-base sm:leading-6">A home for remarkable collectibles—and the collectors who know their worth.</p>
@@ -87,7 +87,10 @@ export default function ComingSoon() {
                 <span>Movies</span>
                 <span>Autographs</span>
                 <span>Disney Pins</span>
+                <span>Music</span>
               </div>
+              <img src="/manus-storage/coming-soon-music-records_91a9fef1.png" alt="Vinyl record detail" className="pointer-events-none absolute -right-44 bottom-[-1.5rem] hidden w-40 rotate-[4deg] rounded-md border border-[#6c503c]/35 object-cover shadow-[0_5px_12px_rgba(43,33,25,0.18)] sm:block" />
+              <img src="/manus-storage/coming-soon-music-records_91a9fef1.png" alt="Vinyl record detail" className="pointer-events-none mx-auto mt-2 block w-32 rotate-[2deg] rounded-md border border-[#6c503c]/35 object-cover shadow-[0_4px_9px_rgba(43,33,25,0.16)] sm:hidden" />
             </div>
 
             <div className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8">
