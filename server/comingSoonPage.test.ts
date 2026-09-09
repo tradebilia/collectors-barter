@@ -23,7 +23,7 @@ describe("Coming Soon experience", () => {
     expect(pageSource).not.toContain("Collector&apos;s Workbench");
     expect(pageSource).toContain('className="-translate-y-4 pb-4 pt-2 sm:-translate-y-4 sm:pb-10 sm:pt-4"');
     expect(pageSource).not.toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
-    expect(pageSource).toContain('className="mx-auto mt-0 max-w-md sm:mt-4"');
+    expect(pageSource).toContain('className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8"');
     expect(pageSource).toContain('/manus-storage/launching-soon-navy-clean_0cf4707a.png');
     expect(pageSource).toContain('<div className="relative">');
     expect(pageSource).toContain('role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3');
@@ -55,11 +55,14 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain('className="order-2 flex flex-row gap-2 sm:items-stretch"');
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
     expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0 text-[8px]');
-    expect(pageSource).toContain('className="mx-auto mt-0 max-w-md sm:mt-4"');
+    expect(pageSource).toContain('className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8"');
     expect(pageSource).toContain('sm:grid-cols-5');
     expect(pageSource).toContain("<span>Vintage Toys</span>");
     expect(pageSource).toContain("<span>Disney Pins</span>");
-    expect(pageSource).toContain("trpc.launchUpdates.subscribe.useMutation");
+    expect(pageSource).toContain('trpc.launchUpdates.subscribe.useMutation');
+    expect(pageSource).toContain('const [alreadySubscribed, setAlreadySubscribed] = useState(false);');
+    expect(pageSource).toContain("You&apos;re already on the early-access list.");
+    expect(pageSource).toContain("We&apos;ll only use your email for Tradebilia launch updates.");
     expect(pageSource).not.toContain("TradebiliaWheel");
     expect(pageSource).not.toContain("A new collector exchange is taking shape");
     expect(pageSource).not.toContain("Your email is used only for the launch update list.");

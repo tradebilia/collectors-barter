@@ -29,7 +29,13 @@ export default function ComingSoon() {
   const emailId = useId();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const subscribeMutation = trpc.launchUpdates.subscribe.useMutation({ onSuccess: () => setSubmitted(true) });
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  const subscribeMutation = trpc.launchUpdates.subscribe.useMutation({
+    onSuccess: (result) => {
+      setAlreadySubscribed(result.alreadySubscribed);
+      setSubmitted(true);
+    },
+  });
   const signupErrorMessage = subscribeMutation.isError
     ? /invalid email|invalid_format/i.test(subscribeMutation.error.message)
       ? "Please enter a valid email address."
@@ -84,7 +90,7 @@ export default function ComingSoon() {
               </div>
             </div>
 
-            <div className="mx-auto mt-0 max-w-md sm:mt-4">
+            <div className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8">
               <div className="relative">
                 <div className={submitted ? "invisible" : undefined} aria-hidden={submitted || undefined}>
                   <div className="relative">
@@ -100,6 +106,7 @@ export default function ComingSoon() {
                     </Button>
                   </div>
                 </form>
+                <p className="mt-2 text-[10px] leading-4 text-[#5a4536]/70 sm:text-[11px]">We&apos;ll only use your email for Tradebilia launch updates.</p>
                 {signupErrorMessage && <p role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3 text-center text-sm font-medium text-[#aa3046]">{signupErrorMessage}</p>}
                   </div>
                 </div>
@@ -109,7 +116,7 @@ export default function ComingSoon() {
                       <CheckCircle2 className="h-6 w-6 text-[#1f4d98]" aria-hidden="true" />
                       <h2 className="font-serif text-2xl text-[#2b2119]">You&apos;re on the list.</h2>
                     </div>
-                    <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[#4d3c2e]/80 sm:text-sm">Your launch-update signup is saved. We&apos;ll share news as Tradebilia opens its doors.</p>
+                    <p className="mx-auto mt-1 max-w-sm text-xs leading-5 text-[#4d3c2e]/80 sm:text-sm">{alreadySubscribed ? "You&apos;re already on the early-access list. We&apos;ll share news as Tradebilia opens its doors." : "Your launch-update signup is saved. We&apos;ll share news as Tradebilia opens its doors."}</p>
                   </div>
                 )}
               </div>

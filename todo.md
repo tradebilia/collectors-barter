@@ -1783,3 +1783,5 @@
 - [ ] Adjust the desktop Music hero background crop/position so it reveals a similar amount of background as mobile while preserving the hero content layout.
 
 - [x] Repair stale Coming Soon restoration-workbench assertions, then validate the current responsive page and early-access subscription flow.
+
+- [x] Improve Coming Soon signup spacing, add privacy reassurance, and show a clear duplicate-email response while preserving responsive behavior.
