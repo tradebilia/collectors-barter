@@ -1769,3 +1769,5 @@
 - [x] Fix the Add Inventory submission error affecting Music vinyl records and verify all Music formats plus representative existing item types against the legacy listing insert contract without destructive schema changes. Root cause was the legacy custom listings.category enum lacking music. Added an additive runtime bootstrap that preserves existing values and appends music before Music inserts; custom schema verification now reports the Music enum, focused Music/LEGO/Add Inventory tests passed, TypeScript and production build passed.
 
 - [x] Rename Music Grading Company options to AMG, MGA, Rewind, and Other while preserving the custom-company conditional field and graded-only visibility.
+
+- [x] Replace the Music title artwork with a similar true-transparent asset and update the Music hero reference after visual verification.
