@@ -47,7 +47,7 @@ describe('Music category', () => {
     expect(field('tradeValue')?.requirement).toBe('required');
     expect(field('photos')?.requirement).toBe('required');
     expect(field('condition')?.conditionalLogic).toBe('Is Graded = no');
-    expect(field('gradingCompany')?.dropdownOptions).toEqual(['Audio Media Grading', 'Vintage Media Grading', 'Other']);
+    expect(field('gradingCompany')?.dropdownOptions).toEqual(['AMG', 'MGA', 'Rewind', 'Other']);
     expect(field('gradingCompany')?.supportsOther).toBe(true);
     expect(field('playbackNotes')?.conditionalLogic).toBe('Playback Tested = yes');
     expect(field('packagingCondition')?.conditionalLogic).toBe('Packaging Included = yes');
@@ -58,7 +58,7 @@ describe('Music category', () => {
     expect(ITEM_TYPE_LAYOUTS.music_vinyl_record).toMatchObject({ itemType: 'vinyl_record', category: 'music' });
     expect(ITEM_TYPE_LAYOUTS.music_compact_disc.sections.optional.fieldLayout.bookletStatus).toBeDefined();
     expect(ITEM_TYPE_LAYOUTS.music_eight_track_tape.sections.optional.fieldLayout.cartridgeNotes).toBeDefined();
-    expect(getGradingCompanyNamesForCategory('music')).toEqual(expect.arrayContaining(['Audio Media Grading', 'Vintage Media Grading', 'Raw']));
+    expect(getGradingCompanyNamesForCategory('music')).toEqual(expect.arrayContaining(['AMG', 'MGA', 'Rewind', 'Raw']));
   });
 
   it('includes Music in the forum category map and specific format subcategories', () => {

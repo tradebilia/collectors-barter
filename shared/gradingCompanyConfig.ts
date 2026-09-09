@@ -513,7 +513,7 @@ export const gradingCompanyConfigs: GradingCompanyConfig[] = [
 
   // MUSIC
   {
-    name: "Audio Media Grading",
+    name: "AMG",
     categories: ["music"],
     gradeScale: "1-10",
     validGrades: Array.from({ length: 91 }, (_, index) => (1 + index / 10).toFixed(1)),
@@ -523,7 +523,17 @@ export const gradingCompanyConfigs: GradingCompanyConfig[] = [
     specialDesignations: [],
   },
   {
-    name: "Vintage Media Grading",
+    name: "MGA",
+    categories: ["music"],
+    gradeScale: "1-10",
+    validGrades: Array.from({ length: 91 }, (_, index) => (1 + index / 10).toFixed(1)),
+    increment: "0.1",
+    hasSubgrades: false,
+    hasSealGrade: false,
+    specialDesignations: [],
+  },
+  {
+    name: "Rewind",
     categories: ["music"],
     gradeScale: "1-10",
     validGrades: Array.from({ length: 91 }, (_, index) => (1 + index / 10).toFixed(1)),

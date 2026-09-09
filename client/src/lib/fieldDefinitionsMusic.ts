@@ -8,7 +8,7 @@ export const MUSIC_FORMAT_OPTIONS = [
   { value: 'other_music_format', label: 'Other Music Format' },
 ] as const;
 
-export const MUSIC_GRADING_COMPANIES = ['Audio Media Grading', 'Vintage Media Grading', 'Other'];
+export const MUSIC_GRADING_COMPANIES = ['AMG', 'MGA', 'Rewind', 'Other'];
 
 const musicCoreFields: FieldDefinition[] = [
   { name: 'listingTitle', label: 'Listing Title', inputType: 'text', requirement: 'required', maxLength: 160 },
