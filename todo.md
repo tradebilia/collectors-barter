@@ -1775,3 +1775,5 @@
 - [x] Regenerate the skyline-style MUSIC wordmark as a true transparent asset and update the Music hero after visual verification.
 
 - [x] Reposition the transparent skyline MUSIC wordmark above the Music hero divider so it does not cover the Exchange text, with responsive desktop/mobile spacing.
+
+- [x] Regenerate the MUSIC headphone wordmark with white lettering, a white headphone outline, and a true transparent background, then update the Music hero after verification.

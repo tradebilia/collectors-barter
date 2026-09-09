@@ -187,7 +187,7 @@ const categoryHeroTitleUrls: Partial<Record<TradebiliaCategorySlug, string>> = {
   stamps: "https://assets.tradebilia.com/StampsTitle_e766d861.webp",
   video_games: "https://assets.tradebilia.com/VideoGamesTitle_7dc7fe49.webp",
   vintage_toys: "https://assets.tradebilia.com/VintageToysTitle_d0af50b4.png",
-  music: "/manus-storage/music-skyline-wordmark-rgba_0367b27a.png",
+  music: "/manus-storage/music-headphones-white-rgba_12aa8a48.png",
 };
 
 const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSProperties>> = {
