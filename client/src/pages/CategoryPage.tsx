@@ -187,7 +187,7 @@ const categoryHeroTitleUrls: Partial<Record<TradebiliaCategorySlug, string>> = {
   stamps: "https://assets.tradebilia.com/StampsTitle_e766d861.webp",
   video_games: "https://assets.tradebilia.com/VideoGamesTitle_7dc7fe49.webp",
   vintage_toys: "https://assets.tradebilia.com/VintageToysTitle_d0af50b4.png",
-  music: "/manus-storage/music-title-transparent-rgba_60078d07.png",
+  music: "/manus-storage/music-skyline-wordmark-rgba_0367b27a.png",
 };
 
 const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSProperties>> = {
@@ -201,7 +201,7 @@ const categoryHeroTitleStyles: Partial<Record<TradebiliaCategorySlug, CSSPropert
   stamps: { maxHeight: "200px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(10px)" },
   video_games: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
   vintage_toys: { maxHeight: "550px", width: "auto", objectFit: "contain", marginBottom: "30px", transform: "translateY(-200px)" },
-  music: { maxWidth: "min(82vw, 760px)", width: "100%", height: "auto", objectFit: "contain", marginBottom: "20px", transform: "translateY(-8px)" },
+  music: { maxWidth: "min(70vw, 680px)", maxHeight: "190px", width: "100%", height: "auto", objectFit: "contain", marginBottom: "0", transform: "translateY(-28px)" },
 };
 
 // Helper function to get category-specific font
@@ -815,6 +815,14 @@ export default function CategoryPage() {
             max-width: 88vw !important;
             margin: 0 !important;
             transform: none !important;
+          }
+          .category-hero-title-shell-music img {
+            max-width: 94vw !important;
+            max-height: 128px !important;
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            transform: translateY(-14px) !important;
           }
           .category-hero-divider-video_games,
           .category-hero-divider-vintage_toys,

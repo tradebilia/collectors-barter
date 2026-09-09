@@ -1771,3 +1771,7 @@
 - [x] Rename Music Grading Company options to AMG, MGA, Rewind, and Other while preserving the custom-company conditional field and graded-only visibility.
 
 - [x] Replace the Music title artwork with a similar true-transparent asset and update the Music hero reference after visual verification.
+
+- [x] Regenerate the skyline-style MUSIC wordmark as a true transparent asset and update the Music hero after visual verification.
+
+- [x] Reposition the transparent skyline MUSIC wordmark above the Music hero divider so it does not cover the Exchange text, with responsive desktop/mobile spacing.

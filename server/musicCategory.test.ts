@@ -70,7 +70,7 @@ describe('Music category', () => {
 
   it('uses the supplied hero asset and Music-specific filters on the category page', () => {
     const source = readFileSync(resolve(process.cwd(), 'client/src/pages/CategoryPage.tsx'), 'utf8');
-    expect(source).toContain('music-title-transparent-rgba_60078d07.png');
+    expect(source).toContain('music-skyline-wordmark-rgba_0367b27a.png');
     expect(source).toContain("music: [");
     expect(source).toContain('Record Label');
     expect(source).toContain('musicFormatOptions');
