@@ -1787,3 +1787,7 @@
 - [x] Improve Coming Soon signup spacing, add privacy reassurance, and show a clear duplicate-email response while preserving responsive behavior.
 
 - [x] Add Music imagery such as records or cassette tapes to Coming Soon and include Music in the category-name list with responsive-safe layout.
+
+- [x] Resolve the unsuitable Coming Soon record crop by removing it instead of replacing it; Music remains in the category list.
+
+- [x] Remove the current record decoration from Coming Soon while retaining the Music category label and verify the page remains responsive.

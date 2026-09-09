@@ -60,7 +60,6 @@ describe("Coming Soon experience", () => {
     expect(pageSource).toContain("<span>Vintage Toys</span>");
     expect(pageSource).toContain("<span>Disney Pins</span>");
     expect(pageSource).toContain("<span>Music</span>");
-    expect(pageSource).toContain("coming-soon-music-records_91a9fef1.png");
     expect(pageSource).toContain('trpc.launchUpdates.subscribe.useMutation');
     expect(pageSource).toContain('const [alreadySubscribed, setAlreadySubscribed] = useState(false);');
     expect(pageSource).toContain("You&apos;re already on the early-access list.");

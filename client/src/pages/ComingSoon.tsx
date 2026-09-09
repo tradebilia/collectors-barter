@@ -89,8 +89,6 @@ export default function ComingSoon() {
                 <span>Disney Pins</span>
                 <span>Music</span>
               </div>
-              <img src="/manus-storage/coming-soon-music-records_91a9fef1.png" alt="Vinyl record detail" className="pointer-events-none absolute -right-44 bottom-[-1.5rem] hidden w-40 rotate-[4deg] rounded-md border border-[#6c503c]/35 object-cover shadow-[0_5px_12px_rgba(43,33,25,0.18)] sm:block" />
-              <img src="/manus-storage/coming-soon-music-records_91a9fef1.png" alt="Vinyl record detail" className="pointer-events-none mx-auto mt-2 block w-32 rotate-[2deg] rounded-md border border-[#6c503c]/35 object-cover shadow-[0_4px_9px_rgba(43,33,25,0.16)] sm:hidden" />
             </div>
 
             <div className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8">
