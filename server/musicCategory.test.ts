@@ -15,6 +15,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 describe('Music category', () => {
+  it('bootstraps the legacy listings and conventions enums before Music persistence', () => {
+    const dbSource = readFileSync(resolve(process.cwd(), 'server/db.ts'), 'utf8');
+    expect(dbSource).toContain('export async function ensureMusicCategory()');
+    expect(dbSource).toContain("if (input.category === 'music') await ensureMusicCategory();");
+    expect(dbSource).toContain("'disney_pins','music') NOT NULL");
+  });
   it('registers Music as a first-class marketplace category with a unique visual theme', () => {
     expect(tradebiliaCategories).toContainEqual({ value: 'music', label: 'Music' });
     expect(getTradebiliaCategoryTheme('music')).toMatchObject({

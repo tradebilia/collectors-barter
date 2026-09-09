@@ -302,6 +302,22 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
 let tradeShowcaseVotesTableReady: Promise<void> | null = null;
 let userReportsTableReady: Promise<void> | null = null;
 let supportTicketsTableReady: Promise<void> | null = null;
+let musicCategoryReady: Promise<void> | null = null;
+
+export async function ensureMusicCategory() {
+  if (!musicCategoryReady) {
+    musicCategoryReady = (async () => {
+      const db = await requireDb();
+      // Legacy databases predate Music. Preserve all existing values and append it.
+      await db.execute(sql`ALTER TABLE listings MODIFY COLUMN category ENUM('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','music') NOT NULL`);
+      await db.execute(sql`ALTER TABLE conventions MODIFY COLUMN category ENUM('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','all','music') NOT NULL DEFAULT 'all'`);
+    })().catch((error) => {
+      musicCategoryReady = null;
+      throw error;
+    });
+  }
+  return musicCategoryReady;
+}
 
 export async function ensureUserReportsTable() {
   if (!userReportsTableReady) {
@@ -2803,9 +2819,9 @@ export async function createListing(
     grade?: string;
   },
 ) {
-  const db = await requireDb();
+    const db = await requireDb();
   await ensureUserProfileRecord(user);
-
+  if (input.category === 'music') await ensureMusicCategory();
   const insertResult = await db.insert(listings).values({
     ownerId: user.id,
     title: input.title.trim(),
