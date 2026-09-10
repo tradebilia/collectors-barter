@@ -44,7 +44,7 @@ function usePrefersReducedMotion() {
 export default function HomepagePhraseLoop() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [visibleFragmentCount, setVisibleFragmentCount] = useState(0);
+  const [visibleFragmentCount, setVisibleFragmentCount] = useState(1);
   const [phase, setPhase] = useState<AnimationPhase>("reveal");
   const [isFading, setIsFading] = useState(false);
 
@@ -92,7 +92,7 @@ export default function HomepagePhraseLoop() {
       setIsFading(true);
       transitionTimer = window.setTimeout(() => {
         setPhraseIndex(previousIndex => (previousIndex + 1) % HOMEPAGE_PHRASES.length);
-        setVisibleFragmentCount(0);
+        setVisibleFragmentCount(1);
         setIsFading(false);
         setPhase("reveal");
       }, TRANSITION_MS);

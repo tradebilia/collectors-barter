@@ -43,6 +43,8 @@ describe("homepage phrase loop", () => {
 
   it("uses the approved five-second phrase and logo holds with reduced-motion support", () => {
     expect(componentSource).toContain("export const FRAGMENT_REVEAL_MS = 2000;");
+    expect(componentSource).toContain("useState(1)");
+    expect(componentSource).toContain("setVisibleFragmentCount(1)");
     expect(componentSource).toContain("export const PHRASE_HOLD_MS = 5000;");
     expect(componentSource).toContain("export const LOGO_HOLD_MS = 5000;");
     expect(componentSource).toContain("type AnimationPhase = \"reveal\" | \"hold\" | \"logo\";");
