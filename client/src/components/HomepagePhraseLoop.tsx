@@ -16,12 +16,16 @@ export const HOMEPAGE_PHRASES = [
   "Trade your way to the collection you want",
 ] as const;
 
-const WORD_REVEAL_MS = 420;
+const FRAGMENT_REVEAL_MS = 420;
 const PHRASE_HOLD_MS = 5000;
 const LOGO_HOLD_MS = 5000;
 const TRANSITION_MS = 420;
 
 type AnimationPhase = "phrase" | "logo";
+
+export function splitPhraseIntoFragments(phrase: string) {
+  return phrase.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(fragment => fragment.trim()) ?? [];
+}
 
 function usePrefersReducedMotion() {
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -40,19 +44,19 @@ function usePrefersReducedMotion() {
 export default function HomepagePhraseLoop() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [visibleWordCount, setVisibleWordCount] = useState(0);
+  const [visibleFragmentCount, setVisibleFragmentCount] = useState(0);
   const [phase, setPhase] = useState<AnimationPhase>("phrase");
   const [isFading, setIsFading] = useState(false);
 
-  const phraseWords = useMemo(() => HOMEPAGE_PHRASES[phraseIndex].split(" "), [phraseIndex]);
-  const displayedWordCount = prefersReducedMotion ? phraseWords.length : visibleWordCount;
-  const phraseComplete = displayedWordCount >= phraseWords.length;
+  const phraseFragments = useMemo(() => splitPhraseIntoFragments(HOMEPAGE_PHRASES[phraseIndex]), [phraseIndex]);
+  const displayedFragmentCount = prefersReducedMotion ? phraseFragments.length : visibleFragmentCount;
+  const phraseComplete = displayedFragmentCount >= phraseFragments.length;
 
   useEffect(() => {
     if (phase === "logo") {
       const timer = window.setTimeout(() => {
         setPhraseIndex(previousIndex => (previousIndex + 1) % HOMEPAGE_PHRASES.length);
-        setVisibleWordCount(0);
+        setVisibleFragmentCount(0);
         setIsFading(false);
         setPhase("phrase");
       }, LOGO_HOLD_MS);
@@ -62,8 +66,8 @@ export default function HomepagePhraseLoop() {
 
     if (!prefersReducedMotion && !phraseComplete) {
       const timer = window.setTimeout(() => {
-        setVisibleWordCount(previousCount => Math.min(previousCount + 1, phraseWords.length));
-      }, WORD_REVEAL_MS);
+        setVisibleFragmentCount(previousCount => Math.min(previousCount + 1, phraseFragments.length));
+      }, FRAGMENT_REVEAL_MS);
 
       return () => window.clearTimeout(timer);
     }
@@ -77,7 +81,7 @@ export default function HomepagePhraseLoop() {
     }, PHRASE_HOLD_MS);
 
     return () => window.clearTimeout(timer);
-  }, [phase, prefersReducedMotion, phraseComplete, phraseWords.length]);
+  }, [phase, prefersReducedMotion, phraseComplete, phraseFragments.length]);
 
   return (
     <section
@@ -92,13 +96,13 @@ export default function HomepagePhraseLoop() {
         >
           {phase === "phrase" ? (
             <p className="m-0 block w-full max-w-6xl px-2 text-center font-serif text-[clamp(1.65rem,4.8vw,4.1rem)] font-medium leading-[1.12] tracking-[-0.025em] text-white sm:px-6">
-              {phraseWords.map((word, index) => (
+              {phraseFragments.map((fragment, index) => (
                 <span
                   key={`${phraseIndex}-${index}`}
-                  className={`inline-block transition-opacity duration-[420ms] ease-out ${index < displayedWordCount ? "opacity-100" : "opacity-0"}`}
-                  aria-hidden={index >= displayedWordCount}
+                  className={`inline-block transition-opacity duration-[420ms] ease-out ${index < displayedFragmentCount ? "opacity-100" : "opacity-0"}`}
+                  aria-hidden={index >= displayedFragmentCount}
                 >
-                  {word}{index < phraseWords.length - 1 ? " " : ""}
+                  {fragment}{index < phraseFragments.length - 1 ? " " : ""}
                 </span>
               ))}
             </p>

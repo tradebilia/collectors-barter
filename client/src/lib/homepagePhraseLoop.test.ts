@@ -26,9 +26,15 @@ describe("homepage phrase loop", () => {
     );
   });
 
-  it("keeps the complete phrase centered while words reveal individually", () => {
+  it("splits phrases into complete punctuation-delimited fragments", () => {
+    expect(componentSource).toContain("export function splitPhraseIntoFragments");
+    expect(componentSource).toContain("phrase.match(/[^.!?]+[.!?]+|[^.!?]+$/g)");
+    expect(componentSource).toContain("Have it. Want it. Trade it.");
+  });
+
+  it("keeps the complete phrase centered while fragments reveal individually", () => {
     expect(componentSource).toContain("block w-full max-w-6xl px-2 text-center");
-    expect(componentSource).toContain("index < displayedWordCount ? \"opacity-100\" : \"opacity-0\"");
+    expect(componentSource).toContain("index < displayedFragmentCount ? \"opacity-100\" : \"opacity-0\"");
     expect(componentSource).toContain("aria-atomic=\"true\"");
   });
 
