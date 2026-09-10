@@ -36,17 +36,20 @@ describe("homepage phrase loop", () => {
   });
 
   it("keeps the complete phrase centered while fragments reveal individually", () => {
-    expect(componentSource).toContain("block w-full max-w-6xl px-2 text-center");
+    expect(componentSource).toContain("block w-full max-w-6xl whitespace-nowrap px-2 text-center");
     expect(componentSource).toContain("index < displayedFragmentCount ? \"opacity-100\" : \"opacity-0\"");
     expect(componentSource).toContain("aria-atomic=\"true\"");
   });
 
   it("uses the approved five-second phrase and logo holds with reduced-motion support", () => {
+    expect(componentSource).toContain("export const FRAGMENT_REVEAL_MS = 2000;");
     expect(componentSource).toContain("export const PHRASE_HOLD_MS = 5000;");
     expect(componentSource).toContain("export const LOGO_HOLD_MS = 5000;");
     expect(componentSource).toContain("type AnimationPhase = \"reveal\" | \"hold\" | \"logo\";");
-    expect(componentSource).toContain("py-4 text-white sm:py-5");
-    expect(componentSource).toContain("text-[clamp(2.15rem,6.2vw,5.25rem)]");
+    expect(componentSource).toContain("h-[136px] w-full overflow-hidden");
+    expect(componentSource).toContain("whitespace-nowrap");
+    expect(componentSource).toContain("fontSize={132}");
+    expect(componentSource).toContain("wheelScale={1.85}");
     expect(componentSource).toContain("prefers-reduced-motion: reduce");
     expect(componentSource).toContain("<AnimatedLogoSmall70");
   });

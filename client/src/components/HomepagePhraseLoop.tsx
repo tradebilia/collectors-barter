@@ -16,7 +16,7 @@ export const HOMEPAGE_PHRASES = [
   "Trade your way to the collection you want",
 ] as const;
 
-export const FRAGMENT_REVEAL_MS = 420;
+export const FRAGMENT_REVEAL_MS = 2000;
 export const PHRASE_HOLD_MS = 5000;
 export const LOGO_HOLD_MS = 5000;
 export const TRANSITION_MS = 420;
@@ -50,6 +50,7 @@ export default function HomepagePhraseLoop() {
 
   const phraseFragments = useMemo(() => splitPhraseIntoFragments(HOMEPAGE_PHRASES[phraseIndex]), [phraseIndex]);
   const displayedFragmentCount = prefersReducedMotion ? phraseFragments.length : visibleFragmentCount;
+  const phraseFontSize = `clamp(0.72rem, calc((100vw - 2rem) / ${Math.max(HOMEPAGE_PHRASES[phraseIndex].length * 0.5, 1)}), 5.5rem)`;
 
   useEffect(() => {
     if (phase === "reveal") {
@@ -105,21 +106,21 @@ export default function HomepagePhraseLoop() {
 
   return (
     <section
-      className="relative z-10 w-full border-y border-white/10 bg-[#0a0e28] px-4 py-4 text-white sm:py-5"
+      className="relative z-10 h-[136px] w-full overflow-hidden border-y border-white/10 bg-[#0a0e28] px-4 text-white"
       aria-label="Tradebilia collector phrases"
     >
-      <div className="mx-auto flex min-h-[124px] w-full max-w-7xl items-center justify-center overflow-hidden text-center sm:min-h-[142px]">
+      <div className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-hidden text-center">
         <div
           className={`flex w-full items-center justify-center transition-opacity duration-[420ms] ease-out ${isFading ? "opacity-0" : "opacity-100"}`}
           aria-live="polite"
           aria-atomic="true"
         >
           {phase === "logo" ? (
-            <div className="h-16 w-full max-w-[560px] sm:h-20" aria-label="Tradebilia">
+            <div className="h-24 w-full max-w-[680px]" aria-label="Tradebilia">
               <AnimatedLogoSmall70
-                fontSize={108}
-                wheelScale={1.45}
-                dividerScale={1.2}
+                fontSize={132}
+                wheelScale={1.85}
+                dividerScale={1.35}
                 dividerOffsetY={-4}
                 wheelOffsetX={-10}
                 wheelOffsetY={-8}
@@ -127,11 +128,11 @@ export default function HomepagePhraseLoop() {
                 dividerStrokeWidth={3}
                 centerLockup
                 fixedCategoryMetrics
-                lockupScale={1.08}
+                lockupScale={1.2}
               />
             </div>
           ) : (
-            <p className="m-0 block w-full max-w-6xl px-2 text-center font-serif text-[clamp(2.15rem,6.2vw,5.25rem)] font-medium leading-[1.04] tracking-[-0.03em] text-white sm:px-6">
+            <p className="m-0 block w-full max-w-6xl whitespace-nowrap px-2 text-center font-serif font-medium leading-none tracking-[-0.04em] text-white sm:px-6" style={{ fontSize: phraseFontSize }}>
               {phraseFragments.map((fragment, index) => (
                 <span
                   key={`${phraseIndex}-${index}`}

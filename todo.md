@@ -1828,3 +1828,4 @@
 - [x] Add a full-width looping homepage phrase section between social media and copyright, revealing each approved phrase fragment while keeping the complete sentence centered, showing the animated Tradebilia logo for 5 seconds between phrases, and verifying desktop/mobile behavior.
 - [x] Refine the homepage phrase loop so complete punctuation-delimited fragments reveal in sequence while preserving exact approved phrase text and centered layout.
 - [x] Shorten the homepage phrase-animation section, increase phrase typography, and correct fragment reveal, 5-second phrase hold, 5-second logo hold, and phrase-to-phrase sequencing.
+- [x] Lock the homepage phrase section to one fixed height and one line per phrase, use a 2-second delay between phrase fragments, and enlarge the centered Tradebilia logo without changing the section height.
