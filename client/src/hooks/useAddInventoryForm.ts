@@ -398,6 +398,10 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
         if (value === undefined || value === null || value === '') {
           newErrors[field.name] = `${field.label} is required`;
         }
+
+        if (field.name === 'grade' && value !== undefined && value !== null && value !== '' && !/^\d+(?:\.\d+)?$/.test(String(value).trim())) {
+          newErrors[field.name] = 'Enter a numeric grade only (for example, 80 or 9.5); do not include + or other symbols.';
+        }
         
         // If field supports "Other" and value is "Other", check if custom field is filled
         if (field.supportsOther && value === 'Other') {

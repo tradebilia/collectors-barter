@@ -47,6 +47,18 @@ export function normalizeListingEstimatedValue(value?: number | null): number | 
   return Math.max(1, Number(value));
 }
 
+/**
+ * listings.grade is a numeric DECIMAL column. Collector-facing grade inputs
+ * may include a display suffix such as "80+"; persist only the numeric part.
+ */
+export function normalizeListingGrade(value?: string | number | null): string {
+  if (value === undefined || value === null) return '0';
+  const trimmed = String(value).trim();
+  if (!trimmed || trimmed.toLowerCase() === 'ungraded' || trimmed.toLowerCase() === 'raw') return '0';
+  const numericMatch = trimmed.match(/^\d+(?:\.\d+)?/);
+  return numericMatch ? numericMatch[0] : '0';
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbLastError: Error | null = null;
 let _dbErrorCount = 0;
@@ -2833,7 +2845,7 @@ export async function createListing(
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     certificationCompany: input.certificationCompany || undefined,
     certificationNumber: input.certificationNumber || undefined,
-    grade: input.grade && input.grade !== 'ungraded' && input.grade.trim() ? String(input.grade) : '0',
+    grade: normalizeListingGrade(input.grade),
     featured: 0,
   });
   const listingId = getInsertId(insertResult);
@@ -2903,7 +2915,7 @@ export async function updateListing(
       itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
       certificationCompany: input.certificationCompany || null,
       certificationNumber: input.certificationNumber || null,
-      grade: input.grade && input.grade !== 'ungraded' && input.grade.trim() ? String(input.grade) : '0',
+      grade: normalizeListingGrade(input.grade),
     })
     .where(eq(listings.id, input.listingId));
 

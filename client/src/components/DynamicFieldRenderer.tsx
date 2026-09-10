@@ -117,9 +117,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
         }
         return (
           <Input
-            type="number"
-            value={value || ''}
-            onChange={(e) => onChange(e.target.value ? Number(e.target.value) : '')}
+                          type="number"
+              inputMode="decimal"
+              value={value ?? ''}
+              onChange={(e) => onChange(e.target.value)}
+
             disabled={disabled}
             min={field.validation?.min}
             max={field.validation?.max}
@@ -134,8 +136,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> = ({
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">$</span>
             <Input
               type="number"
-              value={value || ''}
-              onChange={(e) => onChange(e.target.value ? Number(e.target.value) : '')}
+              inputMode="numeric"
+              value={value ?? ''}
+              onChange={(e) => onChange(e.target.value)}
               disabled={disabled}
               min={field.validation?.min ?? 1}
               placeholder="1.00"
