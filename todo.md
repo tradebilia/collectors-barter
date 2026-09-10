@@ -1817,3 +1817,5 @@
 - [x] Fix the tradePayments API query error surfacing on /coming-soon, add regression coverage, and verify the public route without changing trade data or running migrations.
 
 - [x] Restart Coming Soon from the exact supplied image and display the complete image without cropping, removing all prior custom visual overlays unless explicitly reintroduced.
+
+- [x] Add a Music icon and label to the Coming Soon bottom category row without cropping or altering the supplied image.

@@ -8,9 +8,12 @@ const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), 
 const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("Coming Soon experience", () => {
-  it("uses the exact supplied image as the no-crop visual baseline", () => {
+  it("uses the exact supplied image as the no-crop visual baseline with Music represented in the category row", () => {
     expect(pageSource).toContain("coming-soon-exact-supplied_6f741f0e.png");
-    expect(pageSource).toContain("max-h-[100svh] max-w-full object-contain");
+    expect(pageSource).toContain("w-[min(100vw,calc(100svh*605/289))]");
+    expect(pageSource).toContain('aria-label="Music"');
+    expect(pageSource).toContain("<Disc3");
+    expect(pageSource).toContain(">MUSIC</span>");
     expect(pageSource).not.toContain("object-cover");
     expect(pageSource).not.toContain("tradebilia_final_transparent-Notagline");
     expect(pageSource).not.toContain("launchUpdates.subscribe");
