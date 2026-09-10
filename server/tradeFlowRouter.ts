@@ -42,7 +42,7 @@ import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
 import { requireMarketplaceApproval } from "./accountApproval";
 import { describeTradeCashChange } from "./tradeCashTimeline";
 import { getPaymentVerificationObligations } from "./paymentAuthorization";
-import { getSharedExternalPaymentMethods } from "./externalPaymentMethods";
+import { EXTERNAL_PAYMENT_METHODS, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, type ExternalPaymentMethod } from "./externalPaymentMethods";
 import { hasTrackingForEveryItem, haveAllCashPaymentsBeenReceived, haveAllCashPaymentsBeenSent, haveAllRequiredItemRecipientsConfirmed } from "./tradeFulfillment";
 
 // ============================================================================
@@ -124,6 +124,8 @@ const sendProposalSchema = z.object({
   includeOriginalRequestedListing: z.boolean().optional().default(true),
   cashFromProposer: z.number().min(0).optional(),
   cashFromRecipient: z.number().min(0).optional(),
+  cashPaymentMethodForProposer: z.enum(EXTERNAL_PAYMENT_METHODS).nullable().optional(),
+  cashPaymentMethodForRecipient: z.enum(EXTERNAL_PAYMENT_METHODS).nullable().optional(),
   message: z.string().optional(),
 });
 
@@ -520,12 +522,18 @@ export const tradeFlowRouter = router({
         const senderIsRequester = proposal.requesterId === userId;
         const newCashFromRequester = senderIsRequester ? (input.cashFromProposer ?? 0) : (input.cashFromRecipient ?? 0);
         const newCashFromRecipient = senderIsRequester ? (input.cashFromRecipient ?? 0) : (input.cashFromProposer ?? 0);
+        const selectedCashMethodForRequester = senderIsRequester ? input.cashPaymentMethodForProposer ?? null : input.cashPaymentMethodForRecipient ?? null;
+        const selectedCashMethodForRecipient = senderIsRequester ? input.cashPaymentMethodForRecipient ?? null : input.cashPaymentMethodForProposer ?? null;
+        const selectedCashMethodByPayer = new Map<number, ExternalPaymentMethod | null>([
+          [proposal.requesterId, selectedCashMethodForRequester],
+          [proposal.recipientId, selectedCashMethodForRecipient],
+        ]);
         const cashTermsWereSubmitted = input.cashFromProposer !== undefined || input.cashFromRecipient !== undefined;
         const cashTermsChanged = cashTermsWereSubmitted && (
           Number(proposal.cashFromRequester ?? 0) !== newCashFromRequester
           || Number(proposal.cashFromRecipient ?? 0) !== newCashFromRecipient
         );
-        const termsChanged = offeredItemsChanged || cashTermsChanged;
+        let termsChanged = offeredItemsChanged || cashTermsChanged;
 
         const nextCashObligations = getPaymentVerificationObligations({
           requesterId: proposal.requesterId,
@@ -538,6 +546,19 @@ export const tradeFlowRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: "A proposal must include at least one collectible or a positive cash amount." });
         }
         let paymentMemberById = new Map<number, any>();
+        const existingCashPayments = cashTermsWereSubmitted
+          ? await tx.select({
+            id: tradePayments.id,
+            payerId: tradePayments.payerId,
+            payeeId: tradePayments.payeeId,
+            amount: tradePayments.amount,
+            paymentMethod: tradePayments.paymentMethod,
+            paymentIdentifier: tradePayments.paymentIdentifier,
+            status: tradePayments.status,
+          }).from(tradePayments).where(eq(tradePayments.proposalId, input.proposalId))
+          : [];
+        const existingCashPaymentByPayer = new Map(existingCashPayments.map((payment) => [payment.payerId, payment]));
+        let cashPaymentMethodChanged = false;
         if (nextCashObligations.length > 0) {
           const [paymentMemberRows] = await tx.execute(sql`SELECT
             u.id,
@@ -559,8 +580,20 @@ export const tradeFlowRouter = router({
               const payeeName = payee?.displayName || "Your trade partner";
               throw new TRPCError({ code: "BAD_REQUEST", message: `${payeeName} has no payment method in common with the member who would send this cash. Add a matching method in Profile or discuss another option before including cash.` });
             }
+            const selectedMethod = selectedCashMethodByPayer.get(obligation.payerId);
+            if (!selectedMethod) {
+              throw new TRPCError({ code: "BAD_REQUEST", message: "Select one shared payment method for each cash amount before sending the proposal." });
+            }
+            if (!sharedMethods.some((method) => method.method === selectedMethod)) {
+              throw new TRPCError({ code: "BAD_REQUEST", message: `Both members must enable ${getExternalPaymentMethodLabel(selectedMethod)} before it can be selected for this cash payment.` });
+            }
+            const existingPayment = existingCashPaymentByPayer.get(obligation.payerId);
+            if (!existingPayment || existingPayment.paymentMethod !== selectedMethod || Number(existingPayment.amount) !== obligation.amount) {
+              cashPaymentMethodChanged = true;
+            }
           }
         }
+        termsChanged = termsChanged || cashPaymentMethodChanged;
 
         await tx.execute(sql`DELETE FROM tradeProposalItems WHERE proposalId = ${input.proposalId}`);
         for (const listingId of nextOfferIds) {
@@ -588,45 +621,66 @@ export const tradeFlowRouter = router({
             sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'proposal_sent', 'Trade terms changed; both members must accept the updated terms.', ${now})`
           );
         }
-        if (cashTermsChanged) {
-          const existingPayments = await tx.select({
-            id: tradePayments.id,
-            payerId: tradePayments.payerId,
-            payeeId: tradePayments.payeeId,
-            paymentMethod: tradePayments.paymentMethod,
-            paymentIdentifier: tradePayments.paymentIdentifier,
-          }).from(tradePayments).where(eq(tradePayments.proposalId, input.proposalId));
-          const nextObligationByPayer = new Map(nextCashObligations.map((obligation) => [obligation.payerId, obligation]));
-          for (const existingPayment of existingPayments) {
-            const obligation = nextObligationByPayer.get(existingPayment.payerId);
-            if (!obligation) {
+        if (cashTermsWereSubmitted) {
+          const nextPayerIds = new Set(nextCashObligations.map((obligation) => obligation.payerId));
+          for (const existingPayment of existingCashPayments) {
+            if (!nextPayerIds.has(existingPayment.payerId)) {
               await tx.delete(tradePayments).where(eq(tradePayments.id, existingPayment.id));
-              continue;
             }
-            const payer = paymentMemberById.get(obligation.payerId);
+          }
+
+          for (const obligation of nextCashObligations) {
+            const selectedMethod = selectedCashMethodByPayer.get(obligation.payerId)!;
             const payee = paymentMemberById.get(obligation.payeeId);
-            const methodStillCompatible = Boolean(
-              existingPayment.paymentMethod
-              && existingPayment.paymentIdentifier
-              && existingPayment.payeeId === obligation.payeeId
-              && payer
-              && payee
-              && getSharedExternalPaymentMethods(payer, payee).some((method) => method.method === existingPayment.paymentMethod)
-            );
-            await tx.execute(sql`UPDATE tradePayments SET
-              payeeId = ${obligation.payeeId},
-              amount = ${obligation.amount.toFixed(2)},
-              status = ${methodStillCompatible ? 'method_selected' : 'pending'},
-              transactionId = NULL,
-              sentAt = NULL,
-              receivedAt = NULL,
-              verifiedAt = NULL,
-              disputeOpenedAt = NULL,
-              disputeOpenedBy = NULL,
-              disputeReason = NULL,
-              verificationResult = ${methodStillCompatible ? JSON.stringify({ source: 'payment_method_preserved_after_cash_change', directPaymentDisclosureAcknowledged: true }) : null},
-              updatedAt = ${now}
-              WHERE id = ${existingPayment.id}`);
+            const paymentIdentifier = getExternalPaymentIdentifier(selectedMethod, payee ?? {});
+            const existingPayment = existingCashPaymentByPayer.get(obligation.payerId);
+            const amountChanged = Boolean(existingPayment && Number(existingPayment.amount) !== obligation.amount);
+            const methodChanged = !existingPayment || existingPayment.paymentMethod !== selectedMethod || existingPayment.payeeId !== obligation.payeeId;
+
+            if (amountChanged && existingPayment?.paymentMethod) {
+              await tx.insert(tradeActivityLog).values({
+                proposalId: input.proposalId,
+                actorId: userId,
+                actorName,
+                eventType: "cash_payment_terms_reset",
+                details: `Cash amount changed; ${getExternalPaymentMethodLabel(existingPayment.paymentMethod as ExternalPaymentMethod)} must be selected again.`,
+                createdAt: now,
+              });
+            }
+
+            const paymentData = {
+              payeeId: obligation.payeeId,
+              amount: obligation.amount.toFixed(2),
+              paypalEmail: selectedMethod === "paypal" ? paymentIdentifier : null,
+              paymentMethod: selectedMethod,
+              paymentIdentifier,
+              paymentMethodSelectedAt: now,
+              transactionId: null,
+              status: "method_selected" as const,
+              verificationResult: JSON.stringify({ source: "payer_selected_shared_method", directPaymentDisclosureAcknowledged: true }),
+              verifiedAt: null,
+              sentAt: null,
+              receivedAt: null,
+              disputeOpenedAt: null,
+              disputeOpenedBy: null,
+              disputeReason: null,
+              updatedAt: now,
+            };
+            if (existingPayment) {
+              await tx.update(tradePayments).set(paymentData).where(eq(tradePayments.id, existingPayment.id));
+            } else {
+              await tx.insert(tradePayments).values({ proposalId: input.proposalId, payerId: obligation.payerId, ...paymentData, createdAt: now });
+            }
+            if (amountChanged || methodChanged) {
+              await tx.insert(tradeActivityLog).values({
+                proposalId: input.proposalId,
+                actorId: userId,
+                actorName,
+                eventType: "cash_payment_method_selected",
+                details: JSON.stringify({ method: selectedMethod, amount: obligation.amount, payerId: obligation.payerId }),
+                createdAt: now,
+              });
+            }
           }
         }
         for (const item of [...itemRows, ...requestedItemRows]) {
@@ -700,7 +754,7 @@ export const tradeFlowRouter = router({
               || payment.status !== "method_selected";
           });
           if (missingMethod) {
-            throw new TRPCError({ code: "CONFLICT", message: "Each member receiving cash must choose a shared payment method during Step 2 before this trade can be accepted." });
+            throw new TRPCError({ code: "CONFLICT", message: "Each cash sender must choose a shared payment method while adding cash in Step 2 before this trade can be accepted." });
           }
         }
 

@@ -4665,13 +4665,13 @@ export const appRouter = router({
         const proposal = proposalRows[0];
         if (!proposal) throw new TRPCError({ code: "NOT_FOUND", message: "Trade proposal not found." });
         if (proposal.status !== "negotiating") throw new TRPCError({ code: "CONFLICT", message: "Choose a payment method while the trade is being negotiated, before acceptance." });
-        const payerId = ctx.user.id === proposal.requesterId ? proposal.recipientId : proposal.requesterId;
+        const payerId = ctx.user.id;
         const obligation = getPaymentVerificationObligation(proposal, payerId);
-        if (!obligation || obligation.payeeId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the trade participant receiving cash can choose the payment method." });
+        if (!obligation || obligation.payerId !== ctx.user.id) throw new TRPCError({ code: "FORBIDDEN", message: "Only the trade participant sending cash can choose the payment method." });
 
         const paymentMembers = await getPaymentMethodMembers(db, [proposal.requesterId, proposal.recipientId]);
         const memberById = new Map(paymentMembers.map((member) => [member.id, member]));
-        const payee = memberById.get(ctx.user.id);
+        const payee = memberById.get(obligation.payeeId);
         const payer = memberById.get(obligation.payerId);
         const identifier = getExternalPaymentIdentifier(input.method, payee ?? {});
         if (!identifier) throw new TRPCError({ code: "BAD_REQUEST", message: `Add and enable your ${getExternalPaymentMethodLabel(input.method)} destination in Profile before selecting it for a trade.` });
@@ -4687,7 +4687,7 @@ export const appRouter = router({
         const paymentData = {
           proposalId: input.proposalId,
           payerId: obligation.payerId,
-          payeeId: ctx.user.id,
+          payeeId: obligation.payeeId,
           amount: obligation.amount.toFixed(2),
           paypalEmail: input.method === "paypal" ? identifier : null,
           paymentMethod: input.method,
@@ -4695,7 +4695,7 @@ export const appRouter = router({
           paymentMethodSelectedAt: now,
           transactionId: null,
           status: "method_selected" as const,
-          verificationResult: JSON.stringify({ source: "payee_selected_external_method", directPaymentDisclosureAcknowledged: true }),
+          verificationResult: JSON.stringify({ source: "payer_selected_shared_method", directPaymentDisclosureAcknowledged: true }),
           verifiedAt: null,
           sentAt: null,
           receivedAt: null,

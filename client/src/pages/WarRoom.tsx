@@ -22,6 +22,10 @@ import { getTradeProposalRevision, isIncomingProposalRevision } from "@/lib/trad
 import { getLockedShipmentItems } from "@/lib/shippingItems";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'review' | 'completed' | 'disputed';
+type CashSide = 'my' | 'their';
+type CashPaymentMethod = 'paypal' | 'venmo' | 'cash_app' | 'zelle';
+
+const CASH_PAYMENT_METHOD_VALUES: CashPaymentMethod[] = ['paypal', 'venmo', 'cash_app', 'zelle'];
 
 function getStageFromStatus(status: string, reviewCount = 0): TradeStage {
   switch (status) {
@@ -81,6 +85,7 @@ const eventConfig: Record<string, { color: string; icon: string; label: string }
   item_removed:       { color: 'bg-red-500',    icon: '➖', label: 'Item Removed' },
   cash_added:         { color: 'bg-emerald-500',icon: '💵', label: 'Cash Added' },
   cash_removed:       { color: 'bg-orange-500', icon: '💸', label: 'Cash Removed' },
+  cash_payment_terms_reset: { color: 'bg-amber-500', icon: '↺', label: 'Cash Payment Reset' },
   proposal_sent:      { color: 'bg-blue-400',   icon: '📤', label: 'Counter Offer Sent' },
   proposal_accepted:  { color: 'bg-green-400',  icon: '✅', label: 'Proposal Accepted' },
   proposal_declined:  { color: 'bg-red-400',    icon: '❌', label: 'Proposal Declined' },
@@ -208,9 +213,11 @@ export default function WarRoom() {
   const [selectedItemIds, setSelectedItemIds] = useState<number[]>([]);
   const [cashPay, setCashPay] = useState('');
   const [cashReceive, setCashReceive] = useState('');
+  const [cashMethodBySide, setCashMethodBySide] = useState<Partial<Record<CashSide, CashPaymentMethod>>>({});
   // Cash sweetener modal state
   const [showCashModal, setShowCashModal] = useState<'my' | 'their' | null>(null);
   const [cashInput, setCashInput] = useState('');
+  const [cashMethodInput, setCashMethodInput] = useState<CashPaymentMethod | ''>('');
   const [activeTab, setActiveTab] = useState<'chat' | 'timeline'>('chat');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // Payment step state, kept separately for each payer obligation.
@@ -267,6 +274,7 @@ export default function WarRoom() {
       setRemovedItemIds([]);
       setCashPay('');
       setCashReceive('');
+      setCashMethodBySide({});
       void utils.payment.getCashAdjustmentContext.invalidate({ proposalId });
     },
     onError: (err) => toast.error(err.message),
@@ -362,7 +370,6 @@ export default function WarRoom() {
     void utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
     void utils.tradeFlow.getTimeline.invalidate({ proposalId });
   };
-  const selectCashAdjustmentMethodMutation = trpc.payment.selectCashAdjustmentMethod.useMutation({ onSuccess: () => { toast.success('Payment method selected for this trade.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
   const markCashAdjustmentSentMutation = trpc.payment.markCashAdjustmentSent.useMutation({ onSuccess: () => { toast.success('Marked as sent. Your trade partner must confirm receipt.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
   const confirmCashAdjustmentReceivedMutation = trpc.payment.confirmCashAdjustmentReceived.useMutation({ onSuccess: () => { toast.success('Receipt confirmed.'); invalidateCashAdjustment(); }, onError: (err) => toast.error(err.message) });
 
@@ -519,6 +526,15 @@ export default function WarRoom() {
   const cashAdjustmentContext = cashAdjustmentContextQuery.data as any;
   const sharedPaymentMethods = (cashAdjustmentContext?.sharedMethods ?? []) as Array<{ method: string; label: string }>;
   const partnerPaymentMethods = (cashAdjustmentContext?.partnerMethods ?? []) as Array<{ method: string; label: string }>;
+  const getPersistedCashMethodForSide = (side: CashSide): CashPaymentMethod | '' => {
+    const payerId = side === 'my' ? myUserId : otherUser?.id;
+    const paymentMethod = (cashAdjustmentContext?.obligations ?? []).find((obligation: any) => String(obligation.payerId) === String(payerId ?? ''))?.payment?.paymentMethod;
+    return CASH_PAYMENT_METHOD_VALUES.includes(paymentMethod as CashPaymentMethod) ? paymentMethod as CashPaymentMethod : '';
+  };
+  const getSelectedCashMethodForSide = (side: CashSide): CashPaymentMethod | '' => cashMethodBySide[side] ?? getPersistedCashMethodForSide(side);
+  const mySelectedCashMethod = getSelectedCashMethodForSide('my');
+  const theirSelectedCashMethod = getSelectedCashMethodForSide('their');
+  const getCashMethodLabel = (method: CashPaymentMethod | '') => sharedPaymentMethods.find((entry) => entry.method === method)?.label || '';
   const getAcceptedCashMethodLabel = (payerId?: number | null) => {
     const paymentMethod = (cashAdjustmentContext?.obligations ?? []).find((obligation: any) => String(obligation.payerId) === String(payerId ?? ''))?.payment?.paymentMethod;
     return paymentMethod
@@ -527,9 +543,22 @@ export default function WarRoom() {
   };
   const partnerPaymentMethodLabels = partnerPaymentMethods.map((method) => method.label).join(", ");
   const hasSharedPaymentMethod = sharedPaymentMethods.length > 0;
+  const canAddCash = hasSharedPaymentMethod && !cashAdjustmentContextQuery.isLoading;
   const paymentMethodMismatchMessage = partnerPaymentMethodLabels
     ? `${theirDisplayName} currently accepts ${partnerPaymentMethodLabels}. Add a matching payment method in your Profile, or discuss another payment option with ${theirDisplayName} before including cash.`
     : `${theirDisplayName} has not enabled a direct cash payment method. Add matching payment methods in Profile, or discuss another payment option with ${theirDisplayName} before including cash.`;
+  const openCashModal = (side: CashSide) => {
+    const amount = side === 'my' ? myCash : theirCash;
+    setCashInput(amount > 0 ? String(amount) : '');
+    setCashMethodInput(getSelectedCashMethodForSide(side));
+    setShowCashModal(side);
+  };
+  const cashDirectionRows = [
+    { side: 'my' as CashSide, amount: myCash, payerName: 'You', payeeName: theirDisplayName, method: mySelectedCashMethod },
+    { side: 'their' as CashSide, amount: theirCash, payerName: theirDisplayName, payeeName: 'you', method: theirSelectedCashMethod },
+  ].filter((direction) => direction.amount > 0);
+  const myCashMethodChanged = cashMethodBySide.my !== undefined && cashMethodBySide.my !== getPersistedCashMethodForSide('my');
+  const theirCashMethodChanged = cashMethodBySide.their !== undefined && cashMethodBySide.their !== getPersistedCashMethodForSide('their');
 
   // Detect if the user has made ANY local modifications to the trade
   // (adding/removing items, changing cash) — if so, they can't accept the current proposal
@@ -538,7 +567,9 @@ export default function WarRoom() {
     pendingTheirItems.length > 0 ||
     removedItemIds.length > 0 ||
     (cashPayTouched && localMyCash !== serverMyCash) ||
-    (cashReceiveTouched && localTheirCash !== serverTheirCash)
+    (cashReceiveTouched && localTheirCash !== serverTheirCash) ||
+    myCashMethodChanged ||
+    theirCashMethodChanged
   );
 
   const negotiationTurn = getNegotiationTurnState({
@@ -559,6 +590,7 @@ export default function WarRoom() {
     setSelectedItemIds([]);
     setCashPay('');
     setCashReceive('');
+    setCashMethodBySide({});
     setIncomingProposalNotice(false);
     void tradeDetailsQuery.refetch();
     toast.success('Loaded your trade partner’s latest proposal.');
@@ -746,6 +778,8 @@ export default function WarRoom() {
       includeOriginalRequestedListing: requestedListing?.id ? !removedItemIds.includes(requestedListing.id) : false,
       cashFromProposer: cashPay ? parseFloat(cashPay) : (serverMyCash > 0 ? serverMyCash : undefined),
       cashFromRecipient: cashReceive ? parseFloat(cashReceive) : (serverTheirCash > 0 ? serverTheirCash : undefined),
+      cashPaymentMethodForProposer: myCash > 0 ? mySelectedCashMethod || null : null,
+      cashPaymentMethodForRecipient: theirCash > 0 ? theirSelectedCashMethod || null : null,
     });
   };
 
@@ -1481,7 +1515,8 @@ export default function WarRoom() {
 
                   {/* Cash sweetener line item */}
                   {myCash > 0 && (
-                    <div className="mt-3 flex items-center justify-between bg-green-900/20 border border-green-500/30 rounded-lg px-3 py-2">
+                    <div className="mt-3 rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 text-lg">💵</span>
                         <div>
@@ -1489,13 +1524,9 @@ export default function WarRoom() {
                           <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
                         </div>
                       </div>
-                      {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
-                        <button
-                          onClick={() => { setCashInput(String(myCash)); setShowCashModal('my'); }}
-                          className="text-gray-500 hover:text-white text-xs transition"
-                          title="Edit cash amount"
-                        >Edit</button>
-                      )}
+                      {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && <div className="flex flex-col items-end gap-1"><button onClick={() => openCashModal('my')} className="text-gray-300 hover:text-white text-xs transition" title="Edit cash amount or payment method">Edit cash</button><button onClick={() => openCashModal('my')} className="text-blue-300 hover:text-blue-100 text-[10px] transition">Change method</button></div>}
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-300">{mySelectedCashMethod ? `Payment method: ${getCashMethodLabel(mySelectedCashMethod)}` : 'Select a shared payment method before sending the proposal.'}</p>
                     </div>
                   )}
 
@@ -1507,7 +1538,7 @@ export default function WarRoom() {
                       >
                         + Add Item
                       </button>
-                      {canSubmitProposal && <button onClick={() => { setCashInput(myCash > 0 ? String(myCash) : ''); setShowCashModal('my'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 {myCash > 0 ? 'Adjust Cash' : 'Add Cash'}</button>}
+                      {canSubmitProposal && <button onClick={() => openCashModal('my')} disabled={!canAddCash} title={canAddCash ? 'Add cash and select a shared payment method' : paymentMethodMismatchMessage} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:border-gray-700 disabled:hover:text-gray-500">💵 {canAddCash ? (myCash > 0 ? 'Adjust Cash' : 'Add Cash') : 'Cash Unavailable'}</button>}
                     </div>
                   )}
                 </div>
@@ -1948,7 +1979,8 @@ export default function WarRoom() {
 
                   {/* Cash sweetener line item */}
                   {theirCash > 0 && (
-                    <div className="mt-3 flex items-center justify-between bg-green-900/20 border border-green-500/30 rounded-lg px-3 py-2">
+                    <div className="mt-3 rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 text-lg">💵</span>
                         <div>
@@ -1956,13 +1988,9 @@ export default function WarRoom() {
                           <p className="text-gray-500 text-[10px]">Added to sweeten the deal</p>
                         </div>
                       </div>
-                      {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
-                        <button
-                          onClick={() => { setCashInput(String(theirCash)); setShowCashModal('their'); }}
-                          className="text-gray-500 hover:text-white text-xs transition"
-                          title="Edit cash amount"
-                        >Edit</button>
-                      )}
+                      {canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && <div className="flex flex-col items-end gap-1"><button onClick={() => openCashModal('their')} className="text-gray-300 hover:text-white text-xs transition" title="Edit cash amount or payment method">Edit cash</button><button onClick={() => openCashModal('their')} className="text-blue-300 hover:text-blue-100 text-[10px] transition">Change method</button></div>}
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-300">{theirSelectedCashMethod ? `Payment method: ${getCashMethodLabel(theirSelectedCashMethod)}` : 'Select a shared payment method before sending the proposal.'}</p>
                     </div>
                   )}
 
@@ -1974,7 +2002,7 @@ export default function WarRoom() {
                       >
                         + Browse User Items
                       </button>
-                      {canSubmitProposal && <button onClick={() => { setCashInput(theirCash > 0 ? String(theirCash) : ''); setShowCashModal('their'); }} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2">💵 {theirCash > 0 ? 'Adjust Cash' : 'Add Cash'}</button>}
+                      {canSubmitProposal && <button onClick={() => openCashModal('their')} disabled={!canAddCash} title={canAddCash ? 'Add cash and select a shared payment method' : paymentMethodMismatchMessage} className="flex-1 py-2.5 border border-dashed border-green-700/50 rounded-lg text-green-500 hover:text-green-400 hover:border-green-500 transition text-sm flex items-center justify-center gap-2 disabled:cursor-not-allowed disabled:border-gray-700 disabled:text-gray-500 disabled:hover:border-gray-700 disabled:hover:text-gray-500">💵 {canAddCash ? (theirCash > 0 ? 'Adjust Cash' : 'Add Cash') : 'Cash Unavailable'}</button>}
                     </div>
                   )}
                 </div>
@@ -2125,18 +2153,13 @@ export default function WarRoom() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-sm font-bold text-white">Cash payment method</p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-300">Choose a member-provided method during negotiation. Review shows the method name only; private payment destinations remain hidden until Step 4.</p>
+              <p className="mt-1 text-xs leading-relaxed text-slate-300">Payment methods are chosen when cash is added. Only methods enabled by both traders are available; private payment destinations remain hidden until Step 4.</p>
             </div>
             {hasSharedPaymentMethod ? <span className="rounded-full border border-emerald-500/40 bg-emerald-950/40 px-3 py-1 text-xs font-semibold text-emerald-200">Shared: {sharedPaymentMethods.map((method) => method.label).join(', ')}</span> : <span className="rounded-full border border-amber-500/40 bg-amber-950/40 px-3 py-1 text-xs font-semibold text-amber-200">No shared method</span>}
           </div>
           {cashAdjustmentContextQuery.isLoading && <p className="mt-3 text-xs text-slate-400">Checking compatible payment methods…</p>}
           {!cashAdjustmentContextQuery.isLoading && !hasSharedPaymentMethod && <p className="mt-3 rounded-lg border border-amber-600/40 bg-amber-950/30 px-3 py-2.5 text-xs leading-relaxed text-amber-100">{paymentMethodMismatchMessage}</p>}
-          {!cashAdjustmentContextQuery.isLoading && hasSharedPaymentMethod && <div className="mt-3 grid gap-3 xl:grid-cols-2">{(cashAdjustmentContext?.obligations ?? []).map((obligation: any) => {
-            const payment = obligation.payment as any;
-            const iAmPayee = obligation.role === 'payee';
-            const selectedMethod = sharedPaymentMethods.find((method) => method.method === payment?.paymentMethod);
-            return <div key={obligation.payerId} className="rounded-lg border border-slate-600 bg-slate-950/40 p-3"><p className="text-xs font-bold text-white">{iAmPayee ? `You will receive ${formatWholeDollar(obligation.amount)} from ${theirDisplayName}` : `You will send ${formatWholeDollar(obligation.amount)} to ${theirDisplayName}`}</p>{iAmPayee ? <><p className="mt-1 text-xs text-slate-300">Select how you want to receive this payment.</p><div className="mt-2 flex flex-wrap gap-2">{sharedPaymentMethods.map((method) => <button key={method.method} type="button" onClick={() => selectCashAdjustmentMethodMutation.mutate({ proposalId, method: method.method as any })} disabled={selectCashAdjustmentMethodMutation.isPending} className={`rounded-lg border px-3 py-2 text-xs font-semibold transition disabled:opacity-50 ${payment?.paymentMethod === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 text-slate-200 hover:border-blue-400'}`}>{payment?.paymentMethod === method.method ? 'Selected: ' : ''}{method.label}</button>)}</div>{payment?.paymentMethod && <p className="mt-2 text-xs text-emerald-300">{selectedMethod?.label || 'Compatible method'} selected. Your destination remains private until Step 4.</p>}</> : <p className="mt-2 text-xs text-slate-300">{payment?.paymentMethod ? `${selectedMethod?.label || 'A compatible method'} selected by ${theirDisplayName}. The private destination will appear in Step 4.` : `Waiting for ${theirDisplayName} to select a compatible method before either member can accept.`}</p>}</div>;
-          })}</div>}
+          {!cashAdjustmentContextQuery.isLoading && hasSharedPaymentMethod && <div className="mt-3 grid gap-3 xl:grid-cols-2">{cashDirectionRows.map((direction) => <div key={direction.side} className="rounded-lg border border-slate-600 bg-slate-950/40 p-3"><p className="text-xs font-bold text-white">{direction.side === 'my' ? `You will send ${formatWholeDollar(direction.amount)} to ${direction.payeeName}` : `${direction.payerName} will send ${formatWholeDollar(direction.amount)} to you`}</p>{direction.method ? <p className="mt-1 text-xs text-emerald-300">Payment method: {getCashMethodLabel(direction.method)} <span className="text-slate-300">(locked while the amount is unchanged)</span></p> : <p className="mt-1 text-xs text-amber-200">A shared payment method must be selected before the proposal can be sent.</p>}{canSubmitProposal && <button type="button" onClick={() => openCashModal(direction.side)} className="mt-2 text-xs font-semibold text-blue-300 hover:text-blue-100">{direction.method ? 'Change method' : 'Select method'}</button>}</div>)}</div>}
         </section>
       )}
 
@@ -2247,7 +2270,7 @@ export default function WarRoom() {
                     return <div key={context.payerId} className={`rounded-xl border p-4 shadow-xl ${paymentStatus === 'received' ? 'border-green-500/50 bg-[#16213e]' : paymentStatus === 'disputed' ? 'border-red-500/60 bg-[#241b2a]' : 'border-blue-500/40 bg-[#16213e]'}`}>
                       <div className="mb-3 flex items-center gap-2"><span className="text-lg">💵</span><h3 className="text-sm font-bold text-white">{iAmPayer ? `Send ${formatWholeDollar(cashAmount)} to ${theirDisplayName}` : `Receive ${formatWholeDollar(cashAmount)} from ${theirDisplayName}`}</h3><span className="ml-auto rounded-full border border-slate-600 bg-slate-950/40 px-2 py-0.5 text-[11px] font-medium text-slate-200">{statusLabel}</span></div>
                       {iAmPayee && <div className="space-y-3"><p className="text-xs text-slate-300">{payment?.paymentMethod ? `${String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())} was selected in Step 2. Your private destination remains hidden here.` : 'A compatible method must be selected in Step 2 before payment can be sent.'}</p>{paymentStatus === 'sent' && <p className="rounded-lg border border-amber-500/40 bg-amber-950/30 px-3 py-2 text-xs text-amber-100">Your partner marked this payment sent. Confirm that the cash arrived in Step 5, Confirm Receipt.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ You confirmed cash receipt. This is a member confirmation, not provider verification.</p>}</div>}
-                      {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionReference} onChange={(event) => setTransactionReferenceByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => { if (window.confirm(`Confirm that you sent ${formatWholeDollar(cashAmount)} to ${theirDisplayName} through ${String(payment.paymentMethod).replace('_', ' ')}. Tradebilia does not process or verify this external payment.`)) markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionReference.trim() || undefined }); }} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Payment marked sent. {theirDisplayName} confirms cash receipt in Step 5.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">The recipient selects a compatible private payment method during Step 2.</p>}</div>}
+                      {iAmPayer && <div className="space-y-3">{payment?.paymentMethod && payment?.paymentIdentifier ? <><div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2"><span className="text-xs font-bold text-blue-300">{String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())}</span><span className="text-xs text-slate-300">Send to:</span><code className="text-xs font-bold text-white">{payment.paymentIdentifier}</code><button onClick={() => { void navigator.clipboard?.writeText(payment.paymentIdentifier); toast.success('Payment destination copied.'); }} className="ml-auto text-xs font-semibold text-blue-300 hover:text-blue-200">Copy</button>{providerUrl && <a href={providerUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-blue-300 hover:text-blue-200">Open provider</a>}</div>{paymentStatus === 'method_selected' && <div className="flex flex-wrap gap-2"><input type="text" placeholder="Optional payment reference" value={transactionReference} onChange={(event) => setTransactionReferenceByPayer((current) => ({ ...current, [context.payerId]: event.target.value }))} className="min-w-[13rem] flex-1 rounded-lg border border-gray-600 bg-[#0f0f1a] px-3 py-2 text-xs text-white focus:border-blue-500 focus:outline-none" /><button onClick={() => { if (window.confirm(`Confirm that you sent ${formatWholeDollar(cashAmount)} to ${theirDisplayName} through ${String(payment.paymentMethod).replace('_', ' ')}. Tradebilia does not process or verify this external payment.`)) markCashAdjustmentSentMutation.mutate({ proposalId, transactionReference: transactionReference.trim() || undefined }); }} disabled={markCashAdjustmentSentMutation.isPending} className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700 disabled:opacity-50">I sent it</button></div>}{paymentStatus === 'sent' && <p className="text-xs text-amber-200">Payment marked sent. {theirDisplayName} confirms cash receipt in Step 5.</p>}{paymentStatus === 'received' && <p className="text-xs font-medium text-green-300">✓ {theirDisplayName} confirmed receipt. This is a member confirmation, not provider verification.</p>}</> : <p className="rounded-lg border border-slate-600 bg-slate-950/40 px-3 py-2 text-xs text-slate-300">Select a shared payment method with the cash amount during Step 2 before payment can be sent.</p>}</div>}
                       {paymentStatus === 'disputed' && <p className="mt-2 text-xs text-red-200">A cash-adjustment dispute is open for administrator review. Do not continue shipping until it is resolved.</p>}
                     </div>;
                   })}</div>
@@ -2875,8 +2898,8 @@ export default function WarRoom() {
                   </h2>
                   <p className="text-gray-400 text-xs">
                     {showCashModal === 'my'
-                      ? 'Sweeten the deal by adding cash to your offer'
-                      : 'Request cash from them to balance the trade'}
+                      ? `You will send this cash to ${theirDisplayName}.`
+                      : `${theirDisplayName} will send this cash to you.`}
                   </p>
                 </div>
               </div>
@@ -2888,7 +2911,7 @@ export default function WarRoom() {
             </div>
 
             {!cashAdjustmentContextQuery.isLoading && !hasSharedPaymentMethod && <p className="mb-4 rounded-lg border border-amber-600/40 bg-amber-950/30 px-3 py-2.5 text-xs leading-relaxed text-amber-100">{paymentMethodMismatchMessage}</p>}
-            {hasSharedPaymentMethod && <p className="mb-4 rounded-lg border border-blue-500/30 bg-blue-950/30 px-3 py-2.5 text-xs leading-relaxed text-blue-100">Shared payment methods with {theirDisplayName}: <strong>{sharedPaymentMethods.map((method) => method.label).join(', ')}</strong>. The recipient selects one after the cash terms are proposed.</p>}
+            {hasSharedPaymentMethod && <p className="mb-4 rounded-lg border border-blue-500/30 bg-blue-950/30 px-3 py-2.5 text-xs leading-relaxed text-blue-100">Available methods are enabled by both traders: <strong>{sharedPaymentMethods.map((method) => method.label).join(', ')}</strong>. Select the agreed service for this cash amount now.</p>}
 
             <div className="relative mb-5">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-sm">$</span>
@@ -2898,11 +2921,18 @@ export default function WarRoom() {
                 step="1"
                 placeholder="0"
                 value={cashInput}
-                onChange={(e) => setCashInput(e.target.value)}
+                onChange={(e) => {
+                  const nextAmount = e.target.value;
+                  const currentAmount = showCashModal === 'my' ? myCash : theirCash;
+                  if (parseFloat(nextAmount) !== currentAmount) setCashMethodInput('');
+                  setCashInput(nextAmount);
+                }}
                 className="w-full pl-7 pr-4 py-3 bg-[#0f0f1a] border border-gray-600 rounded-lg text-white text-lg font-bold focus:border-green-500 focus:outline-none"
                 autoFocus
               />
             </div>
+
+            {hasSharedPaymentMethod && <div className="mb-5"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-white">Payment service</p><span className="text-[10px] uppercase tracking-wide text-slate-400">Shared methods only</span></div><p className="mt-1 text-xs text-slate-300">Changing the cash amount clears the payment selection and requires you to choose again.</p><div className="mt-3 grid grid-cols-2 gap-2">{sharedPaymentMethods.map((method) => <button key={method.method} type="button" onClick={() => setCashMethodInput(method.method as CashPaymentMethod)} className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${cashMethodInput === method.method ? 'border-blue-400 bg-blue-500/20 text-white' : 'border-slate-600 bg-slate-950/40 text-slate-200 hover:border-blue-400'}`}>{cashMethodInput === method.method ? 'Selected: ' : ''}{method.label}</button>)}</div></div>}
 
             <div className="flex gap-3">
               {/* Remove cash button */}
@@ -2911,8 +2941,14 @@ export default function WarRoom() {
                   onClick={() => {
                     if (showCashModal === 'my') setCashPay('0');
                     else setCashReceive('0');
+                    setCashMethodBySide((previous) => {
+                      const next = { ...previous };
+                      delete next[showCashModal];
+                      return next;
+                    });
                     setShowCashModal(null);
                     setCashInput('');
+                    setCashMethodInput('');
                   }}
                   className="px-4 py-2.5 border border-red-700/50 text-red-400 rounded-lg text-sm hover:bg-red-900/20 transition"
                 >Remove</button>
@@ -2932,11 +2968,27 @@ export default function WarRoom() {
                     toast.error(paymentMethodMismatchMessage);
                     return;
                   }
+                  if (amount > 0 && !cashMethodInput) {
+                    toast.error('Select one shared payment method for this cash amount.');
+                    return;
+                  }
+                  if (amount > 0 && !sharedPaymentMethods.some((method) => method.method === cashMethodInput)) {
+                    toast.error('Select a payment method enabled by both traders.');
+                    return;
+                  }
                   if (showCashModal === 'my') setCashPay(String(amount));
                   else setCashReceive(String(amount));
+                  setCashMethodBySide((previous) => {
+                    const next = { ...previous };
+                    if (amount > 0) next[showCashModal] = cashMethodInput as CashPaymentMethod;
+                    else delete next[showCashModal];
+                    return next;
+                  });
+                  const selectedMethodLabel = getCashMethodLabel(cashMethodInput);
                   setShowCashModal(null);
                   setCashInput('');
-                  toast.success(`${formatWholeDollar(amount)} cash added to the trade.`);
+                  setCashMethodInput('');
+                  toast.success(amount > 0 ? `${formatWholeDollar(amount)} cash added via ${selectedMethodLabel}.` : 'Cash removed from the trade.');
                 }}
                 className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition"
               >Confirm</button>

@@ -15,9 +15,9 @@ describe("Review, Shipping & Payment, and Confirm Receipt lifecycle", () => {
     expect(acceptance).toContain("entering Review stage");
   });
 
-  it("requires recipient-selected cash methods before cash-inclusive terms can be accepted", () => {
+  it("requires payer-selected cash methods before cash-inclusive terms can be accepted", () => {
     const acceptance = source.slice(source.indexOf("acceptTradeProposal:"), source.indexOf("markTradeDisputed:", source.indexOf("acceptTradeProposal:")));
-    expect(acceptance).toContain("Each member receiving cash must choose a shared payment method during Step 2");
+    expect(acceptance).toContain("Each cash sender must choose a shared payment method while adding cash in Step 2");
     expect(acceptance).toContain("payment.status !== \"method_selected\"");
   });
 

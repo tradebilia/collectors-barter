@@ -6,15 +6,18 @@ const source = fs.readFileSync(path.resolve(process.cwd(), "server/tradeFlowRout
 const sendProposal = source.slice(source.indexOf("sendTradeProposal:"), source.indexOf("acceptTradeProposal:"));
 
 describe("cash payment selection persistence", () => {
-  it("preserves a compatible payment row when cash terms change", () => {
-    expect(sendProposal).toContain("const existingPayments = await tx.select");
-    expect(sendProposal).toContain("const methodStillCompatible = Boolean(");
-    expect(sendProposal).toContain("status = ${methodStillCompatible ? 'method_selected' : 'pending'}");
-    expect(sendProposal).toContain("amount = ${obligation.amount.toFixed(2)}");
+  it("stores the selected shared method with the cash amount and resets the accepted payment state when the amount changes", () => {
+    expect(sendProposal).toContain("const selectedCashMethodByPayer = new Map");
+    expect(sendProposal).toContain("getExternalPaymentIdentifier(selectedMethod, payee ?? {})");
+    expect(sendProposal).toContain("const amountChanged = Boolean(existingPayment && Number(existingPayment.amount) !== obligation.amount)");
+    expect(sendProposal).toContain('eventType: "cash_payment_terms_reset"');
+    expect(sendProposal).toContain('eventType: "cash_payment_method_selected"');
+    expect(sendProposal).toContain('status: "method_selected" as const');
   });
 
   it("removes payment rows whose cash obligation no longer exists", () => {
+    expect(sendProposal).toContain("if (!nextPayerIds.has(existingPayment.payerId))");
     expect(sendProposal).toContain("await tx.delete(tradePayments).where(eq(tradePayments.id, existingPayment.id));");
-    expect(sendProposal).toContain("const nextObligationByPayer = new Map(nextCashObligations.map");
+    expect(sendProposal).toContain("const nextPayerIds = new Set(nextCashObligations.map");
   });
 });

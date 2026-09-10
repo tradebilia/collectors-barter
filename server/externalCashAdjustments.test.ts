@@ -37,12 +37,16 @@ describe("External cash-adjustment safeguards", () => {
     expect(context).toContain("partnerDisplayName");
   });
 
-  it("requires the cash recipient to select a shared method during negotiation", () => {
+  it("requires the cash sender to select a shared method during negotiation", () => {
     const selection = routerSource.slice(routerSource.indexOf("selectCashAdjustmentMethod:"), routerSource.indexOf("markCashAdjustmentSent:", routerSource.indexOf("selectCashAdjustmentMethod:")));
     expect(selection).toContain('proposal.status !== "negotiating"');
-    expect(selection).toContain("Only the trade participant receiving cash can choose the payment method");
+    expect(selection).toContain("Only the trade participant sending cash can choose the payment method");
     expect(selection).toContain("Both members must enable");
     expect(tradeFlowSource).toContain("has no payment method in common");
+    expect(tradeFlowSource).toContain("cashPaymentMethodForProposer");
+    expect(tradeFlowSource).toContain("cashPaymentMethodForRecipient");
+    expect(tradeFlowSource).toContain("Select one shared payment method for each cash amount before sending the proposal.");
+    expect(tradeFlowSource).toContain("cash_payment_terms_reset");
   });
 
   it("keeps provider claims accurate and separates sent from received confirmation", () => {
@@ -53,7 +57,7 @@ describe("External cash-adjustment safeguards", () => {
     expect(warRoomSource).toContain("Tradebilia does not process or verify this external payment");
   });
 
-  it("provides checkbox-based private Profile and Account Setup method setup plus clear Step 2 compatibility guidance", () => {
+  it("provides checkbox-based private Profile and Account Setup method setup plus clear Step 2 shared-method guidance", () => {
     for (const source of [settingsSource, setupSource]) {
       expect(source).toContain("enabledMethods");
       expect(source).toContain("PayPal");
@@ -64,6 +68,9 @@ describe("External cash-adjustment safeguards", () => {
     expect(warRoomSource).toContain("Cash payment method");
     expect(warRoomSource).toContain("No shared method");
     expect(warRoomSource).toContain("currently accepts");
+    expect(warRoomSource).toContain("Available methods are enabled by both traders");
+    expect(warRoomSource).toContain("Changing the cash amount clears the payment selection");
+    expect(warRoomSource).toContain("Change method");
     expect(warRoomSource).toContain("Shipping & Payment");
     expect(warRoomSource).toContain("I Received");
   });
