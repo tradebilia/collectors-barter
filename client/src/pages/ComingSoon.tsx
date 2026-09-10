@@ -44,9 +44,9 @@ export default function ComingSoon() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#120d0b] text-white">
       <picture>
-        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-no-old-logo-mobile-raised-footer_1a30988e.png" />
+        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-no-old-logo-mobile-footer-higher_7573cd2c.png" />
         <img
-          src="/manus-storage/coming-soon-no-old-logo-raised-footer_97462d15.png"
+          src="/manus-storage/coming-soon-no-old-logo-footer-higher_e134142c.png"
           alt="Tradebilia collectors trading exchange coming soon scene with comics, cards, games, toys, coins, stamps, Music, and other collectibles"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
@@ -55,7 +55,7 @@ export default function ComingSoon() {
       <img
         src="/manus-storage/tradebilia_final_transparent-Notagline_95437371.svg"
         alt="Tradebilia"
-        className="pointer-events-none absolute left-1/2 top-[0%] z-10 h-auto w-[min(40rem,88vw)] -translate-x-1/2 sm:top-[-10%] sm:w-[min(56rem,72vw)]"
+        className="pointer-events-none absolute left-1/2 top-[0%] z-10 h-auto w-[min(40rem,88vw)] -translate-x-1/2 sm:top-[-7%] sm:w-[min(56rem,72vw)]"
       />
 
       <section className="relative min-h-screen" aria-label="Tradebilia Coming Soon">

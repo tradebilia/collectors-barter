@@ -1809,3 +1809,5 @@
 - [x] Remove the existing baked-in Coming Soon logo first, then place the supplied transparent logo and verify the replacement on desktop and mobile.
 
 - [x] Center and enlarge the Coming Soon logo above the headline, and raise the category/footer section so the built-for-collectors line is fully visible on desktop and mobile.
+
+- [x] Move the Coming Soon logo directly above the main tagline and raise the entire category/footer strip enough for “Built for Collectors · By Collectors” to be fully visible on desktop and mobile.
