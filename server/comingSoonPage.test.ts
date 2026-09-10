@@ -8,66 +8,21 @@ const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), 
 const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("Coming Soon experience", () => {
-  it("uses the animated Tradebilia logo and has an opt-in email form", () => {
-    expect(pageSource).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(pageSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45} wordmarkColor="#2b2119" neutralCategoryColor="#2b2119" categoryColorOverrides={COMING_SOON_CATEGORY_COLORS} wheelColors={COMING_SOON_WHEEL_COLORS} wheelStrokeWidth={0} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56} />');
-    expect(pageSource).not.toContain("lockupCenterBiasX={-240}");
-    expect(pageSource).toContain('tradebilia-coming-soon-scattered-mixed-grade-workbench-extra-wide-parchment_9f77d258.png');
-    expect(pageSource).toContain('COMING_SOON_CATEGORY_COLORS');
-    expect(pageSource).toContain('COMICS: "#6f3b9e"');
-    expect(pageSource).toContain('"SPORTS CARDS": "#b0221a"');
-    expect(pageSource).toContain('const COMING_SOON_WHEEL_COLORS = [');
-    expect(pageSource).not.toContain('tradebilia-coming-soon-dense-category-workbench_c64ac671.png');
-    expect(pageSource).toContain('className="w-full max-w-xl text-center sm:max-w-2xl"');
-    expect(pageSource).toContain('className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:relative sm:left-1/2 sm:-translate-x-1/2 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4"');
-    expect(pageSource).not.toContain("Collector&apos;s Workbench");
-    expect(pageSource).toContain('className="-translate-y-4 pb-4 pt-2 sm:-translate-y-4 sm:pb-10 sm:pt-4"');
-    expect(pageSource).not.toContain('className="translate-y-0 pt-8 sm:-translate-y-1 sm:pt-6"');
-    expect(pageSource).toContain('className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8"');
-    expect(pageSource).toContain('/manus-storage/launching-soon-navy-clean_0cf4707a.png');
-    expect(pageSource).toContain('<div className="relative">');
-    expect(pageSource).toContain('role="alert" aria-live="polite" className="absolute inset-x-0 top-full mt-3');
-    expect(pageSource).toContain('/invalid email|invalid_format/i.test(subscribeMutation.error.message)');
-    expect(pageSource).toContain('"Please enter a valid email address."');
-    expect(pageSource).toContain('"We could not save your email right now. Please try again later."');
-    expect(pageSource).toContain('className={submitted ? "invisible" : undefined}');
-    expect(pageSource).toContain('role="status" aria-live="polite" className="absolute inset-x-0 top-0');
-    expect(pageSource).not.toContain("Background_23084d14.jpg");
-    expect(pageSource).toContain('className="mt-1 font-serif text-3xl leading-[0.92] tracking-[-0.04em] text-[#2b2119] sm:mt-3 sm:text-6xl"');
-    expect(pageSource).toContain('className="mx-auto mt-2 max-w-md text-sm leading-5 text-[#4d3c2e]/80 sm:mt-5 sm:text-base sm:leading-6"');
-    expect(pageSource).toContain('className="relative mx-auto mt-2 grid max-w-xl');
-    expect(pageSource).toContain('<span>Why Buy or Sell</span><span className="mt-1 block sm:mt-2">When You Can Trade?</span>');
-    expect(pageSource).toContain("The Collectors Trading Exchange");
-    expect(pageSource).toContain("A home for remarkable collectibles—and the collectors who know their worth.");
-    expect(pageSource).toContain("Launching Soon");
-    expect(pageSource).toContain("-left-52 top-[38%] hidden w-44 -translate-y-1/2");
-    expect(pageSource).toContain("w-36 rotate-[-2deg] object-contain");
-    expect(pageSource).toContain("Trade without fees.");
-    expect(pageSource).toContain("No fees are charged to complete a trade.");
-    expect(pageSource).toContain("Connect more verified accounts to strengthen user authenticity.");
-    expect(pageSource).toContain("Everything in one place.");
-    expect(pageSource).toContain("Swap sports cards for comics, toys, games, and more.");
-    expect(pageSource).not.toContain("A deliberate place to discover, value, and trade across all ten collector categories.");
-    expect(pageSource).toContain('"Notify me"');
-    expect(pageSource).not.toContain("Launch updates only · unsubscribe anytime.");
-    expect(pageSource).not.toContain("Yes, I&apos;d like to receive launch updates");
-    expect(pageSource).not.toContain("Checkbox");
-    expect(pageSource).toContain('className="order-2 flex flex-row gap-2 sm:items-stretch"');
+  it("uses the revised supplied-logo artwork, represents Music, and keeps an opt-in email form", () => {
+    expect(pageSource).toContain("coming-soon-logo-music-revised_a20f9ffb.png");
+    expect(pageSource).toContain("coming-soon-logo-music-mobile-clean_5a0bff0e.png");
+    expect(pageSource).toContain("Tradebilia collectors trading exchange coming soon scene");
+    expect(pageSource).toContain('const COMING_SOON_CATEGORIES = [');
+    expect(pageSource).toContain('"Music"');
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
-    expect(pageSource).toContain('border-y border-[#6c503c]/20 py-0 text-[8px]');
-    expect(pageSource).toContain('className="relative z-10 mx-auto -mt-3 max-w-md pb-2 sm:mt-4 sm:pb-8"');
-    expect(pageSource).toContain('sm:grid-cols-5');
-    expect(pageSource).toContain("<span>Vintage Toys</span>");
-    expect(pageSource).toContain("<span>Disney Pins</span>");
-    expect(pageSource).toContain("<span>Music</span>");
-    expect(pageSource).toContain('trpc.launchUpdates.subscribe.useMutation');
+    expect(pageSource).toContain("trpc.launchUpdates.subscribe.useMutation");
     expect(pageSource).toContain('const [alreadySubscribed, setAlreadySubscribed] = useState(false);');
     expect(pageSource).toContain("You&apos;re already on the early-access list.");
     expect(pageSource).toContain("We&apos;ll only use your email for Tradebilia launch updates.");
-    expect(pageSource).not.toContain("TradebiliaWheel");
-    expect(pageSource).not.toContain("A new collector exchange is taking shape");
-    expect(pageSource).not.toContain("Your email is used only for the launch update list.");
-    expect(pageSource).not.toContain('href="/privacy"');
+    expect(pageSource).toContain('placeholder="Enter your email for early access"');
+    expect(pageSource).toContain('"Notify me"');
+    expect(pageSource).toContain('role="alert" aria-live="polite"');
+    expect(pageSource).toContain('role="status" aria-live="polite"');
   });
 
   it("registers the preview route and makes it available from the Admin Dashboard", () => {

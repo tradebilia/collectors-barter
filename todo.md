@@ -1791,3 +1791,5 @@
 - [x] Resolve the unsuitable Coming Soon record crop by removing it instead of replacing it; Music remains in the category list.
 
 - [x] Remove the current record decoration from Coming Soon while retaining the Music category label and verify the page remains responsive.
+
+- [x] Update Coming Soon with the supplied Tradebilia logo artwork, add Music to the category presentation, and add a clearly recognizable record visual with responsive verification.
