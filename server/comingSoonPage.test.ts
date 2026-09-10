@@ -9,12 +9,12 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 
 describe("Coming Soon experience", () => {
   it("uses the exact supplied image as the no-crop visual baseline with an evenly centered category row including Music", () => {
-    expect(pageSource).toContain("coming-soon-exact-supplied_6f741f0e.png");
+    expect(pageSource).toContain("coming-soon-exact-supplied-clean-row_d8aa56d4.png");
     expect(pageSource).toContain("w-[min(100vw,calc(100svh*605/289))]");
     expect(pageSource).toContain("const COMING_SOON_CATEGORIES = [");
     expect(pageSource).toContain('{ label: "Music", icon: Disc3 }');
     expect(pageSource).toContain("grid-cols-11");
-    expect(pageSource).toContain("inset-x-[7%] top-[76%] h-[12%] bg-[#160e0b] px-[6%]");
+    expect(pageSource).toContain("inset-x-[6%] top-[75%] h-[15%] px-[2%]");
     expect(pageSource).toContain('aria-label="Collections on the exchange"');
     expect(pageSource).not.toContain("object-cover");
     expect(pageSource).not.toContain("tradebilia_final_transparent-Notagline");

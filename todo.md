@@ -1821,3 +1821,5 @@
 - [x] Add a Music icon and label to the Coming Soon bottom category row without cropping or altering the supplied image.
 
 - [x] Match the Coming Soon Music icon and label to the existing category-icon scale and recenter the full category row without cropping the supplied image.
+
+- [x] Increase Coming Soon category icon and label sizes, add more icon-to-label spacing, and remove the opaque brown backing while preserving centering and the uncropped image.
