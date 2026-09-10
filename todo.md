@@ -1795,3 +1795,5 @@
 - [x] Update Coming Soon with the supplied Tradebilia logo artwork, add Music to the category presentation, and add a clearly recognizable record visual with responsive verification.
 
 - [x] Preserve the current Coming Soon page as Coming Soon 2 and make the revised supplied-logo/Music/record page the primary Coming Soon route, with both routes verified.
+
+- [x] Remove the baked-in desktop email form from the revised Coming Soon artwork so only the live signup form remains, with desktop/mobile verification.
