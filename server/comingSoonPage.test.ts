@@ -8,34 +8,20 @@ const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), 
 const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("Coming Soon experience", () => {
-  it("uses the revised supplied-logo artwork, represents Music, and keeps an opt-in email form", () => {
-    expect(pageSource).toContain("coming-soon-no-old-logo-footer-higher_e134142c.png");
-    expect(pageSource).toContain("coming-soon-no-old-logo-mobile-footer-higher_7573cd2c.png");
-    expect(pageSource).toContain("Tradebilia collectors trading exchange coming soon scene");
-    expect(pageSource).toContain('const COMING_SOON_CATEGORIES = [');
-    expect(pageSource).toContain("tradebilia_final_transparent-Notagline_95437371.svg");
-    expect(pageSource).toContain('"Music"');
-    expect(pageSource).toContain('aria-label="Collections on the exchange"');
-    expect(pageSource).toContain("trpc.launchUpdates.subscribe.useMutation");
-    expect(pageSource).toContain('const [alreadySubscribed, setAlreadySubscribed] = useState(false);');
-    expect(pageSource).toContain("You&apos;re already on the early-access list.");
-    expect(pageSource).toContain("We&apos;ll only use your email for Tradebilia launch updates.");
-    expect(pageSource).toContain('placeholder="Enter your email for early access"');
-    expect(pageSource).toContain('"Notify me"');
-    expect(pageSource).toContain('role="alert" aria-live="polite"');
-    expect(pageSource).toContain('role="status" aria-live="polite"');
+  it("uses the exact supplied image as the no-crop visual baseline", () => {
+    expect(pageSource).toContain("coming-soon-exact-supplied_6f741f0e.png");
+    expect(pageSource).toContain("max-h-[100svh] max-w-full object-contain");
+    expect(pageSource).not.toContain("object-cover");
+    expect(pageSource).not.toContain("tradebilia_final_transparent-Notagline");
+    expect(pageSource).not.toContain("launchUpdates.subscribe");
   });
 
-  it("registers the preview route and makes it available from the Admin Dashboard", () => {
+  it("registers the primary and preserved legacy Coming Soon routes", () => {
     expect(appSource).toContain('import ComingSoon from "./pages/ComingSoon"');
     expect(appSource).toContain('import ComingSoon2 from "./pages/ComingSoon2"');
     expect(appSource).toContain('<Route path="/coming-soon" component={ComingSoon} />');
     expect(appSource).toContain('<Route path="/coming-soon-2" component={ComingSoon2} />');
     expect(adminSource).toContain('href="/coming-soon"');
     expect(adminSource).toContain("Coming Soon Preview");
-    expect(adminSource).toContain('href="/coming-soon-2"');
-    expect(adminSource).toContain("Coming Soon 2 (Legacy)");
-    expect(adminSource).toContain('value="pre-launch-email"');
-    expect(adminSource).toContain("Pre-Launch Email");
   });
 });

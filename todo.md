@@ -1815,3 +1815,5 @@
 - [x] Recheck the live Coming Soon route and make the logo placement above the tagline and footer lift visibly effective rather than only changing the checkpoint description.
 
 - [x] Fix the tradePayments API query error surfacing on /coming-soon, add regression coverage, and verify the public route without changing trade data or running migrations.
+
+- [x] Restart Coming Soon from the exact supplied image and display the complete image without cropping, removing all prior custom visual overlays unless explicitly reintroduced.
