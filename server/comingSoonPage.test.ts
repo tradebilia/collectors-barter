@@ -27,9 +27,13 @@ describe("Coming Soon experience", () => {
 
   it("registers the preview route and makes it available from the Admin Dashboard", () => {
     expect(appSource).toContain('import ComingSoon from "./pages/ComingSoon"');
+    expect(appSource).toContain('import ComingSoon2 from "./pages/ComingSoon2"');
     expect(appSource).toContain('<Route path="/coming-soon" component={ComingSoon} />');
+    expect(appSource).toContain('<Route path="/coming-soon-2" component={ComingSoon2} />');
     expect(adminSource).toContain('href="/coming-soon"');
     expect(adminSource).toContain("Coming Soon Preview");
+    expect(adminSource).toContain('href="/coming-soon-2"');
+    expect(adminSource).toContain("Coming Soon 2 (Legacy)");
     expect(adminSource).toContain('value="pre-launch-email"');
     expect(adminSource).toContain("Pre-Launch Email");
   });
