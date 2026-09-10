@@ -1811,3 +1811,7 @@
 - [x] Center and enlarge the Coming Soon logo above the headline, and raise the category/footer section so the built-for-collectors line is fully visible on desktop and mobile.
 
 - [x] Move the Coming Soon logo directly above the main tagline and raise the entire category/footer strip enough for “Built for Collectors · By Collectors” to be fully visible on desktop and mobile.
+
+- [x] Recheck the live Coming Soon route and make the logo placement above the tagline and footer lift visibly effective rather than only changing the checkpoint description.
+
+- [x] Fix the tradePayments API query error surfacing on /coming-soon, add regression coverage, and verify the public route without changing trade data or running migrations.

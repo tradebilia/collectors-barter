@@ -141,6 +141,7 @@ import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
+import { MISSING_TRADE_PAYMENTS_FALLBACK_MESSAGE, isMissingTradePaymentsTableError } from "./paymentAdminCompatibility";
 import { billingRouter, membershipRouter } from "./membership";
 import { listHeartbeatJobs } from "./_core/heartbeat";
 import { closeEligibleAccount, getAccountClosureAudit, getAccountClosureRequestsForAdmin, getMyAccountClosureRequest, requestAccountClosure, reviewAccountClosureRequest } from "./accountClosure";
@@ -4801,19 +4802,25 @@ export const appRouter = router({
     listExternalCashAdjustmentsForAdmin: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       const db = await requireDb();
-      const [rows] = await db.execute(sql`
-        SELECT tp.id AS paymentId, tp.proposalId, tp.amount, tp.paymentMethod, tp.status, tp.paymentIdentifier, tp.transactionId, tp.sentAt, tp.receivedAt, tp.disputeOpenedAt,
-          COALESCE(NULLIF(payer_profile.displayName, ''), NULLIF(payer.name, ''), NULLIF(payer.username, ''), 'Member') AS payerName,
-          COALESCE(NULLIF(payee_profile.displayName, ''), NULLIF(payee.name, ''), NULLIF(payee.username, ''), 'Member') AS payeeName
-        FROM tradePayments tp
-        JOIN users payer ON payer.id = tp.payerId
-        JOIN users payee ON payee.id = tp.payeeId
-        LEFT JOIN userProfiles payer_profile ON payer_profile.userId = payer.id
-        LEFT JOIN userProfiles payee_profile ON payee_profile.userId = payee.id
-        ORDER BY COALESCE(tp.updatedAt, tp.createdAt) DESC
-        LIMIT 100
-      `);
-      return (rows as unknown as Array<any>).map((row) => ({ ...row, paymentIdentifier: maskExternalPaymentIdentifier(row.paymentIdentifier), transactionId: row.transactionId ? maskExternalPaymentIdentifier(row.transactionId) : null }));
+      try {
+        const [rows] = await db.execute(sql`
+          SELECT tp.id AS paymentId, tp.proposalId, tp.amount, tp.paymentMethod, tp.status, tp.paymentIdentifier, tp.transactionId, tp.sentAt, tp.receivedAt, tp.disputeOpenedAt,
+            COALESCE(NULLIF(payer_profile.displayName, ''), NULLIF(payer.name, ''), NULLIF(payer.username, ''), 'Member') AS payerName,
+            COALESCE(NULLIF(payee_profile.displayName, ''), NULLIF(payee.name, ''), NULLIF(payee.username, ''), 'Member') AS payeeName
+          FROM tradePayments tp
+          JOIN users payer ON payer.id = tp.payerId
+          JOIN users payee ON payee.id = tp.payeeId
+          LEFT JOIN userProfiles payer_profile ON payer_profile.userId = payer.id
+          LEFT JOIN userProfiles payee_profile ON payee_profile.userId = payee.id
+          ORDER BY COALESCE(tp.updatedAt, tp.createdAt) DESC
+          LIMIT 100
+        `);
+        return (rows as unknown as Array<any>).map((row) => ({ ...row, paymentIdentifier: maskExternalPaymentIdentifier(row.paymentIdentifier), transactionId: row.transactionId ? maskExternalPaymentIdentifier(row.transactionId) : null }));
+      } catch (error) {
+        if (!isMissingTradePaymentsTableError(error)) throw error;
+        console.warn(`[Admin payments] ${MISSING_TRADE_PAYMENTS_FALLBACK_MESSAGE}`);
+        return [];
+      }
     }),
 
     revealExternalCashIdentifierForAdmin: protectedProcedure
