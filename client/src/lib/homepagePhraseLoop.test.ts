@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { HOMEPAGE_PHRASES, splitPhraseIntoFragments } from "@/components/HomepagePhraseLoop";
 
 const componentSource = readFileSync(new URL("../components/HomepagePhraseLoop.tsx", import.meta.url), "utf8");
 
@@ -30,6 +31,8 @@ describe("homepage phrase loop", () => {
     expect(componentSource).toContain("export function splitPhraseIntoFragments");
     expect(componentSource).toContain("phrase.match(/[^.!?]+[.!?]+|[^.!?]+$/g)");
     expect(componentSource).toContain("Have it. Want it. Trade it.");
+    expect(splitPhraseIntoFragments("Have it. Want it. Trade it.")).toEqual(["Have it.", "Want it.", "Trade it."]);
+    expect(splitPhraseIntoFragments(HOMEPAGE_PHRASES[1])).toEqual(["Trade what you have.", "Get what you want."]);
   });
 
   it("keeps the complete phrase centered while fragments reveal individually", () => {
@@ -39,8 +42,11 @@ describe("homepage phrase loop", () => {
   });
 
   it("uses the approved five-second phrase and logo holds with reduced-motion support", () => {
-    expect(componentSource).toContain("const PHRASE_HOLD_MS = 5000;");
-    expect(componentSource).toContain("const LOGO_HOLD_MS = 5000;");
+    expect(componentSource).toContain("export const PHRASE_HOLD_MS = 5000;");
+    expect(componentSource).toContain("export const LOGO_HOLD_MS = 5000;");
+    expect(componentSource).toContain("type AnimationPhase = \"reveal\" | \"hold\" | \"logo\";");
+    expect(componentSource).toContain("py-4 text-white sm:py-5");
+    expect(componentSource).toContain("text-[clamp(2.15rem,6.2vw,5.25rem)]");
     expect(componentSource).toContain("prefers-reduced-motion: reduce");
     expect(componentSource).toContain("<AnimatedLogoSmall70");
   });

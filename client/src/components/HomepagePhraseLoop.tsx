@@ -16,12 +16,12 @@ export const HOMEPAGE_PHRASES = [
   "Trade your way to the collection you want",
 ] as const;
 
-const FRAGMENT_REVEAL_MS = 420;
-const PHRASE_HOLD_MS = 5000;
-const LOGO_HOLD_MS = 5000;
-const TRANSITION_MS = 420;
+export const FRAGMENT_REVEAL_MS = 420;
+export const PHRASE_HOLD_MS = 5000;
+export const LOGO_HOLD_MS = 5000;
+export const TRANSITION_MS = 420;
 
-type AnimationPhase = "phrase" | "logo";
+type AnimationPhase = "reveal" | "hold" | "logo";
 
 export function splitPhraseIntoFragments(phrase: string) {
   return phrase.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(fragment => fragment.trim()) ?? [];
@@ -45,57 +45,93 @@ export default function HomepagePhraseLoop() {
   const prefersReducedMotion = usePrefersReducedMotion();
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [visibleFragmentCount, setVisibleFragmentCount] = useState(0);
-  const [phase, setPhase] = useState<AnimationPhase>("phrase");
+  const [phase, setPhase] = useState<AnimationPhase>("reveal");
   const [isFading, setIsFading] = useState(false);
 
   const phraseFragments = useMemo(() => splitPhraseIntoFragments(HOMEPAGE_PHRASES[phraseIndex]), [phraseIndex]);
   const displayedFragmentCount = prefersReducedMotion ? phraseFragments.length : visibleFragmentCount;
-  const phraseComplete = displayedFragmentCount >= phraseFragments.length;
 
   useEffect(() => {
-    if (phase === "logo") {
-      const timer = window.setTimeout(() => {
+    if (phase === "reveal") {
+      if (prefersReducedMotion) {
+        setVisibleFragmentCount(phraseFragments.length);
+        setPhase("hold");
+        return;
+      }
+
+      if (visibleFragmentCount < phraseFragments.length) {
+        const timer = window.setTimeout(() => {
+          setVisibleFragmentCount(previousCount => Math.min(previousCount + 1, phraseFragments.length));
+        }, FRAGMENT_REVEAL_MS);
+        return () => window.clearTimeout(timer);
+      }
+
+      setPhase("hold");
+      return;
+    }
+
+    if (phase === "hold") {
+      let transitionTimer: number | undefined;
+      const holdTimer = window.setTimeout(() => {
+        setIsFading(true);
+        transitionTimer = window.setTimeout(() => {
+          setIsFading(false);
+          setPhase("logo");
+        }, TRANSITION_MS);
+      }, PHRASE_HOLD_MS);
+
+      return () => {
+        window.clearTimeout(holdTimer);
+        if (transitionTimer !== undefined) window.clearTimeout(transitionTimer);
+      };
+    }
+
+    let transitionTimer: number | undefined;
+    const logoTimer = window.setTimeout(() => {
+      setIsFading(true);
+      transitionTimer = window.setTimeout(() => {
         setPhraseIndex(previousIndex => (previousIndex + 1) % HOMEPAGE_PHRASES.length);
         setVisibleFragmentCount(0);
         setIsFading(false);
-        setPhase("phrase");
-      }, LOGO_HOLD_MS);
-
-      return () => window.clearTimeout(timer);
-    }
-
-    if (!prefersReducedMotion && !phraseComplete) {
-      const timer = window.setTimeout(() => {
-        setVisibleFragmentCount(previousCount => Math.min(previousCount + 1, phraseFragments.length));
-      }, FRAGMENT_REVEAL_MS);
-
-      return () => window.clearTimeout(timer);
-    }
-
-    const timer = window.setTimeout(() => {
-      setIsFading(true);
-      window.setTimeout(() => {
-        setPhase("logo");
-        setIsFading(false);
+        setPhase("reveal");
       }, TRANSITION_MS);
-    }, PHRASE_HOLD_MS);
+    }, LOGO_HOLD_MS);
 
-    return () => window.clearTimeout(timer);
-  }, [phase, prefersReducedMotion, phraseComplete, phraseFragments.length]);
+    return () => {
+      window.clearTimeout(logoTimer);
+      if (transitionTimer !== undefined) window.clearTimeout(transitionTimer);
+    };
+  }, [phase, prefersReducedMotion, phraseFragments.length, visibleFragmentCount]);
 
   return (
     <section
-      className="relative z-10 w-full border-y border-white/10 bg-[#0a0e28] px-4 py-10 text-white sm:py-12"
+      className="relative z-10 w-full border-y border-white/10 bg-[#0a0e28] px-4 py-4 text-white sm:py-5"
       aria-label="Tradebilia collector phrases"
     >
-      <div className="mx-auto flex min-h-[190px] w-full max-w-7xl items-center justify-center overflow-hidden text-center sm:min-h-[220px]">
+      <div className="mx-auto flex min-h-[124px] w-full max-w-7xl items-center justify-center overflow-hidden text-center sm:min-h-[142px]">
         <div
           className={`flex w-full items-center justify-center transition-opacity duration-[420ms] ease-out ${isFading ? "opacity-0" : "opacity-100"}`}
           aria-live="polite"
           aria-atomic="true"
         >
-          {phase === "phrase" ? (
-            <p className="m-0 block w-full max-w-6xl px-2 text-center font-serif text-[clamp(1.65rem,4.8vw,4.1rem)] font-medium leading-[1.12] tracking-[-0.025em] text-white sm:px-6">
+          {phase === "logo" ? (
+            <div className="h-16 w-full max-w-[560px] sm:h-20" aria-label="Tradebilia">
+              <AnimatedLogoSmall70
+                fontSize={108}
+                wheelScale={1.45}
+                dividerScale={1.2}
+                dividerOffsetY={-4}
+                wheelOffsetX={-10}
+                wheelOffsetY={-8}
+                wheelStrokeWidth={0}
+                dividerStrokeWidth={3}
+                centerLockup
+                fixedCategoryMetrics
+                lockupScale={1.08}
+              />
+            </div>
+          ) : (
+            <p className="m-0 block w-full max-w-6xl px-2 text-center font-serif text-[clamp(2.15rem,6.2vw,5.25rem)] font-medium leading-[1.04] tracking-[-0.03em] text-white sm:px-6">
               {phraseFragments.map((fragment, index) => (
                 <span
                   key={`${phraseIndex}-${index}`}
@@ -106,22 +142,6 @@ export default function HomepagePhraseLoop() {
                 </span>
               ))}
             </p>
-          ) : (
-            <div className="h-24 w-full max-w-[560px] sm:h-28" aria-label="Tradebilia">
-              <AnimatedLogoSmall70
-                fontSize={104}
-                wheelScale={1.55}
-                dividerScale={1.25}
-                dividerOffsetY={-4}
-                wheelOffsetX={-10}
-                wheelOffsetY={-8}
-                wheelStrokeWidth={0}
-                dividerStrokeWidth={3}
-                centerLockup
-                fixedCategoryMetrics
-                lockupScale={1.1}
-              />
-            </div>
           )}
         </div>
       </div>
