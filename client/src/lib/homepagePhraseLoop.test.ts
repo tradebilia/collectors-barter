@@ -36,7 +36,7 @@ describe("homepage phrase loop", () => {
   });
 
   it("keeps the complete phrase centered while fragments reveal individually", () => {
-    expect(componentSource).toContain("block w-full max-w-6xl whitespace-nowrap px-2 text-center");
+    expect(componentSource).toContain("block w-full max-w-none whitespace-nowrap px-0 text-center");
     expect(componentSource).toContain("index < displayedFragmentCount ? \"opacity-100\" : \"opacity-0\"");
     expect(componentSource).toContain("aria-atomic=\"true\"");
   });
@@ -49,16 +49,20 @@ describe("homepage phrase loop", () => {
     expect(componentSource).toContain("export const LOGO_HOLD_MS = 5000;");
     expect(componentSource).toContain("type AnimationPhase = \"reveal\" | \"hold\" | \"logo\";");
     expect(componentSource).toContain("h-[136px] w-full overflow-hidden");
-    expect(componentSource).toContain("whitespace-nowrap");
+    expect(componentSource).toContain("max-w-none whitespace-nowrap px-0");
     expect(componentSource).toContain("fontSize={132}");
-    expect(componentSource).toContain("wheelScale={1.85}");
+    expect(componentSource).toContain("wheelScale={1.65}");
+    expect(componentSource).toContain("wheelOffsetX={-48}");
     expect(componentSource).toContain("prefers-reduced-motion: reduce");
     expect(componentSource).toContain("<AnimatedLogoSmall70");
   });
 
-  it("keeps the animation section full width and separates it from the footer", () => {
+  it("keeps the animation section full width and reduces only social-section vertical padding", () => {
     const homepageSource = readFileSync(new URL("../pages/Home.tsx", import.meta.url), "utf8");
     expect(homepageSource).toContain("<HomepagePhraseLoop />");
     expect(homepageSource.indexOf("<HomepagePhraseLoop />")).toBeLessThan(homepageSource.indexOf("{/* Footer */}"));
+    expect(homepageSource).toContain("pb-8 pt-8 text-white sm:pt-10");
+    expect(homepageSource).toContain("text-xs font-semibold uppercase");
+    expect(homepageSource).toContain("h-5 w-5 object-contain");
   });
 });

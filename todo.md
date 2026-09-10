@@ -1830,3 +1830,4 @@
 - [x] Shorten the homepage phrase-animation section, increase phrase typography, and correct fragment reveal, 5-second phrase hold, 5-second logo hold, and phrase-to-phrase sequencing.
 - [x] Lock the homepage phrase section to one fixed height and one line per phrase, use a 2-second delay between phrase fragments, and enlarge the centered Tradebilia logo without changing the section height.
 - [x] Start each homepage phrase with its first fragment visible immediately, then use the requested 2-second interval only between subsequent fragments.
+- [x] Stretch the homepage phrase area across the available width so phrases are not clipped, correct Tradebilia logo wheel overlap, and reduce only social-media section vertical spacing without changing font or icon sizes.

@@ -50,7 +50,7 @@ export default function HomepagePhraseLoop() {
 
   const phraseFragments = useMemo(() => splitPhraseIntoFragments(HOMEPAGE_PHRASES[phraseIndex]), [phraseIndex]);
   const displayedFragmentCount = prefersReducedMotion ? phraseFragments.length : visibleFragmentCount;
-  const phraseFontSize = `clamp(0.72rem, calc((100vw - 2rem) / ${Math.max(HOMEPAGE_PHRASES[phraseIndex].length * 0.5, 1)}), 5.5rem)`;
+  const phraseFontSize = `clamp(0.8rem, calc((100vw - 1rem) / ${Math.max(HOMEPAGE_PHRASES[phraseIndex].length * 0.64, 1)}), 5.25rem)`;
 
   useEffect(() => {
     if (phase === "reveal") {
@@ -116,13 +116,13 @@ export default function HomepagePhraseLoop() {
           aria-atomic="true"
         >
           {phase === "logo" ? (
-            <div className="h-24 w-full max-w-[680px]" aria-label="Tradebilia">
+            <div className="h-24 w-full max-w-[760px]" aria-label="Tradebilia">
               <AnimatedLogoSmall70
                 fontSize={132}
-                wheelScale={1.85}
+                wheelScale={1.65}
                 dividerScale={1.35}
                 dividerOffsetY={-4}
-                wheelOffsetX={-10}
+                wheelOffsetX={-48}
                 wheelOffsetY={-8}
                 wheelStrokeWidth={0}
                 dividerStrokeWidth={3}
@@ -132,7 +132,7 @@ export default function HomepagePhraseLoop() {
               />
             </div>
           ) : (
-            <p className="m-0 block w-full max-w-6xl whitespace-nowrap px-2 text-center font-serif font-medium leading-none tracking-[-0.04em] text-white sm:px-6" style={{ fontSize: phraseFontSize }}>
+            <p className="m-0 block w-full max-w-none whitespace-nowrap px-0 text-center font-serif font-medium leading-none tracking-[-0.04em] text-white" style={{ fontSize: phraseFontSize }}>
               {phraseFragments.map((fragment, index) => (
                 <span
                   key={`${phraseIndex}-${index}`}
