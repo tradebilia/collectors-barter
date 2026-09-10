@@ -1807,3 +1807,5 @@
 - [x] Repair the Coming Soon regression from the animated-logo/background change by restoring the last known-good composition; Music, Stamps, the record, and live signup flow remain intact.
 
 - [x] Remove the existing baked-in Coming Soon logo first, then place the supplied transparent logo and verify the replacement on desktop and mobile.
+
+- [x] Center and enlarge the Coming Soon logo above the headline, and raise the category/footer section so the built-for-collectors line is fully visible on desktop and mobile.

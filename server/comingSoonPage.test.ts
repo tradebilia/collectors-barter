@@ -9,8 +9,8 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 
 describe("Coming Soon experience", () => {
   it("uses the revised supplied-logo artwork, represents Music, and keeps an opt-in email form", () => {
-    expect(pageSource).toContain("coming-soon-no-old-logo_e697cecd.png");
-    expect(pageSource).toContain("coming-soon-no-old-logo-mobile_4974ef8b.png");
+    expect(pageSource).toContain("coming-soon-no-old-logo-raised-footer_97462d15.png");
+    expect(pageSource).toContain("coming-soon-no-old-logo-mobile-raised-footer_1a30988e.png");
     expect(pageSource).toContain("Tradebilia collectors trading exchange coming soon scene");
     expect(pageSource).toContain('const COMING_SOON_CATEGORIES = [');
     expect(pageSource).toContain("tradebilia_final_transparent-Notagline_95437371.svg");
