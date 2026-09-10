@@ -1799,3 +1799,7 @@
 - [x] Remove the baked-in desktop email form from the revised Coming Soon artwork so only the live signup form remains, with desktop/mobile verification.
 
 - [x] Restore the Coming Soon artwork content lost during the over-cleanup while removing only the duplicate baked-in signup controls; verify desktop and mobile before checkpointing.
+
+- [x] Rebuild Coming Soon from the supplied image by removing only the baked-in email form, adding Music to the category row, and adding a recognizable record while preserving the original composition.
+
+- [x] Add Stamps to the Coming Soon category presentation and add recognizable stamp collectibles to the supplied artwork while preserving Music, the record, and the existing composition.

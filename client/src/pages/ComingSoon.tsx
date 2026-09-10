@@ -44,9 +44,9 @@ export default function ComingSoon() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#120d0b] text-white">
       <picture>
-        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-logo-music-mobile-clean_5a0bff0e.png" />
+        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-supplied-music-stamps-mobile-final_bb457c2d.png" />
         <img
-          src="/manus-storage/coming-soon-logo-music-wide-minimal-clean_2a22c044.png"
+          src="/manus-storage/coming-soon-supplied-music-stamps-final_d00d9f60.png"
           alt="Tradebilia collectors trading exchange coming soon scene with comics, cards, games, toys, coins, stamps, Music, and other collectibles"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
