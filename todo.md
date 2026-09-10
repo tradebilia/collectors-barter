@@ -1797,3 +1797,5 @@
 - [x] Preserve the current Coming Soon page as Coming Soon 2 and make the revised supplied-logo/Music/record page the primary Coming Soon route, with both routes verified.
 
 - [x] Remove the baked-in desktop email form from the revised Coming Soon artwork so only the live signup form remains, with desktop/mobile verification.
+
+- [x] Restore the Coming Soon artwork content lost during the over-cleanup while removing only the duplicate baked-in signup controls; verify desktop and mobile before checkpointing.

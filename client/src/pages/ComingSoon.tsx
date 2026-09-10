@@ -46,7 +46,7 @@ export default function ComingSoon() {
       <picture>
         <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-logo-music-mobile-clean_5a0bff0e.png" />
         <img
-          src="/manus-storage/coming-soon-logo-music-desktop-clean_bf3f0ade.png"
+          src="/manus-storage/coming-soon-logo-music-wide-minimal-clean_2a22c044.png"
           alt="Tradebilia collectors trading exchange coming soon scene with comics, cards, games, toys, coins, stamps, Music, and other collectibles"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
