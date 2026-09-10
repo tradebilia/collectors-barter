@@ -6,8 +6,9 @@ const source = readFileSync(resolve(__dirname, "../client/src/pages/ComingSoon.t
 
 describe("Restoration Workbench Coming Soon page", () => {
   it("uses the supplied revised Tradebilia artwork with Music represented", () => {
-    expect(source).not.toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
-    expect(source).toContain("coming-soon-supplied-music-stamps-final_d00d9f60.png");
+    expect(source).toContain('import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70"');
+    expect(source).toContain('<AnimatedLogoSmall70 centerLockup');
+    expect(source).toContain("coming-soon-stamps-no-logo-desktop_21bf9403.png");
     expect(source).toContain("Tradebilia collectors trading exchange coming soon scene");
     expect(source).toContain('"Music"');
     expect(source).not.toContain("Every collection<br />has a next chapter.");

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
+import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 import { ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { FormEvent, useId, useState } from "react";
 
@@ -44,15 +45,17 @@ export default function ComingSoon() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#120d0b] text-white">
       <picture>
-        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-supplied-music-stamps-mobile-final_bb457c2d.png" />
+        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-stamps-no-logo-mobile_37b07e9e.png" />
         <img
-          src="/manus-storage/coming-soon-supplied-music-stamps-final_d00d9f60.png"
+          src="/manus-storage/coming-soon-stamps-no-logo-desktop_21bf9403.png"
           alt="Tradebilia collectors trading exchange coming soon scene with comics, cards, games, toys, coins, stamps, Music, and other collectibles"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
       </picture>
       <div className="absolute inset-0 bg-black/10" aria-hidden="true" />
-
+      <div className="pointer-events-none absolute inset-x-0 top-[4%] z-10 mx-auto h-32 w-[min(34rem,94vw)] sm:top-[9%] sm:h-40 sm:w-[min(58rem,88vw)]" aria-label="Animated Tradebilia logo">
+        <AnimatedLogoSmall70 centerLockup fontSize={86} lockupScale={0.9} categoryColorOverrides={{ BILIA: "#FFFFFF" }} />
+      </div>
       <section className="relative min-h-screen" aria-label="Tradebilia Coming Soon">
         <div className="sr-only">
           <h1>Why Buy or Sell When You Can Trade?</h1>
