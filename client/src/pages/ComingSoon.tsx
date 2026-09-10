@@ -44,14 +44,19 @@ export default function ComingSoon() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#120d0b] text-white">
       <picture>
-        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-supplied-music-stamps-mobile-final_bb457c2d.png" />
+        <source media="(max-width: 639px)" srcSet="/manus-storage/coming-soon-no-old-logo-mobile_4974ef8b.png" />
         <img
-          src="/manus-storage/coming-soon-supplied-music-stamps-final_d00d9f60.png"
+          src="/manus-storage/coming-soon-no-old-logo_e697cecd.png"
           alt="Tradebilia collectors trading exchange coming soon scene with comics, cards, games, toys, coins, stamps, Music, and other collectibles"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
       </picture>
       <div className="absolute inset-0 bg-black/10" aria-hidden="true" />
+      <img
+        src="/manus-storage/tradebilia_final_transparent-Notagline_95437371.svg"
+        alt="Tradebilia"
+        className="pointer-events-none absolute left-1/2 top-[-2%] z-10 h-auto w-[min(34rem,78vw)] -translate-x-1/2 sm:top-[-1%] sm:w-[min(48rem,62vw)]"
+      />
 
       <section className="relative min-h-screen" aria-label="Tradebilia Coming Soon">
         <div className="sr-only">

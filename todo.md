@@ -1805,3 +1805,5 @@
 - [x] Add Stamps to the Coming Soon category presentation and add recognizable stamp collectibles to the supplied artwork while preserving Music, the record, and the existing composition.
 
 - [x] Repair the Coming Soon regression from the animated-logo/background change by restoring the last known-good composition; Music, Stamps, the record, and live signup flow remain intact.
+
+- [x] Remove the existing baked-in Coming Soon logo first, then place the supplied transparent logo and verify the replacement on desktop and mobile.
