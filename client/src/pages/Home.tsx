@@ -46,6 +46,7 @@ import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 import { RecentlyAddedCarousel } from "@/components/RecentlyAddedCarousel";
 import { RecentTradesCarousel } from "@/components/RecentTradesCarousel";
+import HomepagePhraseLoop from "@/components/HomepagePhraseLoop";
 
 type UploadedImage = {
   name: string;
@@ -961,6 +962,8 @@ export default function Home() {
         )}
 
       </main>
+
+      <HomepagePhraseLoop />
 
       {/* Footer */}
       <footer className="border-t border-white/10 bg-black/50 py-12 px-4">

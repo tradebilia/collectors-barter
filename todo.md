@@ -1825,3 +1825,4 @@
 - [x] Increase Coming Soon category icon and label sizes, add more icon-to-label spacing, and remove the opaque brown backing while preserving centering and the uncropped image.
 
 - [x] Update Trade Room cash entry so each side selects only shared active payment methods at the time cash is added; retain the method while the amount is unchanged, clear it when the amount changes, support an explicit Change method action, explain unavailable cash options, and retain the existing trade-wide confirmation and privacy safeguards.
+- [x] Add a full-width looping homepage phrase section between social media and copyright, revealing each approved phrase fragment while keeping the complete sentence centered, showing the animated Tradebilia logo for 5 seconds between phrases, and verifying desktop/mobile behavior.
