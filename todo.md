@@ -1803,3 +1803,5 @@
 - [x] Rebuild Coming Soon from the supplied image by removing only the baked-in email form, adding Music to the category row, and adding a recognizable record while preserving the original composition.
 
 - [x] Add Stamps to the Coming Soon category presentation and add recognizable stamp collectibles to the supplied artwork while preserving Music, the record, and the existing composition.
+
+- [x] Repair the Coming Soon regression from the animated-logo/background change by restoring the last known-good composition; Music, Stamps, the record, and live signup flow remain intact.
