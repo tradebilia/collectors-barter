@@ -1819,3 +1819,5 @@
 - [x] Restart Coming Soon from the exact supplied image and display the complete image without cropping, removing all prior custom visual overlays unless explicitly reintroduced.
 
 - [x] Add a Music icon and label to the Coming Soon bottom category row without cropping or altering the supplied image.
+
+- [x] Match the Coming Soon Music icon and label to the existing category-icon scale and recenter the full category row without cropping the supplied image.
