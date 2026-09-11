@@ -1833,3 +1833,4 @@
 - [x] Stretch the homepage phrase area across the available width so phrases are not clipped, correct Tradebilia logo wheel overlap, and reduce only social-media section vertical spacing without changing font or icon sizes.
 - [x] Fix the Video Games/Console listing submission failure caused by the generated insert payload and verify it with regression coverage.
 - [x] Fix the Video Games/Console Controllers included field so it accepts more than one character without losing input.
+- [x] Rename the Video Games/Console visible field label from “Controllers Included” to “Number of Controllers Included” without changing its stored key or behavior.

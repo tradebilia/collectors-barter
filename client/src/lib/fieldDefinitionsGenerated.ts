@@ -2598,7 +2598,7 @@ export const VIDEO_GAMES_CONSOLE_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'controllersIncluded',
-    label: 'Controllers Included',
+    label: 'Number of Controllers Included',
     inputType: 'number',
     requirement: 'recommended',
   },

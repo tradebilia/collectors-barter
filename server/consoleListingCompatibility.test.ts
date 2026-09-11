@@ -11,6 +11,13 @@ describe("Video Games Console listing compatibility", () => {
     expect(normalizeListingGrade("Gem Mint")).toBe("0");
   });
 
+  it("uses the requested Console controllers label without changing its stored key", () => {
+    const source = readFileSync(new URL("../client/src/lib/fieldDefinitionsGenerated.ts", import.meta.url), "utf8");
+    expect(source).toContain("name: 'controllersIncluded'");
+    expect(source).toContain("label: 'Number of Controllers Included'");
+    expect(source).not.toContain("label: 'Controllers Included'");
+  });
+
   it("rejects display-only grade suffixes before submission with clear guidance", () => {
     const source = readFileSync(new URL("../client/src/hooks/useAddInventoryForm.ts", import.meta.url), "utf8");
     expect(source).toContain("!/^\\d+(?:\\.\\d+)?$/.test(String(value).trim())");
