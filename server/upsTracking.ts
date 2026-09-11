@@ -53,6 +53,19 @@ export function normalizeUpsTrackingNumber(value: string): string {
   return normalized;
 }
 
+export function normalizeUpsExpectedDeliveryDate(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  const normalized = value.trim();
+  if (/^\d{8}$/.test(normalized)) {
+    return `${normalized.slice(0, 4)}-${normalized.slice(4, 6)}-${normalized.slice(6, 8)}`;
+  }
+  const isoDate = normalized.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDate) return `${isoDate[1]}-${isoDate[2]}-${isoDate[3]}`;
+  const monthFirstDate = normalized.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+  if (monthFirstDate) return `${monthFirstDate[3]}-${monthFirstDate[1]}-${monthFirstDate[2]}`;
+  return normalized;
+}
+
 function toEventTimestamp(activity: UpsActivity): string | null {
   const date = activity.gmtDate ?? activity.date;
   const time = activity.gmtTime ?? activity.time;
@@ -76,9 +89,11 @@ export function formatUpsTrackingResult(response: UpsTrackingResponse, requested
     statusCategory: trackedPackage.currentStatus?.statusCode ?? null,
     statusSummary: trackedPackage.currentStatus?.simplifiedTextDescription ?? null,
     service: trackedPackage.service?.description ?? null,
-    expectedDeliveryDate: trackedPackage.deliveryDate?.find((date) => date.type?.toLowerCase().includes("delivery"))?.date
-      ?? trackedPackage.deliveryDate?.[0]?.date
-      ?? null,
+    expectedDeliveryDate: normalizeUpsExpectedDeliveryDate(
+      trackedPackage.deliveryDate?.find((date) => date.type?.toLowerCase().includes("delivery"))?.date
+        ?? trackedPackage.deliveryDate?.[0]?.date
+        ?? null,
+    ),
     events: (trackedPackage.activity ?? []).slice(0, 10).map((activity) => ({
       type: activity.status?.description ?? activity.status?.type ?? "UPS update",
       timestamp: toEventTimestamp(activity),

@@ -1,5 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { formatUpsTrackingResult, normalizeUpsTrackingNumber } from "./upsTracking";
+import { formatUpsTrackingResult, normalizeUpsExpectedDeliveryDate, normalizeUpsTrackingNumber } from "./upsTracking";
+
+describe("UPS expected-delivery normalization", () => {
+  it("normalizes UPS compact YYYYMMDD dates", () => {
+    expect(normalizeUpsExpectedDeliveryDate("20260912")).toBe("2026-09-12");
+  });
+
+  it("normalizes ISO and month-first dates", () => {
+    expect(normalizeUpsExpectedDeliveryDate("2026-09-12T18:00:00-04:00")).toBe("2026-09-12");
+    expect(normalizeUpsExpectedDeliveryDate("09/12/2026")).toBe("2026-09-12");
+  });
+
+  it("returns null when UPS omits an estimate", () => {
+    expect(normalizeUpsExpectedDeliveryDate(null)).toBeNull();
+  });
+});
 
 describe("UPS tracking helpers", () => {
   it("normalizes valid UPS tracking numbers and rejects unsafe input", () => {
@@ -26,6 +41,7 @@ describe("UPS tracking helpers", () => {
     } as any, "1Z999AA10123456784");
 
     expect(result).toMatchObject({
+      expectedDeliveryDate: "2026-08-20",
       status: "On the Way",
       service: "UPS Ground",
       events: [{ type: "Departed from Facility", city: "HUNTINGTON", state: "NY" }],
