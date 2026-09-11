@@ -1862,3 +1862,4 @@
 - [x] Reproduce the persistent Ken Griffey Test AI eBay zero-result response, trace the exact live API/mapping/filter failure, and fix it with regression coverage.
 - [x] Trace and fix the confirmed API-level Ken Griffey Test AI eBay zero-result response by auditing the outbound Browse API request, marketplace configuration, and raw response before post-filters.
 - [x] Diagnose and fix the Test AI eBay Sold-Comps path so completed-sale data is shown when available, or its unavailability is presented accurately.
+- [x] Assess the RiseHaza and CarsonKope GitHub HBID auction-data projects for compliant, maintainable Test AI integration feasibility before any adoption.
