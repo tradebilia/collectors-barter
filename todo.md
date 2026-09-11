@@ -1845,3 +1845,4 @@
 - [x] Restore the original Tradebilia logo version in the phrase section and make the bottom gray copyright section smaller with white text.
 - [x] Review the current homepage phrase-section logo and compact white-text footer at desktop/mobile widths, correcting any remaining visual inconsistencies found.
 - [x] Replace the phrase-section animated logo interlude with the supplied transparent Tradebilia logo without tagline, preserving centered proportions and fixed-section containment.
+- [x] Scale the supplied phrase-section Tradebilia logo up as one complete image without changing its internal spacing or geometry.
