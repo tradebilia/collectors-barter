@@ -7,10 +7,19 @@ export type TradeReceiptInput = {
   theirSide: { name: string; contactName?: string | null; items: ReceiptItem[]; cash: number; tracking: Array<{ carrier: string; trackingNumber: string }> };
 };
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+function parseValidDate(value?: string | Date | null): Date | null {
+  if (!value) return null;
+  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
 export function deriveShippingDeadline(shippingDeadline?: string | Date | null, shippingStartedAt?: string | Date | null): Date | null {
-  if (shippingDeadline) return new Date(shippingDeadline);
-  if (!shippingStartedAt) return null;
-  const derived = new Date(shippingStartedAt); derived.setUTCDate(derived.getUTCDate() + 3); return derived;
+  const explicitDeadline = parseValidDate(shippingDeadline);
+  if (explicitDeadline) return explicitDeadline;
+  const startedAt = parseValidDate(shippingStartedAt);
+  if (!startedAt) return null;
+  startedAt.setUTCDate(startedAt.getUTCDate() + 3);
+  return startedAt;
 }
 export function buildTradeReceiptLines(receipt: TradeReceiptInput): string[] {
   const formatDate = (value?: string | Date | null) => value ? new Date(value).toLocaleDateString() : "Not available";

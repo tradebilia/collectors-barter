@@ -1,6 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { buildTradeReceiptLines, deriveShippingDeadline } from "./tradeReceipt";
 
+describe("Trade Room shipping deadline", () => {
+  it("rejects invalid explicit deadlines instead of returning Invalid Date", () => {
+    expect(deriveShippingDeadline("not-a-date", null)).toBeNull();
+  });
+
+  it("rejects invalid shipping start dates", () => {
+    expect(deriveShippingDeadline(null, "not-a-date")).toBeNull();
+  });
+
+  it("derives a valid deadline from a valid shipping start date", () => {
+    expect(deriveShippingDeadline(null, "2026-09-10T12:00:00Z")?.toISOString()).toBe("2026-09-13T12:00:00.000Z");
+  });
+});
+
 describe("Trade Room receipt", () => {
   it("includes participant, item, cash, and tracking information", () => {
     const text = buildTradeReceiptLines({

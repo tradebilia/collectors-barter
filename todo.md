@@ -1853,3 +1853,4 @@
 - [x] Correct the visible phrase-section logo so its outermost artwork has equal left and right spacing, then double-check desktop and mobile alignment.
 - [x] Fix Test AI FedEx expected-delivery date parsing so valid carrier dates display instead of “Invalid Date,” with regression coverage and no write-side effects.
 - [x] Reproduce the persistent FedEx Test AI “Invalid Date” result, trace the exact live response value, extend normalization as needed, and verify the deployed client bundle.
+- [x] Apply the FedEx expected-delivery date normalization to the Trade Room shipping stage and verify it cannot display “Invalid Date.”
