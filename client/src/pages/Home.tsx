@@ -966,32 +966,32 @@ export default function Home() {
       <HomepagePhraseLoop />
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-black/50 py-12 px-4">
+      <footer className="border-t border-white/10 bg-black/50 px-4 py-4 sm:py-5">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
             <div className="flex items-center gap-2">
-              <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-8 w-auto opacity-70" />
-              <span className="text-white/40 text-sm font-medium">© 2026 Tradebilia. All rights reserved.</span>
+              <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-7 w-auto opacity-70" />
+              <span className="text-sm font-medium text-white">© 2026 Tradebilia. All rights reserved.</span>
             </div>
             
-            <div className="flex items-center gap-8">
-              <Link href="/how-it-works" className="text-white/40 hover:text-white/80 text-sm transition-colors">
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1">
+              <Link href="/how-it-works" className="text-sm text-white hover:text-white/80 transition-colors">
                 How Tradebilia Works
               </Link>
-              <Link href="/privacy" className="text-white/40 hover:text-white/80 text-sm transition-colors">
+              <Link href="/privacy" className="text-sm text-white hover:text-white/80 transition-colors">
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-white/40 hover:text-white/80 text-sm transition-colors">
+              <Link href="/terms" className="text-sm text-white hover:text-white/80 transition-colors">
                 Terms of Service
               </Link>
-              <Link href="/contact" className="text-white/40 hover:text-white/80 text-sm transition-colors">
+              <Link href="/contact" className="text-sm text-white hover:text-white/80 transition-colors">
                 Contact Us
               </Link>
             </div>
           </div>
           
-          <div className="mt-8 pt-8 border-t border-white/5 text-center">
-            <p className="text-white/20 text-[10px] uppercase tracking-widest max-w-2xl mx-auto leading-relaxed">
+          <div className="mt-3 border-t border-white/10 pt-3 text-center">
+            <p className="mx-auto max-w-2xl text-[10px] uppercase leading-relaxed tracking-widest text-white/90">
               Tradebilia is a marketplace for collectors. We are not liable for trades gone wrong. 
               Always trade with caution and verify your counterpart's reputation.
             </p>

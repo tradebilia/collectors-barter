@@ -1835,3 +1835,4 @@
 - [x] Fix the Video Games/Console Controllers included field so it accepts more than one character without losing input.
 - [x] Rename the Video Games/Console visible field label from “Controllers Included” to “Number of Controllers Included” without changing its stored key or behavior.
 - [x] Add O-Pee-Chee to the Manufacturer dropdown for every Sports category item type and verify all mappings.
+- [x] Reduce the main homepage bottom gray footer height and change footer text to white while preserving links and responsive layout.
