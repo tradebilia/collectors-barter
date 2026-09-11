@@ -117,6 +117,7 @@ import { getEbayAuthUrl, exchangeCodeForToken, getUserInfo, getUserFeedback, ref
 import { sdk } from "./_core/sdk";
 import { tradeFlowRouter } from "./tradeFlowRouter";
 import { testAIRouter } from "./testAIRouter";
+import { shippingTrackingRouter } from "./shippingTrackingRouter";
 import { r2MediaRouter } from "./r2MediaRouter";
 import { customAuth } from "./_core/customAuth";
 import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMessagePersistence";
@@ -392,6 +393,7 @@ export const appRouter = router({
   system: systemRouter,
   tradeFlow: tradeFlowRouter,
   testAI: testAIRouter,
+  shippingTracking: shippingTrackingRouter,
   r2Media: r2MediaRouter,
   membership: membershipRouter,
   billing: billingRouter,

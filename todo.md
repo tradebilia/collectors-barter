@@ -1855,3 +1855,5 @@
 - [x] Reproduce the persistent FedEx Test AI “Invalid Date” result, trace the exact live response value, extend normalization as needed, and verify the deployed client bundle.
 - [x] Apply the FedEx expected-delivery date normalization to the Trade Room shipping stage and verify it cannot display “Invalid Date.”
 - [x] Fix UPS expected-delivery extraction so usable carrier estimates display in Test AI, with regression coverage for alternate UPS date fields and omitted estimates.
+- [x] Apply the UPS compact-date normalization used by Test AI to the Trade Room shipping stage and verify valid UPS estimates display there.
+- [x] Add a read-only UPS/FedEx/DHL tracking lookup and expected-delivery display to the Trade Room Shipping Stage without changing shipment submission or confirmation behavior.

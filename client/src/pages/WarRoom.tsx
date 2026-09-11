@@ -20,6 +20,7 @@ import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
 import { getTradeProposalRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
 import { getLockedShipmentItems } from "@/lib/shippingItems";
+import { formatTrackingDate } from "@/lib/formatTrackingDate";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'review' | 'completed' | 'disputed';
 type CashSide = 'my' | 'their';
@@ -193,6 +194,8 @@ export default function WarRoom() {
   const [trackingInputs, setTrackingInputs] = useState<{listingId: number; carrier: string; trackingNumber: string}[]>([]);
   const [confirmedTrackingIds, setConfirmedTrackingIds] = useState<number[]>([]);
   const [resetTrackingIds, setResetTrackingIds] = useState<number[]>([]);
+  const [trackingLookupByListingId, setTrackingLookupByListingId] = useState<Record<number, any>>({});
+  const [trackingLookupLoadingId, setTrackingLookupLoadingId] = useState<number | null>(null);
   // Review/rating form for Stage 5
   const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
   const [reviewText, setReviewText] = useState('');
@@ -311,6 +314,24 @@ export default function WarRoom() {
     onSuccess: () => { toast.success('Trade cancelled.'); navigate('/trade-hub'); },
     onError: (err) => toast.error(err.message),
   });
+
+  const shippingTrackingLookupMutation = trpc.shippingTracking.lookup.useMutation();
+  const lookupCarrierTracking = async (listingId: number, carrier: string, trackingNumber: string) => {
+    const normalizedCarrier = carrier.toUpperCase() === 'FEDEX' ? 'FedEx' : carrier.toUpperCase() === 'UPS' ? 'UPS' : carrier.toUpperCase() === 'DHL' ? 'DHL' : null;
+    if (!normalizedCarrier) {
+      toast.error('Carrier lookup is available for UPS, FedEx, and DHL.');
+      return;
+    }
+    setTrackingLookupLoadingId(listingId);
+    try {
+      const result = await shippingTrackingLookupMutation.mutateAsync({ carrier: normalizedCarrier, trackingNumber });
+      setTrackingLookupByListingId((previous) => ({ ...previous, [listingId]: result }));
+    } catch (error: any) {
+      toast.error(error?.message || 'Carrier tracking lookup failed.');
+    } finally {
+      setTrackingLookupLoadingId(null);
+    }
+  };
 
   const submitTrackingMutation = trpc.tradeFlow.submitTrackingNumbers.useMutation({
     onSuccess: () => {
@@ -1122,16 +1143,22 @@ export default function WarRoom() {
                               const isConfirmed = !resetTrackingIds.includes(item.id) && confirmedTrackingIds.includes(item.id);
                               if (submittedTracking) {
                                 const url = getTrackingUrl(submittedTracking.carrier, submittedTracking.trackingNumber);
+                                const lookup = trackingLookupByListingId[item.id];
+                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(submittedTracking.carrier).toUpperCase());
                                 return <div key={item.id} className="rounded-lg border border-green-500/20 bg-green-900/10 p-4">
                                   <div className="mb-1 flex items-center gap-2"><span className="rounded bg-green-900/40 px-2 py-0.5 text-xs font-bold text-green-400">{submittedTracking.carrier}</span><span className="min-w-0 flex-1 text-base font-semibold text-gray-200">{item.title}</span></div>
                                   <p className="mb-2 font-mono text-sm text-white">{submittedTracking.trackingNumber}</p>
+                                  {canLookup && <div className="mb-3 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex flex-wrap items-center justify-between gap-2"><span>Expected delivery: <strong className="text-white">{lookup ? formatTrackingDate(lookup.expectedDeliveryDate) : 'Not checked'}</strong></span><button type="button" onClick={() => lookupCarrierTracking(item.id, submittedTracking.carrier, submittedTracking.trackingNumber)} disabled={trackingLookupLoadingId === item.id} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingLookupLoadingId === item.id ? 'Checking…' : 'Check tracking'}</button></div>{lookup?.status && <p className="mt-1 text-slate-400">Status: {lookup.status}</p>}</div>}
                                   <div className="flex items-center justify-between gap-3"><div>{url && <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-400 hover:underline">Track on {submittedTracking.carrier} →</a>}</div><button type="button" onClick={() => { setResetTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); setConfirmedTrackingIds(prev => prev.filter(id => id !== item.id)); setTrackingInputs(prev => [...prev.filter(t => t.listingId !== item.id), { listingId: item.id, carrier: submittedTracking.carrier, trackingNumber: submittedTracking.trackingNumber }]); }} className="rounded-lg border border-amber-400/50 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20">Reset</button></div>
                                 </div>;
                               }
                               if (isConfirmed) {
+                                const lookup = trackingLookupByListingId[item.id];
+                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(inp.carrier).toUpperCase());
                                 return <div key={item.id} className="rounded-xl border border-blue-400/40 bg-blue-900/10 p-5">
                                   <div className="mb-2 flex items-center gap-3"><span className="rounded bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-blue-200">Ready</span><span className="min-w-0 flex-1 text-base font-semibold text-white">{item.title}</span></div>
                                   <p className="font-mono text-sm text-blue-100">{inp.carrier} · {inp.trackingNumber}</p>
+                                  {canLookup && <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex flex-wrap items-center justify-between gap-2"><span>Expected delivery: <strong className="text-white">{lookup ? formatTrackingDate(lookup.expectedDeliveryDate) : 'Not checked'}</strong></span><button type="button" onClick={() => lookupCarrierTracking(item.id, inp.carrier, inp.trackingNumber)} disabled={trackingLookupLoadingId === item.id} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingLookupLoadingId === item.id ? 'Checking…' : 'Check tracking'}</button></div>{lookup?.status && <p className="mt-1 text-slate-400">Status: {lookup.status}</p>}</div>}
                                   <button type="button" onClick={() => { setConfirmedTrackingIds(prev => prev.filter(id => id !== item.id)); setResetTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); }} className="mt-3 rounded-lg border border-amber-400/50 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20">Reset</button>
                                 </div>;
                               }
@@ -1206,6 +1233,9 @@ export default function WarRoom() {
                             <div className="space-y-2">
                               {theirTracking.map((t: any, i: number) => {
                                 const url = getTrackingUrl(t.carrier, t.trackingNumber);
+                                const lookupId = Number(t.listingId ?? t.itemId ?? t.id ?? i);
+                                const lookup = trackingLookupByListingId[lookupId];
+                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(t.carrier).toUpperCase());
                                 return (
                                   <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-3">
                                     <div className="flex items-center gap-2 mb-1">
@@ -1213,6 +1243,7 @@ export default function WarRoom() {
                                       <span className="text-gray-200 text-sm font-semibold truncate">{getTrackingItemTitle(t)}</span>
                                     </div>
                                     <p className="text-white text-base font-mono font-semibold mb-2 break-all">{t.trackingNumber}</p>
+                                    {canLookup && <div className="mb-2 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex flex-wrap items-center justify-between gap-2"><span>Expected delivery: <strong className="text-white">{lookup ? formatTrackingDate(lookup.expectedDeliveryDate) : 'Not checked'}</strong></span><button type="button" onClick={() => lookupCarrierTracking(lookupId, t.carrier, t.trackingNumber)} disabled={trackingLookupLoadingId === lookupId} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingLookupLoadingId === lookupId ? 'Checking…' : 'Check tracking'}</button></div>{lookup?.status && <p className="mt-1 text-slate-400">Status: {lookup.status}</p>}</div>}
                                     {url && (
                                       <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-400 text-xs hover:underline">
                                         Track on {t.carrier} →
