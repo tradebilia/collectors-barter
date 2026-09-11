@@ -1850,3 +1850,4 @@
 - [x] Make the supplied phrase-section logo slightly larger and center the complete image as one unit without changing internal spacing or geometry.
 - [x] Center the visible supplied logo artwork so equal left/right space is measured around the artwork rather than the SVG canvas margins, without altering internal logo spacing.
 - [x] Shift the complete phrase-section logo lockup slightly left so its visible artwork aligns with the centered social-media section, then double-check desktop and mobile alignment.
+- [x] Correct the visible phrase-section logo so its outermost artwork has equal left and right spacing, then double-check desktop and mobile alignment.
