@@ -87,11 +87,14 @@ function extractIssueFromTitle(title: string): string | null {
 }
 
 // Filter listings to match the expected issue number (comics) or card number (sports cards)
-function filterListingsByNumber(summaries: any[], targetNumber: string | null): any[] {
+export function filterListingsByNumber(summaries: any[], targetNumber: string | null, options?: { allowMissingNumber?: boolean }): any[] {
   if (!targetNumber) return summaries;
   return summaries.filter((item: any) => {
     const itemNumber = extractIssueFromTitle(item.title);
-    if (!itemNumber) return false;
+    // Sports-card listings often omit the card number even when the title,
+    // player, certification, and grade identify the correct card. Do not
+    // discard those listings; only reject an explicit conflicting number.
+    if (!itemNumber) return options?.allowMissingNumber === true;
     return itemNumber === targetNumber;
   });
 }
@@ -405,7 +408,9 @@ export const testAIRouter = router({
         // For sports cards: also filter by card number
         const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
         const targetNumber = issueNumber || cardNumber;
-        const byNumber = filterListingsByNumber(byYear, targetNumber);
+        const byNumber = filterListingsByNumber(byYear, targetNumber, {
+          allowMissingNumber: input.category === 'sports_cards',
+        });
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
         // For sports cards: also filter by player name to exclude wrong players
         const playerName = input.category === 'sports_cards' ? (details.player || null) : null;

@@ -1859,3 +1859,4 @@
 - [x] Add a read-only UPS/FedEx/DHL tracking lookup and expected-delivery display to the Trade Room Shipping Stage without changing shipment submission or confirmation behavior.
 - [x] Fix Test AI eBay matching for the LEGO Spider-Man 2 Street Chase AFA 8 example so valid eBay API listings are not incorrectly excluded, with regression coverage.
 - [x] Fix Test AI eBay matching for the Ken Griffey Jr. 1989 Upper Deck Rookie PSA 10 example so valid listings are not missed or incorrectly filtered, with regression coverage.
+- [x] Reproduce the persistent Ken Griffey Test AI eBay zero-result response, trace the exact live API/mapping/filter failure, and fix it with regression coverage.
