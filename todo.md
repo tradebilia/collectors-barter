@@ -1839,3 +1839,4 @@
 - [x] Center the bottom homepage Tradebilia logo-and-copyright group with equal side spacing while preserving the compact footer layout.
 - [x] Revert the unintended gray copyright-footer styling changes and correct only the homepage phrase section sizing/alignment.
 - [x] Resize and reposition the complete Tradebilia logo lockup in the phrase section as one contained unit so the wheel, divider, and wordmark do not overlap.
+- [x] Restore the larger phrase-section Tradebilia logo scale and correct its complete lockup spacing without wheel, divider, or wordmark overlap.
