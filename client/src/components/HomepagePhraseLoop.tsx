@@ -116,11 +116,11 @@ export default function HomepagePhraseLoop() {
           aria-atomic="true"
         >
           {phase === "logo" ? (
-            <div className="h-24 w-full max-w-[700px]" aria-label="Tradebilia">
+            <div className="h-24 w-full max-w-[820px]" aria-label="Tradebilia">
               <AnimatedLogoSmall70
-                fontSize={112}
-                wheelScale={1.3}
-                dividerScale={1.15}
+                fontSize={138}
+                wheelScale={1.45}
+                dividerScale={1.25}
                 dividerOffsetY={0}
                 wheelOffsetX={0}
                 wheelOffsetY={0}
@@ -128,8 +128,8 @@ export default function HomepagePhraseLoop() {
                 dividerStrokeWidth={2.8}
                 centerLockup
                 fixedCategoryMetrics
-                contentOffsetX={56}
-                lockupScale={1}
+                contentOffsetX={68}
+                lockupScale={1.08}
               />
             </div>
           ) : (

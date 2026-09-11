@@ -50,11 +50,11 @@ describe("homepage phrase loop", () => {
     expect(componentSource).toContain("type AnimationPhase = \"reveal\" | \"hold\" | \"logo\";");
     expect(componentSource).toContain("h-[136px] w-full overflow-hidden");
     expect(componentSource).toContain("max-w-none whitespace-nowrap px-0");
-    expect(componentSource).toContain("fontSize={112}");
-    expect(componentSource).toContain("wheelScale={1.3}");
+    expect(componentSource).toContain("fontSize={138}");
+    expect(componentSource).toContain("wheelScale={1.45}");
     expect(componentSource).toContain("wheelOffsetX={0}");
-    expect(componentSource).toContain("contentOffsetX={56}");
-    expect(componentSource).toContain("lockupScale={1}");
+    expect(componentSource).toContain("contentOffsetX={68}");
+    expect(componentSource).toContain("lockupScale={1.08}");
     expect(componentSource).toContain("prefers-reduced-motion: reduce");
     expect(componentSource).toContain("<AnimatedLogoSmall70");
   });
