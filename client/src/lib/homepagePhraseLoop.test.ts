@@ -51,7 +51,7 @@ describe("homepage phrase loop", () => {
     expect(componentSource).toContain("h-[136px] w-full overflow-hidden");
     expect(componentSource).toContain("max-w-none whitespace-nowrap px-0");
     expect(componentSource).toContain("/manus-storage/tradebilia_final_transparent-Notagline_3c818caa.svg");
-    expect(componentSource).toContain("className=\"h-full max-h-28 w-full object-contain scale-[2.2] -translate-x-1.5\"");
+    expect(componentSource).toContain("className=\"h-full max-h-28 w-full object-contain scale-[2.2] -translate-x-3\"");
     expect(componentSource).toContain("mx-auto flex h-24 w-full max-w-[560px]");
     expect(componentSource).toContain("mx-auto flex h-24 w-full max-w-[560px]");
     expect(componentSource).not.toContain("<AnimatedLogoSmall70");
