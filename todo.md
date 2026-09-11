@@ -1860,3 +1860,4 @@
 - [x] Fix Test AI eBay matching for the LEGO Spider-Man 2 Street Chase AFA 8 example so valid eBay API listings are not incorrectly excluded, with regression coverage.
 - [x] Fix Test AI eBay matching for the Ken Griffey Jr. 1989 Upper Deck Rookie PSA 10 example so valid listings are not missed or incorrectly filtered, with regression coverage.
 - [x] Reproduce the persistent Ken Griffey Test AI eBay zero-result response, trace the exact live API/mapping/filter failure, and fix it with regression coverage.
+- [x] Trace and fix the confirmed API-level Ken Griffey Test AI eBay zero-result response by auditing the outbound Browse API request, marketplace configuration, and raw response before post-filters.

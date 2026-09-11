@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { buildSportsCardTestAiQueries } from "../shared/testAiCriteria";
-import { filterListingsByNumber } from "./testAIRouter";
+import { buildEbayBrowseQuery, filterListingsByNumber } from "./testAIRouter";
 
 describe("Test AI sports-card eBay query candidates", () => {
+  it("preserves the target certification grade in precise sports-card Browse searches", () => {
+    const query = "1989 Upper Deck Ken Griffey Jr 1 PSA 10";
+
+    expect(buildEbayBrowseQuery(query, { preserveGrade: true })).toBe(query);
+    expect(buildEbayBrowseQuery(query)).toBe("1989 Upper Deck Ken Griffey Jr 1 PSA");
+  });
+
   it("keeps sports-card titles that omit the explicit card number", () => {
     const listings = [
       { title: "1989 Upper Deck Ken Griffey Jr Rookie PSA 10" },

@@ -63,6 +63,14 @@ export function extractGradeFromTitle(title: string): number | null {
   return match ? parseFloat(match[2]) : null;
 }
 
+export function buildEbayBrowseQuery(query: string, options?: { preserveGrade?: boolean }): string {
+  if (options?.preserveGrade) return query.trim();
+  return query.replace(
+    new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"),
+    "$1",
+  ).trim();
+}
+
 // Filter listings to match the grade from the search query
 export function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
@@ -383,14 +391,16 @@ export const testAIRouter = router({
         // Build a broader query for eBay fetch (without grade) to get more results,
         // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
+        const broadQuery = buildEbayBrowseQuery(query);
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '')
           : [fetchQuery];
         const fetchedByQuery = new Map<string, any>();
         for (const candidate of searchQueries) {
-          const candidateQuery = candidate.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
+          const candidateQuery = buildEbayBrowseQuery(candidate, {
+            preserveGrade: input.category === 'sports_cards',
+          });
           const candidateResults = await fetchEbayListings(candidateQuery || candidate, token, 100);
           candidateResults.forEach((item: any) => {
             const key = String(item.itemId ?? item.itemWebUrl ?? item.title ?? fetchedByQuery.size);
