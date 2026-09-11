@@ -1848,3 +1848,4 @@
 - [x] Scale the supplied phrase-section Tradebilia logo up as one complete image without changing its internal spacing or geometry.
 - [x] Increase the supplied phrase-section logo image further so its overall height approaches the phrase typography without changing its internal spacing or geometry.
 - [x] Make the supplied phrase-section logo slightly larger and center the complete image as one unit without changing internal spacing or geometry.
+- [x] Center the visible supplied logo artwork so equal left/right space is measured around the artwork rather than the SVG canvas margins, without altering internal logo spacing.
