@@ -122,7 +122,7 @@ export default function HomepagePhraseLoop() {
                 wheelScale={1.45}
                 dividerScale={1.25}
                 dividerOffsetY={0}
-                wheelOffsetX={0}
+                wheelOffsetX={18}
                 wheelOffsetY={0}
                 wheelStrokeWidth={0}
                 dividerStrokeWidth={2.8}

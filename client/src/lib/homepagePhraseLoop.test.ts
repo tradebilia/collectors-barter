@@ -52,7 +52,7 @@ describe("homepage phrase loop", () => {
     expect(componentSource).toContain("max-w-none whitespace-nowrap px-0");
     expect(componentSource).toContain("fontSize={138}");
     expect(componentSource).toContain("wheelScale={1.45}");
-    expect(componentSource).toContain("wheelOffsetX={0}");
+    expect(componentSource).toContain("wheelOffsetX={18}");
     expect(componentSource).toContain("contentOffsetX={68}");
     expect(componentSource).toContain("lockupScale={1.08}");
     expect(componentSource).toContain("prefers-reduced-motion: reduce");
