@@ -38,6 +38,16 @@ export function normalizeFedexTrackingNumber(value: string): string {
   return normalized;
 }
 
+export function normalizeFedexExpectedDeliveryDate(value: string | null | undefined): string | null {
+  if (!value?.trim()) return null;
+  const normalized = value.trim();
+  const isoDate = normalized.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (isoDate) return `${isoDate[1]}-${isoDate[2]}-${isoDate[3]}`;
+  const monthFirstDate = normalized.match(/(\d{2})[\/-](\d{2})[\/-](\d{4})/);
+  if (monthFirstDate) return `${monthFirstDate[3]}-${monthFirstDate[1]}-${monthFirstDate[2]}`;
+  return normalized;
+}
+
 export function formatFedexTrackingResult(response: FedexTrackingResponse, requestedTrackingNumber: string) {
   const trackedPackage = response.output?.completeTrackResults?.[0]?.trackResults?.[0];
   if (!trackedPackage) throw new Error("FedEx did not return tracking details for that number.");
@@ -52,7 +62,7 @@ export function formatFedexTrackingResult(response: FedexTrackingResponse, reque
     statusCategory: trackedPackage.latestStatusDetail?.code ?? null,
     statusSummary: trackedPackage.latestStatusDetail?.description ?? null,
     service: trackedPackage.serviceDetail?.description ?? trackedPackage.serviceDetail?.type ?? null,
-    expectedDeliveryDate: estimatedDelivery,
+    expectedDeliveryDate: normalizeFedexExpectedDeliveryDate(estimatedDelivery),
     events: (trackedPackage.scanEvents ?? []).slice(0, 10).map((event) => ({
       type: event.eventDescription ?? event.eventType ?? "FedEx update",
       timestamp: event.date ?? null,

@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { formatFedexTrackingResult, normalizeFedexTrackingNumber } from "./fedexTracking";
+import { formatFedexTrackingResult, normalizeFedexExpectedDeliveryDate, normalizeFedexTrackingNumber } from "./fedexTracking";
+
+describe("FedEx expected-delivery normalization", () => {
+  it("reduces ISO timestamps to a stable date-only value", () => {
+    expect(normalizeFedexExpectedDeliveryDate("2026-09-11T18:00:00-07:00")).toBe("2026-09-11");
+  });
+
+  it("normalizes month-first carrier dates", () => {
+    expect(normalizeFedexExpectedDeliveryDate("09/11/2026")).toBe("2026-09-11");
+  });
+
+  it("returns null for missing delivery dates", () => {
+    expect(normalizeFedexExpectedDeliveryDate(null)).toBeNull();
+  });
+});
 
 describe("FedEx tracking", () => {
   it("normalizes tracking numbers without exposing input formatting", () => {
@@ -21,7 +35,7 @@ describe("FedEx tracking", () => {
       },
     }, "123456789012");
 
-    expect(result).toMatchObject({ status: "In transit", service: "FedEx Ground", expectedDeliveryDate: "2026-08-16T12:00:00Z" });
+    expect(result).toMatchObject({ status: "In transit", service: "FedEx Ground", expectedDeliveryDate: "2026-08-16" });
     expect(JSON.stringify(result)).not.toContain("recipient");
     expect(JSON.stringify(result)).not.toContain("addressLine");
   });
