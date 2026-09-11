@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getSoldCompsApiKey } from './testAIRouter';
+import { buildEbayBrowseQuery, getSoldCompsApiKey } from './testAIRouter';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -12,5 +12,11 @@ describe('Sold-Comps API key validation', () => {
 
   it('reports no credential only when neither supported variable is configured', () => {
     expect(getSoldCompsApiKey({})).toBeNull();
+  });
+
+  it('retains the precise sports-card grade for completed-sale retrieval', () => {
+    const query = '1989 Upper Deck Ken Griffey Jr 1 PSA 10';
+
+    expect(buildEbayBrowseQuery(query, { preserveGrade: true })).toBe(query);
   });
 });

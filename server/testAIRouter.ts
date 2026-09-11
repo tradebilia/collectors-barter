@@ -588,7 +588,12 @@ export const testAIRouter = router({
       try {
         // Use broad query (strip grade number) to get more results, then filter
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
+        const broadQuery = buildEbayBrowseQuery(query, {
+          // Sold-Comps supports precise completed-sale queries. Keeping the
+          // sports-card grade prevents the provider's newest 100 broad results
+          // from excluding the target PSA 10 population before validation.
+          preserveGrade: input.category === 'sports_cards',
+        });
         const fetchQuery = broadQuery !== query ? broadQuery : query;
 
         const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
