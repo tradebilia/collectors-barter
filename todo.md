@@ -1836,3 +1836,4 @@
 - [x] Rename the Video Games/Console visible field label from “Controllers Included” to “Number of Controllers Included” without changing its stored key or behavior.
 - [x] Add O-Pee-Chee to the Manufacturer dropdown for every Sports category item type and verify all mappings.
 - [x] Reduce the main homepage bottom gray footer height and change footer text to white while preserving links and responsive layout.
+- [x] Center the bottom homepage Tradebilia logo-and-copyright group with equal side spacing while preserving the compact footer layout.

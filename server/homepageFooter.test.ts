@@ -5,6 +5,8 @@ describe("homepage footer presentation", () => {
   it("uses compact spacing and white footer text without removing footer links", () => {
     const source = readFileSync(new URL("../client/src/pages/Home.tsx", import.meta.url), "utf8");
     expect(source).toContain('bg-black/50 px-4 py-4 sm:py-5');
+    expect(source).toContain('flex flex-col items-center justify-center gap-3 text-center');
+    expect(source).toContain('flex items-center justify-center gap-2');
     expect(source).toContain('text-sm font-medium text-white');
     expect(source).toContain('text-sm text-white hover:text-white/80 transition-colors');
     expect(source).toContain('How Tradebilia Works');

@@ -968,8 +968,8 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-white/10 bg-black/50 px-4 py-4 sm:py-5">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col items-center justify-between gap-3 md:flex-row">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center justify-center gap-3 text-center">
+            <div className="flex items-center justify-center gap-2">
               <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-7 w-auto opacity-70" />
               <span className="text-sm font-medium text-white">© 2026 Tradebilia. All rights reserved.</span>
             </div>
