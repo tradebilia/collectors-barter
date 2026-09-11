@@ -18,6 +18,38 @@ export function buildSportsCardTestAiCriteria(itemDetails: unknown): string {
     .join(' ');
 }
 
+/**
+ * Build a small, ordered set of eBay queries for sports cards. The detailed
+ * query is preferred, but eBay can be overly strict when a card number or
+ * year is represented differently in a listing title. The user-facing title
+ * and a broader identity query provide safe read-only fallbacks.
+ */
+export function buildSportsCardTestAiQueries(
+  itemDetails: unknown,
+  fallbackTitle: string,
+  certificationCompany = '',
+  grade = '',
+): string[] {
+  if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) {
+    return [fallbackTitle].filter(Boolean);
+  }
+  const details = itemDetails as Record<string, unknown>;
+  const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
+  const year = value('year');
+  const manufacturer = resolveTestAiManufacturer(details);
+  const player = value('player');
+  const cardNumber = value('cardNumber');
+  const normalizedCert = certificationCompany.trim();
+  const normalizedGrade = grade.trim();
+  const candidates = [
+    [year, manufacturer, player, cardNumber, normalizedCert, normalizedGrade],
+    [year, manufacturer, player, normalizedCert, normalizedGrade],
+    [manufacturer, player, normalizedCert, normalizedGrade],
+    [fallbackTitle],
+  ].map((parts) => parts.filter(Boolean).join(' ').trim());
+  return [...new Set(candidates)].filter(Boolean);
+}
+
 export function resolveTestAiYear(itemDetails: unknown): string {
   if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) return '';
   const details = itemDetails as Record<string, unknown>;

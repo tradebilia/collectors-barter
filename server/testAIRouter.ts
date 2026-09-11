@@ -17,7 +17,7 @@ import { lookupTcgDexCatalog } from './tcgdexMetadata';
 import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
@@ -382,8 +382,21 @@ export const testAIRouter = router({
         const targetGrade = extractGradeFromQuery(query);
         const broadQuery = query.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
-        const summaries = await fetchEbayListings(fetchQuery, token, 100);
-        console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
+        const searchQueries = input.category === 'sports_cards'
+          ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '')
+          : [fetchQuery];
+        const fetchedByQuery = new Map<string, any>();
+        for (const candidate of searchQueries) {
+          const candidateQuery = candidate.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
+          const candidateResults = await fetchEbayListings(candidateQuery || candidate, token, 100);
+          candidateResults.forEach((item: any) => {
+            const key = String(item.itemId ?? item.itemWebUrl ?? item.title ?? fetchedByQuery.size);
+            fetchedByQuery.set(key, item);
+          });
+          if (candidateResults.length > 0 && input.category === 'sports_cards') break;
+        }
+        const summaries = [...fetchedByQuery.values()];
+        console.log(`[eBay Search] Fetch Query: "${searchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
         const byYear = filterTestAiListingsByYear(summaries, targetYear);
         console.log(`[eBay Search] After year filter: ${byYear.length} results (target year: ${targetYear || 'none'})`);
