@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { trpc } from '@/lib/trpc';
+import { trpc } from "@/lib/trpc";
+import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
@@ -1486,7 +1487,7 @@ function CarrierTrackingSection() {
             <div className="grid grid-cols-2 gap-2 text-xs sm:min-w-56">
               <div className="rounded bg-gray-900/80 p-2">
                 <p className="text-[9px] font-semibold uppercase text-gray-500">Expected delivery</p>
-                <p className="mt-1 text-gray-200">{result.expectedDeliveryDate ? new Date(`${result.expectedDeliveryDate}T12:00:00`).toLocaleDateString() : 'Not provided'}</p>
+                <p className="mt-1 text-gray-200">{formatTrackingDate(result.expectedDeliveryDate)}</p>
               </div>
               <div className="rounded bg-gray-900/80 p-2">
                 <p className="text-[9px] font-semibold uppercase text-gray-500">Service</p>
