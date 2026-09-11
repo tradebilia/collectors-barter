@@ -1843,3 +1843,5 @@
 - [x] Enlarge the complete phrase-section Tradebilia logo lockup to use more available horizontal space while preserving the fixed height and non-overlapping geometry.
 - [x] Correct the phrase-section Tradebilia wheel placement relative to the divider and wordmark while preserving the larger logo scale and fixed section height.
 - [x] Restore the original Tradebilia logo version in the phrase section and make the bottom gray copyright section smaller with white text.
+- [x] Review the current homepage phrase-section logo and compact white-text footer at desktop/mobile widths, correcting any remaining visual inconsistencies found.
+- [x] Replace the phrase-section animated logo interlude with the supplied transparent Tradebilia logo without tagline, preserving centered proportions and fixed-section containment.
