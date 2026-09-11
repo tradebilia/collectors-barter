@@ -1857,3 +1857,4 @@
 - [x] Fix UPS expected-delivery extraction so usable carrier estimates display in Test AI, with regression coverage for alternate UPS date fields and omitted estimates.
 - [x] Apply the UPS compact-date normalization used by Test AI to the Trade Room shipping stage and verify valid UPS estimates display there.
 - [x] Add a read-only UPS/FedEx/DHL tracking lookup and expected-delivery display to the Trade Room Shipping Stage without changing shipment submission or confirmation behavior.
+- [x] Fix Test AI eBay matching for the LEGO Spider-Man 2 Street Chase AFA 8 example so valid eBay API listings are not incorrectly excluded, with regression coverage.

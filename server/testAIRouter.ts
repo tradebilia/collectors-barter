@@ -49,22 +49,22 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // NOTE: eBay sold/completed history requires the eBay Finding API (separate from Browse API).
 // This will be implemented in a future phase when the Finding API is set up.
 
-// Extract grade from query string (e.g., "CGC 9.8" -> 9.8)
-// Extract grade from query string — looks for grade AFTER a grading company name
-// e.g., "DareDevil #168 CGC 9.8" -> 9.8 (not 168)
-function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?(\d+\.?\d*)/i);
+// Extract grade from query/title after a grading company name. eBay titles commonly
+// insert an optional "Grade" or "Graded" word, e.g. "AFA Graded 8.0".
+const gradeProviderPattern = "CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind";
+
+export function extractGradeFromQuery(query: string): number | null {
+  const match = query.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?(\\d+\\.?\\d*)`, "i"));
   return match ? parseFloat(match[2]) : null;
 }
 
-// Extract grade from listing title (e.g., "Daredevil #168 CGC 9.8" -> 9.8)
-function extractGradeFromTitle(title: string): number | null {
-  const match = title.match(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?(\d+\.?\d*)[\+]?/i);
+export function extractGradeFromTitle(title: string): number | null {
+  const match = title.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?(\\d+\\.?\\d*)[\\+]?`, "i"));
   return match ? parseFloat(match[2]) : null;
 }
 
 // Filter listings to match the grade from the search query
-function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
+export function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
 
   return summaries.filter((item: any) => {
@@ -380,7 +380,7 @@ export const testAIRouter = router({
         // Build a broader query for eBay fetch (without grade) to get more results,
         // then filter by grade internally for accuracy
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
+        const broadQuery = query.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const summaries = await fetchEbayListings(fetchQuery, token, 100);
         console.log(`[eBay Search] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
@@ -560,7 +560,7 @@ export const testAIRouter = router({
       try {
         // Use broad query (strip grade number) to get more results, then filter
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = query.replace(/(CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind)\s+[QC]?\d+\.?\d*\+?/gi, '$1').trim();
+        const broadQuery = query.replace(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"), '$1').trim();
         const fetchQuery = broadQuery !== query ? broadQuery : query;
 
         const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
