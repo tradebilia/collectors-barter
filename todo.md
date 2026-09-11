@@ -1842,3 +1842,4 @@
 - [x] Restore the larger phrase-section Tradebilia logo scale and correct its complete lockup spacing without wheel, divider, or wordmark overlap.
 - [x] Enlarge the complete phrase-section Tradebilia logo lockup to use more available horizontal space while preserving the fixed height and non-overlapping geometry.
 - [x] Correct the phrase-section Tradebilia wheel placement relative to the divider and wordmark while preserving the larger logo scale and fixed section height.
+- [x] Restore the original Tradebilia logo version in the phrase section and make the bottom gray copyright section smaller with white text.
