@@ -302,13 +302,16 @@ export const tradeFlowRouter = router({
         sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${proposalId}, ${userId}, ${initiatorName}, 'trade_created', ${`Trade proposal initiated for item: ${listing.title}`}, ${now})`
       );
 
-      // Email notification to listing owner (tradeInitiated preference)
+      // Email notification to listing owner (tradeInitiated preference). Use the
+      // database initiator record rather than the session display name, which can
+      // belong to a stale or different account in legacy sessions.
       const recipientEmailData = await getEmailIfPrefEnabled(db, listing.ownerId, 'tradeInitiated');
       if (recipientEmailData) {
+        const initiatorDisplayName = (initiator as any)?.displayName || (initiator as any)?.name || (initiator as any)?.username || 'A Tradebilia member';
         sendTradeInitiatedEmail({
           recipientEmail: recipientEmailData.email,
           recipientName: recipientEmailData.name,
-          senderName: ctx.user.name ?? 'A Tradebilia member',
+          senderName: initiatorDisplayName,
           itemTitle: listing.title,
           tradeRef,
         }).catch(err => console.warn('[Email] Trade initiated email failed:', err));

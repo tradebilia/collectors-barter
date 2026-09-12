@@ -1920,3 +1920,5 @@
 - [x] Match the Trade Room single-item card to the user’s 100% screenshot by separating its header, image, title, and value regions so the image cannot cover the header/background text.
 
 - [x] Change the initial Trade Room timeline event to “Trade proposal initiated for item: [item name]”.
+
+- [x] Fix trade-initiation email sender identity so the initiating account name is shown instead of the recipient-side username.
