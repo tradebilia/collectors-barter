@@ -763,9 +763,6 @@ export default function Home() {
                         <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Most Viewed</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Items getting the most attention</p>
                       </div>
-                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
-                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
-                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 px-2 pb-2">
@@ -794,9 +791,6 @@ export default function Home() {
                         <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Most Favorited</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Items collectors love most</p>
                       </div>
-                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
-                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
-                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 px-2 pb-2">
@@ -824,9 +818,6 @@ export default function Home() {
                       <div className="flex-1">
                         <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Rated Traders</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Highest rated by the community</p>
-                      </div>
-                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
-                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
                       </div>
                     </div>
                   </CardHeader>
@@ -879,9 +870,6 @@ export default function Home() {
                       <div className="flex-1">
                         <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Highest Values</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Highest value items traded</p>
-                      </div>
-                      <div className="absolute top-7 right-6 text-white/20 hover:text-white/40 transition-colors cursor-help">
-                        <div className="w-4 h-4 rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>
                       </div>
                     </div>
                   </CardHeader>

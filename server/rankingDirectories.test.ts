@@ -14,6 +14,8 @@ describe("full ranking directories", () => {
     expect(homeSource).toContain('href="/rankings/most-favorited"');
     expect(homeSource).toContain('href="/rankings/top-rated-traders"');
     expect(homeSource).toContain('href="/rankings/top-trade-values"');
+    expect(homeSource).not.toContain('cursor-help');
+    expect(homeSource).not.toContain('rounded-full border border-current flex items-center justify-center text-[10px] font-bold">i</div>');
   });
 
   it("exposes public, counted, paginated directory procedures without changing the preview helpers", () => {
