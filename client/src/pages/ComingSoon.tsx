@@ -1,7 +1,7 @@
 import { FormEvent, useId, useState } from "react";
 import { trpc } from "@/lib/trpc";
 
-const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_9f7d3fd1.html";
+const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_ba8c631b.html";
 
 export default function ComingSoon() {
   const emailId = useId();
@@ -28,7 +28,7 @@ export default function ComingSoon() {
 
   return (
     <main className="min-h-[100svh] overflow-hidden bg-[#0b0705]" aria-label="Tradebilia Coming Soon">
-      <div className="relative mx-auto aspect-[1815/867] w-full max-w-[1815px]">
+      <div className="relative mx-auto aspect-[1815/867] w-full">
         <iframe
           src={SUPPLIED_COMING_SOON_HTML_URL}
           title="Tradebilia Coming Soon"

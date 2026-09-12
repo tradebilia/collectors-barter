@@ -1902,3 +1902,5 @@
 - [x] Restore the supplied Coming Soon HTML composition on /coming-soon, including the animated SVG logo and original lower tidbits, then add only the requested email form.
 
 - [x] Use the exact supplied Coming Soon HTML composition as the active page source, retaining its vinyl record, bottom category icons, and original logo centering while wiring the displayed email signup to the launch-update service.
+
+- [x] Remove the supplied Coming Soon HTML’s fixed desktop-width cap so the exact composition naturally fills the user’s viewport like the 110% reference, without cropping or reconstructing it.
