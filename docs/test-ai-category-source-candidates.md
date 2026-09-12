@@ -48,6 +48,57 @@ hobbyDB’s official API page says its REST API provides database items, estimat
 
 The project contains a GoCollect credential but no active GoCollect Test AI connector. GoCollect’s public Data Sharing page documents CSV upload and API integration for contributing a user’s sales data after account registration; it does not, on that page, grant a general right to retrieve and redistribute GoCollect pricing data. The existing credential must therefore be treated as **scope unknown**, not as permission to add an outbound market-price lookup. Before using it, confirm the account plan, endpoint scope, member-facing display rights, retention limits, category coverage, and whether it supports retrieval rather than only data contribution. Source: https://gocollect.com/data-sharing.
 
+## No-subscription API eligibility
+
+The following table addresses the narrower question of whether the candidate source requires a paid subscription. **“No subscription” does not mean “no conditions.”** An account, token, provider review, attribution, rate limit, and data-rights restrictions may still apply.
+
+| Source | Paid subscription needed to call API? | Suitable Test AI role | Commercial status / condition | Practical result |
+|---|---|---|---|---|
+| **Discogs** | No | Music release and pressing identity | Commercial API use is generally permitted for catalog metadata, but marketplace data, user data, and many images are restricted; data must not be displayed more than six hours old. | **Use now for catalog metadata only**; already integrated. |
+| **eBay Developers** | No | Active-listing context and permitted marketplace evidence | Free developer account and app keys; restricted production APIs such as Marketplace Insights require eBay’s Application Growth Check. | **Use now for approved endpoints**; seek approval for restricted/sold-data endpoints. |
+| **PSA Public API** | No | Single-certificate verification | Free account and OAuth access token; API is limited to single-item certificate searches. Member-facing commercial presentation should be confirmed with PSA/Collectors. | **Useful after written production-use confirmation**. |
+| **PCGS Public API** | No | Coin certificate, CoinFacts, and Auction Prices Realized lookup | Free account and OAuth access token; 100 calls/day documented; request approval for higher-volume or commercial production use. | **Useful for targeted coin lookups**, not a high-volume bulk feed. |
+| **IGDB** | No | Video-game title, platform, release, franchise, and catalog identity | Free commercial partnership program; contact IGDB and provide visible attribution. | **Strong no-fee video-game identity candidate** after partnership confirmation. |
+| **RAWG** | No for qualifying small commercial projects | Video-game metadata and title/platform identity | RAWG’s public terms describe free commercial use below 100,000 MAU or 500,000 page views/month with backlink attribution, while its pricing page advertises paid business plans. | **Confirm the applicable free commercial tier in writing** before relying on it. Not price evidence. |
+| **Smithsonian Open Access** | No | Reference metadata and CC0 imagery for items in Smithsonian collections | Free API key through api.data.gov; only assets explicitly marked CC0 are commercially reusable. | **Free reference source**, but it will rarely provide collectible-market comparisons. |
+| **Wikidata** | No | General item/creator/brand identity cross-check | CC0 data; no key, but use a descriptive User-Agent, narrow queries, and respect rate limits. | **Free supplementary metadata only**, not a value source. |
+| **Numista Free Plan** | No credit card for the free plan | Coin type/catalog identity | The free plan is described for development, testing, and small applications; the paid plan is described for production/higher use. Attribution and cache rules apply. | **Use for evaluation only**; plan on paid authorization for production. |
+| **MusicBrainz** | No for non-commercial use | Music catalog identity | Its official API documentation says non-commercial web-service use is free and directs commercial users to commercial plans. | **Not free for Tradebilia production**. |
+
+### Sources that are not presently free/no-subscription Test AI candidates
+
+| Source | Why excluded from the free list |
+|---|---|
+| **PriceCharting** | Official API requires a paid subscription. It returns current values rather than historical sales. |
+| **Card Ladder** | A direct commercial data-feed/license agreement is required; no public free production API was identified. |
+| **TCGplayer** | Official documentation says new API access is not currently being granted; access is discretionary and commercial redistribution requires approval. |
+| **hobbyDB** | Official API page says a setup fee of at least $1,200 plus monthly charges normally applies. |
+| **MobyGames** | API key requires a subscription; commercial use begins at a paid tier. |
+| **GoCollect** | The existing key’s retrieval/display permissions are not established; public material reviewed documents data contribution rather than a free outbound market-data feed. |
+| **COMC / Heritage / authentication providers** | No no-subscription, member-facing market-data API suitable for Tradebilia was verified. |
+
+### Official references
+
+[1] https://support.discogs.com/hc/en-us/articles/360009334593-API-Terms-of-Use
+
+[2] https://developer.ebay.com/api-docs/static/gs_use-the-application-growth.html
+
+[3] https://www.psacard.com/publicapi/documentation
+
+[4] https://www.pcgs.com/publicapi/documentation
+
+[5] https://www.igdb.com/api
+
+[6] https://rawg.io/apidocs
+
+[7] https://www.si.edu/openaccess/faq
+
+[8] https://www.wikidata.org/wiki/Wikidata:Data_access
+
+[9] https://en.numista.com/api/pricing.php
+
+[10] https://musicbrainz.org/doc/MusicBrainz_API
+
 ## Prioritized source acquisition plan
 
 The following is the recommended answer to “what external data should Test AI add next?” It is intentionally shorter than the universe of possible websites. A source is worth pursuing only when it improves **identity certainty**, **verified certification**, or **completed-sale coverage** for a category that eBay alone does not cover well.

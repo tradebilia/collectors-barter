@@ -1879,3 +1879,4 @@
 - [x] Assess Card Ladder and COMC for authorized, useful, and compliant Test AI data integration before any implementation.
 - [x] Produce and prioritize a compliant Test AI enhancement roadmap for stronger potential-trade analysis before implementing further data sources or AI features.
 - [x] Identify and prioritize additional authorized external data sources by Tradebilia category for stronger Test AI item comparisons.
+- [x] Verify and list Test AI data APIs available without a paid subscription, distinguishing commercial eligibility, approval requirements, and limitations.
