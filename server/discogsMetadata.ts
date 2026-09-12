@@ -92,20 +92,20 @@ function discogsUrl(record: DiscogsSearchRecord): string {
 
 export function buildDiscogsSearchQuery(title: string, itemDetails?: string): string {
   const details = parseMusicDetails(itemDetails);
-  const artist = clean(details.artist);
-  const releaseTitle = clean(details.releaseTitle);
-  const structured = [artist, releaseTitle].filter(Boolean).join(" ");
-  return (structured || clean(title)).replace(/\s+/g, " ").trim();
+  return (clean(details.releaseTitle) || clean(title)).replace(/\s+/g, " ").trim();
 }
-
 export function buildDiscogsSearchParams(title: string, itemDetails?: string): URLSearchParams {
   const details = parseMusicDetails(itemDetails);
+  const artist = clean(details.artist);
+  const releaseTitle = clean(details.releaseTitle);
   const params = new URLSearchParams({
     q: buildDiscogsSearchQuery(title, itemDetails),
     type: "release",
     per_page: "12",
     page: "1",
   });
+  if (releaseTitle) params.set("release_title", releaseTitle);
+  if (artist) params.set("artist", artist);
   const releaseYear = clean(details.releaseYear);
   const catalogNumber = clean(details.catalogNumber);
   const recordLabel = clean(details.recordLabel);

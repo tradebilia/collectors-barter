@@ -1865,3 +1865,4 @@
 - [x] Assess the RiseHaza and CarsonKope GitHub HBID auction-data projects for compliant, maintainable Test AI integration feasibility before any adoption.
 - [x] Add official Discogs API as a read-only Test AI music research source, including secure credential configuration, attribution, matching, and regression coverage.
 - [x] Verify Discogs API integration behavior in the Test AI UI and document any required user validation.
+- [x] Make Discogs use Album / Release Title as the primary Music search field, with Artist / Performer as supporting context instead of using the display title first.

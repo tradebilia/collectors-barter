@@ -13,9 +13,11 @@ describe("Discogs metadata adapter", () => {
       format: "Vinyl",
     });
 
-    expect(buildDiscogsSearchQuery("fallback title", details)).toBe("Miles Davis Kind of Blue");
-    const params = buildDiscogsSearchParams("fallback title", details);
-    expect(params.get("q")).toBe("Miles Davis Kind of Blue");
+    expect(buildDiscogsSearchQuery("Display Title — Signed Limited Edition", details)).toBe("Kind of Blue");
+    const params = buildDiscogsSearchParams("Display Title — Signed Limited Edition", details);
+    expect(params.get("q")).toBe("Kind of Blue");
+    expect(params.get("release_title")).toBe("Kind of Blue");
+    expect(params.get("artist")).toBe("Miles Davis");
     expect(params.get("type")).toBe("release");
     expect(params.get("year")).toBe("1959");
     expect(params.get("catno")).toBe("CL 1355");
@@ -43,7 +45,7 @@ describe("Discogs metadata adapter", () => {
       }],
     }), { status: 200, headers: { "Content-Type": "application/json" } }));
 
-    const result = await lookupDiscogsReleases("Kind of Blue", undefined, fetchMock);
+    const result = await lookupDiscogsReleases("Display Title — Signed Limited Edition", JSON.stringify({ artist: "Miles Davis", releaseTitle: "Kind of Blue" }), fetchMock);
 
     expect(result.status).toBe("success");
     expect(result.data?.results[0]).toMatchObject({
@@ -56,7 +58,7 @@ describe("Discogs metadata adapter", () => {
       sourceUrl: "https://www.discogs.com/release/123-Miles-Davis-Kind-Of-Blue",
     });
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining("/database/search?"),
+      expect.stringContaining("release_title=Kind+of+Blue"),
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: "Discogs token=test-token",
