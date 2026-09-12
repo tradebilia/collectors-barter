@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { buildUspsTrackingUrl } from '@shared/uspsTrackingLink';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 
@@ -249,12 +250,22 @@ function getItemManufacturer(item: SelectedItem): string {
 }
 
 // ─── Source Selector ─────────────────────────────────────────────────────────
-function SourceSelector({ enabled, onChange, side }: {
+function SourceSelector({ enabled, onChange, side, item }: {
   enabled: Set<SourceId>;
   onChange: (s: Set<SourceId>) => void;
   side: 'left' | 'right';
+  item: SelectedItem | null;
 }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const applicableSourceIds = new Set<TestAiSourceId>(
+    item
+      ? getEligibleTestAiSources({
+          category: item.category,
+          gradingCompany: item.certificationCompany ?? item.gradingCompany,
+          hasTitle: Boolean(item.title?.trim()),
+        }).map(source => source.sourceId)
+      : [],
+  );
   const toggle = (id: SourceId) => {
     const next = new Set(enabled);
     if (next.has(id)) next.delete(id);
@@ -274,18 +285,23 @@ function SourceSelector({ enabled, onChange, side }: {
               .map(source => {
                 const isEnabled = enabled.has(source.id as SourceId);
                 const isLive = source.status === 'live';
+                const isApplicable = applicableSourceIds.has(source.id as TestAiSourceId);
+                const sourceClassName = isApplicable
+                  ? isEnabled
+                    ? 'bg-green-900/40 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/30'
+                    : 'bg-yellow-900/20 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/20'
+                  : isEnabled
+                    ? isLive
+                      ? 'bg-green-900/40 border-green-600 text-green-300'
+                      : 'bg-indigo-900/40 border-indigo-600 text-indigo-300'
+                    : 'bg-gray-800/40 border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400';
                 return (
                   <button
                     key={source.id}
                     onClick={() => toggle(source.id as SourceId)}
-                    title={source.description}
-                    className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all ${
-                      isEnabled
-                        ? isLive
-                          ? 'bg-green-900/40 border-green-600 text-green-300'
-                          : 'bg-indigo-900/40 border-indigo-600 text-indigo-300'
-                        : 'bg-gray-800/40 border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-400'
-                    }`}
+                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}`}
+                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}`}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all ${sourceClassName}`}
                   >
                     <span>{source.icon}</span>
                     <span>{source.label}</span>
@@ -296,7 +312,7 @@ function SourceSelector({ enabled, onChange, side }: {
           </div>
         </div>
       ))}
-      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder</p>
+      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder{item && ' · Yellow border = applicable to loaded item'}</p>
     </div>
   );
 }
@@ -1827,8 +1843,8 @@ export default function TestAI() {
         {/* Data source selectors — only show when items are selected */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            {leftItem ? <SourceSelector enabled={leftSources} onChange={setLeftSources} side="left" /> : <div />}
-            {rightItem ? <SourceSelector enabled={rightSources} onChange={setRightSources} side="right" /> : <div />}
+            {leftItem ? <SourceSelector enabled={leftSources} onChange={setLeftSources} side="left" item={leftItem} /> : <div />}
+            {rightItem ? <SourceSelector enabled={rightSources} onChange={setRightSources} side="right" item={rightItem} /> : <div />}
           </div>
         )}
 

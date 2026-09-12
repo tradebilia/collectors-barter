@@ -5,10 +5,13 @@ import path from 'node:path';
 describe('manual Test AI selector boundary', () => {
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
 
-  it('retains manual source state and does not apply the future Trade Room applicability policy to the sandbox selector', () => {
+  it('retains manual source state while highlighting sources applicable to the loaded item', () => {
     expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
     expect(source).toContain('function SourceSelector');
-    expect(source).not.toContain('getEligibleTestAiSources');
+    expect(source).toContain('getEligibleTestAiSources');
+    expect(source).toContain('applicableSourceIds');
+    expect(source).toContain('border-yellow-400');
+    expect(source).toContain('Yellow border = applicable to loaded item');
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
@@ -48,6 +51,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Listing title, format, label, catalog number, and country are not used as filters.');
   });
 
+  it('passes each loaded item into both source selectors so applicability is evaluated per side', () => {
+    expect(source).toContain('side="left" item={leftItem}');
+    expect(source).toContain('side="right" item={rightItem}');
+    expect(source).toContain('Applicable to the loaded item.');
+  });
+
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
     expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
     expect(source).toContain('function EvidenceNormalizationSummary');
@@ -57,7 +66,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('both facts may be valid, such as global versus regional release dates.');
     expect(source).toContain('no result or service issue; it is not negative proof about the item.');
     expect(source).toContain('<EvidenceNormalizationSummary item={item}');
-    expect(source).not.toContain('getEligibleTestAiSources');
+    expect(source).toContain('getEligibleTestAiSources');
     expect(source).toContain('setLeftEvidenceSummary(null)');
     expect(source).toContain('setRightEvidenceSummary(null)');
   });
