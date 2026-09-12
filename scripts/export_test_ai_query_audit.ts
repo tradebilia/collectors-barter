@@ -101,6 +101,51 @@ const queryMaps: Record<string, QueryMap> = {
   },
 };
 
+function getQueryMap(category: string, itemType: string, fieldNames: string[]): QueryMap {
+  const base = queryMaps[category];
+  if (category !== 'sports_cards') return base;
+
+  const sportFilter = 'Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport';
+  if (itemType === 'single_card') {
+    return {
+      activeEbay: `Year; Manufacturer; Player; Card Number; Certification Company; Grade when valid; ${sportFilter}`,
+      soldComps: `Year; Manufacturer; Player; Card Number; Certification Company; Grade when valid; ${sportFilter}`,
+      otherSources: base.otherSources,
+      conditionalRules: 'Sport is used for post-retrieval conflict filtering; certification company and grade are included when supplied; listing title is the final fallback.',
+      excludedFields: 'Condition is not sent as a query token; set/parallel/autograph details are not currently provider-specific query filters.',
+      notes: 'Uses detailed, no-card-number, broader identity, and listing-title fallback queries.',
+    };
+  }
+  if (itemType === 'card_set') {
+    return {
+      activeEbay: `Year; Manufacturer; Certification Company; Grade when valid; ${sportFilter}`,
+      soldComps: `Year; Manufacturer; Certification Company; Grade when valid; ${sportFilter}`,
+      otherSources: base.otherSources,
+      conditionalRules: 'Sport is used for post-retrieval conflict filtering; certification company and grade are included when supplied.',
+      excludedFields: 'Player, card number, condition, set type, missing-card details, and card count are not dedicated provider query tokens.',
+      notes: 'Structured player/card-number criteria are empty for this item type; listing title remains a fallback.',
+    };
+  }
+  if (itemType === 'unopened_product') {
+    return {
+      activeEbay: 'Year; Manufacturer; Sport; Product Format; Authentication Company only when Authenticated = Yes; FASC only when From a Sealed Case = Yes; valid certification/grade values',
+      soldComps: 'Year; Manufacturer; Sport; Product Format; Authentication Company only when Authenticated = Yes; FASC only when From a Sealed Case = Yes; valid certification/grade values',
+      otherSources: base.otherSources,
+      conditionalRules: 'Sport and Product Format are used when supplied; Authentication Company is conditional on Authenticated = Yes; exact FASC token is conditional on From a Sealed Case = Yes.',
+      excludedFields: 'Product Name and Condition are intentionally omitted; invalid Grade 0 values are omitted; Sport also receives post-retrieval conflict filtering.',
+      notes: 'The current revised unopened-product contract does not use Product Name or Condition as query tokens.',
+    };
+  }
+  return {
+    activeEbay: `Year; Manufacturer when supplied; listing-title fallback; ${sportFilter}`,
+    soldComps: `Year; Manufacturer when supplied; listing-title fallback; ${sportFilter}`,
+    otherSources: base.otherSources,
+    conditionalRules: 'Sport is used for post-retrieval conflict filtering; only scalar structured values available to the shared builder are included.',
+    excludedFields: 'Approximate card count, years included, manufacturers included, notable players/cards, and graded-card count are not dedicated provider query tokens.',
+    notes: `Collection-lot fields are not expanded into provider-specific search tokens for item type ${itemType}.`,
+  };
+}
+
 const rows = Object.entries(CATEGORY_ITEM_TYPES).flatMap(([category, itemTypes]) =>
   Object.entries(itemTypes).map(([itemType, fields]) => ({
     category,
@@ -114,7 +159,7 @@ const rows = Object.entries(CATEGORY_ITEM_TYPES).flatMap(([category, itemTypes])
       options: field.dropdownOptions?.join(' | ') ?? '',
       supportsOther: field.supportsOther ? 'Yes' : 'No',
     })),
-    query: queryMaps[category],
+    query: getQueryMap(category, itemType, fields.map((field) => field.name)),
   })),
 );
 

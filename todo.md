@@ -1889,3 +1889,4 @@
 - [x] Generate and validate an audit-ready Excel workbook covering all categories, item types, query fields, conditional rules, provider behavior, and an upload template.
 - [x] Fix Test AI stale-year behavior so the current selected inventory year drives Evidence Review and all marketplace query requests.
 - [x] Add a Sports Cards result filter that excludes conflicting sports from Active Listings and Sold-Comps while preserving listings with no explicit sport.
+- [x] Audit and regenerate the Test AI query workbook so each category/item type has accurate provider-specific query fields and conditional rules, especially Sports Cards.

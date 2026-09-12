@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-12T17:23:48.853Z",
+  "generatedAt": "2026-09-12T17:44:55.614Z",
   "rows": [
     {
       "category": "coins",
@@ -1212,12 +1212,12 @@
         }
       ],
       "query": {
-        "activeEbay": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
-        "soldComps": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
+        "activeEbay": "Year; Manufacturer; Player; Card Number; Certification Company; Grade when valid; Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport",
+        "soldComps": "Year; Manufacturer; Player; Card Number; Certification Company; Grade when valid; Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport",
         "otherSources": "130Point: user-facing title query; certification sources: certificate/company when available",
-        "conditionalRules": "Unopened Product: Sport + Product Format; Authentication Company only when Authenticated = Yes; FASC only when From A Sealed Case = Yes",
-        "excludedFields": "Unopened Product excludes Product Name and Condition; FASC is omitted when sealed-case value is No",
-        "notes": "Unopened Product also omits invalid Grade 0 values. Detailed sports-card queries have safe broader fallbacks."
+        "conditionalRules": "Sport is used for post-retrieval conflict filtering; certification company and grade are included when supplied; listing title is the final fallback.",
+        "excludedFields": "Condition is not sent as a query token; set/parallel/autograph details are not currently provider-specific query filters.",
+        "notes": "Uses detailed, no-card-number, broader identity, and listing-title fallback queries."
       }
     },
     {
@@ -1343,12 +1343,12 @@
         }
       ],
       "query": {
-        "activeEbay": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
-        "soldComps": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
+        "activeEbay": "Year; Manufacturer; Certification Company; Grade when valid; Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport",
+        "soldComps": "Year; Manufacturer; Certification Company; Grade when valid; Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport",
         "otherSources": "130Point: user-facing title query; certification sources: certificate/company when available",
-        "conditionalRules": "Unopened Product: Sport + Product Format; Authentication Company only when Authenticated = Yes; FASC only when From A Sealed Case = Yes",
-        "excludedFields": "Unopened Product excludes Product Name and Condition; FASC is omitted when sealed-case value is No",
-        "notes": "Unopened Product also omits invalid Grade 0 values. Detailed sports-card queries have safe broader fallbacks."
+        "conditionalRules": "Sport is used for post-retrieval conflict filtering; certification company and grade are included when supplied.",
+        "excludedFields": "Player, card number, condition, set type, missing-card details, and card count are not dedicated provider query tokens.",
+        "notes": "Structured player/card-number criteria are empty for this item type; listing title remains a fallback."
       }
     },
     {
@@ -1492,12 +1492,12 @@
         }
       ],
       "query": {
-        "activeEbay": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
-        "soldComps": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
+        "activeEbay": "Year; Manufacturer; Sport; Product Format; Authentication Company only when Authenticated = Yes; FASC only when From a Sealed Case = Yes; valid certification/grade values",
+        "soldComps": "Year; Manufacturer; Sport; Product Format; Authentication Company only when Authenticated = Yes; FASC only when From a Sealed Case = Yes; valid certification/grade values",
         "otherSources": "130Point: user-facing title query; certification sources: certificate/company when available",
-        "conditionalRules": "Unopened Product: Sport + Product Format; Authentication Company only when Authenticated = Yes; FASC only when From A Sealed Case = Yes",
-        "excludedFields": "Unopened Product excludes Product Name and Condition; FASC is omitted when sealed-case value is No",
-        "notes": "Unopened Product also omits invalid Grade 0 values. Detailed sports-card queries have safe broader fallbacks."
+        "conditionalRules": "Sport and Product Format are used when supplied; Authentication Company is conditional on Authenticated = Yes; exact FASC token is conditional on From a Sealed Case = Yes.",
+        "excludedFields": "Product Name and Condition are intentionally omitted; invalid Grade 0 values are omitted; Sport also receives post-retrieval conflict filtering.",
+        "notes": "The current revised unopened-product contract does not use Product Name or Condition as query tokens."
       }
     },
     {
@@ -1605,12 +1605,12 @@
         }
       ],
       "query": {
-        "activeEbay": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
-        "soldComps": "Year; Manufacturer; Player; Card Number; Certification Company; Grade; Condition (not for Unopened Product)",
+        "activeEbay": "Year; Manufacturer when supplied; listing-title fallback; Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport",
+        "soldComps": "Year; Manufacturer when supplied; listing-title fallback; Sport post-filter: exclude explicit conflicting sports; retain sparse titles without a stated sport",
         "otherSources": "130Point: user-facing title query; certification sources: certificate/company when available",
-        "conditionalRules": "Unopened Product: Sport + Product Format; Authentication Company only when Authenticated = Yes; FASC only when From A Sealed Case = Yes",
-        "excludedFields": "Unopened Product excludes Product Name and Condition; FASC is omitted when sealed-case value is No",
-        "notes": "Unopened Product also omits invalid Grade 0 values. Detailed sports-card queries have safe broader fallbacks."
+        "conditionalRules": "Sport is used for post-retrieval conflict filtering; only scalar structured values available to the shared builder are included.",
+        "excludedFields": "Approximate card count, years included, manufacturers included, notable players/cards, and graded-card count are not dedicated provider query tokens.",
+        "notes": "Collection-lot fields are not expanded into provider-specific search tokens for item type collection_lot."
       }
     },
     {
