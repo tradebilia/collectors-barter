@@ -1883,3 +1883,4 @@
 - [x] Highlight Test AI data sources with a yellow border when they are applicable to the loaded item category and can retrieve relevant information.
 - [x] Add a privacy-safe all-items mode to the Test AI item dropdown so eligible public listings can be selected across all accounts, while preserving My Inventory mode.
 - [x] Fix unreadable metadata bubble text on Test AI item cards by increasing contrast without changing the card layout.
+- [x] Extend Sports Cards Unopened Product Test AI criteria with Product Name and Product Format, conditional Authentication Company when Graded is Yes, and conditional sealed-case evidence only when From a Sealed Case is Yes.

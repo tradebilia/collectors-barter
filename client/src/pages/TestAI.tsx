@@ -226,6 +226,7 @@ interface SelectedItem {
   id?: number;
   title: string;
   category: string;
+  itemType?: string;
   grade?: string;
   condition?: string;
   estimatedValue?: number;
@@ -453,7 +454,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getSoldCompsData.useQuery(
-    { title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
 
@@ -506,7 +507,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
 function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
-    { title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
 
@@ -1249,6 +1250,17 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       platform: details.platform || details.console || details.system || undefined,
     };
   }, [details, item.title]);
+  const sportsUnopenedSearchCriteria = useMemo(() => {
+    const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
+    const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || details.productName || details.productFormat);
+    const isYes = (value: unknown) => String(value ?? '').trim().toLowerCase() === 'yes';
+    const productName = String(details.productName ?? '').trim();
+    const productFormat = String(details.productFormat ?? '').trim();
+    const isGraded = isYes(details.isGraded) || isYes(details.graded);
+    const authenticationCompany = isGraded ? String(details.authenticationCompany ?? details.customAuthenticationCompany ?? '').trim() : '';
+    const fromSealedCase = isYes(details.fromASealedCase);
+    return { isUnopenedProduct: Boolean(isUnopenedProduct), productName, productFormat, isGraded, authenticationCompany, fromSealedCase };
+  }, [item.category, item.itemType, details]);
   const discogsSearchCriteria = useMemo(() => {
     const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
     const releaseTitle = String(item.releaseTitle ?? details.releaseTitle ?? '').trim();
@@ -1314,6 +1326,16 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       <p><span className="font-semibold text-gray-300">Coverage:</span> no result or service issue; it is not negative proof about the item.</p>
     </div>
     {summary.identity.length > 0 && <div className="flex flex-wrap gap-1.5">{summary.identity.map((field) => <span key={field.key} className="rounded bg-gray-900/60 px-2 py-1 text-[10px] text-gray-300"><span className="text-gray-500">{field.label}:</span> {field.value}</span>)}</div>}
+    {sportsUnopenedSearchCriteria.isUnopenedProduct && <div className="rounded border border-amber-700/30 bg-amber-950/15 p-2">
+      <p className="text-[9px] font-semibold uppercase text-amber-300">Sports Cards Unopened Product search criteria</p>
+      <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
+        <p><span className="text-gray-500">Product Name:</span> {sportsUnopenedSearchCriteria.productName || 'Missing'}</p>
+        <p><span className="text-gray-500">Product Format:</span> {sportsUnopenedSearchCriteria.productFormat || 'Missing'}</p>
+        {sportsUnopenedSearchCriteria.isGraded && <p><span className="text-gray-500">Authentication Company:</span> {sportsUnopenedSearchCriteria.authenticationCompany || 'Not supplied'}</p>}
+        {sportsUnopenedSearchCriteria.fromSealedCase && <p><span className="text-gray-500">From a Sealed Case:</span> Yes</p>}
+      </div>
+      <p className="mt-1 text-[9px] text-gray-500">Product Name and Product Format are included in the search. Authentication Company is included only when Graded is Yes; the sealed-case criterion is included only when From a Sealed Case is Yes.</p>
+    </div>}
     {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && <div className="rounded border border-emerald-700/30 bg-emerald-950/15 p-2">
       <p className="text-[9px] font-semibold uppercase text-emerald-300">Discogs search criteria</p>
       <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
@@ -1812,20 +1834,20 @@ export default function TestAI() {
   const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('ebay_active') }
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
   );
   const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(

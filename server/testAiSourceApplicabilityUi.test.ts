@@ -51,6 +51,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Listing title, format, label, catalog number, and country are not used as filters.');
   });
 
+  it('shows conditional Sports Cards Unopened Product search criteria in Evidence Review', () => {
+    expect(source).toContain('sportsUnopenedSearchCriteria');
+    expect(source).toContain('Product Name:');
+    expect(source).toContain('Product Format:');
+    expect(source).toContain('Authentication Company:');
+    expect(source).toContain('From a Sealed Case:');
+    expect(source).toContain('Authentication Company is included only when Graded is Yes');
+    expect(source).toContain('sealed-case criterion is included only when From a Sealed Case is Yes');
+  });
+
   it('keeps selected-item metadata bubbles readable on dark cards', () => {
     expect(source).toContain('text-slate-100 border-slate-500/70');
     expect(source).toContain('bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80');

@@ -190,7 +190,7 @@ export const testAIRouter = router({
     const [rows] = await db.execute(
       sql`
         SELECT
-          l.id, l.title, l.category, l.condition, l.grade, l.certificationCompany,
+          l.id, l.title, l.category, l.itemType, l.condition, l.grade, l.certificationCompany,
           l.estimatedValue, l.itemDetails, l.description,
           (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) as primaryPhotoUrl
         FROM listings l
@@ -211,6 +211,7 @@ export const testAIRouter = router({
         id: r.id,
         title: r.title,
         category: r.category,
+        itemType: r.itemType ?? null,
         condition: r.condition,
         grade: r.grade ?? null,
         certificationCompany: r.certificationCompany ?? null,
@@ -233,7 +234,7 @@ export const testAIRouter = router({
     const [rows] = await db.execute(
       sql`
         SELECT
-          l.id, l.title, l.category, l.condition, l.grade, l.certificationCompany,
+          l.id, l.title, l.category, l.itemType, l.condition, l.grade, l.certificationCompany,
           l.estimatedValue, l.itemDetails, l.description,
           COALESCE(NULLIF(up.displayName, ''), NULLIF(u.displayName, ''), NULLIF(u.username, ''), 'Member') AS ownerDisplayName,
           (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) AS primaryPhotoUrl
@@ -257,6 +258,7 @@ export const testAIRouter = router({
         id: r.id,
         title: r.title,
         category: r.category,
+        itemType: r.itemType ?? null,
         condition: r.condition,
         grade: r.grade ?? null,
         certificationCompany: r.certificationCompany ?? null,
@@ -317,6 +319,7 @@ export const testAIRouter = router({
       condition: z.string().optional(),
       certificationCompany: z.string().optional(),
       itemDetails: z.string().optional(),
+      itemType: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -359,7 +362,7 @@ export const testAIRouter = router({
       }
       // For sports cards: use year + manufacturer + player + card number + grading/condition
       else if (input.category === 'sports_cards') {
-        const baseQuery = buildSportsCardTestAiCriteria(details);
+        const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '');
         
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
@@ -445,7 +448,7 @@ export const testAIRouter = router({
         const broadQuery = buildEbayBrowseQuery(query);
         const fetchQuery = broadQuery !== query ? broadQuery : query;
         const searchQueries = input.category === 'sports_cards'
-          ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '')
+          ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
           : [fetchQuery];
         const fetchedByQuery = new Map<string, any>();
         for (const candidate of searchQueries) {
@@ -519,6 +522,7 @@ export const testAIRouter = router({
       condition: z.string().optional(),
       certificationCompany: z.string().optional(),
       itemDetails: z.string().optional(),
+      itemType: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -553,7 +557,7 @@ export const testAIRouter = router({
       }
       // Sports cards
       else if (input.category === 'sports_cards') {
-        const baseQuery = buildSportsCardTestAiCriteria(details) || input.title;
+        const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '') || input.title;
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
         else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();

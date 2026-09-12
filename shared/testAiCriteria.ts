@@ -8,12 +8,34 @@ export function resolveTestAiManufacturer(itemDetails: unknown): string {
   return manufacturer.toLowerCase() === 'other' ? customManufacturer : manufacturer;
 }
 
-export function buildSportsCardTestAiCriteria(itemDetails: unknown): string {
+function isYes(value: unknown): boolean {
+  return typeof value === 'string' && value.trim().toLowerCase() === 'yes';
+}
+
+function isSportsCardsUnopenedProduct(details: Record<string, unknown>, itemType = ''): boolean {
+  const normalizedType = itemType.trim().toLowerCase().replace(/[ -]+/g, '_');
+  return normalizedType === 'unopened_product' || typeof details.productName === 'string' || typeof details.productFormat === 'string';
+}
+
+function buildSportsCardsUnopenedProductCriteria(details: Record<string, unknown>, itemType = ''): string[] {
+  if (!isSportsCardsUnopenedProduct(details, itemType)) return [];
+  const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
+  const parts = [value('productName'), value('productFormat')];
+  if (isYes(details.isGraded) || isYes(details.graded)) {
+    const authCompany = value('authenticationCompany') || value('customAuthenticationCompany');
+    if (authCompany) parts.push(authCompany);
+  }
+  if (isYes(details.fromASealedCase)) parts.push('from sealed case');
+  return parts.filter(Boolean);
+}
+
+export function buildSportsCardTestAiCriteria(itemDetails: unknown, itemType = ''): string {
   if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) return '';
   const details = itemDetails as Record<string, unknown>;
   const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
+  const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
 
-  return [value('year'), resolveTestAiManufacturer(details), value('player'), value('cardNumber')]
+  return [...[value('year'), resolveTestAiManufacturer(details), value('player'), value('cardNumber')], ...unopened]
     .filter(Boolean)
     .join(' ');
 }
@@ -29,6 +51,7 @@ export function buildSportsCardTestAiQueries(
   fallbackTitle: string,
   certificationCompany = '',
   grade = '',
+  itemType = '',
 ): string[] {
   if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) {
     return [fallbackTitle].filter(Boolean);
@@ -41,10 +64,11 @@ export function buildSportsCardTestAiQueries(
   const cardNumber = value('cardNumber');
   const normalizedCert = certificationCompany.trim();
   const normalizedGrade = grade.trim();
+  const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
   const candidates = [
-    [year, manufacturer, player, cardNumber, normalizedCert, normalizedGrade],
-    [year, manufacturer, player, normalizedCert, normalizedGrade],
-    [manufacturer, player, normalizedCert, normalizedGrade],
+    [year, manufacturer, player, cardNumber, ...unopened, normalizedCert, normalizedGrade],
+    [year, manufacturer, player, ...unopened, normalizedCert, normalizedGrade],
+    [manufacturer, player, ...unopened, normalizedCert, normalizedGrade],
     [fallbackTitle],
   ].map((parts) => parts.filter(Boolean).join(' ').trim());
   return [...new Set(candidates)].filter(Boolean);
