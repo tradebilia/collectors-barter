@@ -304,7 +304,7 @@ export default function ItemDetail() {
               <img
                 src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg"
                 alt="Tradebilia"
-                className="h-auto w-full drop-shadow-lg" style={{ transform: "translateX(-2.34375%)" }}
+                className="h-auto w-full drop-shadow-lg" style={{ transform: "translateX(-4.296875%)" }}
               />
             </div>
         </div>

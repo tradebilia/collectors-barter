@@ -1892,3 +1892,4 @@
 - [x] Audit and regenerate the Test AI query workbook so each category/item type has accurate provider-specific query fields and conditional rules, especially Sports Cards.
 - [x] Make item-detail hero background filter, overlay, positioning, and repeat behavior match the corresponding category hero.
 - [x] Center the visible Tradebilia hero title artwork on item-detail pages with equal open space on both sides.
+- [x] Recenter the item-detail hero logo using measured visible artwork bounds so both sides have equal negative space.
