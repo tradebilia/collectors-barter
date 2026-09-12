@@ -1900,3 +1900,5 @@
 - [x] Audit why the active /coming-soon page differs from the exact supplied file and correct only the confirmed fidelity differences.
 
 - [x] Restore the supplied Coming Soon HTML composition on /coming-soon, including the animated SVG logo and original lower tidbits, then add only the requested email form.
+
+- [x] Use the exact supplied Coming Soon HTML composition as the active page source, retaining its vinyl record, bottom category icons, and original logo centering while wiring the displayed email signup to the launch-update service.

@@ -1,20 +1,7 @@
-import { ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { FormEvent, useId, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 
-import SuppliedComingSoonLogo from "@/components/SuppliedComingSoonLogo";
-
-const SUPPLIED_TIDBITS = [
-  "Discover rare finds",
-  "Trade with confidence",
-  "No trading fees",
-  "Trade across categories",
-  "Build trust faster",
-  "Interactive trading platform",
-  "A.I. assisted trade evaluation",
-] as const;
+const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_9f7d3fd1.html";
 
 export default function ComingSoon() {
   const emailId = useId();
@@ -40,45 +27,41 @@ export default function ComingSoon() {
   };
 
   return (
-    <main className="min-h-[100svh] overflow-x-hidden bg-[#0b0705]" aria-label="Tradebilia Coming Soon">
-      <div className="relative mx-auto aspect-[1815/867] w-full max-w-[1815px] overflow-hidden [container-type:inline-size]">
-        <img src="/manus-storage/coming-soon-exact-supplied-clean-row_d8aa56d4.png" alt="Tradebilia collector room" className="absolute inset-0 size-full object-contain" />
+    <main className="min-h-[100svh] overflow-hidden bg-[#0b0705]" aria-label="Tradebilia Coming Soon">
+      <div className="relative mx-auto aspect-[1815/867] w-full max-w-[1815px]">
+        <iframe
+          src={SUPPLIED_COMING_SOON_HTML_URL}
+          title="Tradebilia Coming Soon"
+          className="pointer-events-none absolute inset-0 size-full border-0"
+          sandbox=""
+          aria-hidden="true"
+        />
 
-        <div className="absolute left-1/2 top-[32%] w-max -translate-x-1/2 -translate-y-1/2">
-          <SuppliedComingSoonLogo />
-        </div>
-
-        <section className="absolute left-1/2 top-[68%] w-[min(74%,520px)] -translate-x-1/2" aria-label="Tradebilia launch email signup">
+        <section className="absolute left-1/2 top-[69%] h-[5.6%] w-[27%] -translate-x-1/2 -translate-y-1/2" aria-label="Tradebilia launch email signup">
           {submitted ? (
-            <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 text-center text-[clamp(8px,0.56cqw,11px)] font-medium uppercase tracking-[0.1em] text-[#e3ab5e]">
-              <CheckCircle2 className="h-[1em] w-[1em] shrink-0" aria-hidden="true" />
-              <span>{alreadySubscribed ? "You’re already on the launch list." : "You’re on the launch list."}</span>
+            <div role="status" aria-live="polite" className="absolute left-1/2 top-1/2 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center border border-[#e3ab5e]/80 bg-[#0b0705]/90 px-2 text-center text-[clamp(7px,0.56cqw,11px)] font-medium uppercase tracking-[0.1em] text-[#e3ab5e]">
+              {alreadySubscribed ? "You’re already on the launch list." : "You’re on the launch list."}
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate className="mx-auto flex max-w-[460px] flex-col gap-1">
-              <div className="flex items-stretch border border-[#e3ab5e]/75 bg-[#0b0705]/35 p-0.5">
-                <div className="relative min-w-0 flex-1">
-                  <Mail className="pointer-events-none absolute left-2 top-1/2 h-[0.9em] w-[0.9em] -translate-y-1/2 text-[#e3ab5e]/80" aria-hidden="true" />
-                  <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email for early access" autoComplete="email" required aria-label="Email for launch updates" className="h-[clamp(24px,2.6cqw,42px)] border-0 bg-transparent pl-7 text-[clamp(8px,0.62cqw,12px)] text-white placeholder:text-white/65 focus-visible:ring-0" />
-                </div>
-                <Button type="submit" disabled={subscribeMutation.isPending} className="h-[clamp(24px,2.6cqw,42px)] rounded-none bg-[#e3ab5e] px-[clamp(8px,1.2cqw,20px)] text-[clamp(7px,0.52cqw,10px)] font-bold uppercase tracking-[0.12em] text-[#0b0705] hover:bg-[#f0c77f] disabled:bg-[#e3ab5e]/55">
-                  {subscribeMutation.isPending ? "Saving…" : "Notify me"}
-                  {!subscribeMutation.isPending && <ArrowRight className="ml-1 h-[0.9em] w-[0.9em]" aria-hidden="true" />}
-                </Button>
-              </div>
-              {signupErrorMessage && <p role="alert" aria-live="polite" className="text-center text-[clamp(7px,0.5cqw,10px)] font-medium text-[#ffd5d5]">{signupErrorMessage}</p>}
+            <form onSubmit={handleSubmit} noValidate className="size-full">
+              <label htmlFor={emailId} className="sr-only">Email for launch updates</label>
+              <input
+                id={emailId}
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                required
+                placeholder="Enter your email for early access"
+                className="absolute inset-y-0 left-0 w-[74%] border border-[#e3ab5e]/80 bg-[#0b0705]/78 px-[3%] text-[clamp(8px,0.62cqw,12px)] text-[#f4efe4] outline-none placeholder:text-[#f4efe4]/78 focus:border-[#f4efe4]"
+              />
+              <button type="submit" disabled={subscribeMutation.isPending} className="absolute inset-y-0 right-0 flex w-[26%] cursor-pointer items-center justify-center border border-l-0 border-[#e3ab5e]/80 bg-[#e3ab5e] text-[clamp(7px,0.52cqw,10px)] font-bold uppercase tracking-[0.12em] text-[#0b0705] transition-colors hover:bg-[#f0c77f] disabled:bg-[#e3ab5e]/55" aria-label={subscribeMutation.isPending ? "Saving email" : "Notify me for launch updates"}>
+                {subscribeMutation.isPending ? "Saving…" : "Notify me"}
+              </button>
+              {signupErrorMessage && <p role="alert" aria-live="polite" className="absolute left-1/2 top-full mt-1 w-max max-w-[190%] -translate-x-1/2 bg-[#0b0705]/90 px-1 text-center text-[clamp(7px,0.5cqw,10px)] font-medium text-[#ffd5d5]">{signupErrorMessage}</p>}
             </form>
           )}
         </section>
-
-        <div className="absolute left-1/2 top-[96%] flex w-max -translate-x-1/2 -translate-y-1/2 items-center whitespace-nowrap text-[clamp(7.5px,0.56cqw,10.5px)] font-medium uppercase tracking-[0.13em] text-[#e3ab5e]/80" aria-label="Tradebilia platform highlights">
-          {SUPPLIED_TIDBITS.map((tidbit, index) => (
-            <span key={tidbit} className="inline-flex items-center">
-              <span>{tidbit}</span>
-              {index < SUPPLIED_TIDBITS.length - 1 && <span className="mx-[clamp(5px,0.55cqw,10px)] text-[0.8em] text-[#e3ab5e]/50">◆</span>}
-            </span>
-          ))}
-        </div>
       </div>
     </main>
   );
