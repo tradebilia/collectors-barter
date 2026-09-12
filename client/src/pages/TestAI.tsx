@@ -318,15 +318,18 @@ function SourceSelector({ enabled, onChange, side, item }: {
 }
 
 // ─── Item Panel ──────────────────────────────────────────────────────────────
-function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, inventoryLoading }: {
+function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, inventoryLoading, allItems, allItemsLoading }: {
   side: 'left' | 'right';
   item: SelectedItem | null;
   onItemChange: (item: SelectedItem | null) => void;
   onSourceChange: (s: Set<SourceId>) => void;
   inventory: any[];
   inventoryLoading: boolean;
+  allItems: any[];
+  allItemsLoading: boolean;
 }) {
   const [source, setSource] = useState<ItemSource>('inventory');
+  const [inventoryScope, setInventoryScope] = useState<'mine' | 'all'>('mine');
   const [certId, setCertId] = useState('');
   const [gradingCompany, setGradingCompany] = useState<GradingCompany>('CGC');
   const [selectedInventoryId, setSelectedInventoryId] = useState<number | null>(null);
@@ -336,9 +339,12 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
   const bgColor = side === 'left' ? 'bg-cyan-900/10' : 'bg-amber-900/10';
   const label = side === 'left' ? 'ITEM A' : 'ITEM B';
 
+  const selectableItems = inventoryScope === 'all' ? allItems : inventory;
+  const selectableItemsLoading = inventoryScope === 'all' ? allItemsLoading : inventoryLoading;
+
   const handleInventorySelect = (id: number) => {
     setSelectedInventoryId(id);
-    const found = inventory.find((i: any) => i.id === id);
+    const found = selectableItems.find((i: any) => i.id === id);
     if (found) onItemChange(found);
     else onItemChange(null);
   };
@@ -370,26 +376,41 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
               setSelectedInventoryId(null);
             }}
               className={`px-2 py-1 text-[11px] rounded font-medium transition-colors ${source === s ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}>
-              {s === 'inventory' ? 'My Inventory' : 'Cert ID'}
+              {s === 'inventory' ? 'Items' : 'Cert ID'}
             </button>
           ))}
         </div>
       </div>
 
       {source === 'inventory' ? (
-        inventoryLoading ? (
-          <div className="flex items-center gap-2 text-gray-500 text-sm"><Spinner className="w-4 h-4" /> Loading...</div>
-        ) : (
-          <select value={selectedInventoryId ?? ''} onChange={e => handleInventorySelect(Number(e.target.value))}
-            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
-            <option value="">— Select an item —</option>
-            {inventory.map((i: any) => (
-              <option key={i.id} value={i.id}>
-                {i.title}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''}
-              </option>
+        <div className="space-y-2">
+          <div className="flex gap-1 rounded-md border border-gray-700/60 bg-gray-900/50 p-1" role="group" aria-label="Item source scope">
+            {(['mine', 'all'] as const).map(scope => (
+              <button
+                key={scope}
+                type="button"
+                onClick={() => { setInventoryScope(scope); setSelectedInventoryId(null); onItemChange(null); }}
+                className={`flex-1 rounded px-2 py-1 text-[10px] font-semibold transition-colors ${inventoryScope === scope ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                {scope === 'mine' ? 'My Inventory' : 'All Public Items'}
+              </button>
             ))}
-          </select>
-        )
+          </div>
+          <p className="text-[10px] text-gray-500">All Public Items includes active listings from members who allow public profile visibility.</p>
+          {selectableItemsLoading ? (
+            <div className="flex items-center gap-2 text-gray-500 text-sm"><Spinner className="w-4 h-4" /> Loading...</div>
+          ) : (
+            <select value={selectedInventoryId ?? ''} onChange={e => handleInventorySelect(Number(e.target.value))}
+              className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
+              <option value="">— Select an item —</option>
+              {selectableItems.map((i: any) => (
+                <option key={i.id} value={i.id}>
+                  {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       ) : (
         <div className="space-y-2">
           <select value={gradingCompany} onChange={e => setGradingCompany(e.target.value as GradingCompany)}
@@ -1716,6 +1737,9 @@ export default function TestAI() {
   const { data: inventory = [], isLoading: inventoryLoading } = trpc.testAI.getMyInventory.useQuery(undefined, {
     enabled: !!user && user.role === 'admin',
   });
+  const { data: allItems = [], isLoading: allItemsLoading } = trpc.testAI.getAllPublicItems.useQuery(undefined, {
+    enabled: !!user && user.role === 'admin',
+  });
 
   // ── Silently fetch PSA cert data for cert-mode items so we can build search queries ──
   const leftPSAQuery = trpc.testAI.getPSAData.useQuery(
@@ -1833,11 +1857,11 @@ export default function TestAI() {
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Item selectors */}
         <div className="flex gap-4">
-          <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} />
+          <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} allItems={allItems} allItemsLoading={allItemsLoading} />
           <div className="flex items-center justify-center flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 font-bold text-sm">VS</div>
           </div>
-          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} />
+          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} allItems={allItems} allItemsLoading={allItemsLoading} />
         </div>
 
         {/* Data source selectors — only show when items are selected */}

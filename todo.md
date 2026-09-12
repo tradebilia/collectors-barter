@@ -1881,3 +1881,4 @@
 - [x] Identify and prioritize additional authorized external data sources by Tradebilia category for stronger Test AI item comparisons.
 - [x] Verify and list Test AI data APIs available without a paid subscription, distinguishing commercial eligibility, approval requirements, and limitations.
 - [x] Highlight Test AI data sources with a yellow border when they are applicable to the loaded item category and can retrieve relevant information.
+- [x] Add a privacy-safe all-items mode to the Test AI item dropdown so eligible public listings can be selected across all accounts, while preserving My Inventory mode.

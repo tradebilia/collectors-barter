@@ -20,6 +20,7 @@ import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
+import { isPublicMemberEligible } from './publicVisibility';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -220,6 +221,53 @@ export const testAIRouter = router({
         manufacturer: resolveTestAiManufacturer(parsedDetails),
         description: r.description ?? null,
         primaryPhotoUrl: r.primaryPhotoUrl ?? null,
+      };
+    });
+  }),
+
+  // Read-only all-accounts picker: only active listings from open, public profiles.
+  // Test AI remains admin-only, but the same public-visibility rule protects member data.
+  getAllPublicItems: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+    const db = await requireDb();
+    const [rows] = await db.execute(
+      sql`
+        SELECT
+          l.id, l.title, l.category, l.condition, l.grade, l.certificationCompany,
+          l.estimatedValue, l.itemDetails, l.description,
+          COALESCE(NULLIF(up.displayName, ''), NULLIF(u.displayName, ''), NULLIF(u.username, ''), 'Member') AS ownerDisplayName,
+          (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) AS primaryPhotoUrl
+        FROM listings l
+        INNER JOIN users u ON u.id = l.ownerId
+        LEFT JOIN userProfiles up ON up.userId = u.id
+        WHERE l.status = 'active' AND l.isActive = 1
+          AND ${isPublicMemberEligible(sql`l.ownerId`)}
+        ORDER BY l.createdAt DESC, l.id DESC
+      `,
+    ) as any;
+    const arr = Array.isArray(rows) ? rows : [];
+    return arr.map((r: any) => {
+      let parsedDetails: Record<string, unknown> | null = null;
+      try {
+        parsedDetails = r.itemDetails ? JSON.parse(r.itemDetails) : null;
+      } catch {
+        parsedDetails = null;
+      }
+      return {
+        id: r.id,
+        title: r.title,
+        category: r.category,
+        condition: r.condition,
+        grade: r.grade ?? null,
+        certificationCompany: r.certificationCompany ?? null,
+        estimatedValue: r.estimatedValue ? Number(r.estimatedValue) : null,
+        itemDetails: r.itemDetails ?? null,
+        artist: typeof parsedDetails?.artist === 'string' ? parsedDetails.artist : null,
+        releaseTitle: typeof parsedDetails?.releaseTitle === 'string' ? parsedDetails.releaseTitle : null,
+        manufacturer: resolveTestAiManufacturer(parsedDetails),
+        description: r.description ?? null,
+        primaryPhotoUrl: r.primaryPhotoUrl ?? null,
+        ownerDisplayName: r.ownerDisplayName ?? 'Member',
       };
     });
   }),
