@@ -1876,3 +1876,4 @@
 - [x] Replace each homepage Top 10 destination with a full ranked active-listing directory ordered by its respective criterion.
 - [x] Display each ranked directory’s total eligible-item count and support pagination beyond the first page.
 - [x] Remove the non-functional information icons from all four homepage Top 10 ranking headers.
+- [x] Assess Card Ladder and COMC for authorized, useful, and compliant Test AI data integration before any implementation.
