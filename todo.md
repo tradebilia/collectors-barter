@@ -1885,3 +1885,4 @@
 - [x] Fix unreadable metadata bubble text on Test AI item cards by increasing contrast without changing the card layout.
 - [x] Extend Sports Cards Unopened Product Test AI criteria with Product Name and Product Format, conditional Authentication Company when Graded is Yes, and conditional sealed-case evidence only when From a Sealed Case is Yes.
 - [x] Correct Sports Cards Unopened Product queries to always use Product Name and Product Format, add Authentication Company only when Authenticated is Yes, and add exact token FASC only when From a Sealed Case is Yes.
+- [x] Revise Sports Cards Unopened Product criteria to include Sport and Product Format, omit Product Name and Condition, and preserve conditional Authentication Company and FASC rules.

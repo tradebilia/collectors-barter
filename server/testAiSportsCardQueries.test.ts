@@ -19,11 +19,12 @@ describe("Test AI sports-card eBay query candidates", () => {
     expect(filterListingsByNumber(listings, "1", { allowMissingNumber: true })).toEqual([listings[0]]);
   });
 
-  it("includes Product Name and Product Format for Sports Cards Unopened Product", () => {
+  it("includes Sport and Product Format while omitting Product Name for Sports Cards Unopened Product", () => {
     const queries = buildSportsCardTestAiQueries(
       {
         year: "2024",
         manufacturer: "Topps",
+        sport: "Hockey",
         productName: "Chrome Hobby Box",
         productFormat: "Box",
         authenticated: "yes",
@@ -36,14 +37,16 @@ describe("Test AI sports-card eBay query candidates", () => {
       "unopened_product",
     );
 
-    expect(queries[0]).toContain("Chrome Hobby Box Box BBCE FASC");
+    expect(queries[0]).toContain("2024 Topps Hockey Box BBCE FASC");
+    expect(queries[0]).not.toContain("Chrome Hobby Box");
     expect(queries[0]).not.toContain("from sealed case");
-    expect(queries[0]).toContain("2024 Topps");
+    expect(queries[0]).not.toContain("near_mint");
   });
 
   it("omits authentication and sealed-case criteria when their conditions are not yes", () => {
     const queries = buildSportsCardTestAiQueries(
       {
+        sport: "Baseball",
         productName: "Retail Blaster",
         productFormat: "Box",
         authenticated: "no",
@@ -56,7 +59,7 @@ describe("Test AI sports-card eBay query candidates", () => {
       "unopened_product",
     );
 
-    expect(queries[0]).toBe("Retail Blaster Box");
+    expect(queries[0]).toBe("Baseball Box");
     expect(queries[0]).not.toContain("PSA");
     expect(queries[0]).not.toContain("BBCE");
     expect(queries[0]).not.toContain("FASC");

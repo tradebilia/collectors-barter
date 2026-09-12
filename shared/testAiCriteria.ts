@@ -20,7 +20,8 @@ function isSportsCardsUnopenedProduct(details: Record<string, unknown>, itemType
 function buildSportsCardsUnopenedProductCriteria(details: Record<string, unknown>, itemType = ''): string[] {
   if (!isSportsCardsUnopenedProduct(details, itemType)) return [];
   const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
-  const parts = [value('productName'), value('productFormat')];
+  const sport = value('sport') || value('customSport');
+  const parts = [sport, value('productFormat')];
   if (isYes(details.authenticated) || isYes(details.isGraded) || isYes(details.graded)) {
     const authCompany = value('authenticationCompany') || value('customAuthenticationCompany');
     if (authCompany) parts.push(authCompany);

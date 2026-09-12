@@ -53,7 +53,7 @@ describe('manual Test AI selector boundary', () => {
 
   it('shows conditional Sports Cards Unopened Product search criteria in Evidence Review', () => {
     expect(source).toContain('sportsUnopenedSearchCriteria');
-    expect(source).toContain('Product Name:');
+    expect(source).toContain('Sport:');
     expect(source).toContain('Product Format:');
     expect(source).toContain('Authentication Company:');
     expect(source).toContain('From a Sealed Case:');

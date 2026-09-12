@@ -364,12 +364,13 @@ export const testAIRouter = router({
       // For sports cards: use year + manufacturer + player + card number + grading/condition
       else if (input.category === 'sports_cards') {
         const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '');
+        const isUnopenedProduct = String(input.itemType || '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product';
         
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if (input.condition) {
+        } else if (input.condition && !isUnopenedProduct) {
           query = `${baseQuery} ${input.condition}`.trim();
         } else {
           query = baseQuery || input.title;
@@ -560,9 +561,10 @@ export const testAIRouter = router({
       // Sports cards
       else if (input.category === 'sports_cards') {
         const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '') || input.title;
+        const isUnopenedProduct = String(input.itemType || '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product';
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else if (input.condition && !isUnopenedProduct) query = `${baseQuery} ${input.condition}`.trim();
         else query = baseQuery || input.title;
       }
       // Video games

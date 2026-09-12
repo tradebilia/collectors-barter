@@ -1254,12 +1254,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
     const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || details.productName || details.productFormat);
     const isYes = (value: unknown) => String(value ?? '').trim().toLowerCase() === 'yes';
-    const productName = String(details.productName ?? '').trim();
+    const sport = String(details.sport ?? details.customSport ?? '').trim();
     const productFormat = String(details.productFormat ?? '').trim();
     const isAuthenticated = isYes(details.authenticated) || isYes(details.isGraded) || isYes(details.graded);
     const authenticationCompany = isAuthenticated ? String(details.authenticationCompany ?? details.customAuthenticationCompany ?? '').trim() : '';
     const fromSealedCase = isYes(details.fromASealedCase);
-    return { isUnopenedProduct: Boolean(isUnopenedProduct), productName, productFormat, isAuthenticated, authenticationCompany, fromSealedCase };
+    return { isUnopenedProduct: Boolean(isUnopenedProduct), sport, productFormat, isAuthenticated, authenticationCompany, fromSealedCase };
   }, [item.category, item.itemType, details]);
   const discogsSearchCriteria = useMemo(() => {
     const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
@@ -1329,12 +1329,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     {sportsUnopenedSearchCriteria.isUnopenedProduct && <div className="rounded border border-amber-700/30 bg-amber-950/15 p-2">
       <p className="text-[9px] font-semibold uppercase text-amber-300">Sports Cards Unopened Product search criteria</p>
       <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
-        <p><span className="text-gray-500">Product Name:</span> {sportsUnopenedSearchCriteria.productName || 'Missing'}</p>
+        <p><span className="text-gray-500">Sport:</span> {sportsUnopenedSearchCriteria.sport || 'Missing'}</p>
         <p><span className="text-gray-500">Product Format:</span> {sportsUnopenedSearchCriteria.productFormat || 'Missing'}</p>
         {sportsUnopenedSearchCriteria.isAuthenticated && <p><span className="text-gray-500">Authentication Company:</span> {sportsUnopenedSearchCriteria.authenticationCompany || 'Not supplied'}</p>}
         {sportsUnopenedSearchCriteria.fromSealedCase && <p><span className="text-gray-500">From a Sealed Case:</span> Yes → FASC</p>}
       </div>
-      <p className="mt-1 text-[9px] text-gray-500">Product Name and Product Format are included in the search. Authentication Company is included only when Authenticated is Yes; the exact token FASC is included only when From a Sealed Case is Yes.</p>
+      <p className="mt-1 text-[9px] text-gray-500">Sport and Product Format are included in the search; Condition and Product Name are not used. Authentication Company is included only when Authenticated is Yes; the exact token FASC is included only when From a Sealed Case is Yes.</p>
     </div>}
     {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && <div className="rounded border border-emerald-700/30 bg-emerald-950/15 p-2">
       <p className="text-[9px] font-semibold uppercase text-emerald-300">Discogs search criteria</p>
