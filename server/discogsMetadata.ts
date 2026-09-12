@@ -22,6 +22,8 @@ export type DiscogsLookupResult = {
   data?: {
     results: DiscogsReleaseResult[];
     total: number;
+    requestedReleaseYear: number | null;
+    releaseYearFilterApplied: boolean;
   };
   message?: string;
 };
@@ -46,6 +48,14 @@ type DiscogsSearchResponse = {
   pagination?: { items?: number };
   results?: DiscogsSearchRecord[];
 };
+
+type DiscogsSearchAttempt =
+  | { error: string }
+  | { payload: DiscogsSearchResponse; results: DiscogsReleaseResult[] };
+
+function isDiscogsSearchError(attempt: DiscogsSearchAttempt): attempt is { error: string } {
+  return "error" in attempt && typeof attempt.error === "string";
+}
 
 type MusicDetails = {
   artist?: string;
@@ -94,7 +104,14 @@ export function buildDiscogsSearchQuery(title: string, itemDetails?: string): st
   const details = parseMusicDetails(itemDetails);
   return (clean(details.releaseTitle) || clean(title)).replace(/\s+/g, " ").trim();
 }
-export function buildDiscogsSearchParams(title: string, itemDetails?: string): URLSearchParams {
+export function getDiscogsReleaseYear(itemDetails?: string): number | null {
+  const year = clean(parseMusicDetails(itemDetails).releaseYear);
+  if (!/^\d{4}$/.test(year)) return null;
+  const numericYear = Number(year);
+  const latestPlausibleYear = new Date().getUTCFullYear() + 1;
+  return numericYear >= 1877 && numericYear <= latestPlausibleYear ? numericYear : null;
+}
+export function buildDiscogsSearchParams(title: string, itemDetails?: string, useReleaseYear = false): URLSearchParams {
   const details = parseMusicDetails(itemDetails);
   const artist = clean(details.artist);
   const releaseTitle = clean(details.releaseTitle);
@@ -106,6 +123,8 @@ export function buildDiscogsSearchParams(title: string, itemDetails?: string): U
   });
   if (releaseTitle) params.set("release_title", releaseTitle);
   if (artist) params.set("artist", artist);
+  const releaseYear = getDiscogsReleaseYear(itemDetails);
+  if (useReleaseYear && releaseYear) params.set("year", String(releaseYear));
   // Do not send saved release year, catalog number, label, country, or format as
   // restrictive Discogs filters. Existing inventory can contain partial values or
   // internal UI codes such as `vinyl_record`, which Discogs does not recognize as
@@ -142,26 +161,43 @@ export async function lookupDiscogsReleases(
   if (query.length < 2) return { status: "error", query, message: "Enter a music title or artist before searching Discogs." };
 
   try {
-    const params = buildDiscogsSearchParams(title, itemDetails);
-    const response = await fetchImpl(`${DISCOGS_API_BASE}/database/search?${params.toString()}`, {
-      headers: {
-        Authorization: `Discogs token=${token}`,
-        "User-Agent": DISCOGS_USER_AGENT,
-        Accept: "application/vnd.discogs.v2.discogs+json",
-      },
-      signal: AbortSignal.timeout(12_000),
-    });
-    if (response.status === 401 || response.status === 403) {
-      return { status: "error", query, message: "Discogs rejected the configured credential." };
+    const requestedReleaseYear = getDiscogsReleaseYear(itemDetails);
+    const search = async (useReleaseYear: boolean): Promise<DiscogsSearchAttempt> => {
+      const params = buildDiscogsSearchParams(title, itemDetails, useReleaseYear);
+      const response = await fetchImpl(`${DISCOGS_API_BASE}/database/search?${params.toString()}`, {
+        headers: {
+          Authorization: `Discogs token=${token}`,
+          "User-Agent": DISCOGS_USER_AGENT,
+          Accept: "application/vnd.discogs.v2.discogs+json",
+        },
+        signal: AbortSignal.timeout(12_000),
+      });
+      if (response.status === 401 || response.status === 403) return { error: "Discogs rejected the configured credential." };
+      if (response.status === 429) return { error: "Discogs rate limit reached. Please wait before trying again." };
+      if (!response.ok) return { error: `Discogs returned HTTP ${response.status}.` };
+      const payload = await response.json() as DiscogsSearchResponse;
+      const results = (payload.results ?? []).map(normalizeRecord).filter((result): result is DiscogsReleaseResult => Boolean(result));
+      return { payload, results };
+    };
+
+    let releaseYearFilterApplied = Boolean(requestedReleaseYear);
+    let searchResult = await search(releaseYearFilterApplied);
+    if (isDiscogsSearchError(searchResult)) return { status: "error", query, message: searchResult.error };
+
+    // A stored year helps narrow candidates, but it must never hide a valid release.
+    if (releaseYearFilterApplied && !searchResult.results.length) {
+      releaseYearFilterApplied = false;
+      searchResult = await search(false);
+      if (isDiscogsSearchError(searchResult)) return { status: "error", query, message: searchResult.error };
     }
-    if (response.status === 429) {
-      return { status: "error", query, message: "Discogs rate limit reached. Please wait before trying again." };
+
+    if (isDiscogsSearchError(searchResult)) return { status: "error", query, message: searchResult.error };
+    const { payload, results } = searchResult;
+    const total = payload.pagination?.items ?? results.length;
+    if (!results.length) {
+      return { status: "not_found", query, data: { results: [], total, requestedReleaseYear, releaseYearFilterApplied }, message: "No matching Discogs release records were found." };
     }
-    if (!response.ok) return { status: "error", query, message: `Discogs returned HTTP ${response.status}.` };
-    const payload = await response.json() as DiscogsSearchResponse;
-    const results = (payload.results ?? []).map(normalizeRecord).filter((result): result is DiscogsReleaseResult => Boolean(result));
-    if (!results.length) return { status: "not_found", query, data: { results: [], total: payload.pagination?.items ?? 0 }, message: "No matching Discogs release records were found." };
-    return { status: "success", query, data: { results, total: payload.pagination?.items ?? results.length } };
+    return { status: "success", query, data: { results, total, requestedReleaseYear, releaseYearFilterApplied } };
   } catch {
     return { status: "error", query, message: "Discogs is temporarily unavailable. Please try again." };
   }

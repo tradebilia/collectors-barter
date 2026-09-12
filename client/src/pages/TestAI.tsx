@@ -991,6 +991,7 @@ function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
       </div>
       <p className="text-gray-500 text-[10px]">Read-only release metadata for identity matching. This source does not provide Tradebilia valuation or authentication.</p>
       {!releaseTitle && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">Add an Album / Release Title to search Discogs. The listing title is not used for this lookup.</p>}
+      {data?.data?.requestedReleaseYear && <p className="text-[10px] text-gray-500">{data.data.releaseYearFilterApplied ? `Candidates narrowed by release year ${data.data.requestedReleaseYear}.` : `No candidates matched release year ${data.data.requestedReleaseYear}; showing broader title and artist matches.`}</p>}
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">{data.message}</p>}
       {results.length > 0 && (

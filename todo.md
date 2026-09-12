@@ -1869,3 +1869,5 @@
 - [x] Ensure Discogs receives and searches the structured Album / Release Title field rather than the listing title throughout the client-to-server request path.
 - [x] Fix selected Music inventory-item mapping so Discogs receives the serialized Album / Release Title rather than the display/listing title.
 - [x] Remove or translate restrictive Music metadata filters that prevent valid Discogs Album / Release Title matches for existing inventory records.
+- [x] Document available official Discogs fields and recommend the appropriate Test AI metadata set before expanding the integration.
+- [x] Use the optional Music Release Year field to prioritize matching Discogs release candidates without excluding valid results.

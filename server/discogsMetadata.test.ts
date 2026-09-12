@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildDiscogsSearchParams, buildDiscogsSearchQuery, lookupDiscogsReleases } from "./discogsMetadata";
+import { buildDiscogsSearchParams, buildDiscogsSearchQuery, getDiscogsReleaseYear, lookupDiscogsReleases } from "./discogsMetadata";
 
 describe("Discogs metadata adapter", () => {
   it("builds a music-focused query from structured inventory details", () => {
@@ -24,6 +24,16 @@ describe("Discogs metadata adapter", () => {
     expect(params.get("label")).toBeNull();
     expect(params.get("country")).toBeNull();
     expect(params.get("format")).toBeNull();
+  });
+
+  it("uses a valid Release Year only for the initial narrowing request", () => {
+    const details = JSON.stringify({ artist: "The Beatles", releaseTitle: "Sgt. Pepper's Lonely Hearts Club Band", releaseYear: "1967" });
+    expect(getDiscogsReleaseYear(details)).toBe(1967);
+    expect(getDiscogsReleaseYear(JSON.stringify({ releaseYear: "1900" }))).toBe(1900);
+    expect(getDiscogsReleaseYear(JSON.stringify({ releaseYear: "nineteen sixty seven" }))).toBeNull();
+    expect(getDiscogsReleaseYear(JSON.stringify({ releaseYear: "1500" }))).toBeNull();
+    expect(buildDiscogsSearchParams("Listing title", details).get("year")).toBeNull();
+    expect(buildDiscogsSearchParams("Listing title", details, true).get("year")).toBe("1967");
   });
 
   it("does not forward internal Music format codes that would eliminate valid Discogs results", () => {
@@ -81,6 +91,41 @@ describe("Discogs metadata adapter", () => {
         }),
       }),
     );
+  });
+
+  it("keeps a valid Release Year filter when it returns matching candidates", async () => {
+    process.env.DISCOGS_USER_TOKEN = "test-token";
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(new Response(JSON.stringify({
+      pagination: { items: 1 },
+      results: [{ id: 1967, title: "The Beatles - Sgt. Pepper's Lonely Hearts Club Band", year: 1967, format: ["Vinyl"], uri: "/release/1967" }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    const result = await lookupDiscogsReleases("Listing title", JSON.stringify({ artist: "The Beatles", releaseTitle: "Sgt. Pepper's Lonely Hearts Club Band", releaseYear: "1967" }), fetchMock);
+
+    expect(result.status).toBe("success");
+    expect(result.data?.requestedReleaseYear).toBe(1967);
+    expect(result.data?.releaseYearFilterApplied).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("year=1967");
+  });
+
+  it("falls back to title and artist candidates if the stored Release Year produces no matches", async () => {
+    process.env.DISCOGS_USER_TOKEN = "test-token";
+    const fetchMock = vi.fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ pagination: { items: 0 }, results: [] }), { status: 200, headers: { "Content-Type": "application/json" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        pagination: { items: 1 },
+        results: [{ id: 1968, title: "The Beatles - Sgt. Pepper's Lonely Hearts Club Band", year: 1968, format: ["Vinyl"], uri: "/release/1968" }],
+      }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    const result = await lookupDiscogsReleases("Listing title", JSON.stringify({ artist: "The Beatles", releaseTitle: "Sgt. Pepper's Lonely Hearts Club Band", releaseYear: "1900" }), fetchMock);
+
+    expect(result.status).toBe("success");
+    expect(result.data?.requestedReleaseYear).toBe(1900);
+    expect(result.data?.releaseYearFilterApplied).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("year=1900");
+    expect(fetchMock.mock.calls[1]?.[0]).not.toContain("year=");
   });
 
   it("returns a safe configuration error without making a request when the token is missing", async () => {
