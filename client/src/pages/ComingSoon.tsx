@@ -28,7 +28,7 @@ export default function ComingSoon() {
 
   return (
     <main className="min-h-[100svh] overflow-hidden bg-[#0b0705]" aria-label="Tradebilia Coming Soon">
-      <div className="coming-soon-composition relative mx-auto aspect-[1815/867]">
+      <div className="relative mx-auto aspect-[1815/867] w-full max-w-[1815px]">
         <iframe
           src={SUPPLIED_COMING_SOON_HTML_URL}
           title="Tradebilia Coming Soon"
@@ -63,12 +63,6 @@ export default function ComingSoon() {
           )}
         </section>
       </div>
-      <style>{`
-        .coming-soon-composition { width: 110%; }
-        @media (min-width: 640px) {
-          .coming-soon-composition { width: max(110vw, calc(100svh * 1815 / 867)); }
-        }
-      `}</style>
     </main>
   );
 }
