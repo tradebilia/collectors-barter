@@ -1906,3 +1906,5 @@
 - [x] Remove the supplied Coming Soon HTML’s fixed desktop-width cap so the exact composition naturally fills the user’s viewport like the 110% reference, without cropping or reconstructing it.
 
 - [x] Raise the Coming Soon email signup so it is centered between the tagline and the faint divider above the category icons without changing the supplied composition.
+
+- [x] Lower the Coming Soon signup slightly to the true visual midpoint and verify the email submission flow works correctly.

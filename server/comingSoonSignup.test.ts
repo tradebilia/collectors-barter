@@ -9,7 +9,10 @@ describe('Coming Soon exact supplied composition', () => {
     expect(page).toContain('/manus-storage/tradebilia_coming_soon_exact_ba8c631b.html');
     expect(page).toContain('pointer-events-none');
     expect(page).toContain('aria-label="Tradebilia launch email signup"');
-    expect(page).toContain('top-[64%]');
+    expect(page).toContain('top-[65.5%]');
+    expect(page).toContain('subscribeMutation.mutate({ email })');
+    expect(page).toContain('Please enter a valid email address.');
+    expect(page).toContain('You’re on the launch list.');
     expect(page).toContain('trpc.launchUpdates.subscribe.useMutation');
     expect(page).toContain('type="email"');
     expect(page).toContain('type="submit"');
