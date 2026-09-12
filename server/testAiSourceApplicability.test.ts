@@ -17,4 +17,11 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(videoGameIds).toContain('igdb');
     expect(videoGameIds).not.toContain('tcgdex');
   });
+
+  it('enables Discogs only for titled Music items', () => {
+    expect(getEligibleTestAiSources({ category: 'music', hasTitle: true }).map((source) => source.sourceId)).toContain('discogs');
+    expect(getEligibleTestAiSources({ category: 'Music', hasTitle: true }).map((source) => source.sourceId)).toContain('discogs');
+    expect(getEligibleTestAiSources({ category: 'music', hasTitle: false }).map((source) => source.sourceId)).not.toContain('discogs');
+    expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
+  });
 });

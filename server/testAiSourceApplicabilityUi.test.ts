@@ -23,6 +23,10 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('getRawgGameMetadata.useQuery');
     expect(source).toContain('function RawgSection');
     expect(source).not.toContain('RawgSetupSection');
+    expect(source).toContain("label: 'Discogs Music Catalog'");
+    expect(source).toContain('getDiscogsReleases.useQuery');
+    expect(source).toContain('function DiscogsSection');
+    expect(source).toContain('not affiliated with, sponsored or endorsed by Discogs');
   });
 
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {

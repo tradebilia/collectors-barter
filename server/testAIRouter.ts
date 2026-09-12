@@ -16,6 +16,7 @@ import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { lookupTcgDexCatalog } from './tcgdexMetadata';
 import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
+import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
@@ -838,6 +839,21 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupSmithsonianStampReference(input.query);
+    }),
+
+  // Discogs release/catalog metadata — administrator-only, read-only, and not a valuation source.
+  getDiscogsReleases: protectedProcedure
+    .input(z.object({
+      title: z.string().trim().min(2).max(240),
+      category: z.string().trim().min(1).max(80),
+      itemDetails: z.string().max(8_000).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      if (input.category.trim().toLowerCase().replace(/[_-]+/g, ' ') !== 'music') {
+        return { status: 'error' as const, query: input.title.trim(), message: 'Discogs lookup is available for Music items only.' };
+      }
+      return lookupDiscogsReleases(input.title, input.itemDetails);
     }),
 
   // TCGdex catalog metadata — administrator-only, read-only, and explicitly not a price source.

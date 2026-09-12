@@ -203,6 +203,15 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'User-approved read-only Video Game catalog metadata; no pricing, grading, certification, authenticity, or stored data',
   },
+  discogs: {
+    id: 'discogs',
+    label: 'Discogs Music Catalog',
+    group: 'Reference',
+    icon: '🎵',
+    provides: ['item_details'],
+    status: 'live' as const,
+    description: 'Read-only Discogs release metadata for Music items; no valuation, authentication, grading, or stored data',
+  },
 } as const;
 
 type SourceId = keyof typeof DATA_SOURCES;
@@ -950,6 +959,54 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
   </div>;
 }
 
+function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
+  const input = useMemo(() => ({
+    title: item.title,
+    category: item.category,
+    itemDetails: item.itemDetails ?? undefined,
+  }), [item.title, item.category, item.itemDetails]);
+  const { data, isLoading } = trpc.testAI.getDiscogsReleases.useQuery(input, {
+    enabled: isMusic && item.title.trim().length >= 2,
+  });
+  const results = data?.data?.results ?? [];
+
+  if (!isMusic) return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎵 Discogs Music Catalog</p>
+      <p className="text-gray-500 text-[10px]">Discogs is available for Music items only.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎵 Discogs Music Catalog</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Read-only release metadata for identity matching. This source does not provide Tradebilia valuation or authentication.</p>
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">{data.message}</p>}
+      {results.length > 0 && (
+        <div className="space-y-2">
+          {results.map((release) => (
+            <div key={release.id} className="rounded bg-gray-900/40 p-2">
+              <div className="min-w-0">
+                <a href={release.sourceUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[11px] font-semibold text-blue-300 hover:underline">{release.title}</a>
+                <p className="mt-0.5 text-[9px] text-gray-400">{[release.year, release.country, release.format.join(', ')].filter(Boolean).join(' · ') || 'Release details not provided'}</p>
+                <p className="mt-0.5 text-[9px] text-gray-500">{[release.label.join(', '), release.catalogNumber.join(', '), release.genre.join(', ')].filter(Boolean).join(' · ')}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {data?.status === 'success' && !results.length && <p className="text-[10px] text-gray-500">No usable Discogs release records were returned for this query.</p>}
+      <p className="border-t border-gray-700/30 pt-2 text-[9px] text-gray-600">This application uses Discogs’ API but is not affiliated with, sponsored or endorsed by Discogs. ‘Discogs’ is a trademark of Zink Media, LLC.</p>
+    </div>
+  );
+}
+
 function TcgDexSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const supported = item.category === 'pokemon';
@@ -1580,6 +1637,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
       {enabledSources.has('tcgdex') && <TcgDexSection item={item} side={side} />}
       {enabledSources.has('igdb') && <IgdbSection item={item} side={side} />}
       {enabledSources.has('rawg') && <RawgSection item={item} side={side} />}
+      {enabledSources.has('discogs') && <DiscogsSection item={item} side={side} />}
       {enabledSources.has('wikidata') && <WikidataSection item={item} side={side} />}
       {enabledSources.has('smithsonian') && <SmithsonianSection item={item} side={side} />}
       {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}

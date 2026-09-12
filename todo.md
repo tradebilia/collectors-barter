@@ -1863,3 +1863,5 @@
 - [x] Trace and fix the confirmed API-level Ken Griffey Test AI eBay zero-result response by auditing the outbound Browse API request, marketplace configuration, and raw response before post-filters.
 - [x] Diagnose and fix the Test AI eBay Sold-Comps path so completed-sale data is shown when available, or its unavailability is presented accurately.
 - [x] Assess the RiseHaza and CarsonKope GitHub HBID auction-data projects for compliant, maintainable Test AI integration feasibility before any adoption.
+- [x] Add official Discogs API as a read-only Test AI music research source, including secure credential configuration, attribution, matching, and regression coverage.
+- [x] Verify Discogs API integration behavior in the Test AI UI and document any required user validation.
