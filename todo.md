@@ -1904,3 +1904,5 @@
 - [x] Use the exact supplied Coming Soon HTML composition as the active page source, retaining its vinyl record, bottom category icons, and original logo centering while wiring the displayed email signup to the launch-update service.
 
 - [x] Remove the supplied Coming Soon HTML’s fixed desktop-width cap so the exact composition naturally fills the user’s viewport like the 110% reference, without cropping or reconstructing it.
+
+- [x] Raise the Coming Soon email signup so it is centered between the tagline and the faint divider above the category icons without changing the supplied composition.

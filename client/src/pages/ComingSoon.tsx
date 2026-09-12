@@ -37,7 +37,7 @@ export default function ComingSoon() {
           aria-hidden="true"
         />
 
-        <section className="absolute left-1/2 top-[69%] h-[5.6%] w-[27%] -translate-x-1/2 -translate-y-1/2" aria-label="Tradebilia launch email signup">
+        <section className="absolute left-1/2 top-[64%] h-[5.6%] w-[27%] -translate-x-1/2 -translate-y-1/2" aria-label="Tradebilia launch email signup">
           {submitted ? (
             <div role="status" aria-live="polite" className="absolute left-1/2 top-1/2 flex h-full w-full -translate-x-1/2 -translate-y-1/2 items-center justify-center border border-[#e3ab5e]/80 bg-[#0b0705]/90 px-2 text-center text-[clamp(7px,0.56cqw,11px)] font-medium uppercase tracking-[0.1em] text-[#e3ab5e]">
               {alreadySubscribed ? "You’re already on the launch list." : "You’re on the launch list."}
