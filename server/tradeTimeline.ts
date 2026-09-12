@@ -12,6 +12,7 @@ type TimelineProposal = {
   requesterId: number;
   requesterName: string;
   recipientName: string;
+  listingTitle?: string | null;
   status: string;
   createdAt: string | Date;
   negotiatingAt?: string | Date | null;
@@ -45,7 +46,7 @@ export function isMissingTradeActivityLogError(error: unknown): boolean {
 export function buildLegacyTradeTimeline(proposal: TimelineProposal, messages: TimelineMessage[]): TimelineEvent[] {
   const events: TimelineEvent[] = [{
     id: `proposal-${proposal.id}-created`, actorId: proposal.requesterId, actorName: proposal.requesterName,
-    eventType: "trade_created", details: proposal.initiatorMessage || proposal.note || "Trade proposal created", createdAt: proposal.createdAt,
+    eventType: "trade_created", details: `Trade proposal initiated for item: ${proposal.listingTitle || "the requested item"}`, createdAt: proposal.createdAt,
   }];
   const milestones: Array<{ timestamp: string | Date | null | undefined; eventType: string; details: string }> = [
     { timestamp: proposal.negotiatingAt, eventType: "proposal_sent", details: "Trade entered negotiation" },

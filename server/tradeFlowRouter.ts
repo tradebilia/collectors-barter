@@ -299,7 +299,7 @@ export const tradeFlowRouter = router({
       // 8. Log to activity log
       const initiatorName = (initiator as any)?.displayName || (initiator as any)?.username || 'Unknown';
       await db.execute(
-        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${proposalId}, ${userId}, ${initiatorName}, 'trade_created', ${`Trade created for item: ${listing.title}`}, ${now})`
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${proposalId}, ${userId}, ${initiatorName}, 'trade_created', ${`Trade proposal initiated for item: ${listing.title}`}, ${now})`
       );
 
       // Email notification to listing owner (tradeInitiated preference)
@@ -1699,7 +1699,10 @@ export const tradeFlowRouter = router({
         );
         const requesterName = await getUserDisplayName(db, proposal.requesterId);
         const recipientName = await getUserDisplayName(db, proposal.recipientId);
-        return { events: buildLegacyTradeTimeline({ ...proposal, requesterName, recipientName }, messages as unknown as any[]) };
+        const [requestedListing] = proposal.requestedListingId
+          ? await db.select({ title: listings.title }).from(listings).where(eq(listings.id, proposal.requestedListingId)).limit(1)
+          : [];
+        return { events: buildLegacyTradeTimeline({ ...proposal, requesterName, recipientName, listingTitle: requestedListing?.title }, messages as unknown as any[]) };
       }
     }),
 
