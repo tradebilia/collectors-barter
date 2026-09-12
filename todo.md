@@ -1896,3 +1896,7 @@
 - [x] Add an email sign-up section below “so your collection can grow” and above the Coming Soon category icons while preserving the existing logo and spinning wheel.
 
 - [x] Add and visually verify the launch email signup section on the active /coming-soon page between the supplied tagline and category icons.
+
+- [x] Audit why the active /coming-soon page differs from the exact supplied file and correct only the confirmed fidelity differences.
+
+- [x] Restore the supplied Coming Soon HTML composition on /coming-soon, including the animated SVG logo and original lower tidbits, then add only the requested email form.

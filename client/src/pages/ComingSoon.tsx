@@ -1,36 +1,19 @@
-import {
-  Archive,
-  ArrowRight,
-  Bot,
-  CheckCircle2,
-  CircleDot,
-  Coins,
-  Disc3,
-  Gamepad2,
-  LibraryBig,
-  Mail,
-  MousePointer2,
-  PanelsTopLeft,
-  PenTool,
-  Stamp,
-} from "lucide-react";
+import { ArrowRight, CheckCircle2, Mail } from "lucide-react";
 import { FormEvent, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 
-const COMING_SOON_CATEGORIES = [
-  { label: "Sports Cards", icon: PanelsTopLeft },
-  { label: "Comics", icon: LibraryBig },
-  { label: "Pokémon / Trading Card Games", icon: CircleDot },
-  { label: "Vintage Toys", icon: Bot },
-  { label: "Video Games", icon: Gamepad2 },
-  { label: "Coins", icon: Coins },
-  { label: "Stamps", icon: Stamp },
-  { label: "Autographs & Signed Memorabilia", icon: PenTool },
-  { label: "Disney Pins & Disney Collectibles", icon: MousePointer2 },
-  { label: "VHS / DVD / Blu-ray / LaserDisc / Physical Media", icon: Archive },
-  { label: "Music", icon: Disc3 },
+import SuppliedComingSoonLogo from "@/components/SuppliedComingSoonLogo";
+
+const SUPPLIED_TIDBITS = [
+  "Discover rare finds",
+  "Trade with confidence",
+  "No trading fees",
+  "Trade across categories",
+  "Build trust faster",
+  "Interactive trading platform",
+  "A.I. assisted trade evaluation",
 ] as const;
 
 export default function ComingSoon() {
@@ -57,50 +40,44 @@ export default function ComingSoon() {
   };
 
   return (
-    <main
-      className="grid min-h-[100svh] place-items-center overflow-hidden bg-[#120d0b]"
-      aria-label="Tradebilia Coming Soon"
-    >
-      <div className="relative aspect-[605/289] w-[min(100vw,calc(100svh*605/289))] max-w-full">
-        <img
-          src="/manus-storage/coming-soon-exact-supplied-clean-row_d8aa56d4.png"
-          alt="Tradebilia Coming Soon collector room with a centered collection category row for comics, sports cards, games, coins, stamps, media, and music"
-          className="block size-full object-contain"
-        />
-        <section className="absolute inset-x-[13%] top-[63.5%] z-10 flex min-h-[10%] items-center justify-center" aria-label="Tradebilia launch email signup">
+    <main className="min-h-[100svh] overflow-x-hidden bg-[#0b0705]" aria-label="Tradebilia Coming Soon">
+      <div className="relative mx-auto aspect-[1815/867] w-full max-w-[1815px] overflow-hidden [container-type:inline-size]">
+        <img src="/manus-storage/coming-soon-exact-supplied-clean-row_d8aa56d4.png" alt="Tradebilia collector room" className="absolute inset-0 size-full object-contain" />
+
+        <div className="absolute left-1/2 top-[32%] w-max -translate-x-1/2 -translate-y-1/2">
+          <SuppliedComingSoonLogo />
+        </div>
+
+        <section className="absolute left-1/2 top-[68%] w-[min(74%,520px)] -translate-x-1/2" aria-label="Tradebilia launch email signup">
           {submitted ? (
-            <div role="status" aria-live="polite" className="flex items-center gap-2 rounded-full border border-[#e3ab5e]/70 bg-[#120d0b]/75 px-4 py-2 text-center text-[clamp(9px,1vw,15px)] font-semibold text-[#fff7e8] shadow-[0_2px_8px_rgba(0,0,0,0.28)]">
-              <CheckCircle2 className="h-[1.1em] w-[1.1em] shrink-0 text-[#e3ab5e]" aria-hidden="true" />
+            <div role="status" aria-live="polite" className="flex items-center justify-center gap-2 text-center text-[clamp(8px,0.56cqw,11px)] font-medium uppercase tracking-[0.1em] text-[#e3ab5e]">
+              <CheckCircle2 className="h-[1em] w-[1em] shrink-0" aria-hidden="true" />
               <span>{alreadySubscribed ? "You’re already on the launch list." : "You’re on the launch list."}</span>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} noValidate className="flex w-full max-w-[min(88%,31rem)] flex-col items-center gap-1.5">
-              <div className="flex w-full items-stretch gap-1.5 rounded-full border border-[#e3ab5e]/70 bg-[#120d0b]/70 p-1 shadow-[0_2px_8px_rgba(0,0,0,0.28)]">
+            <form onSubmit={handleSubmit} noValidate className="mx-auto flex max-w-[460px] flex-col gap-1">
+              <div className="flex items-stretch border border-[#e3ab5e]/75 bg-[#0b0705]/35 p-0.5">
                 <div className="relative min-w-0 flex-1">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#fff7e8]/65" aria-hidden="true" />
-                  <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Your email for launch updates" autoComplete="email" required aria-label="Email for launch updates" className="h-8 border-0 bg-transparent pl-8 text-[clamp(9px,0.85vw,13px)] text-[#fff7e8] placeholder:text-[#fff7e8]/65 focus-visible:ring-0" />
+                  <Mail className="pointer-events-none absolute left-2 top-1/2 h-[0.9em] w-[0.9em] -translate-y-1/2 text-[#e3ab5e]/80" aria-hidden="true" />
+                  <Input id={emailId} type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="Enter your email for early access" autoComplete="email" required aria-label="Email for launch updates" className="h-[clamp(24px,2.6cqw,42px)] border-0 bg-transparent pl-7 text-[clamp(8px,0.62cqw,12px)] text-white placeholder:text-white/65 focus-visible:ring-0" />
                 </div>
-                <Button type="submit" disabled={subscribeMutation.isPending} className="h-8 rounded-full bg-[#e3ab5e] px-3 text-[clamp(8px,0.7vw,11px)] font-bold uppercase tracking-[0.08em] text-[#24160f] hover:bg-[#f0c77f] disabled:bg-[#e3ab5e]/50">
+                <Button type="submit" disabled={subscribeMutation.isPending} className="h-[clamp(24px,2.6cqw,42px)] rounded-none bg-[#e3ab5e] px-[clamp(8px,1.2cqw,20px)] text-[clamp(7px,0.52cqw,10px)] font-bold uppercase tracking-[0.12em] text-[#0b0705] hover:bg-[#f0c77f] disabled:bg-[#e3ab5e]/55">
                   {subscribeMutation.isPending ? "Saving…" : "Notify me"}
-                  {!subscribeMutation.isPending && <ArrowRight className="ml-1 h-3 w-3" aria-hidden="true" />}
+                  {!subscribeMutation.isPending && <ArrowRight className="ml-1 h-[0.9em] w-[0.9em]" aria-hidden="true" />}
                 </Button>
               </div>
-              {signupErrorMessage && <p role="alert" aria-live="polite" className="rounded bg-[#120d0b]/80 px-2 py-0.5 text-center text-[clamp(8px,0.7vw,11px)] font-medium text-[#ffd5d5]">{signupErrorMessage}</p>}
+              {signupErrorMessage && <p role="alert" aria-live="polite" className="text-center text-[clamp(7px,0.5cqw,10px)] font-medium text-[#ffd5d5]">{signupErrorMessage}</p>}
             </form>
           )}
         </section>
 
-        <div className="absolute inset-x-[6%] top-[75%] h-[15%] px-[2%]" aria-label="Collections on the exchange">
-          <div className="grid h-full grid-cols-11 items-center gap-[0.7%] text-[#e7bd66]">
-            {COMING_SOON_CATEGORIES.map(({ label, icon: Icon }) => (
-              <div key={label} className="flex min-w-0 flex-col items-center justify-center gap-[14%] text-center drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">
-                <Icon className="h-auto w-[2.7vw] max-w-[42px] min-w-[12px] stroke-[1.45]" aria-hidden="true" />
-                <span className="line-clamp-2 min-h-[2.35em] text-[clamp(6px,0.62vw,11px)] font-semibold uppercase leading-[1.18] tracking-[0.08em]">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
+        <div className="absolute left-1/2 top-[96%] flex w-max -translate-x-1/2 -translate-y-1/2 items-center whitespace-nowrap text-[clamp(7.5px,0.56cqw,10.5px)] font-medium uppercase tracking-[0.13em] text-[#e3ab5e]/80" aria-label="Tradebilia platform highlights">
+          {SUPPLIED_TIDBITS.map((tidbit, index) => (
+            <span key={tidbit} className="inline-flex items-center">
+              <span>{tidbit}</span>
+              {index < SUPPLIED_TIDBITS.length - 1 && <span className="mx-[clamp(5px,0.55cqw,10px)] text-[0.8em] text-[#e3ab5e]/50">◆</span>}
+            </span>
+          ))}
         </div>
       </div>
     </main>
