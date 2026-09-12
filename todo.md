@@ -1912,3 +1912,5 @@
 - [x] Verify the Coming Soon signup recipient-segment enrollment path: the existing imported helper assigns contacts to Tradebilia Pre-Launch Updates; no repair was required.
 
 - [x] Conduct a deep technical, operational, and policy assessment of the supplied eBayScraper project for possible Test AI incorporation.
+
+- [x] Fix the Trade Room item-card image overlap at 100% browser zoom so the image remains contained and does not cover background text.

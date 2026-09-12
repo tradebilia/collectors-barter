@@ -1,0 +1,17 @@
+import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+describe("Trade Room item-card layout", () => {
+  const source = readFileSync(resolve(process.cwd(), "client/src/pages/WarRoom.tsx"), "utf8");
+
+  it("keeps the desktop trade table shrinkable at normal browser zoom", () => {
+    expect(source).toContain('className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-11"');
+    expect(source.match(/className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-600 bg-\[#0f0f1a\] p-4 lg:col-span-4"/g)).toHaveLength(2);
+  });
+
+  it("clips both side item cards so artwork cannot cover surrounding card content", () => {
+    expect(source).toContain("relative group overflow-hidden ${getItemCardSpacing(myItems.length)}");
+    expect(source).toContain("relative group overflow-hidden ${getItemCardSpacing(theirItems.length)}");
+  });
+});

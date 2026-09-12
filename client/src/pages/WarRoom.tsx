@@ -1487,7 +1487,7 @@ export default function WarRoom() {
               <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 lg:grid-cols-11">
 
                 {/* ── YOUR SIDE ── */}
-                <div className="flex flex-col overflow-hidden rounded-xl border border-gray-600 bg-[#0f0f1a] p-4 lg:col-span-4">
+                <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-600 bg-[#0f0f1a] p-4 lg:col-span-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
@@ -1518,7 +1518,7 @@ export default function WarRoom() {
                         const isLocked = false;
                         const isOriginalRequestedItem = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg relative group ${getItemCardSpacing(myItems.length)} ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg relative group overflow-hidden ${getItemCardSpacing(myItems.length)} ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
                           {isOriginalRequestedItem && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
@@ -1950,7 +1950,7 @@ export default function WarRoom() {
                 </div>
 
                 {/* ── THEIR SIDE ── */}
-                <div className="flex flex-col overflow-hidden rounded-xl border border-gray-600 bg-[#0f0f1a] p-4 lg:col-span-4">
+                <div className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-600 bg-[#0f0f1a] p-4 lg:col-span-4">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       {/* Avatar */}
@@ -1981,7 +1981,7 @@ export default function WarRoom() {
                         const isLocked = false;
                         const isOriginalRequestedItem = item.id === requestedListing?.id;
                         return (
-                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg relative group ${getItemCardSpacing(theirItems.length)} ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
+                        <div key={item.id} className={`bg-[#0f3460] border rounded-lg relative group overflow-hidden ${getItemCardSpacing(theirItems.length)} ${isOriginalRequestedItem ? 'border-blue-500/40' : 'border-gray-600'}`}>
                           {isOriginalRequestedItem && (
                             <div className="absolute top-1.5 left-1.5 bg-blue-600/80 text-white text-[9px] font-bold px-1.5 py-0.5 rounded flex items-center gap-0.5 z-10">
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-2.5 h-2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" /></svg>
