@@ -1780,7 +1780,7 @@
 
 - [x] Move the Music hero logo higher to create the same visible gap above the divider used by the other category pages, without moving Exchange or the divider.
 
-- [ ] Adjust the desktop Music hero background crop/position so it reveals a similar amount of background as mobile while preserving the hero content layout.
+- [x] Defer the optional desktop Music hero background crop/position adjustment at the user’s direction; preserve the current hero layout.
 
 - [x] Repair stale Coming Soon restoration-workbench assertions, then validate the current responsive page and early-access subscription flow.
 
