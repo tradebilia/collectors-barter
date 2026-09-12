@@ -106,16 +106,10 @@ export function buildDiscogsSearchParams(title: string, itemDetails?: string): U
   });
   if (releaseTitle) params.set("release_title", releaseTitle);
   if (artist) params.set("artist", artist);
-  const releaseYear = clean(details.releaseYear);
-  const catalogNumber = clean(details.catalogNumber);
-  const recordLabel = clean(details.recordLabel);
-  const country = clean(details.country);
-  const format = clean(details.format) || clean(details.formatDetails);
-  if (/^\d{4}$/.test(releaseYear)) params.set("year", releaseYear);
-  if (catalogNumber) params.set("catno", catalogNumber);
-  if (recordLabel) params.set("label", recordLabel);
-  if (country) params.set("country", country);
-  if (format && format.toLowerCase() !== "other") params.set("format", format);
+  // Do not send saved release year, catalog number, label, country, or format as
+  // restrictive Discogs filters. Existing inventory can contain partial values or
+  // internal UI codes such as `vinyl_record`, which Discogs does not recognize as
+  // a format and would turn an otherwise valid album search into a false zero result.
   return params;
 }
 

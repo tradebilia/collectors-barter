@@ -1868,3 +1868,4 @@
 - [x] Make Discogs use Album / Release Title as the primary Music search field, with Artist / Performer as supporting context instead of using the display title first.
 - [x] Ensure Discogs receives and searches the structured Album / Release Title field rather than the listing title throughout the client-to-server request path.
 - [x] Fix selected Music inventory-item mapping so Discogs receives the serialized Album / Release Title rather than the display/listing title.
+- [x] Remove or translate restrictive Music metadata filters that prevent valid Discogs Album / Release Title matches for existing inventory records.

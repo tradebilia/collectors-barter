@@ -19,11 +19,26 @@ describe("Discogs metadata adapter", () => {
     expect(params.get("release_title")).toBe("Kind of Blue");
     expect(params.get("artist")).toBe("Miles Davis");
     expect(params.get("type")).toBe("release");
-    expect(params.get("year")).toBe("1959");
-    expect(params.get("catno")).toBe("CL 1355");
-    expect(params.get("label")).toBe("Columbia");
-    expect(params.get("country")).toBe("US");
-    expect(params.get("format")).toBe("Vinyl");
+    expect(params.get("year")).toBeNull();
+    expect(params.get("catno")).toBeNull();
+    expect(params.get("label")).toBeNull();
+    expect(params.get("country")).toBeNull();
+    expect(params.get("format")).toBeNull();
+  });
+
+  it("does not forward internal Music format codes that would eliminate valid Discogs results", () => {
+    const params = buildDiscogsSearchParams("Listing title", JSON.stringify({
+      artist: "The Beatles",
+      releaseTitle: "Sgt. Pepper's Lonely Hearts Club Band",
+      format: "vinyl_record",
+      catalogNumber: "PCS 7027",
+    }));
+
+    expect(params.get("q")).toBe("Sgt. Pepper's Lonely Hearts Club Band");
+    expect(params.get("release_title")).toBe("Sgt. Pepper's Lonely Hearts Club Band");
+    expect(params.get("artist")).toBe("The Beatles");
+    expect(params.get("format")).toBeNull();
+    expect(params.get("catno")).toBeNull();
   });
 
   it("normalizes usable Discogs release results and preserves source links", async () => {
