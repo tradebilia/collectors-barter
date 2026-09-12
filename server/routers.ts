@@ -91,6 +91,7 @@ import {
   isFavorited,
   getTopMostFavoritedItems,
   getTopMostViewedItems,
+  getRankedListingDirectory,
   adminDeleteListing,
   adminBulkDeleteListings,
   getConventions,
@@ -937,6 +938,16 @@ export const appRouter = router({
     topHighestValueItems: publicProcedure.query(({ ctx }) => {
       return getTopHighestValueItems(ctx.user?.id ?? null);
     }),
+    rankedListings: publicProcedure
+      .input(z.object({
+        metric: z.enum(["most_viewed", "most_favorited", "highest_value"]),
+        limit: z.number().int().min(1).max(48).default(24),
+        offset: z.number().int().min(0).default(0),
+      }))
+      .query(({ ctx, input }) => getRankedListingDirectory(input.metric, {
+        limit: input.limit,
+        offset: input.offset,
+      }, ctx.user?.id ?? null)),
     getVerifiedMerchants: publicProcedure.query(async () => {
       const db = await requireDb();
       const [rows] = await db.execute(
@@ -4064,6 +4075,42 @@ export const appRouter = router({
           LIMIT ${limit}`
         );
         return { traders: (rows as unknown as any[]) || [] };
+      }),
+    getRatedTradersDirectory: publicProcedure
+      .input(z.object({
+        limit: z.number().int().min(1).max(48).default(24),
+        offset: z.number().int().min(0).default(0),
+      }))
+      .query(async ({ input }) => {
+        const db = await requireDb();
+        const [countQuery, traderQuery] = await Promise.all([
+          db.execute(sql`SELECT COUNT(*) AS total
+            FROM users u
+            WHERE ${isPublicMemberEligible(sql`u.id`)}`),
+          db.execute(sql`SELECT
+            u.id,
+            up.displayName,
+            up.avatarUrl,
+            COALESCE(ROUND(AVG(tr.overallRating), 1), 0) as averageRating,
+            COUNT(tr.id) as reviewCount,
+            (SELECT COUNT(*) FROM tradeProposals tp WHERE (tp.requesterId = u.id OR tp.recipientId = u.id) AND tp.status = 'completed') as completedTrades
+          FROM users u
+          LEFT JOIN userProfiles up ON up.userId = u.id
+          LEFT JOIN tradeReviews tr ON tr.revieweeId = u.id AND tr.isVisible = 1
+          WHERE ${isPublicMemberEligible(sql`u.id`)}
+          GROUP BY u.id, up.displayName, up.avatarUrl
+          ORDER BY averageRating DESC, reviewCount DESC, completedTrades DESC, u.id ASC
+          LIMIT ${input.limit} OFFSET ${input.offset}`),
+        ]);
+        const [countRows] = countQuery as unknown as [[{ total?: number | string }], unknown];
+        const [rows] = traderQuery as unknown as [any[], unknown];
+        const countResult = countRows[0];
+        return {
+          traders: (rows as unknown as any[]) || [],
+          total: Number(countResult?.total ?? 0),
+          limit: input.limit,
+          offset: input.offset,
+        };
       }),
 
     getCompletedTrades: publicProcedure

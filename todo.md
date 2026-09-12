@@ -1873,3 +1873,5 @@
 - [x] Use the optional Music Release Year field to prioritize matching Discogs release candidates without excluding valid results.
 - [x] Show the exact Discogs Album / Release Title, Artist / Performer, and Release Year search criteria in the Test AI Evidence Review.
 - [x] Map and display Artist / Performer as a distinct returned Discogs candidate field for Test AI identity comparison.
+- [x] Replace each homepage Top 10 destination with a full ranked active-listing directory ordered by its respective criterion.
+- [x] Display each ranked directory’s total eligible-item count and support pagination beyond the first page.

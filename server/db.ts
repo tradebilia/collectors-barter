@@ -4610,6 +4610,80 @@ export async function getTopMostViewedItems(viewerId?: number | null) {
   return formatListings(listingRows, viewerId ?? null, { publicOnly: true });
 }
 
+export type ListingRankingMetric = "most_viewed" | "most_favorited" | "highest_value";
+
+export async function getRankedListingDirectory(
+  metric: ListingRankingMetric,
+  options: { limit: number; offset: number },
+  viewerId: number | null = null,
+) {
+  const db = await requireDb();
+  const whereClauses = and(
+    eq(listings.status, "active"),
+    eq(listings.isActive, 1),
+    isPublicMemberEligible(listings.ownerId),
+  );
+  const selection = {
+    id: listings.id,
+    ownerId: listings.ownerId,
+    title: listings.title,
+    category: listings.category,
+    condition: listings.condition,
+    grade: listings.grade,
+    certificationCompany: listings.certificationCompany,
+    estimatedValue: listings.estimatedValue,
+    description: listings.description,
+    itemDetails: listings.itemDetails,
+    status: listings.status,
+    isActive: listings.isActive,
+    featured: listings.featured,
+    viewCount: listings.viewCount,
+    createdAt: listings.createdAt,
+    updatedAt: listings.updatedAt,
+    primaryPhotoUrl: listingPhotos.imageUrl,
+  };
+
+  const [countRows, listingRows] = await Promise.all([
+    db.select({ value: sql<number>`count(*)` }).from(listings).where(whereClauses),
+    metric === "most_favorited"
+      ? db.select({
+          ...selection,
+          favoriteCount: sql<number>`COUNT(${favorites.id})`.as("favoriteCount"),
+        })
+          .from(listings)
+          .leftJoin(listingPhotos, and(eq(listings.id, listingPhotos.listingId), eq(listingPhotos.sortOrder, 0)))
+          .leftJoin(favorites, eq(listings.id, favorites.listingId))
+          .where(whereClauses)
+          .groupBy(
+            listings.id, listings.ownerId, listings.title, listings.category, listings.condition,
+            listings.grade, listings.certificationCompany, listings.estimatedValue, listings.description,
+            listings.itemDetails, listings.status, listings.isActive, listings.featured, listings.viewCount,
+            listings.createdAt, listings.updatedAt, listingPhotos.imageUrl,
+          )
+          .orderBy(desc(sql`COUNT(${favorites.id})`), desc(listings.updatedAt), desc(listings.id))
+          .limit(options.limit)
+          .offset(options.offset)
+      : db.select(selection)
+          .from(listings)
+          .leftJoin(listingPhotos, and(eq(listings.id, listingPhotos.listingId), eq(listingPhotos.sortOrder, 0)))
+          .where(whereClauses)
+          .orderBy(
+            metric === "most_viewed" ? desc(listings.viewCount) : desc(listings.estimatedValue),
+            desc(listings.updatedAt),
+            desc(listings.id),
+          )
+          .limit(options.limit)
+          .offset(options.offset),
+  ]);
+
+  return {
+    items: await formatListings(listingRows, viewerId, { publicOnly: true }),
+    total: Number(countRows[0]?.value ?? 0),
+    limit: options.limit,
+    offset: options.offset,
+  };
+}
+
 
 // Admin delete functions
 export async function adminDeleteListing(
