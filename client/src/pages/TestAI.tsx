@@ -11,6 +11,7 @@ import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { buildUspsTrackingUrl } from '@shared/uspsTrackingLink';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
+import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -346,7 +347,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
   const handleInventorySelect = (id: number) => {
     setSelectedInventoryId(id);
     const found = selectableItems.find((i: any) => i.id === id);
-    if (found) onItemChange(found);
+    if (found) onItemChange(normalizeTestAiSelectedItem(found));
     else onItemChange(null);
   };
 
