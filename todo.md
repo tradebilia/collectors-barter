@@ -1893,3 +1893,6 @@
 - [x] Make item-detail hero background filter, overlay, positioning, and repeat behavior match the corresponding category hero.
 - [x] Center the visible Tradebilia hero title artwork on item-detail pages with equal open space on both sides.
 - [x] Recenter the item-detail hero logo using measured visible artwork bounds so both sides have equal negative space.
+- [x] Add an email sign-up section below “so your collection can grow” and above the Coming Soon category icons while preserving the existing logo and spinning wheel.
+
+- [x] Add and visually verify the launch email signup section on the active /coming-soon page between the supplied tagline and category icons.
