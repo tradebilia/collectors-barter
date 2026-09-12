@@ -10,8 +10,10 @@ describe("Trade Room item-card layout", () => {
     expect(source.match(/className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-gray-600 bg-\[#0f0f1a\] p-4 lg:col-span-4"/g)).toHaveLength(2);
   });
 
-  it("clips both side item cards so artwork cannot cover surrounding card content", () => {
+  it("clips both side item cards and limits the single-item footprint", () => {
     expect(source).toContain("relative group overflow-hidden ${getItemCardSpacing(myItems.length)}");
     expect(source).toContain("relative group overflow-hidden ${getItemCardSpacing(theirItems.length)}");
+    expect(source).toContain("h-64 sm:h-72 lg:h-[18rem]");
+    expect(source).toContain("min-h-[25rem] p-4");
   });
 });

@@ -704,14 +704,14 @@ export default function WarRoom() {
   // Returns Tailwind image height class based on item count
   // 1 item = very tall, more items = progressively shorter
   const getImgHeight = (count: number) => {
-    if (count === 1) return 'h-72 sm:h-96 lg:h-[24rem]'; // single item fills its proposal side before the grid becomes multi-item
+    if (count === 1) return 'h-64 sm:h-72 lg:h-[18rem]'; // keep the image clear of the title/value area at normal desktop zoom
     if (count === 2) return 'h-48';   // ~192px
     if (count <= 4) return 'h-36';   // ~144px
     if (count <= 6) return 'h-28';   // ~112px
     return 'h-20';                    // ~80px for 7+
   };
 
-  const getItemCardSpacing = (count: number) => count === 1 ? 'min-h-[31rem] p-4' : 'p-2.5';
+  const getItemCardSpacing = (count: number) => count === 1 ? 'min-h-[25rem] p-4 flex flex-col' : 'p-2.5';
   const getItemTitleClass = (count: number) => count === 1
     ? 'text-base font-semibold leading-snug line-clamp-3'
     : 'text-[11px] font-medium leading-tight line-clamp-2';
@@ -1526,9 +1526,9 @@ export default function WarRoom() {
                             </div>
                           )}
                           {item.photos?.[0]?.imageUrl ? (
-                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(myItems.length)} object-contain rounded mb-2 bg-[#0f0f1a]`} />
+                            <img src={item.photos[0].imageUrl} alt={item.title} className={`mt-3 block w-full shrink-0 ${getImgHeight(myItems.length)} object-contain rounded mb-2 bg-[#0f0f1a]`} />
                           ) : (
-                            <div className={`w-full ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
+                            <div className={`mt-3 block w-full shrink-0 ${getImgHeight(myItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
                           <p className={`text-white ${getItemTitleClass(myItems.length)}`}>{item.title}</p>
                           <p className={`text-blue-400 ${getItemValueClass(myItems.length)}`}>{formatItemValue(item.estimatedValue)}</p>
@@ -1989,9 +1989,9 @@ export default function WarRoom() {
                             </div>
                           )}
                           {item.photos?.[0]?.imageUrl ? (
-                            <img src={item.photos[0].imageUrl} alt={item.title} className={`w-full ${getImgHeight(theirItems.length)} object-contain rounded mb-2 bg-[#0f0f1a]`} />
+                            <img src={item.photos[0].imageUrl} alt={item.title} className={`mt-3 block w-full shrink-0 ${getImgHeight(theirItems.length)} object-contain rounded mb-2 bg-[#0f0f1a]`} />
                           ) : (
-                            <div className={`w-full ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
+                            <div className={`mt-3 block w-full shrink-0 ${getImgHeight(theirItems.length)} bg-gray-800 rounded mb-2 flex items-center justify-center text-gray-600 text-xs`}>No Image</div>
                           )}
                           <p className={`text-white ${getItemTitleClass(theirItems.length)}`}>{item.title}</p>
                           <p className={`text-blue-400 ${getItemValueClass(theirItems.length)}`}>{formatItemValue(item.estimatedValue)}</p>

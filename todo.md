@@ -1914,3 +1914,7 @@
 - [x] Conduct a deep technical, operational, and policy assessment of the supplied eBayScraper project for possible Test AI incorporation.
 
 - [x] Fix the Trade Room item-card image overlap at 100% browser zoom so the image remains contained and does not cover background text.
+
+- [x] Rework the Trade Room single-item image footprint because the prior containment fix did not resolve the overlap at 100% browser zoom.
+
+- [x] Match the Trade Room single-item card to the user’s 100% screenshot by separating its header, image, title, and value regions so the image cannot cover the header/background text.
