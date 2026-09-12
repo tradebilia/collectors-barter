@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCategoryHeroTreatment } from '@/lib/categoryHeroTreatment';
 
 interface CategoryHeroSectionProps {
   slug?: string;
@@ -36,10 +37,7 @@ export function CategoryHeroSection({
   
   const isSportsCardsPage = slug === 'sports_cards';
   const showEyebrow = slug !== 'pokemon';
-  const backgroundFilter = (slug === 'video_games' || slug === 'coins' || slug === 'stamps' || slug === 'vintage_toys' || slug === 'autographs' || slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'disney_pins') ? 'contrast(1.2) saturate(1.1)' : 'none';
-  const backgroundRepeat = (slug === 'movies' || slug === 'comics' || slug === 'pokemon' || slug === 'video_games' || slug === 'disney_pins') ? 'no-repeat' : 'repeat';
-  const backgroundPosition = slug === 'movies' ? 'center top' : 'center';
-  const overlayOpacity = slug === 'movies' ? 'bg-black/10' : 'bg-black/30';
+  const { backgroundFilter, backgroundRepeat, backgroundPosition, overlayClassName } = getCategoryHeroTreatment(slug);
 
   return (
     <header className={`relative overflow-hidden border-b ${theme.borderClassName} ${theme.heroClassName}`} style={{ minHeight: '400px', position: 'relative' }}>
@@ -54,7 +52,7 @@ export function CategoryHeroSection({
         zIndex: 1,
       }}>
         {/* Overlay */}
-        <div className={`absolute inset-0 ${overlayOpacity}`}></div>
+        <div className={`absolute inset-0 ${overlayClassName}`}></div>
       </div>
 
       {/* Container for all elements - position relative so absolute children work */}

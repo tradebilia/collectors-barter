@@ -29,6 +29,7 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade, formatItemValue } from "@/lib/tradebilia";
+import { getCategoryHeroTreatment } from "@/lib/categoryHeroTreatment";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 
 const getItemDetailPageClassName = (category: string): string => {
@@ -275,6 +276,7 @@ export default function ItemDetail() {
   }
 
   const categoryTheme = listing ? getTradebiliaCategoryTheme(listing.category) : null;
+  const heroTreatment = listing ? getCategoryHeroTreatment(listing.category) : getCategoryHeroTreatment();
   const pageBackgroundClass = listing ? getItemDetailPageClassName(listing.category) : "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
 
   return (
@@ -284,13 +286,20 @@ export default function ItemDetail() {
       />
 
       <main className="pb-16">
-       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white" style={{
-          backgroundImage: getCategoryWallpaperUrl(listing.category) ? `url(${getCategoryWallpaperUrl(listing.category)})` : 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-       }}>
-        <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
+       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: getCategoryWallpaperUrl(listing.category) ? `url(${getCategoryWallpaperUrl(listing.category)})` : 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: heroTreatment.backgroundPosition,
+            backgroundRepeat: heroTreatment.backgroundRepeat,
+            filter: heroTreatment.backgroundFilter,
+          }}
+        >
+          <div className={`absolute inset-0 ${heroTreatment.overlayClassName}`} />
+        </div>
+        <div className="container relative z-10 flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
             <div className="flex w-full max-w-6xl items-center justify-center">
               <img
                 src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg"
