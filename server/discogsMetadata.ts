@@ -6,6 +6,8 @@ export type DiscogsLookupStatus = "success" | "not_found" | "error";
 export type DiscogsReleaseResult = {
   id: number;
   title: string;
+  artist: string | null;
+  releaseTitle: string;
   year: number | null;
   format: string[];
   label: string[];
@@ -100,6 +102,15 @@ function discogsUrl(record: DiscogsSearchRecord): string {
   return record.id ? `https://www.discogs.com/release/${record.id}` : "https://www.discogs.com/";
 }
 
+function splitDiscogsSearchTitle(title: string): { artist: string | null; releaseTitle: string } {
+  const separator = title.indexOf(" - ");
+  if (separator <= 0) return { artist: null, releaseTitle: title };
+  return {
+    artist: title.slice(0, separator).trim() || null,
+    releaseTitle: title.slice(separator + 3).trim() || title,
+  };
+}
+
 export function buildDiscogsSearchQuery(title: string, itemDetails?: string): string {
   const details = parseMusicDetails(itemDetails);
   return (clean(details.releaseTitle) || clean(title)).replace(/\s+/g, " ").trim();
@@ -136,9 +147,12 @@ function normalizeRecord(record: DiscogsSearchRecord): DiscogsReleaseResult | nu
   const id = numberOrNull(record.id);
   const title = clean(record.title);
   if (!id || !title) return null;
+  const { artist, releaseTitle } = splitDiscogsSearchTitle(title);
   return {
     id,
     title,
+    artist,
+    releaseTitle,
     year: numberOrNull(record.year),
     format: stringList(record.format),
     label: stringList(record.label),

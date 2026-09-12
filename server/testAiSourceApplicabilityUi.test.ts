@@ -35,6 +35,17 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('releaseTitle,\n    category: item.category');
     expect(source).toContain('enabled: isMusic && releaseTitle.length >= 2');
     expect(source).toContain('The listing title is not used for this lookup.');
+    expect(source).toContain('Artist / Performer:</span> {release.artist');
+  });
+
+  it('shows the exact Discogs Music search criteria in the Evidence Review', () => {
+    expect(source).toContain('const discogsSearchCriteria = useMemo');
+    expect(source).toContain('Discogs search criteria');
+    expect(source).toContain('Album / Release Title:');
+    expect(source).toContain('Artist / Performer:');
+    expect(source).toContain('Release Year:');
+    expect(source).toContain('If the year returns no candidate, Discogs retries without it.');
+    expect(source).toContain('Listing title, format, label, catalog number, and country are not used as filters.');
   });
 
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {

@@ -1871,3 +1871,5 @@
 - [x] Remove or translate restrictive Music metadata filters that prevent valid Discogs Album / Release Title matches for existing inventory records.
 - [x] Document available official Discogs fields and recommend the appropriate Test AI metadata set before expanding the integration.
 - [x] Use the optional Music Release Year field to prioritize matching Discogs release candidates without excluding valid results.
+- [x] Show the exact Discogs Album / Release Title, Artist / Performer, and Release Year search criteria in the Test AI Evidence Review.
+- [x] Map and display Artist / Performer as a distinct returned Discogs candidate field for Test AI identity comparison.

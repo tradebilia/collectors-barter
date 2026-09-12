@@ -999,7 +999,8 @@ function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
           {results.map((release) => (
             <div key={release.id} className="rounded bg-gray-900/40 p-2">
               <div className="min-w-0">
-                <a href={release.sourceUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[11px] font-semibold text-blue-300 hover:underline">{release.title}</a>
+                <a href={release.sourceUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[11px] font-semibold text-blue-300 hover:underline">{release.releaseTitle}</a>
+                <p className="mt-0.5 text-[9px] text-gray-300"><span className="text-gray-500">Artist / Performer:</span> {release.artist || 'Not provided by Discogs'}</p>
                 <p className="mt-0.5 text-[9px] text-gray-400">{[release.year, release.country, release.format.join(', ')].filter(Boolean).join(' · ') || 'Release details not provided'}</p>
                 <p className="mt-0.5 text-[9px] text-gray-500">{[release.label.join(', '), release.catalogNumber.join(', '), release.genre.join(', ')].filter(Boolean).join(' · ')}</p>
               </div>
@@ -1211,6 +1212,16 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       platform: details.platform || details.console || details.system || undefined,
     };
   }, [details, item.title]);
+  const discogsSearchCriteria = useMemo(() => {
+    const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
+    const releaseTitle = String(item.releaseTitle ?? details.releaseTitle ?? '').trim();
+    const artist = String(item.artist ?? details.artist ?? '').trim();
+    const rawReleaseYear = String(details.releaseYear ?? '').trim();
+    const parsedReleaseYear = /^\d{4}$/.test(rawReleaseYear) ? Number(rawReleaseYear) : null;
+    const latestPlausibleYear = new Date().getUTCFullYear() + 1;
+    const releaseYear = parsedReleaseYear && parsedReleaseYear >= 1877 && parsedReleaseYear <= latestPlausibleYear ? String(parsedReleaseYear) : null;
+    return { isMusic, releaseTitle, artist, releaseYear };
+  }, [item.category, item.releaseTitle, item.artist, details.releaseTitle, details.artist, details.releaseYear]);
   const wikidataCategory = item.category === 'movies' ? 'movies' : 'autographs';
   const wikidataQuery = String(wikidataCategory === 'autographs' ? (details.signer || item.title) : (details.title || details.movieTitle || item.title)).trim();
   const certNumber = item.certId || '';
@@ -1266,6 +1277,15 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       <p><span className="font-semibold text-gray-300">Coverage:</span> no result or service issue; it is not negative proof about the item.</p>
     </div>
     {summary.identity.length > 0 && <div className="flex flex-wrap gap-1.5">{summary.identity.map((field) => <span key={field.key} className="rounded bg-gray-900/60 px-2 py-1 text-[10px] text-gray-300"><span className="text-gray-500">{field.label}:</span> {field.value}</span>)}</div>}
+    {enabledSources.has('discogs') && discogsSearchCriteria.isMusic && <div className="rounded border border-emerald-700/30 bg-emerald-950/15 p-2">
+      <p className="text-[9px] font-semibold uppercase text-emerald-300">Discogs search criteria</p>
+      <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
+        <p><span className="text-gray-500">Album / Release Title:</span> {discogsSearchCriteria.releaseTitle || 'Missing'}</p>
+        <p><span className="text-gray-500">Artist / Performer:</span> {discogsSearchCriteria.artist || 'Not supplied'}</p>
+        <p><span className="text-gray-500">Release Year:</span> {discogsSearchCriteria.releaseYear || 'Not supplied'}</p>
+      </div>
+      <p className="mt-1 text-[9px] text-gray-500">Primary request uses Album / Release Title and Artist / Performer{discogsSearchCriteria.releaseYear ? `, narrowed first by ${discogsSearchCriteria.releaseYear}` : ''}. If the year returns no candidate, Discogs retries without it. Listing title, format, label, catalog number, and country are not used as filters.</p>
+    </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
     {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div>}
     {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}

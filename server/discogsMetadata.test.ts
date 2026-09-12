@@ -76,6 +76,8 @@ describe("Discogs metadata adapter", () => {
     expect(result.data?.results[0]).toMatchObject({
       id: 123,
       title: "Miles Davis - Kind Of Blue",
+      artist: "Miles Davis",
+      releaseTitle: "Kind Of Blue",
       year: 1959,
       format: ["Vinyl", "LP", "Album"],
       label: ["Columbia"],
