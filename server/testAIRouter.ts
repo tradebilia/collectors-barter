@@ -335,7 +335,8 @@ export const testAIRouter = router({
         cert = details.customGradingCompany || cert;
       }
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
-      const grade = input.grade ? String(parseFloat(input.grade)) : null;
+      const parsedGrade = input.grade ? parseFloat(input.grade) : NaN;
+      const grade = Number.isFinite(parsedGrade) && parsedGrade > 0 ? String(parsedGrade) : null;
       
       let query = input.title;
       
@@ -536,7 +537,8 @@ export const testAIRouter = router({
         cert = details.customGradingCompany || cert;
       }
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
-      const grade = input.grade ? String(parseFloat(input.grade)) : null;
+      const parsedGrade = input.grade ? parseFloat(input.grade) : NaN;
+      const grade = Number.isFinite(parsedGrade) && parsedGrade > 0 ? String(parsedGrade) : null;
 
       let query = input.title;
 

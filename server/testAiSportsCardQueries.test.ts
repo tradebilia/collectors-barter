@@ -26,8 +26,8 @@ describe("Test AI sports-card eBay query candidates", () => {
         manufacturer: "Topps",
         productName: "Chrome Hobby Box",
         productFormat: "Box",
-        isGraded: "yes",
-        authenticationCompany: "PSA",
+        authenticated: "yes",
+        authenticationCompany: "BBCE",
         fromASealedCase: "yes",
       },
       "Listing title",
@@ -36,7 +36,8 @@ describe("Test AI sports-card eBay query candidates", () => {
       "unopened_product",
     );
 
-    expect(queries[0]).toContain("Chrome Hobby Box Box PSA from sealed case");
+    expect(queries[0]).toContain("Chrome Hobby Box Box BBCE FASC");
+    expect(queries[0]).not.toContain("from sealed case");
     expect(queries[0]).toContain("2024 Topps");
   });
 
@@ -45,8 +46,8 @@ describe("Test AI sports-card eBay query candidates", () => {
       {
         productName: "Retail Blaster",
         productFormat: "Box",
-        isGraded: "no",
-        authenticationCompany: "PSA",
+        authenticated: "no",
+        authenticationCompany: "BBCE",
         fromASealedCase: "no",
       },
       "Listing title",
@@ -57,7 +58,8 @@ describe("Test AI sports-card eBay query candidates", () => {
 
     expect(queries[0]).toBe("Retail Blaster Box");
     expect(queries[0]).not.toContain("PSA");
-    expect(queries[0]).not.toContain("sealed case");
+    expect(queries[0]).not.toContain("BBCE");
+    expect(queries[0]).not.toContain("FASC");
   });
 
   it("includes a broader Ken Griffey identity query when card-number formatting is too strict", () => {

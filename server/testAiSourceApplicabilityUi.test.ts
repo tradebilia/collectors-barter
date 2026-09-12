@@ -57,8 +57,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Product Format:');
     expect(source).toContain('Authentication Company:');
     expect(source).toContain('From a Sealed Case:');
-    expect(source).toContain('Authentication Company is included only when Graded is Yes');
-    expect(source).toContain('sealed-case criterion is included only when From a Sealed Case is Yes');
+    expect(source).toContain('Authentication Company is included only when Authenticated is Yes');
+    expect(source).toContain('exact token FASC is included only when From a Sealed Case is Yes');
   });
 
   it('keeps selected-item metadata bubbles readable on dark cards', () => {

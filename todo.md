@@ -1884,3 +1884,4 @@
 - [x] Add a privacy-safe all-items mode to the Test AI item dropdown so eligible public listings can be selected across all accounts, while preserving My Inventory mode.
 - [x] Fix unreadable metadata bubble text on Test AI item cards by increasing contrast without changing the card layout.
 - [x] Extend Sports Cards Unopened Product Test AI criteria with Product Name and Product Format, conditional Authentication Company when Graded is Yes, and conditional sealed-case evidence only when From a Sealed Case is Yes.
+- [x] Correct Sports Cards Unopened Product queries to always use Product Name and Product Format, add Authentication Company only when Authenticated is Yes, and add exact token FASC only when From a Sealed Case is Yes.

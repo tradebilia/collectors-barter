@@ -21,11 +21,11 @@ function buildSportsCardsUnopenedProductCriteria(details: Record<string, unknown
   if (!isSportsCardsUnopenedProduct(details, itemType)) return [];
   const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
   const parts = [value('productName'), value('productFormat')];
-  if (isYes(details.isGraded) || isYes(details.graded)) {
+  if (isYes(details.authenticated) || isYes(details.isGraded) || isYes(details.graded)) {
     const authCompany = value('authenticationCompany') || value('customAuthenticationCompany');
     if (authCompany) parts.push(authCompany);
   }
-  if (isYes(details.fromASealedCase)) parts.push('from sealed case');
+  if (isYes(details.fromASealedCase)) parts.push('FASC');
   return parts.filter(Boolean);
 }
 
