@@ -435,10 +435,10 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
           <div className="min-w-0 flex-1">
             <p className={`font-semibold text-sm ${accentColor} truncate`}>{item.title}</p>
             <div className="flex flex-wrap gap-1 mt-1">
-              {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="text-[10px]">{item.category.replace(/_/g, ' ')}</Badge>}
-              {getItemManufacturer(item) && <Badge variant="outline" className="text-[10px]">{getItemManufacturer(item)}</Badge>}
-              {item.grade && <Badge variant="outline" className="text-[10px]">Grade {item.grade}</Badge>}
-              {item.certificationCompany && <Badge variant="outline" className="text-[10px]">{item.certificationCompany}</Badge>}
+              {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="bg-slate-700/80 text-[10px] text-slate-100 border-slate-500/70">{item.category.replace(/_/g, ' ')}</Badge>}
+              {getItemManufacturer(item) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{getItemManufacturer(item)}</Badge>}
+              {item.grade && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {item.grade}</Badge>}
+              {item.certificationCompany && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{item.certificationCompany}</Badge>}
             </div>
             {item.estimatedValue != null && <p className="text-green-400 text-sm font-semibold mt-1">{formatItemValue(item.estimatedValue)}</p>}
           </div>

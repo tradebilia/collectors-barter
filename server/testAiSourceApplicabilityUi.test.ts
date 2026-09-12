@@ -51,6 +51,11 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Listing title, format, label, catalog number, and country are not used as filters.');
   });
 
+  it('keeps selected-item metadata bubbles readable on dark cards', () => {
+    expect(source).toContain('text-slate-100 border-slate-500/70');
+    expect(source).toContain('bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80');
+  });
+
   it('passes each loaded item into both source selectors so applicability is evaluated per side', () => {
     expect(source).toContain('side="left" item={leftItem}');
     expect(source).toContain('side="right" item={rightItem}');
