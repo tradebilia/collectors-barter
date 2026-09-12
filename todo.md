@@ -1891,3 +1891,4 @@
 - [x] Add a Sports Cards result filter that excludes conflicting sports from Active Listings and Sold-Comps while preserving listings with no explicit sport.
 - [x] Audit and regenerate the Test AI query workbook so each category/item type has accurate provider-specific query fields and conditional rules, especially Sports Cards.
 - [x] Make item-detail hero background filter, overlay, positioning, and repeat behavior match the corresponding category hero.
+- [x] Center the visible Tradebilia hero title artwork on item-detail pages with equal open space on both sides.
