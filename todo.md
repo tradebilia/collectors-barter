@@ -1866,3 +1866,4 @@
 - [x] Add official Discogs API as a read-only Test AI music research source, including secure credential configuration, attribution, matching, and regression coverage.
 - [x] Verify Discogs API integration behavior in the Test AI UI and document any required user validation.
 - [x] Make Discogs use Album / Release Title as the primary Music search field, with Artist / Performer as supporting context instead of using the display title first.
+- [x] Ensure Discogs receives and searches the structured Album / Release Title field rather than the listing title throughout the client-to-server request path.

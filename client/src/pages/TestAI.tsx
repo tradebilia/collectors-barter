@@ -962,13 +962,15 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
 function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
+  const musicDetails = useMemo(() => testAiDetails(item), [item.itemDetails]);
+  const releaseTitle = typeof musicDetails.releaseTitle === 'string' ? musicDetails.releaseTitle.trim() : '';
   const input = useMemo(() => ({
-    title: item.title,
+    releaseTitle,
     category: item.category,
     itemDetails: item.itemDetails ?? undefined,
-  }), [item.title, item.category, item.itemDetails]);
+  }), [releaseTitle, item.category, item.itemDetails]);
   const { data, isLoading } = trpc.testAI.getDiscogsReleases.useQuery(input, {
-    enabled: isMusic && item.title.trim().length >= 2,
+    enabled: isMusic && releaseTitle.length >= 2,
   });
   const results = data?.data?.results ?? [];
 
@@ -986,6 +988,7 @@ function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <p className="text-gray-500 text-[10px]">Read-only release metadata for identity matching. This source does not provide Tradebilia valuation or authentication.</p>
+      {!releaseTitle && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">Add an Album / Release Title to search Discogs. The listing title is not used for this lookup.</p>}
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">{data.message}</p>}
       {results.length > 0 && (

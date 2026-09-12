@@ -29,6 +29,13 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('not affiliated with, sponsored or endorsed by Discogs');
   });
 
+  it('uses the structured Music release title rather than the listing title for Discogs requests', () => {
+    expect(source).toContain('const releaseTitle = typeof musicDetails.releaseTitle ===');
+    expect(source).toContain('releaseTitle,\n    category: item.category');
+    expect(source).toContain('enabled: isMusic && releaseTitle.length >= 2');
+    expect(source).toContain('The listing title is not used for this lookup.');
+  });
+
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
     expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
     expect(source).toContain('function EvidenceNormalizationSummary');
