@@ -104,3 +104,47 @@ export function filterTestAiListingsByYear<T extends { title?: string }>(listing
     return years.length === 0 || years.includes(targetYear);
   });
 }
+
+function normalizeSport(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+const SPORT_TOKENS: Record<string, string[]> = {
+  baseball: ['baseball', 'mlb'],
+  basketball: ['basketball', 'nba'],
+  football: ['football', 'nfl', 'afl'],
+  hockey: ['hockey', 'nhl'],
+  soccer: ['soccer', 'fifa'],
+  golf: ['golf', 'pga'],
+  tennis: ['tennis', 'atp', 'wta'],
+  wrestling: ['wrestling', 'wwe', 'wwf', 'wcw'],
+  boxing: ['boxing'],
+  mma: ['mma', 'ufc'],
+  racing: ['racing', 'nascar', 'formula 1', 'f1'],
+};
+
+function listingMentionsSport(title: string, sport: string): boolean {
+  const normalizedTitle = ` ${normalizeSport(title)} `;
+  const tokens = SPORT_TOKENS[normalizeSport(sport)] ?? [normalizeSport(sport)];
+  return tokens.some((token) => normalizedTitle.includes(` ${token} `));
+}
+
+function listingMentionsAnyKnownSport(title: string): boolean {
+  return Object.values(SPORT_TOKENS).flat().some((token) => ` ${normalizeSport(title)} `.includes(` ${token} `));
+}
+
+/**
+ * Keep listings that match the target sport or do not state a sport at all.
+ * Exclude only explicit conflicting sport labels so abbreviated or sparse
+ * marketplace titles are not discarded solely because they omit the sport.
+ */
+export function filterTestAiListingsBySport<T extends { title?: string }>(listings: T[], targetSport: string): T[] {
+  const normalizedTarget = normalizeSport(targetSport);
+  if (!normalizedTarget) return listings;
+
+  return listings.filter((listing) => {
+    const title = listing.title || '';
+    if (listingMentionsSport(title, normalizedTarget)) return true;
+    return !listingMentionsAnyKnownSport(title);
+  });
+}

@@ -18,7 +18,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { isPublicMemberEligible } from './publicVisibility';
 
@@ -481,7 +481,10 @@ export const testAIRouter = router({
         // For sports cards: also filter by player name to exclude wrong players
         const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
-        const filteredSummaries = filterListingsByGrade(byPlayer, targetGrade);
+        const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
+        const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
+        const filteredSummaries = filterListingsByGrade(bySport, targetGrade);
+        console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
@@ -674,7 +677,10 @@ export const testAIRouter = router({
         // For sports cards: also filter by player name
         const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
-        const filtered = filterListingsByGrade(byPlayer, targetGrade);
+        const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
+        const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
+        const filtered = filterListingsByGrade(bySport, targetGrade);
+        console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
 
         // Compute metrics from sold prices
         const soldListings = filtered.map((i: any) => ({

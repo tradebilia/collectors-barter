@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSportsCardTestAiQueries } from "../shared/testAiCriteria";
+import { buildSportsCardTestAiQueries, filterTestAiListingsBySport } from "../shared/testAiCriteria";
 import { buildEbayBrowseQuery, filterListingsByNumber } from "./testAIRouter";
 
 describe("Test AI sports-card eBay query candidates", () => {
@@ -63,6 +63,21 @@ describe("Test AI sports-card eBay query candidates", () => {
     expect(queries[0]).not.toContain("PSA");
     expect(queries[0]).not.toContain("BBCE");
     expect(queries[0]).not.toContain("FASC");
+  });
+
+  it("filters explicit conflicting sports while retaining matching and sparse titles", () => {
+    const listings = [
+      { title: "1987 O-Pee-Chee Hockey Box BBCE" },
+      { title: "1987 O-Pee-Chee Baseball Box" },
+      { title: "1987 O-Pee-Chee Box BBCE" },
+    ];
+
+    expect(filterTestAiListingsBySport(listings, "Hockey")).toEqual([listings[0], listings[2]]);
+  });
+
+  it("does not filter listings when no target sport is available", () => {
+    const listings = [{ title: "1987 O-Pee-Chee Baseball Box" }, { title: "1987 O-Pee-Chee Box" }];
+    expect(filterTestAiListingsBySport(listings, "")).toEqual(listings);
   });
 
   it("includes a broader Ken Griffey identity query when card-number formatting is too strict", () => {
