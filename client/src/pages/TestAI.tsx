@@ -230,6 +230,8 @@ interface SelectedItem {
   estimatedValue?: number;
   certificationCompany?: string;
   itemDetails?: string;
+  artist?: string;
+  releaseTitle?: string;
   manufacturer?: string;
   primaryPhotoUrl?: string;
   certId?: string;
@@ -963,7 +965,7 @@ function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
   const musicDetails = useMemo(() => testAiDetails(item), [item.itemDetails]);
-  const releaseTitle = typeof musicDetails.releaseTitle === 'string' ? musicDetails.releaseTitle.trim() : '';
+  const releaseTitle = (item.releaseTitle ?? (typeof musicDetails.releaseTitle === 'string' ? musicDetails.releaseTitle : '')).trim();
   const input = useMemo(() => ({
     releaseTitle,
     category: item.category,

@@ -215,6 +215,8 @@ export const testAIRouter = router({
         certificationCompany: r.certificationCompany ?? null,
         estimatedValue: r.estimatedValue ? Number(r.estimatedValue) : null,
         itemDetails: r.itemDetails ?? null,
+        artist: typeof parsedDetails?.artist === 'string' ? parsedDetails.artist : null,
+        releaseTitle: typeof parsedDetails?.releaseTitle === 'string' ? parsedDetails.releaseTitle : null,
         manufacturer: resolveTestAiManufacturer(parsedDetails),
         description: r.description ?? null,
         primaryPhotoUrl: r.primaryPhotoUrl ?? null,
