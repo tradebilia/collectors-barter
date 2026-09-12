@@ -1908,3 +1908,5 @@
 - [x] Raise the Coming Soon email signup so it is centered between the tagline and the faint divider above the category icons without changing the supplied composition.
 
 - [x] Lower the Coming Soon signup slightly to the true visual midpoint and verify the email submission flow works correctly.
+
+- [x] Verify the Coming Soon signup recipient-segment enrollment path: the existing imported helper assigns contacts to Tradebilia Pre-Launch Updates; no repair was required.
