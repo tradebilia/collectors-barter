@@ -6,13 +6,17 @@ describe("Trade Room carrier tracking controls", () => {
   const warRoomSource = readFileSync(join(process.cwd(), "client/src/pages/WarRoom.tsx"), "utf8");
   const routerSource = readFileSync(join(process.cwd(), "server/shippingTrackingRouter.ts"), "utf8");
 
-  it("offers carrier validation controls and refreshes shared trade status", () => {
+  it("uses automated validation for supported API carriers and an official USPS manual fallback", () => {
     expect(warRoomSource).toContain("trpc.shippingTracking.validateForTrade.useMutation()");
     expect(warRoomSource).toContain("Expected delivery:");
     expect(warRoomSource).toContain("Check tracking");
-    expect((warRoomSource.match(/\['USPS', 'UPS', 'FEDEX', 'DHL'\]/g) || []).length).toBeGreaterThanOrEqual(2);
+    expect((warRoomSource.match(/\['UPS', 'FEDEX', 'DHL'\]/g) || []).length).toBeGreaterThanOrEqual(2);
     expect(warRoomSource).toContain("lookupCarrierTracking");
     expect(warRoomSource).toContain("formatTrackingDate");
+    expect(warRoomSource).toContain("buildUspsTrackingUrl(trackingNumber)");
+    expect(warRoomSource).toContain("Verify on USPS.com →");
+    expect(warRoomSource).toContain("USPS tracking submitted — verify on USPS.com");
+    expect(warRoomSource).toContain("normalizedCarrier === 'USPS'");
     expect(warRoomSource).toContain("Valid Tracking Number has been submitted");
     expect(warRoomSource).toContain("Invalid Tracking Number submitted");
     expect(warRoomSource).toContain("getTradeDetails.invalidate");

@@ -333,6 +333,13 @@ export default function WarRoom() {
       toast.error('Carrier lookup is available for USPS, UPS, FedEx, and DHL.');
       return;
     }
+
+    if (normalizedCarrier === 'USPS') {
+      window.open(buildUspsTrackingUrl(trackingNumber), '_blank', 'noopener,noreferrer');
+      toast.info('USPS tracking opens on USPS.com for manual verification.');
+      return;
+    }
+
     setTrackingLookupLoadingId(listingId);
     try {
       const result = await shippingTrackingLookupMutation.mutateAsync({ proposalId, listingId, carrier: normalizedCarrier, trackingNumber });
@@ -1153,12 +1160,37 @@ export default function WarRoom() {
                   const theirTrackingByListingId = new Map<number, any>(theirTracking.map((tracking: any) => [Number(tracking.listingId), tracking] as [number, any]));
                   const hasCarrierValidation = (validationByListingId: Map<number, any>, item: any, validationStatus: 'valid' | 'invalid') =>
                     validationByListingId.get(Number(item.id))?.validationStatus === validationStatus;
+                  const getParticipantTrackingStatus = (items: any[], trackingByListingId: Map<number, any>, validationByListingId: Map<number, any>, resetIds: number[] = []) => {
+                    if (items.length === 0) return 'missing' as const;
+
+                    let hasUspsManualVerification = false;
+                    for (const item of items) {
+                      if (resetIds.includes(item.id)) return 'missing' as const;
+                      const tracking = trackingByListingId.get(Number(item.id));
+                      if (!tracking) return 'missing' as const;
+
+                      if (String(tracking.carrier).toUpperCase() === 'USPS') {
+                        hasUspsManualVerification = true;
+                        continue;
+                      }
+
+                      const validationStatus = validationByListingId.get(Number(item.id))?.validationStatus;
+                      if (validationStatus === 'invalid') return 'invalid' as const;
+                      if (validationStatus !== 'valid') return 'missing' as const;
+                    }
+
+                    return hasUspsManualVerification ? 'manual-usps' as const : 'valid' as const;
+                  };
                   const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => myTrackingByListingId.has(Number(item.id)) && !resetTrackingIds.includes(item.id));
                   const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => theirTrackingByListingId.has(Number(item.id)));
-                  const myTrackingValidated = myShippingItems.length > 0 && myShippingItems.every((item) => hasCarrierValidation(myValidationByListingId, item, 'valid'));
-                  const theirTrackingValidated = theirShippingItems.length > 0 && theirShippingItems.every((item) => hasCarrierValidation(theirValidationByListingId, item, 'valid'));
-                  const myHasInvalidTracking = myShippingItems.some((item) => hasCarrierValidation(myValidationByListingId, item, 'invalid'));
-                  const theirHasInvalidTracking = theirShippingItems.some((item) => hasCarrierValidation(theirValidationByListingId, item, 'invalid'));
+                  const myTrackingStatus = getParticipantTrackingStatus(myShippingItems, myTrackingByListingId, myValidationByListingId, resetTrackingIds);
+                  const theirTrackingStatus = getParticipantTrackingStatus(theirShippingItems, theirTrackingByListingId, theirValidationByListingId);
+                  const myTrackingValidated = myTrackingStatus === 'valid';
+                  const theirTrackingValidated = theirTrackingStatus === 'valid';
+                  const myHasInvalidTracking = myTrackingStatus === 'invalid';
+                  const theirHasInvalidTracking = theirTrackingStatus === 'invalid';
+                  const myUspsManualVerification = myTrackingStatus === 'manual-usps';
+                  const theirUspsManualVerification = theirTrackingStatus === 'manual-usps';
                   return (
                     <div className="w-full min-h-[38rem] bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
                       {/* Header */}
@@ -1196,7 +1228,7 @@ export default function WarRoom() {
                               if (submittedTracking) {
                                 const url = getTrackingUrl(submittedTracking.carrier, submittedTracking.trackingNumber);
                                 const lookup = trackingLookupByListingId[item.id];
-                                const canLookup = ['USPS', 'UPS', 'FEDEX', 'DHL'].includes(String(submittedTracking.carrier).toUpperCase());
+                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(submittedTracking.carrier).toUpperCase());
                                 return <div key={item.id} className="rounded-lg border border-green-500/20 bg-green-900/10 p-4">
                                   <div className="mb-1 flex items-center gap-2"><span className="rounded bg-green-900/40 px-2 py-0.5 text-xs font-bold text-green-400">{submittedTracking.carrier}</span><span className="min-w-0 flex-1 text-base font-semibold text-gray-200">{item.title}</span></div>
                                   <p className="mb-2 font-mono text-sm text-white">{submittedTracking.trackingNumber}</p>
@@ -1206,11 +1238,12 @@ export default function WarRoom() {
                               }
                               if (isConfirmed) {
                                 const lookup = trackingLookupByListingId[item.id];
-                                const canLookup = ['USPS', 'UPS', 'FEDEX', 'DHL'].includes(String(inp.carrier).toUpperCase());
+                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(inp.carrier).toUpperCase());
                                 return <div key={item.id} className="rounded-xl border border-blue-400/40 bg-blue-900/10 p-5">
                                   <div className="mb-2 flex items-center gap-3"><span className="rounded bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-blue-200">Ready</span><span className="min-w-0 flex-1 text-base font-semibold text-white">{item.title}</span></div>
                                   <p className="font-mono text-sm text-blue-100">{inp.carrier} · {inp.trackingNumber}</p>
                                   {canLookup && <div className="mt-3 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex flex-wrap items-center justify-between gap-2"><span>Expected delivery: <strong className="text-white">{lookup ? formatTrackingDate(lookup.expectedDeliveryDate) : 'Not checked'}</strong></span><button type="button" onClick={() => lookupCarrierTracking(item.id, inp.carrier, inp.trackingNumber)} disabled={trackingLookupLoadingId === item.id} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingLookupLoadingId === item.id ? 'Checking…' : 'Check tracking'}</button></div>{lookup?.status && <p className="mt-1 text-slate-400">Status: {lookup.status}</p>}</div>}
+                                  {String(inp.carrier).toUpperCase() === 'USPS' && <a href={buildUspsTrackingUrl(inp.trackingNumber)} target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-300 hover:underline">Verify on USPS.com →</a>}
                                   <button type="button" onClick={() => { setConfirmedTrackingIds(prev => prev.filter(id => id !== item.id)); setResetTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); }} className="mt-3 rounded-lg border border-amber-400/50 bg-amber-500/10 px-3 py-1.5 text-sm font-semibold text-amber-200 hover:bg-amber-500/20">Reset</button>
                                 </div>;
                               }
@@ -1321,15 +1354,15 @@ export default function WarRoom() {
                       {/* Status bar */}
                       <div className="flex items-center gap-3 px-6 py-3 bg-[#0f0f1a] border-t border-gray-700">
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          myTrackingValidated ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
+                          myTrackingValidated ? 'bg-green-900/20 border border-green-500/30 text-green-400' : myUspsManualVerification ? 'border border-amber-500/40 bg-amber-900/20 text-amber-200' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {myTrackingValidated ? '✓' : '⏳'} {myDisplayName}: <span className={myTrackingValidated ? 'text-green-400' : 'text-red-300'}>{myTrackingValidated ? 'Valid Tracking Number has been submitted' : myHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
+                          {myTrackingValidated ? '✓' : myUspsManualVerification ? '↗' : '⏳'} {myDisplayName}: <span className={myTrackingValidated ? 'text-green-400' : myUspsManualVerification ? 'text-amber-200' : 'text-red-300'}>{myTrackingValidated ? 'Valid Tracking Number has been submitted' : myUspsManualVerification ? 'USPS tracking submitted — verify on USPS.com' : myHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         <div className="w-px h-4 bg-gray-700" />
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          theirTrackingValidated ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
+                          theirTrackingValidated ? 'bg-green-900/20 border border-green-500/30 text-green-400' : theirUspsManualVerification ? 'border border-amber-500/40 bg-amber-900/20 text-amber-200' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {theirTrackingValidated ? '✓' : '○'} {theirDisplayName}: <span className={theirTrackingValidated ? 'text-green-400' : 'text-red-300'}>{theirTrackingValidated ? 'Valid Tracking Number has been submitted' : theirHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
+                          {theirTrackingValidated ? '✓' : theirUspsManualVerification ? '↗' : '○'} {theirDisplayName}: <span className={theirTrackingValidated ? 'text-green-400' : theirUspsManualVerification ? 'text-amber-200' : 'text-red-300'}>{theirTrackingValidated ? 'Valid Tracking Number has been submitted' : theirUspsManualVerification ? 'USPS tracking submitted — verify on USPS.com' : theirHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         {myItemsShipped && theirItemsShipped && (
                           <p className="ml-auto text-green-400 text-xs font-bold">🚚 Both packages on the way!</p>
