@@ -2129,15 +2129,16 @@ export default function WarRoom() {
 
               {/* Input */}
               <div className="px-3 pb-4 pt-3 border-t border-gray-600 shrink-0">
-                <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-xl px-3 py-2 pr-4 shadow-sm">
+                <div className="relative flex items-center bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-sm">
                   <input
                     type="text"
                     placeholder="Type a message..."
-                    className="flex-1 bg-transparent text-gray-900 text-sm focus:outline-none placeholder:text-gray-400"
+                    className="flex-1 min-w-0 bg-transparent pr-24 text-gray-900 text-sm focus:outline-none placeholder:text-gray-400"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
                   />
+                  <div className="absolute inset-y-0 right-6 flex items-center gap-3">
                   <button className="text-gray-400 hover:text-gray-600 p-1">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z" />
@@ -2151,12 +2152,13 @@ export default function WarRoom() {
                   <button
                     onClick={handleSendMessage}
                     disabled={sendMessageMutation.isPending}
-                    className="w-7 h-7 mr-5 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition disabled:opacity-50 shrink-0"
+                    className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-white hover:bg-blue-700 transition disabled:opacity-50 shrink-0"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5 ml-0.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
                     </svg>
                   </button>
+                  </div>
                 </div>
               </div>
             </div>

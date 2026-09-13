@@ -1933,4 +1933,6 @@
 
 - [x] Move the Trade Room chat send button clearly farther left inside the composer to create a visible right-side gap at 100% zoom.
 
+- [x] Rebuild the Trade Room chat composer action layout with a dedicated send-button inset because prior margin adjustments did not visibly move it at 100% zoom.
+
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.

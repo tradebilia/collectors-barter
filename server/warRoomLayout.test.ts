@@ -25,8 +25,10 @@ describe("Trade Room item-card layout", () => {
   });
 
   it("keeps the message-send button inside the chat composer bubble", () => {
-    expect(source).toContain("bg-white border border-gray-300 rounded-xl px-3 py-2 pr-4 shadow-sm");
-    expect(source).toContain("w-7 h-7 mr-5 rounded-full bg-blue-600");
+    expect(source).toContain("relative flex items-center bg-white border border-gray-300 rounded-xl px-3 py-2 shadow-sm");
+    expect(source).toContain("absolute inset-y-0 right-6 flex items-center gap-3");
+    expect(source).toContain("flex-1 min-w-0 bg-transparent pr-24");
+    expect(source).toContain("w-7 h-7 rounded-full bg-blue-600");
   });
 
   it("simplifies fairness labels and gives the analyzer more center-column space", () => {
