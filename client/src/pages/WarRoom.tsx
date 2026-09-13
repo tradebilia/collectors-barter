@@ -1196,7 +1196,7 @@ export default function WarRoom() {
                               if (submittedTracking) {
                                 const url = getTrackingUrl(submittedTracking.carrier, submittedTracking.trackingNumber);
                                 const lookup = trackingLookupByListingId[item.id];
-                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(submittedTracking.carrier).toUpperCase());
+                                const canLookup = ['USPS', 'UPS', 'FEDEX', 'DHL'].includes(String(submittedTracking.carrier).toUpperCase());
                                 return <div key={item.id} className="rounded-lg border border-green-500/20 bg-green-900/10 p-4">
                                   <div className="mb-1 flex items-center gap-2"><span className="rounded bg-green-900/40 px-2 py-0.5 text-xs font-bold text-green-400">{submittedTracking.carrier}</span><span className="min-w-0 flex-1 text-base font-semibold text-gray-200">{item.title}</span></div>
                                   <p className="mb-2 font-mono text-sm text-white">{submittedTracking.trackingNumber}</p>
@@ -1206,7 +1206,7 @@ export default function WarRoom() {
                               }
                               if (isConfirmed) {
                                 const lookup = trackingLookupByListingId[item.id];
-                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(inp.carrier).toUpperCase());
+                                const canLookup = ['USPS', 'UPS', 'FEDEX', 'DHL'].includes(String(inp.carrier).toUpperCase());
                                 return <div key={item.id} className="rounded-xl border border-blue-400/40 bg-blue-900/10 p-5">
                                   <div className="mb-2 flex items-center gap-3"><span className="rounded bg-blue-900/40 px-2 py-0.5 text-xs font-bold text-blue-200">Ready</span><span className="min-w-0 flex-1 text-base font-semibold text-white">{item.title}</span></div>
                                   <p className="font-mono text-sm text-blue-100">{inp.carrier} · {inp.trackingNumber}</p>

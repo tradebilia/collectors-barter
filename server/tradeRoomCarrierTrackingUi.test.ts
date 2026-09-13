@@ -10,6 +10,7 @@ describe("Trade Room carrier tracking controls", () => {
     expect(warRoomSource).toContain("trpc.shippingTracking.validateForTrade.useMutation()");
     expect(warRoomSource).toContain("Expected delivery:");
     expect(warRoomSource).toContain("Check tracking");
+    expect((warRoomSource.match(/\['USPS', 'UPS', 'FEDEX', 'DHL'\]/g) || []).length).toBeGreaterThanOrEqual(2);
     expect(warRoomSource).toContain("lookupCarrierTracking");
     expect(warRoomSource).toContain("formatTrackingDate");
     expect(warRoomSource).toContain("Valid Tracking Number has been submitted");

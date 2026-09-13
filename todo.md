@@ -1966,3 +1966,4 @@
 - [x] In Step 4, show a green “Valid Tracking Number has been submitted” status to both participants after carrier validation succeeds; retain the red not-submitted status until validation is successful.
 - [x] Add USPS carrier validation so “Tracking Not Available” displays “Invalid Tracking Number submitted,” while recognized USPS results qualify for shared valid status.
 - [x] Fix the live Step 4 regression where valid USPS and FedEx checks do not update either participant’s tracking-status bubble.
+- [x] Fix the screenshot-confirmed Step 4 state-flow defect where an entered USPS number remains 0/1 tracked and no carrier-validation result reaches the shared status bubbles.
