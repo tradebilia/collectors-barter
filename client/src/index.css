@@ -344,19 +344,22 @@
 
 
 @media (min-width: 1280px) and (min-height: 760px) {
-  /* Finalize mirrors a 67% browser view while the browser remains at 100%.
-     The enlarged layout box is scaled back into the viewport, preserving the
-     complete shell, chat rail, footer, and original card geometry together. */
+  /* Finalize is rendered as one fixed viewport-sized canvas. The enlarged
+     internal canvas is scaled as a whole, so its header, two-column workspace,
+     chat rail, actions, and disclaimer all remain inside the visible viewport
+     without creating document overflow. */
   .trade-room-shell.trade-room-finalize-whole {
-    width: calc(100% / 0.67);
-    min-width: calc(100% / 0.67);
-    height: calc((100dvh - 6rem) / 0.67);
-    min-height: calc((100dvh - 6rem) / 0.67);
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    width: calc(100vw / 0.67);
+    min-width: calc(100vw / 0.67);
+    height: calc(100dvh / 0.67);
+    min-height: calc(100dvh / 0.67);
+    overflow: hidden;
     transform: scale(0.67);
     transform-origin: top left;
-    /* A CSS transform does not reduce the shell's flow box. Pull the following
-       document flow up by the visual-versus-layout height difference. */
-    margin-bottom: calc((100dvh - 6rem) * -0.4925);
+    margin: 0;
   }
 }
 
@@ -365,5 +368,15 @@
   .trade-room-exchange-arrow,
   .home-trade-direction-icon {
     transform: rotate(90deg);
+  }
+}
+
+
+@media (min-width: 1280px) and (min-height: 760px) {
+  html:has(.trade-room-shell.trade-room-finalize-whole),
+  body:has(.trade-room-shell.trade-room-finalize-whole),
+  #root:has(.trade-room-shell.trade-room-finalize-whole) {
+    overflow: hidden;
+    background: #0f0f1a;
   }
 }
