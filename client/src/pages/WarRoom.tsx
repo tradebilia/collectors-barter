@@ -1447,10 +1447,10 @@ export default function WarRoom() {
                     }}
                     className={`px-4 py-2 border rounded-lg transition text-sm flex items-center gap-2 font-medium ${
                       showVideoChatModal && videoRoomUrl
-                        ? 'bg-red-600/20 text-red-400 border-red-500/30 hover:bg-red-600 hover:text-white'
+                        ? 'bg-rose-500 text-white border-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.4)] hover:bg-rose-400'
                         : (trade?.proposal as any)?.dailyRoomUrl && myUserId && !showVideoChatModal && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
-                          ? 'bg-green-600/20 text-green-400 border-green-500/30 hover:bg-green-600 hover:text-white animate-pulse'
-                          : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600 hover:text-white'
+                          ? 'bg-emerald-500 text-white border-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.4)] hover:bg-emerald-400 animate-pulse'
+                          : 'bg-cyan-500 text-white border-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.42)] hover:bg-cyan-400'
                     }`}
                     disabled={videoRoomLoading}
                   >

@@ -37,4 +37,10 @@ describe("Trade Room item-card layout", () => {
     expect(source).not.toContain(">You Give</p>");
     expect(source).not.toContain(">You Receive</p>");
   });
+
+  it("keeps Video Chat states vibrant and visually distinct", () => {
+    expect(source).toContain("bg-cyan-500 text-white border-cyan-200");
+    expect(source).toContain("bg-emerald-500 text-white border-emerald-300");
+    expect(source).toContain("bg-rose-500 text-white border-rose-300");
+  });
 });

@@ -1932,3 +1932,5 @@
 - [x] Remove redundant Fairness Meter give/receive rows, expand the AI Analyzer into the freed space, and rename the scale labels to Your Favor and Their Favor.
 
 - [x] Move the Trade Room chat send button clearly farther left inside the composer to create a visible right-side gap at 100% zoom.
+
+- [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.
