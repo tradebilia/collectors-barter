@@ -1959,3 +1959,4 @@
 - [x] Shrink the complete authenticated Step 3 Trade Room view to a 67% visual size at 100% browser zoom without rearranging content.
 - [x] Reduce excess bottom whitespace created by the Step 3 67% visual scale without changing its visual size, content arrangement, or horizontal containment.
 - [x] Rotate swap arrows vertically on mobile-only stacked Trade Room and homepage exchange layouts, while retaining horizontal arrows on larger screens.
+- [x] Remove the excess bottom space below the encrypted-data disclaimer in the affected Trade Room view without changing the disclaimer or prior layouts.

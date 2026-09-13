@@ -354,6 +354,9 @@
     min-height: calc((100dvh - 6rem) / 0.67);
     transform: scale(0.67);
     transform-origin: top left;
+    /* A CSS transform does not reduce the shell's flow box. Pull the following
+       document flow up by the visual-versus-layout height difference. */
+    margin-bottom: calc((100dvh - 6rem) * -0.4925);
   }
 }
 
