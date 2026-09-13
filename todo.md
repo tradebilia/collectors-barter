@@ -1969,3 +1969,6 @@
 - [x] Fix the screenshot-confirmed Step 4 state-flow defect where an entered USPS number remains 0/1 tracked and no carrier-validation result reaches the shared status bubbles.
 - [ ] Replace the blocked USPS API check with a compliant USPS.com validation fallback that marks “Tracking Not Available” invalid and shares the result in Step 4.
 - [x] Add an authenticated USPS package-tracking test area that uses configured consumer credentials and never changes Trade Room or shipment data.
+- [ ] Obtain USPS Tracking API authorization for the configured account and re-test the read-only Test AI USPS tracking lookup.
+- [ ] Pursue USPS Tracking API authorization only for packages created under Tradebilia’s own Mailer ID before considering member-entered third-party tracking.
+- [x] Evaluate doprdele/paqq as a potential USPS tracking approach, including its scraper method, reliability, compliance, and production suitability.
