@@ -1955,3 +1955,4 @@
 - [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
 - [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
 - [x] Scale the complete Step 3 Trade Room viewport as one unit at browser 100%, preserving the original arrangement, both participant sections, and intact chat panel.
+- [x] Reduce only the Step 3 item and information section dimensions so both users’ panels fit side by side at 100% zoom without horizontal scrolling; remove whole-shell scaling.

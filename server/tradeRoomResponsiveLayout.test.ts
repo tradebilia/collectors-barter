@@ -36,9 +36,11 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('border-2 border-white/80 rounded-xl w-11/12 max-w-6xl');
     expect(warRoomSource).toContain('const myReviewHasSingleItem = myItems.length === 1;');
     expect(warRoomSource).toContain('const theirReviewHasSingleItem = theirItems.length === 1;');
-    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : ''");
-    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
-    expect(warRoomSource).toContain("${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
+    expect(warRoomSource).not.toContain('trade-room-finalize-whole');
+    expect(warRoomSource).toContain("const isFinalizeStage = currentStage === 'accepted';");
+    expect(warRoomSource).toContain("isFinalizeStage ? 'h-20 w-20' : 'w-full h-72'");
+    expect(warRoomSource).toContain("${myReviewHasSingleItem ? (isFinalizeStage ? 'h-20 w-20' : 'w-full h-72') : 'w-28 h-28'}");
+    expect(warRoomSource).toContain("${theirReviewHasSingleItem ? (isFinalizeStage ? 'h-20 w-20' : 'w-full h-72') : 'w-28 h-28'}");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
     expect(warRoomSource).toContain('className="space-y-3 text-base"');
     expect(warRoomSource).toContain('bg-[#0f0f1a] border border-white/40 rounded-xl p-6');
@@ -47,7 +49,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('formatTimelineDetails(event, cfg.label)');
     expect(warRoomSource).toContain('Selected ${method} as payment method');
     expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
-    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'text-xl' : 'text-base'}");
+    expect(warRoomSource).toContain("${myReviewHasSingleItem ? (isFinalizeStage ? 'text-base' : 'text-xl') : 'text-base'}");
     expect(warRoomSource).toContain('text-gray-200 text-base font-mono mt-1');
     expect(warRoomSource).toContain('w-full min-h-[38rem]');
     expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
@@ -76,10 +78,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('trade-room-content flex flex-1 flex-col overflow-visible p-4 custom-scrollbar');
     expect(warRoomSource).toContain('trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4');
     expect(stylesheet).toContain('@media (min-width: 1280px) and (min-height: 760px)');
-    expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-whole');
-    expect(stylesheet).toContain('min-width: calc(100% / 0.67);');
-    expect(stylesheet).toContain('height: calc(100dvh / 0.67);');
-    expect(stylesheet).toContain('zoom: 0.67;');
+    expect(stylesheet).not.toContain('.trade-room-shell.trade-room-finalize-whole');
     expect(stylesheet).toContain('.trade-room-chat-rail');
     expect(stylesheet).toContain('height: 100%;');
     expect(warRoomSource).toContain('px-3 py-3 sm:px-6 sm:py-4');
