@@ -1954,3 +1954,4 @@
 - [x] Eliminate the Step 3-only horizontal overflow while retaining side-by-side trade items and complete normal-zoom visibility.
 - [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
 - [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
+- [x] Scale the complete Step 3 Trade Room viewport as one unit at browser 100%, preserving the original arrangement, both participant sections, and intact chat panel.

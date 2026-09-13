@@ -315,14 +315,15 @@
    can accommodate it. Short windows, tablets, mobile devices, and browser
    zoom levels fall back to a natural stacked document so actions never clip. */
 @media (min-width: 1280px) and (min-height: 760px) {
-  /* Step 3 scales only its nested finalization content. The outer workspace
-     and fixed chat rail keep their normal geometry, preserving both sides. */
-  .trade-room-shell.trade-room-finalize-mode .trade-room-content {
-    overflow-x: hidden;
-  }
-
-  .trade-room-finalize-viewport {
+  /* Step 3 mirrors the user-approved 67% browser view as one complete
+     viewport. The shell is enlarged in layout space before zooming so its
+     rendered width and height remain exactly within the browser viewport;
+     cards and the chat rail retain their original internal geometry. */
+  .trade-room-shell.trade-room-finalize-whole {
     width: calc(100% / 0.67);
+    min-width: calc(100% / 0.67);
+    height: calc(100dvh / 0.67);
+    min-height: calc(100dvh / 0.67);
     zoom: 0.67;
   }
 

@@ -36,8 +36,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('border-2 border-white/80 rounded-xl w-11/12 max-w-6xl');
     expect(warRoomSource).toContain('const myReviewHasSingleItem = myItems.length === 1;');
     expect(warRoomSource).toContain('const theirReviewHasSingleItem = theirItems.length === 1;');
-    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-mode' : ''");
-    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-viewport' : ''");
+    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : ''");
     expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain("${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
@@ -77,9 +76,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('trade-room-content flex flex-1 flex-col overflow-visible p-4 custom-scrollbar');
     expect(warRoomSource).toContain('trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4');
     expect(stylesheet).toContain('@media (min-width: 1280px) and (min-height: 760px)');
-    expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-mode .trade-room-content');
-    expect(stylesheet).toContain('.trade-room-finalize-viewport');
-    expect(stylesheet).toContain('width: calc(100% / 0.67);');
+    expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-whole');
+    expect(stylesheet).toContain('min-width: calc(100% / 0.67);');
+    expect(stylesheet).toContain('height: calc(100dvh / 0.67);');
     expect(stylesheet).toContain('zoom: 0.67;');
     expect(stylesheet).toContain('.trade-room-chat-rail');
     expect(stylesheet).toContain('height: 100%;');
