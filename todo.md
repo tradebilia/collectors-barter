@@ -1946,5 +1946,6 @@
 - [x] Correct Trade Room video-call timeline entries so joiners are not incorrectly recorded as starting a new call.
 
 - [x] Route the Video Chat panel X close action through active-call cleanup so neither participant sees stale Join Video Chat after exit.
-
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.
+- [x] Keep Step 3 Shipping Information fully visible and usable at 100% browser zoom without altering prior Trade Room steps.
+- [x] Format Step 3 Shipping Information phone numbers consistently with dashes without changing stored contact data.
