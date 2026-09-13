@@ -23,4 +23,8 @@ describe("Trade Room item-card layout", () => {
     expect(source.match(/title=\"Remove from trade\"/g)).toHaveLength(2);
     expect(source).not.toContain("-top-1.5 -right-1.5");
   });
+
+  it("keeps the message-send button inside the chat composer bubble", () => {
+    expect(source).toContain("bg-white border border-gray-300 rounded-xl px-3 py-2 pr-4 shadow-sm");
+  });
 });

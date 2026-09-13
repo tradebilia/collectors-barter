@@ -1924,3 +1924,5 @@
 - [x] Fix trade-initiation email sender identity so the initiating account name is shown instead of the recipient-side username.
 
 - [x] Keep each Trade Room item-card Remove from trade control visible and reachable at 100% browser zoom.
+
+- [x] Move the Trade Room chat message-send button inward so it remains fully inside the composer bubble at 100% browser zoom.
