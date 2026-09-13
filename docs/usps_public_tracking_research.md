@@ -18,6 +18,16 @@ An inspected open-source CLI uses the same route, first uses Selenium only to ob
 
 The current USPS API Terms prohibit using USPS websites or services for data scraping/data mining and prohibit circumventing technology used to protect USPS content. The terms also restrict use to facilitating USPS shipping or mailing transactions unless a specific license allows otherwise. USPS’s Tracking API Access page distinguishes direct shippers using their own MID (continued no-cost access after applicable terms) from service providers tracking other senders’ MIDs (paid access, agreement, payment setup, and authorization requirements).
 
+## In-site visual-confirmation review — September 13, 2026
+
+USPS exposes a public tracking interface at `https://tools.usps.com/go/TrackC`; search results identify a USPS Track & Confirm iframe-oriented route. The official page is currently protected by CAPTCHA during automated browsing, however. A Tradebilia modal could attempt to present the official cross-origin page to a human user, subject to USPS continuing to allow browser framing, but browser same-origin protections prevent Tradebilia from reading the iframe DOM, extracting page text, or detecting a green visual element.
+
+Color is not a reliable validity signal. USPS publishes explicit textual tracking states, including Delivered, In Transit, Shipping Label Created, and USPS in Possession of Item. A compliant user-assisted flow must require a human acknowledgment of the official result and must not relabel it as carrier-automated validation. The viable design is therefore an official USPS page modal with a new-tab fallback and a distinct sender-attestation state such as “USPS result confirmed by sender,” not “Valid Tracking Number.”
+
+## Test AI capture experiment verification — September 13, 2026
+
+The authenticated live Test AI page currently displays the already-published Carrier Tracking Test and no capture controls, as expected before publishing the new Test AI experiment. The signed-in admin session can reach the Test AI page, exposes the USPS tracking-number field, and therefore provides a valid post-publish verification target.
+
 ## Sources
 
 - https://tools.usps.com/tracking/tracking_home.cfm

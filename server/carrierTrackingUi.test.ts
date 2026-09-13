@@ -18,4 +18,13 @@ describe("Test AI carrier tracking controls", () => {
     expect(source).toContain("USPS, UPS, FedEx, and DHL return read-only carrier results.");
     expect(source).toContain("No Tradebilia shipment, trade, or notification data is changed.");
   });
+
+  it("provides a consented Test AI-only USPS screenshot review experiment without Trade Room persistence", () => {
+    expect(source).toContain("reviewUspsTrackingScreenshot.useMutation");
+    expect(source).toContain("navigator.mediaDevices.getDisplayMedia");
+    expect(source).toContain("Capture USPS result");
+    expect(source).toContain("Click here and paste a USPS result screenshot.");
+    expect(source).toContain("not stored by Tradebilia");
+    expect(source).toContain("Color alone is never used as a result.");
+  });
 });

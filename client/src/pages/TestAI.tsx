@@ -1508,10 +1508,13 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 function CarrierTrackingSection() {
   const [carrier, setCarrier] = useState<'USPS' | 'UPS' | 'FedEx' | 'DHL'>('USPS');
   const [trackingNumber, setTrackingNumber] = useState('');
+  const [uspsScreenshot, setUspsScreenshot] = useState<string | null>(null);
+  const [uspsScreenshotSource, setUspsScreenshotSource] = useState<string | null>(null);
   const uspsLookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
   const upsLookupMutation = trpc.testAI.lookupUpsTracking.useMutation();
   const fedexLookupMutation = trpc.testAI.lookupFedexTracking.useMutation();
   const dhlLookupMutation = trpc.testAI.lookupDhlTracking.useMutation();
+  const uspsScreenshotReviewMutation = trpc.testAI.reviewUspsTrackingScreenshot.useMutation();
   const activeMutation = carrier === 'USPS'
     ? uspsLookupMutation
     : carrier === 'UPS'
@@ -1540,6 +1543,68 @@ function CarrierTrackingSection() {
 
   const result = activeMutation.data;
 
+  const setScreenshotFile = (file: File, source: string) => {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      toast.error('Use a PNG, JPEG, or WebP screenshot.');
+      return;
+    }
+    if (file.size > 3_000_000) {
+      toast.error('Keep the screenshot under 3 MB for this Test AI experiment.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setUspsScreenshot(typeof reader.result === 'string' ? reader.result : null);
+      setUspsScreenshotSource(source);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const captureUspsResult = async () => {
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      toast.error('This browser does not support tab or window capture. Paste or choose a screenshot instead.');
+      return;
+    }
+    let stream: MediaStream | null = null;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      await video.play();
+      const maxWidth = 1600;
+      const width = Math.min(video.videoWidth || maxWidth, maxWidth);
+      const height = Math.max(1, Math.round((video.videoHeight || 900) * (width / Math.max(video.videoWidth || maxWidth, 1))));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')?.drawImage(video, 0, 0, width, height);
+      const image = canvas.toDataURL('image/jpeg', 0.86);
+      setUspsScreenshot(image);
+      setUspsScreenshotSource('user-approved tab/window capture');
+      toast.success('USPS result captured locally. Review it with AI when ready.');
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') toast.error('Could not capture the selected USPS tab or window. You can paste or choose a screenshot instead.');
+    } finally {
+      stream?.getTracks().forEach((track) => track.stop());
+    }
+  };
+
+  const reviewUspsScreenshot = () => {
+    const value = trackingNumber.trim();
+    if (!value) {
+      toast.error('Enter the USPS tracking number before AI review.');
+      return;
+    }
+    if (!uspsScreenshot) {
+      toast.error('Capture, paste, or choose a USPS result screenshot first.');
+      return;
+    }
+    uspsScreenshotReviewMutation.mutate({ trackingNumber: value, imageDataUrl: uspsScreenshot }, {
+      onError: (error) => toast.error(error.message),
+    });
+  };
+
   return (
     <section className="rounded-xl border border-sky-700/30 bg-sky-950/20 p-5 space-y-4" aria-labelledby="carrier-tracking-test-title">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
@@ -1556,6 +1621,8 @@ function CarrierTrackingSection() {
           onChange={(event) => {
             setCarrier(event.target.value as 'USPS' | 'UPS' | 'FedEx' | 'DHL');
             setTrackingNumber('');
+            setUspsScreenshot(null);
+            setUspsScreenshotSource(null);
           }}
           aria-label="Carrier"
           className="rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none"
@@ -1586,7 +1653,54 @@ function CarrierTrackingSection() {
       </div>
 
       {carrier === 'USPS' && (
-        <p className="text-xs text-sky-200/90">This USPS test uses the configured server-side consumer credentials. It returns USPS’s response or a clear authorization error without changing any trade or shipment record.</p>
+        <div className="space-y-3 rounded-lg border border-amber-600/30 bg-amber-950/20 p-3">
+          <p className="text-xs text-sky-200/90">This USPS API test uses configured server-side consumer credentials. It returns USPS’s response or a clear authorization error without changing any trade or shipment record.</p>
+          <p className="text-xs text-amber-100">Optional experiment: open the official USPS result, then capture, paste, or choose one screenshot for AI to read the explicit USPS result text. The image is sent for this one review only and is not stored by Tradebilia. Color alone is never used as a result.</p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => window.open(`https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${encodeURIComponent(trackingNumber.trim())}`, '_blank', 'noopener,noreferrer')} disabled={!trackingNumber.trim()} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50">Open USPS result</button>
+            <button type="button" onClick={captureUspsResult} className="rounded-md border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-500/20">Capture USPS result</button>
+            <label className="cursor-pointer rounded-md border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800">
+              Choose screenshot
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) setScreenshotFile(file, 'user-selected screenshot');
+                event.currentTarget.value = '';
+              }} />
+            </label>
+          </div>
+          <div
+            tabIndex={0}
+            role="button"
+            aria-label="Paste USPS result screenshot"
+            onPaste={(event) => {
+              const image = Array.from(event.clipboardData.files).find((file) => file.type.startsWith('image/'));
+              if (image) {
+                event.preventDefault();
+                setScreenshotFile(image, 'pasted screenshot');
+              } else {
+                toast.error('Paste an image screenshot, not text.');
+              }
+            }}
+            className="rounded-md border border-dashed border-gray-600 bg-gray-950/30 p-3 text-xs text-gray-400 outline-none focus:border-sky-400"
+          >
+            Click here and paste a USPS result screenshot.
+          </div>
+          {uspsScreenshot && (
+            <div className="space-y-2 rounded-md border border-sky-500/30 bg-slate-950/40 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-sky-200">Screenshot ready from {uspsScreenshotSource}.</p><button type="button" onClick={() => { setUspsScreenshot(null); setUspsScreenshotSource(null); }} className="text-xs text-gray-400 hover:text-white">Remove</button></div>
+              <img src={uspsScreenshot} alt="USPS result screenshot preview" className="max-h-56 w-full rounded border border-gray-700 object-contain" />
+              <button type="button" onClick={reviewUspsScreenshot} disabled={uspsScreenshotReviewMutation.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">{uspsScreenshotReviewMutation.isPending ? 'AI reviewing…' : 'Review USPS screenshot with AI'}</button>
+            </div>
+          )}
+          {uspsScreenshotReviewMutation.data && (
+            <div className={`rounded-md border p-3 text-xs ${uspsScreenshotReviewMutation.data.classification === 'recognized_result' ? 'border-emerald-500/40 bg-emerald-950/30 text-emerald-100' : uspsScreenshotReviewMutation.data.classification === 'tracking_not_available' || uspsScreenshotReviewMutation.data.classification === 'mismatched_tracking_number' ? 'border-red-500/40 bg-red-950/30 text-red-100' : 'border-amber-500/40 bg-amber-950/30 text-amber-100'}`}>
+              <p className="font-semibold">{uspsScreenshotReviewMutation.data.classification === 'recognized_result' ? 'Recognized USPS result from user-provided evidence' : uspsScreenshotReviewMutation.data.classification === 'tracking_not_available' ? 'USPS reported Tracking Not Available' : uspsScreenshotReviewMutation.data.classification === 'mismatched_tracking_number' ? 'Screenshot tracking number does not match' : 'USPS evidence needs review'}</p>
+              <p className="mt-1">{uspsScreenshotReviewMutation.data.summary}</p>
+              {uspsScreenshotReviewMutation.data.detectedStatusText && <p className="mt-1 text-current/80">Visible USPS text: {uspsScreenshotReviewMutation.data.detectedStatusText}</p>}
+              <p className="mt-2 text-[10px] opacity-75">{uspsScreenshotReviewMutation.data.retention}. This is AI-reviewed user evidence, not direct USPS API validation.</p>
+            </div>
+          )}
+        </div>
       )}
 
       {activeMutation.isError && (

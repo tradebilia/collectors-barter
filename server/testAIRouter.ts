@@ -181,6 +181,24 @@ const testAiEvidenceSummarySchema = z.object({
   sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), status: z.enum(['success', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
 });
 
+const uspsScreenshotReviewSchema = z.object({
+  trackingNumber: z.string().trim().min(4).max(40),
+  imageDataUrl: z.string()
+    .max(4_500_000)
+    .regex(/^data:image\/(?:png|jpeg|webp);base64,/, 'Provide a PNG, JPEG, or WebP screenshot.'),
+});
+
+type UspsScreenshotReview = {
+  classification: 'recognized_result' | 'tracking_not_available' | 'mismatched_tracking_number' | 'needs_review';
+  detectedTrackingNumber: string | null;
+  detectedStatusText: string | null;
+  summary: string;
+};
+
+function normalizeTrackingNumber(value: string | null | undefined) {
+  return String(value ?? '').replace(/[^a-z0-9]/gi, '').toUpperCase();
+}
+
 // ─── Router ─────────────────────────────────────────────────────────────────
 export const testAIRouter = router({
   // Get the logged-in user's active inventory for the item picker
@@ -308,6 +326,73 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
       return lookupDhlTracking(input.trackingNumber);
+    }),
+
+  reviewUspsTrackingScreenshot: protectedProcedure
+    .input(uspsScreenshotReviewSchema)
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+
+      const response = await invokeLLM({
+        model: 'gemini-3-flash-preview',
+        maxTokens: 600,
+        messages: [
+          {
+            role: 'system',
+            content: 'You review user-provided screenshots as limited evidence. Analyze only explicit text visible in an official USPS tracking result. Never infer validity from color, layout, logo alone, package imagery, or a CAPTCHA. Do not claim the screenshot is authentic or that USPS API verification occurred. Return JSON only.',
+          },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: `Submitted tracking number: ${input.trackingNumber}\n\nClassify the screenshot as exactly one of: recognized_result (an explicit USPS tracking status such as Delivered, In Transit, USPS in Possession of Item, Shipping Label Created, or another tracking event is visible), tracking_not_available (the explicit phrase “Tracking Not Available” or equivalent USPS unable-to-find result is visible), mismatched_tracking_number (a visible tracking number differs from the submitted one), or needs_review (cropped, unreadable, CAPTCHA, non-USPS page, no explicit tracking result, or insufficient evidence). Extract the visible tracking number and explicit status text when present.` },
+              { type: 'image_url', image_url: { url: input.imageDataUrl, detail: 'high' } },
+            ],
+          },
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'usps_tracking_screenshot_review',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                classification: { type: 'string', enum: ['recognized_result', 'tracking_not_available', 'mismatched_tracking_number', 'needs_review'] },
+                detectedTrackingNumber: { type: ['string', 'null'] },
+                detectedStatusText: { type: ['string', 'null'] },
+                summary: { type: 'string' },
+              },
+              required: ['classification', 'detectedTrackingNumber', 'detectedStatusText', 'summary'],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+
+      const raw = response.choices[0]?.message?.content;
+      if (!raw) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI could not review the USPS screenshot. Please try again.' });
+
+      let review: UspsScreenshotReview;
+      try {
+        const text = typeof raw === 'string' ? raw : JSON.stringify(raw);
+        review = JSON.parse(text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()) as UspsScreenshotReview;
+      } catch {
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI returned an unreadable USPS screenshot review. Please try again.' });
+      }
+
+      const expected = normalizeTrackingNumber(input.trackingNumber);
+      const observed = normalizeTrackingNumber(review.detectedTrackingNumber);
+      if (observed && observed !== expected) {
+        return {
+          classification: 'mismatched_tracking_number' as const,
+          detectedTrackingNumber: review.detectedTrackingNumber,
+          detectedStatusText: review.detectedStatusText,
+          summary: 'The screenshot shows a different tracking number from the one entered for this test.',
+          retention: 'Not stored by Tradebilia',
+        };
+      }
+
+      return { ...review, retention: 'Not stored by Tradebilia' };
     }),
 
   // Fetch eBay active listings + computed metrics for a single item
