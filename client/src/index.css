@@ -315,13 +315,14 @@
    can accommodate it. Short windows, tablets, mobile devices, and browser
    zoom levels fall back to a natural stacked document so actions never clip. */
 @media (min-width: 1280px) and (min-height: 760px) {
-  /* Step 3 intentionally mirrors the user-approved reduced view in the
-     content pane only. The chat rail remains at its normal fixed width, so
-     both item sections stay side by side with no horizontal scrolling. */
-  .trade-room-shell.trade-room-finalize-scale .trade-room-content {
-    flex: 0 0 calc((100% - 360px) / 0.67);
-    width: calc((100% - 360px) / 0.67);
-    max-width: calc((100% - 360px) / 0.67);
+  /* Step 3 scales only its nested finalization content. The outer workspace
+     and fixed chat rail keep their normal geometry, preserving both sides. */
+  .trade-room-shell.trade-room-finalize-mode .trade-room-content {
+    overflow-x: hidden;
+  }
+
+  .trade-room-finalize-viewport {
+    width: calc(100% / 0.67);
     zoom: 0.67;
   }
 

@@ -872,7 +872,7 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-scale' : ''}`}>
+    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-mode' : ''}`}>
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
       {isAdminReadOnly && (
@@ -983,7 +983,7 @@ export default function WarRoom() {
             const tradeRef = (trade?.proposal as any)?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`;
 
             return (
-              <div className="flex flex-col gap-4 flex-1">
+              <div className={`flex flex-col gap-4 flex-1 ${currentStage === 'accepted' ? 'trade-room-finalize-viewport' : ''}`}>
 
                 {/* TRADE ACCEPTED Banner */}
                 <div className="bg-gradient-to-r from-green-900/40 to-emerald-900/30 border border-green-500/40 rounded-xl p-5 shadow-[0_0_30px_rgba(34,197,94,0.15)]">

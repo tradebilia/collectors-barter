@@ -1952,3 +1952,5 @@
 - [x] Reflow Step 3 contact fields above the fixed action bar so every address, email, and phone number is visible at 100% zoom.
 - [x] Restore the original Step 3 contact-field arrangement and fit the complete Finalize view through Step-3-only scaling at 100% browser zoom.
 - [x] Eliminate the Step 3-only horizontal overflow while retaining side-by-side trade items and complete normal-zoom visibility.
+- [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
+- [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
