@@ -15,6 +15,11 @@ describe("Trade Room carrier tracking controls", () => {
     expect(warRoomSource).toContain("Valid Tracking Number has been submitted");
     expect(warRoomSource).toContain("Invalid Tracking Number submitted");
     expect(warRoomSource).toContain("getTradeDetails.invalidate");
+    expect(warRoomSource).toContain("const myTrackingValidated");
+    expect(warRoomSource).toContain("const theirTrackingValidated");
+    expect(warRoomSource).toContain("myTrackingValidated ? 'Valid Tracking Number has been submitted'");
+    expect(warRoomSource).toContain("theirTrackingValidated ? 'Valid Tracking Number has been submitted'");
+    expect(warRoomSource).not.toContain("myItemsShipped ? 'Valid Tracking Number has been submitted'");
   });
 
   it("keeps the lookup protected and limits it to the supported carrier adapters", () => {
@@ -25,5 +30,7 @@ describe("Trade Room carrier tracking controls", () => {
     expect(routerSource).toContain("lookupUpsTracking");
     expect(routerSource).toContain("lookupFedexTracking");
     expect(routerSource).toContain("lookupDhlTracking");
+    expect(routerSource).toContain("tracking_validation:");
+    expect(routerSource).toContain("validationStatus: valid ? 'valid' : 'invalid'");
   });
 });

@@ -1965,3 +1965,4 @@
 - [x] Widen the desktop Trade Room message/chat rail by another 50px, from 390px to 440px, while preserving Step 3 containment and mobile sizing.
 - [x] In Step 4, show a green “Valid Tracking Number has been submitted” status to both participants after carrier validation succeeds; retain the red not-submitted status until validation is successful.
 - [x] Add USPS carrier validation so “Tracking Not Available” displays “Invalid Tracking Number submitted,” while recognized USPS results qualify for shared valid status.
+- [x] Fix the live Step 4 regression where valid USPS and FedEx checks do not update either participant’s tracking-status bubble.

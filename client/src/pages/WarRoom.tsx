@@ -1151,20 +1151,14 @@ export default function WarRoom() {
                   });
                   const myTrackingByListingId = new Map<number, any>(myTracking.map((tracking: any) => [Number(tracking.listingId), tracking] as [number, any]));
                   const theirTrackingByListingId = new Map<number, any>(theirTracking.map((tracking: any) => [Number(tracking.listingId), tracking] as [number, any]));
-                  const hasValidTracking = (trackingByListingId: Map<number, any>, validationByListingId: Map<number, any>, item: any) => {
-                    const tracking = trackingByListingId.get(Number(item.id));
-                    const validation = validationByListingId.get(Number(item.id));
-                    return Boolean(tracking && validation?.trackingNumber === tracking.trackingNumber && validation.validationStatus === 'valid');
-                  };
-                  const hasInvalidTracking = (trackingByListingId: Map<number, any>, validationByListingId: Map<number, any>, item: any) => {
-                    const tracking = trackingByListingId.get(Number(item.id));
-                    const validation = validationByListingId.get(Number(item.id));
-                    return Boolean(tracking && validation?.trackingNumber === tracking.trackingNumber && validation.validationStatus === 'invalid');
-                  };
-                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => hasValidTracking(myTrackingByListingId, myValidationByListingId, item) && !resetTrackingIds.includes(item.id));
-                  const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => hasValidTracking(theirTrackingByListingId, theirValidationByListingId, item));
-                  const myHasInvalidTracking = myShippingItems.some((item) => hasInvalidTracking(myTrackingByListingId, myValidationByListingId, item));
-                  const theirHasInvalidTracking = theirShippingItems.some((item) => hasInvalidTracking(theirTrackingByListingId, theirValidationByListingId, item));
+                  const hasCarrierValidation = (validationByListingId: Map<number, any>, item: any, validationStatus: 'valid' | 'invalid') =>
+                    validationByListingId.get(Number(item.id))?.validationStatus === validationStatus;
+                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => myTrackingByListingId.has(Number(item.id)) && !resetTrackingIds.includes(item.id));
+                  const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => theirTrackingByListingId.has(Number(item.id)));
+                  const myTrackingValidated = myShippingItems.length > 0 && myShippingItems.every((item) => hasCarrierValidation(myValidationByListingId, item, 'valid'));
+                  const theirTrackingValidated = theirShippingItems.length > 0 && theirShippingItems.every((item) => hasCarrierValidation(theirValidationByListingId, item, 'valid'));
+                  const myHasInvalidTracking = myShippingItems.some((item) => hasCarrierValidation(myValidationByListingId, item, 'invalid'));
+                  const theirHasInvalidTracking = theirShippingItems.some((item) => hasCarrierValidation(theirValidationByListingId, item, 'invalid'));
                   return (
                     <div className="w-full min-h-[38rem] bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
                       {/* Header */}
@@ -1327,15 +1321,15 @@ export default function WarRoom() {
                       {/* Status bar */}
                       <div className="flex items-center gap-3 px-6 py-3 bg-[#0f0f1a] border-t border-gray-700">
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          myItemsShipped ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
+                          myTrackingValidated ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {myItemsShipped ? '✓' : '⏳'} {myDisplayName}: <span className={myItemsShipped ? 'text-green-400' : 'text-red-300'}>{myItemsShipped ? 'Valid Tracking Number has been submitted' : myHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
+                          {myTrackingValidated ? '✓' : '⏳'} {myDisplayName}: <span className={myTrackingValidated ? 'text-green-400' : 'text-red-300'}>{myTrackingValidated ? 'Valid Tracking Number has been submitted' : myHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         <div className="w-px h-4 bg-gray-700" />
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          theirItemsShipped ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
+                          theirTrackingValidated ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {theirItemsShipped ? '✓' : '○'} {theirDisplayName}: <span className={theirItemsShipped ? 'text-green-400' : 'text-red-300'}>{theirItemsShipped ? 'Valid Tracking Number has been submitted' : theirHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
+                          {theirTrackingValidated ? '✓' : '○'} {theirDisplayName}: <span className={theirTrackingValidated ? 'text-green-400' : 'text-red-300'}>{theirTrackingValidated ? 'Valid Tracking Number has been submitted' : theirHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         {myItemsShipped && theirItemsShipped && (
                           <p className="ml-auto text-green-400 text-xs font-bold">🚚 Both packages on the way!</p>
