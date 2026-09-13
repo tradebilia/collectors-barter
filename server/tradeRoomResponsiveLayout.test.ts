@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const projectRoot = path.resolve(import.meta.dirname, "..");
 const warRoomSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/WarRoom.tsx"), "utf8");
+const recentTradesSource = fs.readFileSync(path.join(projectRoot, "client/src/components/RecentTradesCarousel.tsx"), "utf8");
 const stylesheet = fs.readFileSync(path.join(projectRoot, "client/src/index.css"), "utf8");
 
 describe("Trade Room responsive completed-trade layout", () => {
@@ -65,7 +66,12 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain("const visibleStages = currentStage === 'disputed' ? [...stages, { key: 'disputed' as const, label: 'Disputed', sub: 'Under Review' }] : stages;");
     expect(warRoomSource).toContain("getTrackingItemTitle = (tracking: any) => tracking.itemTitle || tradeItemTitleById.get(Number(tracking.listingId)) || 'Trade item'");
     expect(warRoomSource).toContain('lg:flex-row lg:items-stretch');
-    expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
+    expect(warRoomSource).toContain('trade-room-exchange-arrow my-auto h-12 w-12 text-cyan-300');
+    expect(recentTradesSource).toContain('home-trade-direction-icon h-6 w-6');
+    expect(stylesheet).toContain('@media (max-width: 767px)');
+    expect(stylesheet).toContain('.trade-room-exchange-arrow');
+    expect(stylesheet).toContain('.home-trade-direction-icon');
+    expect(stylesheet).toContain('transform: rotate(90deg);');
     expect(warRoomSource).toContain('text-gray-200 text-base font-mono font-semibold flex-1 break-all');
     expect(warRoomSource).toContain('text-white text-lg font-semibold');
   });

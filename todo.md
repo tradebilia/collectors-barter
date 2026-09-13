@@ -1958,3 +1958,4 @@
 - [x] Reduce only the Step 3 item and information section dimensions so both users’ panels fit side by side at 100% zoom without horizontal scrolling; remove whole-shell scaling.
 - [x] Shrink the complete authenticated Step 3 Trade Room view to a 67% visual size at 100% browser zoom without rearranging content.
 - [x] Reduce excess bottom whitespace created by the Step 3 67% visual scale without changing its visual size, content arrangement, or horizontal containment.
+- [x] Rotate swap arrows vertically on mobile-only stacked Trade Room and homepage exchange layouts, while retaining horizontal arrows on larger screens.

@@ -72,7 +72,7 @@ export function DirectionMarker({ side }: { side: "left" | "right" }) {
 
   return (
     <span className="flex h-7 w-7 shrink-0 items-center justify-center text-[#3974bb]" aria-label={directionLabel} title={directionLabel}>
-      <DirectionIcon className="h-6 w-6" strokeWidth={2} aria-hidden="true" />
+      <DirectionIcon className="home-trade-direction-icon h-6 w-6" strokeWidth={2} aria-hidden="true" />
     </span>
   );
 }
