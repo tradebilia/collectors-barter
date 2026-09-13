@@ -53,4 +53,11 @@ describe("Trade Room item-card layout", () => {
     expect(source).toContain("if (result.joinedExistingCall)");
     expect(source).not.toContain("dailyRoomStartedBy !== myUserId");
   });
+
+  it("routes both Video Chat exit controls through shared server-backed cleanup", () => {
+    expect(source).toContain("const closeVideoCall = async () => {");
+    expect(source).toContain("await endVideoCallMutation.mutateAsync({ proposalId });");
+    expect(source).toContain("await closeVideoCall();");
+    expect(source).toContain("onClose={() => { void closeVideoCall(); }}");
+  });
 });

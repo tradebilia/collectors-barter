@@ -1945,4 +1945,6 @@
 
 - [x] Correct Trade Room video-call timeline entries so joiners are not incorrectly recorded as starting a new call.
 
+- [x] Route the Video Chat panel X close action through active-call cleanup so neither participant sees stale Join Video Chat after exit.
+
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.

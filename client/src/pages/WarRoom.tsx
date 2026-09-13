@@ -422,6 +422,17 @@ export default function WarRoom() {
   const myReview = (trade as any)?.myReview || null;
   const myUserId = trade ? (isAdminReadOnly ? trade.proposal.requesterId : (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId)) : null;
 
+  const closeVideoCall = async () => {
+    try {
+      await endVideoCallMutation.mutateAsync({ proposalId });
+      setShowVideoChatModal(false);
+      setVideoRoomUrl(null);
+      void utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+    } catch (error: any) {
+      toast.error(error?.message || "Unable to end the video call. Please try again.");
+    }
+  };
+
   // Reset dismissed state when a new call is started (dailyRoomStartedBy changes)
   const dailyRoomStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
   const hasOtherMemberActiveVideoCall = Boolean(
@@ -1439,10 +1450,8 @@ export default function WarRoom() {
                   <button
                     onClick={async () => {
                       if (showVideoChatModal && videoRoomUrl) {
-                        // End the call — close panel and clear state in DB for both users
-                        setShowVideoChatModal(false);
-                        setVideoRoomUrl(null);
-                        try { await endVideoCallMutation.mutateAsync({ proposalId }); } catch (_) {}
+                        // Every exit path clears the shared Daily state for both members.
+                        await closeVideoCall();
                         return;
                       }
                       setVideoRoomLoading(true);
@@ -3041,7 +3050,7 @@ export default function WarRoom() {
         <VideoChatPanel
           roomUrl={videoRoomUrl}
           displayName={myDisplayName}
-          onClose={() => { setShowVideoChatModal(false); setVideoRoomUrl(null); }}
+          onClose={() => { void closeVideoCall(); }}
         />
       )}
 
