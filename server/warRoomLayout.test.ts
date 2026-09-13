@@ -45,4 +45,12 @@ describe("Trade Room item-card layout", () => {
     expect(source).toContain("bg-emerald-500 text-white border-emerald-300");
     expect(source).toContain("bg-rose-500 text-white border-rose-300");
   });
+
+  it("shows Join Video Chat only for an explicit active caller on the other side", () => {
+    expect(source).toContain("const hasOtherMemberActiveVideoCall = Boolean(");
+    expect(source).toContain("&& dailyRoomStartedBy");
+    expect(source).toContain("String(dailyRoomStartedBy) !== String(myUserId)");
+    expect(source).toContain("if (result.joinedExistingCall)");
+    expect(source).not.toContain("dailyRoomStartedBy !== myUserId");
+  });
 });

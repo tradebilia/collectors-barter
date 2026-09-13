@@ -420,20 +420,27 @@ export default function WarRoom() {
   const otherUser = trade?.otherUser;
   const messages = (messagesQuery.data?.messages || []) as any[];
   const myReview = (trade as any)?.myReview || null;
+  const myUserId = trade ? (isAdminReadOnly ? trade.proposal.requesterId : (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId)) : null;
 
   // Reset dismissed state when a new call is started (dailyRoomStartedBy changes)
   const dailyRoomStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
+  const hasOtherMemberActiveVideoCall = Boolean(
+    (trade?.proposal as any)?.dailyRoomUrl
+      && dailyRoomStartedBy
+      && myUserId
+      && String(dailyRoomStartedBy) !== String(myUserId),
+  );
   useEffect(() => {
     if (!dailyRoomStartedBy) {
       // Call was dismissed or ended — reset buttons and close panel for everyone
       setVideoBannerDismissed(true);
       setShowVideoChatModal(false);
       setVideoRoomUrl(null);
-    } else if (dailyRoomStartedBy !== myUserId) {
+    } else if (hasOtherMemberActiveVideoCall) {
       // A new call was started by the other user — show the join buttons
       setVideoBannerDismissed(false);
     }
-  }, [dailyRoomStartedBy]);
+  }, [dailyRoomStartedBy, hasOtherMemberActiveVideoCall]);
 
   // Watch messages for a video call decline and show it next to the Video Chat button
   // (must be after messages declaration)
@@ -450,7 +457,6 @@ export default function WarRoom() {
       return () => clearTimeout(timer);
     }
   }, [messages]);
-  const myUserId = trade ? (isAdminReadOnly ? trade.proposal.requesterId : (isRequester ? trade.proposal.requesterId : trade.proposal.recipientId)) : null;
   const partnerHasAccepted = (trade as any)?.partnerHasAccepted ?? false;
   const myHasAccepted = (trade as any)?.myHasAccepted ?? false;
 
@@ -1444,11 +1450,9 @@ export default function WarRoom() {
                         const result = await getOrCreateVideoRoomMutation.mutateAsync({ proposalId });
                         setVideoRoomUrl(result.roomUrl);
                         setShowVideoChatModal(true);
-                        // If this user is joining (not starting), post a joined message
-                        // Must have an explicit non-null dailyRoomStartedBy that belongs to the OTHER user
-                        const existingStartedBy = (trade?.proposal as any)?.dailyRoomStartedBy;
-                        const isJoining = !!existingStartedBy && existingStartedBy !== myUserId;
-                        if (isJoining) {
+                        // The server resolves the action from current database state,
+                        // avoiding a stale client snapshot that could log a joiner as a caller.
+                        if (result.joinedExistingCall) {
                           try { await joinVideoCallMutation.mutateAsync({ proposalId }); } catch (_) {}
                         }
                       } catch (err: any) {
@@ -1460,7 +1464,7 @@ export default function WarRoom() {
                     className={`px-4 py-2 border rounded-lg transition text-sm flex items-center gap-2 font-medium ${
                       showVideoChatModal && videoRoomUrl
                         ? 'bg-rose-500 text-white border-rose-300 shadow-[0_0_18px_rgba(244,63,94,0.4)] hover:bg-rose-400'
-                        : (trade?.proposal as any)?.dailyRoomUrl && myUserId && !showVideoChatModal && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
+                        : hasOtherMemberActiveVideoCall && !showVideoChatModal && !videoBannerDismissed
                           ? 'bg-emerald-500 text-white border-emerald-300 shadow-[0_0_18px_rgba(16,185,129,0.4)] hover:bg-emerald-400 animate-pulse'
                           : 'bg-cyan-500 text-white border-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.42)] hover:bg-cyan-400'
                     }`}
@@ -1471,14 +1475,14 @@ export default function WarRoom() {
                     </svg>
                     {showVideoChatModal && videoRoomUrl
                       ? 'End Video'
-                      : (trade?.proposal as any)?.dailyRoomUrl && myUserId && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId
+                      : hasOtherMemberActiveVideoCall && !videoBannerDismissed
                         ? 'Join Video Chat'
                         : 'Video Chat'
                     }
                   </button>
 
                   {/* Dismiss button — only shown to the non-caller when a call is active and not yet dismissed */}
-                  {(trade?.proposal as any)?.dailyRoomUrl && myUserId && !showVideoChatModal && !videoBannerDismissed && (trade?.proposal as any)?.dailyRoomStartedBy !== myUserId && (
+                  {hasOtherMemberActiveVideoCall && !showVideoChatModal && !videoBannerDismissed && (
                     <button
                       onClick={async () => {
                         setVideoBannerDismissed(true);

@@ -38,6 +38,7 @@ import {
 } from "./_core/email";
 import { buildLegacyTradeTimeline, isMissingTradeActivityLogError } from "./tradeTimeline";
 import { getReviewSubmissionBlocker, resolveTradeContactName } from "./tradeRoomSafeguards";
+import { getVideoRoomEntryMode } from "./videoCallState";
 import { buildCompletedTradeExchange } from "../shared/completedTradeExchange";
 import { requireMarketplaceApproval } from "./accountApproval";
 import { describeTradeCashChange } from "./tradeCashTimeline";
@@ -2059,7 +2060,7 @@ export const tradeFlowRouter = router({
 
       // Verify user is a participant in this trade
       const [rows] = await db.execute(
-        sql`SELECT id, requesterId, recipientId, dailyRoomName, dailyRoomUrl
+        sql`SELECT id, requesterId, recipientId, dailyRoomName, dailyRoomUrl, dailyRoomStartedBy
             FROM tradeProposals
             WHERE id = ${input.proposalId}
               AND (requesterId = ${userId} OR recipientId = ${userId})
@@ -2068,10 +2069,28 @@ export const tradeFlowRouter = router({
       const resolvedTrade = (rows as any)?.[0];
       if (!resolvedTrade) throw new TRPCError({ code: 'NOT_FOUND', message: 'Trade not found or access denied' });
 
-      // If room already exists, update the caller and send invite message again
+      // An existing room can be resumed by its caller or joined by the other
+      // member. Only a truly new call writes a “started” system message.
       if (resolvedTrade.dailyRoomName && resolvedTrade.dailyRoomUrl) {
+        const entryMode = getVideoRoomEntryMode(resolvedTrade.dailyRoomStartedBy, userId);
+        if (entryMode === "join") {
+          return {
+            roomUrl: resolvedTrade.dailyRoomUrl as string,
+            roomName: resolvedTrade.dailyRoomName as string,
+            joinedExistingCall: true,
+          };
+        }
+
+        if (entryMode === "resume") {
+          return {
+            roomUrl: resolvedTrade.dailyRoomUrl as string,
+            roomName: resolvedTrade.dailyRoomName as string,
+            joinedExistingCall: false,
+          };
+        }
+
         const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-        // Update who started the call (caller may have changed)
+        // A prior call ended; reuse its Daily room but record the new caller.
         await db.execute(
           sql`UPDATE tradeProposals SET dailyRoomStartedBy = ${userId} WHERE id = ${input.proposalId}`
         );
@@ -2084,7 +2103,7 @@ export const tradeFlowRouter = router({
           sql`INSERT INTO tradeMessages (proposalId, senderId, message, messageType, createdAt)
               VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName2} has started a video call. Click "Join Video Chat" to join.`}, 'system', ${now})`
         );
-        return { roomUrl: resolvedTrade.dailyRoomUrl as string, roomName: resolvedTrade.dailyRoomName as string };
+        return { roomUrl: resolvedTrade.dailyRoomUrl as string, roomName: resolvedTrade.dailyRoomName as string, joinedExistingCall: false };
       }
 
       // Create a new Daily.co room for this trade
@@ -2132,7 +2151,7 @@ export const tradeFlowRouter = router({
             VALUES (${input.proposalId}, ${userId}, ${`📹 ${callerName} has started a video call. Click "Join Video Chat" to join.`}, 'system', ${now})`
       );
 
-      return { roomUrl: data.url as string, roomName: data.name as string };
+      return { roomUrl: data.url as string, roomName: data.name as string, joinedExistingCall: false };
     }),
 
   joinVideoCall: protectedProcedure

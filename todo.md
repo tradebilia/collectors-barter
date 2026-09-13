@@ -1941,4 +1941,8 @@
 
 - [x] Eliminate the remaining false “sent a new proposal” notification after video-call exit by tracing the live Trade Room refresh payload.
 
+- [x] Return the Trade Room Video Chat button to its normal state after a call exit instead of incorrectly showing Join Video Chat.
+
+- [x] Correct Trade Room video-call timeline entries so joiners are not incorrectly recorded as starting a new call.
+
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.
