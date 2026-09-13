@@ -315,6 +315,15 @@
    can accommodate it. Short windows, tablets, mobile devices, and browser
    zoom levels fall back to a natural stacked document so actions never clip. */
 @media (min-width: 1280px) and (min-height: 760px) {
+  /* Step 3 intentionally mirrors the user-approved 67% browser view without
+     changing browser zoom or the layouts of the other Trade Room steps. */
+  .trade-room-shell.trade-room-finalize-scale {
+    width: calc(100% / 0.67);
+    height: calc(100dvh / 0.67);
+    min-height: calc(100dvh / 0.67);
+    zoom: 0.67;
+  }
+
   .trade-room-shell {
     height: 100dvh;
     overflow: hidden;
