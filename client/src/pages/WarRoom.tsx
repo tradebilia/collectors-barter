@@ -1578,7 +1578,7 @@ export default function WarRoom() {
                 {/* ── MIDDLE: Fairness Meter + AI Analyzer ── */}
                 <div className="flex flex-col gap-4 overflow-hidden lg:col-span-3">
                   {/* Fairness Meter */}
-                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-1 flex flex-col justify-center">
+                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-5 text-center flex-[0.85] flex flex-col justify-center">
                     {myHasAccepted && currentStage === 'negotiating' && (
                       <div className="mb-4 px-3 py-3 rounded-lg flex flex-col items-center justify-center gap-1 bg-blue-500/15 border border-blue-400/50 text-blue-300 shadow-[0_0_20px_rgba(59,130,246,0.2)] animate-pulse">
                         <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider">
@@ -1644,28 +1644,17 @@ export default function WarRoom() {
                           />
                         </div>
                         <div className="flex justify-between text-gray-600 text-[10px] mt-2 mb-4">
-                          <span>You Favor</span>
+                          <span>Your Favor</span>
                           <span>Fair</span>
-                          <span>They Favor</span>
+                          <span>Their Favor</span>
                         </div>
 
-                        {/* Value amounts */}
-                        <div className="flex justify-between text-xs border-t border-gray-800 pt-3">
-                          <div className="text-left">
-                            <p className="text-gray-500 text-[10px] mb-0.5">You Give</p>
-                            <p className="text-blue-400 font-bold">{formatWholeDollar(myTotalValue)}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-gray-500 text-[10px] mb-0.5">You Receive</p>
-                            <p className="text-blue-400 font-bold">{formatWholeDollar(theirTotalValue)}</p>
-                          </div>
-                        </div>
                       </>
                     )}
                   </div>
 
                   {/* AI Analyzer */}
-                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex-1 flex flex-col overflow-y-auto">
+                  <div className="bg-[#0f0f1a] border border-gray-600 rounded-xl p-4 flex-[1.15] flex flex-col overflow-y-auto">
                     {!aiAnalysis && !aiAnalysisLoading && (
                       <div className="flex flex-col items-center justify-center h-full text-center">
                         <div className="w-12 h-12 rounded-full bg-blue-900/30 border border-blue-500/20 flex items-center justify-center mb-3">

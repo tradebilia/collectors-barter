@@ -1928,3 +1928,5 @@
 - [x] Move the Trade Room chat message-send button inward so it remains fully inside the composer bubble at 100% browser zoom.
 
 - [x] Apply a direct horizontal offset to the Trade Room chat send button because the prior composer-padding change did not visibly move it at 100% zoom.
+
+- [x] Remove redundant Fairness Meter give/receive rows, expand the AI Analyzer into the freed space, and rename the scale labels to Your Favor and Their Favor.

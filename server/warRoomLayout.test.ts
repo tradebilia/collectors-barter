@@ -28,4 +28,13 @@ describe("Trade Room item-card layout", () => {
     expect(source).toContain("bg-white border border-gray-300 rounded-xl px-3 py-2 pr-4 shadow-sm");
     expect(source).toContain("w-7 h-7 mr-2 rounded-full bg-blue-600");
   });
+
+  it("simplifies fairness labels and gives the analyzer more center-column space", () => {
+    expect(source).toContain("flex-[0.85] flex flex-col justify-center");
+    expect(source).toContain("flex-[1.15] flex flex-col overflow-y-auto");
+    expect(source).toContain("<span>Your Favor</span>");
+    expect(source).toContain("<span>Their Favor</span>");
+    expect(source).not.toContain(">You Give</p>");
+    expect(source).not.toContain(">You Receive</p>");
+  });
 });
