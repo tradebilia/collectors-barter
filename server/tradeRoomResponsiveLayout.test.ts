@@ -96,6 +96,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('overflow: hidden;');
     expect(stylesheet).toContain('background: #0f0f1a;');
     expect(stylesheet).toContain('.trade-room-chat-rail');
+    expect(stylesheet).toContain('width: 390px;');
     expect(stylesheet).toContain('height: 100%;');
     expect(warRoomSource).toContain('px-3 py-3 sm:px-6 sm:py-4');
   });
