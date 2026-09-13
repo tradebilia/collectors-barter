@@ -1949,3 +1949,4 @@
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.
 - [x] Keep Step 3 Shipping Information fully visible and usable at 100% browser zoom without altering prior Trade Room steps.
 - [x] Format Step 3 Shipping Information phone numbers consistently with dashes without changing stored contact data.
+- [x] Reflow Step 3 contact fields above the fixed action bar so every address, email, and phone number is visible at 100% zoom.

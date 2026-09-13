@@ -39,8 +39,8 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain("const isFinalizeStage = currentStage === 'accepted';");
     expect(warRoomSource).toContain("isFinalizeStage ? 'h-32 w-full sm:w-32' : 'w-full h-72'");
     expect(warRoomSource).toContain('data-testid="finalize-shipping-information"');
-    expect(warRoomSource).toContain("isFinalizeStage ? 'p-4' : 'p-7'");
-    expect(warRoomSource).toContain("isFinalizeStage ? 'space-y-2 text-sm' : 'space-y-3 text-base'");
+    expect(warRoomSource).toContain("isFinalizeStage ? 'p-3' : 'p-7'");
+    expect(warRoomSource).toContain("isFinalizeStage ? 'grid grid-cols-1 gap-x-4 gap-y-1 text-xs sm:grid-cols-2' : 'space-y-3 text-base'");
     expect(warRoomSource).toContain('formatTradeRoomPhone(contact.contactPhone)');
     expect(warRoomSource).toContain("if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;");
     expect(warRoomSource).toContain('formatTimelineDetails(event, cfg.label)');
@@ -66,7 +66,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('lg:flex-row lg:items-stretch');
     expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
     expect(warRoomSource).toContain('text-gray-200 text-base font-mono font-semibold flex-1 break-all');
-    expect(warRoomSource).toContain("text-white font-semibold ${isFinalizeStage ? 'text-base' : 'text-lg'}");
+    expect(warRoomSource).toContain("min-w-0 text-white font-semibold ${isFinalizeStage ? 'text-sm' : 'text-lg'}");
   });
 
   it("uses a fixed-height rail only on wide desktops and otherwise lets the entire workspace scroll naturally", () => {
