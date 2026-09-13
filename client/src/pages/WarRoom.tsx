@@ -1319,8 +1319,6 @@ export default function WarRoom() {
                               {theirTracking.map((t: any, i: number) => {
                                 const url = getTrackingUrl(t.carrier, t.trackingNumber);
                                 const lookupId = Number(t.listingId ?? t.itemId ?? t.id ?? i);
-                                const lookup = trackingLookupByListingId[lookupId];
-                                const canLookup = ['UPS', 'FEDEX', 'DHL'].includes(String(t.carrier).toUpperCase());
                                 return (
                                   <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-3">
                                     <div className="flex items-center gap-2 mb-1">
@@ -1328,7 +1326,6 @@ export default function WarRoom() {
                                       <span className="text-gray-200 text-sm font-semibold truncate">{getTrackingItemTitle(t)}</span>
                                     </div>
                                     <p className="text-white text-base font-mono font-semibold mb-2 break-all">{t.trackingNumber}</p>
-                                    {canLookup && <div className="mb-2 rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex flex-wrap items-center justify-between gap-2"><span>Expected delivery: <strong className="text-white">{lookup ? formatTrackingDate(lookup.expectedDeliveryDate) : 'Not checked'}</strong></span><button type="button" onClick={() => lookupCarrierTracking(lookupId, t.carrier, t.trackingNumber)} disabled={trackingLookupLoadingId === lookupId} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingLookupLoadingId === lookupId ? 'Checking…' : 'Check tracking'}</button></div>{lookup?.status && <p className="mt-1 text-slate-400">Status: {lookup.status}</p>}</div>}
                                     {url && (
                                       <a href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-blue-400 text-xs hover:underline">
                                         Track on {t.carrier} →

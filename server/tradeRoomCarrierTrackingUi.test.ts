@@ -27,6 +27,12 @@ describe("Trade Room carrier tracking controls", () => {
     expect(warRoomSource).not.toContain("myItemsShipped ? 'Valid Tracking Number has been submitted'");
   });
 
+  it("keeps carrier checking scoped to the signed-in participant in Step 4", () => {
+    expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
+    expect(warRoomSource).not.toContain("lookupCarrierTracking(lookupId, t.carrier, t.trackingNumber)");
+    expect(warRoomSource).toContain("Track on {t.carrier} →");
+  });
+
   it("keeps the lookup protected and limits it to the supported carrier adapters", () => {
     expect(routerSource).toContain("protectedProcedure");
     expect(routerSource).toContain('z.enum(["USPS", "UPS", "FedEx", "DHL"])');

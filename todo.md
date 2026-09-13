@@ -1973,3 +1973,5 @@
 - [ ] Pursue USPS Tracking API authorization only for packages created under Tradebilia’s own Mailer ID before considering member-entered third-party tracking.
 - [x] Evaluate doprdele/paqq as a potential USPS tracking approach, including its scraper method, reliability, compliance, and production suitability.
 - [x] Implement the user-selected official USPS.com manual-confirmation fallback for member-entered Step 4 USPS tracking while retaining Test AI diagnostics.
+- [ ] Fix the Step 4 USPS fallback so its participant-visible shared status does not remain red after a number is entered and official USPS verification is opened.
+- [x] Remove the other participant’s Step 4 Check Tracking section; retain only the signed-in user’s controls until the next step.
