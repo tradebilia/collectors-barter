@@ -341,3 +341,18 @@
     height: 100%;
   }
 }
+
+
+@media (min-width: 1280px) and (min-height: 760px) {
+  /* Finalize mirrors a 67% browser view while the browser remains at 100%.
+     The enlarged layout box is scaled back into the viewport, preserving the
+     complete shell, chat rail, footer, and original card geometry together. */
+  .trade-room-shell.trade-room-finalize-whole {
+    width: calc(100% / 0.67);
+    min-width: calc(100% / 0.67);
+    height: calc(100dvh / 0.67);
+    min-height: calc(100dvh / 0.67);
+    transform: scale(0.67);
+    transform-origin: top left;
+  }
+}

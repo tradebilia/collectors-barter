@@ -872,7 +872,7 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] `}>
+    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-whole' : ''}`}>
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
       {isAdminReadOnly && (
@@ -980,7 +980,6 @@ export default function WarRoom() {
             const acceptedDate = acceptedAt ? new Date(acceptedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : null;
             const myReviewHasSingleItem = myItems.length === 1;
             const theirReviewHasSingleItem = theirItems.length === 1;
-            const isFinalizeStage = currentStage === 'accepted';
             const tradeRef = (trade?.proposal as any)?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`;
 
             return (
@@ -1008,27 +1007,27 @@ export default function WarRoom() {
                 </div>
 
                 {/* Trade Summary Card — hidden on Shipping stage */}
-                {currentStage !== 'shipping' && <div className={`bg-[#16213e] border border-gray-600 rounded-xl shadow-xl ${isFinalizeStage ? 'p-3' : 'p-5'}`}>
-                  <div className={`flex items-center justify-between ${isFinalizeStage ? 'mb-3' : 'mb-5'}`}>
+                {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                  <div className="flex items-center justify-between mb-5">
                     <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
                     <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
                   </div>
-                  <div className={`flex flex-col lg:flex-row lg:items-stretch ${isFinalizeStage ? 'gap-3' : 'gap-6'}`}>
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
                     {/* Your Items */}
                     <div className={`flex-1 space-y-2 ${myReviewHasSingleItem ? 'lg:min-w-0' : ''}`}>
-                      <div className={`flex items-center gap-2 ${isFinalizeStage ? 'mb-2' : 'mb-3'}`}>
+                      <div className="flex items-center gap-2 mb-3">
 
                         {myAvatarUrl ? <TradeRoomAvatar src={myAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center text-white text-[10px] font-bold">{myInitial}</div>}
                         <p className="text-blue-400 text-xs font-bold uppercase tracking-wide">{myDisplayName}</p>
                       </div>
                       {myItems.map((item: any) => (
-                        <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${myReviewHasSingleItem ? (isFinalizeStage ? 'flex-row items-center p-2' : 'flex-col p-4') : 'items-center p-2'}`}>
+                        <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${myReviewHasSingleItem ? 'flex-col p-4' : 'items-center p-2'}`}>
                           {item.photos?.[0]?.imageUrl
-                            ? <img src={item.photos[0].imageUrl} className={`${myReviewHasSingleItem ? (isFinalizeStage ? 'h-20 w-20' : 'w-full h-72') : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
-                            : <div className={`${myReviewHasSingleItem ? (isFinalizeStage ? 'h-20 w-20' : 'w-full h-72') : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
+                            ? <img src={item.photos[0].imageUrl} className={`${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
+                            : <div className={`${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? (isFinalizeStage ? 'text-base' : 'text-xl') : 'text-base'}`}>{item.title}</p>
+                            <p className={`text-white font-semibold leading-tight ${myReviewHasSingleItem ? 'text-xl' : 'text-base'}`}>{item.title}</p>
                             <p className="text-gray-200 text-base font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
@@ -1046,19 +1045,19 @@ export default function WarRoom() {
                     </div>
                     {/* Their Items */}
                     <div className={`flex-1 space-y-2 ${theirReviewHasSingleItem ? 'lg:min-w-0' : ''}`}>
-                      <div className={`flex items-center gap-2 ${isFinalizeStage ? 'mb-2' : 'mb-3'}`}>
+                      <div className="flex items-center gap-2 mb-3">
 
                         {theirAvatarUrl ? <TradeRoomAvatar src={theirAvatarUrl} alt="" className="h-6 w-6 rounded-full bg-slate-800" /> : <div className="w-6 h-6 rounded-full bg-gray-600 flex items-center justify-center text-white text-[10px] font-bold">{theirInitial}</div>}
                         <p className="text-gray-200 text-sm font-bold uppercase tracking-wide">{theirDisplayName}</p>
                       </div>
                       {theirItems.map((item: any) => (
-                        <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${theirReviewHasSingleItem ? (isFinalizeStage ? 'flex-row items-center p-2' : 'flex-col p-4') : 'items-center p-2'}`}>
+                        <div key={item.id} className={`flex gap-3 bg-[#0f0f1a] border border-gray-700 rounded-lg ${theirReviewHasSingleItem ? 'flex-col p-4' : 'items-center p-2'}`}>
                           {item.photos?.[0]?.imageUrl
-                            ? <img src={item.photos[0].imageUrl} className={`${theirReviewHasSingleItem ? (isFinalizeStage ? 'h-20 w-20' : 'w-full h-72') : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
-                            : <div className={`${theirReviewHasSingleItem ? (isFinalizeStage ? 'h-20 w-20' : 'w-full h-72') : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
+                            ? <img src={item.photos[0].imageUrl} className={`${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
+                            : <div className={`${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
                           <div className="flex-1 min-w-0">
-                            <p className={`text-white font-semibold leading-tight ${theirReviewHasSingleItem ? (isFinalizeStage ? 'text-base' : 'text-xl') : 'text-sm'}`}>{item.title}</p>
+                            <p className={`text-white font-semibold leading-tight ${theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
                             <p className="text-gray-200 text-base font-mono mt-1">Ref # {String(item.id).padStart(5, '0')}</p>
 
                           </div>
