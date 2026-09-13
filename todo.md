@@ -1922,3 +1922,5 @@
 - [x] Change the initial Trade Room timeline event to “Trade proposal initiated for item: [item name]”.
 
 - [x] Fix trade-initiation email sender identity so the initiating account name is shown instead of the recipient-side username.
+
+- [x] Keep each Trade Room item-card Remove from trade control visible and reachable at 100% browser zoom.

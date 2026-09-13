@@ -1535,7 +1535,8 @@ export default function WarRoom() {
                           {!isLocked && canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
-                              className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                              className="absolute top-2 right-2 z-20 bg-red-600/95 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold opacity-100 shadow-lg ring-2 ring-[#0f3460]"
+                              title="Remove from trade"
                             >×</button>
                           )}
                         </div>
@@ -1998,7 +1999,7 @@ export default function WarRoom() {
                           {!isLocked && canSubmitProposal && (currentStage === 'proposed' || currentStage === 'negotiating') && (
                             <button
                               onClick={() => handleRemoveItemFromTrade(item.id)}
-                              className="absolute -top-1.5 -right-1.5 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                              className="absolute top-2 right-2 z-20 bg-red-600/95 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold opacity-100 shadow-lg ring-2 ring-[#0f3460]"
                               title="Remove from trade"
                             >×</button>
                           )}

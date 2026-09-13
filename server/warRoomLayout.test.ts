@@ -16,4 +16,11 @@ describe("Trade Room item-card layout", () => {
     expect(source).toContain("h-64 sm:h-72 lg:h-[18rem]");
     expect(source).toContain("min-h-[25rem] p-4");
   });
+
+  it("keeps both remove controls visible inside their card bounds", () => {
+    const removeControlClass = "absolute top-2 right-2 z-20 bg-red-600/95";
+    expect(source.match(new RegExp(removeControlClass.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&"), "g"))).toHaveLength(2);
+    expect(source.match(/title=\"Remove from trade\"/g)).toHaveLength(2);
+    expect(source).not.toContain("-top-1.5 -right-1.5");
+  });
 });
