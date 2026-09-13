@@ -350,8 +350,8 @@
   .trade-room-shell.trade-room-finalize-whole {
     width: calc(100% / 0.67);
     min-width: calc(100% / 0.67);
-    height: calc(100dvh / 0.67);
-    min-height: calc(100dvh / 0.67);
+    height: calc((100dvh - 6rem) / 0.67);
+    min-height: calc((100dvh - 6rem) / 0.67);
     transform: scale(0.67);
     transform-origin: top left;
   }

@@ -79,6 +79,8 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-whole');
     expect(stylesheet).toContain('transform: scale(0.67);');
     expect(stylesheet).toContain('transform-origin: top left;');
+    expect(stylesheet).toContain('height: calc((100dvh - 6rem) / 0.67);');
+    expect(stylesheet).toContain('min-height: calc((100dvh - 6rem) / 0.67);');
     expect(stylesheet).toContain('.trade-room-chat-rail');
     expect(stylesheet).toContain('height: 100%;');
     expect(warRoomSource).toContain('px-3 py-3 sm:px-6 sm:py-4');
