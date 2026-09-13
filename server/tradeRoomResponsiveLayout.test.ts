@@ -76,7 +76,8 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('trade-room-content flex flex-1 flex-col overflow-visible p-4 custom-scrollbar');
     expect(warRoomSource).toContain('trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4');
     expect(stylesheet).toContain('@media (min-width: 1280px) and (min-height: 760px)');
-    expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-scale');
+    expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-scale .trade-room-content');
+    expect(stylesheet).toContain('calc((100% - 360px) / 0.67)');
     expect(stylesheet).toContain('zoom: 0.67;');
     expect(stylesheet).toContain('.trade-room-chat-rail');
     expect(stylesheet).toContain('height: 100%;');
