@@ -12,12 +12,24 @@ type IncomingProposalCheck = {
   isNegotiating: boolean;
 };
 
+type TradeVideoRoomRevisionSource = {
+  id?: number;
+  dailyRoomName?: string | null;
+  dailyRoomUrl?: string | null;
+  dailyRoomStartedBy?: number | null;
+} | null | undefined;
+
 export function getTradeProposalRevision(proposal: TradeProposalRevisionSource) {
   if (!proposal?.id) return null;
   // The database auto-updates `updatedAt` for every row write, including
   // Daily video-room start/join/leave state. Trade proposals alternate the
   // submitting member, so `lastProposedBy` is the reliable term-change signal.
   return `${proposal.id}:${proposal.lastProposedBy ?? ''}`;
+}
+
+export function getTradeVideoRoomRevision(proposal: TradeVideoRoomRevisionSource) {
+  if (!proposal?.id) return null;
+  return `${proposal.id}:${proposal.dailyRoomName ?? ''}:${proposal.dailyRoomUrl ?? ''}:${proposal.dailyRoomStartedBy ?? ''}`;
 }
 
 export function isIncomingProposalRevision({

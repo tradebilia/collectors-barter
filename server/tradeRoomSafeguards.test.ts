@@ -29,7 +29,10 @@ describe("Trade Room safeguards", () => {
 
   it("surfaces incoming terms safely and keeps both cash sides adjustable while negotiating", () => {
     expect(warRoomSource).toContain("getTradeProposalRevision");
+    expect(warRoomSource).toContain("getTradeVideoRoomRevision");
     expect(warRoomSource).toContain("isIncomingProposalRevision");
+    expect(warRoomSource).toContain("latestVideoRoomRevisionRef");
+    expect(warRoomSource).toContain("previousVideoRoomRevision !== null && previousVideoRoomRevision !== videoRoomRevision");
     expect(warRoomSource).toContain("data-testid=\"incoming-proposal-notice\"");
     expect(warRoomSource).toContain("Load Updated Terms");
     expect(warRoomSource).toContain("Your unsent changes are protected");

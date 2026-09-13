@@ -1939,4 +1939,6 @@
 
 - [x] Prevent video-call exit events from showing a false top-right trade-modified notification.
 
+- [x] Eliminate the remaining false “sent a new proposal” notification after video-call exit by tracing the live Trade Room refresh payload.
+
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.

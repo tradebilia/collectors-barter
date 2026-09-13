@@ -18,7 +18,7 @@ import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt
 import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
 import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
-import { getTradeProposalRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
+import { getTradeProposalRevision, getTradeVideoRoomRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
 import { getLockedShipmentItems } from "@/lib/shippingItems";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 
@@ -227,6 +227,7 @@ export default function WarRoom() {
   const [transactionReferenceByPayer, setTransactionReferenceByPayer] = useState<Record<number, string>>({});
   const [incomingProposalNotice, setIncomingProposalNotice] = useState(false);
   const latestProposalRevisionRef = useRef<string | null>(null);
+  const latestVideoRoomRevisionRef = useRef<string | null>(null);
 
   // ── tRPC queries ──────────────────────────────────────────────────────────
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
@@ -603,6 +604,7 @@ export default function WarRoom() {
   const iCanAccept = negotiationTurn.canAcceptCurrentProposal;
   const canSubmitProposal = negotiationTurn.canSubmitProposal && !incomingProposalNotice;
   const proposalRevision = getTradeProposalRevision(trade?.proposal as any);
+  const videoRoomRevision = getTradeVideoRoomRevision(trade?.proposal as any);
 
   const loadIncomingProposalTerms = () => {
     setPendingMyItems([]);
@@ -618,9 +620,19 @@ export default function WarRoom() {
   };
 
   useEffect(() => {
+    const previousVideoRoomRevision = latestVideoRoomRevisionRef.current;
+    latestVideoRoomRevisionRef.current = videoRoomRevision;
     if (!proposalRevision || !myUserId) return;
     const previousRevision = latestProposalRevisionRef.current;
     latestProposalRevisionRef.current = proposalRevision;
+
+    // Daily room lifecycle writes are communication state, not trade terms.
+    // Ignore a refetch that only changes video-room fields before evaluating
+    // incoming proposal state from any legacy payload shape.
+    if (previousVideoRoomRevision !== null && previousVideoRoomRevision !== videoRoomRevision) {
+      return;
+    }
+
     if (!isIncomingProposalRevision({
       previousRevision,
       nextRevision: proposalRevision,
@@ -637,7 +649,7 @@ export default function WarRoom() {
     }
 
     toast.info(`${theirDisplayName} sent a new proposal. The Trade Room has been refreshed.`);
-  }, [proposalRevision, lastProposedBy, myUserId, currentStage, hasLocalChanges, theirDisplayName]);
+  }, [proposalRevision, videoRoomRevision, lastProposedBy, myUserId, currentStage, hasLocalChanges, theirDisplayName]);
 
   // Calculate total values (items + cash)
   const myItemsValue = myItems.reduce((sum: number, l: any) => sum + parseFloat(l?.estimatedValue || '0'), 0);
