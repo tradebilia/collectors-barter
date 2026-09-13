@@ -26,5 +26,6 @@ describe("Trade Room item-card layout", () => {
 
   it("keeps the message-send button inside the chat composer bubble", () => {
     expect(source).toContain("bg-white border border-gray-300 rounded-xl px-3 py-2 pr-4 shadow-sm");
+    expect(source).toContain("w-7 h-7 mr-2 rounded-full bg-blue-600");
   });
 });
