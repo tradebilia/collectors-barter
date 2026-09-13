@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
-import { buildUspsTrackingUrl } from '@shared/uspsTrackingLink';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 
@@ -1509,18 +1508,17 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 function CarrierTrackingSection() {
   const [carrier, setCarrier] = useState<'USPS' | 'UPS' | 'FedEx' | 'DHL'>('USPS');
   const [trackingNumber, setTrackingNumber] = useState('');
+  const uspsLookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
   const upsLookupMutation = trpc.testAI.lookupUpsTracking.useMutation();
   const fedexLookupMutation = trpc.testAI.lookupFedexTracking.useMutation();
   const dhlLookupMutation = trpc.testAI.lookupDhlTracking.useMutation();
-  const activeMutation = carrier === 'UPS'
+  const activeMutation = carrier === 'USPS'
+    ? uspsLookupMutation
+    : carrier === 'UPS'
     ? upsLookupMutation
     : carrier === 'FedEx'
       ? fedexLookupMutation
       : dhlLookupMutation;
-  const isUsps = carrier === 'USPS';
-  const uspsTrackingUrl = isUsps && trackingNumber.trim()
-    ? buildUspsTrackingUrl(trackingNumber)
-    : null;
 
   const submitLookup = () => {
     const value = trackingNumber.trim();
@@ -1528,11 +1526,9 @@ function CarrierTrackingSection() {
       toast.error(`Enter a ${carrier} tracking number`);
       return;
     }
-    if (isUsps) {
-      window.open(buildUspsTrackingUrl(value), '_blank', 'noopener,noreferrer');
-      return;
-    }
-    const mutation = carrier === 'UPS'
+    const mutation = carrier === 'USPS'
+      ? uspsLookupMutation
+      : carrier === 'UPS'
       ? upsLookupMutation
       : carrier === 'FedEx'
         ? fedexLookupMutation
@@ -1542,14 +1538,14 @@ function CarrierTrackingSection() {
     });
   };
 
-  const result = isUsps ? undefined : activeMutation.data;
+  const result = activeMutation.data;
 
   return (
     <section className="rounded-xl border border-sky-700/30 bg-sky-950/20 p-5 space-y-4" aria-labelledby="carrier-tracking-test-title">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 id="carrier-tracking-test-title" className="text-sm font-bold uppercase tracking-wide text-sky-300">Carrier Tracking Test</h2>
-          <p className="mt-1 text-xs text-gray-400">USPS opens official USPS.com tracking. UPS, FedEx, and DHL return read-only carrier results. No Tradebilia shipment, trade, or notification data is changed.</p>
+          <p className="mt-1 text-xs text-gray-400">USPS, UPS, FedEx, and DHL return read-only carrier results. No Tradebilia shipment, trade, or notification data is changed.</p>
         </div>
         <Badge className="w-fit border border-sky-600/40 bg-sky-900/40 text-[10px] text-sky-200">Read only</Badge>
       </div>
@@ -1580,40 +1576,20 @@ function CarrierTrackingSection() {
           aria-label={`${carrier} tracking number`}
           className="min-w-0 flex-1 rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2.5 text-sm text-white placeholder:text-gray-500 focus:border-sky-500 focus:outline-none"
         />
-        {isUsps ? (
-          <a
-            href={uspsTrackingUrl ?? undefined}
-            target={uspsTrackingUrl ? '_blank' : undefined}
-            rel={uspsTrackingUrl ? 'noopener noreferrer' : undefined}
-            onClick={(event) => {
-              if (!uspsTrackingUrl) {
-                event.preventDefault();
-                toast.error('Enter a USPS tracking number');
-              }
-            }}
-            aria-disabled={!uspsTrackingUrl}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-500 aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-          >
-            Track on USPS.com →
-          </a>
-        ) : (
-          <button
-            onClick={submitLookup}
-            disabled={activeMutation.isPending}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {activeMutation.isPending ? <><Spinner className="h-4 w-4" /> Checking {carrier}…</> : 'Check tracking'}
-          </button>
-        )}
+        <button
+          onClick={submitLookup}
+          disabled={activeMutation.isPending}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-sky-500 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {activeMutation.isPending ? <><Spinner className="h-4 w-4" /> Checking {carrier}…</> : 'Check tracking'}
+        </button>
       </div>
 
-      {isUsps && (
-        <p className="text-xs text-sky-200/90">
-          USPS tracking opens on the official USPS website. Tradebilia does not use the paid USPS Tracking API or scrape USPS tracking pages.
-        </p>
+      {carrier === 'USPS' && (
+        <p className="text-xs text-sky-200/90">This USPS test uses the configured server-side consumer credentials. It returns USPS’s response or a clear authorization error without changing any trade or shipment record.</p>
       )}
 
-      {!isUsps && activeMutation.isError && (
+      {activeMutation.isError && (
         <div className="rounded-lg border border-red-700/40 bg-red-950/30 p-3 text-xs text-red-300" role="alert">
           {activeMutation.error.message}
         </div>

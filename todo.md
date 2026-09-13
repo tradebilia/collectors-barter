@@ -1967,3 +1967,5 @@
 - [x] Add USPS carrier validation so “Tracking Not Available” displays “Invalid Tracking Number submitted,” while recognized USPS results qualify for shared valid status.
 - [x] Fix the live Step 4 regression where valid USPS and FedEx checks do not update either participant’s tracking-status bubble.
 - [x] Fix the screenshot-confirmed Step 4 state-flow defect where an entered USPS number remains 0/1 tracked and no carrier-validation result reaches the shared status bubbles.
+- [ ] Replace the blocked USPS API check with a compliant USPS.com validation fallback that marks “Tracking Not Available” invalid and shares the result in Step 4.
+- [x] Add an authenticated USPS package-tracking test area that uses configured consumer credentials and never changes Trade Room or shipment data.
