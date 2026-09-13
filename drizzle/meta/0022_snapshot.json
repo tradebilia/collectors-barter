@@ -1,8 +1,8 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "fd03adb1-633d-4562-9d82-19e4c6c5384b",
-  "prevId": "10de5eb8-8b9d-4668-a94b-4ca9f7205414",
+  "id": "3e8f617c-2bd8-40d1-8223-6cc233ab9086",
+  "prevId": "fd03adb1-633d-4562-9d82-19e4c6c5384b",
   "tables": {
     "accountApprovalReviews": {
       "name": "accountApprovalReviews",
@@ -6683,6 +6683,21 @@
         "trackingUrl": {
           "name": "trackingUrl",
           "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "validationStatus": {
+          "name": "validationStatus",
+          "type": "enum('pending','valid','invalid')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "validatedAt": {
+          "name": "validatedAt",
+          "type": "timestamp",
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false

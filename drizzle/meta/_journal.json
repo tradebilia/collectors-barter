@@ -155,6 +155,13 @@
       "when": 1788746282363,
       "tag": "0021_yummy_phantom_reporter",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "5",
+      "when": 1789329918592,
+      "tag": "0022_nifty_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

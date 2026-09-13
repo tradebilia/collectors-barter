@@ -326,17 +326,19 @@ export default function WarRoom() {
     onError: (err) => toast.error(err.message),
   });
 
-  const shippingTrackingLookupMutation = trpc.shippingTracking.lookup.useMutation();
+  const shippingTrackingLookupMutation = trpc.shippingTracking.validateForTrade.useMutation();
   const lookupCarrierTracking = async (listingId: number, carrier: string, trackingNumber: string) => {
-    const normalizedCarrier = carrier.toUpperCase() === 'FEDEX' ? 'FedEx' : carrier.toUpperCase() === 'UPS' ? 'UPS' : carrier.toUpperCase() === 'DHL' ? 'DHL' : null;
+    const normalizedCarrier = carrier.toUpperCase() === 'USPS' ? 'USPS' : carrier.toUpperCase() === 'FEDEX' ? 'FedEx' : carrier.toUpperCase() === 'UPS' ? 'UPS' : carrier.toUpperCase() === 'DHL' ? 'DHL' : null;
     if (!normalizedCarrier) {
-      toast.error('Carrier lookup is available for UPS, FedEx, and DHL.');
+      toast.error('Carrier lookup is available for USPS, UPS, FedEx, and DHL.');
       return;
     }
     setTrackingLookupLoadingId(listingId);
     try {
-      const result = await shippingTrackingLookupMutation.mutateAsync({ carrier: normalizedCarrier, trackingNumber });
+      const result = await shippingTrackingLookupMutation.mutateAsync({ proposalId, listingId, carrier: normalizedCarrier, trackingNumber });
       setTrackingLookupByListingId((previous) => ({ ...previous, [listingId]: result }));
+      await utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+      toast[result.validationStatus === 'valid' ? 'success' : 'error'](result.validationMessage);
     } catch (error: any) {
       toast.error(error?.message || 'Carrier tracking lookup failed.');
     } finally {
@@ -960,6 +962,9 @@ export default function WarRoom() {
             const allItems = [...myItems, ...theirItems];
             const myTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId === myUserId);
             const theirTracking = (trade?.trackingNumbers || []).filter((t: any) => t.userId !== myUserId);
+            const trackingValidations = (trade as any)?.trackingValidations || [];
+            const myValidationByListingId = new Map<number, any>(trackingValidations.filter((entry: any) => entry.userId === myUserId).map((entry: any) => [Number(entry.listingId), entry] as [number, any]));
+            const theirValidationByListingId = new Map<number, any>(trackingValidations.filter((entry: any) => entry.userId !== myUserId).map((entry: any) => [Number(entry.listingId), entry] as [number, any]));
             const tradeItemTitleById = new Map([...myItems, ...theirItems].map((item: any) => [Number(item.id), item.title]));
             const getTrackingItemTitle = (tracking: any) => tracking.itemTitle || tradeItemTitleById.get(Number(tracking.listingId)) || 'Trade item';
             const myContact = (trade as any)?.myContactInfo;
@@ -1144,10 +1149,22 @@ export default function WarRoom() {
                     offeredListings: trade?.offeredListings || [],
                     viewerUserId: myUserId,
                   });
-                  const myTrackingByListingId = new Map(myTracking.map((tracking: any) => [tracking.listingId, tracking]));
-                  const theirTrackingByListingId = new Map(theirTracking.map((tracking: any) => [tracking.listingId, tracking]));
-                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => myTrackingByListingId.has(item.id) && !resetTrackingIds.includes(item.id));
-                  const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => theirTrackingByListingId.has(item.id));
+                  const myTrackingByListingId = new Map<number, any>(myTracking.map((tracking: any) => [Number(tracking.listingId), tracking] as [number, any]));
+                  const theirTrackingByListingId = new Map<number, any>(theirTracking.map((tracking: any) => [Number(tracking.listingId), tracking] as [number, any]));
+                  const hasValidTracking = (trackingByListingId: Map<number, any>, validationByListingId: Map<number, any>, item: any) => {
+                    const tracking = trackingByListingId.get(Number(item.id));
+                    const validation = validationByListingId.get(Number(item.id));
+                    return Boolean(tracking && validation?.trackingNumber === tracking.trackingNumber && validation.validationStatus === 'valid');
+                  };
+                  const hasInvalidTracking = (trackingByListingId: Map<number, any>, validationByListingId: Map<number, any>, item: any) => {
+                    const tracking = trackingByListingId.get(Number(item.id));
+                    const validation = validationByListingId.get(Number(item.id));
+                    return Boolean(tracking && validation?.trackingNumber === tracking.trackingNumber && validation.validationStatus === 'invalid');
+                  };
+                  const myItemsShipped = myShippingItems.length > 0 && myShippingItems.every((item) => hasValidTracking(myTrackingByListingId, myValidationByListingId, item) && !resetTrackingIds.includes(item.id));
+                  const theirItemsShipped = theirShippingItems.length > 0 && theirShippingItems.every((item) => hasValidTracking(theirTrackingByListingId, theirValidationByListingId, item));
+                  const myHasInvalidTracking = myShippingItems.some((item) => hasInvalidTracking(myTrackingByListingId, myValidationByListingId, item));
+                  const theirHasInvalidTracking = theirShippingItems.some((item) => hasInvalidTracking(theirTrackingByListingId, theirValidationByListingId, item));
                   return (
                     <div className="w-full min-h-[38rem] bg-[#16213e] border border-orange-500/40 rounded-xl shadow-[0_0_30px_rgba(249,115,22,0.1)] overflow-hidden">
                       {/* Header */}
@@ -1312,13 +1329,13 @@ export default function WarRoom() {
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
                           myItemsShipped ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {myItemsShipped ? '✓' : '⏳'} {myDisplayName}: <span className={myItemsShipped ? 'text-green-400' : 'text-red-300'}>{myItemsShipped ? 'Tracking Numbers submitted' : 'Tracking Numbers not submitted'}</span>
+                          {myItemsShipped ? '✓' : '⏳'} {myDisplayName}: <span className={myItemsShipped ? 'text-green-400' : 'text-red-300'}>{myItemsShipped ? 'Valid Tracking Number has been submitted' : myHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         <div className="w-px h-4 bg-gray-700" />
                         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold ${
                           theirItemsShipped ? 'bg-green-900/20 border border-green-500/30 text-green-400' : 'bg-red-900/20 border border-red-500/40 text-red-300'
                         }`}>
-                          {theirItemsShipped ? '✓' : '○'} {theirDisplayName}: <span className={theirItemsShipped ? 'text-green-400' : 'text-red-300'}>{theirItemsShipped ? 'Tracking Numbers submitted' : 'Tracking Numbers not submitted'}</span>
+                          {theirItemsShipped ? '✓' : '○'} {theirDisplayName}: <span className={theirItemsShipped ? 'text-green-400' : 'text-red-300'}>{theirItemsShipped ? 'Valid Tracking Number has been submitted' : theirHasInvalidTracking ? 'Invalid Tracking Number submitted' : 'Tracking Numbers not submitted'}</span>
                         </div>
                         {myItemsShipped && theirItemsShipped && (
                           <p className="ml-auto text-green-400 text-xs font-bold">🚚 Both packages on the way!</p>

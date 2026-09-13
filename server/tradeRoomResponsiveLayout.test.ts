@@ -57,7 +57,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('uppercase tracking-wide animate-pulse');
     expect(warRoomSource).toContain('bg-white border border-slate-300 text-slate-900');
     expect(warRoomSource).toContain('Tracking Numbers not submitted');
-    expect(warRoomSource).toContain('Tracking Numbers submitted');
+    expect(warRoomSource).toContain('Valid Tracking Number has been submitted');
     expect(warRoomSource).toContain('Press Enter to lock every tracking number before submitting.');
     expect(warRoomSource).toContain('>Enter</button>');
     expect(warRoomSource).toContain('>Reset</button>');
