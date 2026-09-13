@@ -22,4 +22,18 @@ describe("Trade Room incoming proposal synchronization", () => {
     expect(isIncomingProposalRevision({ previousRevision, nextRevision, lastProposedBy: 10, myUserId: 10, isNegotiating: true })).toBe(false);
     expect(isIncomingProposalRevision({ previousRevision, nextRevision: "81:3:20", lastProposedBy: 20, myUserId: 10, isNegotiating: false })).toBe(false);
   });
+
+  it("ignores generic proposal timestamp changes caused by video-room state updates", () => {
+    const beforeVideoExit = getTradeProposalRevision({ id: 81, updatedAt: "2026-09-12T21:00:00.000Z", lastProposedBy: 20 });
+    const afterVideoExit = getTradeProposalRevision({ id: 81, updatedAt: "2026-09-12T21:05:00.000Z", lastProposedBy: 20 });
+
+    expect(afterVideoExit).toBe(beforeVideoExit);
+    expect(isIncomingProposalRevision({
+      previousRevision: beforeVideoExit,
+      nextRevision: afterVideoExit,
+      lastProposedBy: 20,
+      myUserId: 10,
+      isNegotiating: true,
+    })).toBe(false);
+  });
 });

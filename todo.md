@@ -1937,4 +1937,6 @@
 
 - [x] Reduce the Trade Room composer send-button inset to a modest right-side gap after the fixed inset moved it too far left.
 
+- [x] Prevent video-call exit events from showing a false top-right trade-modified notification.
+
 - [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.

@@ -14,8 +14,10 @@ type IncomingProposalCheck = {
 
 export function getTradeProposalRevision(proposal: TradeProposalRevisionSource) {
   if (!proposal?.id) return null;
-  const updatedAt = proposal.updatedAt ? new Date(String(proposal.updatedAt)).getTime() : '';
-  return `${proposal.id}:${updatedAt}:${proposal.lastProposedBy ?? ''}`;
+  // The database auto-updates `updatedAt` for every row write, including
+  // Daily video-room start/join/leave state. Trade proposals alternate the
+  // submitting member, so `lastProposedBy` is the reliable term-change signal.
+  return `${proposal.id}:${proposal.lastProposedBy ?? ''}`;
 }
 
 export function isIncomingProposalRevision({

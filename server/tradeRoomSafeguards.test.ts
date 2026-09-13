@@ -38,8 +38,8 @@ describe("Trade Room safeguards", () => {
   });
 
   it("gives a single Step 1 item a prominent card before reverting to compact multi-item cards", () => {
-    expect(warRoomSource).toContain("if (count === 1) return 'h-72 sm:h-96 lg:h-[24rem]'");
-    expect(warRoomSource).toContain("const getItemCardSpacing = (count: number) => count === 1 ? 'min-h-[31rem] p-4' : 'p-2.5';");
+    expect(warRoomSource).toContain("if (count === 1) return 'h-64 sm:h-72 lg:h-[18rem]'");
+    expect(warRoomSource).toContain("const getItemCardSpacing = (count: number) => count === 1 ? 'min-h-[25rem] p-4 flex flex-col' : 'p-2.5';");
     expect(warRoomSource).toContain("getItemCardSpacing(myItems.length)");
     expect(warRoomSource).toContain("getItemCardSpacing(theirItems.length)");
     expect(warRoomSource).toContain("getItemTitleClass(myItems.length)");
