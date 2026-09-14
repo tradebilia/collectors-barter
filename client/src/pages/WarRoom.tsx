@@ -86,6 +86,7 @@ const formatTimelineDetails = (event: any, fallbackLabel: string) => {
       return 'Selected payment method';
     }
   }
+  if (event.eventType === 'tracking_submitted' && event.details === 'Tracking number submitted') return 'Submitted shipment tracking information';
   return event.details || fallbackLabel;
 };
 
@@ -101,7 +102,7 @@ const eventConfig: Record<string, { color: string; icon: string; label: string }
   proposal_accepted:  { color: 'bg-green-400',  icon: '✅', label: 'Proposal Accepted' },
   proposal_declined:  { color: 'bg-red-400',    icon: '❌', label: 'Proposal Declined' },
   trade_cancelled:    { color: 'bg-gray-500',   icon: '🚫', label: 'Trade Cancelled' },
-  tracking_submitted: { color: 'bg-yellow-500', icon: '📦', label: 'Tracking Submitted' },
+  tracking_submitted: { color: 'bg-yellow-500', icon: '📦', label: 'Shipment Tracking Submitted' },
   items_received:     { color: 'bg-teal-500',   icon: '📬', label: 'Items Received' },
   trade_completed:    { color: 'bg-purple-500', icon: '🏆', label: 'Trade Completed' },
   disputed:           { color: 'bg-red-500',    icon: '⚠️', label: 'Dispute Review Requested' },

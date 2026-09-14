@@ -1060,10 +1060,10 @@ export const tradeFlowRouter = router({
       const otherUserId = proposal.requesterId === userId ? proposal.recipientId : proposal.requesterId;
       const [actor] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       const actorName = await getUserDisplayName(db, userId);
-      const trackingAlertMsg = `${actorName} has submitted their tracking number`;
-      await createTradeAlert(db, input.proposalId, otherUserId, 'shipped', `${actorName} has submitted tracking information for trade (TR-${proposal.tradeReferenceNumber}).`, now);
+      const trackingAlertMsg = `${actorName} has submitted shipment tracking information`;
+      await createTradeAlert(db, input.proposalId, otherUserId, 'shipped', `${actorName} has submitted shipment tracking information for trade (TR-${proposal.tradeReferenceNumber}).`, now);
             await db.execute(
-        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'tracking_submitted', 'Tracking number submitted', ${now})`
+        sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${userId}, ${actorName}, 'tracking_submitted', 'Submitted shipment tracking information', ${now})`
       );
 
       // Email notification (itemsShipped preference)

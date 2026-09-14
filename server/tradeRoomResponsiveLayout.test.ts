@@ -46,6 +46,8 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('formatTradeRoomPhone(contact.contactPhone)');
     expect(warRoomSource).toContain("if (digits.length === 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;");
     expect(warRoomSource).toContain('formatTimelineDetails(event, cfg.label)');
+    expect(warRoomSource).toContain('Submitted shipment tracking information');
+    expect(warRoomSource).toContain('Shipment Tracking Submitted');
     expect(warRoomSource).toContain('Selected ${method} as payment method');
     expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
     expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'text-xl' : 'text-base'}");

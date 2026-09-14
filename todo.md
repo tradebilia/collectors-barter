@@ -2002,3 +2002,4 @@
 - [x] Contain Trade Room Step 5 so the full Confirm/Receipt stage fits at 100% browser zoom without vertical or horizontal page scrolling, using the established Step 3 strategy.
 - [x] Add UPS, FedEx, and DHL tracking-status displays to Step 5 with page-entry refresh and per-tracking manual refresh, while keeping USPS on the direct USPS.com workflow.
 - [x] Show full UPS, FedEx, and DHL shipment scan history beneath each Step 5 tracking number, including chronological stops, locations, event descriptions, and the current/latest event; keep USPS on the direct USPS.com workflow.
+- [x] Refine Trade Room timeline wording for tracking verification and final tracking submission so each event clearly reflects the user action.
