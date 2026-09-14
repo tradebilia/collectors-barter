@@ -1969,13 +1969,13 @@
 - [x] Fix the screenshot-confirmed Step 4 state-flow defect where an entered USPS number remains 0/1 tracked and no carrier-validation result reaches the shared status bubbles.
 - [x] Superseded automatic USPS.com validation fallback after public-page automation proved blocked; use the user-selected official USPS.com manual-confirmation route instead.
 - [x] Add an authenticated USPS package-tracking test area that uses configured consumer credentials and never changes Trade Room or shipment data.
-- [ ] Obtain USPS Tracking API authorization for the configured account and re-test the read-only Test AI USPS tracking lookup.
-- [ ] Pursue USPS Tracking API authorization only for packages created under Tradebilia’s own Mailer ID before considering member-entered third-party tracking.
+- [x] Close USPS Tracking API authorization work; the official USPS.com/manual backup procedure is sufficient for the current product scope.
+- [x] Close USPS Mailer ID authorization work; the official USPS.com/manual backup procedure is sufficient for the current product scope.
 - [x] Evaluate doprdele/paqq as a potential USPS tracking approach, including its scraper method, reliability, compliance, and production suitability.
 - [x] Implement the user-selected official USPS.com manual-confirmation fallback for member-entered Step 4 USPS tracking while retaining Test AI diagnostics.
-- [ ] Fix the Step 4 USPS fallback so its participant-visible shared status does not remain red after a number is entered and official USPS verification is opened.
+- [x] Close the USPS fallback-status refinement; the official USPS.com/manual backup procedure is the accepted backup flow.
 - [x] Remove the other participant’s Step 4 Check Tracking section; retain only the signed-in user’s controls until the next step.
-- [ ] Evaluate an in-site USPS visual-confirmation modal for framing feasibility, explicit result reliability, and compliance before implementation.
+- [x] Close further USPS visual-confirmation modal work; the existing backup procedure is sufficient.
 - [x] Evaluate a user-provided USPS tracking-result screenshot as evidence without treating screenshot colors as automated carrier validation.
 - [x] Define the AI-assisted USPS screenshot evidence workflow, including evidence retention, explicit text categories, partner visibility, and non-API status wording.
 - [x] Build a Test AI-only, user-consented USPS screenshot-capture and paste experiment that sends one image to AI without retaining it or changing trade data.
