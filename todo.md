@@ -1983,3 +1983,6 @@
 - [x] Make the primary Test AI “Open USPS results” action open the official USPS page in a new tab while retaining the user on Tradebilia.
 - [x] Automatically start AI review after a user-approved Test AI USPS tab/window capture while retaining manual paste and file review controls.
 - [x] Assess the proposed server-side USPS shipment-verification system, including architecture fit, official-access constraints, caching, evidence handling, and compliant failure behavior before implementation.
+- [x] Run an isolated, read-only USPS browser feasibility test that classifies normal result, challenge/block, timeout, or unavailable response without persisting tracking data or changing trade state.
+- [x] Add regression coverage for the isolated USPS feasibility test’s safe result classification and non-persistence boundary.
+- [x] Document observed feasibility-test results and determine whether the experiment supports any further authorized implementation.
