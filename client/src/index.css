@@ -211,6 +211,16 @@
     box-shadow: 0 24px 60px -32px rgba(79, 53, 34, 0.35);
   }
 
+  .homepage-phrase-text {
+    font-size: clamp(0.8rem, calc((100vw - 1rem) / var(--phrase-length-factor)), 5.25rem);
+  }
+
+  @media (max-width: 639px) {
+    .homepage-phrase-text {
+      font-size: clamp(0.95rem, calc((100vw - 1rem) / var(--phrase-mobile-length-factor)), 5.25rem);
+    }
+  }
+
   .tradebilia-wheel-home {
     animation: tradebilia-wheel-spin 18s linear infinite;
     transform-origin: center;

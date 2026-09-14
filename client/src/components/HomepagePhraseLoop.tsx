@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
 
 export const HOMEPAGE_PHRASES = [
@@ -50,7 +50,11 @@ export default function HomepagePhraseLoop() {
 
   const phraseFragments = useMemo(() => splitPhraseIntoFragments(HOMEPAGE_PHRASES[phraseIndex]), [phraseIndex]);
   const displayedFragmentCount = prefersReducedMotion ? phraseFragments.length : visibleFragmentCount;
-  const phraseFontSize = `clamp(0.8rem, calc((100vw - 1rem) / ${Math.max(HOMEPAGE_PHRASES[phraseIndex].length * 0.64, 1)}), 5.25rem)`;
+  const phraseLengthFactor = Math.max(HOMEPAGE_PHRASES[phraseIndex].length * 0.64, 1);
+  const phraseStyle = {
+    "--phrase-length-factor": phraseLengthFactor,
+    "--phrase-mobile-length-factor": Math.max(phraseLengthFactor * 0.86, 1),
+  } as CSSProperties;
 
   useEffect(() => {
     if (phase === "reveal") {
@@ -124,7 +128,7 @@ export default function HomepagePhraseLoop() {
               />
             </div>
           ) : (
-            <p className="m-0 block w-full max-w-none whitespace-nowrap px-0 text-center font-serif font-medium leading-none tracking-[-0.04em] text-white" style={{ fontSize: phraseFontSize }}>
+            <p className="homepage-phrase-text m-0 block w-full max-w-none whitespace-nowrap px-0 text-center font-serif font-medium leading-none tracking-[-0.04em] text-white" style={phraseStyle}>
               {phraseFragments.map((fragment, index) => (
                 <span
                   key={`${phraseIndex}-${index}`}
