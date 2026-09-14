@@ -1670,19 +1670,9 @@ function CarrierTrackingSection() {
       {carrier === 'USPS' && (
         <div className="space-y-3 rounded-lg border border-amber-600/30 bg-amber-950/20 p-3">
           <p className="text-xs text-sky-200/90">This USPS API test uses configured server-side consumer credentials. It returns USPS’s response or a clear authorization error without changing any trade or shipment record.</p>
-          <p className="text-xs text-amber-100">Optional experiment: open the official USPS result in a new tab while remaining on Tradebilia, then return here to capture, paste, or choose one screenshot for AI to read explicit USPS result text. An in-site viewer is also available for current-tab capture. The image is sent for one review only and is not stored by Tradebilia. Color alone is never used as a result.</p>
+          <p className="text-xs text-amber-100">Open the official USPS result in the Tradebilia viewer, then capture one view for AI to read explicit USPS result text. If browser capture is unavailable, paste one screenshot instead. The image is sent for one review only and is not stored by Tradebilia. Color alone is never used as a result.</p>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer')} disabled={!trackingNumber.trim()} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50">Open USPS results</button>
             <button type="button" onClick={() => setUspsViewerOpen(true)} disabled={!trackingNumber.trim()} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50">View USPS result in Tradebilia</button>
-            <button type="button" onClick={captureUspsResult} className="rounded-md border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-500/20">Capture current Tradebilia tab</button>
-            <label className="cursor-pointer rounded-md border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800">
-              Choose screenshot
-              <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => {
-                const file = event.target.files?.[0];
-                if (file) setScreenshotFile(file, 'user-selected screenshot');
-                event.currentTarget.value = '';
-              }} />
-            </label>
           </div>
           <div
             tabIndex={0}

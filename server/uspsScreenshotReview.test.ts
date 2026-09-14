@@ -18,6 +18,10 @@ describe('Test AI USPS screenshot review', () => {
     expect(pageSource).not.toContain('const openUspsAndCapture = () =>');
     expect(pageSource).not.toContain('Open USPS.com in new tab');
     expect(pageSource).not.toContain('Open USPS + start capture');
+    expect(pageSource).not.toContain('Open USPS results');
+    expect(pageSource).not.toContain('Capture current Tradebilia tab');
+    expect(pageSource).not.toContain('Choose screenshot');
+    expect(pageSource).toContain('View USPS result in Tradebilia');
     expect(pageSource).toContain('navigator.mediaDevices.getDisplayMedia');
     expect(pageSource).toContain('submitUspsScreenshotForReview(image)');
     expect(pageSource).toContain('Capture this Tradebilia view');
