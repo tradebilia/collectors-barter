@@ -38,8 +38,10 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('const myReviewHasSingleItem = myItems.length === 1;');
     expect(warRoomSource).toContain('const theirReviewHasSingleItem = theirItems.length === 1;');
     expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : currentStage === 'shipped' ? 'trade-room-confirm-whole' : ''");
-    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
-    expect(warRoomSource).toContain("${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
+    expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'w-16 h-16' : myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
+    expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'w-16 h-16' : theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
+    expect(warRoomSource).toContain("currentStage === 'shipped' ? 'items-center p-2'");
+    expect(warRoomSource).toContain("currentStage === 'shipped' ? 'text-base'");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
     expect(warRoomSource).toContain('className="space-y-3 text-base"');
     expect(warRoomSource).toContain('bg-[#0f0f1a] border border-white/40 rounded-xl p-6');
@@ -50,8 +52,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('Shipment Tracking Submitted');
     expect(warRoomSource).toContain('Selected ${method} as payment method');
     expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
-    expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'text-xl' : 'text-base'}");
-    expect(warRoomSource).toContain('text-gray-200 text-base font-mono mt-1');
+    expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'text-base' : myReviewHasSingleItem ? 'text-xl' : 'text-base'}");
+    expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'text-base' : theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}");
+    expect(warRoomSource).toContain('text-gray-200 text-base font-mono');
     expect(warRoomSource).toContain('w-full min-h-[38rem]');
     expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
     expect(warRoomSource).toContain('Cash payment & shipping tasks');
