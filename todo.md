@@ -1979,3 +1979,5 @@
 - [x] Evaluate a user-provided USPS tracking-result screenshot as evidence without treating screenshot colors as automated carrier validation.
 - [x] Define the AI-assisted USPS screenshot evidence workflow, including evidence retention, explicit text categories, partner visibility, and non-API status wording.
 - [x] Build a Test AI-only, user-consented USPS screenshot-capture and paste experiment that sends one image to AI without retaining it or changing trade data.
+- [x] Update the Test AI USPS experiment so the official result is viewed inside Tradebilia before current-tab capture, with an external-tab fallback if embedding fails.
+- [x] Make the primary Test AI “Open USPS results” action open the official USPS page in a new tab while retaining the user on Tradebilia.

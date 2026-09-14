@@ -1510,6 +1510,7 @@ function CarrierTrackingSection() {
   const [trackingNumber, setTrackingNumber] = useState('');
   const [uspsScreenshot, setUspsScreenshot] = useState<string | null>(null);
   const [uspsScreenshotSource, setUspsScreenshotSource] = useState<string | null>(null);
+  const [uspsViewerOpen, setUspsViewerOpen] = useState(false);
   const uspsLookupMutation = trpc.testAI.lookupUspsTracking.useMutation();
   const upsLookupMutation = trpc.testAI.lookupUpsTracking.useMutation();
   const fedexLookupMutation = trpc.testAI.lookupFedexTracking.useMutation();
@@ -1542,6 +1543,7 @@ function CarrierTrackingSection() {
   };
 
   const result = activeMutation.data;
+  const officialUspsTrackingUrl = `https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${encodeURIComponent(trackingNumber.trim())}`;
 
   const setScreenshotFile = (file: File, source: string) => {
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
@@ -1567,7 +1569,7 @@ function CarrierTrackingSection() {
     }
     let stream: MediaStream | null = null;
     try {
-      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false, preferCurrentTab: true } as DisplayMediaStreamOptions);
       const video = document.createElement('video');
       video.srcObject = stream;
       video.muted = true;
@@ -1581,7 +1583,8 @@ function CarrierTrackingSection() {
       canvas.getContext('2d')?.drawImage(video, 0, 0, width, height);
       const image = canvas.toDataURL('image/jpeg', 0.86);
       setUspsScreenshot(image);
-      setUspsScreenshotSource('user-approved tab/window capture');
+      setUspsScreenshotSource('user-approved Tradebilia-tab capture');
+      setUspsViewerOpen(false);
       toast.success('USPS result captured locally. Review it with AI when ready.');
     } catch (error: any) {
       if (error?.name !== 'AbortError') toast.error('Could not capture the selected USPS tab or window. You can paste or choose a screenshot instead.');
@@ -1623,6 +1626,7 @@ function CarrierTrackingSection() {
             setTrackingNumber('');
             setUspsScreenshot(null);
             setUspsScreenshotSource(null);
+            setUspsViewerOpen(false);
           }}
           aria-label="Carrier"
           className="rounded-lg border border-gray-700 bg-gray-900/70 px-3 py-2.5 text-sm text-white focus:border-sky-500 focus:outline-none"
@@ -1655,10 +1659,11 @@ function CarrierTrackingSection() {
       {carrier === 'USPS' && (
         <div className="space-y-3 rounded-lg border border-amber-600/30 bg-amber-950/20 p-3">
           <p className="text-xs text-sky-200/90">This USPS API test uses configured server-side consumer credentials. It returns USPS’s response or a clear authorization error without changing any trade or shipment record.</p>
-          <p className="text-xs text-amber-100">Optional experiment: open the official USPS result, then capture, paste, or choose one screenshot for AI to read the explicit USPS result text. The image is sent for this one review only and is not stored by Tradebilia. Color alone is never used as a result.</p>
+          <p className="text-xs text-amber-100">Optional experiment: open the official USPS result in a new tab while remaining on Tradebilia, then return here to capture, paste, or choose one screenshot for AI to read explicit USPS result text. An in-site viewer is also available for current-tab capture. The image is sent for one review only and is not stored by Tradebilia. Color alone is never used as a result.</p>
           <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={() => window.open(`https://tools.usps.com/go/TrackConfirmAction?qtc_tLabels1=${encodeURIComponent(trackingNumber.trim())}`, '_blank', 'noopener,noreferrer')} disabled={!trackingNumber.trim()} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50">Open USPS result</button>
-            <button type="button" onClick={captureUspsResult} className="rounded-md border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-500/20">Capture USPS result</button>
+            <button type="button" onClick={() => window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer')} disabled={!trackingNumber.trim()} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50">Open USPS results</button>
+            <button type="button" onClick={() => setUspsViewerOpen(true)} disabled={!trackingNumber.trim()} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-50">View USPS result in Tradebilia</button>
+            <button type="button" onClick={captureUspsResult} className="rounded-md border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-500/20">Capture current Tradebilia tab</button>
             <label className="cursor-pointer rounded-md border border-gray-600 bg-gray-900/70 px-3 py-2 text-xs font-semibold text-gray-200 hover:bg-gray-800">
               Choose screenshot
               <input type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" onChange={(event) => {
@@ -1700,6 +1705,27 @@ function CarrierTrackingSection() {
               <p className="mt-2 text-[10px] opacity-75">{uspsScreenshotReviewMutation.data.retention}. This is AI-reviewed user evidence, not direct USPS API validation.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {carrier === 'USPS' && uspsViewerOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="Official USPS tracking result">
+          <div className="flex h-[min(88vh,760px)] w-[min(96vw,1040px)] flex-col overflow-hidden rounded-xl border border-sky-400/40 bg-slate-950 shadow-2xl">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-4 py-3">
+              <div><p className="text-sm font-semibold text-white">Official USPS tracking result</p><p className="text-xs text-slate-400">This page is provided by USPS. Tradebilia cannot read it directly.</p></div>
+              <button type="button" onClick={() => setUspsViewerOpen(false)} className="rounded-md border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800">Close</button>
+            </div>
+            <div className="min-h-0 flex-1 bg-white">
+              <iframe title="Official USPS tracking result" src={officialUspsTrackingUrl} className="h-full w-full border-0" />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-900 px-4 py-3">
+              <p className="max-w-2xl text-xs text-amber-100">If the browser capture chooser appears, select the current Tradebilia tab so this viewer is captured. If USPS blocks the embedded page or shows a challenge, use the external link instead.</p>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer')} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20">Open USPS.com in new tab</button>
+                <button type="button" onClick={captureUspsResult} className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500">Capture this Tradebilia view</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

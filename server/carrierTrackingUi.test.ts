@@ -22,7 +22,12 @@ describe("Test AI carrier tracking controls", () => {
   it("provides a consented Test AI-only USPS screenshot review experiment without Trade Room persistence", () => {
     expect(source).toContain("reviewUspsTrackingScreenshot.useMutation");
     expect(source).toContain("navigator.mediaDevices.getDisplayMedia");
-    expect(source).toContain("Capture USPS result");
+    expect(source).toContain("preferCurrentTab: true");
+    expect(source).toContain("Open USPS results");
+    expect(source).toContain("View USPS result in Tradebilia");
+    expect(source).toContain('title="Official USPS tracking result"');
+    expect(source).toContain("Capture this Tradebilia view");
+    expect(source).toContain("Open USPS.com in new tab");
     expect(source).toContain("Click here and paste a USPS result screenshot.");
     expect(source).toContain("not stored by Tradebilia");
     expect(source).toContain("Color alone is never used as a result.");
