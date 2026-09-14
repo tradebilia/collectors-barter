@@ -120,7 +120,7 @@ export default function HomepagePhraseLoop() {
               <img
                 src="/manus-storage/tradebilia_final_transparent-Notagline_3c818caa.svg"
                 alt="Tradebilia"
-                className="h-full max-h-28 w-full object-contain scale-[2.2] -translate-x-4"
+                className="h-full max-h-28 w-full object-contain scale-100 translate-x-0 sm:scale-[2.2] sm:-translate-x-4"
               />
             </div>
           ) : (
