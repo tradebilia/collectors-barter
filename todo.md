@@ -1996,3 +1996,6 @@
 - [x] Resolve whether the requested Enter-only USPS behavior can be implemented with current browser permission boundaries or requires authorized API/provider access.
 - [x] Implement the USPS-only Step 4 Enter-to-viewer flow with a user-approved hidden capture, automatic Gemini Flash evidence review, and shared green/red status persistence; retain all other carrier flows.
 - [x] Add focused USPS Step 4 evidence, ownership, non-persistence, and carrier-regression coverage; validate TypeScript and the production build.
+- [ ] Keep Step 4 active after USPS verification until both participants press Submit Tracking before entering Step 5.
+- [ ] Contain the complete Step 4 shipping layout at 100% browser zoom with no vertical or horizontal scrolling, modeled on Step 3.
+- [ ] Add regression coverage for two-sided submission gating and Step 4 viewport containment, then validate TypeScript and build.
