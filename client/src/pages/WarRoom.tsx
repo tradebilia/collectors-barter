@@ -330,10 +330,15 @@ export default function WarRoom() {
   const shippingTrackingLookupMutation = trpc.shippingTracking.validateForTrade.useMutation();
   const reviewUspsEvidenceMutation = trpc.shippingTracking.reviewUspsEvidenceForTrade.useMutation({
     onSuccess: async (result) => {
+      const reviewedTarget = uspsEvidenceTarget;
       setUspsEvidenceTarget(null);
+      if (result.validationStatus === 'valid' && reviewedTarget) {
+        setConfirmedTrackingIds(prev => prev.includes(reviewedTarget.listingId) ? prev : [...prev, reviewedTarget.listingId]);
+        setResetTrackingIds(prev => prev.filter(id => id !== reviewedTarget.listingId));
+      }
       await utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
       if (result.validationStatus === 'valid') {
-        toast.success('Valid Tracking Number has been submitted');
+        toast.success('USPS tracking verified — press Submit Tracking to continue');
       } else if (result.validationStatus === 'invalid') {
         toast.error('Invalid Tracking Number submitted');
       } else {
@@ -925,7 +930,7 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-whole' : ''}`}>
+    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : ''}`}>
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
       {isAdminReadOnly && (

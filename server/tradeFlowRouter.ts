@@ -1025,20 +1025,29 @@ export const tradeFlowRouter = router({
         );
       }
 
-			// Step 5 opens after every required item has tracking and every payer
-			// has marked the agreed external payment sent. Cash receipt is confirmed
-			// in Step 5, alongside physical-item receipt.
-			const trackingRows = await db.execute(sql`SELECT listingId FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`);
-			const trackedListingIds = ((trackingRows[0] as unknown as Array<{ listingId: number }>) || []).map((tracking) => tracking.listingId);
-			const cashObligations = getPaymentVerificationObligations(proposal);
-			const paymentRows = cashObligations.length
-				? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
-					.where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
-				: [];
-			const allTrackingSubmitted = hasTrackingForEveryItem(tradeListingIds, trackedListingIds);
-			const allCashPaymentsSent = haveAllCashPaymentsBeenSent(cashObligations, paymentRows);
+				// Step 5 opens only after both participants have explicitly submitted
+				// tracking for every item they are sending, and required cash payments
+				// have been marked sent. Cash receipt is confirmed in Step 5.
+				const trackingRows = await db.execute(sql`SELECT userId, listingId FROM tradeTrackingNumbers WHERE proposalId = ${input.proposalId}`);
+				const submittedTrackingRows = ((trackingRows[0] as unknown as Array<{ userId: number; listingId: number }>) || []).map((tracking) => ({ userId: Number(tracking.userId), listingId: Number(tracking.listingId) }));
+				const expectedListingIdsByUser = new Map<number, number[]>([
+					[Number(proposal.requesterId), tradeListings.filter((listing) => listing.ownerId === proposal.requesterId).map((listing) => listing.id)],
+					[Number(proposal.recipientId), tradeListings.filter((listing) => listing.ownerId === proposal.recipientId).map((listing) => listing.id)],
+				]);
+				const allParticipantsSubmittedTracking = [Number(proposal.requesterId), Number(proposal.recipientId)].every((participantId) => {
+					const participantListingIds = expectedListingIdsByUser.get(participantId) ?? [];
+					const submittedListingIdsForParticipant = submittedTrackingRows.filter((tracking) => tracking.userId === participantId).map((tracking) => tracking.listingId);
+					return hasTrackingForEveryItem(participantListingIds, submittedListingIdsForParticipant);
+				});
+				const cashObligations = getPaymentVerificationObligations(proposal);
+				const paymentRows = cashObligations.length
+					? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments)
+						.where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
+					: [];
+				const allTrackingSubmitted = allParticipantsSubmittedTracking;
+				const allCashPaymentsSent = haveAllCashPaymentsBeenSent(cashObligations, paymentRows);
 
-			if (allTrackingSubmitted && allCashPaymentsSent) {
+				if (allParticipantsSubmittedTracking && allCashPaymentsSent) {
         await db.execute(
           sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         );

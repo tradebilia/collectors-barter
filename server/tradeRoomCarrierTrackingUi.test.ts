@@ -51,7 +51,8 @@ describe("Trade Room carrier tracking controls", () => {
     expect(routerSource).toContain("reviewUspsEvidenceForTrade");
     expect(routerSource).toContain("reviewUspsTrackingEvidence");
     expect(routerSource).toContain('classification === "tracking_not_available"');
-    expect(routerSource).toContain("ON DUPLICATE KEY UPDATE");
+    expect(routerSource).not.toContain("ON DUPLICATE KEY UPDATE");
+    expect(routerSource).toContain('validationStatus: "valid" as const');
     expect(routerSource).not.toContain("storagePut(input.imageDataUrl");
   });
 });

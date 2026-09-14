@@ -17,9 +17,11 @@ describe("Trade Room USPS evidence verification", () => {
   it("persists only explicit recognized USPS evidence as submitted tracking", () => {
     expect(routerSource).toContain('review.classification === "tracking_not_available"');
     expect(routerSource).toContain('review.classification !== "recognized_result"');
-    expect(routerSource).toContain("INSERT INTO tradeTrackingNumbers");
+    expect(routerSource).not.toContain("INSERT INTO tradeTrackingNumbers");
     expect(routerSource).toContain('validationStatus: "valid"');
     expect(routerSource).toContain('validationStatus: "invalid"');
+    expect(routerSource).toContain("expectedListingIdsByUser");
+    expect(routerSource).toContain("allParticipantsSubmittedTracking");
     expect(routerSource).toContain('retention: "Not stored by Tradebilia"');
     expect(routerSource).not.toContain("storagePut(");
     expect(tradeFlowSource).toContain("ORDER BY createdAt ASC, id ASC");

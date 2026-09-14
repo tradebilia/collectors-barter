@@ -106,23 +106,26 @@ export const shippingTrackingRouter = router({
         return { ...review, validationStatus: null, validationMessage: "USPS evidence needs review. Tracking was not submitted.", retention: "Not stored by Tradebilia" };
       }
 
-      await db.execute(sql`
-        INSERT INTO tradeTrackingNumbers (proposalId, userId, listingId, carrier, carrierOther, trackingNumber, submittedAt)
-        VALUES (${input.proposalId}, ${ctx.user.id}, ${input.listingId}, 'USPS', NULL, ${input.trackingNumber}, ${now})
-        ON DUPLICATE KEY UPDATE carrier = 'USPS', carrierOther = NULL, trackingNumber = VALUES(trackingNumber), submittedAt = VALUES(submittedAt)
-      `);
       const details = `tracking_validation:${JSON.stringify({ listingId: input.listingId, carrier: "USPS", trackingNumber: input.trackingNumber, validationStatus: "valid", message: "Valid Tracking Number has been submitted", validatedAt: now, evidence: "user-approved USPS view" })}`;
       await db.execute(sql`INSERT INTO tradeActivityLog (proposalId, actorId, actorName, eventType, details, createdAt) VALUES (${input.proposalId}, ${ctx.user.id}, ${actorName}, 'tracking_submitted', ${details}, ${now})`);
 
       const proposalItemRows = await db.select({ listingId: tradeProposalItems.offeredListingId }).from(tradeProposalItems).where(eq(tradeProposalItems.proposalId, input.proposalId));
       const tradeListingIds = [...new Set([proposal.requestedListingId, ...proposalItemRows.map((item) => item.listingId)].filter((listingId): listingId is number => Number.isInteger(listingId)))];
-      const trackingRows = await db.select({ listingId: tradeTrackingNumbers.listingId }).from(tradeTrackingNumbers).where(eq(tradeTrackingNumbers.proposalId, input.proposalId));
+      const tradeListings = tradeListingIds.length ? await db.select({ id: listings.id, ownerId: listings.ownerId }).from(listings).where(inArray(listings.id, tradeListingIds)) : [];
+      const trackingRows = await db.select({ userId: tradeTrackingNumbers.userId, listingId: tradeTrackingNumbers.listingId }).from(tradeTrackingNumbers).where(eq(tradeTrackingNumbers.proposalId, input.proposalId));
+      const expectedListingIdsByUser = new Map<number, number[]>([
+        [Number(proposal.requesterId), tradeListings.filter((listing) => listing.ownerId === proposal.requesterId).map((listing) => listing.id)],
+        [Number(proposal.recipientId), tradeListings.filter((listing) => listing.ownerId === proposal.recipientId).map((listing) => listing.id)],
+      ]);
+      const allParticipantsSubmittedTracking = [Number(proposal.requesterId), Number(proposal.recipientId)].every((participantId) => hasTrackingForEveryItem(
+        expectedListingIdsByUser.get(participantId) ?? [],
+        trackingRows.filter((tracking) => Number(tracking.userId) === participantId).map((tracking) => Number(tracking.listingId)),
+      ));
       const cashObligations = getPaymentVerificationObligations(proposal);
       const paymentRows = cashObligations.length
         ? await db.select({ payerId: tradePayments.payerId, status: tradePayments.status }).from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, cashObligations.map((obligation) => obligation.payerId))))
         : [];
-      const shouldAdvance = hasTrackingForEveryItem(tradeListingIds, trackingRows.map((tracking) => tracking.listingId))
-        && haveAllCashPaymentsBeenSent(cashObligations, paymentRows);
+      const shouldAdvance = allParticipantsSubmittedTracking && haveAllCashPaymentsBeenSent(cashObligations, paymentRows);
       await db.execute(shouldAdvance
         ? sql`UPDATE tradeProposals SET status = 'shipped', shippedAt = ${now}, lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`
         : sql`UPDATE tradeProposals SET lastActivityAt = ${now}, updatedAt = ${now} WHERE id = ${input.proposalId}`);

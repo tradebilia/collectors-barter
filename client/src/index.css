@@ -348,7 +348,8 @@
      internal canvas is scaled as a whole, so its header, two-column workspace,
      chat rail, actions, and disclaimer all remain inside the visible viewport
      without creating document overflow. */
-  .trade-room-shell.trade-room-finalize-whole {
+  .trade-room-shell.trade-room-finalize-whole,
+  .trade-room-shell.trade-room-shipping-whole {
     position: fixed;
     inset: 0;
     z-index: 40;
@@ -375,7 +376,10 @@
 @media (min-width: 1280px) and (min-height: 760px) {
   html:has(.trade-room-shell.trade-room-finalize-whole),
   body:has(.trade-room-shell.trade-room-finalize-whole),
-  #root:has(.trade-room-shell.trade-room-finalize-whole) {
+  #root:has(.trade-room-shell.trade-room-finalize-whole),
+  html:has(.trade-room-shell.trade-room-shipping-whole),
+  body:has(.trade-room-shell.trade-room-shipping-whole),
+  #root:has(.trade-room-shell.trade-room-shipping-whole) {
     overflow: hidden;
     background: #0f0f1a;
   }

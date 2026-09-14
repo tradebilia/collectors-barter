@@ -21,9 +21,10 @@ describe("Review, Shipping & Payment, and Confirm Receipt lifecycle", () => {
     expect(acceptance).toContain("payment.status !== \"method_selected\"");
   });
 
-  it("moves to Step 5 only after every required tracking record and payment-sent confirmation", () => {
+  it("moves to Step 5 only after both participants submit every required tracking record and payment-sent confirmation", () => {
     const tracking = source.slice(source.indexOf("submitTrackingNumbers:"), source.indexOf("confirmItemsReceived:", source.indexOf("submitTrackingNumbers:")));
-    expect(tracking).toContain("allTrackingSubmitted && allCashPaymentsSent");
+    expect(tracking).toContain("allParticipantsSubmittedTracking && allCashPaymentsSent");
+    expect(tracking).toContain("expectedListingIdsByUser");
     expect(tracking).toContain("awaitingPaymentSentConfirmation");
     expect(tracking).toContain("haveAllCashPaymentsBeenSent");
   });

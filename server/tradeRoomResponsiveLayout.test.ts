@@ -37,7 +37,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('border-2 border-white/80 rounded-xl w-11/12 max-w-6xl');
     expect(warRoomSource).toContain('const myReviewHasSingleItem = myItems.length === 1;');
     expect(warRoomSource).toContain('const theirReviewHasSingleItem = theirItems.length === 1;');
-    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : ''");
+    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : ''");
     expect(warRoomSource).toContain("${myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain("${theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
@@ -83,6 +83,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('trade-room-chat-rail flex min-h-[34rem] w-full flex-shrink-0 flex-col p-4');
     expect(stylesheet).toContain('@media (min-width: 1280px) and (min-height: 760px)');
     expect(stylesheet).toContain('.trade-room-shell.trade-room-finalize-whole');
+    expect(stylesheet).toContain('.trade-room-shell.trade-room-shipping-whole');
     expect(stylesheet).toContain('transform: scale(0.67);');
     expect(stylesheet).toContain('transform-origin: top left;');
     expect(stylesheet).toContain('position: fixed;');
@@ -92,6 +93,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('min-height: calc(100dvh / 0.67);');
     expect(stylesheet).not.toContain('margin-bottom: calc((100dvh - 6rem) * -0.4925);');
     expect(stylesheet).toContain('html:has(.trade-room-shell.trade-room-finalize-whole)');
+    expect(stylesheet).toContain('html:has(.trade-room-shell.trade-room-shipping-whole)');
     expect(stylesheet).toContain('body:has(.trade-room-shell.trade-room-finalize-whole)');
     expect(stylesheet).toContain('overflow: hidden;');
     expect(stylesheet).toContain('background: #0f0f1a;');
