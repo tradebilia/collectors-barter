@@ -7,7 +7,7 @@ const phraseLoopSource = fs.readFileSync(path.join(projectRoot, "client/src/comp
 
 describe("homepage slogan wheel sharpness", () => {
   it("avoids transformed SVG scaling on mobile while preserving the desktop transform", () => {
-    expect(phraseLoopSource).toContain("scale-100 translate-x-0 sm:scale-[2.2] sm:-translate-x-4");
+    expect(phraseLoopSource).toContain("h-[220%] max-h-none w-[220%] max-w-none object-contain scale-100 translate-x-0 sm:h-full sm:max-h-28 sm:w-full sm:scale-[2.2] sm:-translate-x-4");
     expect(phraseLoopSource).not.toContain('className="h-full max-h-28 w-full object-contain scale-[2.2] -translate-x-4"');
   });
 });
