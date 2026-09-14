@@ -34,3 +34,9 @@ The pure classifier has three passing regression tests. They cover an access-den
 ## Decision
 
 The test does **not** support adding Playwright/Chromium to Tradebilia’s production runtime. It supports the previous recommendation: keep the current manual official-link/evidence flow until Tradebilia has authorized USPS Tracking API/Webhook access or uses a permitted carrier-data provider. If the user supplies an actual tracking number for a repeat test, the same local probe can be run once against it without changing application or database state.
+
+## Additional Test AI Automation Assessment
+
+The Test AI flow now includes an optional **Open USPS + start capture** action. It opens the official USPS URL in a new tab and immediately starts the existing browser capture request. After the user approves the browser prompt and selects a tab or window, the app captures one frame, stops the media stream, closes the in-site viewer, sends the image to the existing non-persistent AI review, and displays the result.
+
+The following actions remain intentionally user-controlled because the browser enforces them: choosing which tab or window to share, granting screen/tab-capture permission, and supplying an image by paste or file selection when capture is unavailable. The application cannot silently select a browser tab, approve the permission prompt, read another tab’s DOM, or bypass USPS’s access controls. The shortcut reduces the sequence by one manual navigation action, but it does not turn the workflow into direct USPS carrier validation.

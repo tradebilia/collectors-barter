@@ -13,6 +13,17 @@ describe('Test AI USPS screenshot review', () => {
     expect(source).not.toContain('storagePut(input.imageDataUrl');
   });
 
+  it('keeps the streamlined capture action permissioned and non-persistent', () => {
+    const pageSource = readFileSync(join(process.cwd(), 'client/src/pages/TestAI.tsx'), 'utf8');
+    expect(pageSource).toContain('const openUspsAndCapture = () =>');
+    expect(pageSource).toContain("window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer')");
+    expect(pageSource).toContain('navigator.mediaDevices.getDisplayMedia');
+    expect(pageSource).toContain('submitUspsScreenshotForReview(image)');
+    expect(pageSource).toContain('Capture selected tab/window');
+    expect(pageSource).not.toContain('document.cookie');
+    expect(pageSource).not.toContain('bypass');
+  });
+
   it('requires explicit USPS result text and rejects color-only inference', () => {
     expect(source).toContain('Never infer validity from color');
     expect(source).toContain("'recognized_result'");

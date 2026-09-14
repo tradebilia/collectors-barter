@@ -1986,3 +1986,6 @@
 - [x] Run an isolated, read-only USPS browser feasibility test that classifies normal result, challenge/block, timeout, or unavailable response without persisting tracking data or changing trade state.
 - [x] Add regression coverage for the isolated USPS feasibility test’s safe result classification and non-persistence boundary.
 - [x] Document observed feasibility-test results and determine whether the experiment supports any further authorized implementation.
+- [x] Audit Test AI USPS evidence flow for additional safe automation opportunities and browser-enforced permission boundaries.
+- [x] Implement only safe Test AI USPS workflow reductions that do not bypass browser permissions or claim direct USPS carrier validation.
+- [x] Add regression coverage and document the remaining unavoidable user actions in the streamlined Test AI USPS workflow.
