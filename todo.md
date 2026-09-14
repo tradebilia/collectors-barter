@@ -2012,3 +2012,5 @@
 - [x] Right-align the reference number in each Step 5 compact item row while preserving the thumbnail-left and display-name layout.
 - [x] Add accessible hover and keyboard-focus explanations to the Step 5 Report a Trade Issue and Request Dispute Review actions without changing their behavior or layout.
 - [x] Replace ambiguous USPS Step 5 status wording with clear guidance to view the latest delivery scans through the existing official USPS.com link.
+- [ ] Make the Trade Room Leave Trade Room control white while preserving readable text, placement, hover behavior, and functionality.
+- [ ] Move the white Leave Trade Room control farther right to separate it from the Step 7 Completed indicator while preserving responsive behavior and functionality.
