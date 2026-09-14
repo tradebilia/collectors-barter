@@ -1562,7 +1562,23 @@ function CarrierTrackingSection() {
     reader.readAsDataURL(file);
   };
 
+  const submitUspsScreenshotForReview = (imageDataUrl: string) => {
+    const value = trackingNumber.trim();
+    if (!value) {
+      toast.error('Enter the USPS tracking number before AI review.');
+      return false;
+    }
+    uspsScreenshotReviewMutation.mutate({ trackingNumber: value, imageDataUrl }, {
+      onError: (error) => toast.error(error.message),
+    });
+    return true;
+  };
+
   const captureUspsResult = async () => {
+    if (!trackingNumber.trim()) {
+      toast.error('Enter the USPS tracking number before capturing the result.');
+      return;
+    }
     if (!navigator.mediaDevices?.getDisplayMedia) {
       toast.error('This browser does not support tab or window capture. Paste or choose a screenshot instead.');
       return;
@@ -1585,7 +1601,9 @@ function CarrierTrackingSection() {
       setUspsScreenshot(image);
       setUspsScreenshotSource('user-approved Tradebilia-tab capture');
       setUspsViewerOpen(false);
-      toast.success('USPS result captured locally. Review it with AI when ready.');
+      if (submitUspsScreenshotForReview(image)) {
+        toast.success('USPS result captured. AI review started automatically.');
+      }
     } catch (error: any) {
       if (error?.name !== 'AbortError') toast.error('Could not capture the selected USPS tab or window. You can paste or choose a screenshot instead.');
     } finally {
@@ -1594,18 +1612,11 @@ function CarrierTrackingSection() {
   };
 
   const reviewUspsScreenshot = () => {
-    const value = trackingNumber.trim();
-    if (!value) {
-      toast.error('Enter the USPS tracking number before AI review.');
-      return;
-    }
     if (!uspsScreenshot) {
       toast.error('Capture, paste, or choose a USPS result screenshot first.');
       return;
     }
-    uspsScreenshotReviewMutation.mutate({ trackingNumber: value, imageDataUrl: uspsScreenshot }, {
-      onError: (error) => toast.error(error.message),
-    });
+    submitUspsScreenshotForReview(uspsScreenshot);
   };
 
   return (

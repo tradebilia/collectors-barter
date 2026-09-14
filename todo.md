@@ -1981,3 +1981,4 @@
 - [x] Build a Test AI-only, user-consented USPS screenshot-capture and paste experiment that sends one image to AI without retaining it or changing trade data.
 - [x] Update the Test AI USPS experiment so the official result is viewed inside Tradebilia before current-tab capture, with an external-tab fallback if embedding fails.
 - [x] Make the primary Test AI “Open USPS results” action open the official USPS page in a new tab while retaining the user on Tradebilia.
+- [x] Automatically start AI review after a user-approved Test AI USPS tab/window capture while retaining manual paste and file review controls.

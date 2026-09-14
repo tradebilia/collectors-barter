@@ -31,5 +31,7 @@ describe("Test AI carrier tracking controls", () => {
     expect(source).toContain("Click here and paste a USPS result screenshot.");
     expect(source).toContain("not stored by Tradebilia");
     expect(source).toContain("Color alone is never used as a result.");
+    expect(source).toContain("submitUspsScreenshotForReview(image)");
+    expect(source).toContain("AI review started automatically.");
   });
 });
