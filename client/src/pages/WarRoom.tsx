@@ -1041,10 +1041,10 @@ export default function WarRoom() {
           </div>
 
           {/* Right: Leave + Settings */}
-          <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px] xl:justify-end">
+          <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px] xl:justify-end xl:translate-x-4">
             <button
               onClick={() => navigate('/trade-hub')}
-              className="px-4 py-2 border border-gray-700 text-gray-300 rounded-lg hover:bg-gray-800 transition text-sm flex items-center gap-2"
+              className="px-4 py-2 border border-white bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition text-sm flex items-center gap-2 shadow-sm"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
