@@ -2006,3 +2006,4 @@
 - [x] Diagnose and fix the mobile-only blurry spinning wheel in the homepage slogan section without changing desktop rendering or slogan timing/layout.
 - [x] Restore the mobile slogan logo’s original visual size using intrinsic SVG sizing while keeping the wheel sharp and desktop unchanged.
 - [x] Increase the mobile homepage slogan phrase font size without changing the logo, wheel, section height, timing, or desktop phrase typography.
+- [x] Increase only the Explore All mobile hero title size while preserving desktop title sizing, hero background, layout, and positioning.
