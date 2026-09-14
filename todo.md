@@ -1999,3 +1999,4 @@
 - [x] Keep Step 4 active after USPS verification until both participants press Submit Tracking before entering Step 5.
 - [x] Contain the complete Step 4 shipping layout at 100% browser zoom with no vertical or horizontal scrolling, modeled on Step 3.
 - [x] Add regression coverage for two-sided submission gating and Step 4 viewport containment, then validate TypeScript and build.
+- [x] Contain Trade Room Step 5 so the full Confirm/Receipt stage fits at 100% browser zoom without vertical or horizontal page scrolling, using the established Step 3 strategy.

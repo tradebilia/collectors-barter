@@ -349,7 +349,8 @@
      chat rail, actions, and disclaimer all remain inside the visible viewport
      without creating document overflow. */
   .trade-room-shell.trade-room-finalize-whole,
-  .trade-room-shell.trade-room-shipping-whole {
+  .trade-room-shell.trade-room-shipping-whole,
+  .trade-room-shell.trade-room-confirm-whole {
     position: fixed;
     inset: 0;
     z-index: 40;
@@ -379,7 +380,10 @@
   #root:has(.trade-room-shell.trade-room-finalize-whole),
   html:has(.trade-room-shell.trade-room-shipping-whole),
   body:has(.trade-room-shell.trade-room-shipping-whole),
-  #root:has(.trade-room-shell.trade-room-shipping-whole) {
+  #root:has(.trade-room-shell.trade-room-shipping-whole),
+  html:has(.trade-room-shell.trade-room-confirm-whole),
+  body:has(.trade-room-shell.trade-room-confirm-whole),
+  #root:has(.trade-room-shell.trade-room-confirm-whole) {
     overflow: hidden;
     background: #0f0f1a;
   }
