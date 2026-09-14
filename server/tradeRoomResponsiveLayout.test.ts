@@ -41,6 +41,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'w-16 h-16' : myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'w-16 h-16' : theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain("currentStage === 'shipped' ? 'items-center p-2'");
+    expect(warRoomSource).toContain("currentStage === 'shipped' ? 'flex flex-1 min-w-0 items-center gap-3'");
     expect(warRoomSource).toContain("currentStage === 'shipped' ? 'text-base'");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
     expect(warRoomSource).toContain('className="space-y-3 text-base"');
@@ -54,7 +55,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('my-auto h-12 w-12 text-cyan-300');
     expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'text-base' : myReviewHasSingleItem ? 'text-xl' : 'text-base'}");
     expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'text-base' : theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}");
-    expect(warRoomSource).toContain('text-gray-200 text-base font-mono');
+    expect(warRoomSource).toContain('ml-auto shrink-0 text-right text-gray-200 text-base font-mono');
     expect(warRoomSource).toContain('w-full min-h-[38rem]');
     expect(warRoomSource).toContain('data-testid="shipping-counterparty-locked-items"');
     expect(warRoomSource).toContain('Cash payment & shipping tasks');

@@ -1146,9 +1146,9 @@ export default function WarRoom() {
                             ? <img src={item.photos[0].imageUrl} className={`${currentStage === 'shipped' ? 'w-16 h-16' : myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
                             : <div className={`${currentStage === 'shipped' ? 'w-16 h-16' : myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
-                          <div className={`${currentStage === 'shipped' ? 'flex flex-1 min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1' : 'flex-1 min-w-0'}`}>
-                            <p className={`text-white font-semibold leading-tight ${currentStage === 'shipped' ? 'text-base' : myReviewHasSingleItem ? 'text-xl' : 'text-base'}`}>{item.title}</p>
-                            <p className="text-gray-200 text-base font-mono">Ref # {String(item.id).padStart(5, '0')}</p>
+                          <div className={`${currentStage === 'shipped' ? 'flex flex-1 min-w-0 items-center gap-3' : 'flex-1 min-w-0'}`}>
+                            <p className={`min-w-0 flex-1 text-white font-semibold leading-tight ${currentStage === 'shipped' ? 'text-base' : myReviewHasSingleItem ? 'text-xl' : 'text-base'}`}>{item.title}</p>
+                            <p className="ml-auto shrink-0 text-right text-gray-200 text-base font-mono">Ref # {String(item.id).padStart(5, '0')}</p>
                           </div>
                         </div>
                       ))}
@@ -1175,9 +1175,9 @@ export default function WarRoom() {
                             ? <img src={item.photos[0].imageUrl} className={`${currentStage === 'shipped' ? 'w-16 h-16' : theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} object-contain rounded-lg bg-[#0a0a1a] shrink-0`} alt={item.title} />
                             : <div className={`${currentStage === 'shipped' ? 'w-16 h-16' : theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'} bg-[#0a0a1a] rounded-lg flex items-center justify-center text-gray-600 text-xs shrink-0`}>No image</div>
                           }
-                          <div className={`${currentStage === 'shipped' ? 'flex flex-1 min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1' : 'flex-1 min-w-0'}`}>
-                            <p className={`text-white font-semibold leading-tight ${currentStage === 'shipped' ? 'text-base' : theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
-                            <p className="text-gray-200 text-base font-mono">Ref # {String(item.id).padStart(5, '0')}</p>
+                          <div className={`${currentStage === 'shipped' ? 'flex flex-1 min-w-0 items-center gap-3' : 'flex-1 min-w-0'}`}>
+                            <p className={`min-w-0 flex-1 text-white font-semibold leading-tight ${currentStage === 'shipped' ? 'text-base' : theirReviewHasSingleItem ? 'text-xl' : 'text-sm'}`}>{item.title}</p>
+                            <p className="ml-auto shrink-0 text-right text-gray-200 text-base font-mono">Ref # {String(item.id).padStart(5, '0')}</p>
                           </div>
                         </div>
                       ))}

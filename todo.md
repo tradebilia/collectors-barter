@@ -2009,3 +2009,4 @@
 - [x] Increase only the Explore All mobile hero title size while preserving desktop title sizing, hero background, layout, and positioning.
 - [x] Increase Step 5 text sizes for readability while preserving the current no-scroll containment, images, logo, stage geometry, and earlier stages.
 - [x] Compact Step 5 participant item sections into thumbnail, display-name, and reference-number rows so Shipping Information remains visible without scrolling; leave earlier stages unchanged.
+- [x] Right-align the reference number in each Step 5 compact item row while preserving the thumbnail-left and display-name layout.
