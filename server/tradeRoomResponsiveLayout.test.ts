@@ -12,6 +12,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('aria-label="Trade documents and support actions"');
     expect(warRoomSource).toContain('flex w-full flex-wrap items-center justify-center gap-2 rounded-xl');
     expect(warRoomSource).toContain('relative z-0 w-full flex-none bg-[#16213e]');
+    expect(warRoomSource).toContain('Document a concern or add supporting details. This does not pause the trade.');
+    expect(warRoomSource).toContain('Pause this trade and ask Tradebilia to review it. Your partner will be notified.');
+    expect(warRoomSource).toContain('TooltipTrigger asChild');
   });
 
   it("stacks actions and tracking details before narrow or zoomed desktop widths can overlap", () => {

@@ -48,7 +48,8 @@ describe("Trade Room carrier tracking controls", () => {
     expect(warRoomSource).toContain("formatShipmentEventLocation");
     expect(warRoomSource).toContain("Current");
     expect(warRoomSource).toContain("currentStage === 'shipped'");
-    expect(warRoomSource).toContain("USPS status is available on USPS.com.");
+    expect(warRoomSource).toContain("USPS tracking details are available on USPS.com.");
+    expect(warRoomSource).toContain("to view the latest status and delivery scans.");
     expect(warRoomSource).toContain("buildUspsTrackingUrl(tracking.trackingNumber)");
   });
 

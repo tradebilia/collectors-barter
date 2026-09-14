@@ -21,6 +21,7 @@ import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
 import { getTradeProposalRevision, getTradeVideoRoomRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
 import { getLockedShipmentItems } from "@/lib/shippingItems";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 type TradeStage = 'proposed' | 'negotiating' | 'accepted' | 'shipping' | 'shipped' | 'review' | 'completed' | 'disputed';
 type CashSide = 'my' | 'their';
@@ -523,7 +524,7 @@ export default function WarRoom() {
     if (currentStage !== 'shipped') return null;
     const carrier = String(tracking.carrier ?? '').toUpperCase();
     if (carrier === 'USPS') {
-      return <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS status is available on USPS.com. <a href={buildUspsTrackingUrl(tracking.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a></div>;
+      return <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS tracking details are available on USPS.com. Select <a href={buildUspsTrackingUrl(tracking.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a> to view the latest status and delivery scans.</div>;
     }
     if (!['UPS', 'FEDEX', 'DHL'].includes(carrier)) return null;
     const statusKey = `${fallbackId}:${String(tracking.carrier)}:${tracking.trackingNumber}`;
@@ -2684,8 +2685,26 @@ export default function WarRoom() {
           {receiptAvailable && (
             <section aria-label="Trade documents and support actions" className="flex w-full flex-wrap items-center justify-center gap-2 rounded-xl border border-blue-500/15 bg-[#0a0a14] p-2 sm:justify-start sm:p-3">
               <button type="button" onClick={downloadCurrentReceipt} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:w-auto"><span aria-hidden="true">↓</span> Download Trade Receipt (PDF)</button>
-              {canReportTradeIssue && <button type="button" onClick={openTradeIssueReport} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"><span aria-hidden="true">!</span> Report a Trade Issue</button>}
-              {canRequestDisputeReview && <button type="button" onClick={() => setShowDisputeModal(true)} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/45 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition hover:bg-red-500/20 sm:w-auto"><span aria-hidden="true">⚠</span> Request Dispute Review</button>}
+              {canReportTradeIssue && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" onClick={openTradeIssueReport} aria-label="Report a Trade Issue. Document a concern without pausing the trade." className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 transition hover:bg-amber-500/20 sm:w-auto"><span aria-hidden="true">!</span> Report a Trade Issue</button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={8} className="max-w-64 text-center leading-relaxed">
+                    Document a concern or add supporting details. This does not pause the trade.
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {canRequestDisputeReview && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" onClick={() => setShowDisputeModal(true)} aria-label="Request Dispute Review. Pause the trade and ask Tradebilia to review it." className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-red-400/45 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-100 transition hover:bg-red-500/20 sm:w-auto"><span aria-hidden="true">⚠</span> Request Dispute Review</button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" sideOffset={8} className="max-w-64 text-center leading-relaxed">
+                    Pause this trade and ask Tradebilia to review it. Your partner will be notified.
+                  </TooltipContent>
+                </Tooltip>
+              )}
             </section>
           )}
         </div>
