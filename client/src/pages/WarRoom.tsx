@@ -206,6 +206,8 @@ export default function WarRoom() {
   const [resetTrackingIds, setResetTrackingIds] = useState<number[]>([]);
   const [trackingLookupByListingId, setTrackingLookupByListingId] = useState<Record<number, any>>({});
   const [trackingLookupLoadingId, setTrackingLookupLoadingId] = useState<number | null>(null);
+  const [trackingStatusByKey, setTrackingStatusByKey] = useState<Record<string, any>>({});
+  const [trackingStatusLoadingKey, setTrackingStatusLoadingKey] = useState<string | null>(null);
   const [uspsEvidenceTarget, setUspsEvidenceTarget] = useState<{ listingId: number; trackingNumber: string } | null>(null);
   // Review/rating form for Stage 5
   const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
@@ -239,6 +241,7 @@ export default function WarRoom() {
   const [incomingProposalNotice, setIncomingProposalNotice] = useState(false);
   const latestProposalRevisionRef = useRef<string | null>(null);
   const latestVideoRoomRevisionRef = useRef<string | null>(null);
+  const autoRefreshedTrackingKeyRef = useRef<string | null>(null);
 
   // ── tRPC queries ──────────────────────────────────────────────────────────
   const tradeDetailsQuery = trpc.tradeFlow.getTradeDetails.useQuery(
@@ -328,6 +331,7 @@ export default function WarRoom() {
   });
 
   const shippingTrackingLookupMutation = trpc.shippingTracking.validateForTrade.useMutation();
+  const shippingStatusLookupMutation = trpc.shippingTracking.lookup.useMutation();
   const reviewUspsEvidenceMutation = trpc.shippingTracking.reviewUspsEvidenceForTrade.useMutation({
     onSuccess: async (result) => {
       const reviewedTarget = uspsEvidenceTarget;
@@ -399,6 +403,23 @@ export default function WarRoom() {
       toast.error(error?.message || 'Carrier tracking lookup failed.');
     } finally {
       setTrackingLookupLoadingId(null);
+    }
+  };
+
+  const lookupStep5TrackingStatus = async (listingId: number, carrier: string, trackingNumber: string, showToast = true) => {
+    const normalizedCarrier = carrier.toUpperCase() === 'FEDEX' ? 'FedEx' : carrier.toUpperCase() === 'UPS' ? 'UPS' : carrier.toUpperCase() === 'DHL' ? 'DHL' : null;
+    if (!normalizedCarrier || !trackingNumber.trim()) return;
+    const statusKey = `${listingId}:${normalizedCarrier}:${trackingNumber.trim()}`;
+    setTrackingStatusLoadingKey(statusKey);
+    try {
+      const result = await shippingStatusLookupMutation.mutateAsync({ carrier: normalizedCarrier, trackingNumber: trackingNumber.trim() });
+      setTrackingStatusByKey((previous) => ({ ...previous, [statusKey]: result }));
+      if (showToast) toast.success(`${normalizedCarrier} tracking status refreshed.`);
+    } catch (error: any) {
+      setTrackingStatusByKey((previous) => ({ ...previous, [statusKey]: { status: 'Unavailable', statusSummary: error?.message || 'Status unavailable' } }));
+      if (showToast) toast.error(error?.message || `${normalizedCarrier} status refresh failed.`);
+    } finally {
+      setTrackingStatusLoadingKey((current) => current === statusKey ? null : current);
     }
   };
 
@@ -482,6 +503,19 @@ export default function WarRoom() {
   const trade = tradeDetailsQuery.data;
   const hasOfferedItems = (trade?.offeredListings?.length ?? 0) > 0;
   const currentStage = trade ? getStageFromStatus(trade.proposal.status, Number((trade as any).reviewCount ?? 0)) : 'proposed';
+
+  useEffect(() => {
+    if (currentStage !== 'shipped' || !trade?.trackingNumbers?.length) return;
+    const entries = (trade.trackingNumbers as any[])
+      .filter((entry) => ['UPS', 'FEDEX', 'DHL'].includes(String(entry.carrier).toUpperCase()) && String(entry.trackingNumber || '').trim())
+      .map((entry) => `${Number(entry.listingId)}:${String(entry.carrier)}:${String(entry.trackingNumber).trim()}`)
+      .filter((key, index, all) => all.indexOf(key) === index);
+    const refreshKey = `${proposalId}:${entries.join('|')}`;
+    if (!entries.length || autoRefreshedTrackingKeyRef.current === refreshKey) return;
+    autoRefreshedTrackingKeyRef.current = refreshKey;
+    const refreshEntries = (trade.trackingNumbers as any[]).filter((entry) => ['UPS', 'FEDEX', 'DHL'].includes(String(entry.carrier).toUpperCase()) && String(entry.trackingNumber || '').trim());
+    void Promise.all(refreshEntries.map((entry) => lookupStep5TrackingStatus(Number(entry.listingId), String(entry.carrier), String(entry.trackingNumber), false)));
+  }, [currentStage, proposalId, trade?.trackingNumbers]);
   const visibleStages = currentStage === 'disputed' ? [...stages, { key: 'disputed' as const, label: 'Disputed', sub: 'Under Review' }] : stages;
   const currentStageIndex = visibleStages.findIndex(s => s.key === currentStage);
   const isRequester = trade?.isRequester ?? false;
@@ -1482,10 +1516,11 @@ export default function WarRoom() {
                           const url = getTrackingUrl(t.carrier, t.trackingNumber);
                           return (
                             <div key={i} className="bg-green-900/10 border border-green-500/20 rounded-lg p-2 mb-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-green-400 text-[10px] font-bold">{t.carrier}</span>
                                 <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
                                 <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
+                                {currentStage === 'shipped' && (['UPS', 'FEDEX', 'DHL'].includes(String(t.carrier).toUpperCase()) ? (() => { const statusKey = `${Number(t.listingId ?? t.itemId ?? t.id ?? i)}:${String(t.carrier)}:${t.trackingNumber}`; const status = trackingStatusByKey[statusKey]; return <div className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(Number(t.listingId ?? t.itemId ?? t.id ?? i), t.carrier, t.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>{status?.expectedDeliveryDate && <p className="mt-1 text-slate-400">Expected delivery: {formatTrackingDate(status.expectedDeliveryDate)}</p>}</div>; })() : <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS status is available on USPS.com. <a href={buildUspsTrackingUrl(t.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a></div>)}
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
                             </div>
@@ -1498,10 +1533,11 @@ export default function WarRoom() {
                           const url = getTrackingUrl(t.carrier, t.trackingNumber);
                           return (
                             <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-2 mb-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-blue-400 text-[10px] font-bold">{t.carrier}</span>
                                 <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
                                 <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
+                                {currentStage === 'shipped' && (['UPS', 'FEDEX', 'DHL'].includes(String(t.carrier).toUpperCase()) ? (() => { const statusKey = `${Number(t.listingId ?? t.itemId ?? t.id ?? i)}:${String(t.carrier)}:${t.trackingNumber}`; const status = trackingStatusByKey[statusKey]; return <div className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(Number(t.listingId ?? t.itemId ?? t.id ?? i), t.carrier, t.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>{status?.expectedDeliveryDate && <p className="mt-1 text-slate-400">Expected delivery: {formatTrackingDate(status.expectedDeliveryDate)}</p>}</div>; })() : <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS status is available on USPS.com. <a href={buildUspsTrackingUrl(t.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a></div>)}
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
                             </div>

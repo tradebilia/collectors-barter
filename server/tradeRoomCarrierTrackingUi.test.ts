@@ -38,6 +38,17 @@ describe("Trade Room carrier tracking controls", () => {
     expect(warRoomSource).toContain("Track on {t.carrier} →");
   });
 
+  it("refreshes API carrier status automatically on Step 5 entry and manually per tracking number", () => {
+    expect(warRoomSource).toContain("trpc.shippingTracking.lookup.useMutation()");
+    expect(warRoomSource).toContain("lookupStep5TrackingStatus");
+    expect(warRoomSource).toContain("autoRefreshedTrackingKeyRef");
+    expect(warRoomSource).toContain("Refresh status");
+    expect(warRoomSource).toContain("Shipping status:");
+    expect(warRoomSource).toContain("currentStage === 'shipped'");
+    expect(warRoomSource).toContain("USPS status is available on USPS.com.");
+    expect(warRoomSource).toContain("buildUspsTrackingUrl(t.trackingNumber)");
+  });
+
   it("keeps the lookup protected and limits it to the supported carrier adapters", () => {
     expect(routerSource).toContain("protectedProcedure");
     expect(routerSource).toContain('z.enum(["USPS", "UPS", "FedEx", "DHL"])');
