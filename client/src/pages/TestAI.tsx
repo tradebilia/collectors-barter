@@ -1704,7 +1704,6 @@ function CarrierTrackingSection() {
           {uspsScreenshot && (
             <div className="space-y-2 rounded-md border border-sky-500/30 bg-slate-950/40 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-sky-200">Screenshot ready from {uspsScreenshotSource}.</p><button type="button" onClick={() => { setUspsScreenshot(null); setUspsScreenshotSource(null); }} className="text-xs text-gray-400 hover:text-white">Remove</button></div>
-              <img src={uspsScreenshot} alt="USPS result screenshot preview" className="max-h-56 w-full rounded border border-gray-700 object-contain" />
               <button type="button" onClick={reviewUspsScreenshot} disabled={uspsScreenshotReviewMutation.isPending} className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50">{uspsScreenshotReviewMutation.isPending ? 'AI reviewing…' : 'Review USPS screenshot with AI'}</button>
             </div>
           )}

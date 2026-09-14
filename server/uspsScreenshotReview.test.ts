@@ -21,6 +21,8 @@ describe('Test AI USPS screenshot review', () => {
     expect(pageSource).toContain('navigator.mediaDevices.getDisplayMedia');
     expect(pageSource).toContain('submitUspsScreenshotForReview(image)');
     expect(pageSource).toContain('Capture this Tradebilia view');
+    expect(pageSource).not.toContain('USPS result screenshot preview');
+    expect(pageSource).not.toContain('<img src={uspsScreenshot}');
     expect(pageSource).not.toContain('document.cookie');
     expect(pageSource).not.toContain('bypass');
   });

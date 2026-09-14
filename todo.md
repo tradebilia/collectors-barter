@@ -1990,3 +1990,4 @@
 - [x] Implement only safe Test AI USPS workflow reductions that do not bypass browser permissions or claim direct USPS carrier validation.
 - [x] Add regression coverage and document the remaining unavoidable user actions in the streamlined Test AI USPS workflow.
 - [x] Simplify the Test AI USPS modal by removing the “Open USPS.com in new tab” and “Open USPS + start capture” actions, leaving one clear capture action.
+- [x] Hide the captured USPS screenshot preview from Test AI while preserving transient in-memory capture and automatic AI review results.
