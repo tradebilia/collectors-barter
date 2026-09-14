@@ -206,6 +206,7 @@ export default function WarRoom() {
   const [resetTrackingIds, setResetTrackingIds] = useState<number[]>([]);
   const [trackingLookupByListingId, setTrackingLookupByListingId] = useState<Record<number, any>>({});
   const [trackingLookupLoadingId, setTrackingLookupLoadingId] = useState<number | null>(null);
+  const [uspsEvidenceTarget, setUspsEvidenceTarget] = useState<{ listingId: number; trackingNumber: string } | null>(null);
   // Review/rating form for Stage 5
   const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
   const [reviewText, setReviewText] = useState('');
@@ -327,6 +328,49 @@ export default function WarRoom() {
   });
 
   const shippingTrackingLookupMutation = trpc.shippingTracking.validateForTrade.useMutation();
+  const reviewUspsEvidenceMutation = trpc.shippingTracking.reviewUspsEvidenceForTrade.useMutation({
+    onSuccess: async (result) => {
+      setUspsEvidenceTarget(null);
+      await utils.tradeFlow.getTradeDetails.invalidate({ proposalId });
+      if (result.validationStatus === 'valid') {
+        toast.success('Valid Tracking Number has been submitted');
+      } else if (result.validationStatus === 'invalid') {
+        toast.error('Invalid Tracking Number submitted');
+      } else {
+        toast.info(result.validationMessage);
+      }
+    },
+    onError: (error) => toast.error(error.message || 'USPS evidence review failed.'),
+  });
+  const captureUspsEvidenceForTrade = async () => {
+    if (!uspsEvidenceTarget) return;
+    if (!navigator.mediaDevices?.getDisplayMedia) {
+      toast.error('This browser does not support tab or window capture. USPS evidence cannot be reviewed automatically here.');
+      return;
+    }
+    let stream: MediaStream | null = null;
+    try {
+      stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false, preferCurrentTab: true } as DisplayMediaStreamOptions);
+      const video = document.createElement('video');
+      video.srcObject = stream;
+      video.muted = true;
+      await video.play();
+      const maxWidth = 1600;
+      const width = Math.min(video.videoWidth || maxWidth, maxWidth);
+      const height = Math.max(1, Math.round((video.videoHeight || 900) * (width / Math.max(video.videoWidth || maxWidth, 1))));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d')?.drawImage(video, 0, 0, width, height);
+      const imageDataUrl = canvas.toDataURL('image/jpeg', 0.86);
+      toast.info('USPS evidence captured. AI review is running in the background.');
+      reviewUspsEvidenceMutation.mutate({ proposalId, listingId: uspsEvidenceTarget.listingId, trackingNumber: uspsEvidenceTarget.trackingNumber, imageDataUrl });
+    } catch (error: any) {
+      if (error?.name !== 'AbortError') toast.error('Could not capture the selected USPS view. Try again and select the current Tradebilia tab.');
+    } finally {
+      stream?.getTracks().forEach((track) => track.stop());
+    }
+  };
   const lookupCarrierTracking = async (listingId: number, carrier: string, trackingNumber: string) => {
     const normalizedCarrier = carrier.toUpperCase() === 'USPS' ? 'USPS' : carrier.toUpperCase() === 'FEDEX' ? 'FedEx' : carrier.toUpperCase() === 'UPS' ? 'UPS' : carrier.toUpperCase() === 'DHL' ? 'DHL' : null;
     if (!normalizedCarrier) {
@@ -1167,15 +1211,16 @@ export default function WarRoom() {
                     for (const item of items) {
                       if (resetIds.includes(item.id)) return 'missing' as const;
                       const tracking = trackingByListingId.get(Number(item.id));
+                      const validationStatus = validationByListingId.get(Number(item.id))?.validationStatus;
+                      if (validationStatus === 'invalid') return 'invalid' as const;
                       if (!tracking) return 'missing' as const;
 
                       if (String(tracking.carrier).toUpperCase() === 'USPS') {
+                        if (validationStatus === 'valid') continue;
                         hasUspsManualVerification = true;
                         continue;
                       }
 
-                      const validationStatus = validationByListingId.get(Number(item.id))?.validationStatus;
-                      if (validationStatus === 'invalid') return 'invalid' as const;
                       if (validationStatus !== 'valid') return 'missing' as const;
                     }
 
@@ -1284,9 +1329,28 @@ export default function WarRoom() {
                                             return [...existing, { ...inp, trackingNumber: val, carrier: detectedCarrier }];
                                           });
                                         }}
+                                        onKeyDown={(event) => {
+                                          if (event.key !== 'Enter' || !inp.trackingNumber.trim()) return;
+                                          event.preventDefault();
+                                          const normalizedCarrier = String(inp.carrier).toUpperCase();
+                                          if (normalizedCarrier === 'USPS') {
+                                            setUspsEvidenceTarget({ listingId: item.id, trackingNumber: inp.trackingNumber.trim() });
+                                            return;
+                                          }
+                                          setConfirmedTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]);
+                                          setResetTrackingIds(prev => prev.filter(id => id !== item.id));
+                                        }}
                                         className="flex-1 bg-white border border-slate-300 text-slate-900 text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-blue-500 font-mono"
                                       />
-                                      <button type="button" disabled={!inp.trackingNumber.trim()} onClick={() => { setConfirmedTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]); setResetTrackingIds(prev => prev.filter(id => id !== item.id)); }} className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40">Enter</button>
+                                      <button type="button" disabled={!inp.trackingNumber.trim()} onClick={() => {
+                                        const normalizedCarrier = String(inp.carrier).toUpperCase();
+                                        if (normalizedCarrier === 'USPS') {
+                                          setUspsEvidenceTarget({ listingId: item.id, trackingNumber: inp.trackingNumber.trim() });
+                                          return;
+                                        }
+                                        setConfirmedTrackingIds(prev => prev.includes(item.id) ? prev : [...prev, item.id]);
+                                        setResetTrackingIds(prev => prev.filter(id => id !== item.id));
+                                      }} className="shrink-0 rounded-lg bg-blue-600 px-3 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40">Enter</button>
                                     </div>
                                   </div>
                                 );
@@ -1373,6 +1437,23 @@ export default function WarRoom() {
                     </div>
                   );
                 })()}
+                {uspsEvidenceTarget && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="USPS tracking verification">
+                    <div className="flex h-[min(88vh,760px)] w-[min(96vw,1040px)] flex-col overflow-hidden rounded-xl border border-sky-400/40 bg-slate-950 shadow-2xl">
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-700 px-4 py-3">
+                        <div><p className="text-sm font-semibold text-white">USPS tracking verification</p><p className="text-xs text-slate-400">Select this Tradebilia tab when the browser asks what to capture. The image remains hidden and AI review starts automatically.</p></div>
+                        <button type="button" onClick={() => setUspsEvidenceTarget(null)} disabled={reviewUspsEvidenceMutation.isPending} className="rounded-md border border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-slate-800 disabled:opacity-50">Close</button>
+                      </div>
+                      <div className="min-h-0 flex-1 bg-white">
+                        <iframe title="Official USPS tracking result for verification" src={buildUspsTrackingUrl(uspsEvidenceTarget.trackingNumber)} className="h-full w-full border-0" />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-900 px-4 py-3">
+                        <p className="max-w-2xl text-xs text-amber-100">Tradebilia cannot read USPS directly. Capture this displayed result once; the image is not shown or stored.</p>
+                        <button type="button" onClick={captureUspsEvidenceForTrade} disabled={reviewUspsEvidenceMutation.isPending} className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500 disabled:opacity-50">{reviewUspsEvidenceMutation.isPending ? 'AI reviewing…' : 'Capture and verify'}</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
                 {(currentStage === 'shipped' || currentStage === 'review' || currentStage === 'completed') && (

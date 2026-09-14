@@ -1992,3 +1992,7 @@
 - [x] Simplify the Test AI USPS modal by removing the “Open USPS.com in new tab” and “Open USPS + start capture” actions, leaving one clear capture action.
 - [x] Hide the captured USPS screenshot preview from Test AI while preserving transient in-memory capture and automatic AI review results.
 - [x] Remove the Test AI USPS “Open USPS results,” “Capture current Tradebilia tab,” and “Choose screenshot” controls while preserving the in-site viewer capture action.
+- [x] Assess and design the USPS-only Step 4 Enter-triggered background verification flow with hidden evidence and participant-visible shared status, without changing other carriers.
+- [x] Resolve whether the requested Enter-only USPS behavior can be implemented with current browser permission boundaries or requires authorized API/provider access.
+- [x] Implement the USPS-only Step 4 Enter-to-viewer flow with a user-approved hidden capture, automatic Gemini Flash evidence review, and shared green/red status persistence; retain all other carrier flows.
+- [x] Add focused USPS Step 4 evidence, ownership, non-persistence, and carrier-regression coverage; validate TypeScript and the production build.

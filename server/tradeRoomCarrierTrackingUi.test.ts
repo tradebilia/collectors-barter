@@ -6,16 +6,21 @@ describe("Trade Room carrier tracking controls", () => {
   const warRoomSource = readFileSync(join(process.cwd(), "client/src/pages/WarRoom.tsx"), "utf8");
   const routerSource = readFileSync(join(process.cwd(), "server/shippingTrackingRouter.ts"), "utf8");
 
-  it("uses automated validation for supported API carriers and an official USPS manual fallback", () => {
+  it("uses automated validation for supported API carriers and a permissioned USPS evidence flow", () => {
     expect(warRoomSource).toContain("trpc.shippingTracking.validateForTrade.useMutation()");
     expect(warRoomSource).toContain("Expected delivery:");
     expect(warRoomSource).toContain("Check tracking");
     expect((warRoomSource.match(/\['UPS', 'FEDEX', 'DHL'\]/g) || []).length).toBeGreaterThanOrEqual(2);
     expect(warRoomSource).toContain("lookupCarrierTracking");
     expect(warRoomSource).toContain("formatTrackingDate");
-    expect(warRoomSource).toContain("buildUspsTrackingUrl(trackingNumber)");
-    expect(warRoomSource).toContain("Verify on USPS.com →");
-    expect(warRoomSource).toContain("USPS tracking submitted — verify on USPS.com");
+    expect(warRoomSource).toContain("trpc.shippingTracking.reviewUspsEvidenceForTrade.useMutation({");
+    expect(warRoomSource).toContain("setUspsEvidenceTarget({ listingId: item.id, trackingNumber: inp.trackingNumber.trim() })");
+    expect(warRoomSource).toContain("onKeyDown={(event) => {");
+    expect(warRoomSource).toContain("USPS tracking verification");
+    expect(warRoomSource).toContain("Capture and verify");
+    expect(warRoomSource).toContain("navigator.mediaDevices.getDisplayMedia");
+    expect(warRoomSource).toContain("The image remains hidden and AI review starts automatically.");
+    expect(warRoomSource).toContain("Tradebilia cannot read USPS directly.");
     expect(warRoomSource).toContain("normalizedCarrier === 'USPS'");
     expect(warRoomSource).toContain("Valid Tracking Number has been submitted");
     expect(warRoomSource).toContain("Invalid Tracking Number submitted");
@@ -43,5 +48,10 @@ describe("Trade Room carrier tracking controls", () => {
     expect(routerSource).toContain("lookupDhlTracking");
     expect(routerSource).toContain("tracking_validation:");
     expect(routerSource).toContain("validationStatus: valid ? 'valid' : 'invalid'");
+    expect(routerSource).toContain("reviewUspsEvidenceForTrade");
+    expect(routerSource).toContain("reviewUspsTrackingEvidence");
+    expect(routerSource).toContain('classification === "tracking_not_available"');
+    expect(routerSource).toContain("ON DUPLICATE KEY UPDATE");
+    expect(routerSource).not.toContain("storagePut(input.imageDataUrl");
   });
 });

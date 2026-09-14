@@ -1520,7 +1520,7 @@ export const tradeFlowRouter = router({
       let trackingValidations: any[] = [];
       if (['accepted', 'shipping', 'shipped', 'completed', 'disputed'].includes(proposal.status as string)) {
         const [validationRows] = await db.execute(
-          sql`SELECT actorId as userId, details, createdAt FROM tradeActivityLog WHERE proposalId = ${input.proposalId} AND eventType = 'tracking_submitted' AND details LIKE 'tracking_validation:%' ORDER BY createdAt ASC`
+          sql`SELECT id, actorId as userId, details, createdAt FROM tradeActivityLog WHERE proposalId = ${input.proposalId} AND eventType = 'tracking_submitted' AND details LIKE 'tracking_validation:%' ORDER BY createdAt ASC, id ASC`
         );
         trackingValidations = ((validationRows as unknown as any[]) || []).map((row: any) => {
           try { return { userId: row.userId, createdAt: row.createdAt, ...JSON.parse(String(row.details).slice('tracking_validation:'.length)) }; } catch { return null; }
