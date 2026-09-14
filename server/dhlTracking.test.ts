@@ -33,7 +33,7 @@ describe("DHL Express MyDHL tracking", () => {
       trackingNumber: "1234567890",
       status: "Delivered",
       service: "DHL Express Worldwide",
-      events: [{ type: "DHL update", city: "Bonn", country: "DE" }],
+      events: [{ type: "Delivered", city: "Bonn", country: "DE" }],
     });
     expect(JSON.stringify(result)).not.toContain("53113");
     expect(JSON.stringify(result)).not.toContain("recipient");

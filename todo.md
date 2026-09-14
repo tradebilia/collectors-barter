@@ -2001,3 +2001,4 @@
 - [x] Add regression coverage for two-sided submission gating and Step 4 viewport containment, then validate TypeScript and build.
 - [x] Contain Trade Room Step 5 so the full Confirm/Receipt stage fits at 100% browser zoom without vertical or horizontal page scrolling, using the established Step 3 strategy.
 - [x] Add UPS, FedEx, and DHL tracking-status displays to Step 5 with page-entry refresh and per-tracking manual refresh, while keeping USPS on the direct USPS.com workflow.
+- [x] Show full UPS, FedEx, and DHL shipment scan history beneath each Step 5 tracking number, including chronological stops, locations, event descriptions, and the current/latest event; keep USPS on the direct USPS.com workflow.

@@ -1,4 +1,5 @@
 import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+import { normalizeTrackingTimeline } from "./shippingTrackingTimeline";
 
 type DhlAddress = {
   addressLocality?: string;
@@ -55,13 +56,13 @@ export function formatDhlTrackingResult(response: DhlTrackingResponse, requested
     statusSummary: null,
     service: shipment.details?.product?.productName ?? "DHL",
     expectedDeliveryDate: shipment.details?.estimatedDeliveryDate ?? null,
-    events: (shipment.events ?? []).slice(0, 10).map((event) => ({
-      type: event.statusCode ?? "DHL update",
+    events: normalizeTrackingTimeline((shipment.events ?? []).map((event) => ({
+      type: event.description ?? event.statusCode ?? "DHL update",
       timestamp: event.timestamp ?? null,
       city: event.location?.address?.addressLocality ?? null,
       state: null,
       country: event.location?.address?.countryCode ?? null,
-    })),
+    }))),
   };
 }
 

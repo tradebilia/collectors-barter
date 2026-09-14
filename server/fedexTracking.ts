@@ -1,4 +1,5 @@
 import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+import { normalizeTrackingTimeline } from "./shippingTrackingTimeline";
 
 type FedexAccessToken = {
   value: string;
@@ -63,13 +64,13 @@ export function formatFedexTrackingResult(response: FedexTrackingResponse, reque
     statusSummary: trackedPackage.latestStatusDetail?.description ?? null,
     service: trackedPackage.serviceDetail?.description ?? trackedPackage.serviceDetail?.type ?? null,
     expectedDeliveryDate: normalizeFedexExpectedDeliveryDate(estimatedDelivery),
-    events: (trackedPackage.scanEvents ?? []).slice(0, 10).map((event) => ({
+    events: normalizeTrackingTimeline((trackedPackage.scanEvents ?? []).map((event) => ({
       type: event.eventDescription ?? event.eventType ?? "FedEx update",
       timestamp: event.date ?? null,
       city: event.scanLocation?.city ?? null,
       state: event.scanLocation?.stateOrProvinceCode ?? null,
       country: event.scanLocation?.countryCode ?? null,
-    })),
+    }))),
   };
 }
 

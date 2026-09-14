@@ -1,4 +1,5 @@
 import { classifyApiFailure, recordApiFailure } from "./apiHealth";
+import { normalizeTrackingTimeline } from "./shippingTrackingTimeline";
 
 const fetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> => {
   try {
@@ -94,13 +95,13 @@ export function formatUpsTrackingResult(response: UpsTrackingResponse, requested
         ?? trackedPackage.deliveryDate?.[0]?.date
         ?? null,
     ),
-    events: (trackedPackage.activity ?? []).slice(0, 10).map((activity) => ({
+    events: normalizeTrackingTimeline((trackedPackage.activity ?? []).map((activity) => ({
       type: activity.status?.description ?? activity.status?.type ?? "UPS update",
       timestamp: toEventTimestamp(activity),
       city: activity.location?.address?.city ?? null,
       state: activity.location?.address?.stateProvince ?? null,
       country: activity.location?.address?.countryCode ?? null,
-    })),
+    }))),
   };
 }
 

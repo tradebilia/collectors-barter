@@ -516,6 +516,30 @@ export default function WarRoom() {
     const refreshEntries = (trade.trackingNumbers as any[]).filter((entry) => ['UPS', 'FEDEX', 'DHL'].includes(String(entry.carrier).toUpperCase()) && String(entry.trackingNumber || '').trim());
     void Promise.all(refreshEntries.map((entry) => lookupStep5TrackingStatus(Number(entry.listingId), String(entry.carrier), String(entry.trackingNumber), false)));
   }, [currentStage, proposalId, trade?.trackingNumbers]);
+  const formatShipmentEventLocation = (event: any) => [event.city, event.state, event.country].filter(Boolean).join(', ') || 'Location not provided';
+
+  const renderStep5ShipmentStatus = (tracking: any, fallbackId: number) => {
+    if (currentStage !== 'shipped') return null;
+    const carrier = String(tracking.carrier ?? '').toUpperCase();
+    if (carrier === 'USPS') {
+      return <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS status is available on USPS.com. <a href={buildUspsTrackingUrl(tracking.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a></div>;
+    }
+    if (!['UPS', 'FEDEX', 'DHL'].includes(carrier)) return null;
+    const statusKey = `${fallbackId}:${String(tracking.carrier)}:${tracking.trackingNumber}`;
+    const status = trackingStatusByKey[statusKey];
+    const events = Array.isArray(status?.events) ? status.events : [];
+    const formatEventTime = (value: string | null | undefined) => {
+      if (!value) return 'Date not provided';
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? 'Date not provided' : date.toLocaleString();
+    };
+    return <div className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300">
+      <div className="flex items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(fallbackId, tracking.carrier, tracking.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>
+      {status?.expectedDeliveryDate && <p className="mt-1 text-slate-400">Expected delivery: {formatTrackingDate(status.expectedDeliveryDate)}</p>}
+      {events.length > 0 && <div className="mt-3 border-t border-slate-700 pt-2"><p className="mb-2 font-semibold text-slate-200">Shipment history</p><ol className="space-y-2 border-l border-slate-600 pl-3">{events.map((event: any, index: number) => <li key={`${event.timestamp ?? 'event'}-${index}`} className={index === events.length - 1 ? 'relative rounded-md border border-blue-400/30 bg-blue-500/10 p-2' : 'relative rounded-md p-2'}><span className="absolute -left-[1.05rem] top-3 h-2 w-2 rounded-full bg-blue-400" /><div className="flex items-start justify-between gap-2"><strong className="text-slate-100">{event.type || 'Carrier update'}</strong>{index === events.length - 1 && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-300">Current</span>}</div><p className="mt-0.5 text-slate-400">{formatEventTime(event.timestamp)} · {formatShipmentEventLocation(event)}</p></li>)}</ol></div>}
+    </div>;
+  };
+
   const visibleStages = currentStage === 'disputed' ? [...stages, { key: 'disputed' as const, label: 'Disputed', sub: 'Under Review' }] : stages;
   const currentStageIndex = visibleStages.findIndex(s => s.key === currentStage);
   const isRequester = trade?.isRequester ?? false;
@@ -1520,7 +1544,7 @@ export default function WarRoom() {
                                 <span className="text-green-400 text-[10px] font-bold">{t.carrier}</span>
                                 <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
                                 <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
-                                {currentStage === 'shipped' && (['UPS', 'FEDEX', 'DHL'].includes(String(t.carrier).toUpperCase()) ? (() => { const statusKey = `${Number(t.listingId ?? t.itemId ?? t.id ?? i)}:${String(t.carrier)}:${t.trackingNumber}`; const status = trackingStatusByKey[statusKey]; return <div className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(Number(t.listingId ?? t.itemId ?? t.id ?? i), t.carrier, t.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>{status?.expectedDeliveryDate && <p className="mt-1 text-slate-400">Expected delivery: {formatTrackingDate(status.expectedDeliveryDate)}</p>}</div>; })() : <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS status is available on USPS.com. <a href={buildUspsTrackingUrl(t.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a></div>)}
+                                {renderStep5ShipmentStatus(t, Number(t.listingId ?? t.itemId ?? t.id ?? i))}
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
                             </div>
@@ -1537,7 +1561,7 @@ export default function WarRoom() {
                                 <span className="text-blue-400 text-[10px] font-bold">{t.carrier}</span>
                                 <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
                                 <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
-                                {currentStage === 'shipped' && (['UPS', 'FEDEX', 'DHL'].includes(String(t.carrier).toUpperCase()) ? (() => { const statusKey = `${Number(t.listingId ?? t.itemId ?? t.id ?? i)}:${String(t.carrier)}:${t.trackingNumber}`; const status = trackingStatusByKey[statusKey]; return <div className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300"><div className="flex items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(Number(t.listingId ?? t.itemId ?? t.id ?? i), t.carrier, t.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>{status?.expectedDeliveryDate && <p className="mt-1 text-slate-400">Expected delivery: {formatTrackingDate(status.expectedDeliveryDate)}</p>}</div>; })() : <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS status is available on USPS.com. <a href={buildUspsTrackingUrl(t.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a></div>)}
+                                {renderStep5ShipmentStatus(t, Number(t.listingId ?? t.itemId ?? t.id ?? i))}
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
                             </div>
