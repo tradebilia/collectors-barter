@@ -1982,3 +1982,4 @@
 - [x] Update the Test AI USPS experiment so the official result is viewed inside Tradebilia before current-tab capture, with an external-tab fallback if embedding fails.
 - [x] Make the primary Test AI “Open USPS results” action open the official USPS page in a new tab while retaining the user on Tradebilia.
 - [x] Automatically start AI review after a user-approved Test AI USPS tab/window capture while retaining manual paste and file review controls.
+- [x] Assess the proposed server-side USPS shipment-verification system, including architecture fit, official-access constraints, caching, evidence handling, and compliant failure behavior before implementation.
