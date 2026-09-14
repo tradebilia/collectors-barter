@@ -15,11 +15,12 @@ describe('Test AI USPS screenshot review', () => {
 
   it('keeps the streamlined capture action permissioned and non-persistent', () => {
     const pageSource = readFileSync(join(process.cwd(), 'client/src/pages/TestAI.tsx'), 'utf8');
-    expect(pageSource).toContain('const openUspsAndCapture = () =>');
-    expect(pageSource).toContain("window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer')");
+    expect(pageSource).not.toContain('const openUspsAndCapture = () =>');
+    expect(pageSource).not.toContain('Open USPS.com in new tab');
+    expect(pageSource).not.toContain('Open USPS + start capture');
     expect(pageSource).toContain('navigator.mediaDevices.getDisplayMedia');
     expect(pageSource).toContain('submitUspsScreenshotForReview(image)');
-    expect(pageSource).toContain('Capture selected tab/window');
+    expect(pageSource).toContain('Capture this Tradebilia view');
     expect(pageSource).not.toContain('document.cookie');
     expect(pageSource).not.toContain('bypass');
   });

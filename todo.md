@@ -1989,3 +1989,4 @@
 - [x] Audit Test AI USPS evidence flow for additional safe automation opportunities and browser-enforced permission boundaries.
 - [x] Implement only safe Test AI USPS workflow reductions that do not bypass browser permissions or claim direct USPS carrier validation.
 - [x] Add regression coverage and document the remaining unavoidable user actions in the streamlined Test AI USPS workflow.
+- [x] Simplify the Test AI USPS modal by removing the “Open USPS.com in new tab” and “Open USPS + start capture” actions, leaving one clear capture action.

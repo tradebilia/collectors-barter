@@ -1574,14 +1574,6 @@ function CarrierTrackingSection() {
     return true;
   };
 
-  const openUspsAndCapture = () => {
-    if (!trackingNumber.trim()) {
-      toast.error('Enter the USPS tracking number before starting the evidence check.');
-      return;
-    }
-    window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer');
-    void captureUspsResult();
-  };
   const captureUspsResult = async () => {
     if (!trackingNumber.trim()) {
       toast.error('Enter the USPS tracking number before capturing the result.');
@@ -1740,9 +1732,7 @@ function CarrierTrackingSection() {
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 bg-slate-900 px-4 py-3">
               <p className="max-w-2xl text-xs text-amber-100">If the browser capture chooser appears, select the current Tradebilia tab so this viewer is captured. If USPS blocks the embedded page or shows a challenge, use the external link instead.</p>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => window.open(officialUspsTrackingUrl, '_blank', 'noopener,noreferrer')} className="rounded-md border border-sky-400/50 bg-sky-500/10 px-3 py-2 text-xs font-semibold text-sky-100 hover:bg-sky-500/20">Open USPS.com in new tab</button>
-                <button type="button" onClick={openUspsAndCapture} className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500">Open USPS + start capture</button>
-                <button type="button" onClick={captureUspsResult} className="rounded-md border border-amber-400/50 bg-amber-500/10 px-3 py-2 text-xs font-semibold text-amber-100 hover:bg-amber-500/20">Capture selected tab/window</button>
+                <button type="button" onClick={captureUspsResult} className="rounded-md bg-amber-600 px-3 py-2 text-xs font-semibold text-white hover:bg-amber-500">Capture this Tradebilia view</button>
               </div>
             </div>
           </div>
