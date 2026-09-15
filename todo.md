@@ -2014,3 +2014,4 @@
 - [x] Replace ambiguous USPS Step 5 status wording with clear guidance to view the latest delivery scans through the existing official USPS.com link.
 - [x] Make the Trade Room Leave Trade Room control white while preserving readable text, placement, hover behavior, and functionality.
 - [x] Move the white Leave Trade Room control farther right to separate it from the Step 7 Completed indicator while preserving responsive behavior and functionality.
+- [x] Move the Leave Trade Room control farther right within the wide-desktop header action area while preserving its white styling, mobile containment, and functionality.
