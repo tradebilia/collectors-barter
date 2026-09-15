@@ -2669,7 +2669,7 @@ export default function WarRoom() {
                   shippingSpeedRating: reviewRatings.shippingSpeed,
                   review: reviewText || undefined,
                 })}
-                disabled={leaveReviewMutation.isPending || Object.values(reviewRatings).every(v => v === 0)}
+                disabled={leaveReviewMutation.isPending || !hasAllReviewRatings}
                 className={`px-8 py-3 rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2 ${hasAllReviewRatings ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border border-slate-500 bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
               >
                 ★ Submit Review

@@ -163,10 +163,10 @@ const fileComplaintSchema = z.object({
 
 const leaveReviewSchema = z.object({
   proposalId: z.number().int().positive(),
-  tradeExperienceRating: z.number().int().min(0).max(5),
-  itemConditionRating: z.number().int().min(0).max(5),
-  communicationRating: z.number().int().min(0).max(5),
-  shippingSpeedRating: z.number().int().min(0).max(5),
+  tradeExperienceRating: z.number().int().min(1).max(5),
+  itemConditionRating: z.number().int().min(1).max(5),
+  communicationRating: z.number().int().min(1).max(5),
+  shippingSpeedRating: z.number().int().min(1).max(5),
   review: z.string().optional(),
   photoUrls: z.array(z.string()).max(5).optional(),
 });
