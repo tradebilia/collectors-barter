@@ -2015,3 +2015,4 @@
 - [x] Make the Trade Room Leave Trade Room control white while preserving readable text, placement, hover behavior, and functionality.
 - [x] Move the white Leave Trade Room control farther right to separate it from the Step 7 Completed indicator while preserving responsive behavior and functionality.
 - [x] Move the Leave Trade Room control farther right within the wide-desktop header action area while preserving its white styling, mobile containment, and functionality.
+- [x] Move the Leave Trade Room control an additional 50px right on wide desktop layouts while preserving its white styling, header placement, functionality, and mobile positioning.
