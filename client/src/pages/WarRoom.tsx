@@ -1041,7 +1041,7 @@ export default function WarRoom() {
           </div>
 
           {/* Right: Leave + Settings */}
-          <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px] xl:justify-end xl:mr-[68px]">
+          <div className="flex min-w-0 shrink-0 items-center gap-3 xl:ml-auto xl:mr-[68px] xl:justify-end">
             <button
               onClick={() => navigate('/trade-hub')}
               className="px-4 py-2 border border-white bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition text-sm flex items-center gap-2 shadow-sm"
