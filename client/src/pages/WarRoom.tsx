@@ -1544,7 +1544,15 @@ export default function WarRoom() {
                       </div>
                       <div>
                         <h2 id="trade-tracking-heading" className="text-2xl font-bold text-white">{allItems.length > 0 ? 'Tracking' : 'Cash Receipt'}</h2>
-                        <p className="text-sm text-gray-300">{allItems.length > 0 ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.' : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}</p>
+                        <p className="text-sm text-gray-300">
+                          {currentStage === 'review' || currentStage === 'completed'
+                            ? allItems.length > 0
+                              ? 'Delivery confirmed. Review submitted tracking as part of this completed trade record.'
+                              : 'Cash receipt confirmed. Review payment details as part of this completed trade record.'
+                            : allItems.length > 0
+                              ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.'
+                              : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}
+                        </p>
                       </div>
                       <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">{allItems.length > 0 ? 'TRACKING SUBMITTED' : 'PAYMENT SENT'}</span>
                     </div>

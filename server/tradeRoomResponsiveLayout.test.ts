@@ -94,6 +94,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('aria-labelledby="trade-reviews-heading"');
     expect(warRoomSource).toContain('id="trade-reviews-heading"');
     expect(warRoomSource).toContain('id="trade-tracking-heading" className="text-2xl font-bold text-white"');
+    expect(warRoomSource).toContain("currentStage === 'review' || currentStage === 'completed'");
+    expect(warRoomSource).toContain('Delivery confirmed. Review submitted tracking as part of this completed trade record.');
+    expect(warRoomSource).toContain('Follow the submitted tracking while you wait to receive your items and any cash owed.');
     expect(warRoomSource).toContain('border border-blue-400/70 bg-[#1a2947] p-6 shadow-2xl ring-1 ring-blue-400/20');
     expect(warRoomSource).toContain('text-2xl font-bold text-white');
     expect(warRoomSource).toContain('bg-white p-3 text-xl leading-relaxed text-slate-900 placeholder:text-slate-500');

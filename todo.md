@@ -2029,4 +2029,5 @@
 - [x] Increase the Trade Room chat composer typed-message font size while preserving chat history, send controls, and contained layout.
 - [x] Increase the Step 6 optional review text-area font size while preserving its white background, rating controls, submission gate, and Review-stage layout.
 - [x] Add a completed-trade-only Print Trade Recap button to the top-left Trade Steps header using existing participant-authorized recap data.
+- [x] Replace the outdated Step 6 Tracking description with completed-trade delivery-record wording while preserving tracking details and earlier-stage guidance.
 - [x] Match Items Being Traded, Shipping Information, and Tracking heading typography to the current Reviews title size for consistent Trade Room section hierarchy.
