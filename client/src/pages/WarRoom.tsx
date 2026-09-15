@@ -1620,7 +1620,7 @@ export default function WarRoom() {
                           placeholder="Write a review (optional)..."
                           value={reviewText}
                           onChange={(e) => setReviewText(e.target.value)}
-                          className="mt-3 w-full resize-none rounded-lg border border-blue-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
+                          className="mt-3 w-full resize-none rounded-lg border border-blue-300 bg-white p-3 text-xl leading-relaxed text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
                           rows={3}
                         />
                         </>}
