@@ -88,6 +88,10 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('grid grid-cols-1 gap-2 sm:grid-cols-2');
     expect(warRoomSource).toContain('rounded-lg border border-blue-500/40 bg-[#16213e] px-3 py-2.5');
     expect(warRoomSource).toContain('flex shrink-0 gap-1');
+    expect(warRoomSource).toContain('aria-labelledby="trade-tracking-heading"');
+    expect(warRoomSource).toContain('id="trade-tracking-heading"');
+    expect(warRoomSource).toContain('aria-labelledby="trade-reviews-heading"');
+    expect(warRoomSource).toContain('id="trade-reviews-heading"');
     expect(warRoomSource).toContain('<header className="relative border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">');
     expect(warRoomSource).toContain('xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2');
     expect(warRoomSource).not.toContain('xl:translate-x-[82px]');

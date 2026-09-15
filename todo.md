@@ -2024,3 +2024,4 @@
 - [x] Disable Step 6 Submit Review until all four ratings are selected, then enable and highlight it as the only active submission state.
 - [x] Create a visual-only Step 6 review-rating layout mockup that keeps each criterion label and its star control together; do not change the live interface without approval.
 - [x] Reformat only the current Step 6 rating section so each label and star selector stay together, while retaining all existing Review-stage content, controls, and behavior.
+- [x] Separate Step 6 Tracking and Reviews into distinct visible sections while retaining all existing content, review gating, and no-scroll containment.

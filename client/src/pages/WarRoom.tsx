@@ -1521,7 +1521,8 @@ export default function WarRoom() {
 
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
                 {(currentStage === 'shipped' || currentStage === 'review' || currentStage === 'completed') && (
-                  <div className="relative z-0 w-full flex-none bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                  <>
+                    <section aria-labelledby="trade-tracking-heading" className="relative z-0 w-full flex-none bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                     <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center">
                       <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
@@ -1529,7 +1530,7 @@ export default function WarRoom() {
                         </svg>
                       </div>
                       <div>
-                        <h2 className="text-white font-bold text-lg">{allItems.length > 0 ? 'Tracking & Receipt' : 'Cash Receipt'}</h2>
+                        <h2 id="trade-tracking-heading" className="text-white font-bold text-lg">{allItems.length > 0 ? 'Tracking' : 'Cash Receipt'}</h2>
                         <p className="text-gray-400 text-xs">{allItems.length > 0 ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.' : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}</p>
                       </div>
                       <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">{allItems.length > 0 ? 'TRACKING SUBMITTED' : 'PAYMENT SENT'}</span>
@@ -1592,9 +1593,12 @@ export default function WarRoom() {
                       </div>
                     )}
 
+                    </section>
+
                     {/* Completed — leave review */}
                     {(currentStage === 'review' || currentStage === 'completed') && (
-                      <div className="pt-4 border-t border-gray-700">
+                      <section aria-labelledby="trade-reviews-heading" className="relative z-0 mt-4 w-full flex-none rounded-xl border border-gray-600 bg-[#16213e] p-5 shadow-xl">
+                        <h2 id="trade-reviews-heading" className="mb-1 text-lg font-bold text-white">Reviews</h2>
                         <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
                         {myReview ? (
                           <p className="rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2 text-xs text-green-300">✓ Your review has been submitted and is locked for this trade.</p>
@@ -1620,9 +1624,9 @@ export default function WarRoom() {
                           rows={3}
                         />
                         </>}
-                      </div>
+                      </section>
                     )}
-                  </div>
+                  </>
                 )}
 
               </div>
