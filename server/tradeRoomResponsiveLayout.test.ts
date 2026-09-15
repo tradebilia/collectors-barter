@@ -40,7 +40,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('border-2 border-white/80 rounded-xl w-11/12 max-w-6xl');
     expect(warRoomSource).toContain('const myReviewHasSingleItem = myItems.length === 1;');
     expect(warRoomSource).toContain('const theirReviewHasSingleItem = theirItems.length === 1;');
-    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : currentStage === 'shipped' ? 'trade-room-confirm-whole' : currentStage === 'review' ? 'trade-room-review-whole' : ''");
+    expect(warRoomSource).toContain("currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : currentStage === 'shipped' ? 'trade-room-confirm-whole' : currentStage === 'review' ? 'trade-room-review-whole' : currentStage === 'completed' ? 'trade-room-complete-whole' : ''");
     expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'w-16 h-16' : myReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain("${currentStage === 'shipped' ? 'w-16 h-16' : theirReviewHasSingleItem ? 'w-full h-72' : 'w-28 h-28'}");
     expect(warRoomSource).toContain("currentStage === 'shipped' ? 'items-center p-2'");
@@ -119,7 +119,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('.trade-room-shell.trade-room-shipping-whole');
     expect(stylesheet).toContain('.trade-room-shell.trade-room-confirm-whole');
     expect(stylesheet).toContain('.trade-room-shell.trade-room-review-whole');
+    expect(stylesheet).toContain('.trade-room-shell.trade-room-complete-whole');
     expect(stylesheet).toContain('transform: scale(0.67);');
+    expect(stylesheet).toContain('transform: scale(0.8);');
     expect(stylesheet).toContain('transform-origin: top left;');
     expect(stylesheet).toContain('position: fixed;');
     expect(stylesheet).toContain('inset: 0;');
@@ -131,6 +133,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('html:has(.trade-room-shell.trade-room-shipping-whole)');
     expect(stylesheet).toContain('html:has(.trade-room-shell.trade-room-confirm-whole)');
     expect(stylesheet).toContain('html:has(.trade-room-shell.trade-room-review-whole)');
+    expect(stylesheet).toContain('html:has(.trade-room-shell.trade-room-complete-whole)');
     expect(stylesheet).toContain('body:has(.trade-room-shell.trade-room-finalize-whole)');
     expect(stylesheet).toContain('overflow: hidden;');
     expect(stylesheet).toContain('background: #0f0f1a;');

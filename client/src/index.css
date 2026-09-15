@@ -375,6 +375,23 @@
     margin: 0;
   }
 
+  /* Step 7 has less interactive content after both reviews are submitted, so
+     retain a larger 80% visual canvas while keeping the full completed record
+     inside the browser viewport. */
+  .trade-room-shell.trade-room-complete-whole {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    width: calc(100vw / 0.8);
+    min-width: calc(100vw / 0.8);
+    height: calc(100dvh / 0.8);
+    min-height: calc(100dvh / 0.8);
+    overflow: hidden;
+    transform: scale(0.8);
+    transform-origin: top left;
+    margin: 0;
+  }
+
   /* Step 5 has ample contained canvas area, so improve readability without
      enlarging images, logos, or changing the established viewport scale. */
   .trade-room-shell.trade-room-confirm-whole .text-xs {
@@ -412,6 +429,13 @@
   html:has(.trade-room-shell.trade-room-review-whole),
   body:has(.trade-room-shell.trade-room-review-whole),
   #root:has(.trade-room-shell.trade-room-review-whole) {
+    overflow: hidden;
+    background: #0f0f1a;
+  }
+
+  html:has(.trade-room-shell.trade-room-complete-whole),
+  body:has(.trade-room-shell.trade-room-complete-whole),
+  #root:has(.trade-room-shell.trade-room-complete-whole) {
     overflow: hidden;
     background: #0f0f1a;
   }

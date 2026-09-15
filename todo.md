@@ -2030,4 +2030,5 @@
 - [x] Increase the Step 6 optional review text-area font size while preserving its white background, rating controls, submission gate, and Review-stage layout.
 - [x] Add a completed-trade-only Print Trade Recap button to the top-left Trade Steps header using existing participant-authorized recap data.
 - [x] Replace the outdated Step 6 Tracking description with completed-trade delivery-record wording while preserving tracking details and earlier-stage guidance.
+- [x] Apply Step 7 Complete-stage-only 80% internal visual scaling so more post-review content fits at normal browser zoom without changing Steps 3–6 or creating overflow.
 - [x] Match Items Being Traded, Shipping Information, and Tracking heading typography to the current Reviews title size for consistent Trade Room section hierarchy.
