@@ -1000,7 +1000,7 @@ export default function WarRoom() {
       )}
 
       {/* Progress Tracker Header */}
-      <header className="border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">
+      <header className="relative border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           {/* Left: Trade ID */}
           <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px]">
@@ -1041,7 +1041,7 @@ export default function WarRoom() {
           </div>
 
           {/* Right: Leave + Settings */}
-          <div className="flex min-w-0 shrink-0 items-center gap-3 xl:ml-auto xl:mr-[68px] xl:justify-end">
+          <div className="flex min-w-0 shrink-0 items-center gap-3 xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2">
             <button
               onClick={() => navigate('/trade-hub')}
               className="px-4 py-2 border border-white bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition text-sm flex items-center gap-2 shadow-sm"

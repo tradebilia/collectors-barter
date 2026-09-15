@@ -2018,3 +2018,4 @@
 - [x] Move the Leave Trade Room control an additional 50px right on wide desktop layouts while preserving its white styling, header placement, functionality, and mobile positioning.
 - [x] Match the Leave Trade Room button to the uploaded reference position in the far-right header action area while keeping it contained, separated from Step 7, and responsive.
 - [x] Correct the Leave Trade Room header anchor and spacing to match the latest uploaded reference, removing the arbitrary offset while preserving responsive behavior and functionality.
+- [x] Anchor the Leave Trade Room button directly to the wide-desktop header’s far-right screen edge, matching the latest reference instead of the internal stepper layout.
