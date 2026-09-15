@@ -1002,6 +1002,19 @@ export default function WarRoom() {
 
       {/* Progress Tracker Header */}
       <header className="relative border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">
+        {currentStage === 'completed' && (
+          <button
+            type="button"
+            onClick={() => window.open(`/trade-print/${proposalId}`, '_blank', 'noopener,noreferrer')}
+            className="mb-2 inline-flex items-center gap-2 rounded-lg border border-white bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 xl:absolute xl:left-6 xl:top-1/2 xl:z-10 xl:mb-0 xl:-translate-y-1/2"
+            aria-label="Print Trade Recap"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5V3.75h10.5V7.5M6.75 18.75h10.5v1.5H6.75v-1.5Zm0 0H4.5a1.5 1.5 0 0 1-1.5-1.5v-6a1.5 1.5 0 0 1 1.5-1.5h15a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-2.25m-10.5 0v-4.5h10.5v4.5" />
+            </svg>
+            Print Trade Recap
+          </button>
+        )}
         <div className="mx-auto flex max-w-[1600px] flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           {/* Left: Trade ID */}
           <div className="flex min-w-0 items-center gap-3 xl:min-w-[200px]">
@@ -1131,7 +1144,7 @@ export default function WarRoom() {
                 {/* Trade Summary Card — hidden on Shipping stage */}
                 {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
                   <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-white font-bold text-lg">Items Being Traded</h2>
+                    <h2 className="text-2xl font-bold text-white">Items Being Traded</h2>
                     <span className="px-3 py-1 bg-green-900/30 border border-green-500/30 text-green-400 text-xs font-bold rounded-full">LOCKED</span>
                   </div>
                   <div className="flex flex-col gap-6 lg:flex-row lg:items-stretch">
@@ -1530,7 +1543,7 @@ export default function WarRoom() {
                         </svg>
                       </div>
                       <div>
-                        <h2 id="trade-tracking-heading" className="text-xl font-bold text-white">{allItems.length > 0 ? 'Tracking' : 'Cash Receipt'}</h2>
+                        <h2 id="trade-tracking-heading" className="text-2xl font-bold text-white">{allItems.length > 0 ? 'Tracking' : 'Cash Receipt'}</h2>
                         <p className="text-sm text-gray-300">{allItems.length > 0 ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.' : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}</p>
                       </div>
                       <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">{allItems.length > 0 ? 'TRACKING SUBMITTED' : 'PAYMENT SENT'}</span>

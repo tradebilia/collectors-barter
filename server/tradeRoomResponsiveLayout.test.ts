@@ -47,6 +47,7 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain("currentStage === 'shipped' ? 'flex flex-1 min-w-0 items-center gap-3'");
     expect(warRoomSource).toContain("currentStage === 'shipped' ? 'text-base'");
     expect(warRoomSource).toContain('text-white font-bold text-2xl">Shipping Information</h2>');
+    expect(warRoomSource).toContain('text-2xl font-bold text-white">Items Being Traded</h2>');
     expect(warRoomSource).toContain('className="space-y-3 text-base"');
     expect(warRoomSource).toContain('bg-[#0f0f1a] border border-white/40 rounded-xl p-6');
     expect(warRoomSource).toContain('formatTradeRoomPhone(contact.contactPhone)');
@@ -92,11 +93,15 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain('id="trade-tracking-heading"');
     expect(warRoomSource).toContain('aria-labelledby="trade-reviews-heading"');
     expect(warRoomSource).toContain('id="trade-reviews-heading"');
-    expect(warRoomSource).toContain('text-xl font-bold text-white');
+    expect(warRoomSource).toContain('id="trade-tracking-heading" className="text-2xl font-bold text-white"');
     expect(warRoomSource).toContain('border border-blue-400/70 bg-[#1a2947] p-6 shadow-2xl ring-1 ring-blue-400/20');
     expect(warRoomSource).toContain('text-2xl font-bold text-white');
     expect(warRoomSource).toContain('bg-white p-3 text-xl leading-relaxed text-slate-900 placeholder:text-slate-500');
     expect(warRoomSource).toContain('<header className="relative border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">');
+    expect(warRoomSource).toContain("currentStage === 'completed' && (");
+    expect(warRoomSource).toContain('aria-label="Print Trade Recap"');
+    expect(warRoomSource).toContain("window.open(`/trade-print/${proposalId}`, '_blank', 'noopener,noreferrer')");
+    expect(warRoomSource).toContain('xl:absolute xl:left-6 xl:top-1/2 xl:z-10 xl:mb-0 xl:-translate-y-1/2');
     expect(warRoomSource).toContain('xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2');
     expect(warRoomSource).not.toContain('xl:translate-x-[82px]');
   });
