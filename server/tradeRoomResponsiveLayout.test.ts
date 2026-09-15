@@ -104,6 +104,9 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(warRoomSource).toContain("currentStage === 'completed' && (");
     expect(warRoomSource).toContain('aria-label="Print Trade Recap"');
     expect(warRoomSource).toContain("window.open(`/trade-print/${proposalId}`, '_blank', 'noopener,noreferrer')");
+    expect(warRoomSource).toContain('border border-sky-200 bg-sky-300');
+    expect(warRoomSource).toContain("currentStage === 'completed' ? 'border-slate-300 bg-slate-200 text-slate-900 hover:bg-slate-100'");
+    expect(warRoomSource).toContain("currentStage !== 'completed' && <button type=\"button\" onClick={downloadCurrentReceipt}");
     expect(warRoomSource).toContain('xl:absolute xl:left-6 xl:top-1/2 xl:z-10 xl:mb-0 xl:-translate-y-1/2');
     expect(warRoomSource).toContain('xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2');
     expect(warRoomSource).not.toContain('xl:translate-x-[82px]');

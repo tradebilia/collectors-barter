@@ -1006,7 +1006,7 @@ export default function WarRoom() {
           <button
             type="button"
             onClick={() => window.open(`/trade-print/${proposalId}`, '_blank', 'noopener,noreferrer')}
-            className="mb-2 inline-flex items-center gap-2 rounded-lg border border-white bg-white px-4 py-2 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 xl:absolute xl:left-6 xl:top-1/2 xl:z-10 xl:mb-0 xl:-translate-y-1/2"
+            className="mb-2 inline-flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-300 px-4 py-2 text-sm font-semibold text-sky-950 shadow-sm transition hover:bg-sky-200 xl:absolute xl:left-6 xl:top-1/2 xl:z-10 xl:mb-0 xl:-translate-y-1/2"
             aria-label="Print Trade Recap"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-4 w-4" aria-hidden="true">
@@ -1058,7 +1058,7 @@ export default function WarRoom() {
           <div className="flex min-w-0 shrink-0 items-center gap-3 xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2">
             <button
               onClick={() => navigate('/trade-hub')}
-              className="px-4 py-2 border border-white bg-white text-slate-900 rounded-lg hover:bg-slate-100 transition text-sm flex items-center gap-2 shadow-sm"
+              className={`px-4 py-2 rounded-lg border text-sm shadow-sm transition flex items-center gap-2 ${currentStage === 'completed' ? 'border-slate-300 bg-slate-200 text-slate-900 hover:bg-slate-100' : 'border-white bg-white text-slate-900 hover:bg-slate-100'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" />
@@ -2712,7 +2712,7 @@ export default function WarRoom() {
           </div>
           {receiptAvailable && (
             <section aria-label="Trade documents and support actions" className="flex w-full flex-wrap items-center justify-center gap-2 rounded-xl border border-blue-500/15 bg-[#0a0a14] p-2 sm:justify-start sm:p-3">
-              <button type="button" onClick={downloadCurrentReceipt} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:w-auto"><span aria-hidden="true">↓</span> Download Trade Receipt (PDF)</button>
+              {currentStage !== 'completed' && <button type="button" onClick={downloadCurrentReceipt} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-500/40 bg-blue-900/20 px-3 py-2 text-xs font-semibold text-blue-200 transition hover:bg-blue-900/40 sm:w-auto"><span aria-hidden="true">↓</span> Download Trade Receipt (PDF)</button>}
               {canReportTradeIssue && (
                 <Tooltip>
                   <TooltipTrigger asChild>
