@@ -2019,3 +2019,4 @@
 - [x] Match the Leave Trade Room button to the uploaded reference position in the far-right header action area while keeping it contained, separated from Step 7, and responsive.
 - [x] Correct the Leave Trade Room header anchor and spacing to match the latest uploaded reference, removing the arbitrary offset while preserving responsive behavior and functionality.
 - [x] Anchor the Leave Trade Room button directly to the wide-desktop header’s far-right screen edge, matching the latest reference instead of the internal stepper layout.
+- [x] Contain the Trade Room Step 6 Review stage at 100% browser zoom so more review content is visible on one page without horizontal scrolling or changes to earlier stages.

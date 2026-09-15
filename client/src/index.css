@@ -360,7 +360,8 @@
      without creating document overflow. */
   .trade-room-shell.trade-room-finalize-whole,
   .trade-room-shell.trade-room-shipping-whole,
-  .trade-room-shell.trade-room-confirm-whole {
+  .trade-room-shell.trade-room-confirm-whole,
+  .trade-room-shell.trade-room-review-whole {
     position: fixed;
     inset: 0;
     z-index: 40;
@@ -407,7 +408,10 @@
   #root:has(.trade-room-shell.trade-room-shipping-whole),
   html:has(.trade-room-shell.trade-room-confirm-whole),
   body:has(.trade-room-shell.trade-room-confirm-whole),
-  #root:has(.trade-room-shell.trade-room-confirm-whole) {
+  #root:has(.trade-room-shell.trade-room-confirm-whole),
+  html:has(.trade-room-shell.trade-room-review-whole),
+  body:has(.trade-room-shell.trade-room-review-whole),
+  #root:has(.trade-room-shell.trade-room-review-whole) {
     overflow: hidden;
     background: #0f0f1a;
   }

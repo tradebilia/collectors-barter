@@ -990,7 +990,7 @@ export default function WarRoom() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : currentStage === 'shipped' ? 'trade-room-confirm-whole' : ''}`}>
+    <div className={`trade-room-shell flex min-h-[100dvh] flex-col overflow-x-hidden bg-[#0f0f1a] ${currentStage === 'accepted' ? 'trade-room-finalize-whole' : currentStage === 'shipping' ? 'trade-room-shipping-whole' : currentStage === 'shipped' ? 'trade-room-confirm-whole' : currentStage === 'review' ? 'trade-room-review-whole' : ''}`}>
       {/* Top Bar — compact mode (no search) */}
       <TopBar hideSearch />
       {isAdminReadOnly && (
