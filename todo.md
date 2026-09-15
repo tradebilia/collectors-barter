@@ -2036,3 +2036,4 @@
 - [x] Match Items Being Traded, Shipping Information, and Tracking heading typography to the current Reviews title size for consistent Trade Room section hierarchy.
 
 - [ ] Future enhancement: evaluate and design member-to-member live chat entry points on public profiles and item detail pages, including online presence, offline messaging fallback, item context, notifications, blocking/reporting, rate limits, and separation from formal Trade Room proposals.
+- [ ] Future discussion: design a Wanted List where members can save desired items or collectible targets, define matching against available inventory, configure alerts, set privacy controls, and connect matches to trade proposals without implementing it yet.
