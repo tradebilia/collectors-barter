@@ -2034,3 +2034,5 @@
 - [x] Expand Trade Hub sorting beyond Last Active with accurate, useful trade-order options while preserving the current default and responsive controls.
 - [x] In Step 7, remove Download Trade Receipt, style Print Trade Recap light blue, and style Leave Trade Room light gray while preserving visibility rules, behavior, and responsive layout.
 - [x] Match Items Being Traded, Shipping Information, and Tracking heading typography to the current Reviews title size for consistent Trade Room section hierarchy.
+
+- [ ] Future enhancement: evaluate and design member-to-member live chat entry points on public profiles and item detail pages, including online presence, offline messaging fallback, item context, notifications, blocking/reporting, rate limits, and separation from formal Trade Room proposals.
