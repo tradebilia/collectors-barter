@@ -21,6 +21,51 @@ import { formatItemValue } from "@/lib/tradebilia";
 const TRADE_HUB_LOGO_URL = "https://assets.tradebilia.com/TradeHub_5b3c2442.svg";
 
 type TradeFolder = 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
+type TradeSort = 'lastActive' | 'newest' | 'oldest' | 'partner' | 'reference';
+
+const tradeSortLabels: Record<TradeSort, string> = {
+  lastActive: 'Last Active',
+  newest: 'Newest Trade',
+  oldest: 'Oldest Trade',
+  partner: 'Partner A–Z',
+  reference: 'Trade # A–Z',
+};
+
+type SortableTrade = {
+  lastActivityAt?: unknown;
+  createdAt?: unknown;
+  tradeReferenceNumber?: string | null;
+  otherUser?: { displayName?: string | null; username?: string | null } | null;
+};
+
+function tradeTimestamp(value: unknown): number {
+  if (!value) return 0;
+  const timestamp = new Date(String(value)).getTime();
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+export function sortTradeHubTrades<T extends SortableTrade>(trades: T[], sort: TradeSort): T[] {
+  return [...trades].sort((left, right) => {
+    const lastActivityDifference = tradeTimestamp(right.lastActivityAt ?? right.createdAt) - tradeTimestamp(left.lastActivityAt ?? left.createdAt);
+
+    switch (sort) {
+      case 'newest':
+        return tradeTimestamp(right.createdAt) - tradeTimestamp(left.createdAt) || lastActivityDifference;
+      case 'oldest':
+        return tradeTimestamp(left.createdAt) - tradeTimestamp(right.createdAt) || lastActivityDifference;
+      case 'partner': {
+        const leftName = left.otherUser?.displayName || left.otherUser?.username || '';
+        const rightName = right.otherUser?.displayName || right.otherUser?.username || '';
+        return leftName.localeCompare(rightName) || lastActivityDifference;
+      }
+      case 'reference':
+        return String(left.tradeReferenceNumber || '').localeCompare(String(right.tradeReferenceNumber || '')) || lastActivityDifference;
+      case 'lastActive':
+      default:
+        return lastActivityDifference;
+    }
+  });
+}
 
 const folderLabels: Record<TradeFolder, string> = {
   proposal: 'Proposals',
@@ -119,6 +164,7 @@ export default function TradeHub() {
   const [activeFolder, setActiveFolder] = useState<TradeFolder>('proposal');
   const [selectedTradeId, setSelectedTradeId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<TradeSort>('lastActive');
 
   // tRPC queries
   const tradeAlertsQuery = trpc.tradeFlow.getTradeAlerts.useQuery(
@@ -145,6 +191,7 @@ export default function TradeHub() {
       t.listing?.title?.toLowerCase().includes(q)
     );
   }) || [];
+  const sortedFilteredTrades = sortTradeHubTrades(filteredTrades, sortBy);
 
   const markAlertsAsReadMutation = trpc.tradeFlow.markAlertsAsRead.useMutation({
     onSuccess: () => {
@@ -236,19 +283,32 @@ export default function TradeHub() {
               <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
                 <h2 className="flex items-center gap-2 text-white font-semibold text-sm uppercase tracking-wider">
                   {folderLabels[activeFolder]}
-                  {filteredTrades.length > 0 && (
+                  {sortedFilteredTrades.length > 0 && (
                     activeFolder === "completed" ? (
                       <span className="inline-flex h-6 min-w-7 shrink-0 items-center justify-center rounded-full border border-blue-300/70 bg-blue-600 px-2 font-sans text-[13px] font-semibold leading-none text-white align-middle">
-                        {filteredTrades.length}
+                        {sortedFilteredTrades.length}
                       </span>
                     ) : (
                       <span className="ml-2 rounded-full bg-blue-600 px-2 py-0.5 text-xs text-white">
-                        {filteredTrades.length}
+                        {sortedFilteredTrades.length}
                       </span>
                     )
                   )}
                 </h2>
-                <span className="text-xs text-gray-400">Sort by: Last Active</span>
+                <label className="flex items-center gap-2 text-xs text-gray-300" htmlFor="trade-hub-sort">
+                  <span className="hidden sm:inline">Sort:</span>
+                  <select
+                    id="trade-hub-sort"
+                    aria-label="Sort trades"
+                    value={sortBy}
+                    onChange={(event) => setSortBy(event.target.value as TradeSort)}
+                    className="rounded-md border border-blue-300/40 bg-[#0f1730] px-2 py-1 text-xs font-medium text-white focus:border-blue-300 focus:outline-none"
+                  >
+                    {(Object.keys(tradeSortLabels) as TradeSort[]).map((sort) => (
+                      <option key={sort} value={sort} className="bg-[#0f1730] text-white">{tradeSortLabels[sort]}</option>
+                    ))}
+                  </select>
+                </label>
               </div>
 
               <div className="divide-y divide-gray-700 max-h-[600px] overflow-y-auto">
@@ -257,13 +317,13 @@ export default function TradeHub() {
                     <div className="animate-spin inline-block w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full mb-2"></div>
                     <p className="text-sm">Loading trades...</p>
                   </div>
-                ) : filteredTrades.length === 0 ? (
+                ) : sortedFilteredTrades.length === 0 ? (
                   <div className="text-center text-gray-400 py-12 px-4">
                     <p className="text-lg mb-1">No trades in this folder</p>
                     <p className="text-sm">Start trading by browsing the marketplace!</p>
                   </div>
                 ) : (
-                  filteredTrades.map((trade: any) => (
+                  sortedFilteredTrades.map((trade: any) => (
                     <button
                       key={trade.id}
                       onClick={() => handleSelectTrade(trade.id)}

@@ -31,5 +31,8 @@ describe("Trade Hub completed exchange preview", () => {
     expect(hubSource).toContain("bg-white px-4 py-2 text-gray-900");
     expect(hubSource).toContain("from-blue-600 to-cyan-500");
     expect(hubSource).toContain("activeFolder === 'completed'");
+    expect(hubSource).toContain('aria-label="Sort trades"');
+    expect(hubSource).toContain("const [sortBy, setSortBy] = useState<TradeSort>('lastActive');");
+    expect(hubSource).toContain('sortedFilteredTrades.map');
   });
 });

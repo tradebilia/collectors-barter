@@ -2031,4 +2031,5 @@
 - [x] Add a completed-trade-only Print Trade Recap button to the top-left Trade Steps header using existing participant-authorized recap data.
 - [x] Replace the outdated Step 6 Tracking description with completed-trade delivery-record wording while preserving tracking details and earlier-stage guidance.
 - [x] Apply Step 7 Complete-stage-only 80% internal visual scaling so more post-review content fits at normal browser zoom without changing Steps 3–6 or creating overflow.
+- [x] Expand Trade Hub sorting beyond Last Active with accurate, useful trade-order options while preserving the current default and responsive controls.
 - [x] Match Items Being Traded, Shipping Information, and Tracking heading typography to the current Reviews title size for consistent Trade Room section hierarchy.
