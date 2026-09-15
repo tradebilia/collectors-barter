@@ -2025,3 +2025,4 @@
 - [x] Create a visual-only Step 6 review-rating layout mockup that keeps each criterion label and its star control together; do not change the live interface without approval.
 - [x] Reformat only the current Step 6 rating section so each label and star selector stay together, while retaining all existing Review-stage content, controls, and behavior.
 - [x] Separate Step 6 Tracking and Reviews into distinct visible sections while retaining all existing content, review gating, and no-scroll containment.
+- [x] Increase Step 6 section readability, make the review text area white, enlarge section titles, and give Reviews stronger visual emphasis without changing content, gating, or containment.

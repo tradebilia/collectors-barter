@@ -11,7 +11,7 @@ describe("Trade Room responsive completed-trade layout", () => {
   it("keeps receipt and trade-issue actions in a separate full-width flow section before tracking", () => {
     expect(warRoomSource).toContain('aria-label="Trade documents and support actions"');
     expect(warRoomSource).toContain('flex w-full flex-wrap items-center justify-center gap-2 rounded-xl');
-    expect(warRoomSource).toContain('relative z-0 w-full flex-none bg-[#16213e]');
+    expect(warRoomSource).toContain('relative z-0 w-full flex-none rounded-xl border border-gray-600 bg-[#16213e] p-6 shadow-xl');
     expect(warRoomSource).toContain('Document a concern or add supporting details. This does not pause the trade.');
     expect(warRoomSource).toContain('Pause this trade and ask Tradebilia to review it. Your partner will be notified.');
     expect(warRoomSource).toContain('TooltipTrigger asChild');
@@ -81,17 +81,21 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('.trade-room-exchange-arrow');
     expect(stylesheet).toContain('.home-trade-direction-icon');
     expect(stylesheet).toContain('transform: rotate(90deg);');
-    expect(warRoomSource).toContain('text-gray-200 text-base font-mono font-semibold flex-1 break-all');
-    expect(warRoomSource).toContain('text-white text-lg font-semibold');
+    expect(warRoomSource).toContain('flex-1 break-all font-mono text-lg font-semibold text-gray-100');
+    expect(warRoomSource).toContain('min-w-0 flex-1 truncate text-base font-semibold text-gray-100');
     expect(warRoomSource).toContain('const hasAllReviewRatings = Object.values(reviewRatings).every((rating) => rating > 0);');
     expect(warRoomSource).toContain("hasAllReviewRatings ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border border-slate-500 bg-slate-700 text-slate-300 hover:bg-slate-600'");
     expect(warRoomSource).toContain('grid grid-cols-1 gap-2 sm:grid-cols-2');
-    expect(warRoomSource).toContain('rounded-lg border border-blue-500/40 bg-[#16213e] px-3 py-2.5');
+    expect(warRoomSource).toContain('rounded-lg border border-blue-400/50 bg-[#16213e] px-4 py-3');
     expect(warRoomSource).toContain('flex shrink-0 gap-1');
     expect(warRoomSource).toContain('aria-labelledby="trade-tracking-heading"');
     expect(warRoomSource).toContain('id="trade-tracking-heading"');
     expect(warRoomSource).toContain('aria-labelledby="trade-reviews-heading"');
     expect(warRoomSource).toContain('id="trade-reviews-heading"');
+    expect(warRoomSource).toContain('text-xl font-bold text-white');
+    expect(warRoomSource).toContain('border border-blue-400/70 bg-[#1a2947] p-6 shadow-2xl ring-1 ring-blue-400/20');
+    expect(warRoomSource).toContain('text-2xl font-bold text-white');
+    expect(warRoomSource).toContain('bg-white p-3 text-sm text-slate-900 placeholder:text-slate-500');
     expect(warRoomSource).toContain('<header className="relative border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">');
     expect(warRoomSource).toContain('xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2');
     expect(warRoomSource).not.toContain('xl:translate-x-[82px]');

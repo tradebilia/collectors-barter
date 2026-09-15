@@ -1522,7 +1522,7 @@ export default function WarRoom() {
                 {/* ── SHIPPED / COMPLETED: Compact tracking summary + receipt confirmation ── */}
                 {(currentStage === 'shipped' || currentStage === 'review' || currentStage === 'completed') && (
                   <>
-                    <section aria-labelledby="trade-tracking-heading" className="relative z-0 w-full flex-none bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
+                    <section aria-labelledby="trade-tracking-heading" className="relative z-0 w-full flex-none rounded-xl border border-gray-600 bg-[#16213e] p-6 shadow-xl">
                     <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center">
                       <div className="w-9 h-9 rounded-lg bg-green-900/30 border border-green-500/20 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-green-400">
@@ -1530,22 +1530,22 @@ export default function WarRoom() {
                         </svg>
                       </div>
                       <div>
-                        <h2 id="trade-tracking-heading" className="text-white font-bold text-lg">{allItems.length > 0 ? 'Tracking' : 'Cash Receipt'}</h2>
-                        <p className="text-gray-400 text-xs">{allItems.length > 0 ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.' : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}</p>
+                        <h2 id="trade-tracking-heading" className="text-xl font-bold text-white">{allItems.length > 0 ? 'Tracking' : 'Cash Receipt'}</h2>
+                        <p className="text-sm text-gray-300">{allItems.length > 0 ? 'Follow the submitted tracking while you wait to receive your items and any cash owed.' : 'No items require shipping for this cash-only agreement. Confirm cash receipt once it arrives.'}</p>
                       </div>
                       <span className="self-start px-3 py-1 bg-green-500/20 border border-green-500/30 text-green-400 text-xs font-bold rounded-full sm:ml-auto sm:self-auto">{allItems.length > 0 ? 'TRACKING SUBMITTED' : 'PAYMENT SENT'}</span>
                     </div>
                     {allItems.length > 0 && <div className="grid grid-cols-1 gap-4 mb-4 lg:grid-cols-2">
                       <div className="min-w-0">
-                        <p className="text-blue-400 text-xs font-bold mb-2">Your Tracking</p>
+                        <p className="mb-2 text-sm font-bold text-blue-300">Your Tracking</p>
                         {myTracking.map((t: any, i: number) => {
                           const url = getTrackingUrl(t.carrier, t.trackingNumber);
                           return (
                             <div key={i} className="bg-green-900/10 border border-green-500/20 rounded-lg p-2 mb-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-green-400 text-[10px] font-bold">{t.carrier}</span>
-                                <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
-                                <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
+                                <span className="text-xs font-bold text-green-400">{t.carrier}</span>
+                                <span className="min-w-0 flex-1 truncate text-base font-semibold text-gray-100">{getTrackingItemTitle(t)}</span>
+                                <span className="flex-1 break-all font-mono text-lg font-semibold text-gray-100">{t.trackingNumber}</span>
                                 {renderStep5ShipmentStatus(t, Number(t.listingId ?? t.itemId ?? t.id ?? i))}
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
@@ -1554,15 +1554,15 @@ export default function WarRoom() {
                         })}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-gray-300 text-xs font-bold mb-2">{theirDisplayName}'s Tracking</p>
+                        <p className="mb-2 text-sm font-bold text-gray-100">{theirDisplayName}'s Tracking</p>
                         {theirTracking.map((t: any, i: number) => {
                           const url = getTrackingUrl(t.carrier, t.trackingNumber);
                           return (
                             <div key={i} className="bg-blue-900/10 border border-blue-500/20 rounded-lg p-2 mb-1">
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-blue-400 text-[10px] font-bold">{t.carrier}</span>
-                                <span className="text-gray-200 text-sm font-semibold flex-1 min-w-0 truncate">{getTrackingItemTitle(t)}</span>
-                                <span className="text-gray-200 text-base font-mono font-semibold flex-1 break-all">{t.trackingNumber}</span>
+                                <span className="text-xs font-bold text-blue-300">{t.carrier}</span>
+                                <span className="min-w-0 flex-1 truncate text-base font-semibold text-gray-100">{getTrackingItemTitle(t)}</span>
+                                <span className="flex-1 break-all font-mono text-lg font-semibold text-gray-100">{t.trackingNumber}</span>
                                 {renderStep5ShipmentStatus(t, Number(t.listingId ?? t.itemId ?? t.id ?? i))}
                                 {url && <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-400 text-xs hover:underline shrink-0">Track →</a>}
                               </div>
@@ -1597,20 +1597,20 @@ export default function WarRoom() {
 
                     {/* Completed — leave review */}
                     {(currentStage === 'review' || currentStage === 'completed') && (
-                      <section aria-labelledby="trade-reviews-heading" className="relative z-0 mt-4 w-full flex-none rounded-xl border border-gray-600 bg-[#16213e] p-5 shadow-xl">
-                        <h2 id="trade-reviews-heading" className="mb-1 text-lg font-bold text-white">Reviews</h2>
-                        <p className="text-white text-sm font-bold mb-3">Leave a Review for {theirDisplayName}</p>
+                      <section aria-labelledby="trade-reviews-heading" className="relative z-0 mt-4 w-full flex-none rounded-xl border border-blue-400/70 bg-[#1a2947] p-6 shadow-2xl ring-1 ring-blue-400/20">
+                        <h2 id="trade-reviews-heading" className="mb-1 text-2xl font-bold text-white">Reviews</h2>
+                        <p className="mb-4 text-lg font-bold text-white">Leave a Review for {theirDisplayName}</p>
                         {myReview ? (
                           <p className="rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2 text-xs text-green-300">✓ Your review has been submitted and is locked for this trade.</p>
                         ) : <>
                         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
-                            <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-blue-500/40 bg-[#16213e] px-3 py-2.5">
-                              <p className="text-xs font-medium text-gray-100 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                            <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-blue-400/50 bg-[#16213e] px-4 py-3">
+                              <p className="text-sm font-semibold text-gray-50 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
                               <div className="flex shrink-0 gap-1">
                                 {[1,2,3,4,5].map(star => (
                                   <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
-                                    className={`text-lg ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
+                                    className={`text-xl ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
                                 ))}
                               </div>
                             </div>
@@ -1620,7 +1620,7 @@ export default function WarRoom() {
                           placeholder="Write a review (optional)..."
                           value={reviewText}
                           onChange={(e) => setReviewText(e.target.value)}
-                          className="w-full mt-2 bg-[#0f0f1a] border border-gray-600 text-white text-xs rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none"
+                          className="mt-3 w-full resize-none rounded-lg border border-blue-300 bg-white p-3 text-sm text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
                           rows={3}
                         />
                         </>}
