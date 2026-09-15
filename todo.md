@@ -2022,4 +2022,5 @@
 - [x] Contain the Trade Room Step 6 Review stage at 100% browser zoom so more review content is visible on one page without horizontal scrolling or changes to earlier stages.
 - [x] Keep the Step 6 Submit Review button visually subdued until all four ratings are selected, then highlight it without changing submission validation.
 - [x] Disable Step 6 Submit Review until all four ratings are selected, then enable and highlight it as the only active submission state.
-- [ ] Create a visual-only Step 6 review-rating layout mockup that keeps each criterion label and its star control together; do not change the live interface without approval.
+- [x] Create a visual-only Step 6 review-rating layout mockup that keeps each criterion label and its star control together; do not change the live interface without approval.
+- [x] Reformat only the current Step 6 rating section so each label and star selector stay together, while retaining all existing Review-stage content, controls, and behavior.

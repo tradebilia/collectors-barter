@@ -1599,17 +1599,19 @@ export default function WarRoom() {
                         {myReview ? (
                           <p className="rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2 text-xs text-green-300">✓ Your review has been submitted and is locked for this trade.</p>
                         ) : <>
-                        {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
-                          <div key={key} className="flex items-center justify-between mb-2">
-                            <p className="text-gray-400 text-xs capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
-                            <div className="flex gap-1">
-                              {[1,2,3,4,5].map(star => (
-                                <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
-                                  className={`text-lg ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
-                              ))}
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
+                            <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-blue-500/40 bg-[#16213e] px-3 py-2.5">
+                              <p className="text-xs font-medium text-gray-100 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                              <div className="flex shrink-0 gap-1">
+                                {[1,2,3,4,5].map(star => (
+                                  <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
+                                    className={`text-lg ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
+                                ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                         <textarea
                           placeholder="Write a review (optional)..."
                           value={reviewText}
