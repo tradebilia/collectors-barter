@@ -2364,7 +2364,7 @@ export default function WarRoom() {
                   <input
                     type="text"
                     placeholder="Type a message..."
-                    className="flex-1 min-w-0 bg-transparent pr-24 text-gray-900 text-sm focus:outline-none placeholder:text-gray-400"
+                    className="flex-1 min-w-0 bg-transparent pr-24 text-base text-gray-900 focus:outline-none placeholder:text-gray-400"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
