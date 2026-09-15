@@ -214,6 +214,7 @@ export default function WarRoom() {
   // Review/rating form for Stage 5
   const [reviewRatings, setReviewRatings] = useState({ tradeExperience: 0, itemCondition: 0, communication: 0, shippingSpeed: 0 });
   const [reviewText, setReviewText] = useState('');
+  const hasAllReviewRatings = Object.values(reviewRatings).every((rating) => rating > 0);
   const [messageInput, setMessageInput] = useState('');
   const [declineReason, setDeclineReason] = useState('');
   const [showDeclineModal, setShowDeclineModal] = useState(false);
@@ -2669,7 +2670,7 @@ export default function WarRoom() {
                   review: reviewText || undefined,
                 })}
                 disabled={leaveReviewMutation.isPending || Object.values(reviewRatings).every(v => v === 0)}
-                className="px-8 py-3 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2"
+                className={`px-8 py-3 rounded-lg font-bold transition disabled:opacity-50 flex items-center gap-2 ${hasAllReviewRatings ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border border-slate-500 bg-slate-700 text-slate-300 hover:bg-slate-600'}`}
               >
                 ★ Submit Review
               </button>

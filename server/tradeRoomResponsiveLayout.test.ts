@@ -83,6 +83,8 @@ describe("Trade Room responsive completed-trade layout", () => {
     expect(stylesheet).toContain('transform: rotate(90deg);');
     expect(warRoomSource).toContain('text-gray-200 text-base font-mono font-semibold flex-1 break-all');
     expect(warRoomSource).toContain('text-white text-lg font-semibold');
+    expect(warRoomSource).toContain('const hasAllReviewRatings = Object.values(reviewRatings).every((rating) => rating > 0);');
+    expect(warRoomSource).toContain("hasAllReviewRatings ? 'bg-yellow-600 hover:bg-yellow-700 text-white' : 'border border-slate-500 bg-slate-700 text-slate-300 hover:bg-slate-600'");
     expect(warRoomSource).toContain('<header className="relative border-b border-gray-600 bg-[#16213e] px-4 py-3 lg:px-6">');
     expect(warRoomSource).toContain('xl:absolute xl:right-[68px] xl:top-1/2 xl:z-10 xl:-translate-y-1/2');
     expect(warRoomSource).not.toContain('xl:translate-x-[82px]');
