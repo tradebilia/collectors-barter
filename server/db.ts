@@ -1339,6 +1339,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
   const ratingMap = await getRatingStatsMap([detailCard[0].ownerId]);
   const ownerRating = ratingMap.get(detailCard[0].ownerId) ?? { averageRating: 0, reviewCount: 0 };
   const ownerEtsyVerification = getPublicEtsyVerification(ownerProfileRows[0]?.connectedAccounts);
+  const ownerWhatnotReference = getPublicWhatnotReference(ownerProfileRows[0]?.connectedAccounts);
 
   return {
     id: detailCard[0].id,
@@ -1368,6 +1369,7 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       linkedinVerified: !!(ownerUserRows[0]?.linkedinId),
       merchantVerified: ownerUserRows[0]?.merchantVerified === 1,
       etsyVerified: ownerEtsyVerification.etsyVerified,
+      whatnotReference: ownerWhatnotReference,
     },
     ownerRating,
     photos: photoRows.map(p => ({

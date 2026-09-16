@@ -2048,3 +2048,7 @@
 - [x] Implement a separate Whatnot Reference section on the Profile page’s Integrations tab with a protected Apify-backed refresh flow for aggregate public seller data only; exclude individual review text, reviewer identities, private email, marketplace inventory, and pricing.
 - [x] Resize the Whatnot logo in the Profile page Integrations tab to match the visual scale of the other provider logos without changing the artwork or integration behavior.
 - [x] Fix Whatnot Reference refresh failure: send the Apify actor mode as lowercase `seller` instead of `Seller`, and add regression coverage for the accepted input value.
+- [x] Fix missing Whatnot Reference in the public profile Verified Accounts area by tracing saved data, public serialization, and rendering, then add regression coverage.
+- [x] Add the aggregate-only Whatnot Reference card to item detail owner information, with the same Public data label and no individual reviews, private email, listings, or pricing.
+- [x] Ensure the Whatnot Reference chip and aggregate details appear on the public profile Verified Accounts area after a successful refresh; do not include item-detail work in this scope.
+- [x] Fix the confirmed missing Whatnot Reference on the public profile Verified Accounts area and item detail owner verification strip, then validate both surfaces with aggregate-only data.

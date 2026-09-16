@@ -942,7 +942,7 @@ export default function PublicProfile() {
                     </div>
                     <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-500">These accounts were connected through their provider’s authorization flow. Details below are limited to information the provider makes available for public trust signals.</p>
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{[user.ebayUsername, user.facebookId, user.linkedinId, user.etsyVerified].filter(Boolean).length} connected</span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{[user.ebayUsername, user.facebookId, user.linkedinId, user.etsyVerified, user.whatnotReference].filter(Boolean).length} connected</span>
                 </div>
               </div>
 
@@ -1068,9 +1068,42 @@ export default function PublicProfile() {
                     </div>
                   </section>
                 )}
+
+                {user.whatnotReference && (
+                  <section className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm" aria-labelledby="verified-whatnot-heading">
+                    <div className="flex items-center justify-between border-b border-red-100 bg-red-50/70 px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-8 w-8 rounded object-contain" />
+                        <div>
+                          <h3 id="verified-whatnot-heading" className="text-sm font-black text-slate-950">Whatnot Reference</h3>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-red-700">Public data</p>
+                        </div>
+                      </div>
+                      <span className="rounded-full border border-red-200 bg-white/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-red-700">Reference</span>
+                    </div>
+                    <div className="space-y-4 p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-slate-900">{user.whatnotReference.displayName || `@${user.whatnotReference.username}`}</p>
+                          <p className="mt-1 text-[10px] font-semibold text-slate-500">@{user.whatnotReference.username}</p>
+                        </div>
+                        <a href={user.whatnotReference.profileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1.5 text-xs font-bold text-red-700 underline-offset-2 hover:underline">View Whatnot profile <ExternalLink className="h-3 w-3" /></a>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:grid-cols-3">
+                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.rating ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Rating</p></div>
+                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.reviewCount ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Reviews</p></div>
+                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.soldCount ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Sold</p></div>
+                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.followerCount ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Followers</p></div>
+                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.averageShippingTime ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Avg. shipping</p></div>
+                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.sellerStatus ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Seller status</p></div>
+                      </div>
+                      <p className="border-t border-slate-100 pt-3 text-[10px] leading-4 text-slate-500">Aggregate public profile data retrieved from Whatnot. This reference does not verify account ownership or include individual reviews.</p>
+                    </div>
+                  </section>
+                )}
               </div>
 
-              {!user.ebayUsername && !user.facebookId && !user.linkedinId && !user.etsyVerified && (
+              {!user.ebayUsername && !user.facebookId && !user.linkedinId && !user.etsyVerified && !user.whatnotReference && (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
                   <ShieldCheck className="mx-auto mb-3 h-8 w-8 text-slate-300" />
                   <p className="text-sm font-semibold">No external accounts have been verified yet.</p>

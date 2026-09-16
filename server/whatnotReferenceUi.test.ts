@@ -23,6 +23,24 @@ describe("Whatnot Reference surfaces", () => {
     expect(source).toContain("does not verify account ownership");
   });
 
+  it("serializes Whatnot Reference into the public profile payload", () => {
+    const source = read("server/routers.ts");
+    const profileStart = source.indexOf("getUserProfile: publicProcedure");
+    const profileEnd = source.indexOf("getUserListings:", profileStart);
+    const profileSource = source.slice(profileStart, profileEnd > profileStart ? profileEnd : undefined);
+    expect(profileSource).toContain("const whatnotReference = getPublicWhatnotReference(profileRow?.connectedAccounts)");
+    expect(profileSource).toContain("whatnotReference,");
+  });
+
+  it("adds Whatnot Reference to item-owner data and the item detail verification strip", () => {
+    const dbSource = read("server/db.ts");
+    const itemSource = read("client/src/pages/ItemDetail.tsx");
+    expect(dbSource).toContain("whatnotReference: ownerWhatnotReference");
+    expect(itemSource).toContain("listing.ownerProfile.whatnotReference");
+    expect(itemSource).toContain("Whatnot Reference");
+    expect(itemSource).toContain("Public Whatnot Reference");
+  });
+
   it("keeps the refresh workflow protected and server-side", () => {
     const source = read("server/routers.ts");
     expect(source).toContain("refreshWhatnotReference: protectedProcedure");

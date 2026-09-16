@@ -456,7 +456,7 @@ export default function ItemDetail() {
                 </div>
 
                 {/* Verified Platforms */}
-               {(listing.ownerProfile.merchantVerified || listing.ownerProfile.ebayVerified || listing.ownerProfile.facebookVerified || listing.ownerProfile.linkedinVerified || listing.ownerProfile.etsyVerified) && (
+               {(listing.ownerProfile.merchantVerified || listing.ownerProfile.ebayVerified || listing.ownerProfile.facebookVerified || listing.ownerProfile.linkedinVerified || listing.ownerProfile.etsyVerified || listing.ownerProfile.whatnotReference) && (
                  <div className="flex items-center gap-2 mt-4">
                    <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
                     {listing.ownerProfile.merchantVerified && (
@@ -486,6 +486,12 @@ export default function ItemDetail() {
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-orange-200 bg-orange-50 text-xs font-bold text-orange-700" title="Connected Etsy account">
                         <img src="/manus-storage/etsy-mark_2dee1a0f.png" alt="Etsy" className="h-3.5 w-3.5 rounded-sm object-contain" />
                         Etsy
+                      </span>
+                    )}
+                    {listing.ownerProfile.whatnotReference && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-red-200 bg-red-50 text-xs font-bold text-red-700" title="Public Whatnot Reference">
+                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-4 w-4 rounded-sm object-contain" />
+                        Whatnot Reference
                       </span>
                     )}
                   </div>
