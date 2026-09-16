@@ -2043,3 +2043,4 @@
 - [x] Evaluate the user-selected Apify actor `omgr8VWKxGZrtwQKJ` against alternative Whatnot seller/reference actors for fields, pricing, reliability, and fit for the consent-based Trust/References feature; do not enable or credential it until approved.
 - [x] Walk through setting up and running the selected `epicscrapers/whatnot-scraper` Apify actor for a one-profile seller/review test, without connecting it to Tradebilia yet.
 - [x] Run and compare a second controlled Whatnot Seller-mode test for `dovescollection` using the same Profile/Reviews-only settings and capped limits as the `toyota99` pilot.
+- [x] Evaluate additional Whatnot fields available through the selected actor and official access, especially whether email can be retrieved or used to match a Tradebilia account; classify fields by public/private sensitivity and recommend safe identity matching.
