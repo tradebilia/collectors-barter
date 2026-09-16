@@ -1235,30 +1235,22 @@ export default function AccountSettings() {
 
                       {whatnotReferenceQuery.data ? (
                         <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                              <p className="font-semibold text-slate-950">{whatnotReferenceQuery.data.displayName || `@${whatnotReferenceQuery.data.username}`}</p>
-                              <p className="text-xs text-slate-500">@{whatnotReferenceQuery.data.username} · refreshed {new Date(whatnotReferenceQuery.data.refreshedAt).toLocaleString()}</p>
+                              <p className="font-semibold text-slate-950">Whatnot Reference connected</p>
+                              <p className="text-xs text-slate-500">@{whatnotReferenceQuery.data.username} · last refreshed {new Date(whatnotReferenceQuery.data.refreshedAt).toLocaleString()}</p>
                             </div>
                             <a href={whatnotReferenceQuery.data.profileUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-red-700 underline underline-offset-2">View Whatnot profile</a>
                           </div>
-                          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
-                            {[
-                              ["Rating", whatnotReferenceQuery.data.rating ?? "—"],
-                              ["Reviews", whatnotReferenceQuery.data.reviewCount ?? "—"],
-                              ["Sold", whatnotReferenceQuery.data.soldCount ?? "—"],
-                              ["Followers", whatnotReferenceQuery.data.followerCount ?? "—"],
-                              ["Avg. shipping", whatnotReferenceQuery.data.averageShippingTime ?? "—"],
-                            ].map(([label, value]) => (
-                              <div key={label} className="rounded-md bg-slate-50 px-2 py-2 text-center">
-                                <p className="text-sm font-bold text-slate-950">{value}</p>
-                                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
-                              </div>
-                            ))}
-                          </div>
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
-                            <p className="text-xs text-slate-500">Aggregate reputation only. Individual reviews, reviewer identities, email, listings, and pricing are not imported.</p>
-                            <Button type="button" variant="ghost" size="sm" className="rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
+                            <p className="text-xs text-slate-500">Detailed reputation data is displayed on the public profile’s Verified Accounts area.</p>
+                            <div className="flex items-center gap-2">
+                              <Button type="button" className="rounded-lg bg-blue-600 text-white hover:bg-blue-700" disabled={!whatnotUsername.trim() || refreshWhatnotReferenceMutation.isPending} onClick={() => refreshWhatnotReferenceMutation.mutate({ username: whatnotUsername.trim() })}>
+                                {refreshWhatnotReferenceMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Refresh Reference
+                              </Button>
+                              <Button type="button" variant="ghost" size="sm" className="rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
+                            </div>
                           </div>
                         </div>
                       ) : null}

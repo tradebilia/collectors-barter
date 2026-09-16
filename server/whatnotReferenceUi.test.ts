@@ -5,13 +5,14 @@ import { resolve } from "node:path";
 const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8");
 
 describe("Whatnot Reference surfaces", () => {
-  it("uses a separate aggregate-only settings section", () => {
+  it("keeps Profile Integrations focused on connection management", () => {
     const source = read("client/src/pages/AccountSettings.tsx");
     expect(source).toContain("Whatnot Reference");
     expect(source).toContain("h-16 w-16 rounded-xl object-contain");
     expect(source).toContain("trpc.market.refreshWhatnotReference.useMutation");
-    expect(source).toContain("Aggregate reputation only");
-    expect(source).toContain("Individual reviews, reviewer identities, email, listings, and pricing are not imported.");
+    expect(source).toContain("Detailed reputation data is displayed on the public profile’s Verified Accounts area.");
+    expect(source).toContain("Refresh Reference");
+    expect(source).toContain("Disconnect");
     expect(source).not.toContain("WhatnotConnection");
   });
 

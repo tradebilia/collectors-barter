@@ -2054,3 +2054,4 @@
 - [x] Fix the confirmed missing Whatnot Reference on the public profile Verified Accounts area and item detail owner verification strip, then validate both surfaces with aggregate-only data.
 - [x] Restyle the Whatnot Reference Integrations controls so Refresh Reference is blue and Disconnect is red without changing their behavior or loading states.
 - [x] Match the Whatnot Reference Disconnect button to the existing solid red-background, white-text account disconnect style while keeping Refresh Reference blue.
+- [x] Remove the detailed Whatnot aggregate metric grid from the Profile Integrations tab, retaining only username, connection status, last refresh, Refresh Reference, and Disconnect controls; keep full data on public Verified Accounts.
