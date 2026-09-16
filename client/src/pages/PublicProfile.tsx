@@ -589,7 +589,7 @@ export default function PublicProfile() {
                       )}
                       {user.whatnotReference && (
                         <button type="button" onClick={() => setSelectedVerification(selectedVerification === "whatnot" ? null : "whatnot")} aria-pressed={selectedVerification === "whatnot"} aria-controls="verified-account-details" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${selectedVerification === "whatnot" ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 bg-white text-slate-600 hover:border-red-200 hover:bg-red-50"}`}>
-                          <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="" className="h-4 w-4 rounded object-contain" />
+                          <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="" className="h-6 w-6 rounded object-contain" />
                           Whatnot Reference
                         </button>
                       )}
@@ -807,7 +807,7 @@ export default function PublicProfile() {
                   <div id="verified-account-details" className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm">
                     <div className="flex items-center justify-between border-b border-red-100 bg-red-50 px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-5 w-5 rounded object-contain" />
+                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-8 w-8 rounded object-contain" />
                         <span className="text-sm font-bold text-red-900">Whatnot Reference</span>
                       </div>
                       <span className="rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-red-700">Public data</span>

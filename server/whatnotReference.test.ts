@@ -24,7 +24,7 @@ describe("Whatnot Reference adapter", () => {
 
     const result = await fetchWhatnotReference("@dovescollection");
 
-    expect(result).toMatchObject({ username: "dovescollection", rating: 5, reviewCount: 3697, soldCount: 22763, followerCount: 12372, averageShippingTime: "1 day" });
+    expect(result).toMatchObject({ username: "dovescollection", rating: 5, reviewCount: 3697, soldCount: 22763, followerCount: 12372, averageShippingTime: "1 day", sellerStatus: "active" });
     expect(result).not.toHaveProperty("review");
     const input = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
     expect(input).toMatchObject({ mode: "seller", usernames: ["dovescollection"], includeProfile: true, includeReviews: true, includeShows: false, includeShopListings: false, maxReviews: 10 });

@@ -65,11 +65,11 @@ function parseDatasetItem(item: unknown, username: string): WhatnotReference {
     profileUrl,
     avatarUrl: readText(findValue(item, ["avatarUrl", "avatarURL", "profilePicture", "profileImage"])) ,
     rating: readNumber(findValue(item, ["rating", "averageRating", "sellerRating", "starRating"])) ,
-    reviewCount: readNumber(findValue(item, ["reviewCount", "reviewsCount", "ratingCount", "ratingsCount"])) ,
+    reviewCount: readNumber(findValue(item, ["reviewCount", "reviewsCount", "review_count", "ratingCount", "ratingsCount", "totalReviews", "reviewTotal", "reviews"])) ,
     soldCount: readNumber(findValue(item, ["soldCount", "itemsSold", "salesCount", "totalSold"])) ,
     followerCount: readNumber(findValue(item, ["followerCount", "followers", "followersCount"])) ,
     averageShippingTime: readText(findValue(item, ["averageShippingTime", "avgShippingTime", "shippingTime", "averageHandlingTime"])) ,
-    sellerStatus: readText(findValue(item, ["sellerStatus", "status", "accountStatus"])) ,
+    sellerStatus: readText(findValue(item, ["sellerStatus", "seller_status", "sellerType", "sellerTier", "status", "accountStatus", "sellerBadge", "badge"])) ?? "Seller",
     refreshedAt: new Date().toISOString(),
     source: "apify",
   };
