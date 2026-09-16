@@ -2055,3 +2055,4 @@
 - [x] Restyle the Whatnot Reference Integrations controls so Refresh Reference is blue and Disconnect is red without changing their behavior or loading states.
 - [x] Match the Whatnot Reference Disconnect button to the existing solid red-background, white-text account disconnect style while keeping Refresh Reference blue.
 - [x] Remove the detailed Whatnot aggregate metric grid from the Profile Integrations tab, retaining only username, connection status, last refresh, Refresh Reference, and Disconnect controls; keep full data on public Verified Accounts.
+- [x] Remove the duplicate Whatnot refresh control so only one remains on Profile Integrations; ensure public Whatnot Reference shows review count and seller status, and excludes average shipping status.

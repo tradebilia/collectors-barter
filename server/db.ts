@@ -3966,7 +3966,7 @@ function readWhatnotReference(connectedAccounts: unknown): WhatnotReference | nu
     : null;
 }
 
-export function getPublicWhatnotReference(connectedAccounts: unknown): WhatnotReference | null {
+export function getPublicWhatnotReference(connectedAccounts: unknown): Omit<WhatnotReference, "averageShippingTime"> | null {
   const reference = readWhatnotReference(connectedAccounts);
   if (!reference) return null;
   return {
@@ -3979,7 +3979,6 @@ export function getPublicWhatnotReference(connectedAccounts: unknown): WhatnotRe
     reviewCount: reference.reviewCount,
     soldCount: reference.soldCount,
     followerCount: reference.followerCount,
-    averageShippingTime: reference.averageShippingTime,
     sellerStatus: reference.sellerStatus,
     refreshedAt: reference.refreshedAt,
     source: "apify",

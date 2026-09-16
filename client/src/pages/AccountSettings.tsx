@@ -1244,13 +1244,7 @@ export default function AccountSettings() {
                           </div>
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
                             <p className="text-xs text-slate-500">Detailed reputation data is displayed on the public profile’s Verified Accounts area.</p>
-                            <div className="flex items-center gap-2">
-                              <Button type="button" className="rounded-lg bg-blue-600 text-white hover:bg-blue-700" disabled={!whatnotUsername.trim() || refreshWhatnotReferenceMutation.isPending} onClick={() => refreshWhatnotReferenceMutation.mutate({ username: whatnotUsername.trim() })}>
-                                {refreshWhatnotReferenceMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Refresh Reference
-                              </Button>
-                              <Button type="button" variant="ghost" size="sm" className="rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
-                            </div>
+                            <Button type="button" variant="ghost" size="sm" className="rounded-lg bg-red-600 px-3 py-2 text-white hover:bg-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
                           </div>
                         </div>
                       ) : null}

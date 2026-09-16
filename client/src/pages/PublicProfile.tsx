@@ -826,7 +826,6 @@ export default function PublicProfile() {
                           ["Reviews", user.whatnotReference.reviewCount ?? "—"],
                           ["Sold", user.whatnotReference.soldCount ?? "—"],
                           ["Followers", user.whatnotReference.followerCount ?? "—"],
-                          ["Avg. shipping", user.whatnotReference.averageShippingTime ?? "—"],
                           ["Seller status", user.whatnotReference.sellerStatus ?? "—"],
                         ].map(([label, value]) => (
                           <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-2 text-center">
@@ -1094,7 +1093,6 @@ export default function PublicProfile() {
                         <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.reviewCount ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Reviews</p></div>
                         <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.soldCount ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Sold</p></div>
                         <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.followerCount ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Followers</p></div>
-                        <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.averageShippingTime ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Avg. shipping</p></div>
                         <div><p className="text-lg font-black text-slate-950">{user.whatnotReference.sellerStatus ?? "—"}</p><p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">Seller status</p></div>
                       </div>
                       <p className="border-t border-slate-100 pt-3 text-[10px] leading-4 text-slate-500">Aggregate public profile data retrieved from Whatnot. This reference does not verify account ownership or include individual reviews.</p>

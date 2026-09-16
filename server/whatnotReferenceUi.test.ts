@@ -13,6 +13,7 @@ describe("Whatnot Reference surfaces", () => {
     expect(source).toContain("Detailed reputation data is displayed on the public profile’s Verified Accounts area.");
     expect(source).toContain("Refresh Reference");
     expect(source).toContain("Disconnect");
+    expect(source.match(/refreshWhatnotReferenceMutation\.mutate/g)?.length).toBe(1);
     expect(source).not.toContain("WhatnotConnection");
   });
 
@@ -22,6 +23,10 @@ describe("Whatnot Reference surfaces", () => {
     expect(source).toContain("Whatnot Reference");
     expect(source).toContain("Public data");
     expect(source).toContain("does not verify account ownership");
+    expect(source).toContain("reviewCount");
+    expect(source).toContain("sellerStatus");
+    expect(source).not.toContain("Avg. shipping");
+    expect(source).not.toContain("averageShippingTime");
   });
 
   it("serializes Whatnot Reference into the public profile payload", () => {
