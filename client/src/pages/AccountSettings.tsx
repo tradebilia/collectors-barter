@@ -102,6 +102,22 @@ export default function AccountSettings() {
   // Private external cash-adjustment destinations. These are never public-profile fields.
   const externalPaymentMethodsQuery = trpc.payment.getExternalPaymentMethods.useQuery();
   const saveExternalPaymentMethodsMutation = trpc.payment.saveExternalPaymentMethods.useMutation();
+  const whatnotReferenceQuery = trpc.market.getWhatnotReference.useQuery(undefined, { enabled: isAuthenticated });
+  const refreshWhatnotReferenceMutation = trpc.market.refreshWhatnotReference.useMutation({
+    onSuccess: async () => {
+      await whatnotReferenceQuery.refetch();
+      toast.success("Whatnot Reference refreshed.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
+  const disconnectWhatnotReferenceMutation = trpc.market.disconnectWhatnotReference.useMutation({
+    onSuccess: async () => {
+      await whatnotReferenceQuery.refetch();
+      setWhatnotUsername("");
+      toast.success("Whatnot Reference disconnected.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
 
   // Read ?tab= from URL to support redirects (e.g., from eBay OAuth callback)
   const validTabs = ["profile", "membership", "security", "integrations", "communications", "preferences"] as const;
@@ -172,6 +188,7 @@ export default function AccountSettings() {
 
   // Integrations State
   const [connectedAccounts, setConnectedAccounts] = useState<AccountSource[]>([]);
+  const [whatnotUsername, setWhatnotUsername] = useState("");
 
   // Direct cash-adjustment destinations
   const [externalPaymentForm, setExternalPaymentForm] = useState({
@@ -383,6 +400,10 @@ export default function AccountSettings() {
       setCommunicationPrefs(notificationPrefs);
     }
   }, [dashboardQuery.data?.profile, user?.name]);
+
+  useEffect(() => {
+    setWhatnotUsername(whatnotReferenceQuery.data?.username ?? "");
+  }, [whatnotReferenceQuery.data?.username]);
 
   // Attach click listeners to labels to toggle checkboxes (workaround for Manus click interception)
   useEffect(() => {
@@ -1170,34 +1191,78 @@ export default function AccountSettings() {
                     <FacebookConnection />
                     <LinkedInConnection />
                     <EtsyConnection />
-                    {accountSources.map((source) => (
-                      <div
-                        key={source.value}
-                        className="flex flex-col items-stretch gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={source.logo}
-                            alt={source.label}
-                            className="h-12 w-auto object-contain"
-                          />
-                          <div>
-                            <p className="font-medium text-slate-900">{source.label}</p>
-                            <p className="text-xs text-slate-600">
-                              {connectedAccounts.includes(source.value) ? "Connected" : "Not connected"}
+                    <div className="rounded-xl border border-red-100 bg-gradient-to-br from-white to-red-50/60 p-4 shadow-sm sm:p-5">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex min-w-0 items-start gap-3">
+                          <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-12 w-12 rounded-xl object-contain" />
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="font-semibold text-slate-950">Whatnot Reference</h3>
+                              <span className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-700">Public data</span>
+                            </div>
+                            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                              Add your public Whatnot username to show aggregate seller reputation on your public Tradebilia profile. This does not require your Whatnot password and does not verify account ownership.
                             </p>
                           </div>
                         </div>
+                        {whatnotReferenceQuery.data ? (
+                          <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">Reference added</span>
+                        ) : null}
+                      </div>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="whatnot-reference-username">Public Whatnot username</Label>
+                          <Input
+                            id="whatnot-reference-username"
+                            value={whatnotUsername}
+                            onChange={(event) => setWhatnotUsername(event.target.value)}
+                            placeholder="e.g. dovescollection"
+                            autoComplete="off"
+                            disabled={refreshWhatnotReferenceMutation.isPending || disconnectWhatnotReferenceMutation.isPending}
+                          />
+                        </div>
                         <Button
-                          variant={connectedAccounts.includes(source.value) ? "destructive" : "outline"}
-                          size="sm"
-                          className="rounded-lg"
-                          onClick={() => handleAccountSourceToggle(source.value)}
+                          type="button"
+                          className="rounded-lg bg-red-600 text-white hover:bg-red-700"
+                          disabled={!whatnotUsername.trim() || refreshWhatnotReferenceMutation.isPending}
+                          onClick={() => refreshWhatnotReferenceMutation.mutate({ username: whatnotUsername.trim() })}
                         >
-                          {connectedAccounts.includes(source.value) ? "Disconnect" : "Connect"}
+                          {refreshWhatnotReferenceMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          {whatnotReferenceQuery.data ? "Refresh Reference" : "Add Reference"}
                         </Button>
                       </div>
-                    ))}
+
+                      {whatnotReferenceQuery.data ? (
+                        <div className="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <p className="font-semibold text-slate-950">{whatnotReferenceQuery.data.displayName || `@${whatnotReferenceQuery.data.username}`}</p>
+                              <p className="text-xs text-slate-500">@{whatnotReferenceQuery.data.username} · refreshed {new Date(whatnotReferenceQuery.data.refreshedAt).toLocaleString()}</p>
+                            </div>
+                            <a href={whatnotReferenceQuery.data.profileUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-red-700 underline underline-offset-2">View Whatnot profile</a>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
+                            {[
+                              ["Rating", whatnotReferenceQuery.data.rating ?? "—"],
+                              ["Reviews", whatnotReferenceQuery.data.reviewCount ?? "—"],
+                              ["Sold", whatnotReferenceQuery.data.soldCount ?? "—"],
+                              ["Followers", whatnotReferenceQuery.data.followerCount ?? "—"],
+                              ["Avg. shipping", whatnotReferenceQuery.data.averageShippingTime ?? "—"],
+                            ].map(([label, value]) => (
+                              <div key={label} className="rounded-md bg-slate-50 px-2 py-2 text-center">
+                                <p className="text-sm font-bold text-slate-950">{value}</p>
+                                <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                            <p className="text-xs text-slate-500">Aggregate reputation only. Individual reviews, reviewer identities, email, listings, and pricing are not imported.</p>
+                            <Button type="button" variant="ghost" size="sm" className="text-slate-500 hover:text-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

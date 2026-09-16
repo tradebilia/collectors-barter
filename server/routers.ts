@@ -48,7 +48,11 @@ import {
   getUserLinkedInInfo,
   getUserEtsyInfo,
   getPublicEtsyVerification,
+  getPublicWhatnotReference,
   clearUserEtsyInfo,
+  getUserWhatnotReference,
+  refreshUserWhatnotReference,
+  clearUserWhatnotReference,
   getLowFeedbackFlags,
   sendItemInquiry,
   getUnreadInquiries,
@@ -1078,11 +1082,13 @@ export const appRouter = router({
         const reviews = Array.isArray(reviewsRows) ? reviewsRows : [];
 
         const etsyVerification = getPublicEtsyVerification(profileRow?.connectedAccounts);
+        const whatnotReference = getPublicWhatnotReference(profileRow?.connectedAccounts);
 
         return {
           user: {
             ...userRow,
             ...etsyVerification,
+            whatnotReference,
             facebookLink: getSafeVerifiedProfileUrl(userRow.facebookLink, ["facebook.com", "fb.com"]),
             linkedinProfileUrl: getSafeVerifiedProfileUrl(userRow.linkedinProfileUrl, ["linkedin.com"]),
           },
@@ -1377,21 +1383,42 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        // Store integrations in userProfiles while preserving Etsy metadata.
+        // Store integrations in userProfiles while preserving Etsy and Whatnot metadata.
         const db = await requireDb();
         const existing = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, ctx.user.id)).limit(1);
         let etsy: unknown;
+        let whatnotReference: unknown;
         try {
           const parsed = existing[0]?.connectedAccounts ? JSON.parse(existing[0].connectedAccounts) : null;
           etsy = Array.isArray(parsed) ? undefined : parsed?.etsy;
+          whatnotReference = Array.isArray(parsed) ? undefined : parsed?.whatnotReference;
         } catch {
           etsy = undefined;
+          whatnotReference = undefined;
         }
+        const payload: Record<string, unknown> = { accounts: input.connectedAccounts };
+        if (etsy) payload.etsy = etsy;
+        if (whatnotReference && input.connectedAccounts.includes("whatnot")) payload.whatnotReference = whatnotReference;
         await db.update(userProfiles).set({
-          connectedAccounts: JSON.stringify(etsy ? { accounts: input.connectedAccounts, etsy } : input.connectedAccounts),
+          connectedAccounts: JSON.stringify(payload),
         }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
       }),
+    getWhatnotReference: protectedProcedure.query(({ ctx }) => getUserWhatnotReference(ctx.user.id)),
+    refreshWhatnotReference: protectedProcedure
+      .input(z.object({ username: z.string().trim().min(2).max(80) }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          return await refreshUserWhatnotReference(ctx.user.id, input.username);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Unable to refresh Whatnot Reference.";
+          throw new TRPCError({ code: "BAD_REQUEST", message });
+        }
+      }),
+    disconnectWhatnotReference: protectedProcedure.mutation(async ({ ctx }) => {
+      await clearUserWhatnotReference(ctx.user.id);
+      return { success: true };
+    }),
     saveCommunications: protectedProcedure
       .input(
         z.object({

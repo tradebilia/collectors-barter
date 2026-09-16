@@ -27,6 +27,8 @@ export const ENV = {
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   // OpenAI for trade analysis
   openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? "", // key refreshed 2026-08-06
+  // Apify Whatnot Reference actor
+  apifyApiToken: process.env.APIFY_API_TOKEN ?? "",
   // PSA API (placeholder)
   psaApiToken: process.env.PSA_API_TOKEN ?? "",
   // Twilio Verify (SMS phone verification during account setup)

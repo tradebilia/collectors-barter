@@ -38,6 +38,7 @@ import bcrypt from 'bcryptjs';
 import { encrypt } from "./_core/crypto";
 import { isPublicMemberEligible } from "./publicVisibility";
 import { claimIdentity } from "./identityRegistry";
+import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -3947,6 +3948,90 @@ export async function clearUserEtsyInfo(userId: number) {
   try { parsed = rows[0]?.connectedAccounts ? JSON.parse(rows[0].connectedAccounts) : {}; } catch {}
   const accounts = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.accounts) ? parsed.accounts : []);
   await db.update(userProfiles).set({ connectedAccounts: JSON.stringify(accounts) }).where(eq(userProfiles.userId, userId));
+}
+
+function readWhatnotReference(connectedAccounts: unknown): WhatnotReference | null {
+  let parsed: unknown;
+  try {
+    parsed = typeof connectedAccounts === "string" ? JSON.parse(connectedAccounts) : connectedAccounts;
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const reference = (parsed as { whatnotReference?: unknown }).whatnotReference;
+  return reference && typeof reference === "object" && !Array.isArray(reference)
+    ? reference as WhatnotReference
+    : null;
+}
+
+export function getPublicWhatnotReference(connectedAccounts: unknown): WhatnotReference | null {
+  const reference = readWhatnotReference(connectedAccounts);
+  if (!reference) return null;
+  return {
+    username: reference.username,
+    displayName: reference.displayName,
+    userId: reference.userId,
+    profileUrl: reference.profileUrl,
+    avatarUrl: reference.avatarUrl,
+    rating: reference.rating,
+    reviewCount: reference.reviewCount,
+    soldCount: reference.soldCount,
+    followerCount: reference.followerCount,
+    averageShippingTime: reference.averageShippingTime,
+    sellerStatus: reference.sellerStatus,
+    refreshedAt: reference.refreshedAt,
+    source: "apify",
+  };
+}
+
+function parseConnectedAccountPayload(raw: string | null | undefined) {
+  let parsed: any = {};
+  try { parsed = raw ? JSON.parse(raw) : {}; } catch {}
+  if (Array.isArray(parsed)) return { accounts: parsed as string[] };
+  return {
+    accounts: Array.isArray(parsed.accounts) ? parsed.accounts as string[] : [],
+    etsy: parsed.etsy,
+    whatnotReference: parsed.whatnotReference,
+  };
+}
+
+export async function getUserWhatnotReference(userId: number): Promise<WhatnotReference | null> {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  return readWhatnotReference(rows[0]?.connectedAccounts);
+}
+
+export async function refreshUserWhatnotReference(userId: number, username: string): Promise<WhatnotReference> {
+  const reference = await fetchWhatnotReference(username);
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  const payload = parseConnectedAccountPayload(rows[0]?.connectedAccounts);
+  payload.accounts = Array.from(new Set([...payload.accounts, "whatnot"]));
+  payload.whatnotReference = reference;
+  await db.update(userProfiles)
+    .set({ connectedAccounts: JSON.stringify(payload) })
+    .where(eq(userProfiles.userId, userId));
+  return reference;
+}
+
+export async function clearUserWhatnotReference(userId: number): Promise<void> {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  const payload = parseConnectedAccountPayload(rows[0]?.connectedAccounts);
+  payload.accounts = payload.accounts.filter((account) => account !== "whatnot");
+  delete payload.whatnotReference;
+  await db.update(userProfiles)
+    .set({ connectedAccounts: JSON.stringify(payload) })
+    .where(eq(userProfiles.userId, userId));
 }
 
 // Item Inquiry Functions

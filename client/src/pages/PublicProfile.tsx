@@ -203,7 +203,7 @@ export default function PublicProfile() {
 
   const numericUserId = parseInt(userId || "0", 10);
   const [composeOpen, setComposeOpen] = useState(false);
-  const [selectedVerification, setSelectedVerification] = useState<"ebay" | "facebook" | "linkedin" | "etsy" | null>(null);
+  const [selectedVerification, setSelectedVerification] = useState<"ebay" | "facebook" | "linkedin" | "etsy" | "whatnot" | null>(null);
   const { data: profileData, isLoading } = trpc.market.getUserProfile.useQuery(
     { userId: numericUserId },
     { enabled: numericUserId > 0 }
@@ -552,7 +552,7 @@ export default function PublicProfile() {
 
               {/* Right column: Trust Sidebar */}
               <div className="lg:col-span-4 space-y-6">
-                {(user.ebayUsername || user.facebookId || user.linkedinId || user.etsyVerified) && (
+                {(user.ebayUsername || user.facebookId || user.linkedinId || user.etsyVerified || user.whatnotReference) && (
                   <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-labelledby="verified-accounts-heading">
                     <div className="border-b border-slate-100 bg-slate-50 px-5 py-3">
                       <h2 id="verified-accounts-heading" className="text-sm font-bold uppercase tracking-wider text-slate-900">Verified Accounts</h2>
@@ -585,6 +585,12 @@ export default function PublicProfile() {
                           <img src="/manus-storage/etsy-mark_2dee1a0f.png" alt="" className="h-4 w-4 rounded object-contain" />
                           Etsy
                           <CheckCircle2 className="h-3.5 w-3.5 text-orange-600" aria-hidden="true" />
+                        </button>
+                      )}
+                      {user.whatnotReference && (
+                        <button type="button" onClick={() => setSelectedVerification(selectedVerification === "whatnot" ? null : "whatnot")} aria-pressed={selectedVerification === "whatnot"} aria-controls="verified-account-details" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-bold transition-[transform,background-color,border-color,color] duration-150 ease-out active:scale-[0.97] ${selectedVerification === "whatnot" ? "border-red-200 bg-red-50 text-red-700" : "border-slate-200 bg-white text-slate-600 hover:border-red-200 hover:bg-red-50"}`}>
+                          <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="" className="h-4 w-4 rounded object-contain" />
+                          Whatnot Reference
                         </button>
                       )}
                     </div>
@@ -794,6 +800,42 @@ export default function PublicProfile() {
                           )}
                         </div>
                       )}
+                    </div>
+                  </div>
+                )}
+                {selectedVerification === "whatnot" && user.whatnotReference && (
+                  <div id="verified-account-details" className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm">
+                    <div className="flex items-center justify-between border-b border-red-100 bg-red-50 px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-5 w-5 rounded object-contain" />
+                        <span className="text-sm font-bold text-red-900">Whatnot Reference</span>
+                      </div>
+                      <span className="rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-red-700">Public data</span>
+                    </div>
+                    <div className="space-y-4 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black tracking-tight text-slate-900">{user.whatnotReference.displayName || `@${user.whatnotReference.username}`}</p>
+                          <p className="mt-0.5 text-[10px] font-semibold text-slate-500">@{user.whatnotReference.username}</p>
+                        </div>
+                        <a href={user.whatnotReference.profileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 underline-offset-2 hover:underline">View profile <ExternalLink className="h-3 w-3" /></a>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        {[
+                          ["Rating", user.whatnotReference.rating ?? "—"],
+                          ["Reviews", user.whatnotReference.reviewCount ?? "—"],
+                          ["Sold", user.whatnotReference.soldCount ?? "—"],
+                          ["Followers", user.whatnotReference.followerCount ?? "—"],
+                          ["Avg. shipping", user.whatnotReference.averageShippingTime ?? "—"],
+                          ["Seller status", user.whatnotReference.sellerStatus ?? "—"],
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-lg border border-slate-100 bg-slate-50 px-2 py-2 text-center">
+                            <p className="text-sm font-black text-slate-950">{value}</p>
+                            <p className="mt-0.5 text-[8px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="border-t border-slate-100 pt-3 text-[10px] leading-4 text-slate-500">Aggregate public profile data retrieved from Whatnot. This reference does not verify account ownership or include individual reviews.</p>
                     </div>
                   </div>
                 )}
