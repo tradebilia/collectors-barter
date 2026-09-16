@@ -2046,3 +2046,5 @@
 - [x] Evaluate additional Whatnot fields available through the selected actor and official access, especially whether email can be retrieved or used to match a Tradebilia account; classify fields by public/private sensitivity and recommend safe identity matching.
 - [x] Naming decision: use **Whatnot Reference** as the consistent label for the deferred Whatnot aggregate trust-signal feature.
 - [x] Implement a separate Whatnot Reference section on the Profile page’s Integrations tab with a protected Apify-backed refresh flow for aggregate public seller data only; exclude individual review text, reviewer identities, private email, marketplace inventory, and pricing.
+- [x] Resize the Whatnot logo in the Profile page Integrations tab to match the visual scale of the other provider logos without changing the artwork or integration behavior.
+- [x] Fix Whatnot Reference refresh failure: send the Apify actor mode as lowercase `seller` instead of `Seller`, and add regression coverage for the accepted input value.

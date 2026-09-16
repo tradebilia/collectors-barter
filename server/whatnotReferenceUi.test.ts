@@ -8,6 +8,7 @@ describe("Whatnot Reference surfaces", () => {
   it("uses a separate aggregate-only settings section", () => {
     const source = read("client/src/pages/AccountSettings.tsx");
     expect(source).toContain("Whatnot Reference");
+    expect(source).toContain("h-16 w-16 rounded-xl object-contain");
     expect(source).toContain("trpc.market.refreshWhatnotReference.useMutation");
     expect(source).toContain("Aggregate reputation only");
     expect(source).toContain("Individual reviews, reviewer identities, email, listings, and pricing are not imported.");

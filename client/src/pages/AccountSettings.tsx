@@ -1194,7 +1194,7 @@ export default function AccountSettings() {
                     <div className="rounded-xl border border-red-100 bg-gradient-to-br from-white to-red-50/60 p-4 shadow-sm sm:p-5">
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex min-w-0 items-start gap-3">
-                          <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-12 w-12 rounded-xl object-contain" />
+                          <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-16 w-16 rounded-xl object-contain" />
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="font-semibold text-slate-950">Whatnot Reference</h3>

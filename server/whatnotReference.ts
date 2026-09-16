@@ -100,7 +100,7 @@ export async function fetchWhatnotReference(usernameInput: string): Promise<What
   const run = await apifyRequest(`/acts/${ACTOR_ID}/runs?waitForFinish=60`, {
     method: "POST",
     body: JSON.stringify({
-      mode: "Seller",
+      mode: "seller",
       usernames: [username],
       userIds: [],
       includeProfile: true,

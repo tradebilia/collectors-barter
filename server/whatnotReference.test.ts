@@ -27,7 +27,7 @@ describe("Whatnot Reference adapter", () => {
     expect(result).toMatchObject({ username: "dovescollection", rating: 5, reviewCount: 3697, soldCount: 22763, followerCount: 12372, averageShippingTime: "1 day" });
     expect(result).not.toHaveProperty("review");
     const input = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
-    expect(input).toMatchObject({ mode: "Seller", usernames: ["dovescollection"], includeProfile: true, includeReviews: true, includeShows: false, includeShopListings: false, maxReviews: 10 });
+    expect(input).toMatchObject({ mode: "seller", usernames: ["dovescollection"], includeProfile: true, includeReviews: true, includeShows: false, includeShopListings: false, maxReviews: 10 });
   });
 
   it("rejects malformed usernames before calling Apify", async () => {
