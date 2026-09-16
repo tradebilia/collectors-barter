@@ -55,6 +55,14 @@ function findValue(value: unknown, keys: string[], depth = 0): unknown {
   return undefined;
 }
 
+function readSellerStatus(value: unknown): string {
+  const explicit = readText(value);
+  if (explicit) return explicit;
+  if (value === true) return "Verified seller";
+  if (value === false) return "Seller";
+  return "Seller";
+}
+
 function parseDatasetItem(item: unknown, username: string): WhatnotReference {
   const profileUrl = readText(findValue(item, ["profileUrl", "profileURL", "url", "userUrl"]))
     ?? `https://www.whatnot.com/user/${encodeURIComponent(username)}`;
@@ -65,11 +73,11 @@ function parseDatasetItem(item: unknown, username: string): WhatnotReference {
     profileUrl,
     avatarUrl: readText(findValue(item, ["avatarUrl", "avatarURL", "profilePicture", "profileImage"])) ,
     rating: readNumber(findValue(item, ["rating", "averageRating", "sellerRating", "starRating"])) ,
-    reviewCount: readNumber(findValue(item, ["reviewCount", "reviewsCount", "review_count", "ratingCount", "ratingsCount", "totalReviews", "reviewTotal", "reviews"])) ,
+    reviewCount: readNumber(findValue(item, ["reviewCount", "reviewsCount", "review_count", "ratingCount", "ratingsCount", "totalReviews", "reviewTotal", "numReviews"])) ,
     soldCount: readNumber(findValue(item, ["soldCount", "itemsSold", "salesCount", "totalSold"])) ,
     followerCount: readNumber(findValue(item, ["followerCount", "followers", "followersCount"])) ,
     averageShippingTime: readText(findValue(item, ["averageShippingTime", "avgShippingTime", "shippingTime", "averageHandlingTime"])) ,
-    sellerStatus: readText(findValue(item, ["sellerStatus", "seller_status", "sellerType", "sellerTier", "status", "accountStatus", "sellerBadge", "badge"])) ?? "Seller",
+    sellerStatus: readSellerStatus(findValue(item, ["sellerStatus", "seller_status", "sellerType", "sellerTier", "status", "accountStatus", "sellerBadge", "badge", "isVerifiedSeller"])),
     refreshedAt: new Date().toISOString(),
     source: "apify",
   };

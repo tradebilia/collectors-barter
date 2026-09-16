@@ -8,23 +8,26 @@ describe("Whatnot Reference adapter", () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ data: { defaultDatasetId: "dataset-1" } }), { status: 201 }))
       .mockResolvedValueOnce(new Response(JSON.stringify([{
-        username: "dovescollection",
-        displayName: "Doves Collection",
-        userId: "123",
-        profileUrl: "https://www.whatnot.com/user/dovescollection",
-        rating: 5,
-        reviewCount: 3697,
-        soldCount: 22763,
-        followers: 12372,
-        averageShippingTime: "1 day",
-        sellerStatus: "active",
-        review: "private review text should not be returned",
+        seller: {
+          username: "dovescollection",
+          displayName: "Doves Collection",
+          userId: "123",
+        },
+        profileMetrics: {
+          rating: 5,
+          numReviews: 3700,
+          soldCount: 22830,
+          followerCount: 12584,
+          averageShipDays: 1,
+          isVerifiedSeller: false,
+        },
+        reviews: [{ review: "private review text should not be returned" }],
       }]), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await fetchWhatnotReference("@dovescollection");
 
-    expect(result).toMatchObject({ username: "dovescollection", rating: 5, reviewCount: 3697, soldCount: 22763, followerCount: 12372, averageShippingTime: "1 day", sellerStatus: "active" });
+    expect(result).toMatchObject({ username: "dovescollection", rating: 5, reviewCount: 3700, soldCount: 22830, followerCount: 12584, sellerStatus: "Seller" });
     expect(result).not.toHaveProperty("review");
     const input = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
     expect(input).toMatchObject({ mode: "seller", usernames: ["dovescollection"], includeProfile: true, includeReviews: true, includeShows: false, includeShopListings: false, maxReviews: 10 });
