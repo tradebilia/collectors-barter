@@ -2052,3 +2052,4 @@
 - [x] Add the aggregate-only Whatnot Reference card to item detail owner information, with the same Public data label and no individual reviews, private email, listings, or pricing.
 - [x] Ensure the Whatnot Reference chip and aggregate details appear on the public profile Verified Accounts area after a successful refresh; do not include item-detail work in this scope.
 - [x] Fix the confirmed missing Whatnot Reference on the public profile Verified Accounts area and item detail owner verification strip, then validate both surfaces with aggregate-only data.
+- [x] Restyle the Whatnot Reference Integrations controls so Refresh Reference is blue and Disconnect is red without changing their behavior or loading states.

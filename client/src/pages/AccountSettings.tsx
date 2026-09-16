@@ -1224,7 +1224,7 @@ export default function AccountSettings() {
                         </div>
                         <Button
                           type="button"
-                          className="rounded-lg bg-red-600 text-white hover:bg-red-700"
+                          className="rounded-lg bg-blue-600 text-white hover:bg-blue-700"
                           disabled={!whatnotUsername.trim() || refreshWhatnotReferenceMutation.isPending}
                           onClick={() => refreshWhatnotReferenceMutation.mutate({ username: whatnotUsername.trim() })}
                         >
@@ -1258,7 +1258,7 @@ export default function AccountSettings() {
                           </div>
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
                             <p className="text-xs text-slate-500">Aggregate reputation only. Individual reviews, reviewer identities, email, listings, and pricing are not imported.</p>
-                            <Button type="button" variant="ghost" size="sm" className="text-slate-500 hover:text-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
+                            <Button type="button" variant="ghost" size="sm" className="text-red-600 hover:bg-red-50 hover:text-red-700" disabled={disconnectWhatnotReferenceMutation.isPending} onClick={() => disconnectWhatnotReferenceMutation.mutate()}>Disconnect</Button>
                           </div>
                         </div>
                       ) : null}
