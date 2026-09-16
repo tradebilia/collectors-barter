@@ -39,6 +39,7 @@ import { encrypt } from "./_core/crypto";
 import { isPublicMemberEligible } from "./publicVisibility";
 import { claimIdentity } from "./identityRegistry";
 import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference";
+import type { PayPalIdentityReference } from "./paypalIdentity";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -3993,6 +3994,7 @@ function parseConnectedAccountPayload(raw: string | null | undefined) {
     accounts: Array.isArray(parsed.accounts) ? parsed.accounts as string[] : [],
     etsy: parsed.etsy,
     whatnotReference: parsed.whatnotReference,
+    paypalIdentity: parsed.paypalIdentity,
   };
 }
 
@@ -4030,6 +4032,57 @@ export async function clearUserWhatnotReference(userId: number): Promise<void> {
   const payload = parseConnectedAccountPayload(rows[0]?.connectedAccounts);
   payload.accounts = payload.accounts.filter((account) => account !== "whatnot");
   delete payload.whatnotReference;
+  await db.update(userProfiles)
+    .set({ connectedAccounts: JSON.stringify(payload) })
+    .where(eq(userProfiles.userId, userId));
+}
+
+function readPayPalIdentity(connectedAccounts: unknown): PayPalIdentityReference | null {
+  let parsed: unknown;
+  try {
+    parsed = typeof connectedAccounts === "string" ? JSON.parse(connectedAccounts) : connectedAccounts;
+  } catch {
+    return null;
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return null;
+  const identity = (parsed as { paypalIdentity?: unknown }).paypalIdentity;
+  return identity && typeof identity === "object" && !Array.isArray(identity)
+    ? identity as PayPalIdentityReference
+    : null;
+}
+
+export async function getUserPayPalIdentity(userId: number): Promise<PayPalIdentityReference | null> {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  return readPayPalIdentity(rows[0]?.connectedAccounts);
+}
+
+export async function saveUserPayPalIdentity(userId: number, identity: PayPalIdentityReference): Promise<void> {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  const payload = parseConnectedAccountPayload(rows[0]?.connectedAccounts);
+  payload.accounts = Array.from(new Set([...payload.accounts, "paypal"]));
+  payload.paypalIdentity = identity;
+  await db.update(userProfiles)
+    .set({ connectedAccounts: JSON.stringify(payload) })
+    .where(eq(userProfiles.userId, userId));
+}
+
+export async function clearUserPayPalIdentity(userId: number): Promise<void> {
+  const db = await requireDb();
+  const rows = await db.select({ connectedAccounts: userProfiles.connectedAccounts })
+    .from(userProfiles)
+    .where(eq(userProfiles.userId, userId))
+    .limit(1);
+  const payload = parseConnectedAccountPayload(rows[0]?.connectedAccounts);
+  payload.accounts = payload.accounts.filter((account) => account !== "paypal");
+  delete payload.paypalIdentity;
   await db.update(userProfiles)
     .set({ connectedAccounts: JSON.stringify(payload) })
     .where(eq(userProfiles.userId, userId));

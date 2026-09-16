@@ -144,6 +144,7 @@ import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from ".
 import { getIpqsEmailHistory } from "./ipqs";
 import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/providerOauthState";
 import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
+import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
@@ -1383,28 +1384,40 @@ export const appRouter = router({
         }),
       )
       .mutation(async ({ ctx, input }) => {
-        // Store integrations in userProfiles while preserving Etsy and Whatnot metadata.
+        // Store integrations in userProfiles while preserving provider metadata.
         const db = await requireDb();
         const existing = await db.select({ connectedAccounts: userProfiles.connectedAccounts }).from(userProfiles).where(eq(userProfiles.userId, ctx.user.id)).limit(1);
         let etsy: unknown;
         let whatnotReference: unknown;
+        let paypalIdentity: unknown;
         try {
           const parsed = existing[0]?.connectedAccounts ? JSON.parse(existing[0].connectedAccounts) : null;
           etsy = Array.isArray(parsed) ? undefined : parsed?.etsy;
           whatnotReference = Array.isArray(parsed) ? undefined : parsed?.whatnotReference;
+          paypalIdentity = Array.isArray(parsed) ? undefined : parsed?.paypalIdentity;
         } catch {
           etsy = undefined;
           whatnotReference = undefined;
+          paypalIdentity = undefined;
         }
         const payload: Record<string, unknown> = { accounts: input.connectedAccounts };
         if (etsy) payload.etsy = etsy;
         if (whatnotReference && input.connectedAccounts.includes("whatnot")) payload.whatnotReference = whatnotReference;
+        if (paypalIdentity) {
+          payload.paypalIdentity = paypalIdentity;
+          if (!input.connectedAccounts.includes("paypal")) payload.accounts = Array.from(new Set([...input.connectedAccounts, "paypal"]));
+        }
         await db.update(userProfiles).set({
           connectedAccounts: JSON.stringify(payload),
         }).where(eq(userProfiles.userId, ctx.user.id));
         return { success: true };
       }),
     getWhatnotReference: protectedProcedure.query(({ ctx }) => getUserWhatnotReference(ctx.user.id)),
+    getPayPalIdentity: protectedProcedure.query(({ ctx }) => getUserPayPalIdentity(ctx.user.id)),
+    disconnectPayPalIdentity: protectedProcedure.mutation(async ({ ctx }) => {
+      await clearUserPayPalIdentity(ctx.user.id);
+      return { success: true };
+    }),
     refreshWhatnotReference: protectedProcedure
       .input(z.object({ username: z.string().trim().min(2).max(80) }))
       .mutation(async ({ ctx, input }) => {

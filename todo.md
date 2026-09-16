@@ -2059,3 +2059,4 @@
 - [x] Verify Whatnot actor output and saved public payload for review count and seller status, fix missing values if needed, and enlarge the Whatnot logo on the public profile.
 - [x] Trace the raw Whatnot actor response for `dovescollection`, map the exact total-review field, and fix the public profile review count while preserving the enlarged logo and approved fields.
 - [x] Deep-dive PayPal’s official OAuth/Identity API, available profile claims, permissions, verification signals, privacy limits, and safe Tradebilia integration model; produce a cited field inventory without implementing the integration.
+- [ ] Set up PayPal sandbox authorization for the Profile Integrations tab with secure server-side OAuth, consented userinfo retrieval, private persistence, disconnect behavior, and no public exposure of sensitive claims until the flow is approved and tested.

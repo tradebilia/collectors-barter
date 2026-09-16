@@ -2,14 +2,64 @@ import type { Express } from "express";
 import { COOKIE_NAME } from "../../shared/const";
 import { customAuth } from "./customAuth";
 import { hasValidProviderTokenEncryptionKey } from "./crypto";
+import { buildPayPalAuthorizationUrl, createPayPalOauthState, exchangePayPalIdentityCode, fetchPayPalUserInfo, getPayPalIdentityRedirectUri } from "../paypalIdentity";
+import { saveUserPayPalIdentity } from "../db";
 import { isStagingSafetyEnabled } from "./stagingSafety";
 import {
   clearProviderOauthStateCookie,
   isValidProviderOauthState,
   providerOauthStateCookieName,
+  setProviderOauthStateCookie,
 } from "./providerOauthState";
 
 export function registerProviderOAuthCallbacks(app: Express) {
+  app.get("/api/paypal/start", async (req: any, res: any) => {
+    if (isStagingSafetyEnabled()) return res.redirect(302, "/account-settings?paypal=error&reason=staging_disabled&tab=integrations");
+    try {
+      const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) return res.redirect(302, "/account-settings?paypal=error&reason=not_logged_in&tab=integrations");
+      const state = createPayPalOauthState();
+      const forwardedProto = req.headers?.["x-forwarded-proto"]?.split(",")[0]?.trim();
+      const protocol = forwardedProto || req.protocol || "https";
+      const host = req.get?.("host") || req.headers?.host;
+      if (!host) return res.redirect(302, "/account-settings?paypal=error&reason=missing_origin&tab=integrations");
+      const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
+      setProviderOauthStateCookie(res, "paypal", state);
+      return res.redirect(302, buildPayPalAuthorizationUrl(state, redirectUri));
+    } catch (err) {
+      console.error("[PayPal Start] Error:", err);
+      return res.redirect(302, "/account-settings?paypal=error&reason=start_failed&tab=integrations");
+    }
+  });
+
+  app.get("/api/paypal/callback", async (req: any, res: any) => {
+    if (isStagingSafetyEnabled()) return res.redirect(302, "/account-settings?paypal=error&reason=staging_disabled&tab=integrations");
+    if (req.query.error) return res.redirect(302, "/account-settings?paypal=error&reason=access_denied&tab=integrations");
+    const code = req.query.code as string | undefined;
+    if (!code) return res.redirect(302, "/account-settings?paypal=error&reason=no_code&tab=integrations");
+    try {
+      const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+      const isValidState = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("paypal")), req.query.state);
+      clearProviderOauthStateCookie(res, "paypal");
+      if (!isValidState) return res.redirect(302, "/account-settings?paypal=error&reason=invalid_state&tab=integrations");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user) return res.redirect(302, "/account-settings?paypal=error&reason=not_logged_in&tab=integrations");
+      const forwardedProto = req.headers?.["x-forwarded-proto"]?.split(",")[0]?.trim();
+      const protocol = forwardedProto || req.protocol || "https";
+      const host = req.get?.("host") || req.headers?.host;
+      if (!host) return res.redirect(302, "/account-settings?paypal=error&reason=missing_origin&tab=integrations");
+      const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
+      const accessToken = await exchangePayPalIdentityCode(code, redirectUri);
+      const identity = await fetchPayPalUserInfo(accessToken);
+      await saveUserPayPalIdentity(user.id, identity);
+      return res.redirect(302, "/account-settings?paypal=connected&tab=integrations");
+    } catch (err) {
+      console.error("[PayPal Callback] Error:", err);
+      return res.redirect(302, "/account-settings?paypal=error&reason=callback_failed&tab=integrations");
+    }
+  });
+
   app.get("/api/ebay/callback", async (req: any, res: any) => {
     if (isStagingSafetyEnabled()) return res.redirect(302, "/account-settings?ebay=error&reason=staging_disabled");
     const code = req.query.code as string | undefined;
