@@ -2042,3 +2042,4 @@
 - [ ] Future implementation decision: if approved, build Whatnot Reference as a member-controlled, source-labeled trust card with safe account-linking, aggregate reputation, refresh/disconnect controls, and no marketplace inventory or pricing import.
 - [x] Evaluate the user-selected Apify actor `omgr8VWKxGZrtwQKJ` against alternative Whatnot seller/reference actors for fields, pricing, reliability, and fit for the consent-based Trust/References feature; do not enable or credential it until approved.
 - [x] Walk through setting up and running the selected `epicscrapers/whatnot-scraper` Apify actor for a one-profile seller/review test, without connecting it to Tradebilia yet.
+- [x] Run and compare a second controlled Whatnot Seller-mode test for `dovescollection` using the same Profile/Reviews-only settings and capped limits as the `toyota99` pilot.
