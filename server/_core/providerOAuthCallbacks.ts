@@ -2,7 +2,14 @@ import type { Express } from "express";
 import { COOKIE_NAME } from "../../shared/const";
 import { customAuth } from "./customAuth";
 import { hasValidProviderTokenEncryptionKey } from "./crypto";
-import { buildPayPalAuthorizationUrl, createPayPalOauthState, exchangePayPalIdentityCode, fetchPayPalUserInfo, getPayPalIdentityRedirectUri } from "../paypalIdentity";
+import {
+  buildPayPalAuthorizationUrl,
+  createPayPalOauthState,
+  exchangePayPalIdentityCode,
+  fetchPayPalUserInfo,
+  getPayPalIdentityRedirectUri,
+  PayPalIdentityRequestError,
+} from "../paypalIdentity";
 import { saveUserPayPalIdentity } from "../db";
 import { isStagingSafetyEnabled } from "./stagingSafety";
 import {
@@ -58,7 +65,10 @@ export function registerProviderOAuthCallbacks(app: Express) {
       return res.redirect(302, "/account-settings?paypal=connected&tab=integrations");
     } catch (err) {
       console.error("[PayPal Callback] Error:", err);
-      return res.redirect(302, "/account-settings?paypal=error&reason=callback_failed&tab=integrations");
+      const reason = err instanceof PayPalIdentityRequestError
+        ? `callback_${err.stage}_${err.status}`
+        : "callback_failed";
+      return res.redirect(302, `/account-settings?paypal=error&reason=${reason}&tab=integrations`);
     }
   });
 

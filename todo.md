@@ -2066,4 +2066,5 @@
 - [ ] Resolve PayPal Sandbox `invalid scope` authorization failure by verifying the app’s permitted Identity scopes, requesting only the approved minimum claims, and retrying consent.
 - [ ] Prevent a stale deployed `PAYPAL_IDENTITY_SCOPES` override from reintroducing rejected phone or PayPal-attributes scopes; enforce the approved minimum scope allowlist before authorization.
 - [ ] Diagnose and fix the PayPal post-consent `callback_failed` result, then verify only safe private identity metadata persists after authorization.
+- [ ] Capture the safe PayPal error category after the corrected userinfo retry and resolve the remaining post-consent callback failure without logging tokens or identity claims.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.

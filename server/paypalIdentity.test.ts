@@ -81,7 +81,13 @@ describe("PayPal identity adapter", () => {
       await fetchPayPalUserInfo("sandbox-access-token");
       expect(fetchMock).toHaveBeenCalledWith(
         "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=paypalv1.1",
-        { headers: { Authorization: "Bearer sandbox-access-token", Accept: "application/json" } },
+        {
+          headers: {
+            Authorization: "Bearer sandbox-access-token",
+            Accept: "application/json",
+            "Content-Type": "application/json",
+          },
+        },
       );
     } finally {
       vi.unstubAllGlobals();

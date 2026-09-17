@@ -24,6 +24,16 @@ export type PayPalIdentityReference = {
   connectedAt: string;
 };
 
+export class PayPalIdentityRequestError extends Error {
+  constructor(
+    public readonly stage: "token_exchange" | "userinfo",
+    public readonly status: number,
+  ) {
+    super(`PayPal ${stage} failed (${status}).`);
+    this.name = "PayPalIdentityRequestError";
+  }
+}
+
 function readText(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -101,10 +111,13 @@ export function normalizePayPalUserInfo(payload: Record<string, unknown>, connec
   };
 }
 
-async function parseResponse(response: Response, context: string): Promise<Record<string, unknown>> {
+async function parseResponse(
+  response: Response,
+  stage: "token_exchange" | "userinfo",
+): Promise<Record<string, unknown>> {
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(`${context} failed (${response.status}).`);
+    throw new PayPalIdentityRequestError(stage, response.status);
   }
   return body as Record<string, unknown>;
 }
@@ -123,7 +136,7 @@ export async function exchangePayPalIdentityCode(code: string, redirectUri: stri
     },
     body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: redirectUri }),
   });
-  const body = await parseResponse(response, "PayPal token exchange");
+  const body = await parseResponse(response, "token_exchange");
   const accessToken = readText(body.access_token);
   if (!accessToken) throw new Error("PayPal token response did not include an access token.");
   return accessToken;
@@ -131,9 +144,13 @@ export async function exchangePayPalIdentityCode(code: string, redirectUri: stri
 
 export async function fetchPayPalUserInfo(accessToken: string): Promise<PayPalIdentityReference> {
   const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/openidconnect/userinfo?schema=paypalv1.1`, {
-    headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
   });
-  const body = await parseResponse(response, "PayPal userinfo request");
+  const body = await parseResponse(response, "userinfo");
   return normalizePayPalUserInfo(body);
 }
 
