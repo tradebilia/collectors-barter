@@ -127,7 +127,7 @@ export async function exchangePayPalIdentityCode(code: string, redirectUri: stri
     throw new Error("PayPal identity credentials are not configured.");
   }
   const basic = Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64");
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/openidconnect/tokenservice`, {
     method: "POST",
     headers: {
       Authorization: `Basic ${basic}`,

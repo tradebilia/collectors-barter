@@ -1,5 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import { buildPayPalAuthorizationUrl, fetchPayPalUserInfo, getPayPalIdentityRedirectUri, getPayPalIdentityScopes, normalizePayPalUserInfo } from "./paypalIdentity";
+import {
+  buildPayPalAuthorizationUrl,
+  exchangePayPalIdentityCode,
+  fetchPayPalUserInfo,
+  getPayPalIdentityRedirectUri,
+  getPayPalIdentityScopes,
+  normalizePayPalUserInfo,
+} from "./paypalIdentity";
 
 describe("PayPal identity adapter", () => {
   it("uses the configured public callback URI exactly", () => {
@@ -88,6 +95,20 @@ describe("PayPal identity adapter", () => {
             "Content-Type": "application/json",
           },
         },
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("uses PayPal Identity tokenservice for authorization-code exchange", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ access_token: "identity-user-token" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await expect(exchangePayPalIdentityCode("authorization-code", "https://tradebilia.manus.space/api/paypal/callback"))
+        .resolves.toBe("identity-user-token");
+      expect(fetchMock.mock.calls[0]?.[0]).toBe(
+        "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/tokenservice",
       );
     } finally {
       vi.unstubAllGlobals();
