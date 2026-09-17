@@ -2060,3 +2060,7 @@
 - [x] Trace the raw Whatnot actor response for `dovescollection`, map the exact total-review field, and fix the public profile review count while preserving the enlarged logo and approved fields.
 - [x] Deep-dive PayPal’s official OAuth/Identity API, available profile claims, permissions, verification signals, privacy limits, and safe Tradebilia integration model; produce a cited field inventory without implementing the integration.
 - [ ] Set up PayPal sandbox authorization for the Profile Integrations tab with secure server-side OAuth, consented userinfo retrieval, private persistence, disconnect behavior, and no public exposure of sensitive claims until the flow is approved and tested.
+- [ ] Resume PayPal sandbox dashboard configuration after the PayPal security challenge is completed in a normal browser; add the callback URL, enable approved Identity permissions, and run a consented sandbox test.
+- [ ] Fix the PayPal Sandbox callback URI mismatch: override the legacy internal redirect URL with the registered `https://tradebilia.manus.space/api/paypal/callback` endpoint and retest authorization.
+- [ ] Fix the persistent deployed PayPal authorization mismatch: the live start route still sends the legacy internal Cloud Run callback despite the configured public callback URI; trace deployment environment resolution and correct it before retrying consent.
+- [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.

@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildPayPalAuthorizationUrl, normalizePayPalUserInfo } from "./paypalIdentity";
+import { buildPayPalAuthorizationUrl, getPayPalIdentityRedirectUri, normalizePayPalUserInfo } from "./paypalIdentity";
 
 describe("PayPal identity adapter", () => {
+  it("uses the configured public callback URI exactly", () => {
+    expect(getPayPalIdentityRedirectUri()).toBe("https://tradebilia.manus.space/api/paypal/callback");
+  });
+
   it("builds a sandbox authorization URL with consented identity scopes", () => {
     const url = new URL(buildPayPalAuthorizationUrl("state-123", "https://tradebilia.example/api/paypal/callback"));
     expect(url.origin).toBe("https://www.sandbox.paypal.com");
