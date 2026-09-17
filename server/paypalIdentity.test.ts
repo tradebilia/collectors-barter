@@ -6,6 +6,20 @@ describe("PayPal identity adapter", () => {
     expect(getPayPalIdentityRedirectUri()).toBe("https://tradebilia.manus.space/api/paypal/callback");
   });
 
+  it("uses a forwarded public origin instead of an internal legacy callback", () => {
+    const previousIdentityRedirect = process.env.PAYPAL_IDENTITY_REDIRECT_URI;
+    const previousLegacyRedirect = process.env.PAYPAL_REDIRECT_URI;
+    process.env.PAYPAL_IDENTITY_REDIRECT_URI = "";
+    process.env.PAYPAL_REDIRECT_URI = "https://internal-service.a.run.app/api/paypal/callback";
+
+    expect(getPayPalIdentityRedirectUri("https://tradebilia.manus.space")).toBe(
+      "https://tradebilia.manus.space/api/paypal/callback",
+    );
+
+    process.env.PAYPAL_IDENTITY_REDIRECT_URI = previousIdentityRedirect;
+    process.env.PAYPAL_REDIRECT_URI = previousLegacyRedirect;
+  });
+
   it("builds a sandbox authorization URL with consented identity scopes", () => {
     const url = new URL(buildPayPalAuthorizationUrl("state-123", "https://tradebilia.example/api/paypal/callback"));
     expect(url.origin).toBe("https://www.sandbox.paypal.com");

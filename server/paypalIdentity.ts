@@ -29,6 +29,15 @@ function readText(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function isInternalCallbackUrl(value: string): boolean {
+  try {
+    const host = new URL(value).hostname;
+    return host.endsWith(".a.run.app") || host === "localhost" || host === "127.0.0.1";
+  } catch {
+    return true;
+  }
+}
+
 function readBoolean(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null;
 }
@@ -45,10 +54,18 @@ function safeHttpsUrl(value: unknown): string | null {
 }
 
 export function getPayPalIdentityRedirectUri(origin?: string): string {
-  const configured = process.env.PAYPAL_IDENTITY_REDIRECT_URI ?? process.env.PAYPAL_REDIRECT_URI;
-  if (configured) return configured;
-  if (!origin) throw new Error("PayPal identity redirect URI is not configured.");
-  return `${origin.replace(/\/$/, "")}/api/paypal/callback`;
+  const identityRedirect = readText(process.env.PAYPAL_IDENTITY_REDIRECT_URI);
+  if (identityRedirect && !isInternalCallbackUrl(identityRedirect)) return identityRedirect;
+
+  const publicOrigin = readText(origin);
+  if (publicOrigin && !isInternalCallbackUrl(publicOrigin)) {
+    return `${publicOrigin.replace(/\/$/, "")}/api/paypal/callback`;
+  }
+
+  const legacyRedirect = readText(process.env.PAYPAL_REDIRECT_URI);
+  if (legacyRedirect && !isInternalCallbackUrl(legacyRedirect)) return legacyRedirect;
+
+  throw new Error("PayPal identity redirect URI is not configured with a public HTTPS origin.");
 }
 
 export function getPayPalIdentityScopes(): string[] {

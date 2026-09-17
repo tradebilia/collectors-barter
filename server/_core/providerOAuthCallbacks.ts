@@ -22,7 +22,8 @@ export function registerProviderOAuthCallbacks(app: Express) {
       const state = createPayPalOauthState();
       const forwardedProto = req.headers?.["x-forwarded-proto"]?.split(",")[0]?.trim();
       const protocol = forwardedProto || req.protocol || "https";
-      const host = req.get?.("host") || req.headers?.host;
+      const forwardedHost = req.headers?.["x-forwarded-host"]?.split(",")[0]?.trim();
+      const host = forwardedHost || req.get?.("host") || req.headers?.host;
       if (!host) return res.redirect(302, "/account-settings?paypal=error&reason=missing_origin&tab=integrations");
       const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
       setProviderOauthStateCookie(res, "paypal", state);
@@ -47,7 +48,8 @@ export function registerProviderOAuthCallbacks(app: Express) {
       if (!user) return res.redirect(302, "/account-settings?paypal=error&reason=not_logged_in&tab=integrations");
       const forwardedProto = req.headers?.["x-forwarded-proto"]?.split(",")[0]?.trim();
       const protocol = forwardedProto || req.protocol || "https";
-      const host = req.get?.("host") || req.headers?.host;
+      const forwardedHost = req.headers?.["x-forwarded-host"]?.split(",")[0]?.trim();
+      const host = forwardedHost || req.get?.("host") || req.headers?.host;
       if (!host) return res.redirect(302, "/account-settings?paypal=error&reason=missing_origin&tab=integrations");
       const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
       const accessToken = await exchangePayPalIdentityCode(code, redirectUri);
