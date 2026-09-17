@@ -2072,10 +2072,10 @@
 - [x] Test the user-token-compatible OpenID userinfo schema with PayPal Identity tokenservice after `paypalv1.1` produced a 401 following Personal Sandbox consent.
 - [x] Audit the remaining PayPal Sandbox Dashboard settings and Personal test-account prerequisites after PayPal itself returned “Something went wrong on our end” immediately after sign-in.
 - [x] Implement private PayPal name, email, and address consistency outcomes against the member’s Profile data, retaining only safe result metadata and never exposing raw PayPal claims publicly.
-- [ ] Add an owner-only PayPal Comparison Inspector on Test AI that shows one authorized inspection’s raw field values and field-level comparison, without public exposure or durable raw-claim storage.
-- [ ] Fix the PayPal Comparison Inspector so completed authorization returns the one-time preview and renders Tradebilia and PayPal values side by side instead of remaining in the empty state.
-- [ ] Fix the nonresponsive PayPal Comparison Inspector trigger by using a server-issued authorization launch with visible loading or error feedback.
-- [ ] Diagnose why the deployed Test AI inspector button still does not trigger its authenticated launch mutation, then make the start failure observable in the UI.
-- [ ] Fix the PayPal inspector ready callback that returns to Test AI without its one-time preview, and show a specific missing-preview status rather than an empty card.
+- [x] Add an owner-only PayPal Comparison Inspector on Test AI that shows one authorized inspection’s raw field values and field-level comparison, without public exposure or durable raw-claim storage.
+- [x] Fix the PayPal Comparison Inspector so completed authorization returns the one-time preview and renders Tradebilia and PayPal values side by side instead of remaining in the empty state. Live authorized validation confirmed the one-time table.
+- [x] Fix the nonresponsive PayPal Comparison Inspector trigger by using a server-issued authorization launch with visible loading or error feedback.
+- [x] Diagnose why the deployed Test AI inspector button still does not trigger its authenticated launch mutation, then make the start failure observable in the UI.
+- [x] Fix the PayPal inspector ready callback that returns to Test AI without its one-time preview, and show a specific missing-preview status rather than an empty card. The final cause was pathname-only query parsing; query-aware consumption now renders the table.
 - [x] Enlarge the Whatnot logo on the public profile Whatnot Reference card to match the visual scale of the LinkedIn and Etsy verified-account logos.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.
