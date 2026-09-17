@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPayPalAuthorizationUrl, getPayPalIdentityRedirectUri, normalizePayPalUserInfo } from "./paypalIdentity";
+import { buildPayPalAuthorizationUrl, getPayPalIdentityRedirectUri, getPayPalIdentityScopes, normalizePayPalUserInfo } from "./paypalIdentity";
 
 describe("PayPal identity adapter", () => {
   it("uses the configured public callback URI exactly", () => {
@@ -18,6 +18,17 @@ describe("PayPal identity adapter", () => {
 
     process.env.PAYPAL_IDENTITY_REDIRECT_URI = previousIdentityRedirect;
     process.env.PAYPAL_REDIRECT_URI = previousLegacyRedirect;
+  });
+
+  it("filters stale configured scopes to the approved minimum allowlist", () => {
+    const previousScopes = process.env.PAYPAL_IDENTITY_SCOPES;
+    try {
+      process.env.PAYPAL_IDENTITY_SCOPES = "openid profile email address phone https://uri.paypal.com/services/paypalattributes";
+      expect(getPayPalIdentityScopes()).toEqual(["openid", "profile", "email", "address"]);
+    } finally {
+      if (previousScopes === undefined) delete process.env.PAYPAL_IDENTITY_SCOPES;
+      else process.env.PAYPAL_IDENTITY_SCOPES = previousScopes;
+    }
   });
 
   it("builds a sandbox authorization URL with only the approved minimum identity scopes", () => {

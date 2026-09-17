@@ -11,6 +11,7 @@ const DEFAULT_SCOPES = [
   "email",
   "address",
 ];
+const ALLOWED_IDENTITY_SCOPES = new Set(DEFAULT_SCOPES);
 
 export type PayPalIdentityReference = {
   paypalUserId: string;
@@ -70,8 +71,8 @@ export function getPayPalIdentityScopes(): string[] {
   const configured = process.env.PAYPAL_IDENTITY_SCOPES
     ?.split(/[\s,]+/)
     .map((scope) => scope.trim())
-    .filter(Boolean);
-  return configured?.length ? configured : DEFAULT_SCOPES;
+    .filter((scope) => ALLOWED_IDENTITY_SCOPES.has(scope));
+  return configured?.length ? [...new Set(configured)] : DEFAULT_SCOPES;
 }
 
 export function buildPayPalAuthorizationUrl(state: string, redirectUri: string): string {

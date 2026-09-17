@@ -2064,4 +2064,5 @@
 - [ ] Fix the PayPal Sandbox callback URI mismatch: override the legacy internal redirect URL with the registered `https://tradebilia.manus.space/api/paypal/callback` endpoint and retest authorization.
 - [ ] Fix the persistent deployed PayPal authorization mismatch: the live start route still sends the legacy internal Cloud Run callback despite the configured public callback URI; trace deployment environment resolution and correct it before retrying consent.
 - [ ] Resolve PayPal Sandbox `invalid scope` authorization failure by verifying the app’s permitted Identity scopes, requesting only the approved minimum claims, and retrying consent.
+- [ ] Prevent a stale deployed `PAYPAL_IDENTITY_SCOPES` override from reintroducing rejected phone or PayPal-attributes scopes; enforce the approved minimum scope allowlist before authorization.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.
