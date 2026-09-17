@@ -4,6 +4,7 @@ import { customAuth } from "./customAuth";
 import { hasValidProviderTokenEncryptionKey } from "./crypto";
 import {
   buildPayPalAuthorizationUrl,
+  buildPayPalComparisonInspection,
   createPayPalOauthState,
   exchangePayPalIdentityCode,
   fetchPayPalUserInfoPayload,
@@ -11,6 +12,7 @@ import {
   normalizePayPalUserInfo,
   PayPalIdentityRequestError,
 } from "../paypalIdentity";
+import { setPayPalComparisonInspectionCookie } from "../paypalInspection";
 import { getUserPayPalComparisonProfile, saveUserPayPalIdentity } from "../db";
 import { isStagingSafetyEnabled } from "./stagingSafety";
 import {
@@ -42,18 +44,40 @@ export function registerProviderOAuthCallbacks(app: Express) {
     }
   });
 
-  app.get("/api/paypal/callback", async (req: any, res: any) => {
-    if (isStagingSafetyEnabled()) return res.redirect(302, "/account-settings?paypal=error&reason=staging_disabled&tab=integrations");
-    if (req.query.error) return res.redirect(302, "/account-settings?paypal=error&reason=access_denied&tab=integrations");
-    const code = req.query.code as string | undefined;
-    if (!code) return res.redirect(302, "/account-settings?paypal=error&reason=no_code&tab=integrations");
+  app.get("/api/paypal/inspection/start", async (req: any, res: any) => {
+    if (isStagingSafetyEnabled()) return res.redirect(302, "/test-ai?paypalInspector=error&reason=staging_disabled");
     try {
       const cookies = customAuth.parseCookies(req.headers?.cookie || "");
-      const isValidState = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("paypal")), req.query.state);
-      clearProviderOauthStateCookie(res, "paypal");
+      const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
+      if (!user || user.role !== "admin") return res.redirect(302, "/test-ai?paypalInspector=error&reason=not_authorized");
+      const state = createPayPalOauthState();
+      const forwardedProto = req.headers?.["x-forwarded-proto"]?.split(",")[0]?.trim();
+      const protocol = forwardedProto || req.protocol || "https";
+      const forwardedHost = req.headers?.["x-forwarded-host"]?.split(",")[0]?.trim();
+      const host = forwardedHost || req.get?.("host") || req.headers?.host;
+      if (!host) return res.redirect(302, "/test-ai?paypalInspector=error&reason=missing_origin");
+      const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
+      setProviderOauthStateCookie(res, "paypal_inspection", state);
+      return res.redirect(302, buildPayPalAuthorizationUrl(state, redirectUri));
+    } catch {
+      return res.redirect(302, "/test-ai?paypalInspector=error&reason=start_failed");
+    }
+  });
+
+  app.get("/api/paypal/callback", async (req: any, res: any) => {
+    const cookies = customAuth.parseCookies(req.headers?.cookie || "");
+    const isInspection = isValidProviderOauthState(cookies.get(providerOauthStateCookieName("paypal_inspection")), req.query.state);
+    const resultPath = isInspection ? "/test-ai?paypalInspector" : "/account-settings?paypal";
+    if (isStagingSafetyEnabled()) return res.redirect(302, `${resultPath}=error&reason=staging_disabled${isInspection ? "" : "&tab=integrations"}`);
+    if (req.query.error) return res.redirect(302, `${resultPath}=error&reason=access_denied${isInspection ? "" : "&tab=integrations"}`);
+    const code = req.query.code as string | undefined;
+    if (!code) return res.redirect(302, `${resultPath}=error&reason=no_code${isInspection ? "" : "&tab=integrations"}`);
+    try {
+      const isValidState = isInspection || isValidProviderOauthState(cookies.get(providerOauthStateCookieName("paypal")), req.query.state);
+      clearProviderOauthStateCookie(res, isInspection ? "paypal_inspection" : "paypal");
       if (!isValidState) return res.redirect(302, "/account-settings?paypal=error&reason=invalid_state&tab=integrations");
       const user = await customAuth.getUserFromSession(cookies.get(COOKIE_NAME));
-      if (!user) return res.redirect(302, "/account-settings?paypal=error&reason=not_logged_in&tab=integrations");
+      if (!user || (isInspection && user.role !== "admin")) return res.redirect(302, `${resultPath}=error&reason=not_authorized${isInspection ? "" : "&tab=integrations"}`);
       const forwardedProto = req.headers?.["x-forwarded-proto"]?.split(",")[0]?.trim();
       const protocol = forwardedProto || req.protocol || "https";
       const forwardedHost = req.headers?.["x-forwarded-host"]?.split(",")[0]?.trim();
@@ -63,6 +87,10 @@ export function registerProviderOAuthCallbacks(app: Express) {
       const accessToken = await exchangePayPalIdentityCode(code, redirectUri);
       const userinfo = await fetchPayPalUserInfoPayload(accessToken);
       const comparisonProfile = await getUserPayPalComparisonProfile(user.id);
+      if (isInspection) {
+        setPayPalComparisonInspectionCookie(res, user.id, buildPayPalComparisonInspection(userinfo, comparisonProfile));
+        return res.redirect(302, "/test-ai?paypalInspector=ready");
+      }
       const identity = normalizePayPalUserInfo(userinfo, new Date().toISOString(), comparisonProfile);
       await saveUserPayPalIdentity(user.id, identity);
       return res.redirect(302, "/account-settings?paypal=connected&tab=integrations");
@@ -71,7 +99,7 @@ export function registerProviderOAuthCallbacks(app: Express) {
       const reason = err instanceof PayPalIdentityRequestError
         ? `callback_${err.stage}_${err.status}`
         : "callback_failed";
-      return res.redirect(302, `/account-settings?paypal=error&reason=${reason}&tab=integrations`);
+      return res.redirect(302, `${resultPath}=error&reason=${reason}${isInspection ? "" : "&tab=integrations"}`);
     }
   });
 

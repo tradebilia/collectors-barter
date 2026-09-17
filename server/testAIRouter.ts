@@ -21,6 +21,7 @@ import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { isPublicMemberEligible } from './publicVisibility';
+import { consumePayPalComparisonInspection } from './paypalInspection';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -201,6 +202,17 @@ function normalizeTrackingNumber(value: string | null | undefined) {
 
 // ─── Router ─────────────────────────────────────────────────────────────────
 export const testAIRouter = router({
+  consumePayPalComparisonInspection: protectedProcedure
+    .mutation(({ ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'This private inspector is available to administrators only.' });
+      }
+      const preview = consumePayPalComparisonInspection(ctx.req, ctx.res, ctx.user.id);
+      if (!preview) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'No active PayPal comparison preview was found. Start a new inspection to view it.' });
+      }
+      return preview;
+    }),
   // Get the logged-in user's active inventory for the item picker
   getMyInventory: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });

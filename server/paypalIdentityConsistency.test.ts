@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildPayPalIdentityConsistency, normalizePayPalUserInfo } from "./paypalIdentity";
+import { buildPayPalComparisonInspection, buildPayPalIdentityConsistency, normalizePayPalUserInfo } from "./paypalIdentity";
 
 describe("PayPal private consistency outcomes", () => {
   const profile = {
@@ -42,5 +42,30 @@ describe("PayPal private consistency outcomes", () => {
       profile,
     );
     expect(consistency).toMatchObject({ name: "mismatch", email: "unavailable", address: "unavailable" });
+  });
+
+  it("allows raw claims only in the explicit one-time inspection model", () => {
+    const payload = {
+      user_id: "paypal-user-3",
+      name: "Rich Tavani",
+      email: "rich@example.com",
+      email_verified: true,
+      address: {
+        street_address: "123 Main Street",
+        locality: "Tampa",
+        region: "FL",
+        postal_code: "33602",
+        country: "US",
+      },
+    };
+    const preview = buildPayPalComparisonInspection(payload, profile, "2026-09-17T00:00:00.000Z");
+    expect(preview.paypal.email).toBe("rich@example.com");
+    expect(preview.paypal.address.street).toBe("123 Main Street");
+    expect(preview.tradebilia.emailCandidates).toEqual(["rich@example.com"]);
+    expect(preview.outcomes).toMatchObject({ name: "match", email: "match", address: "match" });
+
+    const persisted = normalizePayPalUserInfo(payload, "2026-09-17T00:00:00.000Z", profile);
+    expect(JSON.stringify(persisted)).not.toContain("rich@example.com");
+    expect(JSON.stringify(persisted)).not.toContain("123 Main Street");
   });
 });

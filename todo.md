@@ -2071,5 +2071,6 @@
 - [x] Resolve the confirmed PayPal Sandbox `callback_userinfo_401` after successful Personal-account consent by validating the OAuth token and Identity API authorization contract.
 - [x] Test the user-token-compatible OpenID userinfo schema with PayPal Identity tokenservice after `paypalv1.1` produced a 401 following Personal Sandbox consent.
 - [x] Audit the remaining PayPal Sandbox Dashboard settings and Personal test-account prerequisites after PayPal itself returned “Something went wrong on our end” immediately after sign-in.
-- [ ] Implement private PayPal name, email, and address consistency outcomes against the member’s Profile data, retaining only safe result metadata and never exposing raw PayPal claims publicly.
+- [x] Implement private PayPal name, email, and address consistency outcomes against the member’s Profile data, retaining only safe result metadata and never exposing raw PayPal claims publicly.
+- [ ] Add an owner-only PayPal Comparison Inspector on Test AI that shows one authorized inspection’s raw field values and field-level comparison, without public exposure or durable raw-claim storage.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.

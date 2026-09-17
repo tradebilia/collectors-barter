@@ -1776,6 +1776,79 @@ function CarrierTrackingSection() {
   );
 }
 
+// ─── PayPal Comparison Inspector ─────────────────────────────────────────────
+function PayPalComparisonInspector() {
+  const [location] = useLocation();
+  const [preview, setPreview] = useState<any>(null);
+  const [attempted, setAttempted] = useState(false);
+  const consumePreview = trpc.testAI.consumePayPalComparisonInspection.useMutation();
+  const inspectorState = useMemo(
+    () => new URLSearchParams(location.split('?')[1] ?? '').get('paypalInspector'),
+    [location],
+  );
+
+  useEffect(() => {
+    if (inspectorState !== 'ready' || attempted) return;
+    setAttempted(true);
+    consumePreview.mutate(undefined, {
+      onSuccess: (data) => setPreview(data),
+      onError: (error) => toast.error(error.message),
+    });
+  }, [attempted, consumePreview, inspectorState]);
+
+  const comparisonRows = preview ? [
+    { label: 'Name', local: preview.tradebilia.nameCandidates.join(' · ') || 'Not set', paypal: preview.paypal.name ?? 'Not provided', outcome: preview.outcomes.name },
+    { label: 'Email', local: preview.tradebilia.emailCandidates.join(' · ') || 'Not set', paypal: preview.paypal.email ?? 'Not provided', outcome: preview.outcomes.email, note: preview.paypal.emailVerified === true ? 'PayPal email is verified' : 'PayPal email is not verified' },
+    { label: 'Street address', local: preview.tradebilia.address.street ?? 'Not set', paypal: preview.paypal.address.street ?? 'Not provided', outcome: preview.outcomes.address },
+    { label: 'City', local: preview.tradebilia.address.town ?? 'Not set', paypal: preview.paypal.address.town ?? 'Not provided', outcome: preview.outcomes.address },
+    { label: 'State / region', local: preview.tradebilia.address.state ?? 'Not set', paypal: preview.paypal.address.state ?? 'Not provided', outcome: preview.outcomes.address },
+    { label: 'Postal code', local: preview.tradebilia.address.zipCode ?? 'Not set', paypal: preview.paypal.address.zipCode ?? 'Not provided', outcome: preview.outcomes.address },
+    { label: 'Country', local: preview.tradebilia.address.country ?? 'Not set', paypal: preview.paypal.address.country ?? 'Not provided', outcome: preview.outcomes.address },
+  ] : [];
+
+  return (
+    <section className="rounded-xl border border-violet-500/40 bg-violet-950/20 p-5 space-y-4" aria-labelledby="paypal-comparison-inspector-title">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 id="paypal-comparison-inspector-title" className="text-sm font-bold uppercase tracking-wide text-violet-200">PayPal Comparison Inspector</h2>
+          <p className="mt-1 max-w-3xl text-xs text-violet-100/80">Private admin diagnostic. It makes a new PayPal authorization request and shows the exact authorized values compared with this Tradebilia Profile only once in this browser.</p>
+        </div>
+        <Badge className="w-fit border border-violet-400/40 bg-violet-900/40 text-[10px] text-violet-100">Owner-only · one-time view</Badge>
+      </div>
+
+      {!preview && (
+        <div className="flex flex-col gap-3 rounded-lg border border-violet-400/20 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="max-w-2xl text-xs text-gray-300">Raw PayPal name, email, and address are never saved to the Tradebilia database or public profile. The encrypted preview expires after five minutes and is consumed after one view.</p>
+          <button type="button" onClick={() => { window.location.assign('/api/paypal/inspection/start'); }} className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-500">Inspect my PayPal comparison</button>
+        </div>
+      )}
+
+      {consumePreview.isPending && <div className="flex items-center gap-2 text-sm text-violet-100"><Spinner className="h-4 w-4" /> Loading one-time private comparison…</div>}
+
+      {preview && (
+        <div className="overflow-x-auto rounded-lg border border-violet-400/20 bg-slate-950/50">
+          <table className="min-w-full text-left text-xs">
+            <thead className="border-b border-violet-400/20 bg-violet-950/40 text-[10px] uppercase tracking-wide text-violet-200">
+              <tr><th className="px-3 py-2">Field</th><th className="px-3 py-2">Tradebilia Profile</th><th className="px-3 py-2">Authorized PayPal value</th><th className="px-3 py-2">Saved outcome</th></tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800 text-slate-200">
+              {comparisonRows.map((row) => (
+                <tr key={row.label}>
+                  <th className="whitespace-nowrap px-3 py-2 font-semibold text-white">{row.label}</th>
+                  <td className="px-3 py-2 break-all">{row.local}</td>
+                  <td className="px-3 py-2 break-all">{row.paypal}{row.note && <span className="mt-1 block text-[10px] text-emerald-300">{row.note}</span>}</td>
+                  <td className="px-3 py-2 capitalize text-violet-200">{row.outcome.replace('_', ' ')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="border-t border-violet-400/20 px-3 py-2 text-[10px] text-gray-400">Inspection created {new Date(preview.inspectedAt).toLocaleString()}. Raw values are one-time diagnostic data and are not retained after this view.</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 // ─── Data Column ─────────────────────────────────────────────────────────────
 function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
@@ -2038,6 +2111,8 @@ export default function TestAI() {
 
         {/* Kept below all sold-item data and AI testing so it remains an independent carrier test. */}
         <CarrierTrackingSection />
+
+        <PayPalComparisonInspector />
 
         {!leftItem && !rightItem && (
           <div className="text-center py-16 text-gray-500">

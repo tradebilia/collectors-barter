@@ -47,6 +47,28 @@ export type PayPalComparisonProfile = {
   };
 };
 
+export type PayPalComparisonInspection = {
+  inspectedAt: string;
+  paypal: {
+    name: string | null;
+    email: string | null;
+    emailVerified: boolean | null;
+    address: {
+      street: string | null;
+      town: string | null;
+      state: string | null;
+      zipCode: string | null;
+      country: string | null;
+    };
+  };
+  tradebilia: {
+    nameCandidates: string[];
+    emailCandidates: string[];
+    address: PayPalComparisonProfile["address"];
+  };
+  outcomes: PayPalIdentityConsistency;
+};
+
 export class PayPalIdentityRequestError extends Error {
   constructor(
     public readonly stage: "token_exchange" | "userinfo",
@@ -172,6 +194,35 @@ export function buildPayPalIdentityConsistency(
     name: compareName(payload.name, profile.nameCandidates),
     email: compareEmail(payload.email, readBoolean(payload.email_verified), profile.emailCandidates),
     address: compareAddress(payload, profile.address),
+  };
+}
+
+export function buildPayPalComparisonInspection(
+  payload: Record<string, unknown>,
+  profile: PayPalComparisonProfile,
+  inspectedAt = new Date().toISOString(),
+): PayPalComparisonInspection {
+  const paypalAddress = readRecord(payload.address) ?? readRecord(payload.addresses) ?? {};
+  return {
+    inspectedAt,
+    paypal: {
+      name: readText(payload.name),
+      email: readText(payload.email),
+      emailVerified: readBoolean(payload.email_verified),
+      address: {
+        street: readText(paypalAddress.street_address ?? paypalAddress.address_line_1 ?? paypalAddress.line1),
+        town: readText(paypalAddress.locality ?? paypalAddress.city),
+        state: readText(paypalAddress.region ?? paypalAddress.state),
+        zipCode: readText(paypalAddress.postal_code ?? paypalAddress.zip),
+        country: readText(paypalAddress.country ?? paypalAddress.country_code),
+      },
+    },
+    tradebilia: {
+      nameCandidates: profile.nameCandidates.filter((value): value is string => Boolean(readText(value))),
+      emailCandidates: profile.emailCandidates.filter((value): value is string => Boolean(readText(value))),
+      address: profile.address,
+    },
+    outcomes: buildPayPalIdentityConsistency(payload, profile, inspectedAt),
   };
 }
 
