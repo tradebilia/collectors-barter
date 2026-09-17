@@ -2079,3 +2079,4 @@
 - [x] Fix the PayPal inspector ready callback that returns to Test AI without its one-time preview, and show a specific missing-preview status rather than an empty card. The final cause was pathname-only query parsing; query-aware consumption now renders the table.
 - [x] Enlarge the Whatnot logo on the public profile Whatnot Reference card to match the visual scale of the LinkedIn and Etsy verified-account logos.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.
+- [ ] Create a recovery checkpoint and credential-safe full backup commit, then push the current project state to the selected GitHub repository.
