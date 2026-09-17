@@ -50,7 +50,7 @@ export type PayPalComparisonProfile = {
 export type PayPalComparisonProfileInput = {
   firstName: string | null | undefined;
   lastName: string | null | undefined;
-  accountEmail: string | null | undefined;
+  accountSettingsEmail: string | null | undefined;
   address: PayPalComparisonProfile["address"];
 };
 
@@ -187,16 +187,17 @@ function normalizeComparableCountry(value: unknown): string | null {
 }
 
 /**
- * The approved identity check intentionally uses one account name and one
- * signup email. Profile display names and alternate contact emails are not
- * identity candidates for this comparison.
+ * The approved identity check intentionally uses the identity values shown in
+ * Account Settings: first name, last name, and email address. It never falls
+ * back to the Manus authentication email, a public display name, or another
+ * alternate email.
  */
 export function buildPayPalComparisonProfile(input: PayPalComparisonProfileInput): PayPalComparisonProfile {
   const fullName = [readText(input.firstName), readText(input.lastName)].filter((value): value is string => Boolean(value)).join(" ");
-  const accountEmail = readText(input.accountEmail);
+  const accountSettingsEmail = readText(input.accountSettingsEmail);
   return {
     nameCandidates: fullName ? [fullName] : [],
-    emailCandidates: accountEmail ? [accountEmail] : [],
+    emailCandidates: accountSettingsEmail ? [accountSettingsEmail] : [],
     address: input.address,
   };
 }

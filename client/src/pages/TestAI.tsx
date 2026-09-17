@@ -1801,7 +1801,7 @@ function PayPalComparisonInspector() {
 
   const comparisonRows = preview ? [
     { label: 'Name', local: preview.tradebilia.nameCandidates[0] ?? 'Not set', paypal: preview.paypal.name ?? 'Not provided', outcome: preview.outcomes.name, note: 'Profile first name followed by last name' },
-    { label: 'Email', local: preview.tradebilia.emailCandidates[0] ?? 'Not set', paypal: preview.paypal.email ?? 'Not provided', outcome: preview.outcomes.email, note: preview.paypal.emailVerified === true ? 'Tradebilia signup email · PayPal email is verified' : 'Tradebilia signup email · PayPal email is not verified' },
+    { label: 'Email', local: preview.tradebilia.emailCandidates[0] ?? 'Not set', paypal: preview.paypal.email ?? 'Not provided', outcome: preview.outcomes.email, note: preview.paypal.emailVerified === true ? 'Account Settings email · PayPal email is verified' : 'Account Settings email · PayPal email is not verified' },
     { label: 'Street address', local: preview.tradebilia.address.street ?? 'Not set', paypal: preview.paypal.address.street ?? 'Not provided', outcome: preview.addressFields?.street ?? preview.outcomes.address },
     { label: 'City', local: preview.tradebilia.address.town ?? 'Not set', paypal: preview.paypal.address.town ?? 'Not provided', outcome: preview.addressFields?.town ?? preview.outcomes.address },
     { label: 'State / region', local: preview.tradebilia.address.state ?? 'Not set', paypal: preview.paypal.address.state ?? 'Not provided', outcome: preview.addressFields?.state ?? preview.outcomes.address, note: 'US state abbreviations and full names are compared as equivalent' },

@@ -4064,9 +4064,11 @@ export async function getUserPayPalComparisonProfile(userId: number): Promise<Pa
   const db = await requireDb();
   const rows = await db
     .select({
-      accountEmail: users.email,
       firstName: userProfiles.firstName,
       lastName: userProfiles.lastName,
+      // Account Settings displays and saves this value as its Email Address.
+      // Do not substitute users.email here: that is the Manus authentication email.
+      accountSettingsEmail: userProfiles.contactEmail,
       contactAddress: userProfiles.contactAddress,
       contactTown: userProfiles.contactTown,
       contactState: userProfiles.contactState,
@@ -4081,7 +4083,7 @@ export async function getUserPayPalComparisonProfile(userId: number): Promise<Pa
   return buildPayPalComparisonProfile({
     firstName: row?.firstName,
     lastName: row?.lastName,
-    accountEmail: row?.accountEmail,
+    accountSettingsEmail: row?.accountSettingsEmail,
     address: {
       street: row?.contactAddress,
       town: row?.contactTown,

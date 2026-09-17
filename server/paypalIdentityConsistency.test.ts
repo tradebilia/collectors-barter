@@ -77,21 +77,36 @@ describe("PayPal private consistency outcomes", () => {
     expect(JSON.stringify(persisted)).not.toContain("123 Main Street");
   });
 
-  it("uses only profile first and last name plus the original account email", () => {
+  it("uses only Account Settings first name, last name, and email", () => {
     const comparisonProfile = buildPayPalComparisonProfile({
       firstName: "Rich",
       lastName: "Tavani",
-      accountEmail: "signup@tradebilia.test",
+      accountSettingsEmail: "account-settings@tradebilia.test",
       address: profile.address,
     });
 
     expect(comparisonProfile.nameCandidates).toEqual(["Rich Tavani"]);
-    expect(comparisonProfile.emailCandidates).toEqual(["signup@tradebilia.test"]);
+    expect(comparisonProfile.emailCandidates).toEqual(["account-settings@tradebilia.test"]);
     expect(buildPayPalIdentityConsistency({
       name: "Tavani, Rich",
-      email: "signup@tradebilia.test",
+      email: "account-settings@tradebilia.test",
       email_verified: true,
     }, comparisonProfile)).toMatchObject({ name: "match", email: "match" });
+  });
+
+  it("does not substitute a missing Account Settings email with another account email", () => {
+    const comparisonProfile = buildPayPalComparisonProfile({
+      firstName: "Rich",
+      lastName: "Tavani",
+      accountSettingsEmail: null,
+      address: profile.address,
+    });
+
+    expect(comparisonProfile.emailCandidates).toEqual([]);
+    expect(buildPayPalIdentityConsistency({
+      email: "manus-auth@example.test",
+      email_verified: true,
+    }, comparisonProfile)).toMatchObject({ email: "unavailable" });
   });
 
   it("treats PayPal US state and country codes as their full profile names", () => {
@@ -127,6 +142,11 @@ describe("PayPal private consistency outcomes", () => {
 
   it("keeps the Test AI inspector as an explicit authorization link with visible failure feedback", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
+    const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
+    const comparisonProfileQuery = dbSource.slice(
+      dbSource.indexOf("export async function getUserPayPalComparisonProfile"),
+      dbSource.indexOf("export async function saveUserPayPalIdentity"),
+    );
     expect(source).toContain("useSearch");
     expect(source).toContain("new URLSearchParams(search)");
     expect(source).toContain('trpc.testAI.startPayPalComparisonInspection.useMutation');
@@ -137,8 +157,11 @@ describe("PayPal private consistency outcomes", () => {
     expect(source).toContain("The one-time preview could not be loaded.");
     expect(source).toContain("Tradebilia Profile");
     expect(source).toContain("Authorized PayPal value");
-    expect(source).toContain("Tradebilia signup email");
+    expect(source).toContain("Account Settings email");
     expect(source).toContain("US state abbreviations and full names are compared as equivalent");
     expect(source).toContain("ISO country codes and full names are compared as equivalent");
+    expect(comparisonProfileQuery).toContain("accountSettingsEmail: userProfiles.contactEmail");
+    expect(comparisonProfileQuery).not.toContain("accountEmail: users.email");
+    expect(comparisonProfileQuery).not.toContain("accountSettingsEmail: users.email");
   });
 });
