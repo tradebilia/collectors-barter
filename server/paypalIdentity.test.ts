@@ -20,7 +20,7 @@ describe("PayPal identity adapter", () => {
     process.env.PAYPAL_REDIRECT_URI = previousLegacyRedirect;
   });
 
-  it("builds a sandbox authorization URL with consented identity scopes", () => {
+  it("builds a sandbox authorization URL with only the approved minimum identity scopes", () => {
     const url = new URL(buildPayPalAuthorizationUrl("state-123", "https://tradebilia.example/api/paypal/callback"));
     expect(url.origin).toBe("https://www.sandbox.paypal.com");
     expect(url.pathname).toBe("/signin/authorize");
@@ -29,6 +29,9 @@ describe("PayPal identity adapter", () => {
     expect(url.searchParams.get("state")).toBe("state-123");
     expect(url.searchParams.get("scope")).toContain("openid");
     expect(url.searchParams.get("scope")).toContain("email");
+    expect(url.searchParams.get("scope")).toContain("address");
+    expect(url.searchParams.get("scope")).not.toContain("phone");
+    expect(url.searchParams.get("scope")).not.toContain("paypalattributes");
   });
 
   it("normalizes the approved identity claims and does not retain raw email", () => {

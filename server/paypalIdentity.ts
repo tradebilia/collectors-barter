@@ -10,8 +10,6 @@ const DEFAULT_SCOPES = [
   "profile",
   "email",
   "address",
-  "phone",
-  "https://uri.paypal.com/services/paypalattributes",
 ];
 
 export type PayPalIdentityReference = {
