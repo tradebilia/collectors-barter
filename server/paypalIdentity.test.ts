@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { buildPayPalAuthorizationUrl, getPayPalIdentityRedirectUri, getPayPalIdentityScopes, normalizePayPalUserInfo } from "./paypalIdentity";
+import { describe, expect, it, vi } from "vitest";
+import { buildPayPalAuthorizationUrl, fetchPayPalUserInfo, getPayPalIdentityRedirectUri, getPayPalIdentityScopes, normalizePayPalUserInfo } from "./paypalIdentity";
 
 describe("PayPal identity adapter", () => {
   it("uses the configured public callback URI exactly", () => {
@@ -72,5 +72,19 @@ describe("PayPal identity adapter", () => {
 
   it("accepts the OpenID subject when PayPal omits user_id", () => {
     expect(normalizePayPalUserInfo({ sub: "openid-subject" }).paypalUserId).toBe("openid-subject");
+  });
+
+  it("uses the documented OpenID Connect userinfo endpoint and schema", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ user_id: "paypal-user-1" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      await fetchPayPalUserInfo("sandbox-access-token");
+      expect(fetchMock).toHaveBeenCalledWith(
+        "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=paypalv1.1",
+        { headers: { Authorization: "Bearer sandbox-access-token", Accept: "application/json" } },
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

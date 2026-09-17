@@ -130,7 +130,7 @@ export async function exchangePayPalIdentityCode(code: string, redirectUri: stri
 }
 
 export async function fetchPayPalUserInfo(accessToken: string): Promise<PayPalIdentityReference> {
-  const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/oauth2/userinfo?schema=openid`, {
+  const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/openidconnect/userinfo?schema=paypalv1.1`, {
     headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
   });
   const body = await parseResponse(response, "PayPal userinfo request");
