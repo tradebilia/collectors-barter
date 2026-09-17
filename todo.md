@@ -2069,4 +2069,5 @@
 - [ ] Capture the safe PayPal error category after the corrected userinfo retry and resolve the remaining post-consent callback failure without logging tokens or identity claims.
 - [ ] Resolve the PayPal Sandbox provider-side “Something went wrong” consent error by checking callback propagation, allowed permissions, and Sandbox personal-account test compatibility before retrying.
 - [ ] Resolve the confirmed PayPal Sandbox `callback_userinfo_401` after successful Personal-account consent by validating the OAuth token and Identity API authorization contract.
+- [ ] Test the user-token-compatible OpenID userinfo schema with PayPal Identity tokenservice after `paypalv1.1` produced a 401 following Personal Sandbox consent.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.

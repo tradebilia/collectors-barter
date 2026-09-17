@@ -81,13 +81,13 @@ describe("PayPal identity adapter", () => {
     expect(normalizePayPalUserInfo({ sub: "openid-subject" }).paypalUserId).toBe("openid-subject");
   });
 
-  it("uses the documented OpenID Connect userinfo endpoint and schema", async () => {
+  it("uses the OpenID userinfo schema associated with the Identity tokenservice flow", async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ user_id: "paypal-user-1" }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     try {
       await fetchPayPalUserInfo("sandbox-access-token");
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=paypalv1.1",
+        "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo/?schema=openid",
         {
           headers: {
             Authorization: "Bearer sandbox-access-token",
