@@ -38,9 +38,9 @@ describe("PayPal identity adapter", () => {
     }
   });
 
-  it("builds a sandbox authorization URL with only the approved minimum identity scopes", () => {
+  it("builds a Live authorization URL with only the approved minimum identity scopes", () => {
     const url = new URL(buildPayPalAuthorizationUrl("state-123", "https://tradebilia.example/api/paypal/callback"));
-    expect(url.origin).toBe("https://www.sandbox.paypal.com");
+    expect(url.origin).toBe("https://www.paypal.com");
     expect(url.pathname).toBe("/signin/authorize");
     expect(url.searchParams.get("response_type")).toBe("code");
     expect(url.searchParams.get("redirect_uri")).toBe("https://tradebilia.example/api/paypal/callback");
@@ -87,7 +87,7 @@ describe("PayPal identity adapter", () => {
     try {
       await fetchPayPalUserInfo("sandbox-access-token");
       expect(fetchMock).toHaveBeenCalledWith(
-        "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo/?schema=openid",
+        "https://api-m.paypal.com/v1/identity/openidconnect/userinfo/?schema=openid",
         {
           headers: {
             Authorization: "Bearer sandbox-access-token",
@@ -108,7 +108,7 @@ describe("PayPal identity adapter", () => {
       await expect(exchangePayPalIdentityCode("authorization-code", "https://tradebilia.manus.space/api/paypal/callback"))
         .resolves.toBe("identity-user-token");
       expect(fetchMock.mock.calls[0]?.[0]).toBe(
-        "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/tokenservice",
+        "https://api-m.paypal.com/v1/identity/openidconnect/tokenservice",
       );
     } finally {
       vi.unstubAllGlobals();
