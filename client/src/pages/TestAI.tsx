@@ -1800,13 +1800,13 @@ function PayPalComparisonInspector() {
   }, [attempted, consumePreview, inspectorState]);
 
   const comparisonRows = preview ? [
-    { label: 'Name', local: preview.tradebilia.nameCandidates.join(' · ') || 'Not set', paypal: preview.paypal.name ?? 'Not provided', outcome: preview.outcomes.name },
-    { label: 'Email', local: preview.tradebilia.emailCandidates.join(' · ') || 'Not set', paypal: preview.paypal.email ?? 'Not provided', outcome: preview.outcomes.email, note: preview.paypal.emailVerified === true ? 'PayPal email is verified' : 'PayPal email is not verified' },
-    { label: 'Street address', local: preview.tradebilia.address.street ?? 'Not set', paypal: preview.paypal.address.street ?? 'Not provided', outcome: preview.outcomes.address },
-    { label: 'City', local: preview.tradebilia.address.town ?? 'Not set', paypal: preview.paypal.address.town ?? 'Not provided', outcome: preview.outcomes.address },
-    { label: 'State / region', local: preview.tradebilia.address.state ?? 'Not set', paypal: preview.paypal.address.state ?? 'Not provided', outcome: preview.outcomes.address },
-    { label: 'Postal code', local: preview.tradebilia.address.zipCode ?? 'Not set', paypal: preview.paypal.address.zipCode ?? 'Not provided', outcome: preview.outcomes.address },
-    { label: 'Country', local: preview.tradebilia.address.country ?? 'Not set', paypal: preview.paypal.address.country ?? 'Not provided', outcome: preview.outcomes.address },
+    { label: 'Name', local: preview.tradebilia.nameCandidates[0] ?? 'Not set', paypal: preview.paypal.name ?? 'Not provided', outcome: preview.outcomes.name, note: 'Profile first name followed by last name' },
+    { label: 'Email', local: preview.tradebilia.emailCandidates[0] ?? 'Not set', paypal: preview.paypal.email ?? 'Not provided', outcome: preview.outcomes.email, note: preview.paypal.emailVerified === true ? 'Tradebilia signup email · PayPal email is verified' : 'Tradebilia signup email · PayPal email is not verified' },
+    { label: 'Street address', local: preview.tradebilia.address.street ?? 'Not set', paypal: preview.paypal.address.street ?? 'Not provided', outcome: preview.addressFields?.street ?? preview.outcomes.address },
+    { label: 'City', local: preview.tradebilia.address.town ?? 'Not set', paypal: preview.paypal.address.town ?? 'Not provided', outcome: preview.addressFields?.town ?? preview.outcomes.address },
+    { label: 'State / region', local: preview.tradebilia.address.state ?? 'Not set', paypal: preview.paypal.address.state ?? 'Not provided', outcome: preview.addressFields?.state ?? preview.outcomes.address, note: 'US state abbreviations and full names are compared as equivalent' },
+    { label: 'Postal code', local: preview.tradebilia.address.zipCode ?? 'Not set', paypal: preview.paypal.address.zipCode ?? 'Not provided', outcome: preview.addressFields?.zipCode ?? preview.outcomes.address },
+    { label: 'Country', local: preview.tradebilia.address.country ?? 'Not set', paypal: preview.paypal.address.country ?? 'Not provided', outcome: preview.addressFields?.country ?? preview.outcomes.address, note: 'ISO country codes and full names are compared as equivalent' },
   ] : [];
 
   return (
@@ -1860,7 +1860,7 @@ function PayPalComparisonInspector() {
         <div className="overflow-x-auto rounded-lg border border-violet-400/20 bg-slate-950/50">
           <table className="min-w-full text-left text-xs">
             <thead className="border-b border-violet-400/20 bg-violet-950/40 text-[10px] uppercase tracking-wide text-violet-200">
-              <tr><th className="px-3 py-2">Field</th><th className="px-3 py-2">Tradebilia Profile</th><th className="px-3 py-2">Authorized PayPal value</th><th className="px-3 py-2">Saved outcome</th></tr>
+              <tr><th className="px-3 py-2">Field</th><th className="px-3 py-2">Tradebilia Profile</th><th className="px-3 py-2">Authorized PayPal value</th><th className="px-3 py-2">Comparison result</th></tr>
             </thead>
             <tbody className="divide-y divide-slate-800 text-slate-200">
               {comparisonRows.map((row) => (

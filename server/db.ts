@@ -39,7 +39,7 @@ import { encrypt } from "./_core/crypto";
 import { isPublicMemberEligible } from "./publicVisibility";
 import { claimIdentity } from "./identityRegistry";
 import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference";
-import type { PayPalComparisonProfile, PayPalIdentityReference } from "./paypalIdentity";
+import { buildPayPalComparisonProfile, type PayPalComparisonProfile, type PayPalIdentityReference } from "./paypalIdentity";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -4064,12 +4064,9 @@ export async function getUserPayPalComparisonProfile(userId: number): Promise<Pa
   const db = await requireDb();
   const rows = await db
     .select({
-      accountName: users.name,
-      accountDisplayName: users.displayName,
       accountEmail: users.email,
-      profileDisplayName: userProfiles.displayName,
-      contactFullName: userProfiles.contactFullName,
-      contactEmail: userProfiles.contactEmail,
+      firstName: userProfiles.firstName,
+      lastName: userProfiles.lastName,
       contactAddress: userProfiles.contactAddress,
       contactTown: userProfiles.contactTown,
       contactState: userProfiles.contactState,
@@ -4081,9 +4078,10 @@ export async function getUserPayPalComparisonProfile(userId: number): Promise<Pa
     .where(eq(users.id, userId))
     .limit(1);
   const row = rows[0];
-  return {
-    nameCandidates: [row?.contactFullName, row?.accountName, row?.accountDisplayName, row?.profileDisplayName],
-    emailCandidates: [row?.contactEmail, row?.accountEmail],
+  return buildPayPalComparisonProfile({
+    firstName: row?.firstName,
+    lastName: row?.lastName,
+    accountEmail: row?.accountEmail,
     address: {
       street: row?.contactAddress,
       town: row?.contactTown,
@@ -4091,7 +4089,7 @@ export async function getUserPayPalComparisonProfile(userId: number): Promise<Pa
       zipCode: row?.contactZipCode,
       country: row?.contactCountry,
     },
-  };
+  });
 }
 
 export async function saveUserPayPalIdentity(userId: number, identity: PayPalIdentityReference): Promise<void> {

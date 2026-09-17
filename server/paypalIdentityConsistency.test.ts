@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { buildPayPalComparisonInspection, buildPayPalIdentityConsistency, normalizePayPalUserInfo } from "./paypalIdentity";
+import {
+  buildPayPalAddressFieldConsistency,
+  buildPayPalComparisonInspection,
+  buildPayPalComparisonProfile,
+  buildPayPalIdentityConsistency,
+  normalizePayPalUserInfo,
+} from "./paypalIdentity";
 
 describe("PayPal private consistency outcomes", () => {
   const profile = {
@@ -71,6 +77,54 @@ describe("PayPal private consistency outcomes", () => {
     expect(JSON.stringify(persisted)).not.toContain("123 Main Street");
   });
 
+  it("uses only profile first and last name plus the original account email", () => {
+    const comparisonProfile = buildPayPalComparisonProfile({
+      firstName: "Rich",
+      lastName: "Tavani",
+      accountEmail: "signup@tradebilia.test",
+      address: profile.address,
+    });
+
+    expect(comparisonProfile.nameCandidates).toEqual(["Rich Tavani"]);
+    expect(comparisonProfile.emailCandidates).toEqual(["signup@tradebilia.test"]);
+    expect(buildPayPalIdentityConsistency({
+      name: "Tavani, Rich",
+      email: "signup@tradebilia.test",
+      email_verified: true,
+    }, comparisonProfile)).toMatchObject({ name: "match", email: "match" });
+  });
+
+  it("treats PayPal US state and country codes as their full profile names", () => {
+    const fullNameAddressProfile = {
+      ...profile,
+      address: {
+        street: "123 Main Street",
+        town: "Tampa",
+        state: "New York",
+        zipCode: "33602",
+        country: "United States",
+      },
+    };
+    const payload = {
+      address: {
+        street_address: "123 Main St.",
+        locality: "Tampa",
+        region: "NY",
+        postal_code: "33602",
+        country: "US",
+      },
+    };
+
+    expect(buildPayPalAddressFieldConsistency(payload, fullNameAddressProfile.address)).toEqual({
+      street: "match",
+      town: "match",
+      state: "match",
+      zipCode: "match",
+      country: "match",
+    });
+    expect(buildPayPalIdentityConsistency(payload, fullNameAddressProfile)).toMatchObject({ address: "match" });
+  });
+
   it("keeps the Test AI inspector as an explicit authorization link with visible failure feedback", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
     expect(source).toContain("useSearch");
@@ -83,5 +137,8 @@ describe("PayPal private consistency outcomes", () => {
     expect(source).toContain("The one-time preview could not be loaded.");
     expect(source).toContain("Tradebilia Profile");
     expect(source).toContain("Authorized PayPal value");
+    expect(source).toContain("Tradebilia signup email");
+    expect(source).toContain("US state abbreviations and full names are compared as equivalent");
+    expect(source).toContain("ISO country codes and full names are compared as equivalent");
   });
 });

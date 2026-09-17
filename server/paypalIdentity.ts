@@ -47,6 +47,21 @@ export type PayPalComparisonProfile = {
   };
 };
 
+export type PayPalComparisonProfileInput = {
+  firstName: string | null | undefined;
+  lastName: string | null | undefined;
+  accountEmail: string | null | undefined;
+  address: PayPalComparisonProfile["address"];
+};
+
+export type PayPalAddressFieldConsistency = {
+  street: PayPalConsistencyStatus;
+  town: PayPalConsistencyStatus;
+  state: PayPalConsistencyStatus;
+  zipCode: PayPalConsistencyStatus;
+  country: PayPalConsistencyStatus;
+};
+
 export type PayPalComparisonInspection = {
   inspectedAt: string;
   paypal: {
@@ -67,6 +82,7 @@ export type PayPalComparisonInspection = {
     address: PayPalComparisonProfile["address"];
   };
   outcomes: PayPalIdentityConsistency;
+  addressFields: PayPalAddressFieldConsistency;
 };
 
 export class PayPalIdentityRequestError extends Error {
@@ -123,6 +139,68 @@ function normalizeComparableText(value: unknown): string | null {
   return normalized || null;
 }
 
+/**
+ * PayPal returns US regions as postal abbreviations, while Tradebilia asks
+ * members for their complete state or territory name. Canonicalize the
+ * abbreviation before comparison without changing either displayed value.
+ */
+const US_REGION_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AS: "American Samoa", AZ: "Arizona", AR: "Arkansas",
+  CA: "California", CO: "Colorado", CT: "Connecticut", DE: "Delaware", DC: "District of Columbia",
+  FL: "Florida", GA: "Georgia", GU: "Guam", HI: "Hawaii", ID: "Idaho", IL: "Illinois",
+  IN: "Indiana", IA: "Iowa", KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine",
+  MD: "Maryland", MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+  MO: "Missouri", MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire",
+  NJ: "New Jersey", NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota",
+  MP: "Northern Mariana Islands", OH: "Ohio", OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania",
+  PR: "Puerto Rico", RI: "Rhode Island", SC: "South Carolina", SD: "South Dakota", TN: "Tennessee",
+  TX: "Texas", UT: "Utah", VT: "Vermont", VI: "U.S. Virgin Islands", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
+function normalizeComparableRegion(value: unknown): string | null {
+  const raw = readText(value);
+  if (!raw) return null;
+  const compactCode = raw.replace(/[.\s]/g, "").toUpperCase();
+  return normalizeComparableText(US_REGION_NAMES[compactCode] ?? raw);
+}
+
+/**
+ * PayPal Identity commonly returns an ISO 3166-1 alpha-2 country code (for
+ * example, US) whereas the Tradebilia profile stores the full country name.
+ */
+function normalizeComparableCountry(value: unknown): string | null {
+  const raw = readText(value);
+  if (!raw) return null;
+  const compact = raw.replace(/[.\s]/g, "").toUpperCase();
+  if (compact === "USA" || compact === "UNITEDSTATESOFAMERICA") return normalizeComparableText("United States");
+
+  if (/^[A-Z]{2}$/.test(compact)) {
+    try {
+      const expanded = new Intl.DisplayNames(["en"], { type: "region" }).of(compact);
+      if (expanded) return normalizeComparableText(expanded);
+    } catch {
+      // A malformed or unsupported code falls through to ordinary text comparison.
+    }
+  }
+  return normalizeComparableText(raw);
+}
+
+/**
+ * The approved identity check intentionally uses one account name and one
+ * signup email. Profile display names and alternate contact emails are not
+ * identity candidates for this comparison.
+ */
+export function buildPayPalComparisonProfile(input: PayPalComparisonProfileInput): PayPalComparisonProfile {
+  const fullName = [readText(input.firstName), readText(input.lastName)].filter((value): value is string => Boolean(value)).join(" ");
+  const accountEmail = readText(input.accountEmail);
+  return {
+    nameCandidates: fullName ? [fullName] : [],
+    emailCandidates: accountEmail ? [accountEmail] : [],
+    address: input.address,
+  };
+}
+
 function normalizedNameTokens(value: unknown): string | null {
   const raw = readText(value);
   if (!raw) return null;
@@ -157,24 +235,46 @@ function compareEmail(
   return availableCandidates.includes(paypalNormalized) ? "match" : "mismatch";
 }
 
-function compareAddress(payload: Record<string, unknown>, profile: PayPalComparisonProfile["address"]): PayPalConsistencyStatus {
+function getPayPalAddressValues(payload: Record<string, unknown>) {
   const paypalAddress = readRecord(payload.address) ?? readRecord(payload.addresses);
-  if (!paypalAddress) return "unavailable";
-  const pairs: Array<[unknown, unknown]> = [
-    [paypalAddress.street_address ?? paypalAddress.address_line_1 ?? paypalAddress.line1, profile.street],
-    [paypalAddress.locality ?? paypalAddress.city, profile.town],
-    [paypalAddress.region ?? paypalAddress.state, profile.state],
-    [paypalAddress.postal_code ?? paypalAddress.zip, profile.zipCode],
-    [paypalAddress.country ?? paypalAddress.country_code, profile.country],
-  ];
+  return {
+    street: paypalAddress?.street_address ?? paypalAddress?.address_line_1 ?? paypalAddress?.line1,
+    town: paypalAddress?.locality ?? paypalAddress?.city,
+    state: paypalAddress?.region ?? paypalAddress?.state,
+    zipCode: paypalAddress?.postal_code ?? paypalAddress?.zip,
+    country: paypalAddress?.country ?? paypalAddress?.country_code,
+  };
+}
+
+function compareAddressField(paypalValue: unknown, localValue: unknown, normalizer = normalizeComparableText): PayPalConsistencyStatus {
+  const paypalNormalized = normalizer(paypalValue);
+  const localNormalized = normalizer(localValue);
+  if (!paypalNormalized || !localNormalized) return "unavailable";
+  return paypalNormalized === localNormalized ? "match" : "mismatch";
+}
+
+export function buildPayPalAddressFieldConsistency(
+  payload: Record<string, unknown>,
+  profile: PayPalComparisonProfile["address"],
+): PayPalAddressFieldConsistency {
+  const paypalAddress = getPayPalAddressValues(payload);
+  return {
+    street: compareAddressField(paypalAddress.street, profile.street),
+    town: compareAddressField(paypalAddress.town, profile.town),
+    state: compareAddressField(paypalAddress.state, profile.state, normalizeComparableRegion),
+    zipCode: compareAddressField(paypalAddress.zipCode, profile.zipCode),
+    country: compareAddressField(paypalAddress.country, profile.country, normalizeComparableCountry),
+  };
+}
+
+function compareAddress(payload: Record<string, unknown>, profile: PayPalComparisonProfile["address"]): PayPalConsistencyStatus {
+  const fieldOutcomes = buildPayPalAddressFieldConsistency(payload, profile);
+  const outcomes = Object.values(fieldOutcomes);
   let matches = 0;
   let mismatches = 0;
-  for (const [paypalValue, localValue] of pairs) {
-    const paypalNormalized = normalizeComparableText(paypalValue);
-    const localNormalized = normalizeComparableText(localValue);
-    if (!paypalNormalized || !localNormalized) continue;
-    if (paypalNormalized === localNormalized) matches += 1;
-    else mismatches += 1;
+  for (const outcome of outcomes) {
+    if (outcome === "match") matches += 1;
+    if (outcome === "mismatch") mismatches += 1;
   }
   if (!matches && !mismatches) return "unavailable";
   if (matches >= 2 && mismatches === 0) return "match";
@@ -202,7 +302,7 @@ export function buildPayPalComparisonInspection(
   profile: PayPalComparisonProfile,
   inspectedAt = new Date().toISOString(),
 ): PayPalComparisonInspection {
-  const paypalAddress = readRecord(payload.address) ?? readRecord(payload.addresses) ?? {};
+  const paypalAddress = getPayPalAddressValues(payload);
   return {
     inspectedAt,
     paypal: {
@@ -210,11 +310,11 @@ export function buildPayPalComparisonInspection(
       email: readText(payload.email),
       emailVerified: readBoolean(payload.email_verified),
       address: {
-        street: readText(paypalAddress.street_address ?? paypalAddress.address_line_1 ?? paypalAddress.line1),
-        town: readText(paypalAddress.locality ?? paypalAddress.city),
-        state: readText(paypalAddress.region ?? paypalAddress.state),
-        zipCode: readText(paypalAddress.postal_code ?? paypalAddress.zip),
-        country: readText(paypalAddress.country ?? paypalAddress.country_code),
+        street: readText(paypalAddress.street),
+        town: readText(paypalAddress.town),
+        state: readText(paypalAddress.state),
+        zipCode: readText(paypalAddress.zipCode),
+        country: readText(paypalAddress.country),
       },
     },
     tradebilia: {
@@ -223,6 +323,7 @@ export function buildPayPalComparisonInspection(
       address: profile.address,
     },
     outcomes: buildPayPalIdentityConsistency(payload, profile, inspectedAt),
+    addressFields: buildPayPalAddressFieldConsistency(payload, profile.address),
   };
 }
 
