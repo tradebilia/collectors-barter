@@ -1231,6 +1231,13 @@ export default function AccountSettings() {
                             {paypalIdentityQuery.data.emailVerified === true ? <span className="rounded-full bg-blue-50 px-2.5 py-1 font-semibold text-blue-700">Email verified by PayPal</span> : null}
                             {paypalIdentityQuery.data.accountType ? <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-700">{paypalIdentityQuery.data.accountType} account</span> : null}
                           </div>
+                          {paypalIdentityQuery.data.consistency ? (
+                            <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                              <p className="font-semibold text-slate-900">Private consistency check</p>
+                              <p className="mt-1">Name: {paypalIdentityQuery.data.consistency.name.replace("_", " ")} · Email: {paypalIdentityQuery.data.consistency.email.replace("_", " ")} · Address: {paypalIdentityQuery.data.consistency.address.replace("_", " ")}</p>
+                              <p className="mt-1 text-slate-500">Only the comparison outcomes are retained; PayPal name, email, and address values are never shown here or publicly.</p>
+                            </div>
+                          ) : null}
                         </div>
                       ) : (
                         <div className="mt-4 flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">

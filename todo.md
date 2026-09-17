@@ -2059,15 +2059,17 @@
 - [x] Verify Whatnot actor output and saved public payload for review count and seller status, fix missing values if needed, and enlarge the Whatnot logo on the public profile.
 - [x] Trace the raw Whatnot actor response for `dovescollection`, map the exact total-review field, and fix the public profile review count while preserving the enlarged logo and approved fields.
 - [x] Deep-dive PayPal’s official OAuth/Identity API, available profile claims, permissions, verification signals, privacy limits, and safe Tradebilia integration model; produce a cited field inventory without implementing the integration.
-- [ ] Set up PayPal sandbox authorization for the Profile Integrations tab with secure server-side OAuth, consented userinfo retrieval, private persistence, disconnect behavior, and no public exposure of sensitive claims until the flow is approved and tested.
-- [ ] Resume PayPal sandbox dashboard configuration after the PayPal security challenge is completed in a normal browser; add the callback URL, enable approved Identity permissions, and run a consented sandbox test.
-- [ ] Fix the PayPal Sandbox callback URI mismatch: override the legacy internal redirect URL with the registered `https://tradebilia.manus.space/api/paypal/callback` endpoint and retest authorization.
-- [ ] Fix the persistent deployed PayPal authorization mismatch: the live start route still sends the legacy internal Cloud Run callback despite the configured public callback URI; trace deployment environment resolution and correct it before retrying consent.
-- [ ] Resolve PayPal Sandbox `invalid scope` authorization failure by verifying the app’s permitted Identity scopes, requesting only the approved minimum claims, and retrying consent.
-- [ ] Prevent a stale deployed `PAYPAL_IDENTITY_SCOPES` override from reintroducing rejected phone or PayPal-attributes scopes; enforce the approved minimum scope allowlist before authorization.
-- [ ] Diagnose and fix the PayPal post-consent `callback_failed` result, then verify only safe private identity metadata persists after authorization.
-- [ ] Capture the safe PayPal error category after the corrected userinfo retry and resolve the remaining post-consent callback failure without logging tokens or identity claims.
-- [ ] Resolve the PayPal Sandbox provider-side “Something went wrong” consent error by checking callback propagation, allowed permissions, and Sandbox personal-account test compatibility before retrying.
-- [ ] Resolve the confirmed PayPal Sandbox `callback_userinfo_401` after successful Personal-account consent by validating the OAuth token and Identity API authorization contract.
-- [ ] Test the user-token-compatible OpenID userinfo schema with PayPal Identity tokenservice after `paypalv1.1` produced a 401 following Personal Sandbox consent.
+- [x] Set up PayPal sandbox authorization for the Profile Integrations tab with secure server-side OAuth, consented userinfo retrieval, private persistence, disconnect behavior, and no public exposure of sensitive claims until the flow is approved and tested.
+- [x] Resume PayPal sandbox dashboard configuration after the PayPal security challenge is completed in a normal browser; add the callback URL, enable approved Identity permissions, and run a consented sandbox test.
+- [x] Fix the PayPal Sandbox callback URI mismatch: override the legacy internal redirect URL with the registered `https://tradebilia.manus.space/api/paypal/callback` endpoint and retest authorization.
+- [x] Fix the persistent deployed PayPal authorization mismatch: the live start route still sends the legacy internal Cloud Run callback despite the configured public callback URI; trace deployment environment resolution and correct it before retrying consent.
+- [x] Resolve PayPal Sandbox `invalid scope` authorization failure by verifying the app’s permitted Identity scopes, requesting only the approved minimum claims, and retrying consent.
+- [x] Prevent a stale deployed `PAYPAL_IDENTITY_SCOPES` override from reintroducing rejected phone or PayPal-attributes scopes; enforce the approved minimum scope allowlist before authorization.
+- [x] Diagnose and fix the PayPal post-consent `callback_failed` result, then verify only safe private identity metadata persists after authorization.
+- [x] Capture the safe PayPal error category after the corrected userinfo retry and resolve the remaining post-consent callback failure without logging tokens or identity claims.
+- [x] Resolve the PayPal Sandbox provider-side “Something went wrong” consent error by checking callback propagation, allowed permissions, and Sandbox personal-account test compatibility before retrying.
+- [x] Resolve the confirmed PayPal Sandbox `callback_userinfo_401` after successful Personal-account consent by validating the OAuth token and Identity API authorization contract.
+- [x] Test the user-token-compatible OpenID userinfo schema with PayPal Identity tokenservice after `paypalv1.1` produced a 401 following Personal Sandbox consent.
+- [x] Audit the remaining PayPal Sandbox Dashboard settings and Personal test-account prerequisites after PayPal itself returned “Something went wrong on our end” immediately after sign-in.
+- [ ] Implement private PayPal name, email, and address consistency outcomes against the member’s Profile data, retaining only safe result metadata and never exposing raw PayPal claims publicly.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.

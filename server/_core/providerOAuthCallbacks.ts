@@ -6,11 +6,12 @@ import {
   buildPayPalAuthorizationUrl,
   createPayPalOauthState,
   exchangePayPalIdentityCode,
-  fetchPayPalUserInfo,
+  fetchPayPalUserInfoPayload,
   getPayPalIdentityRedirectUri,
+  normalizePayPalUserInfo,
   PayPalIdentityRequestError,
 } from "../paypalIdentity";
-import { saveUserPayPalIdentity } from "../db";
+import { getUserPayPalComparisonProfile, saveUserPayPalIdentity } from "../db";
 import { isStagingSafetyEnabled } from "./stagingSafety";
 import {
   clearProviderOauthStateCookie,
@@ -60,7 +61,9 @@ export function registerProviderOAuthCallbacks(app: Express) {
       if (!host) return res.redirect(302, "/account-settings?paypal=error&reason=missing_origin&tab=integrations");
       const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
       const accessToken = await exchangePayPalIdentityCode(code, redirectUri);
-      const identity = await fetchPayPalUserInfo(accessToken);
+      const userinfo = await fetchPayPalUserInfoPayload(accessToken);
+      const comparisonProfile = await getUserPayPalComparisonProfile(user.id);
+      const identity = normalizePayPalUserInfo(userinfo, new Date().toISOString(), comparisonProfile);
       await saveUserPayPalIdentity(user.id, identity);
       return res.redirect(302, "/account-settings?paypal=connected&tab=integrations");
     } catch (err) {

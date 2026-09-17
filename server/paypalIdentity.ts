@@ -22,6 +22,29 @@ export type PayPalIdentityReference = {
   profileImageUrl: string | null;
   locale: string | null;
   connectedAt: string;
+  consistency?: PayPalIdentityConsistency;
+};
+
+export type PayPalConsistencyStatus = "match" | "partial_match" | "mismatch" | "unavailable";
+
+export type PayPalIdentityConsistency = {
+  version: 1;
+  evaluatedAt: string;
+  name: PayPalConsistencyStatus;
+  email: PayPalConsistencyStatus;
+  address: PayPalConsistencyStatus;
+};
+
+export type PayPalComparisonProfile = {
+  nameCandidates: Array<string | null | undefined>;
+  emailCandidates: Array<string | null | undefined>;
+  address: {
+    street: string | null | undefined;
+    town: string | null | undefined;
+    state: string | null | undefined;
+    zipCode: string | null | undefined;
+    country: string | null | undefined;
+  };
 };
 
 export class PayPalIdentityRequestError extends Error {
@@ -49,6 +72,107 @@ function isInternalCallbackUrl(value: string): boolean {
 
 function readBoolean(value: unknown): boolean | null {
   return typeof value === "boolean" ? value : null;
+}
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function normalizeComparableText(value: unknown): string | null {
+  const raw = readText(value);
+  if (!raw) return null;
+  const normalized = raw
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/\bstreet\b/g, "st")
+    .replace(/\broad\b/g, "rd")
+    .replace(/\bavenue\b/g, "ave")
+    .replace(/\bboulevard\b/g, "blvd")
+    .replace(/\bdrive\b/g, "dr")
+    .replace(/\blane\b/g, "ln")
+    .replace(/\bcourt\b/g, "ct")
+    .replace(/\bplace\b/g, "pl")
+    .replace(/\bapartment\b/g, "apt")
+    .replace(/\bsuite\b/g, "ste")
+    .replace(/[^a-z0-9]/g, "");
+  return normalized || null;
+}
+
+function normalizedNameTokens(value: unknown): string | null {
+  const raw = readText(value);
+  if (!raw) return null;
+  const tokens = raw
+    .normalize("NFKD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .sort();
+  return tokens.length ? tokens.join("|") : null;
+}
+
+function compareName(paypalName: unknown, candidates: Array<string | null | undefined>): PayPalConsistencyStatus {
+  const paypalTokens = normalizedNameTokens(paypalName);
+  if (!paypalTokens) return "unavailable";
+  const availableCandidates = candidates.map(normalizedNameTokens).filter((value): value is string => Boolean(value));
+  if (!availableCandidates.length) return "unavailable";
+  return availableCandidates.includes(paypalTokens) ? "match" : "mismatch";
+}
+
+function compareEmail(
+  paypalEmail: unknown,
+  paypalEmailVerified: boolean | null,
+  candidates: Array<string | null | undefined>,
+): PayPalConsistencyStatus {
+  if (paypalEmailVerified !== true) return "unavailable";
+  const paypalNormalized = normalizeComparableText(paypalEmail);
+  if (!paypalNormalized) return "unavailable";
+  const availableCandidates = candidates.map(normalizeComparableText).filter((value): value is string => Boolean(value));
+  if (!availableCandidates.length) return "unavailable";
+  return availableCandidates.includes(paypalNormalized) ? "match" : "mismatch";
+}
+
+function compareAddress(payload: Record<string, unknown>, profile: PayPalComparisonProfile["address"]): PayPalConsistencyStatus {
+  const paypalAddress = readRecord(payload.address) ?? readRecord(payload.addresses);
+  if (!paypalAddress) return "unavailable";
+  const pairs: Array<[unknown, unknown]> = [
+    [paypalAddress.street_address ?? paypalAddress.address_line_1 ?? paypalAddress.line1, profile.street],
+    [paypalAddress.locality ?? paypalAddress.city, profile.town],
+    [paypalAddress.region ?? paypalAddress.state, profile.state],
+    [paypalAddress.postal_code ?? paypalAddress.zip, profile.zipCode],
+    [paypalAddress.country ?? paypalAddress.country_code, profile.country],
+  ];
+  let matches = 0;
+  let mismatches = 0;
+  for (const [paypalValue, localValue] of pairs) {
+    const paypalNormalized = normalizeComparableText(paypalValue);
+    const localNormalized = normalizeComparableText(localValue);
+    if (!paypalNormalized || !localNormalized) continue;
+    if (paypalNormalized === localNormalized) matches += 1;
+    else mismatches += 1;
+  }
+  if (!matches && !mismatches) return "unavailable";
+  if (matches >= 2 && mismatches === 0) return "match";
+  if (matches > 0 && mismatches > 0) return "partial_match";
+  if (mismatches >= 2) return "mismatch";
+  return "unavailable";
+}
+
+export function buildPayPalIdentityConsistency(
+  payload: Record<string, unknown>,
+  profile: PayPalComparisonProfile,
+  evaluatedAt = new Date().toISOString(),
+): PayPalIdentityConsistency {
+  return {
+    version: 1,
+    evaluatedAt,
+    name: compareName(payload.name, profile.nameCandidates),
+    email: compareEmail(payload.email, readBoolean(payload.email_verified), profile.emailCandidates),
+    address: compareAddress(payload, profile.address),
+  };
 }
 
 function safeHttpsUrl(value: unknown): string | null {
@@ -96,10 +220,14 @@ export function buildPayPalAuthorizationUrl(state: string, redirectUri: string):
   return url.toString();
 }
 
-export function normalizePayPalUserInfo(payload: Record<string, unknown>, connectedAt = new Date().toISOString()): PayPalIdentityReference {
+export function normalizePayPalUserInfo(
+  payload: Record<string, unknown>,
+  connectedAt = new Date().toISOString(),
+  comparisonProfile?: PayPalComparisonProfile,
+): PayPalIdentityReference {
   const paypalUserId = readText(payload.user_id) ?? readText(payload.sub);
   if (!paypalUserId) throw new Error("PayPal userinfo did not include a user identifier.");
-  return {
+  const reference: PayPalIdentityReference = {
     paypalUserId,
     name: readText(payload.name),
     emailVerified: readBoolean(payload.email_verified),
@@ -109,6 +237,8 @@ export function normalizePayPalUserInfo(payload: Record<string, unknown>, connec
     locale: readText(payload.locale),
     connectedAt,
   };
+  if (comparisonProfile) reference.consistency = buildPayPalIdentityConsistency(payload, comparisonProfile, connectedAt);
+  return reference;
 }
 
 async function parseResponse(
@@ -142,7 +272,7 @@ export async function exchangePayPalIdentityCode(code: string, redirectUri: stri
   return accessToken;
 }
 
-export async function fetchPayPalUserInfo(accessToken: string): Promise<PayPalIdentityReference> {
+export async function fetchPayPalUserInfoPayload(accessToken: string): Promise<Record<string, unknown>> {
   const response = await fetch(`${PAYPAL_API_BASE}/v1/identity/openidconnect/userinfo/?schema=openid`, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -150,8 +280,11 @@ export async function fetchPayPalUserInfo(accessToken: string): Promise<PayPalId
       "Content-Type": "application/json",
     },
   });
-  const body = await parseResponse(response, "userinfo");
-  return normalizePayPalUserInfo(body);
+  return parseResponse(response, "userinfo");
+}
+
+export async function fetchPayPalUserInfo(accessToken: string): Promise<PayPalIdentityReference> {
+  return normalizePayPalUserInfo(await fetchPayPalUserInfoPayload(accessToken));
 }
 
 export function createPayPalOauthState(): string {

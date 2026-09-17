@@ -39,7 +39,7 @@ import { encrypt } from "./_core/crypto";
 import { isPublicMemberEligible } from "./publicVisibility";
 import { claimIdentity } from "./identityRegistry";
 import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference";
-import type { PayPalIdentityReference } from "./paypalIdentity";
+import type { PayPalComparisonProfile, PayPalIdentityReference } from "./paypalIdentity";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -4058,6 +4058,40 @@ export async function getUserPayPalIdentity(userId: number): Promise<PayPalIdent
     .where(eq(userProfiles.userId, userId))
     .limit(1);
   return readPayPalIdentity(rows[0]?.connectedAccounts);
+}
+
+export async function getUserPayPalComparisonProfile(userId: number): Promise<PayPalComparisonProfile> {
+  const db = await requireDb();
+  const rows = await db
+    .select({
+      accountName: users.name,
+      accountDisplayName: users.displayName,
+      accountEmail: users.email,
+      profileDisplayName: userProfiles.displayName,
+      contactFullName: userProfiles.contactFullName,
+      contactEmail: userProfiles.contactEmail,
+      contactAddress: userProfiles.contactAddress,
+      contactTown: userProfiles.contactTown,
+      contactState: userProfiles.contactState,
+      contactZipCode: userProfiles.contactZipCode,
+      contactCountry: userProfiles.contactCountry,
+    })
+    .from(users)
+    .leftJoin(userProfiles, eq(userProfiles.userId, users.id))
+    .where(eq(users.id, userId))
+    .limit(1);
+  const row = rows[0];
+  return {
+    nameCandidates: [row?.contactFullName, row?.accountName, row?.accountDisplayName, row?.profileDisplayName],
+    emailCandidates: [row?.contactEmail, row?.accountEmail],
+    address: {
+      street: row?.contactAddress,
+      town: row?.contactTown,
+      state: row?.contactState,
+      zipCode: row?.contactZipCode,
+      country: row?.contactCountry,
+    },
+  };
 }
 
 export async function saveUserPayPalIdentity(userId: number, identity: PayPalIdentityReference): Promise<void> {
