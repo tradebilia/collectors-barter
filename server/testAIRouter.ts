@@ -22,6 +22,8 @@ import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideo
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
+import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
+import { setProviderOauthStateCookie } from './_core/providerOauthState';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 async function getEbayAppToken(): Promise<string | null> {
@@ -202,6 +204,25 @@ function normalizeTrackingNumber(value: string | null | undefined) {
 
 // ─── Router ─────────────────────────────────────────────────────────────────
 export const testAIRouter = router({
+  startPayPalComparisonInspection: protectedProcedure
+    .mutation(({ ctx }) => {
+      if (ctx.user.role !== 'admin') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'This private inspector is available to administrators only.' });
+      }
+      const protoHeader = ctx.req.headers['x-forwarded-proto'];
+      const forwardedProto = (Array.isArray(protoHeader) ? protoHeader[0] : protoHeader)?.split(',')[0]?.trim();
+      const protocol = forwardedProto || ctx.req.protocol || 'https';
+      const hostHeader = ctx.req.headers['x-forwarded-host'];
+      const forwardedHost = (Array.isArray(hostHeader) ? hostHeader[0] : hostHeader)?.split(',')[0]?.trim();
+      const host = forwardedHost || ctx.req.get('host') || ctx.req.headers.host;
+      if (!host) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Could not determine the public site origin for PayPal.' });
+      }
+      const state = createPayPalOauthState();
+      const redirectUri = getPayPalIdentityRedirectUri(`${protocol}://${host}`);
+      setProviderOauthStateCookie(ctx.res, 'paypal_inspection', state);
+      return { authorizationUrl: buildPayPalAuthorizationUrl(state, redirectUri) };
+    }),
   consumePayPalComparisonInspection: protectedProcedure
     .mutation(({ ctx }) => {
       if (ctx.user.role !== 'admin') {

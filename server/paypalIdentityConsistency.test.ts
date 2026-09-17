@@ -73,8 +73,11 @@ describe("PayPal private consistency outcomes", () => {
 
   it("keeps the Test AI inspector as an explicit authorization link with visible failure feedback", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
-    expect(source).toContain('href="/api/paypal/inspection/start"');
+    expect(source).toContain('trpc.testAI.startPayPalComparisonInspection.useMutation');
+    expect(source).toContain('window.location.assign(authorizationUrl)');
+    expect(source).toContain('Opening PayPal…');
     expect(source).toContain("PayPal comparison inspection did not complete.");
+    expect(source).toContain("PayPal inspection could not start.");
     expect(source).toContain("The one-time preview could not be loaded.");
     expect(source).toContain("Tradebilia Profile");
     expect(source).toContain("Authorized PayPal value");

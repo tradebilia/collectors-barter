@@ -1781,6 +1781,7 @@ function PayPalComparisonInspector() {
   const [location] = useLocation();
   const [preview, setPreview] = useState<any>(null);
   const [attempted, setAttempted] = useState(false);
+  const startInspection = trpc.testAI.startPayPalComparisonInspection.useMutation();
   const consumePreview = trpc.testAI.consumePayPalComparisonInspection.useMutation();
   const inspectorParams = useMemo(
     () => new URLSearchParams(location.split('?')[1] ?? ''),
@@ -1821,10 +1822,26 @@ function PayPalComparisonInspector() {
       {!preview && (
         <div className="flex flex-col gap-3 rounded-lg border border-violet-400/20 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-2xl text-xs text-gray-300">Raw PayPal name, email, and address are never saved to the Tradebilia database or public profile. The encrypted preview expires after five minutes and is consumed after one view.</p>
-          <a href="/api/paypal/inspection/start" className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-violet-500">Inspect my PayPal comparison</a>
+          <button
+            type="button"
+            disabled={startInspection.isPending}
+            onClick={() => startInspection.mutate(undefined, {
+              onSuccess: ({ authorizationUrl }) => window.location.assign(authorizationUrl),
+              onError: (error) => toast.error(error.message),
+            })}
+            className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-violet-500 disabled:cursor-wait disabled:opacity-60"
+          >
+            {startInspection.isPending ? 'Opening PayPal…' : 'Inspect my PayPal comparison'}
+          </button>
         </div>
       )}
 
+      {startInspection.isError && (
+        <div className="rounded-lg border border-red-500/40 bg-red-950/30 p-3 text-xs text-red-100" role="alert">
+          <p className="font-semibold">PayPal inspection could not start.</p>
+          <p className="mt-1">{startInspection.error.message}</p>
+        </div>
+      )}
       {consumePreview.isPending && <div className="flex items-center gap-2 text-sm text-violet-100"><Spinner className="h-4 w-4" /> Loading one-time private comparison…</div>}
       {inspectorState === 'error' && (
         <div className="rounded-lg border border-red-500/40 bg-red-950/30 p-3 text-xs text-red-100" role="alert">
