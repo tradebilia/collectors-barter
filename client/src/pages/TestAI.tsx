@@ -1782,10 +1782,12 @@ function PayPalComparisonInspector() {
   const [preview, setPreview] = useState<any>(null);
   const [attempted, setAttempted] = useState(false);
   const consumePreview = trpc.testAI.consumePayPalComparisonInspection.useMutation();
-  const inspectorState = useMemo(
-    () => new URLSearchParams(location.split('?')[1] ?? '').get('paypalInspector'),
+  const inspectorParams = useMemo(
+    () => new URLSearchParams(location.split('?')[1] ?? ''),
     [location],
   );
+  const inspectorState = inspectorParams.get('paypalInspector');
+  const inspectorReason = inspectorParams.get('reason');
 
   useEffect(() => {
     if (inspectorState !== 'ready' || attempted) return;
@@ -1819,11 +1821,23 @@ function PayPalComparisonInspector() {
       {!preview && (
         <div className="flex flex-col gap-3 rounded-lg border border-violet-400/20 bg-slate-950/40 p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="max-w-2xl text-xs text-gray-300">Raw PayPal name, email, and address are never saved to the Tradebilia database or public profile. The encrypted preview expires after five minutes and is consumed after one view.</p>
-          <button type="button" onClick={() => { window.location.assign('/api/paypal/inspection/start'); }} className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-violet-500">Inspect my PayPal comparison</button>
+          <a href="/api/paypal/inspection/start" className="shrink-0 rounded-lg bg-violet-600 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-violet-500">Inspect my PayPal comparison</a>
         </div>
       )}
 
       {consumePreview.isPending && <div className="flex items-center gap-2 text-sm text-violet-100"><Spinner className="h-4 w-4" /> Loading one-time private comparison…</div>}
+      {inspectorState === 'error' && (
+        <div className="rounded-lg border border-red-500/40 bg-red-950/30 p-3 text-xs text-red-100" role="alert">
+          <p className="font-semibold">PayPal comparison inspection did not complete.</p>
+          <p className="mt-1">Safe status: {inspectorReason?.replace(/_/g, ' ') || 'unknown error'}. Start a new inspection after resolving the displayed status.</p>
+        </div>
+      )}
+      {consumePreview.isError && (
+        <div className="rounded-lg border border-red-500/40 bg-red-950/30 p-3 text-xs text-red-100" role="alert">
+          <p className="font-semibold">The one-time preview could not be loaded.</p>
+          <p className="mt-1">{consumePreview.error.message}</p>
+        </div>
+      )}
 
       {preview && (
         <div className="overflow-x-auto rounded-lg border border-violet-400/20 bg-slate-950/50">

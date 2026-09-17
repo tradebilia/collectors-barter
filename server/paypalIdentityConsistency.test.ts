@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { buildPayPalComparisonInspection, buildPayPalIdentityConsistency, normalizePayPalUserInfo } from "./paypalIdentity";
 
 describe("PayPal private consistency outcomes", () => {
@@ -67,5 +69,14 @@ describe("PayPal private consistency outcomes", () => {
     const persisted = normalizePayPalUserInfo(payload, "2026-09-17T00:00:00.000Z", profile);
     expect(JSON.stringify(persisted)).not.toContain("rich@example.com");
     expect(JSON.stringify(persisted)).not.toContain("123 Main Street");
+  });
+
+  it("keeps the Test AI inspector as an explicit authorization link with visible failure feedback", () => {
+    const source = readFileSync(resolve(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
+    expect(source).toContain('href="/api/paypal/inspection/start"');
+    expect(source).toContain("PayPal comparison inspection did not complete.");
+    expect(source).toContain("The one-time preview could not be loaded.");
+    expect(source).toContain("Tradebilia Profile");
+    expect(source).toContain("Authorized PayPal value");
   });
 });

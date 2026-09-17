@@ -2073,5 +2073,6 @@
 - [x] Audit the remaining PayPal Sandbox Dashboard settings and Personal test-account prerequisites after PayPal itself returned “Something went wrong on our end” immediately after sign-in.
 - [x] Implement private PayPal name, email, and address consistency outcomes against the member’s Profile data, retaining only safe result metadata and never exposing raw PayPal claims publicly.
 - [ ] Add an owner-only PayPal Comparison Inspector on Test AI that shows one authorized inspection’s raw field values and field-level comparison, without public exposure or durable raw-claim storage.
+- [ ] Fix the PayPal Comparison Inspector so completed authorization returns the one-time preview and renders Tradebilia and PayPal values side by side instead of remaining in the empty state.
 - [x] Enlarge the Whatnot logo on the public profile Whatnot Reference card to match the visual scale of the LinkedIn and Etsy verified-account logos.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.
