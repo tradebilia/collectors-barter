@@ -25,6 +25,7 @@ describe("Whatnot Reference surfaces", () => {
     expect(source).toContain("does not verify account ownership");
     expect(source).toContain("reviewCount");
     expect(source).toContain("sellerStatus");
+    expect(source).toContain('className="h-9 w-20 object-contain"');
     expect(source).not.toContain("Avg. shipping");
     expect(source).not.toContain("averageShippingTime");
   });

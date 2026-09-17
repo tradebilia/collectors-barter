@@ -807,7 +807,7 @@ export default function PublicProfile() {
                   <div id="verified-account-details" className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm">
                     <div className="flex items-center justify-between border-b border-red-100 bg-red-50 px-5 py-3">
                       <div className="flex items-center gap-2">
-                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-8 w-8 rounded object-contain" />
+                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-9 w-20 object-contain" />
                         <span className="text-sm font-bold text-red-900">Whatnot Reference</span>
                       </div>
                       <span className="rounded-full bg-white/80 px-2 py-0.5 text-[9px] font-black uppercase tracking-tight text-red-700">Public data</span>
@@ -1072,7 +1072,7 @@ export default function PublicProfile() {
                   <section className="overflow-hidden rounded-2xl border border-red-100 bg-white shadow-sm" aria-labelledby="verified-whatnot-heading">
                     <div className="flex items-center justify-between border-b border-red-100 bg-red-50/70 px-5 py-4">
                       <div className="flex items-center gap-3">
-                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-8 w-8 rounded object-contain" />
+                        <img src="https://assets.tradebilia.com/WhatNot_ab669ac9.png" alt="Whatnot" className="h-9 w-20 object-contain" />
                         <div>
                           <h3 id="verified-whatnot-heading" className="text-sm font-black text-slate-950">Whatnot Reference</h3>
                           <p className="text-[10px] font-bold uppercase tracking-widest text-red-700">Public data</p>
