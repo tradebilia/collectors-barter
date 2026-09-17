@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
 import { useAuth } from '@/_core/hooks/useAuth';
-import { useLocation } from 'wouter';
+import { useLocation, useSearch } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -1778,14 +1778,14 @@ function CarrierTrackingSection() {
 
 // ─── PayPal Comparison Inspector ─────────────────────────────────────────────
 function PayPalComparisonInspector() {
-  const [location] = useLocation();
+  const search = useSearch();
   const [preview, setPreview] = useState<any>(null);
   const [attempted, setAttempted] = useState(false);
   const startInspection = trpc.testAI.startPayPalComparisonInspection.useMutation();
   const consumePreview = trpc.testAI.consumePayPalComparisonInspection.useMutation();
   const inspectorParams = useMemo(
-    () => new URLSearchParams(location.split('?')[1] ?? ''),
-    [location],
+    () => new URLSearchParams(search),
+    [search],
   );
   const inspectorState = inspectorParams.get('paypalInspector');
   const inspectorReason = inspectorParams.get('reason');

@@ -73,6 +73,8 @@ describe("PayPal private consistency outcomes", () => {
 
   it("keeps the Test AI inspector as an explicit authorization link with visible failure feedback", () => {
     const source = readFileSync(resolve(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
+    expect(source).toContain("useSearch");
+    expect(source).toContain("new URLSearchParams(search)");
     expect(source).toContain('trpc.testAI.startPayPalComparisonInspection.useMutation');
     expect(source).toContain('window.location.assign(authorizationUrl)');
     expect(source).toContain('Opening PayPal…');
