@@ -168,7 +168,7 @@ const SOCIAL_GRAPHIC_ALLOWED_IMAGE_HOSTS = new Set([
 const SOCIAL_GRAPHIC_ALLOWED_REDIRECT_HOSTS = new Set([
   "d36hbw14aib5lz.cloudfront.net",
 ]);
-const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
+const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "https://tradebilia.manus.space/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "https://tradebilia.manus.space/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 const SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES = new Set([
   "image/jpeg",

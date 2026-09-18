@@ -25,14 +25,14 @@ describe("Social promotion graphic", () => {
     expect(source).toContain("New High-Value Listing");
     expect(source).toContain("getSocialPromotionItemTitle");
     expect(source).toContain("h-12");
-    expect(source).toContain("TRADEBILIA_LOGO_URL");
-    expect(source).toContain("brandLogoUrl = TRADEBILIA_LOGO_URL");
+    expect(source).toContain("SOCIAL_GRAPHIC_BRAND_LOGO_URL");
+    expect(source).toContain("brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL");
     expect(source).toContain('alt="Tradebilia"');
     expect(source).toContain("View item profile");
     expect(source).toContain("draft.destinationUrl");
     expect(source).toContain("promotion?.facts.slice(0, 4)");
     expect(source).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
-    expect(source).toContain("h-28 w-auto");
+    expect(source).toContain("h-40 w-auto");
     expect(source).toContain("justify-center border-t");
     expect(source).not.toContain("<span>tradebilia</span>");
   });

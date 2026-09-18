@@ -14,6 +14,7 @@ export const SOCIAL_GRAPHIC_CANVAS_SIZES: Record<SocialPlatform, SocialGraphicCa
 type CanvasImage = HTMLImageElement;
 
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
+export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 
 type SocialGraphicExportInput = {
   draft: SocialDraft;
@@ -255,7 +256,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 2 * scale, 900 * scale, 230 * scale);
+  drawBrand(context, brandLogo, padding, -18 * scale, 1050 * scale, 360 * scale);
 
   const imageX = padding;
   const imageY = 168 * scale;
@@ -319,7 +320,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 4 * scale, 900 * scale, 230 * scale);
+  drawBrand(context, brandLogo, padding, -8 * scale, 1050 * scale, 360 * scale);
 
   const imageY = 182 * scale;
   const imageHeight = platform === "Pinterest" ? height * 0.46 : height * 0.43;

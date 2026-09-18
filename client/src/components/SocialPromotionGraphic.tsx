@@ -1,7 +1,6 @@
 import React from "react";
 import { ExternalLink, Image as ImageIcon, PlayCircle } from "lucide-react";
-import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
-import { SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
+import { SOCIAL_GRAPHIC_BRAND_LOGO_URL, SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
 import { formatSocialItemType, formatSocialValue, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
@@ -21,7 +20,7 @@ function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBILIA_LOGO_URL }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string }) {
+export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string }) {
   const spec = SOCIAL_GRAPHIC_SPECS[platform];
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -47,7 +46,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBI
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
-          <img src={brandLogoUrl} alt="Tradebilia" className="h-28 w-auto max-w-[80%] shrink-0 object-contain sm:h-36" />
+          <img src={brandLogoUrl} alt="Tradebilia" className="h-40 w-auto max-w-[88%] shrink-0 object-contain sm:h-52" />
           {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : null}
         </header>
 
