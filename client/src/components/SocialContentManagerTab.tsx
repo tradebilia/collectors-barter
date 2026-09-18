@@ -229,7 +229,9 @@ export function SocialContentManagerTab() {
     : selectedDraft?.platforms[0] ?? null;
   const promotionItemTitle = getSocialPromotionItemTitle(selectedDraft?.promotion?.itemTitle ?? selectedDraft?.title);
   const promotionItemLinkQuery = trpc.admin.getSocialPromotionItemLink.useQuery({ title: promotionItemTitle });
-  const canonicalDestinationUrl = selectedDraft?.promotion?.itemPath
+  const canonicalDestinationUrl = selectedDraft?.source === "Completed Trade"
+    ? TRADEBILIA_PUBLIC_ORIGIN
+    : selectedDraft?.promotion?.itemPath
     ? `${TRADEBILIA_PUBLIC_ORIGIN}${selectedDraft.promotion.itemPath}`
     : promotionItemLinkQuery.data?.destinationUrl ?? selectedDraft?.destinationUrl ?? TRADEBILIA_PUBLIC_ORIGIN;
   const previewCaption = getPreviewCaption(selectedDraft, canonicalDestinationUrl);
@@ -326,14 +328,14 @@ export function SocialContentManagerTab() {
 
   function createCompletedTradeDraft(trade: any) {
     const facts = buildPromotionFacts(trade);
-    const destinationUrl = trade.itemPath ? `${TRADEBILIA_PUBLIC_ORIGIN}${trade.itemPath}` : TRADEBILIA_PUBLIC_ORIGIN;
+    const destinationUrl = TRADEBILIA_PUBLIC_ORIGIN;
     const tradeItems = Array.isArray(trade.tradeItems) ? trade.tradeItems.filter((item: any) => item?.title).slice(0, 4) : [];
     const cashIncluded = Boolean(trade.cashIncluded);
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "Completed Trade",
       sourceSummary: `Completed public exchange · ${formatOpportunityDate(trade.completedAt)}`,
       title: `Recent completed trade: ${trade.title}`,
-      copy: `COMPLETED TRADE\n\n${tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title}${cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nDiscover collector-to-collector trades on Tradebilia.`,
+      copy: `TRADE ALERT\n\n${tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title}${cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nSee more trades on Tradebilia.`,
       mediaUrl: trade.imageUrl,
       destinationUrl,
       promotion: {

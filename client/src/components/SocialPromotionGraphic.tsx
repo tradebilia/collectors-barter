@@ -27,7 +27,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
   const promotionHeader = draft.source === "High-Value Listing"
     ? "New High-Value Listing"
     : draft.source === "Completed Trade"
-      ? "Completed Trade"
+      ? "Trade Alert"
       : "Collectible Showcase";
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = draft.source === "Completed Trade" ? null : formatSocialValue(promotion?.estimatedValue);
@@ -93,7 +93,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
             {facts.length > 0 ? <dl className="mt-[6%] grid grid-cols-2 gap-x-3 gap-y-2 border-y border-white/15 py-[5%]">{facts.map((fact) => <div key={`${fact.label}-${fact.value}`} className="min-w-0"><dt className="text-[clamp(0.43rem,0.7cqw,0.55rem)] font-semibold uppercase tracking-[0.1em] text-[#b9caea]">{fact.label}</dt><dd className="mt-0.5 truncate text-[clamp(0.58rem,1cqw,0.78rem)] font-semibold text-white">{fact.value}</dd></div>)}</dl> : null}
             {value ? <p className="mt-[6%] text-[clamp(0.72rem,1.35cqw,1rem)] font-bold text-[#ffe0a8]">Trade value <span className="text-white">{value}</span></p> : null}
             <div className="mt-[auto] pt-[7%]">
-              <p className="flex items-center gap-1.5 text-[clamp(0.52rem,0.84cqw,0.66rem)] font-bold uppercase tracking-[0.12em] text-white"><ExternalLink className="h-3 w-3 shrink-0 text-[#f6ca7a]" aria-hidden="true" />View item profile</p>
+              <p className="flex items-center gap-1.5 text-[clamp(0.52rem,0.84cqw,0.66rem)] font-bold uppercase tracking-[0.12em] text-white"><ExternalLink className="h-3 w-3 shrink-0 text-[#f6ca7a]" aria-hidden="true" />{draft.source === "Completed Trade" ? "See more trades on Tradebilia" : "View item profile"}</p>
               <p className="mt-1 break-all text-[clamp(0.46rem,0.73cqw,0.58rem)] text-white/70">{draft.destinationUrl}</p>
             </div>
           </div>

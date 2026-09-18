@@ -183,7 +183,7 @@ function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, 
 
 function getPromotionHeader(draft: SocialDraft, category: string | null) {
   if (draft.source === "High-Value Listing") return "NEW HIGH-VALUE LISTING";
-  if (draft.source === "Completed Trade") return "COMPLETED TRADE";
+  if (draft.source === "Completed Trade") return "TRADE ALERT";
   return category?.toUpperCase() || "COLLECTIBLE SHOWCASE";
 }
 
@@ -224,7 +224,7 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   const padding = 54 * scale;
   const items = draft.promotion?.tradeItems ?? [];
   drawBrand(context, brandLogo, padding, 0, 580 * scale, 150 * scale);
-  const frameY = 168 * scale;
+  const frameY = 204 * scale;
   const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
   const columns = itemCount > 2 ? 2 : 2;
   const rows = Math.ceil(itemCount / columns);
@@ -236,6 +236,9 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     const y = frameY + Math.floor(index / columns) * (frameHeight + gap);
     drawMediaFrame(context, images[index] ?? null, x, y, frameWidth, frameHeight, `ITEM ${index + 1}`);
   });
+  context.font = `800 ${Math.round(20 * scale)}px Arial, sans-serif`;
+  const alertWidth = context.measureText("TRADE ALERT").width + 34 * scale;
+  drawPromotionHeader(context, "TRADE ALERT", (width - alertWidth) / 2, frameY - 18 * scale, scale);
   context.fillStyle = "#ffe0a8";
   context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
@@ -246,12 +249,6 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
     context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
   }
-  context.textAlign = "left";
-  context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-  context.fillText("COMPLETED TRADE", padding, height - 92 * scale);
-  context.fillStyle = "rgba(255,255,255,0.82)";
-  drawCompleteFittedTitle(context, items.slice(0, 2).map((item) => item.title).join("  ↔  ") || "Collector exchange", padding, height - 66 * scale, width - padding * 2, 16 * scale, 10 * scale, 2);
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
   context.moveTo(padding, height - 48 * scale);
@@ -276,9 +273,9 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
   Array.from({ length: itemCount }, (_, index) => drawMediaFrame(context, images[index] ?? null, padding + (index % 2) * (frameWidth + gap), frameY + Math.floor(index / 2) * (frameHeight / 2 + gap), frameWidth, frameHeight / 2, `ITEM ${index + 1}`));
   const titleY = frameY + frameHeight + 52 * scale;
-  drawPromotionHeader(context, "COMPLETED TRADE", padding, titleY, scale);
+  drawPromotionHeader(context, "TRADE ALERT", padding, titleY, scale);
   context.fillStyle = "#ffffff";
-  drawCompleteFittedTitle(context, items.map((item) => item.title).join("  ↔ ") || "Collector exchange", padding, titleY + 50 * scale, width - padding * 2, 38 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
+  drawCompleteFittedTitle(context, items.map((item) => item.title).join("  ↔ ") || "Trade Alert", padding, titleY + 50 * scale, width - padding * 2, 38 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
   if (draft.promotion?.cashIncluded) {
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
