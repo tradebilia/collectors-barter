@@ -1,7 +1,7 @@
 import React from "react";
 import { ExternalLink, Image as ImageIcon, PlayCircle } from "lucide-react";
 import { SOCIAL_GRAPHIC_BRAND_LOGO_URL, SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
-import { formatSocialItemType, formatSocialValue, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+import { formatSocialItemType, formatSocialValue, getSocialFooterPhrase, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
   Facebook: { label: "Facebook Feed", size: "1200 × 630", aspect: "aspect-[1.91/1]", previewClass: "max-w-[680px]" },
@@ -52,19 +52,19 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10", isCompletedTrade ? "justify-start" : "justify-between")}>
           <img src={brandLogoUrl} alt="Tradebilia" className="h-24 w-auto max-w-[55%] shrink-0 object-contain sm:h-28" />
-          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="absolute left-1/2 top-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-4 py-2 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">Trade Alert</span> : null}
+          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="absolute left-1/2 top-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-4 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">Trade Alert</span> : null}
         </header>
 
-        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : isCompletedTrade ? "flex-col gap-[3%] pt-[20%]" : "items-stretch gap-[5%] pt-[29%]")}>
+        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : isCompletedTrade ? "flex-col gap-[2%] pt-[17%]" : "items-stretch gap-[5%] pt-[29%]")}>
           <div className={classNames("relative flex min-h-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/15 bg-white/[0.07]", isTallCanvas ? "min-h-0 flex-[1.45] p-[5%]" : isCompletedTrade ? "min-h-0 flex-1 p-[3%]" : "w-[53%] p-[4%]")}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.17),transparent_68%)]" />
             {draft.source === "Completed Trade" && completedItems.length > 0 ? (
               <div className="relative z-10 grid h-full w-full grid-cols-2 items-stretch gap-[4%]">
-                {[{ label: "OFFERED", entries: offeredItems }, { label: "REQUESTED", entries: requestedItems }].map((side) => (
-                  <div key={side.label} className="flex min-h-0 flex-col items-center justify-center gap-[3%] rounded-lg border border-white/10 bg-black/10 p-[2%]">
-                    <div className={classNames("grid min-h-0 w-full flex-1 items-center justify-items-center gap-[3%]", side.entries.length === 3 ? "grid-cols-2 grid-rows-2" : side.entries.length === 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>
-                      {side.entries.map(({ item, index }, entryIndex) => (
-                        <div key={`${item.title}-${index}`} className={classNames("flex min-h-0 w-full flex-col items-center justify-center gap-1", side.entries.length === 3 && entryIndex === 0 ? "row-span-2" : undefined)}>
+                {[offeredItems, requestedItems].map((entries, sideIndex) => (
+                  <div key={sideIndex} className="flex min-h-0 flex-col items-center justify-center gap-[2%] rounded-lg border border-white/10 bg-black/10 p-[1.5%]">
+                    <div className={classNames("grid min-h-0 w-full flex-1 items-center justify-items-center gap-[3%]", entries.length === 3 ? "grid-cols-2 grid-rows-2" : entries.length === 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>
+                      {entries.map(({ item, index }, entryIndex) => (
+                        <div key={`${item.title}-${index}`} className={classNames("flex min-h-0 w-full flex-col items-center justify-center gap-1", entries.length === 3 && entryIndex === 0 ? "row-span-2" : undefined)}>
                           <div className="flex min-h-0 flex-1 items-center justify-center">
                             {(tradeItemImageUrls[index] || item.imageUrl) ? <img src={tradeItemImageUrls[index] || item.imageUrl || undefined} alt={item.title} className="block max-h-full max-w-full object-contain" /> : <ImageIcon className="h-8 w-8 text-[#f6ca7a]" aria-hidden="true" />}
                           </div>
@@ -109,7 +109,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
           </div>
         </div>
 
-        {!isTallCanvas ? <footer className="absolute bottom-[4.5%] left-[4.5%] right-[4.5%] flex items-center justify-center border-t border-white/15 pt-[2%] text-[clamp(0.42rem,0.67cqw,0.54rem)] font-semibold uppercase tracking-[0.13em] text-white/85"><span>Discover · Trade · Collect</span></footer> : null}
+        {!isTallCanvas ? <footer className="absolute bottom-[4.5%] left-[4.5%] right-[4.5%] flex items-center justify-center border-t border-white/15 pt-[2%] text-[clamp(0.42rem,0.67cqw,0.54rem)] font-semibold uppercase tracking-[0.13em] text-white/85"><span>{getSocialFooterPhrase(draft.id, platform)}</span></footer> : null}
       </div>
     </article>
   );

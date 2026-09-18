@@ -41,6 +41,21 @@ export type SocialDraft = {
 export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "Pinterest", "LinkedIn", "YouTube"];
 export const SOCIAL_DRAFT_STATUSES: DraftStatus[] = ["Draft", "Needs Review", "Approved", "Scheduled", "Published"];
 
+export const TRADEBILIA_FOOTER_PHRASES = [
+  "Trade what you love.",
+  "Build your collection.",
+  "Find your next collectible.",
+  "Where collectors connect.",
+  "Swap. Discover. Collect.",
+  "Your collection, your story.",
+  "Collect with confidence.",
+  "Make your next great trade.",
+  "From one collector to another.",
+  "Discover something remarkable.",
+  "Keep collecting. Keep trading.",
+  "The collector-to-collector exchange.",
+] as const;
+
 export function formatSocialCategory(category: string | null | undefined) {
   if (!category) return null;
   return category.replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
@@ -60,6 +75,12 @@ export function getSocialPromotionItemTitle(title: string | null | undefined) {
   return (title || "Tradebilia collectible")
     .replace(/^(new\s+high[-\s]value\s+listing|recent\s+completed\s+trade)\s*:\s*/i, "")
     .trim() || "Tradebilia collectible";
+}
+
+export function getSocialFooterPhrase(seed: string, platform: SocialPlatform = "Facebook") {
+  let hash = 0;
+  for (const character of `${seed}:${platform}`) hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  return TRADEBILIA_FOOTER_PHRASES[hash % TRADEBILIA_FOOTER_PHRASES.length];
 }
 
 function buildCategoryAwareSocialCta(category: string | null | undefined, itemType: string | null | undefined) {

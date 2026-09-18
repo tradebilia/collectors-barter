@@ -1,4 +1,4 @@
-import { formatSocialCategory, formatSocialItemType, formatSocialValue, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+import { formatSocialCategory, formatSocialItemType, formatSocialValue, getSocialFooterPhrase, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 
 export type SocialGraphicCanvasSize = { width: number; height: number };
 
@@ -231,19 +231,15 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
   const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
   const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
-  const drawSide = (label: string, entries: Array<{ item: { title: string }; index: number }>, x: number) => {
+  const drawSide = (entries: Array<{ item: { title: string }; index: number }>, x: number) => {
     drawRoundedRect(context, x, frameY, frameWidth, frameHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
-    context.fillStyle = "#ffe0a8";
-    context.font = `800 ${Math.round(15 * scale)}px Arial, sans-serif`;
-    context.textAlign = "center";
-    context.fillText(label, x + frameWidth / 2, frameY + 30 * scale);
     const columns = entries.length > 2 ? 2 : 1;
     const cellWidth = (frameWidth - 28 * scale - (columns - 1) * 14 * scale) / columns;
     const cellHeight = frameHeight - 52 * scale;
     entries.forEach(({ item, index }, entryIndex) => {
       const isThreeItemLead = entries.length === 3 && entryIndex === 0;
       const imageWidth = cellWidth;
-      const imageHeight = isThreeItemLead ? cellHeight - 26 * scale : entries.length === 3 ? cellHeight / 2 - 10 * scale : columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale;
+      const imageHeight = isThreeItemLead ? cellHeight - 48 * scale : entries.length === 3 ? cellHeight / 2 - 28 * scale : columns > 1 ? cellHeight / 2 - 28 * scale : cellHeight - 48 * scale;
       const cellX = x + 14 * scale + (entries.length === 3 && !isThreeItemLead ? cellWidth + 14 * scale : (entryIndex % columns) * (cellWidth + 14 * scale));
       const cellY = frameY + 42 * scale + (entries.length === 3 && !isThreeItemLead ? (entryIndex - 1) * (cellHeight / 2) : columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
       if (images[index]) {
@@ -255,12 +251,12 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
       context.fillStyle = "rgba(255,255,255,0.86)";
       context.font = `600 ${Math.round(10 * scale)}px Arial, sans-serif`;
       context.textAlign = "center";
-      context.fillText(splitLine(context, item.title, imageWidth, 2)[0] ?? "", cellX + imageWidth / 2, cellY + imageHeight + 14 * scale);
+      drawWrappedText(context, item.title, cellX + imageWidth / 2, cellY + imageHeight + 14 * scale, imageWidth - 10 * scale, 12 * scale, 2);
     });
     context.textAlign = "left";
   };
-  drawSide("OFFERED", offered, padding);
-  drawSide("REQUESTED", requested, padding + frameWidth + gap);
+  drawSide(offered, padding);
+  drawSide(requested, padding + frameWidth + gap);
   const rows = 1;
   context.font = `800 ${Math.round(20 * scale)}px Arial, sans-serif`;
   const alertWidth = context.measureText("TRADE ALERT").width + 34 * scale;
@@ -278,19 +274,15 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   context.textAlign = "left";
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-  context.fillText("↗  SEE MORE TRADES ON TRADEBILIA", padding, height - 72 * scale);
-  context.fillStyle = "rgba(255,255,255,0.68)";
-  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  context.fillText(splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space", padding, height - 49 * scale);
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
-  context.moveTo(padding, height - 48 * scale);
-  context.lineTo(width - padding, height - 48 * scale);
+  context.moveTo(padding, height - 46 * scale);
+  context.lineTo(width - padding, height - 46 * scale);
   context.stroke();
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
-  context.fillText("DISCOVER · TRADE · COLLECT", width / 2, height - 24 * scale);
+  context.fillText(getSocialFooterPhrase(draft.id, "Facebook").toUpperCase(), width / 2, height - 22 * scale);
   context.textAlign = "left";
 }
 
@@ -316,10 +308,8 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   }
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-  context.fillText("↗  SEE MORE TRADES ON TRADEBILIA", padding, height - 42 * scale);
-  context.fillStyle = "rgba(255,255,255,0.68)";
-  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  context.fillText(splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space", padding, height - 22 * scale);
+  context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 28 * scale);
+  context.textAlign = "left";
 }
 
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {

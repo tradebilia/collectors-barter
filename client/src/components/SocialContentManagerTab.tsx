@@ -99,6 +99,12 @@ function formatUpdatedAt(value: string) {
 
 function getPreviewCaption(draft: SocialDraft | null, canonicalDestinationUrl: string) {
   if (!draft) return "";
+  if (draft.source === "Completed Trade") {
+    const copyWithoutPriorHomepageLink = draft.copy
+      .replace(/\n*https?:\/\/\S+\s*$/i, "")
+      .trim();
+    return `${copyWithoutPriorHomepageLink}\n\n${canonicalDestinationUrl}`.trim();
+  }
   if (draft.source !== "High-Value Listing") return draft.copy;
   const existingCopy = draft.copy.trim();
   const copyWithoutPriorItemLink = existingCopy
@@ -339,7 +345,7 @@ export function SocialContentManagerTab() {
       source: "Completed Trade",
       sourceSummary: `Completed public exchange · ${formatOpportunityDate(trade.completedAt)}`,
       title: `Recent completed trade: ${trade.title}`,
-      copy: `TRADE ALERT\n\n${tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title}${cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nSee more trades on Tradebilia.`,
+      copy: `TRADE ALERT\n\n${tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title}${cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nSee more trades on Tradebilia.\n${destinationUrl}`,
       mediaUrl: trade.imageUrl,
       destinationUrl,
       promotion: {
