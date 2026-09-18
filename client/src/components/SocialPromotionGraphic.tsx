@@ -33,8 +33,9 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
   const value = draft.source === "Completed Trade" ? null : formatSocialValue(promotion?.estimatedValue);
   const facts = draft.source === "Completed Trade" ? [] : promotion?.facts.slice(0, 4) ?? [];
   const completedItems = promotion?.tradeItems?.slice(0, 4) ?? [];
-  const offeredItems = completedItems.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered");
-  const requestedItems = completedItems.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered");
+  const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
+  const offeredItems = completedItems.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
+  const requestedItems = completedItems.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
   const isTallCanvas = platform === "Instagram" || platform === "Pinterest";
   const isCompletedTrade = draft.source === "Completed Trade";
   const hasMedia = Boolean(draft.mediaUrl);

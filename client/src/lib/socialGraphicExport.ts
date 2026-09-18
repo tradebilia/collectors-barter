@@ -228,8 +228,9 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   const gap = 20 * scale;
   const frameWidth = (width - padding * 2 - gap) / 2;
   const frameHeight = height - frameY - 82 * scale;
-  const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered");
-  const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered");
+  const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
+  const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
+  const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
   const drawSide = (label: string, entries: Array<{ item: { title: string }; index: number }>, x: number) => {
     drawRoundedRect(context, x, frameY, frameWidth, frameHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
     context.fillStyle = "#ffe0a8";
