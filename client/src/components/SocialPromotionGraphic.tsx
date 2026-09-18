@@ -46,11 +46,11 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
-          <img src={brandLogoUrl} alt="Tradebilia" className="h-28 w-auto max-w-[55%] shrink-0 object-contain sm:h-32" />
+          <img src={brandLogoUrl} alt="Tradebilia" className="h-24 w-auto max-w-[55%] shrink-0 object-contain sm:h-28" />
           {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : null}
         </header>
 
-        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : "items-stretch gap-[5%] pt-[11%]")}>
+        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : "items-stretch gap-[5%] pt-[29%]")}>
           <div className={classNames("relative flex min-h-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/15 bg-white/[0.07]", isTallCanvas ? "min-h-0 flex-[1.45] p-[5%]" : "w-[53%] p-[4%]")}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.17),transparent_68%)]" />
             {hasMedia && !isVideoMediaUrl(draft.mediaUrl) ? (

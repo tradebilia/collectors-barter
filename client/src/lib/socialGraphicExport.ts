@@ -256,7 +256,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 8 * scale, 580 * scale, 180 * scale);
+  drawBrand(context, brandLogo, padding, 0 * scale, 580 * scale, 150 * scale);
 
   const imageX = padding;
   const imageY = 168 * scale;
@@ -320,7 +320,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 8 * scale, 580 * scale, 180 * scale);
+  drawBrand(context, brandLogo, padding, 0 * scale, 580 * scale, 150 * scale);
 
   const imageY = 182 * scale;
   const imageHeight = platform === "Pinterest" ? height * 0.46 : height * 0.43;
