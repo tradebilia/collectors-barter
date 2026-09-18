@@ -3051,6 +3051,15 @@ export const appRouter = router({
 
         return { highValueListings, completedTrades, listingValueMinimum, recentDays };
       }),
+    getSocialPromotionItemLink: protectedProcedure
+      .input(z.object({ title: z.string().min(1).max(500) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const db = await requireDb();
+        const [rows] = await db.execute(sql`SELECT id FROM listings WHERE title = ${input.title} ORDER BY createdAt DESC LIMIT 1`);
+        const listingId = Number((rows as unknown as any[])?.[0]?.id);
+        return Number.isFinite(listingId) && listingId > 0 ? { destinationUrl: `https://tradebilia.manus.space/listings/${listingId}` } : null;
+      }),
     // Platform statistics
 	    getPlatformStatistics: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });

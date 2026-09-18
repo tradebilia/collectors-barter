@@ -11,6 +11,8 @@ export type SocialPromotionFact = {
 
 export type SocialPromotionDetails = {
   itemTitle: string;
+  listingId?: number | null;
+  itemPath?: string | null;
   category: string | null;
   itemType: string | null;
   facts: SocialPromotionFact[];
@@ -50,6 +52,12 @@ export function formatSocialItemType(itemType: string | null | undefined) {
 export function formatSocialValue(value: number | null | undefined) {
   if (!Number.isFinite(value) || !value || value < 0) return null;
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+}
+
+export function getSocialPromotionItemTitle(title: string | null | undefined) {
+  return (title || "Tradebilia collectible")
+    .replace(/^(new\s+high[-\s]value\s+listing|recent\s+completed\s+trade)\s*:\s*/i, "")
+    .trim() || "Tradebilia collectible";
 }
 
 function buildCategoryAwareSocialCta(category: string | null | undefined, itemType: string | null | undefined) {

@@ -6,6 +6,7 @@ import {
   createPromotionSocialDraft,
   createSocialDraft,
   filterSocialDrafts,
+  getSocialPromotionItemTitle,
   requestSocialReview,
   toggleSocialPlatform,
   SOCIAL_PLATFORMS,
@@ -72,6 +73,11 @@ describe("social content manager draft workflow", () => {
 
   it("includes Pinterest as a selectable platform", () => {
     expect(SOCIAL_PLATFORMS).toContain("Pinterest");
+  });
+
+  it("uses the true item title rather than the saved promotion heading", () => {
+    expect(getSocialPromotionItemTitle("New high-value listing: 1986 Fleer Michael Jordan Rookie PSA 10")).toBe("1986 Fleer Michael Jordan Rookie PSA 10");
+    expect(getSocialPromotionItemTitle("Recent completed trade: Example collectible")).toBe("Example collectible");
   });
 
   it("toggles additional platforms without mutating the original draft", () => {

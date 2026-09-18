@@ -49,6 +49,7 @@ import {
   TRADEBILIA_PUBLIC_ORIGIN,
   buildListingSocialCopy,
   formatSocialCategory,
+  getSocialPromotionItemTitle,
   toggleSocialPlatform,
   type DraftStatus,
   type SocialDraft,
@@ -94,6 +95,16 @@ const starterDraft: SocialDraft = {
 
 function formatUpdatedAt(value: string) {
   return new Date(value).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
+}
+
+function getPreviewCaption(draft: SocialDraft | null, canonicalDestinationUrl: string) {
+  if (!draft) return "";
+  if (draft.source !== "High-Value Listing") return draft.copy;
+  const existingCopy = draft.copy.trim();
+  const copyWithoutPriorItemLink = existingCopy
+    .replace(/\n*View this item:\s*https?:\/\/\S+\s*$/i, "")
+    .trim();
+  return `${copyWithoutPriorItemLink}\n\nView this item:\n${canonicalDestinationUrl}`.trim();
 }
 
 function makeDraft(title = "Untitled social post"): SocialDraft {
@@ -214,9 +225,15 @@ export function SocialContentManagerTab() {
   const selectedPreviewPlatform = selectedDraft?.platforms.includes(previewPlatform as SocialPlatform)
     ? previewPlatform
     : selectedDraft?.platforms[0] ?? null;
+  const promotionItemTitle = getSocialPromotionItemTitle(selectedDraft?.promotion?.itemTitle ?? selectedDraft?.title);
+  const promotionItemLinkQuery = trpc.admin.getSocialPromotionItemLink.useQuery({ title: promotionItemTitle });
+  const canonicalDestinationUrl = selectedDraft?.promotion?.itemPath
+    ? `${TRADEBILIA_PUBLIC_ORIGIN}${selectedDraft.promotion.itemPath}`
+    : promotionItemLinkQuery.data?.destinationUrl ?? selectedDraft?.destinationUrl ?? TRADEBILIA_PUBLIC_ORIGIN;
+  const previewCaption = getPreviewCaption(selectedDraft, canonicalDestinationUrl);
   const graphicDraft = selectedDraft && preparedGraphicImageUrl
-    ? { ...selectedDraft, mediaUrl: preparedGraphicImageUrl }
-    : selectedDraft;
+    ? { ...selectedDraft, mediaUrl: preparedGraphicImageUrl, destinationUrl: canonicalDestinationUrl }
+    : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
     && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl);
@@ -276,6 +293,8 @@ export function SocialContentManagerTab() {
     const destinationUrl = listing.itemPath ? `${TRADEBILIA_PUBLIC_ORIGIN}${listing.itemPath}` : TRADEBILIA_PUBLIC_ORIGIN;
     const promotion = {
       itemTitle: listing.title,
+      listingId: listing.listingId ?? null,
+      itemPath: listing.itemPath ?? null,
       category: listing.category ?? null,
       itemType: listing.itemType ?? null,
       facts,
@@ -311,6 +330,8 @@ export function SocialContentManagerTab() {
       destinationUrl,
       promotion: {
         itemTitle: trade.title,
+        listingId: trade.listingId ?? null,
+        itemPath: trade.itemPath ?? null,
         category: trade.category ?? null,
         itemType: trade.itemType ?? null,
         facts,
@@ -374,9 +395,9 @@ export function SocialContentManagerTab() {
   }
 
   async function copySocialCaption() {
-    if (!selectedDraft?.copy.trim()) return toast.error("Add social copy before copying the caption.");
+    if (!previewCaption.trim()) return toast.error("Add social copy before copying the caption.");
     try {
-      await navigator.clipboard.writeText(selectedDraft.copy);
+      await navigator.clipboard.writeText(previewCaption);
       toast.success("Social caption copied");
     } catch {
       toast.error("The caption could not be copied. Please select and copy it manually.");
@@ -392,7 +413,7 @@ export function SocialContentManagerTab() {
     setIsExportingGraphic(true);
     try {
       const canvas = await renderSocialGraphicCanvas({
-        draft: selectedDraft,
+        draft: graphicDraft ?? selectedDraft,
         platform: selectedPreviewPlatform,
         itemImageUrl: preparedGraphicImageUrl,
         brandLogoUrl: preparedBrandLogoUrl,
@@ -580,7 +601,7 @@ export function SocialContentManagerTab() {
 
                   <section className="rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="Generated social caption">
                     <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-bold text-slate-900">Social caption</p><p className="mt-0.5 text-xs text-slate-500">Uses the actual item details and direct Tradebilia item link when available.</p></div><Button type="button" size="sm" variant="outline" onClick={() => void copySocialCaption()}><Copy className="mr-1.5 h-3.5 w-3.5" />Copy caption</Button></div>
-                    <p className="mt-3 whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 text-sm leading-6 text-slate-700">{selectedDraft.copy || "Your post copy will appear here."}</p>
+                    <p className="mt-3 whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 text-sm leading-6 text-slate-700">{previewCaption || "Your post copy will appear here."}</p>
                   </section>
                   <p className="text-xs leading-5 text-slate-500">Platform layouts can vary after manual publishing. Review this graphic and caption, then use the existing approval workflow before posting outside Tradebilia.</p>
                 </div>

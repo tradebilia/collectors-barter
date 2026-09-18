@@ -1,7 +1,7 @@
 import React from "react";
 import { ExternalLink, Image as ImageIcon, PlayCircle } from "lucide-react";
 import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
-import { formatSocialCategory, formatSocialItemType, formatSocialValue, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+import { formatSocialItemType, formatSocialValue, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
   Facebook: { label: "Facebook Feed", size: "1200 × 630", aspect: "aspect-[1.91/1]", previewClass: "max-w-[680px]" },
@@ -23,8 +23,12 @@ function classNames(...classes: Array<string | false | null | undefined>) {
 export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBILIA_LOGO_URL }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string }) {
   const spec = SOCIAL_GRAPHIC_SPECS[platform];
   const promotion = draft.promotion;
-  const itemTitle = promotion?.itemTitle || draft.title || "Tradebilia collectible";
-  const category = formatSocialCategory(promotion?.category);
+  const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
+  const promotionHeader = draft.source === "High-Value Listing"
+    ? "New High-Value Listing"
+    : draft.source === "Completed Trade"
+      ? "Completed Trade"
+      : "Collectible Showcase";
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
   const facts = promotion?.facts.slice(0, 4) ?? [];
@@ -43,8 +47,8 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBI
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
-          <img src={brandLogoUrl} alt="Tradebilia" className="h-8 w-auto max-w-[52%] shrink-0 object-contain sm:h-10" />
-          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/70 bg-[#f3be63]/16 px-2.5 py-1 text-[clamp(0.45rem,0.82cqw,0.62rem)] font-bold uppercase tracking-[0.14em] text-[#ffe0a8]">New to Tradebilia</span> : null}
+          <img src={brandLogoUrl} alt="Tradebilia" className="h-12 w-auto max-w-[62%] shrink-0 object-contain sm:h-16" />
+          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : null}
         </header>
 
         <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : "items-stretch gap-[5%] pt-[11%]")}>
@@ -67,17 +71,16 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBI
                 <span className="max-w-[12rem] text-xs font-semibold uppercase tracking-[0.12em]">Original item media will appear here</span>
               </div>
             )}
-            <span className="absolute bottom-2 left-2 rounded bg-[#080d1d]/80 px-2 py-1 text-[0.48rem] font-semibold uppercase tracking-[0.12em] text-white/70">Original image · fully shown</span>
           </div>
 
           <div className={classNames("flex min-w-0 flex-col justify-center", isTallCanvas ? "flex-[0.85]" : "min-w-0 flex-1 pb-[1%]")}>
-            <p className="text-[clamp(0.46rem,0.84cqw,0.68rem)] font-bold uppercase tracking-[0.18em] text-[#f6ca7a]">{category || "Collectible showcase"}</p>
+            <p className="text-[clamp(0.54rem,0.98cqw,0.78rem)] font-extrabold uppercase tracking-[0.16em] text-[#ffe0a8]">{promotionHeader}</p>
             <h2 className="mt-[4%] line-clamp-3 font-serif text-[clamp(1.15rem,2.45cqw,2.25rem)] font-semibold leading-[0.99] tracking-[-0.025em] text-white">{itemTitle}</h2>
             {itemType ? <p className="mt-[4%] text-[clamp(0.58rem,1.1cqw,0.85rem)] font-medium text-white/75">{itemType}</p> : null}
             {facts.length > 0 ? <dl className="mt-[6%] grid grid-cols-2 gap-x-3 gap-y-2 border-y border-white/15 py-[5%]">{facts.map((fact) => <div key={`${fact.label}-${fact.value}`} className="min-w-0"><dt className="text-[clamp(0.43rem,0.7cqw,0.55rem)] font-semibold uppercase tracking-[0.1em] text-[#b9caea]">{fact.label}</dt><dd className="mt-0.5 truncate text-[clamp(0.58rem,1cqw,0.78rem)] font-semibold text-white">{fact.value}</dd></div>)}</dl> : null}
             {value ? <p className="mt-[6%] text-[clamp(0.72rem,1.35cqw,1rem)] font-bold text-[#ffe0a8]">Trade value <span className="text-white">{value}</span></p> : null}
             <div className="mt-[auto] pt-[7%]">
-              <p className="flex items-center gap-1.5 text-[clamp(0.52rem,0.84cqw,0.66rem)] font-bold uppercase tracking-[0.12em] text-white"><ExternalLink className="h-3 w-3 shrink-0 text-[#f6ca7a]" aria-hidden="true" />View this item on Tradebilia</p>
+              <p className="flex items-center gap-1.5 text-[clamp(0.52rem,0.84cqw,0.66rem)] font-bold uppercase tracking-[0.12em] text-white"><ExternalLink className="h-3 w-3 shrink-0 text-[#f6ca7a]" aria-hidden="true" />View item profile</p>
               <p className="mt-1 break-all text-[clamp(0.46rem,0.73cqw,0.58rem)] text-white/70">{draft.destinationUrl}</p>
             </div>
           </div>

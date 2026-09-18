@@ -23,6 +23,13 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("prepareSocialGraphicImage");
     expect(componentSource).toContain("preparedGraphicImageUrl");
     expect(componentSource).toContain("preparedBrandLogoUrl");
+    expect(componentSource).toContain("getSocialPromotionItemLink");
+    expect(componentSource).toContain("canonicalDestinationUrl");
+    expect(componentSource).toContain("${TRADEBILIA_PUBLIC_ORIGIN}${selectedDraft.promotion.itemPath}");
+    expect(componentSource).toContain("draft: graphicDraft ?? selectedDraft");
+    expect(componentSource).toContain("getPreviewCaption");
+    expect(componentSource).toContain("navigator.clipboard.writeText(previewCaption)");
+    expect(componentSource).toContain('if (draft.source !== "High-Value Listing") return draft.copy;');
     expect(componentSource).toContain("brandLogoDataUrl");
     expect(componentSource).toContain("Preparing the original item image");
     expect(componentSource).toContain("renderSocialGraphicCanvas");

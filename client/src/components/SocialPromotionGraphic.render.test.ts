@@ -29,7 +29,8 @@ describe("rendered Social promotion graphic", () => {
     expect(markup).toContain("aspect-[1.91/1]");
     expect(markup).toContain("object-contain");
     expect(markup).toContain("1986 Fleer Michael Jordan Rookie PSA 10");
-    expect(markup).toContain("New to Tradebilia");
+    expect(markup).toContain("New High-Value Listing");
+    expect(markup).not.toContain("New high-value listing: 1986 Fleer");
     expect(markup).toContain("Trade value");
     expect(markup).toContain("$125,000");
     expect(markup).toContain("https://tradebilia.manus.space/listings/42");
@@ -38,7 +39,7 @@ describe("rendered Social promotion graphic", () => {
   it("renders a full-image tall canvas for a Pinterest promotion", () => {
     const markup = renderToStaticMarkup(createElement(SocialPromotionGraphic, { draft: promotionDraft, platform: "Pinterest" }));
     expect(markup).toContain("aspect-[2/3]");
-    expect(markup).toContain("Original image · fully shown");
+    expect(markup).not.toContain("Original image · fully shown");
     expect(markup).toContain("Grade");
   });
 });

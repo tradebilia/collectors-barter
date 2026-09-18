@@ -27,6 +27,12 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).toContain("customGradingCompany");
   });
 
+  it("resolves older saved high-value drafts back to the canonical item profile URL", () => {
+    expect(promotionSection).toContain("getSocialPromotionItemLink");
+    expect(promotionSection).toContain("SELECT id FROM listings WHERE title = ${input.title}");
+    expect(promotionSection).toContain("https://tradebilia.manus.space/listings/${listingId}");
+  });
+
   it("excludes participant, cash, shipping, message, and trade identifiers", () => {
     expect(returnedOpportunityMappings).not.toContain("requesterDisplayName");
     expect(returnedOpportunityMappings).not.toContain("recipientDisplayName");

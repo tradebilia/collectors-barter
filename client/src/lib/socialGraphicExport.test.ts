@@ -37,8 +37,12 @@ describe("native Social graphic exporter", () => {
     expect(getSocialGraphicExportFileName(promotionDraft, "Facebook")).toBe("tradebilia-1986-fleer-michael-jordan-rookie-psa-10-facebook.png");
   });
 
-  it("keeps fitting final title lines intact instead of adding a premature ellipsis", () => {
-    expect(exporterSource).toContain("if (line) lines.push(line);");
-    expect(exporterSource).not.toContain("const consumedWords");
+  it("uses an explicit new-listing header, enlarged official brand space, and a complete fitted title without image labels", () => {
+    expect(exporterSource).toContain("NEW HIGH-VALUE LISTING");
+    expect(exporterSource).toContain("drawCompleteFittedTitle");
+    expect(exporterSource).toContain("660 * scale, 150 * scale");
+    expect(exporterSource).toContain("getSocialPromotionItemTitle");
+    expect(exporterSource).not.toContain("ORIGINAL IMAGE · FULLY SHOWN");
+    expect(exporterSource).toContain("VIEW ITEM PROFILE");
   });
 });

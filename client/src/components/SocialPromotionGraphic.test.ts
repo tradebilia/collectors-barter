@@ -16,17 +16,19 @@ describe("Social promotion graphic", () => {
     expect(source).toContain("object-contain");
     expect(source).not.toContain("object-cover");
     expect(source).not.toContain("crossOrigin");
-    expect(source).toContain("Original image · fully shown");
+    expect(source).not.toContain("Original image · fully shown");
     expect(source).not.toContain("generateImage");
     expect(source).not.toContain("invokeLLM");
   });
 
-  it("includes the new-item badge, item facts, Tradebilia branding, and direct item CTA", () => {
-    expect(source).toContain("New to Tradebilia");
+  it("uses a dominant new-listing header, enlarged Tradebilia branding, complete title source, and direct item CTA", () => {
+    expect(source).toContain("New High-Value Listing");
+    expect(source).toContain("getSocialPromotionItemTitle");
+    expect(source).toContain("h-12");
     expect(source).toContain("TRADEBILIA_LOGO_URL");
     expect(source).toContain("brandLogoUrl = TRADEBILIA_LOGO_URL");
     expect(source).toContain('alt="Tradebilia"');
-    expect(source).toContain("View this item on Tradebilia");
+    expect(source).toContain("View item profile");
     expect(source).toContain("draft.destinationUrl");
     expect(source).toContain("promotion?.facts.slice(0, 4)");
   });
