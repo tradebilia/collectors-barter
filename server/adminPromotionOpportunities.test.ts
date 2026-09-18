@@ -16,7 +16,7 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain('ctx.user.role !== "admin"');
     expect(promotionSection).toContain("listingValueMinimum");
     expect(promotionSection).toContain("l.estimatedValue >=");
-    expect(promotionSection).toContain("l.status = 'active'");
+    expect(promotionSection).toContain("l.status IN ('active', 'traded')");
     expect(promotionSection).toContain("isPublicMemberEligible");
   });
 

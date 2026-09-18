@@ -120,7 +120,7 @@ function makeDraft(title = "Untitled social post"): SocialDraft {
 
 function normalizeDraft(draft: Partial<SocialDraft> & { id: string }): SocialDraft {
   const fallback = createSocialDraft(draft.id, draft.updatedAt);
-  return {
+  const normalized = {
     ...fallback,
     ...draft,
     source: draft.source ?? "Original",
@@ -128,6 +128,14 @@ function normalizeDraft(draft: Partial<SocialDraft> & { id: string }): SocialDra
     destinationUrl: draft.destinationUrl || fallback.destinationUrl,
     promotion: draft.promotion ?? fallback.promotion,
   };
+  const promotionPath = normalized.promotion?.itemPath;
+  const promotionUrl = promotionPath ? `${TRADEBILIA_PUBLIC_ORIGIN}${promotionPath}` : normalized.destinationUrl;
+  if ((normalized.source === "Completed Trade" || normalized.source === "Verified Merchant") && !/https?:\/\//i.test(normalized.copy)) {
+    normalized.copy = `${normalized.copy.trim()}\n\n${TRADEBILIA_PUBLIC_ORIGIN}`.trim();
+  } else if (normalized.source === "High-Value Listing" && promotionPath && !/View this item:\s*https?:\/\//i.test(normalized.copy)) {
+    normalized.copy = `${normalized.copy.trim()}\n\nView this item:\n${promotionUrl}`.trim();
+  }
+  return normalized;
 }
 
 function formatWholeDollar(value: number | null | undefined) {
@@ -370,13 +378,13 @@ export function SocialContentManagerTab() {
   }
 
   function createVerifiedMerchantDraft(merchant: any) {
-    const destinationUrl = merchant.profilePath ? `${TRADEBILIA_PUBLIC_ORIGIN}${merchant.profilePath}` : TRADEBILIA_PUBLIC_ORIGIN;
+    const destinationUrl = TRADEBILIA_PUBLIC_ORIGIN;
     const displayName = merchant.title || "Verified Tradebilia Merchant";
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "Verified Merchant",
       sourceSummary: `Verified merchant · ${formatOpportunityDate(merchant.merchantVerifiedAt)}`,
       title: `Verified merchant: ${displayName}`,
-      copy: `MEET A VERIFIED MERCHANT\n\n${displayName} is a verified Tradebilia merchant. Discover their public collector profile and explore their marketplace activity.\n\nView profile:\n${destinationUrl}`,
+      copy: `MEET A VERIFIED MERCHANT\n\n${displayName} is a verified Tradebilia merchant. Discover verified merchants and explore the marketplace on Tradebilia.\n\nVisit Tradebilia:\n${destinationUrl}`,
       mediaUrl: merchant.imageUrl,
       destinationUrl,
       promotion: {
@@ -510,7 +518,6 @@ export function SocialContentManagerTab() {
               <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Social Content Manager</h2>
               <p className="text-sm leading-6 text-slate-300">Prepare, review, and organize Tradebilia social posts in one place. This first version never connects to social accounts or publishes automatically.</p>
             </div>
-            <Button onClick={addDraft} className="w-full shrink-0 bg-white text-indigo-950 hover:bg-indigo-50 sm:w-auto"><Plus className="mr-2 h-4 w-4" />Create Original Post</Button>
           </div>
         </CardContent>
       </Card>

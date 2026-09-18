@@ -2982,8 +2982,7 @@ export const appRouter = router({
               l.createdAt,
               (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl
             FROM listings l
-            WHERE l.status = 'active'
-              AND l.isActive = 1
+            WHERE l.status IN ('active', 'traded')
               AND l.estimatedValue >= ${listingValueMinimum}
               AND ${isPublicMemberEligible(sql`l.ownerId`)}
             ORDER BY l.createdAt DESC
