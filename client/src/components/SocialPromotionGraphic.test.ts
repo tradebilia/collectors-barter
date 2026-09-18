@@ -12,34 +12,24 @@ describe("Social promotion graphic", () => {
     expect(source).toContain("LinkedIn Feed");
   });
 
-  it("contains the original collectible image without cropping or AI modification", () => {
-    expect(source).toContain("object-contain");
+  it("uses the exact native canvas export so preview and download cannot diverge", () => {
+    expect(source).toContain("renderSocialGraphicCanvas");
+    expect(source).toContain("canvas.toDataURL(\"image/png\")");
+    expect(source).toContain("itemImageUrl: itemImageUrl ?? draft.mediaUrl");
+    expect(source).toContain("tradeItemImageUrls");
     expect(source).not.toContain("object-cover");
     expect(source).not.toContain("crossOrigin");
-    expect(source).not.toContain("Original image · fully shown");
     expect(source).not.toContain("generateImage");
     expect(source).not.toContain("invokeLLM");
   });
 
-  it("uses a dominant new-listing header, enlarged Tradebilia branding, complete title source, and direct item CTA", () => {
-    expect(source).toContain("New High-Value Listing");
-    expect(source).toContain("getSocialPromotionItemTitle");
-    expect(source).toContain("h-12");
+  it("passes the real draft, platform, branding, and homepage-safe assets to the renderer", () => {
+    expect(source).toContain("draft,");
+    expect(source).toContain("platform,");
+    expect(source).toContain("brandLogoUrl,");
     expect(source).toContain("SOCIAL_GRAPHIC_BRAND_LOGO_URL");
-    expect(source).toContain("brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL");
-    expect(source).toContain('alt="Tradebilia"');
-    expect(source).toContain("View item profile");
-    expect(source).toContain("draft.destinationUrl");
-    expect(source).toContain("promotion?.facts.slice(0, 4)");
     expect(source).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
-    expect(source).toContain("h-24 w-auto");
-    expect(source).toContain("justify-center border-t");
-    expect(source).not.toContain("<span>tradebilia</span>");
-  });
-
-  it("supports prepared traded-item images and the homepage trade CTA", () => {
-    expect(source).toContain("tradeItemImageUrls");
-    expect(source).toContain("See more trades on Tradebilia");
-    expect(source).toContain("tradeItemImageUrls[index] || item.imageUrl");
+    expect(source).toContain("heroBackgroundUrl,");
+    expect(source).toContain('alt={`${spec.label} finished promotional graphic`}');
   });
 });

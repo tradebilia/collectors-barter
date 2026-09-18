@@ -1,7 +1,7 @@
-import React from "react";
-import { ExternalLink, Image as ImageIcon, PlayCircle } from "lucide-react";
-import { SOCIAL_GRAPHIC_BRAND_LOGO_URL, SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
-import { formatSocialItemType, formatSocialValue, getSocialFooterPhrase, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { renderSocialGraphicCanvas, SOCIAL_GRAPHIC_BRAND_LOGO_URL, SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
+import type { SocialDraft, SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
   Facebook: { label: "Facebook Feed", size: "1200 × 630", aspect: "aspect-[1.91/1]", previewClass: "max-w-[680px]" },
@@ -12,107 +12,61 @@ export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size:
   YouTube: { label: "YouTube Community", size: "1280 × 720", aspect: "aspect-video", previewClass: "max-w-[680px]" },
 };
 
-function isVideoMediaUrl(url: string) {
-  return /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(url);
-}
+export function SocialPromotionGraphic({
+  draft,
+  platform,
+  brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL,
+  itemImageUrl,
+  tradeItemImageUrls = [],
+  heroBackgroundUrl = SOCIAL_GRAPHIC_HERO_BACKGROUND_URL,
+}: {
+  draft: SocialDraft;
+  platform: SocialPlatform;
+  brandLogoUrl?: string;
+  itemImageUrl?: string | null;
+  tradeItemImageUrls?: string[];
+  heroBackgroundUrl?: string;
+}) {
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isRendering, setIsRendering] = useState(true);
 
-function classNames(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
+  useEffect(() => {
+    let cancelled = false;
+    setIsRendering(true);
+    setPreviewUrl(null);
+    void renderSocialGraphicCanvas({
+      draft,
+      platform,
+      itemImageUrl: itemImageUrl ?? draft.mediaUrl ?? null,
+      tradeItemImageUrls,
+      brandLogoUrl,
+      heroBackgroundUrl,
+    }).then((canvas) => {
+      if (!cancelled) {
+        setPreviewUrl(canvas.toDataURL("image/png"));
+        setIsRendering(false);
+      }
+    }).catch(() => {
+      if (!cancelled) setIsRendering(false);
+    });
+    return () => { cancelled = true; };
+  }, [draft, platform, brandLogoUrl, itemImageUrl, tradeItemImageUrls, heroBackgroundUrl]);
 
-export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL, tradeItemImageUrls = [] }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string; tradeItemImageUrls?: string[] }) {
   const spec = SOCIAL_GRAPHIC_SPECS[platform];
-  const promotion = draft.promotion;
-  const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
-  const promotionHeader = draft.source === "High-Value Listing"
-    ? "New High-Value Listing"
-    : draft.source === "Completed Trade"
-      ? "Trade Alert"
-      : draft.source === "Verified Merchant"
-        ? "Verified Merchant"
-      : "Collectible Showcase";
-  const itemType = formatSocialItemType(promotion?.itemType);
-  const value = draft.source === "Completed Trade" ? null : formatSocialValue(promotion?.estimatedValue);
-  const facts = draft.source === "Completed Trade" ? [] : promotion?.facts.slice(0, 4) ?? [];
-  const completedItems = promotion?.tradeItems?.slice(0, 4) ?? [];
-  const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
-  const offeredItems = completedItems.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
-  const requestedItems = completedItems.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
-  const isTallCanvas = platform === "Instagram" || platform === "Pinterest";
-  const isCompletedTrade = draft.source === "Completed Trade";
-  const hasMedia = Boolean(draft.mediaUrl);
-
   return (
-    <article
-      className={classNames("relative isolate overflow-hidden bg-[#070b18] text-white shadow-[0_24px_60px_rgba(15,23,42,0.28)] [container-type:inline-size]", spec.aspect)}
+    <div
+      className="relative overflow-hidden bg-[#070b18] shadow-[0_24px_60px_rgba(15,23,42,0.28)]"
       aria-label={`${spec.label} promotional graphic preview`}
       data-social-promotion-graphic="true"
       data-platform={platform}
     >
-      <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(rgba(3,18,55,0.66),rgba(3,18,55,0.66)), url(${SOCIAL_GRAPHIC_HERO_BACKGROUND_URL})` }} />
-
-      <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
-        <header className={classNames("flex shrink-0 items-center gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10", isCompletedTrade ? "justify-start" : "justify-between")}>
-          <img src={brandLogoUrl} alt="Tradebilia" className="h-24 w-auto max-w-[55%] shrink-0 object-contain sm:h-28" />
-          {draft.source === "High-Value Listing" && promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="absolute left-1/2 top-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-4 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">Trade Alert</span> : null}
-        </header>
-
-        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : isCompletedTrade ? "flex-col gap-[2%] pt-[17%]" : "items-stretch gap-[5%] pt-[29%]")}>
-          <div className={classNames("relative flex min-h-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/15 bg-white/[0.07]", isTallCanvas ? "min-h-0 flex-[1.45] p-[5%]" : isCompletedTrade ? "min-h-0 flex-1 p-[3%]" : "w-[53%] p-[4%]")}>
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.17),transparent_68%)]" />
-            {draft.source === "Completed Trade" && completedItems.length > 0 ? (
-              <div className="relative z-10 grid h-full w-full grid-cols-2 items-stretch gap-[4%]">
-                {[offeredItems, requestedItems].map((entries, sideIndex) => (
-                  <div key={sideIndex} className="flex min-h-0 flex-col items-center justify-center gap-[2%] rounded-lg border border-white/10 bg-black/10 p-[1.5%]">
-                    <div className={classNames("grid min-h-0 w-full flex-1 items-center justify-items-center gap-[3%]", entries.length === 3 ? "grid-cols-2 grid-rows-2" : entries.length === 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>
-                      {entries.map(({ item, index }, entryIndex) => (
-                        <div key={`${item.title}-${index}`} className={classNames("flex min-h-0 w-full flex-col items-center justify-center gap-1", entries.length === 3 && entryIndex === 0 ? "row-span-2" : undefined)}>
-                          <div className="flex min-h-0 flex-1 items-center justify-center">
-                            {(tradeItemImageUrls[index] || item.imageUrl) ? <img src={tradeItemImageUrls[index] || item.imageUrl || undefined} alt={item.title} className="block max-h-full max-w-full object-contain" /> : <ImageIcon className="h-8 w-8 text-[#f6ca7a]" aria-hidden="true" />}
-                          </div>
-                          <span className="line-clamp-2 text-center text-[clamp(0.4rem,0.68cqw,0.54rem)] font-semibold text-white/85">{item.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-bold text-[#ffe0a8]" aria-label={promotion?.cashIncluded ? "Items swapped with cash included" : "Items swapped"}>↔</span>
-                {promotion?.cashIncluded ? <span className="absolute bottom-[2%] left-1/2 -translate-x-1/2 rounded-full bg-[#f3be63]/20 px-2 py-1 text-[clamp(0.42rem,0.7cqw,0.55rem)] font-bold uppercase tracking-wide text-[#ffe0a8]">Cash included</span> : null}
-              </div>
-            ) : hasMedia && !isVideoMediaUrl(draft.mediaUrl) ? (
-              <img
-                src={draft.mediaUrl}
-                alt={itemTitle}
-                className="relative z-10 block h-full max-h-full w-full max-w-full object-contain"
-              />
-            ) : hasMedia ? (
-              <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-3 text-center text-white/80">
-                <PlayCircle className="h-12 w-12 text-[#f6ca7a]" aria-hidden="true" />
-                <span className="text-xs font-semibold uppercase tracking-[0.12em]">Original video attached</span>
-              </div>
-            ) : (
-              <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-3 text-center text-white/75">
-                <ImageIcon className="h-12 w-12 text-[#f6ca7a]" aria-hidden="true" />
-                <span className="max-w-[12rem] text-xs font-semibold uppercase tracking-[0.12em]">Original item media will appear here</span>
-              </div>
-            )}
-          </div>
-
-          <div className={classNames("flex min-w-0 flex-col justify-center", isCompletedTrade ? "hidden" : isTallCanvas ? "flex-[0.85]" : "min-w-0 flex-1 pb-[1%]")}>
-            <p className="text-[clamp(0.54rem,0.98cqw,0.78rem)] font-extrabold uppercase tracking-[0.16em] text-[#ffe0a8]">{promotionHeader}</p>
-            <h2 className="mt-[4%] line-clamp-3 font-serif text-[clamp(1.15rem,2.45cqw,2.25rem)] font-semibold leading-[0.99] tracking-[-0.025em] text-white">{itemTitle}</h2>
-            {itemType ? <p className="mt-[4%] text-[clamp(0.58rem,1.1cqw,0.85rem)] font-medium text-white/75">{itemType}</p> : null}
-            {facts.length > 0 ? <dl className="mt-[6%] grid grid-cols-2 gap-x-3 gap-y-2 border-y border-white/15 py-[5%]">{facts.map((fact) => <div key={`${fact.label}-${fact.value}`} className="min-w-0"><dt className="text-[clamp(0.43rem,0.7cqw,0.55rem)] font-semibold uppercase tracking-[0.1em] text-[#b9caea]">{fact.label}</dt><dd className="mt-0.5 truncate text-[clamp(0.58rem,1cqw,0.78rem)] font-semibold text-white">{fact.value}</dd></div>)}</dl> : null}
-            {value ? <p className="mt-[6%] text-[clamp(0.72rem,1.35cqw,1rem)] font-bold text-[#ffe0a8]">Trade value <span className="text-white">{value}</span></p> : null}
-            <div className="mt-[auto] pt-[7%]">
-              <p className="flex items-center gap-1.5 text-[clamp(0.52rem,0.84cqw,0.66rem)] font-bold uppercase tracking-[0.12em] text-white"><ExternalLink className="h-3 w-3 shrink-0 text-[#f6ca7a]" aria-hidden="true" />{draft.source === "Completed Trade" ? "See more trades on Tradebilia" : "View item profile"}</p>
-              <p className="mt-1 break-all text-[clamp(0.46rem,0.73cqw,0.58rem)] text-white/70">{draft.destinationUrl}</p>
-            </div>
-          </div>
+      {previewUrl ? (
+        <img src={previewUrl} alt={`${spec.label} finished promotional graphic`} className="block h-auto w-full" />
+      ) : (
+        <div className="flex aspect-[1.91/1] items-center justify-center text-white/70">
+          {isRendering ? <Loader2 className="h-7 w-7 animate-spin" aria-label="Rendering promotional graphic" /> : <span className="text-xs">Preview unavailable</span>}
         </div>
-
-        {!isTallCanvas ? <footer className="absolute bottom-[4.5%] left-[4.5%] right-[4.5%] flex items-center justify-center border-t border-white/15 pt-[2%] text-[clamp(0.42rem,0.67cqw,0.54rem)] font-semibold uppercase tracking-[0.13em] text-white/85"><span>{getSocialFooterPhrase(draft.id, platform)}</span></footer> : null}
-      </div>
-    </article>
+      )}
+    </div>
   );
 }

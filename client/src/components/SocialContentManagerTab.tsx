@@ -643,12 +643,12 @@ export function SocialContentManagerTab() {
             </CardContent>
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
               <DialogContent className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
-                <DialogHeader className="border-b border-slate-100 px-5 pt-5 sm:px-6 sm:pt-6">
+                <DialogHeader className="relative z-10 shrink-0 border-b border-slate-100 bg-white px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
                   <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-indigo-600" />Social Graphic Preview</DialogTitle>
                   <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account. The original item image is fitted in full and is never cropped or altered.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-5 px-5 sm:px-6">
-                  <div className="flex flex-wrap gap-2" aria-label="Preview platform">
+                <div className="space-y-5 px-5 pb-5 pt-4 sm:px-6">
+                  <div className="relative z-10 flex flex-wrap gap-2" aria-label="Preview platform">
                     {selectedDraft.platforms.map((platform) => <button key={platform} type="button" onClick={() => setPreviewPlatform(platform)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selectedPreviewPlatform === platform ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className={selectedPreviewPlatform === platform ? "" : "opacity-70"}>{platformIcon(platform)}</span>{platform}<span className="text-[10px] font-medium opacity-70">{SOCIAL_GRAPHIC_SPECS[platform].size}</span></button>)}
                   </div>
 
@@ -659,7 +659,7 @@ export function SocialContentManagerTab() {
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
                       <div className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
-                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} />
+                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

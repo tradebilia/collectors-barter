@@ -39,7 +39,8 @@ describe("Social Content Manager post preview", () => {
     expect(exporterSource).toContain("document.createElement(\"canvas\")");
     expect(exporterSource).toContain("drawContainedImage");
     expect(exporterSource).toContain("SOCIAL_GRAPHIC_CANVAS_SIZES");
-    expect(graphicSource).toContain("draft.destinationUrl");
+    expect(graphicSource).toContain("renderSocialGraphicCanvas");
+    expect(graphicSource).toContain("draft,");
   });
 
   it("retains the original image and manual-publishing safeguards", () => {
