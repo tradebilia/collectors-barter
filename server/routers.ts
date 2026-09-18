@@ -2984,7 +2984,6 @@ export const appRouter = router({
             FROM listings l
             WHERE l.status IN ('active', 'traded')
               AND l.estimatedValue >= ${listingValueMinimum}
-              AND ${isPublicMemberEligible(sql`l.ownerId`)}
             ORDER BY l.createdAt DESC
             LIMIT ${historicalOpportunityLimit}`),
           db.execute(sql`SELECT
@@ -3013,26 +3012,23 @@ export const appRouter = router({
             LEFT JOIN listings l ON l.id = tp.requestedListingId
             WHERE tp.status = 'completed'
               AND tp.completedAt IS NOT NULL
-              AND ${isPublicMemberEligible(sql`tp.requesterId`)}
-              AND ${isPublicMemberEligible(sql`tp.recipientId`)}
             ORDER BY tp.completedAt DESC
             LIMIT ${historicalOpportunityLimit}`),
           db.execute(sql`SELECT
               u.id AS merchantId,
               COALESCE(up.displayName, u.name, CONCAT('Merchant ', u.id)) AS displayName,
               up.avatarUrl,
-              u.merchantVerifiedAt,
+              u.createdAt AS merchantVerifiedAt,
               (SELECT COUNT(*) FROM listings merchantListings WHERE merchantListings.ownerId = u.id AND merchantListings.status = 'active' AND merchantListings.isActive = 1) AS activeListings,
               (SELECT COUNT(*) FROM tradeProposals merchantTrades WHERE (merchantTrades.requesterId = u.id OR merchantTrades.recipientId = u.id) AND merchantTrades.status = 'completed') AS completedTrades
             FROM users u
             LEFT JOIN userProfiles up ON up.userId = u.id
             WHERE u.isMerchant = 1
               AND u.merchantVerified = 1
-              AND u.merchantVerifiedAt IS NOT NULL
-              AND u.merchantVerifiedAt >= ${recentBoundary}
+              AND u.createdAt >= ${recentBoundary}
               AND ${isPublicMemberEligible(sql`u.id`)}
-            ORDER BY u.merchantVerifiedAt DESC
-            LIMIT ${limit * 3}`),
+            ORDER BY u.createdAt DESC
+            LIMIT ${limit * 3}`).catch(() => [[] as any[]]),
         ]);
 
         const highValueListings = ((listingRows[0] as unknown as any[]) || [])

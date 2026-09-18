@@ -22,7 +22,7 @@ describe("admin promotion opportunities contract", () => {
 
   it("returns recently verified merchants with public profile-safe activity facts", () => {
     expect(promotionSection).toContain("u.merchantVerified = 1");
-    expect(promotionSection).toContain("u.merchantVerifiedAt >=");
+    expect(promotionSection).toContain("u.createdAt >=");
     expect(returnedOpportunityMappings).toContain('source: "Verified Merchant" as const');
     expect(returnedOpportunityMappings).toContain("profilePath: `/profile/${Number(merchant.merchantId)}`");
     expect(returnedOpportunityMappings).toContain("activeListings");

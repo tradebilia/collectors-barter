@@ -567,7 +567,7 @@ export function SocialContentManagerTab() {
           <OpportunityList
             icon={<DollarSign className="h-4 w-4" />}
             title="New high-value listings"
-            description="Active public listings valued at $1,000 or more, including historical qualifying listings."
+            description="Public listings valued at $1,000 or more, including historical and traded qualifying listings."
             emptyCopy={autoListEnabled ? "No qualifying listings were added during this window." : "Auto-list is off. Turn it on above to surface qualifying new listings."}
             opportunities={highValueListings}
             renderMeta={(listing: any) => `${formatWholeDollar(listing.estimatedValue)} · Added ${formatOpportunityDate(listing.createdAt)}`}
