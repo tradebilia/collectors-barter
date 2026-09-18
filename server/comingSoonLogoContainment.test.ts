@@ -3,21 +3,28 @@ import { describe, expect, it } from "vitest";
 
 const source = readFileSync(new URL("../client/src/pages/ComingSoon.tsx", import.meta.url), "utf8");
 
-describe("Coming Soon logo containment", () => {
-  it("expands the SVG lockup frame for the enlarged wheel and long category labels", () => {
-    expect(source).toContain('<div className="mx-auto flex aspect-[20/4] min-h-32 w-full max-w-full translate-y-12 items-center overflow-hidden sm:relative sm:left-1/2 sm:-translate-x-1/2 sm:aspect-[20/4] sm:min-h-32 sm:w-[calc(100%+12rem)] sm:max-w-[54rem] sm:translate-y-20 sm:overflow-visible sm:px-4">');
-    expect(source).toContain("wheelOffsetX={-65} wheelOffsetY={-65}");
-    expect(source).toContain("wheelStrokeWidth={0}");
-    expect(source).toContain("dividerScale={1.55}");
-    expect(source).toContain("centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56}");
-    expect(source).not.toContain("lockupCenterBiasX={-240}");
-    expect(source).toContain("<AnimatedLogoSmall70");
+describe("Coming Soon responsive layout", () => {
+  it("retains the supplied artwork and compact overlay form on desktop", () => {
+    expect(source).toContain("SUPPLIED_COMING_SOON_HTML_URL");
+    expect(source).toContain('hidden aspect-[1815/867] w-full sm:block');
+    expect(source).toContain('top-[65.5%] h-[5.6%] w-[27%]');
+    expect(source).toContain('id={`${emailId}-desktop`}');
   });
 
-  it("keeps the surrounding Coming Soon composition unchanged", () => {
+  it("uses a full-height, vertical mobile composition instead of shrinking the desktop canvas", () => {
+    expect(source).toContain('min-h-[100svh] flex-col overflow-hidden px-5 pb-6 pt-8');
+    expect(source).toContain('aria-label="Tradebilia mobile launch signup"');
+    expect(source).toContain('id={`${emailId}-mobile`}');
+    expect(source).toContain('h-12 w-full rounded-lg');
     expect(source).toContain("Why Buy or Sell");
     expect(source).toContain("When You Can Trade?");
-    expect(source).toContain("Launching Soon");
-    expect(source).toContain("Enter your email for early access");
+    expect(source).toContain("Discover rare finds · Trade with confidence · No trading fees · Trade across categories");
+  });
+
+  it("keeps the mobile email field and action at accessible touch sizes", () => {
+    expect(source).toContain('type="email"');
+    expect(source).toContain('autoComplete="email"');
+    expect(source).toContain('required');
+    expect(source).toContain('aria-label={subscribeMutation.isPending ? "Saving email" : "Notify me for launch updates"}');
   });
 });
