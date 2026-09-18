@@ -180,12 +180,18 @@ function platformIcon(platform: SocialPlatform) {
 function buildPromotionFacts(opportunity: any) {
   const gradingCompany = opportunity.customGradingCompany || opportunity.certificationCompany;
   const facts = Array.isArray(opportunity.itemFacts) ? opportunity.itemFacts : [];
+  const category = String(opportunity.category ?? "").toLowerCase();
+  const isSportsCard = category.includes("sport") && category.includes("card");
+  const isGradedComic = category.includes("comic") && Boolean(opportunity.grade || gradingCompany);
   const coreFacts = [
     opportunity.grade ? { label: "Grade", value: String(opportunity.grade) } : null,
-    gradingCompany ? { label: "Graded by", value: String(gradingCompany) } : null,
-    opportunity.condition ? { label: "Condition", value: String(opportunity.condition).replace(/_/g, " ") } : null,
+    gradingCompany ? { label: "Grading company", value: String(gradingCompany) } : null,
+    opportunity.condition && !isSportsCard && !isGradedComic ? { label: "Condition", value: String(opportunity.condition).replace(/_/g, " ") } : null,
   ].filter((fact): fact is { label: string; value: string } => Boolean(fact));
-  return [...facts, ...coreFacts].filter((fact, index, allFacts) => allFacts.findIndex((other) => other.label === fact.label) === index).slice(0, 4);
+  return [...facts, ...coreFacts]
+    .filter((fact) => !(isSportsCard && ["Year", "Set", "Card No.", "Condition"].includes(fact.label)))
+    .filter((fact, index, allFacts) => allFacts.findIndex((other) => other.label === fact.label) === index)
+    .slice(0, 4);
 }
 
 function isNewListing(createdAt: string | number | Date | null | undefined) {

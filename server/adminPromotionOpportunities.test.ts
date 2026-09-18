@@ -32,8 +32,15 @@ describe("admin promotion opportunities contract", () => {
   it("returns concise public item facts and a canonical existing listing path", () => {
     expect(promotionSection).toContain("getPromotionItemFacts");
     expect(returnedOpportunityMappings).toContain("itemPath: `/listings/${Number(listing.listingId)}`");
-    expect(returnedOpportunityMappings).toContain("itemFacts: getPromotionItemFacts(listing.itemDetails)");
+    expect(returnedOpportunityMappings).toContain("itemFacts: getPromotionItemFacts(listing.itemDetails, listing.category)");
     expect(returnedOpportunityMappings).toContain("customGradingCompany");
+  });
+
+  it("uses category-specific facts for sports cards and comics", () => {
+    expect(routerSource).toContain('normalizedCategory.includes("sport")');
+    expect(routerSource).toContain('normalizedCategory.includes("comic")');
+    expect(routerSource).toContain('label: "Issue No."');
+    expect(routerSource).toContain('!isSportsCard || !["Year", "Set", "Card No."].includes(fact.label)');
   });
 
   it("keeps historical qualifying listings and completed trades available for testing", () => {

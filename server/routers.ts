@@ -239,8 +239,13 @@ const SOCIAL_PROMOTION_FACT_FIELDS = [
   { label: "Catalog No.", keys: ["catalogNumber", "catalog_no", "catalogNo"] },
 ] as const;
 
+const SOCIAL_COMIC_FACT_FIELDS = [
+  { label: "Title", keys: ["title", "comicTitle", "series", "seriesTitle"] },
+  { label: "Issue No.", keys: ["issueNumber", "issueNo", "issue", "number"] },
+] as const;
+
 /** Returns only concise, public-safe collectible facts for social planning. */
-function getPromotionItemFacts(itemDetails: unknown): Array<{ label: string; value: string }> {
+function getPromotionItemFacts(itemDetails: unknown, category?: string | null): Array<{ label: string; value: string }> {
   if (!itemDetails) return [];
   let details: Record<string, unknown> | null = null;
   if (typeof itemDetails === "string") {
@@ -255,11 +260,14 @@ function getPromotionItemFacts(itemDetails: unknown): Array<{ label: string; val
   }
   if (!details) return [];
 
-  return SOCIAL_PROMOTION_FACT_FIELDS.flatMap(({ label, keys }) => {
+  const normalizedCategory = String(category ?? "").toLowerCase();
+  const isSportsCard = normalizedCategory.includes("sport") && normalizedCategory.includes("card");
+  const fields = normalizedCategory.includes("comic") ? SOCIAL_COMIC_FACT_FIELDS : SOCIAL_PROMOTION_FACT_FIELDS;
+  return fields.flatMap(({ label, keys }) => {
     const candidate = keys.map((key) => details?.[key]).find((value) => (typeof value === "string" || typeof value === "number") && String(value).trim());
     const value = typeof candidate === "string" || typeof candidate === "number" ? String(candidate).trim().slice(0, 80) : "";
     return value ? [{ label, value }] : [];
-  });
+  }).filter((fact) => !isSportsCard || !["Year", "Set", "Card No."].includes(fact.label));
 }
 
 const externalPaymentMethodsInputSchema = z.object({
@@ -3043,7 +3051,7 @@ export const appRouter = router({
             grade: listing.grade ?? null,
             certificationCompany: listing.certificationCompany ?? null,
             customGradingCompany: getCustomGradingCompany(listing.itemDetails),
-            itemFacts: getPromotionItemFacts(listing.itemDetails),
+            itemFacts: getPromotionItemFacts(listing.itemDetails, listing.category),
             estimatedValue: Number(listing.estimatedValue ?? 0),
             createdAt: listing.createdAt,
             imageUrl: listing.imageUrl ?? null,
@@ -3061,7 +3069,7 @@ export const appRouter = router({
             grade: trade.requestedListingGrade ?? null,
             certificationCompany: trade.requestedListingCertificationCompany ?? null,
             customGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails),
-            itemFacts: getPromotionItemFacts(trade.requestedListingItemDetails),
+            itemFacts: getPromotionItemFacts(trade.requestedListingItemDetails, trade.requestedListingCategory),
             itemCount: Number(trade.itemCount ?? 0),
             completedAt: trade.completedAt,
             imageUrl: trade.imageUrl ?? null,
