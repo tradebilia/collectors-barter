@@ -188,8 +188,8 @@ function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage 
 }
 
 function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: string, width: number, y: number, scale: number) {
-  context.font = `800 ${Math.round(25 * scale)}px Arial, sans-serif`;
-  const bannerWidth = Math.min(width - 2 * 54 * scale, context.measureText(label).width + 70 * scale);
+  context.font = `800 ${Math.round(29 * scale)}px Arial, sans-serif`;
+  const bannerWidth = Math.min(width - 2 * 44 * scale, context.measureText(label).width + 96 * scale);
   drawPromotionHeader(context, label, (width - bannerWidth) / 2, y, scale, bannerWidth);
 }
 
@@ -200,9 +200,9 @@ function getPromotionHeader(draft: SocialDraft, category: string | null) {
 }
 
 function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x: number, y: number, scale: number, forcedWidth?: number) {
-  context.font = `800 ${Math.round(20 * scale)}px Arial, sans-serif`;
-  const width = forcedWidth ?? context.measureText(label).width + 34 * scale;
-  const height = 40 * scale;
+  context.font = `800 ${Math.round(23 * scale)}px Arial, sans-serif`;
+  const width = forcedWidth ?? context.measureText(label).width + 48 * scale;
+  const height = 50 * scale;
   drawRoundedRect(context, x, y - height + 7 * scale, width, height, height / 2, "rgba(246,202,122,0.18)", "rgba(246,202,122,0.86)");
   context.fillStyle = "#ffe0a8";
   context.textAlign = "center";
@@ -323,7 +323,7 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
   if (facts.length === 0) return 0;
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
-  const height = rows * 54 * scale + 20 * scale;
+  const height = rows * 66 * scale + 24 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);
@@ -336,14 +336,14 @@ function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: stri
     const column = index % 2;
     const row = Math.floor(index / 2);
     const cellX = x + column * (width / 2);
-    const cellY = y + 18 * scale + row * 54 * scale;
+    const cellY = y + 20 * scale + row * 66 * scale;
     context.fillStyle = "#b9caea";
     context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
     context.fillText(fact.label.toUpperCase(), cellX, cellY);
     context.fillStyle = "#ffffff";
     context.font = `700 ${Math.round(16 * scale)}px Arial, sans-serif`;
     const trimmedValue = splitLine(context, fact.value, width / 2 - 16 * scale, 1)[0] ?? "";
-    context.fillText(trimmedValue, cellX, cellY + 20 * scale);
+    context.fillText(trimmedValue, cellX, cellY + 23 * scale);
   });
   return height;
 }
@@ -387,19 +387,10 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
     context.fillText(`Trade value  ${value}`, detailX, detailY);
   }
 
-  const ctaY = height - 188 * scale;
-  context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-  context.fillText("↗  VIEW ITEM PROFILE", detailX, ctaY);
-  context.fillStyle = "rgba(255,255,255,0.68)";
-  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  const url = splitLine(context, draft.destinationUrl || "tradebilia.manus.space", detailWidth, 1)[0] ?? "tradebilia.manus.space";
-  context.fillText(url, detailX, ctaY + 23 * scale);
-
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
-  context.moveTo(padding, height - 72 * scale);
-  context.lineTo(width - padding, height - 72 * scale);
+  context.moveTo(padding, height - 42 * scale);
+  context.lineTo(width - padding, height - 42 * scale);
   context.stroke();
   drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
@@ -445,14 +436,11 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
     context.fillText(`Trade value  ${value}`, padding, y);
   }
 
-  const ctaY = height - 170 * scale;
-  context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-  context.fillText("↗  VIEW ITEM PROFILE", padding, ctaY);
-  context.fillStyle = "rgba(255,255,255,0.68)";
-  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  const url = splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space";
-  context.fillText(url, padding, ctaY + 23 * scale);
+  context.strokeStyle = "rgba(255,255,255,0.18)";
+  context.beginPath();
+  context.moveTo(padding, height - 42 * scale);
+  context.lineTo(width - padding, height - 42 * scale);
+  context.stroke();
   drawCenteredBrand(context, brandLogo, width, height - 112 * scale, scale);
 }
 
