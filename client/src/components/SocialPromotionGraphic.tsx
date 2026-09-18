@@ -34,6 +34,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
   const facts = draft.source === "Completed Trade" ? [] : promotion?.facts.slice(0, 4) ?? [];
   const completedItems = promotion?.tradeItems?.slice(0, 4) ?? [];
   const isTallCanvas = platform === "Instagram" || platform === "Pinterest";
+  const isCompletedTrade = draft.source === "Completed Trade";
   const hasMedia = Boolean(draft.mediaUrl);
 
   return (
@@ -48,11 +49,11 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
           <img src={brandLogoUrl} alt="Tradebilia" className="h-24 w-auto max-w-[55%] shrink-0 object-contain sm:h-28" />
-          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : null}
+          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">Trade Alert</span> : null}
         </header>
 
-        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : "items-stretch gap-[5%] pt-[29%]")}>
-          <div className={classNames("relative flex min-h-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/15 bg-white/[0.07]", isTallCanvas ? "min-h-0 flex-[1.45] p-[5%]" : "w-[53%] p-[4%]")}>
+        <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : isCompletedTrade ? "flex-col gap-[3%] pt-[20%]" : "items-stretch gap-[5%] pt-[29%]")}>
+          <div className={classNames("relative flex min-h-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/15 bg-white/[0.07]", isTallCanvas ? "min-h-0 flex-[1.45] p-[5%]" : isCompletedTrade ? "min-h-0 flex-1 p-[3%]" : "w-[53%] p-[4%]")}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.17),transparent_68%)]" />
             {draft.source === "Completed Trade" && completedItems.length > 0 ? (
               <div className="relative z-10 grid h-full w-full grid-cols-2 items-center gap-[4%]">
@@ -86,7 +87,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
             )}
           </div>
 
-          <div className={classNames("flex min-w-0 flex-col justify-center", isTallCanvas ? "flex-[0.85]" : "min-w-0 flex-1 pb-[1%]")}>
+          <div className={classNames("flex min-w-0 flex-col justify-center", isCompletedTrade ? "hidden" : isTallCanvas ? "flex-[0.85]" : "min-w-0 flex-1 pb-[1%]")}>
             <p className="text-[clamp(0.54rem,0.98cqw,0.78rem)] font-extrabold uppercase tracking-[0.16em] text-[#ffe0a8]">{promotionHeader}</p>
             <h2 className="mt-[4%] line-clamp-3 font-serif text-[clamp(1.15rem,2.45cqw,2.25rem)] font-semibold leading-[0.99] tracking-[-0.025em] text-white">{itemTitle}</h2>
             {itemType ? <p className="mt-[4%] text-[clamp(0.58rem,1.1cqw,0.85rem)] font-medium text-white/75">{itemType}</p> : null}
