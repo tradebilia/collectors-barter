@@ -1,10 +1,6 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("@/components/TradebiliaWheel", () => ({
-  TradebiliaWheel: () => "Tradebilia wheel",
-}));
+import { describe, expect, it } from "vitest";
 
 import { SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";

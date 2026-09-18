@@ -1,6 +1,6 @@
 import React from "react";
 import { ExternalLink, Image as ImageIcon, PlayCircle } from "lucide-react";
-import { TradebiliaWheel } from "@/components/TradebiliaWheel";
+import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
 import { formatSocialCategory, formatSocialItemType, formatSocialValue, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
@@ -43,11 +43,7 @@ export function SocialPromotionGraphic({ draft, platform }: { draft: SocialDraft
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
-          <div className="flex min-w-0 items-center gap-2.5">
-            <TradebiliaWheel className="h-8 w-8 shrink-0 sm:h-10 sm:w-10" />
-            <span className="h-7 w-px shrink-0 bg-white/65 sm:h-9" />
-            <span className="truncate text-[clamp(0.68rem,1.5cqw,1.1rem)] font-bold tracking-[0.08em]">TRADEBILIA</span>
-          </div>
+          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-8 w-auto max-w-[52%] shrink-0 object-contain sm:h-10" />
           {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/70 bg-[#f3be63]/16 px-2.5 py-1 text-[clamp(0.45rem,0.82cqw,0.62rem)] font-bold uppercase tracking-[0.14em] text-[#ffe0a8]">New to Tradebilia</span> : null}
         </header>
 
@@ -59,7 +55,6 @@ export function SocialPromotionGraphic({ draft, platform }: { draft: SocialDraft
                 src={draft.mediaUrl}
                 alt={itemTitle}
                 className="relative z-10 block h-full max-h-full w-full max-w-full object-contain"
-                crossOrigin="anonymous"
               />
             ) : hasMedia ? (
               <div className="relative z-10 flex h-full w-full flex-col items-center justify-center gap-3 text-center text-white/80">
