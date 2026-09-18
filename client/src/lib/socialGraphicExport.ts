@@ -13,7 +13,7 @@ export const SOCIAL_GRAPHIC_CANVAS_SIZES: Record<SocialPlatform, SocialGraphicCa
 
 type CanvasImage = HTMLImageElement;
 
-export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg";
+export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-a_5d56bb7d.jpg";
 
 type SocialGraphicExportInput = {
   draft: SocialDraft;
