@@ -50,7 +50,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
       <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(rgba(3,18,55,0.66),rgba(3,18,55,0.66)), url(${SOCIAL_GRAPHIC_HERO_BACKGROUND_URL})` }} />
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
-        <header className={classNames("flex shrink-0 items-center gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10", isCompletedTrade ? "justify-center" : "justify-between")}>
+        <header className={classNames("flex shrink-0 items-center gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10", isCompletedTrade ? "justify-start" : "justify-between")}>
           <img src={brandLogoUrl} alt="Tradebilia" className="h-24 w-auto max-w-[55%] shrink-0 object-contain sm:h-28" />
           {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="absolute left-1/2 top-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-4 py-2 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">Trade Alert</span> : null}
         </header>
@@ -62,7 +62,6 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
               <div className="relative z-10 grid h-full w-full grid-cols-2 items-stretch gap-[4%]">
                 {[{ label: "OFFERED", entries: offeredItems }, { label: "REQUESTED", entries: requestedItems }].map((side) => (
                   <div key={side.label} className="flex min-h-0 flex-col items-center justify-center gap-[3%] rounded-lg border border-white/10 bg-black/10 p-[2%]">
-                    <span className="text-[clamp(0.42rem,0.7cqw,0.56rem)] font-extrabold uppercase tracking-[0.14em] text-[#ffe0a8]">{side.label}</span>
                     <div className={classNames("grid min-h-0 w-full flex-1 items-center justify-items-center gap-[3%]", side.entries.length === 3 ? "grid-cols-2 grid-rows-2" : side.entries.length === 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>
                       {side.entries.map(({ item, index }, entryIndex) => (
                         <div key={`${item.title}-${index}`} className={classNames("flex min-h-0 w-full flex-col items-center justify-center gap-1", side.entries.length === 3 && entryIndex === 0 ? "row-span-2" : undefined)}>
