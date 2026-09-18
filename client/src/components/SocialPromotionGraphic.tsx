@@ -20,7 +20,7 @@ function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function SocialPromotionGraphic({ draft, platform }: { draft: SocialDraft; platform: SocialPlatform }) {
+export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBILIA_LOGO_URL }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string }) {
   const spec = SOCIAL_GRAPHIC_SPECS[platform];
   const promotion = draft.promotion;
   const itemTitle = promotion?.itemTitle || draft.title || "Tradebilia collectible";
@@ -43,7 +43,7 @@ export function SocialPromotionGraphic({ draft, platform }: { draft: SocialDraft
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
-          <img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-8 w-auto max-w-[52%] shrink-0 object-contain sm:h-10" />
+          <img src={brandLogoUrl} alt="Tradebilia" className="h-8 w-auto max-w-[52%] shrink-0 object-contain sm:h-10" />
           {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/70 bg-[#f3be63]/16 px-2.5 py-1 text-[clamp(0.45rem,0.82cqw,0.62rem)] font-bold uppercase tracking-[0.14em] text-[#ffe0a8]">New to Tradebilia</span> : null}
         </header>
 

@@ -24,6 +24,7 @@ describe("Social promotion graphic", () => {
   it("includes the new-item badge, item facts, Tradebilia branding, and direct item CTA", () => {
     expect(source).toContain("New to Tradebilia");
     expect(source).toContain("TRADEBILIA_LOGO_URL");
+    expect(source).toContain("brandLogoUrl = TRADEBILIA_LOGO_URL");
     expect(source).toContain('alt="Tradebilia"');
     expect(source).toContain("View this item on Tradebilia");
     expect(source).toContain("draft.destinationUrl");

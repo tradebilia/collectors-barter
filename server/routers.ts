@@ -159,6 +159,74 @@ const ADMIN_CLOSE_TICKET_PHRASE = "CLOSE AND RETAIN TICKET";
 const ADMIN_REVEAL_CASH_IDENTIFIER_PHRASE = "REVEAL CASH PAYMENT IDENTIFIER";
 
 const externalPaymentMethodSchema = z.enum(EXTERNAL_PAYMENT_METHODS);
+const SOCIAL_GRAPHIC_MAX_IMAGE_BYTES = 6 * 1024 * 1024;
+const SOCIAL_GRAPHIC_ALLOWED_IMAGE_HOSTS = new Set([
+  "tradebilia.manus.space",
+  "media.tradebilia.com",
+  "assets.tradebilia.com",
+]);
+const SOCIAL_GRAPHIC_ALLOWED_REDIRECT_HOSTS = new Set([
+  "d36hbw14aib5lz.cloudfront.net",
+]);
+const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
+const SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/svg+xml",
+]);
+
+/** Fetches known public Tradebilia images into a one-request data URL for canvas export. */
+async function getSocialGraphicImageDataUrl(sourceUrl: string) {
+  let parsedUrl: URL;
+  try {
+    parsedUrl = new URL(sourceUrl, "https://tradebilia.manus.space");
+  } catch {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "The selected graphic image has an invalid URL." });
+  }
+  if (parsedUrl.protocol !== "https:" || !SOCIAL_GRAPHIC_ALLOWED_IMAGE_HOSTS.has(parsedUrl.hostname)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Only public Tradebilia listing and brand images can be prepared for export." });
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(parsedUrl, { signal: AbortSignal.timeout(20_000), redirect: "manual" });
+  } catch {
+    throw new TRPCError({ code: "BAD_GATEWAY", message: "The selected graphic image could not be retrieved for export." });
+  }
+  if (response.status >= 300 && response.status < 400) {
+    const redirectLocation = response.headers.get("location");
+    let redirectUrl: URL | null = null;
+    try {
+      redirectUrl = redirectLocation ? new URL(redirectLocation, parsedUrl) : null;
+    } catch {
+      redirectUrl = null;
+    }
+    if (!redirectUrl || redirectUrl.protocol !== "https:" || !SOCIAL_GRAPHIC_ALLOWED_REDIRECT_HOSTS.has(redirectUrl.hostname)) {
+      throw new TRPCError({ code: "BAD_GATEWAY", message: "The selected graphic image could not be retrieved for export." });
+    }
+    try {
+      response = await fetch(redirectUrl, { signal: AbortSignal.timeout(20_000), redirect: "error" });
+    } catch {
+      throw new TRPCError({ code: "BAD_GATEWAY", message: "The selected graphic image could not be retrieved for export." });
+    }
+  }
+  if (!response.ok) {
+    throw new TRPCError({ code: "BAD_GATEWAY", message: "The selected graphic image could not be retrieved for export." });
+  }
+
+  const contentType = response.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase() ?? "";
+  const contentLength = Number(response.headers.get("content-length") ?? 0);
+  if (!SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES.has(contentType) || (Number.isFinite(contentLength) && contentLength > SOCIAL_GRAPHIC_MAX_IMAGE_BYTES)) {
+    throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "The selected graphic image must be a JPG, PNG, WEBP, GIF, or SVG no larger than 6 MB." });
+  }
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (!bytes.length || bytes.length > SOCIAL_GRAPHIC_MAX_IMAGE_BYTES) {
+    throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "The selected graphic image must be a JPG, PNG, WEBP, GIF, or SVG no larger than 6 MB." });
+  }
+  return `data:${contentType};base64,${bytes.toString("base64")}`;
+}
 
 const SOCIAL_PROMOTION_FACT_FIELDS = [
   { label: "Year", keys: ["year", "releaseYear", "publicationYear", "manufactureYear"] },
@@ -2872,6 +2940,16 @@ export const appRouter = router({
         const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(-120) || "social-media";
         const { url } = await storagePut(`social-content/admin-${ctx.user.id}/${Date.now()}-${safeFileName}`, bytes, input.contentType);
         return { url, fileName: safeFileName, contentType: input.contentType };
+      }),
+    prepareSocialGraphicImage: protectedProcedure
+      .input(z.object({ sourceUrl: z.string().min(1).max(2_000) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        const [dataUrl, brandLogoDataUrl] = await Promise.all([
+          getSocialGraphicImageDataUrl(input.sourceUrl),
+          getSocialGraphicImageDataUrl(SOCIAL_GRAPHIC_BRAND_LOGO_URL),
+        ]);
+        return { dataUrl, brandLogoDataUrl };
       }),
     getPromotionOpportunities: protectedProcedure
       .input(z.object({

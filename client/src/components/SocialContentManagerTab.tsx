@@ -36,6 +36,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
 import {
   approveSocialDraft,
   createPromotionSocialDraft,
@@ -173,10 +174,14 @@ export function SocialContentManagerTab() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
   const [isExportingGraphic, setIsExportingGraphic] = useState(false);
+  const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
+  const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const graphicRef = useRef<HTMLDivElement>(null);
+  const preparedAssetRequestRef = useRef<string | null>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
+  const prepareSocialGraphicImage = trpc.admin.prepareSocialGraphicImage.useMutation();
 
   useEffect(() => {
     try {
@@ -209,6 +214,39 @@ export function SocialContentManagerTab() {
   const selectedPreviewPlatform = selectedDraft?.platforms.includes(previewPlatform as SocialPlatform)
     ? previewPlatform
     : selectedDraft?.platforms[0] ?? null;
+  const graphicDraft = selectedDraft && preparedGraphicImageUrl
+    ? { ...selectedDraft, mediaUrl: preparedGraphicImageUrl }
+    : selectedDraft;
+  const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
+  const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
+    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl);
+
+  useEffect(() => {
+    setPreparedGraphicImageUrl(null);
+    setPreparedBrandLogoUrl(null);
+    preparedAssetRequestRef.current = null;
+  }, [selectedDraft?.id, selectedDraft?.mediaUrl]);
+
+  useEffect(() => {
+    if (!isPreviewOpen) {
+      preparedAssetRequestRef.current = null;
+      return;
+    }
+    if (!selectedDraft) return;
+    const hasItemImage = Boolean(selectedDraft.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
+    const sourceUrl = hasItemImage ? selectedDraft.mediaUrl : TRADEBILIA_LOGO_URL;
+    if ((hasItemImage && preparedGraphicImageUrl) || (!hasItemImage && preparedBrandLogoUrl)) return;
+    if (preparedAssetRequestRef.current === sourceUrl) return;
+    preparedAssetRequestRef.current = sourceUrl;
+    prepareSocialGraphicImage.mutate({ sourceUrl }, {
+      onSuccess: ({ dataUrl, brandLogoDataUrl }) => {
+        setPreparedGraphicImageUrl(hasItemImage ? dataUrl : null);
+        setPreparedBrandLogoUrl(brandLogoDataUrl);
+      },
+      onError: () => toast.error("The original item image or Tradebilia mark could not be prepared for export. Please close and reopen the preview to retry."),
+    });
+  }, [isPreviewOpen, preparedBrandLogoUrl, preparedGraphicImageUrl, prepareSocialGraphicImage, selectedDraft]);
+
   const filteredDrafts = useMemo(() => filterSocialDrafts(drafts, statusFilter), [drafts, statusFilter]);
   const counts = useMemo(() => ({
     total: drafts.length,
@@ -348,6 +386,10 @@ export function SocialContentManagerTab() {
   async function downloadSocialGraphic() {
     const graphic = graphicRef.current;
     if (!graphic || !selectedDraft || !selectedPreviewPlatform) return;
+    if (!preparedBrandLogoUrl || (hasExportableItemImage && !preparedGraphicImageUrl)) {
+      toast.error("Preparing the original item image and Tradebilia mark. Please wait a moment, then download the graphic.");
+      return;
+    }
     setIsExportingGraphic(true);
     try {
       const { default: html2canvas } = await import("html2canvas");
@@ -537,12 +579,12 @@ export function SocialContentManagerTab() {
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
                       <div ref={graphicRef} className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
-                        <SocialPromotionGraphic draft={selectedDraft} platform={selectedPreviewPlatform} />
+                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} brandLogoUrl={preparedBrandLogoUrl ?? undefined} />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs leading-5 text-slate-500">The download exports the displayed platform graphic. It never changes the original uploaded collectible image.</p>
-                      <Button type="button" size="sm" onClick={() => void downloadSocialGraphic()} disabled={isExportingGraphic} className="shrink-0 bg-indigo-600 text-white hover:bg-indigo-700"><Download className="mr-1.5 h-4 w-4" />{isExportingGraphic ? "Preparing…" : "Download Graphic"}</Button>
+                      <p className="text-xs leading-5 text-slate-500">{isPreparingGraphicImage ? "Preparing the original image for a reliable download…" : "The download exports the displayed platform graphic. It never changes the original uploaded collectible image."}</p>
+                      <Button type="button" size="sm" onClick={() => void downloadSocialGraphic()} disabled={isExportingGraphic || isPreparingGraphicImage} className="shrink-0 bg-indigo-600 text-white hover:bg-indigo-700"><Download className="mr-1.5 h-4 w-4" />{isPreparingGraphicImage || isExportingGraphic ? "Preparing…" : "Download Graphic"}</Button>
                     </div>
                   </div> : null}
 

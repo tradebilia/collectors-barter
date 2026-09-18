@@ -19,6 +19,11 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("Copy caption");
     expect(componentSource).toContain("Download Graphic");
     expect(componentSource).toContain("downloadSocialGraphic");
+    expect(componentSource).toContain("prepareSocialGraphicImage");
+    expect(componentSource).toContain("preparedGraphicImageUrl");
+    expect(componentSource).toContain("preparedBrandLogoUrl");
+    expect(componentSource).toContain("brandLogoDataUrl");
+    expect(componentSource).toContain("Preparing the original item image");
     expect(graphicSource).toContain("draft.destinationUrl");
   });
 
