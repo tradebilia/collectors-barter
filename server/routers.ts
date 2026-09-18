@@ -2965,6 +2965,7 @@ export const appRouter = router({
         const listingValueMinimum = input?.listingValueMinimum ?? 1000;
         const recentDays = input?.recentDays ?? 30;
         const limit = input?.limit ?? 12;
+        const historicalOpportunityLimit = 500;
         const recentBoundary = new Date(Date.now() - recentDays * 24 * 60 * 60 * 1000);
 
         const [listingRows, tradeRows, merchantRows] = await Promise.all([
@@ -2986,7 +2987,7 @@ export const appRouter = router({
               AND l.estimatedValue >= ${listingValueMinimum}
               AND ${isPublicMemberEligible(sql`l.ownerId`)}
             ORDER BY l.createdAt DESC
-            LIMIT ${limit * 3}`),
+            LIMIT ${historicalOpportunityLimit}`),
           db.execute(sql`SELECT
               tp.completedAt,
               l.id AS requestedListingId,
@@ -3016,7 +3017,7 @@ export const appRouter = router({
               AND ${isPublicMemberEligible(sql`tp.requesterId`)}
               AND ${isPublicMemberEligible(sql`tp.recipientId`)}
             ORDER BY tp.completedAt DESC
-            LIMIT ${limit * 3}`),
+            LIMIT ${historicalOpportunityLimit}`),
           db.execute(sql`SELECT
               u.id AS merchantId,
               COALESCE(up.displayName, u.name, CONCAT('Merchant ', u.id)) AS displayName,
@@ -3036,7 +3037,6 @@ export const appRouter = router({
         ]);
 
         const highValueListings = ((listingRows[0] as unknown as any[]) || [])
-          .slice(0, limit)
           .map((listing) => ({
             source: "High-Value Listing" as const,
             listingId: Number(listing.listingId),
@@ -3055,7 +3055,6 @@ export const appRouter = router({
           }));
 
         const completedTrades = ((tradeRows[0] as unknown as any[]) || [])
-          .slice(0, limit)
           .map((trade) => ({
             source: "Completed Trade" as const,
             listingId: trade.requestedListingId ? Number(trade.requestedListingId) : null,

@@ -39,6 +39,8 @@ describe("admin promotion opportunities contract", () => {
   it("keeps historical qualifying listings and completed trades available for testing", () => {
     expect(returnedOpportunityMappings).toContain("const highValueListings = ((listingRows[0] as unknown as any[]) || [])");
     expect(returnedOpportunityMappings).toContain("const completedTrades = ((tradeRows[0] as unknown as any[]) || [])");
+    expect(promotionSection).toContain("const historicalOpportunityLimit = 500");
+    expect(promotionSection).toContain("LIMIT ${historicalOpportunityLimit}");
     expect(returnedOpportunityMappings).not.toContain("filter((listing) => new Date(listing.createdAt) >= recentBoundary)");
     expect(returnedOpportunityMappings).not.toContain("filter((trade) => new Date(trade.completedAt) >= recentBoundary)");
   });
