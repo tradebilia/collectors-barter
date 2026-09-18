@@ -11,20 +11,24 @@ describe("Coming Soon responsive layout", () => {
     expect(source).toContain('id={`${emailId}-desktop`}');
   });
 
-  it("uses a full-height, vertical mobile composition instead of shrinking the desktop canvas", () => {
-    expect(source).toContain('min-h-[100svh] flex-col overflow-hidden px-5 pb-6 pt-8');
+  it("reflows the distinctive desktop visual language for mobile", () => {
     expect(source).toContain('aria-label="Tradebilia mobile launch signup"');
-    expect(source).toContain('id={`${emailId}-mobile`}');
-    expect(source).toContain('h-12 w-full rounded-lg');
+    expect(source).toContain("<TradebiliaWheel");
+    expect(source).toContain("TRADEBILIA");
     expect(source).toContain("Why Buy or Sell");
     expect(source).toContain("When You Can Trade?");
-    expect(source).toContain("Discover rare finds · Trade with confidence · No trading fees · Trade across categories");
+    expect(source).toContain("mobileCategories.map");
+    expect(source).toContain('aria-label="Tradebilia collector categories"');
+    expect(source).toContain("Built for collectors");
   });
 
-  it("keeps the mobile email field and action at accessible touch sizes", () => {
+  it("keeps the mobile email action as a 48px direct gold signup bar", () => {
+    expect(source).toContain('className="flex h-12 w-full"');
+    expect(source).toContain('id={`${emailId}-mobile`}');
+    expect(source).toContain('w-[31%]');
+    expect(source).toContain('bg-[#e3ab5e]');
     expect(source).toContain('type="email"');
     expect(source).toContain('autoComplete="email"');
     expect(source).toContain('required');
-    expect(source).toContain('aria-label={subscribeMutation.isPending ? "Saving email" : "Notify me for launch updates"}');
   });
 });
