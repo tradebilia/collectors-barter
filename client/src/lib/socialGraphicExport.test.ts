@@ -40,7 +40,7 @@ describe("native Social graphic exporter", () => {
   it("uses an explicit new-listing header, enlarged official brand space, and a complete fitted title without image labels", () => {
     expect(exporterSource).toContain("NEW HIGH-VALUE LISTING");
     expect(exporterSource).toContain("drawCompleteFittedTitle");
-    expect(exporterSource).toContain("580 * scale, 150 * scale");
+    expect(exporterSource).toContain("drawCenteredBrand");
     expect(exporterSource).toContain('context.textAlign = "center"');
     expect(exporterSource).toContain('context.textBaseline = "middle"');
     expect(exporterSource).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");

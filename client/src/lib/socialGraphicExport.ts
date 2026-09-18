@@ -181,15 +181,27 @@ function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, 
   context.fillText("TRADEBILIA", x, y + height * 0.72);
 }
 
+function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, y: number, scale: number) {
+  const brandWidth = 420 * scale;
+  const brandHeight = 86 * scale;
+  drawBrand(context, logo, (width - brandWidth) / 2, y, brandWidth, brandHeight);
+}
+
+function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: string, width: number, y: number, scale: number) {
+  context.font = `800 ${Math.round(25 * scale)}px Arial, sans-serif`;
+  const bannerWidth = Math.min(width - 2 * 54 * scale, context.measureText(label).width + 70 * scale);
+  drawPromotionHeader(context, label, (width - bannerWidth) / 2, y, scale, bannerWidth);
+}
+
 function getPromotionHeader(draft: SocialDraft, category: string | null) {
   if (draft.source === "High-Value Listing") return "NEW HIGH-VALUE LISTING";
   if (draft.source === "Completed Trade") return "TRADE ALERT";
   return category?.toUpperCase() || "COLLECTIBLE SHOWCASE";
 }
 
-function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x: number, y: number, scale: number) {
+function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x: number, y: number, scale: number, forcedWidth?: number) {
   context.font = `800 ${Math.round(20 * scale)}px Arial, sans-serif`;
-  const width = context.measureText(label).width + 34 * scale;
+  const width = forcedWidth ?? context.measureText(label).width + 34 * scale;
   const height = 40 * scale;
   drawRoundedRect(context, x, y - height + 7 * scale, width, height, height / 2, "rgba(246,202,122,0.18)", "rgba(246,202,122,0.86)");
   context.fillStyle = "#ffe0a8";
@@ -223,11 +235,11 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   const scale = width / 1200;
   const padding = 54 * scale;
   const items = draft.promotion?.tradeItems ?? [];
-  drawBrand(context, brandLogo, padding, 0, 580 * scale, 150 * scale);
-  const frameY = 204 * scale;
+  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  const frameY = 146 * scale;
   const gap = 20 * scale;
   const frameWidth = (width - padding * 2 - gap) / 2;
-  const frameHeight = height - frameY - 132 * scale;
+  const frameHeight = height - frameY - 168 * scale;
   const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
   const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
   const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
@@ -258,9 +270,6 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   drawSide(offered, padding);
   drawSide(requested, padding + frameWidth + gap);
   const rows = 1;
-  context.font = `800 ${Math.round(20 * scale)}px Arial, sans-serif`;
-  const alertWidth = context.measureText("TRADE ALERT").width + 34 * scale;
-  drawPromotionHeader(context, "TRADE ALERT", (width - alertWidth) / 2, frameY - 18 * scale, scale);
   context.fillStyle = "#ffe0a8";
   context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
@@ -272,17 +281,16 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
   }
   context.textAlign = "left";
-  context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
-  context.moveTo(padding, height - 46 * scale);
-  context.lineTo(width - padding, height - 46 * scale);
+  context.moveTo(padding, height - 78 * scale);
+  context.lineTo(width - padding, height - 78 * scale);
   context.stroke();
+  drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
-  context.fillText(getSocialFooterPhrase(draft.id, "Facebook").toUpperCase(), width / 2, height - 22 * scale);
+  context.fillText(getSocialFooterPhrase(draft.id, "Facebook").toUpperCase(), width / 2, height - 18 * scale);
   context.textAlign = "left";
 }
 
@@ -290,22 +298,22 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   const scale = width / 1080;
   const padding = 62 * scale;
   const items = draft.promotion?.tradeItems ?? [];
-  drawBrand(context, brandLogo, padding, 0, 580 * scale, 150 * scale);
-  const frameY = 182 * scale;
-  const frameHeight = platform === "Pinterest" ? height * 0.38 : height * 0.34;
+  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  const frameY = 146 * scale;
+  const frameHeight = platform === "Pinterest" ? height * 0.34 : height * 0.30;
   const gap = 18 * scale;
   const frameWidth = (width - padding * 2 - gap) / 2;
   const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
   Array.from({ length: itemCount }, (_, index) => drawMediaFrame(context, images[index] ?? null, padding + (index % 2) * (frameWidth + gap), frameY + Math.floor(index / 2) * (frameHeight / 2 + gap), frameWidth, frameHeight / 2, `ITEM ${index + 1}`));
-  const titleY = frameY + frameHeight + 52 * scale;
-  drawPromotionHeader(context, "TRADE ALERT", padding, titleY, scale);
+  const titleY = frameY + frameHeight + 42 * scale;
   context.fillStyle = "#ffffff";
-  drawCompleteFittedTitle(context, items.map((item) => item.title).join("  ↔ ") || "Trade Alert", padding, titleY + 50 * scale, width - padding * 2, 38 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
+  drawCompleteFittedTitle(context, items.map((item) => item.title).join("  ↔ ") || "Trade Alert", padding, titleY, width - padding * 2, 32 * scale, 20 * scale, platform === "Pinterest" ? 4 : 3);
   if (draft.promotion?.cashIncluded) {
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-    context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 78 * scale);
+    context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 142 * scale);
   }
+  drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
   context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 28 * scale);
@@ -350,19 +358,17 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 0 * scale, 580 * scale, 150 * scale);
+  drawCenteredPromotionHeader(context, promotionHeader, width, 104 * scale, scale);
 
   const imageX = padding;
-  const imageY = 168 * scale;
+  const imageY = 146 * scale;
   const imageWidth = width * 0.47;
-  const imageHeight = height - imageY - 82 * scale;
+  const imageHeight = height - imageY - 150 * scale;
   drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
 
   const detailX = imageX + imageWidth + 62 * scale;
   const detailWidth = width - detailX - padding;
-  let detailY = imageY + 38 * scale;
-  drawPromotionHeader(context, promotionHeader, detailX, detailY, scale);
-  detailY += 47 * scale;
+  let detailY = imageY + 30 * scale;
 
   context.fillStyle = "#ffffff";
   detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 43 * scale, 25 * scale, 3);
@@ -381,7 +387,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
     context.fillText(`Trade value  ${value}`, detailX, detailY);
   }
 
-  const ctaY = height - 92 * scale;
+  const ctaY = height - 112 * scale;
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
   context.fillText("↗  VIEW ITEM PROFILE", detailX, ctaY);
@@ -392,13 +398,14 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
 
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
-  context.moveTo(padding, height - 48 * scale);
-  context.lineTo(width - padding, height - 48 * scale);
+  context.moveTo(padding, height - 72 * scale);
+  context.lineTo(width - padding, height - 72 * scale);
   context.stroke();
+  drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
-  context.fillText("DISCOVER · TRADE · COLLECT", width / 2, height - 24 * scale);
+  context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 18 * scale);
   context.textAlign = "left";
 
   void platform;
@@ -414,15 +421,13 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 0 * scale, 580 * scale, 150 * scale);
+  drawCenteredPromotionHeader(context, promotionHeader, width, 104 * scale, scale);
 
-  const imageY = 182 * scale;
-  const imageHeight = platform === "Pinterest" ? height * 0.46 : height * 0.43;
+  const imageY = 146 * scale;
+  const imageHeight = platform === "Pinterest" ? height * 0.40 : height * 0.36;
   drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
 
-  let y = imageY + imageHeight + 52 * scale;
-  drawPromotionHeader(context, promotionHeader, padding, y, scale);
-  y += 50 * scale;
+  let y = imageY + imageHeight + 38 * scale;
   context.fillStyle = "#ffffff";
   y += drawCompleteFittedTitle(context, itemTitle, padding, y, width - padding * 2, 43 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
   if (itemType) {
@@ -440,7 +445,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
     context.fillText(`Trade value  ${value}`, padding, y);
   }
 
-  const ctaY = height - 72 * scale;
+  const ctaY = height - 108 * scale;
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
   context.fillText("↗  VIEW ITEM PROFILE", padding, ctaY);
@@ -448,6 +453,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
   const url = splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space";
   context.fillText(url, padding, ctaY + 23 * scale);
+  drawCenteredBrand(context, brandLogo, width, height - 150 * scale, scale);
 }
 
 export function getSocialGraphicExportFileName(draft: SocialDraft, platform: SocialPlatform) {
