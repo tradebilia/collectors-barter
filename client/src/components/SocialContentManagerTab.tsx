@@ -604,7 +604,7 @@ export function SocialContentManagerTab() {
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
                       <div className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
-                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} brandLogoUrl={preparedBrandLogoUrl ?? undefined} />
+                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

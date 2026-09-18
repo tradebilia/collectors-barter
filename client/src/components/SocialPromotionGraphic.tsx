@@ -20,7 +20,7 @@ function classNames(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string }) {
+export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_GRAPHIC_BRAND_LOGO_URL, tradeItemImageUrls = [] }: { draft: SocialDraft; platform: SocialPlatform; brandLogoUrl?: string; tradeItemImageUrls?: string[] }) {
   const spec = SOCIAL_GRAPHIC_SPECS[platform];
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -59,7 +59,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
                 {completedItems.map((item, index) => (
                   <div key={`${item.title}-${index}`} className="flex h-full min-h-0 flex-col items-center justify-center gap-2">
                     <div className="flex min-h-0 flex-1 items-center justify-center">
-                      {item.imageUrl ? <img src={item.imageUrl} alt={item.title} className="block max-h-full max-w-full object-contain" /> : <ImageIcon className="h-10 w-10 text-[#f6ca7a]" aria-hidden="true" />}
+                      {(tradeItemImageUrls[index] || item.imageUrl) ? <img src={tradeItemImageUrls[index] || item.imageUrl || undefined} alt={item.title} className="block max-h-full max-w-full object-contain" /> : <ImageIcon className="h-10 w-10 text-[#f6ca7a]" aria-hidden="true" />}
                     </div>
                     <span className="line-clamp-2 text-center text-[clamp(0.48rem,0.8cqw,0.64rem)] font-semibold text-white/85">{item.title}</span>
                   </div>

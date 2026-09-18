@@ -249,6 +249,13 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
     context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
   }
+  context.textAlign = "left";
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText("↗  SEE MORE TRADES ON TRADEBILIA", padding, height - 72 * scale);
+  context.fillStyle = "rgba(255,255,255,0.68)";
+  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.fillText(splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space", padding, height - 49 * scale);
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
   context.moveTo(padding, height - 48 * scale);
@@ -281,6 +288,12 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
     context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
     context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 78 * scale);
   }
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText("↗  SEE MORE TRADES ON TRADEBILIA", padding, height - 42 * scale);
+  context.fillStyle = "rgba(255,255,255,0.68)";
+  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.fillText(splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space", padding, height - 22 * scale);
 }
 
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
@@ -441,7 +454,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
 
   const [itemImage, tradeItemImages, brandLogo, heroBackground] = await Promise.all([
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
-    Promise.all((tradeItemImageUrls ?? []).slice(0, 2).map((url) => loadCanvasImage(url, false))),
+    Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, false))),
     loadCanvasImage(brandLogoUrl),
     loadCanvasImage(heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
   ]);

@@ -36,4 +36,10 @@ describe("Social promotion graphic", () => {
     expect(source).toContain("justify-center border-t");
     expect(source).not.toContain("<span>tradebilia</span>");
   });
+
+  it("supports prepared traded-item images and the homepage trade CTA", () => {
+    expect(source).toContain("tradeItemImageUrls");
+    expect(source).toContain("See more trades on Tradebilia");
+    expect(source).toContain("tradeItemImageUrls[index] || item.imageUrl");
+  });
 });
