@@ -40,7 +40,7 @@ describe("admin promotion opportunities contract", () => {
     expect(routerSource).toContain('normalizedCategory.includes("sport")');
     expect(routerSource).toContain('normalizedCategory.includes("comic")');
     expect(routerSource).toContain('label: "Issue No."');
-    expect(routerSource).toContain('!isSportsCard || !["Year", "Set", "Card No."].includes(fact.label)');
+    expect(routerSource).toContain('!isSportsCard || !["Set", "Card No."].includes(fact.label)');
   });
 
   it("keeps historical qualifying listings and completed trades available for testing", () => {

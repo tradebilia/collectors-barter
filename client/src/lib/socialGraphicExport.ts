@@ -188,7 +188,7 @@ function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage 
 }
 
 function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: string, width: number, y: number, scale: number) {
-  context.font = `800 ${Math.round(29 * scale)}px Arial, sans-serif`;
+  context.font = `800 ${Math.round(35 * scale)}px Arial, sans-serif`;
   const bannerWidth = Math.min(width - 2 * 44 * scale, context.measureText(label).width + 96 * scale);
   drawPromotionHeader(context, label, (width - bannerWidth) / 2, y, scale, bannerWidth);
 }
@@ -200,9 +200,9 @@ function getPromotionHeader(draft: SocialDraft, category: string | null) {
 }
 
 function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x: number, y: number, scale: number, forcedWidth?: number) {
-  context.font = `800 ${Math.round(23 * scale)}px Arial, sans-serif`;
+  context.font = `800 ${Math.round(28 * scale)}px Arial, sans-serif`;
   const width = forcedWidth ?? context.measureText(label).width + 48 * scale;
-  const height = 50 * scale;
+  const height = 58 * scale;
   drawRoundedRect(context, x, y - height + 7 * scale, width, height, height / 2, "rgba(246,202,122,0.18)", "rgba(246,202,122,0.86)");
   context.fillStyle = "#ffe0a8";
   context.textAlign = "center";
@@ -358,7 +358,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawCenteredPromotionHeader(context, promotionHeader, width, 104 * scale, scale);
+  drawCenteredPromotionHeader(context, promotionHeader, width, 88 * scale, scale);
 
   const imageX = padding;
   const imageY = 146 * scale;
@@ -381,7 +381,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   detailY += 30 * scale;
   detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
   if (value) {
-    detailY += 36 * scale;
+    detailY = Math.min(detailY + 36 * scale, height - 188 * scale);
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(21 * scale)}px Arial, sans-serif`;
     context.fillText(`Trade value  ${value}`, detailX, detailY);

@@ -184,14 +184,19 @@ function buildPromotionFacts(opportunity: any) {
   const isSportsCard = category.includes("sport") && category.includes("card");
   const isGradedComic = category.includes("comic") && Boolean(opportunity.grade || gradingCompany);
   const coreFacts = [
-    opportunity.grade ? { label: "Grade", value: String(opportunity.grade) } : null,
     gradingCompany ? { label: "Grading company", value: String(gradingCompany) } : null,
+    opportunity.grade ? { label: "Grade", value: String(opportunity.grade) } : null,
     opportunity.condition && !isSportsCard && !isGradedComic ? { label: "Condition", value: String(opportunity.condition).replace(/_/g, " ") } : null,
   ].filter((fact): fact is { label: string; value: string } => Boolean(fact));
-  return [...facts, ...coreFacts]
-    .filter((fact) => !(isSportsCard && ["Year", "Set", "Card No.", "Condition"].includes(fact.label)))
+  const ordered = [...facts, ...coreFacts]
+    .filter((fact) => !(isSportsCard && ["Set", "Card No.", "Condition"].includes(fact.label)))
     .filter((fact, index, allFacts) => allFacts.findIndex((other) => other.label === fact.label) === index)
     .slice(0, 4);
+  if (!isSportsCard) return ordered;
+  const byLabel = new Map(ordered.map((fact) => [fact.label, fact]));
+  return ["Year", "Manufacturer", "Grading company", "Grade"]
+    .map((label) => byLabel.get(label))
+    .filter((fact): fact is { label: string; value: string } => Boolean(fact));
 }
 
 function isNewListing(createdAt: string | number | Date | null | undefined) {

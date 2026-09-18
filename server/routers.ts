@@ -267,7 +267,7 @@ function getPromotionItemFacts(itemDetails: unknown, category?: string | null): 
     const candidate = keys.map((key) => details?.[key]).find((value) => (typeof value === "string" || typeof value === "number") && String(value).trim());
     const value = typeof candidate === "string" || typeof candidate === "number" ? String(candidate).trim().slice(0, 80) : "";
     return value ? [{ label, value }] : [];
-  }).filter((fact) => !isSportsCard || !["Year", "Set", "Card No."].includes(fact.label));
+  }).filter((fact) => !isSportsCard || !["Set", "Card No."].includes(fact.label));
 }
 
 const externalPaymentMethodsInputSchema = z.object({
