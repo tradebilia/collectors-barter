@@ -13,7 +13,7 @@ export const SOCIAL_GRAPHIC_CANVAS_SIZES: Record<SocialPlatform, SocialGraphicCa
 
 type CanvasImage = HTMLImageElement;
 
-export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-a_5d56bb7d.jpg";
+export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 
 type SocialGraphicExportInput = {
   draft: SocialDraft;
@@ -191,7 +191,11 @@ function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x
   const height = 40 * scale;
   drawRoundedRect(context, x, y - height + 7 * scale, width, height, height / 2, "rgba(246,202,122,0.18)", "rgba(246,202,122,0.86)");
   context.fillStyle = "#ffe0a8";
-  context.fillText(label, x + 17 * scale, y - 8 * scale);
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(label, x + width / 2, y - height / 2 + 7 * scale);
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
 }
 
 function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | null, x: number, y: number, width: number, height: number, label: string) {
@@ -251,7 +255,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 8 * scale, 760 * scale, 190 * scale);
+  drawBrand(context, brandLogo, padding, 2 * scale, 900 * scale, 230 * scale);
 
   const imageX = padding;
   const imageY = 168 * scale;
@@ -315,7 +319,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 10 * scale, 760 * scale, 190 * scale);
+  drawBrand(context, brandLogo, padding, 4 * scale, 900 * scale, 230 * scale);
 
   const imageY = 182 * scale;
   const imageHeight = platform === "Pinterest" ? height * 0.46 : height * 0.43;
