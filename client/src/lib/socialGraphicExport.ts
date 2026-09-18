@@ -219,7 +219,7 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
   context.restore();
 }
 
-function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: CanvasImage[], brandLogo: CanvasImage | null) {
+function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
   const scale = width / 1200;
   const padding = 54 * scale;
   const items = draft.promotion?.tradeItems ?? [];
@@ -268,7 +268,7 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   context.textAlign = "left";
 }
 
-function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: CanvasImage[], brandLogo: CanvasImage | null) {
+function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
   const scale = width / 1080;
   const padding = 62 * scale;
   const items = draft.promotion?.tradeItems ?? [];
@@ -454,15 +454,15 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
 
   const [itemImage, tradeItemImages, brandLogo, heroBackground] = await Promise.all([
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
-    Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, false))),
+    Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, true))),
     loadCanvasImage(brandLogoUrl),
     loadCanvasImage(heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
   ]);
   drawBackground(context, width, height, heroBackground);
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
-    drawCompletedTradeLandscape(context, draft, width, height, tradeItemImages.filter((image): image is CanvasImage => Boolean(image)), brandLogo);
+    drawCompletedTradeLandscape(context, draft, width, height, tradeItemImages, brandLogo);
   } else if (draft.source === "Completed Trade") {
-    drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages.filter((image): image is CanvasImage => Boolean(image)), brandLogo);
+    drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, brandLogo);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {
