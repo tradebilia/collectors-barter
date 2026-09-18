@@ -227,7 +227,7 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   const frameY = 204 * scale;
   const gap = 20 * scale;
   const frameWidth = (width - padding * 2 - gap) / 2;
-  const frameHeight = height - frameY - 82 * scale;
+  const frameHeight = height - frameY - 132 * scale;
   const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
   const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
   const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
@@ -242,16 +242,10 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     const cellHeight = frameHeight - 52 * scale;
     entries.forEach(({ item, index }, entryIndex) => {
       const isThreeItemLead = entries.length === 3 && entryIndex === 0;
-      const imageWidth = isThreeItemLead ? frameWidth - 28 * scale : entries.length === 3 ? cellWidth : cellWidth;
-      const imageHeight = isThreeItemLead ? cellHeight * 0.46 : entries.length === 3 ? cellHeight * 0.22 : columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale;
-      const cellX = isThreeItemLead
-        ? x + 14 * scale
-        : x + 14 * scale + ((entries.length === 3 ? entryIndex - 1 : entryIndex) % columns) * (cellWidth + 14 * scale);
-      const cellY = isThreeItemLead
-        ? frameY + 42 * scale
-        : entries.length === 3
-          ? frameY + 42 * scale + cellHeight * 0.56
-          : frameY + 42 * scale + (columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
+      const imageWidth = cellWidth;
+      const imageHeight = isThreeItemLead ? cellHeight - 26 * scale : entries.length === 3 ? cellHeight / 2 - 10 * scale : columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale;
+      const cellX = x + 14 * scale + (entries.length === 3 && !isThreeItemLead ? cellWidth + 14 * scale : (entryIndex % columns) * (cellWidth + 14 * scale));
+      const cellY = frameY + 42 * scale + (entries.length === 3 && !isThreeItemLead ? (entryIndex - 1) * (cellHeight / 2) : columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
       if (images[index]) {
         drawContainedImage(context, images[index], cellX, cellY, imageWidth, imageHeight);
       } else {
