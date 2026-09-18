@@ -2943,15 +2943,15 @@ export const appRouter = router({
         return { url, fileName: safeFileName, contentType: input.contentType };
       }),
     prepareSocialGraphicImage: protectedProcedure
-      .input(z.object({ sourceUrl: z.string().min(1).max(2_000) }))
+      .input(z.object({ sourceUrls: z.array(z.string().min(1).max(2_000)).min(1).max(5) }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        const [dataUrl, brandLogoDataUrl, heroBackgroundDataUrl] = await Promise.all([
-          getSocialGraphicImageDataUrl(input.sourceUrl),
+        const [dataUrls, brandLogoDataUrl, heroBackgroundDataUrl] = await Promise.all([
+          Promise.all(input.sourceUrls.map((sourceUrl) => getSocialGraphicImageDataUrl(sourceUrl))),
           getSocialGraphicImageDataUrl(SOCIAL_GRAPHIC_BRAND_LOGO_URL),
           getSocialGraphicImageDataUrl(SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
         ]);
-        return { dataUrl, brandLogoDataUrl, heroBackgroundDataUrl };
+        return { dataUrls, brandLogoDataUrl, heroBackgroundDataUrl };
       }),
     getPromotionOpportunities: protectedProcedure
       .input(z.object({

@@ -268,19 +268,12 @@ export function SocialContentManagerTab() {
     if ((hasItemImage && preparedGraphicImageUrl) || (!hasItemImage && preparedBrandLogoUrl)) return;
     if (preparedAssetRequestRef.current === sourceUrl) return;
     preparedAssetRequestRef.current = sourceUrl;
-    (async () => {
-      const primary = await prepareSocialGraphicImage.mutateAsync({ sourceUrl });
-      const tradeAssets = [] as Array<{ dataUrl?: string | null }>;
-      for (const url of tradeImageSources) {
-        tradeAssets.push(await prepareSocialGraphicImage.mutateAsync({ sourceUrl: url }));
-      }
-      return [primary, ...tradeAssets] as const;
-    })()
-      .then(([primary, ...tradeAssets]) => {
-        setPreparedGraphicImageUrl(hasItemImage ? primary.dataUrl : null);
-        setPreparedTradeImageUrls(tradeAssets.map((asset) => asset.dataUrl).filter((url): url is string => Boolean(url)));
-        setPreparedBrandLogoUrl(primary.brandLogoDataUrl);
-        setPreparedHeroBackgroundUrl(primary.heroBackgroundDataUrl);
+    prepareSocialGraphicImage.mutateAsync({ sourceUrls: [sourceUrl, ...tradeImageSources] })
+      .then((result) => {
+        setPreparedGraphicImageUrl(hasItemImage ? result.dataUrls[0] ?? null : null);
+        setPreparedTradeImageUrls(result.dataUrls.slice(1).filter((url): url is string => Boolean(url)));
+        setPreparedBrandLogoUrl(result.brandLogoDataUrl);
+        setPreparedHeroBackgroundUrl(result.heroBackgroundDataUrl);
       })
       .catch(() => toast.error("One or more traded item images could not be prepared for export. Please close and reopen the preview to retry."));
   }, [isPreviewOpen, preparedBrandLogoUrl, preparedGraphicImageUrl, prepareSocialGraphicImage, selectedDraft]);
