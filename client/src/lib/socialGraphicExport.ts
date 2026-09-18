@@ -240,17 +240,27 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     const cellWidth = (frameWidth - 28 * scale - (columns - 1) * 14 * scale) / columns;
     const cellHeight = frameHeight - 52 * scale;
     entries.forEach(({ item, index }, entryIndex) => {
-      const cellX = x + 14 * scale + (entryIndex % columns) * (cellWidth + 14 * scale);
-      const cellY = frameY + 42 * scale + (columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
+      const isThreeItemLead = entries.length === 3 && entryIndex === 0;
+      const imageWidth = isThreeItemLead ? frameWidth - 28 * scale : entries.length === 3 ? cellWidth : cellWidth;
+      const imageHeight = isThreeItemLead ? cellHeight * 0.46 : entries.length === 3 ? cellHeight * 0.22 : columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale;
+      const cellX = isThreeItemLead
+        ? x + 14 * scale
+        : x + 14 * scale + ((entries.length === 3 ? entryIndex - 1 : entryIndex) % columns) * (cellWidth + 14 * scale);
+      const cellY = isThreeItemLead
+        ? frameY + 42 * scale
+        : entries.length === 3
+          ? frameY + 42 * scale + cellHeight * 0.56
+          : frameY + 42 * scale + (columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
       if (images[index]) {
-        drawContainedImage(context, images[index], cellX, cellY, cellWidth, columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale);
+        drawContainedImage(context, images[index], cellX, cellY, imageWidth, imageHeight);
       } else {
         context.fillStyle = "rgba(255,255,255,0.10)";
-        context.fillRect(cellX, cellY, cellWidth, columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale);
+        context.fillRect(cellX, cellY, imageWidth, imageHeight);
       }
       context.fillStyle = "rgba(255,255,255,0.86)";
       context.font = `600 ${Math.round(10 * scale)}px Arial, sans-serif`;
-      context.fillText(splitLine(context, item.title, cellWidth, 2)[0] ?? "", cellX + cellWidth / 2, frameY + frameHeight - 14 * scale);
+      context.textAlign = "center";
+      context.fillText(splitLine(context, item.title, imageWidth, 2)[0] ?? "", cellX + imageWidth / 2, cellY + imageHeight + 14 * scale);
     });
     context.textAlign = "left";
   };

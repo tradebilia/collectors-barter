@@ -62,9 +62,9 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
                 {[{ label: "OFFERED", entries: offeredItems }, { label: "REQUESTED", entries: requestedItems }].map((side) => (
                   <div key={side.label} className="flex min-h-0 flex-col items-center justify-center gap-[3%] rounded-lg border border-white/10 bg-black/10 p-[2%]">
                     <span className="text-[clamp(0.42rem,0.7cqw,0.56rem)] font-extrabold uppercase tracking-[0.14em] text-[#ffe0a8]">{side.label}</span>
-                    <div className={classNames("grid min-h-0 w-full flex-1 items-center justify-items-center gap-[3%]", side.entries.length > 2 ? "grid-cols-2" : "grid-cols-1")}>
-                      {side.entries.map(({ item, index }) => (
-                        <div key={`${item.title}-${index}`} className="flex min-h-0 w-full flex-col items-center justify-center gap-1">
+                    <div className={classNames("grid min-h-0 w-full flex-1 items-center justify-items-center gap-[3%]", side.entries.length === 3 ? "grid-cols-2 grid-rows-2" : side.entries.length === 4 ? "grid-cols-2 grid-rows-2" : "grid-cols-1")}>
+                      {side.entries.map(({ item, index }, entryIndex) => (
+                        <div key={`${item.title}-${index}`} className={classNames("flex min-h-0 w-full flex-col items-center justify-center gap-1", side.entries.length === 3 && entryIndex === 0 ? "col-span-2" : undefined)}>
                           <div className="flex min-h-0 flex-1 items-center justify-center">
                             {(tradeItemImageUrls[index] || item.imageUrl) ? <img src={tradeItemImageUrls[index] || item.imageUrl || undefined} alt={item.title} className="block max-h-full max-w-full object-contain" /> : <ImageIcon className="h-8 w-8 text-[#f6ca7a]" aria-hidden="true" />}
                           </div>
