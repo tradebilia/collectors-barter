@@ -225,26 +225,47 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   const items = draft.promotion?.tradeItems ?? [];
   drawBrand(context, brandLogo, padding, 0, 580 * scale, 150 * scale);
   const frameY = 204 * scale;
-  const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
-  const columns = itemCount > 2 ? 2 : 2;
-  const rows = Math.ceil(itemCount / columns);
   const gap = 20 * scale;
-  const frameWidth = (width - padding * 2 - gap) / columns;
-  const frameHeight = (height - frameY - 82 * scale - gap * (rows - 1)) / rows;
-  Array.from({ length: itemCount }, (_, index) => {
-    const x = padding + (index % columns) * (frameWidth + gap);
-    const y = frameY + Math.floor(index / columns) * (frameHeight + gap);
-    drawMediaFrame(context, images[index] ?? null, x, y, frameWidth, frameHeight, `ITEM ${index + 1}`);
-  });
+  const frameWidth = (width - padding * 2 - gap) / 2;
+  const frameHeight = height - frameY - 82 * scale;
+  const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered");
+  const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered");
+  const drawSide = (label: string, entries: Array<{ item: { title: string }; index: number }>, x: number) => {
+    drawRoundedRect(context, x, frameY, frameWidth, frameHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
+    context.fillStyle = "#ffe0a8";
+    context.font = `800 ${Math.round(15 * scale)}px Arial, sans-serif`;
+    context.textAlign = "center";
+    context.fillText(label, x + frameWidth / 2, frameY + 30 * scale);
+    const columns = entries.length > 2 ? 2 : 1;
+    const cellWidth = (frameWidth - 28 * scale - (columns - 1) * 14 * scale) / columns;
+    const cellHeight = frameHeight - 52 * scale;
+    entries.forEach(({ item, index }, entryIndex) => {
+      const cellX = x + 14 * scale + (entryIndex % columns) * (cellWidth + 14 * scale);
+      const cellY = frameY + 42 * scale + (columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
+      if (images[index]) {
+        drawContainedImage(context, images[index], cellX, cellY, cellWidth, columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale);
+      } else {
+        context.fillStyle = "rgba(255,255,255,0.10)";
+        context.fillRect(cellX, cellY, cellWidth, columns > 1 ? cellHeight / 2 - 10 * scale : cellHeight - 26 * scale);
+      }
+      context.fillStyle = "rgba(255,255,255,0.86)";
+      context.font = `600 ${Math.round(10 * scale)}px Arial, sans-serif`;
+      context.fillText(splitLine(context, item.title, cellWidth, 2)[0] ?? "", cellX + cellWidth / 2, frameY + frameHeight - 14 * scale);
+    });
+    context.textAlign = "left";
+  };
+  drawSide("OFFERED", offered, padding);
+  drawSide("REQUESTED", requested, padding + frameWidth + gap);
+  const rows = 1;
   context.font = `800 ${Math.round(20 * scale)}px Arial, sans-serif`;
   const alertWidth = context.measureText("TRADE ALERT").width + 34 * scale;
   drawPromotionHeader(context, "TRADE ALERT", (width - alertWidth) / 2, frameY - 18 * scale, scale);
   context.fillStyle = "#ffe0a8";
   context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
-  context.fillText("SWAPPED", width / 2, frameY + (frameHeight * rows) / 2 - 14 * scale);
+  context.fillText("SWAPPED", width / 2, frameY + frameHeight / 2 - 14 * scale);
   context.font = `700 ${Math.round(32 * scale)}px Arial, sans-serif`;
-  context.fillText("↔", width / 2, frameY + (frameHeight * rows) / 2 + 22 * scale);
+  context.fillText("↔", width / 2, frameY + frameHeight / 2 + 22 * scale);
   if (draft.promotion?.cashIncluded) {
     context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
     context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
