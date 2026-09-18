@@ -37,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
+import { downloadSocialGraphicCanvas, getSocialGraphicExportFileName, renderSocialGraphicCanvas } from "@/lib/socialGraphicExport";
 import {
   approveSocialDraft,
   createPromotionSocialDraft,
@@ -177,7 +178,6 @@ export function SocialContentManagerTab() {
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
   const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const graphicRef = useRef<HTMLDivElement>(null);
   const preparedAssetRequestRef = useRef<string | null>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
@@ -384,33 +384,23 @@ export function SocialContentManagerTab() {
   }
 
   async function downloadSocialGraphic() {
-    const graphic = graphicRef.current;
-    if (!graphic || !selectedDraft || !selectedPreviewPlatform) return;
+    if (!selectedDraft || !selectedPreviewPlatform) return;
     if (!preparedBrandLogoUrl || (hasExportableItemImage && !preparedGraphicImageUrl)) {
       toast.error("Preparing the original item image and Tradebilia mark. Please wait a moment, then download the graphic.");
       return;
     }
     setIsExportingGraphic(true);
     try {
-      const { default: html2canvas } = await import("html2canvas");
-      const canvas = await html2canvas(graphic, {
-        backgroundColor: "#080d1d",
-        scale: 2,
-        useCORS: true,
-        logging: false,
+      const canvas = await renderSocialGraphicCanvas({
+        draft: selectedDraft,
+        platform: selectedPreviewPlatform,
+        itemImageUrl: preparedGraphicImageUrl,
+        brandLogoUrl: preparedBrandLogoUrl,
       });
-      const downloadLink = document.createElement("a");
-      const safeTitle = (selectedDraft.promotion?.itemTitle || selectedDraft.title || "tradebilia-item")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "")
-        .slice(0, 60) || "tradebilia-item";
-      downloadLink.download = `tradebilia-${safeTitle}-${selectedPreviewPlatform.toLowerCase()}.png`;
-      downloadLink.href = canvas.toDataURL("image/png");
-      downloadLink.click();
+      downloadSocialGraphicCanvas(canvas, getSocialGraphicExportFileName(selectedDraft, selectedPreviewPlatform));
       toast.success("Social graphic download prepared");
     } catch {
-      toast.error("The graphic could not be exported. Your original item image was not changed.");
+      toast.error("The graphic could not be exported. Please try again; your original item image was not changed.");
     } finally {
       setIsExportingGraphic(false);
     }
@@ -578,7 +568,7 @@ export function SocialContentManagerTab() {
                       {selectedDraft.promotion ? <Badge className="w-fit border border-indigo-100 bg-indigo-50 text-indigo-700">{formatSocialCategory(selectedDraft.promotion.category) || "Collectible"}</Badge> : null}
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
-                      <div ref={graphicRef} className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
+                      <div className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
                         <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} brandLogoUrl={preparedBrandLogoUrl ?? undefined} />
                       </div>
                     </div>

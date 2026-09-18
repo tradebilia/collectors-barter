@@ -1,0 +1,360 @@
+import { formatSocialCategory, formatSocialItemType, formatSocialValue, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+
+export type SocialGraphicCanvasSize = { width: number; height: number };
+
+export const SOCIAL_GRAPHIC_CANVAS_SIZES: Record<SocialPlatform, SocialGraphicCanvasSize> = {
+  Facebook: { width: 1200, height: 630 },
+  Instagram: { width: 1080, height: 1080 },
+  X: { width: 1600, height: 900 },
+  Pinterest: { width: 1000, height: 1500 },
+  LinkedIn: { width: 1200, height: 627 },
+  YouTube: { width: 1280, height: 720 },
+};
+
+type CanvasImage = HTMLImageElement;
+
+type SocialGraphicExportInput = {
+  draft: SocialDraft;
+  platform: SocialPlatform;
+  itemImageUrl?: string | null;
+  brandLogoUrl?: string | null;
+};
+
+function isTallCanvas(platform: SocialPlatform) {
+  return platform === "Instagram" || platform === "Pinterest";
+}
+
+function isVideoMediaUrl(url: string | null | undefined) {
+  return Boolean(url && /\.(mp4|webm|mov)(?:[?#].*)?$/i.test(url));
+}
+
+function roundedRectPath(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  const corner = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + corner, y);
+  context.arcTo(x + width, y, x + width, y + height, corner);
+  context.arcTo(x + width, y + height, x, y + height, corner);
+  context.arcTo(x, y + height, x, y, corner);
+  context.arcTo(x, y, x + width, y, corner);
+  context.closePath();
+}
+
+function drawRoundedRect(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, fill: string, stroke?: string) {
+  roundedRectPath(context, x, y, width, height, radius);
+  context.fillStyle = fill;
+  context.fill();
+  if (stroke) {
+    context.strokeStyle = stroke;
+    context.stroke();
+  }
+}
+
+function drawContainedImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number) {
+  const naturalWidth = image.naturalWidth || 1;
+  const naturalHeight = image.naturalHeight || 1;
+  const scale = Math.min(width / naturalWidth, height / naturalHeight);
+  const drawWidth = naturalWidth * scale;
+  const drawHeight = naturalHeight * scale;
+  context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+
+function loadCanvasImage(source: string | null | undefined, required = false): Promise<CanvasImage | null> {
+  if (!source) return Promise.resolve(null);
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => required ? reject(new Error("The prepared item image could not be rendered for export.")) : resolve(null);
+    image.src = source;
+  });
+}
+
+function splitLine(context: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const candidate = line ? `${line} ${word}` : word;
+    if (context.measureText(candidate).width <= maxWidth || !line) {
+      line = candidate;
+      continue;
+    }
+    if (lines.length === maxLines - 1) {
+      const ellipsisLine = `${line.replace(/[.…]+$/, "")}…`;
+      return [...lines, ellipsisLine];
+    }
+    lines.push(line);
+    line = word;
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, maxLines);
+}
+
+function drawWrappedText(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, maxLines: number) {
+  const lines = splitLine(context, text, maxWidth, maxLines);
+  lines.forEach((line, index) => context.fillText(line, x, y + index * lineHeight));
+  return lines.length * lineHeight;
+}
+
+function drawBackground(context: CanvasRenderingContext2D, width: number, height: number) {
+  const background = context.createLinearGradient(0, 0, width, height);
+  background.addColorStop(0, "#090e20");
+  background.addColorStop(0.54, "#172348");
+  background.addColorStop(1, "#07101c");
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+
+  const violet = context.createRadialGradient(width * 0.04, height * 0.02, 0, width * 0.04, height * 0.02, width * 0.48);
+  violet.addColorStop(0, "rgba(87, 47, 218, 0.78)");
+  violet.addColorStop(1, "rgba(87, 47, 218, 0)");
+  context.fillStyle = violet;
+  context.fillRect(0, 0, width, height);
+
+  const cyan = context.createRadialGradient(width, height, 0, width, height, width * 0.42);
+  cyan.addColorStop(0, "rgba(10, 178, 218, 0.72)");
+  cyan.addColorStop(1, "rgba(10, 178, 218, 0)");
+  context.fillStyle = cyan;
+  context.fillRect(0, 0, width, height);
+
+  context.fillStyle = "rgba(255,255,255,0.30)";
+  for (let index = 0; index < 96; index += 1) {
+    const x = ((index * 131) % width) + 0.5;
+    const y = ((index * 71) % height) + 0.5;
+    const radius = index % 7 === 0 ? 1.5 : 0.8;
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fill();
+  }
+}
+
+function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, x: number, y: number, width: number, height: number) {
+  if (logo) {
+    drawContainedImage(context, logo, x, y, width, height);
+    return;
+  }
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.round(height * 0.54)}px Arial, sans-serif`;
+  context.fillText("TRADEBILIA", x, y + height * 0.72);
+}
+
+function drawNewBadge(context: CanvasRenderingContext2D, x: number, y: number, text: string, scale: number) {
+  context.font = `700 ${Math.round(14 * scale)}px Arial, sans-serif`;
+  const horizontalPadding = 18 * scale;
+  const height = 35 * scale;
+  const width = context.measureText(text).width + horizontalPadding * 2;
+  drawRoundedRect(context, x - width, y, width, height, height / 2, "rgba(243,190,99,0.16)", "rgba(246,202,122,0.75)");
+  context.fillStyle = "#ffe0a8";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text.toUpperCase(), x - width / 2, y + height / 2 + 1);
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+}
+
+function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | null, x: number, y: number, width: number, height: number, label: string) {
+  drawRoundedRect(context, x, y, width, height, Math.max(16, width * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
+  context.save();
+  roundedRectPath(context, x + 10, y + 10, width - 20, height - 20, Math.max(10, width * 0.022));
+  context.clip();
+  if (image) {
+    drawContainedImage(context, image, x + 18, y + 18, width - 36, height - 36);
+  } else {
+    context.fillStyle = "rgba(255,255,255,0.10)";
+    context.fillRect(x + 10, y + 10, width - 20, height - 20);
+    context.fillStyle = "rgba(255,255,255,0.78)";
+    context.font = `600 ${Math.max(15, Math.round(width * 0.04))}px Arial, sans-serif`;
+    context.textAlign = "center";
+    context.fillText(label, x + width / 2, y + height / 2);
+    context.textAlign = "left";
+  }
+  context.restore();
+  context.font = `700 ${Math.max(11, Math.round(width * 0.022))}px Arial, sans-serif`;
+  const chipWidth = context.measureText("ORIGINAL IMAGE · FULLY SHOWN").width + 24;
+  drawRoundedRect(context, x + 14, y + height - 38, chipWidth, 24, 5, "rgba(8,13,29,0.85)");
+  context.fillStyle = "rgba(255,255,255,0.74)";
+  context.fillText("ORIGINAL IMAGE · FULLY SHOWN", x + 26, y + height - 21);
+}
+
+function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
+  if (facts.length === 0) return 0;
+  const rows = Math.ceil(Math.min(facts.length, 4) / 2);
+  const height = rows * 54 * scale + 20 * scale;
+  context.strokeStyle = "rgba(255,255,255,0.22)";
+  context.beginPath();
+  context.moveTo(x, y);
+  context.lineTo(x + width, y);
+  context.moveTo(x, y + height);
+  context.lineTo(x + width, y + height);
+  context.stroke();
+
+  facts.slice(0, 4).forEach((fact, index) => {
+    const column = index % 2;
+    const row = Math.floor(index / 2);
+    const cellX = x + column * (width / 2);
+    const cellY = y + 18 * scale + row * 54 * scale;
+    context.fillStyle = "#b9caea";
+    context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+    context.fillText(fact.label.toUpperCase(), cellX, cellY);
+    context.fillStyle = "#ffffff";
+    context.font = `700 ${Math.round(16 * scale)}px Arial, sans-serif`;
+    const trimmedValue = splitLine(context, fact.value, width / 2 - 16 * scale, 1)[0] ?? "";
+    context.fillText(trimmedValue, cellX, cellY + 20 * scale);
+  });
+  return height;
+}
+
+function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null) {
+  const scale = width / 1200;
+  const padding = 54 * scale;
+  const promotion = draft.promotion;
+  const itemTitle = promotion?.itemTitle || draft.title || "Tradebilia collectible";
+  const category = formatSocialCategory(promotion?.category) || "Collectible showcase";
+  const itemType = formatSocialItemType(promotion?.itemType);
+  const value = formatSocialValue(promotion?.estimatedValue);
+
+  drawBrand(context, brandLogo, padding, 34 * scale, 270 * scale, 56 * scale);
+  if (promotion?.isNew) drawNewBadge(context, width - padding, 40 * scale, "New to Tradebilia", scale);
+
+  const imageX = padding;
+  const imageY = 132 * scale;
+  const imageWidth = width * 0.47;
+  const imageHeight = height - imageY - 82 * scale;
+  drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
+
+  const detailX = imageX + imageWidth + 62 * scale;
+  const detailWidth = width - detailX - padding;
+  let detailY = imageY + 30 * scale;
+  context.fillStyle = "#f6ca7a";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText(category.toUpperCase(), detailX, detailY);
+  detailY += 42 * scale;
+
+  context.fillStyle = "#ffffff";
+  context.font = `600 ${Math.round(43 * scale)}px Georgia, serif`;
+  detailY += drawWrappedText(context, itemTitle, detailX, detailY, detailWidth, 44 * scale, 3);
+  if (itemType) {
+    detailY += 14 * scale;
+    context.fillStyle = "rgba(255,255,255,0.75)";
+    context.font = `600 ${Math.round(17 * scale)}px Arial, sans-serif`;
+    context.fillText(itemType, detailX, detailY);
+  }
+  detailY += 30 * scale;
+  detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
+  if (value) {
+    detailY += 36 * scale;
+    context.fillStyle = "#ffe0a8";
+    context.font = `700 ${Math.round(21 * scale)}px Arial, sans-serif`;
+    context.fillText(`Trade value  ${value}`, detailX, detailY);
+  }
+
+  const ctaY = height - 92 * scale;
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText("↗  VIEW THIS ITEM ON TRADEBILIA", detailX, ctaY);
+  context.fillStyle = "rgba(255,255,255,0.68)";
+  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  const url = splitLine(context, draft.destinationUrl || "tradebilia.manus.space", detailWidth, 1)[0] ?? "tradebilia.manus.space";
+  context.fillText(url, detailX, ctaY + 23 * scale);
+
+  context.strokeStyle = "rgba(255,255,255,0.18)";
+  context.beginPath();
+  context.moveTo(padding, height - 48 * scale);
+  context.lineTo(width - padding, height - 48 * scale);
+  context.stroke();
+  context.fillStyle = "rgba(255,255,255,0.65)";
+  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.fillText("DISCOVER · TRADE · COLLECT", padding, height - 24 * scale);
+  context.textAlign = "right";
+  context.fillText("TRADEBILIA", width - padding, height - 24 * scale);
+  context.textAlign = "left";
+
+  void platform;
+}
+
+function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null) {
+  const scale = width / 1080;
+  const padding = 62 * scale;
+  const promotion = draft.promotion;
+  const itemTitle = promotion?.itemTitle || draft.title || "Tradebilia collectible";
+  const category = formatSocialCategory(promotion?.category) || "Collectible showcase";
+  const itemType = formatSocialItemType(promotion?.itemType);
+  const value = formatSocialValue(promotion?.estimatedValue);
+
+  drawBrand(context, brandLogo, padding, 38 * scale, 260 * scale, 54 * scale);
+  if (promotion?.isNew) drawNewBadge(context, width - padding, 48 * scale, "New to Tradebilia", scale);
+
+  const imageY = 142 * scale;
+  const imageHeight = platform === "Pinterest" ? height * 0.46 : height * 0.43;
+  drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
+
+  let y = imageY + imageHeight + 52 * scale;
+  context.fillStyle = "#f6ca7a";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText(category.toUpperCase(), padding, y);
+  y += 50 * scale;
+  context.fillStyle = "#ffffff";
+  context.font = `600 ${Math.round(43 * scale)}px Georgia, serif`;
+  y += drawWrappedText(context, itemTitle, padding, y, width - padding * 2, 46 * scale, platform === "Pinterest" ? 4 : 3);
+  if (itemType) {
+    y += 16 * scale;
+    context.fillStyle = "rgba(255,255,255,0.75)";
+    context.font = `600 ${Math.round(17 * scale)}px Arial, sans-serif`;
+    context.fillText(itemType, padding, y);
+  }
+  y += 34 * scale;
+  y += drawFacts(context, promotion?.facts ?? [], padding, y, width - padding * 2, scale);
+  if (value) {
+    y += 38 * scale;
+    context.fillStyle = "#ffe0a8";
+    context.font = `700 ${Math.round(22 * scale)}px Arial, sans-serif`;
+    context.fillText(`Trade value  ${value}`, padding, y);
+  }
+
+  const ctaY = height - 72 * scale;
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText("↗  VIEW THIS ITEM ON TRADEBILIA", padding, ctaY);
+  context.fillStyle = "rgba(255,255,255,0.68)";
+  context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  const url = splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space";
+  context.fillText(url, padding, ctaY + 23 * scale);
+}
+
+export function getSocialGraphicExportFileName(draft: SocialDraft, platform: SocialPlatform) {
+  const safeTitle = (draft.promotion?.itemTitle || draft.title || "tradebilia-item")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 60) || "tradebilia-item";
+  return `tradebilia-${safeTitle}-${platform.toLowerCase()}.png`;
+}
+
+/** Renders the finished promotion to a native platform-size canvas without reading preview DOM or CSS. */
+export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, brandLogoUrl }: SocialGraphicExportInput) {
+  const { width, height } = SOCIAL_GRAPHIC_CANVAS_SIZES[platform];
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("A canvas graphics context is not available in this browser.");
+
+  const [itemImage, brandLogo] = await Promise.all([
+    loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
+    loadCanvasImage(brandLogoUrl),
+  ]);
+  drawBackground(context, width, height);
+  if (isTallCanvas(platform)) {
+    drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
+  } else {
+    drawLandscapeGraphic(context, draft, platform, width, height, itemImage, brandLogo);
+  }
+  return canvas;
+}
+
+export function downloadSocialGraphicCanvas(canvas: HTMLCanvasElement, fileName: string) {
+  const downloadLink = document.createElement("a");
+  downloadLink.download = fileName;
+  downloadLink.href = canvas.toDataURL("image/png");
+  downloadLink.click();
+}

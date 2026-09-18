@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const componentSource = readFileSync(new URL("../components/SocialContentManagerTab.tsx", import.meta.url), "utf8");
 const graphicSource = readFileSync(new URL("../components/SocialPromotionGraphic.tsx", import.meta.url), "utf8");
+const exporterSource = readFileSync(new URL("./socialGraphicExport.ts", import.meta.url), "utf8");
 
 describe("Social Content Manager post preview", () => {
   it("provides an internal Preview Post action in the Create and Review workflow", () => {
@@ -24,6 +25,11 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("preparedBrandLogoUrl");
     expect(componentSource).toContain("brandLogoDataUrl");
     expect(componentSource).toContain("Preparing the original item image");
+    expect(componentSource).toContain("renderSocialGraphicCanvas");
+    expect(componentSource).not.toContain("html2canvas");
+    expect(exporterSource).toContain("document.createElement(\"canvas\")");
+    expect(exporterSource).toContain("drawContainedImage");
+    expect(exporterSource).toContain("SOCIAL_GRAPHIC_CANVAS_SIZES");
     expect(graphicSource).toContain("draft.destinationUrl");
   });
 
