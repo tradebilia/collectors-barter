@@ -535,7 +535,7 @@ export function SocialContentManagerTab() {
               <Badge className="border border-amber-200 bg-amber-100 text-amber-900">Admin reviewed</Badge>
             </div>
             <h3 className="mt-5 text-xl font-bold text-slate-950">Promotion Opportunities</h3>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Review public listings added in the past 30 days at $1,000 or more, recent completed exchanges, and newly verified merchants. Each selection creates an editable draft—nothing posts automatically.</p>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Review public high-value listings, completed exchanges, and newly verified merchants. Historical listings and trades remain available for testing; each selection creates an editable draft—nothing posts automatically.</p>
             <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-white/80 p-3">
               <div><p className="text-sm font-bold text-slate-900">Auto-list promotion opportunities</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Surfaces qualifying activity in this admin workspace only.</p></div>
               <Switch checked={autoListEnabled === true} onCheckedChange={setAutoListEnabled} aria-label="Auto-list promotion opportunities" disabled={autoListEnabled === null} />
@@ -556,11 +556,11 @@ export function SocialContentManagerTab() {
             {autoListEnabled === false ? <span className="text-xs font-semibold text-slate-500">Auto-list is off</span> : promotionQuery.isLoading ? <span className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Loading opportunities</span> : null}
           </div>
         </CardHeader>
-        <CardContent className="grid gap-6 p-4 sm:p-6 lg:grid-cols-2">
+        <CardContent className="grid gap-6 p-4 sm:p-6 lg:grid-cols-3">
           <OpportunityList
             icon={<DollarSign className="h-4 w-4" />}
             title="New high-value listings"
-            description="Active public listings valued at $1,000 or more."
+            description="Active public listings valued at $1,000 or more, including historical qualifying listings."
             emptyCopy={autoListEnabled ? "No qualifying listings were added during this window." : "Auto-list is off. Turn it on above to surface qualifying new listings."}
             opportunities={highValueListings}
             renderMeta={(listing: any) => `${formatWholeDollar(listing.estimatedValue)} · Added ${formatOpportunityDate(listing.createdAt)}`}
@@ -569,7 +569,7 @@ export function SocialContentManagerTab() {
           <OpportunityList
             icon={<Trophy className="h-4 w-4" />}
             title="Recent completed trades"
-            description="Public completed exchanges, presented without cash or participant information."
+            description="Public completed exchanges, including historical records and without cash or participant information."
             emptyCopy={autoListEnabled ? "No public completed trades were found during this window." : "Auto-list is off. Turn it on above to surface recent completed trades."}
             opportunities={completedTrades}
             renderMeta={(trade: any) => `${Math.max(1, Number(trade.itemCount ?? 1))} item${Math.max(1, Number(trade.itemCount ?? 1)) === 1 ? "" : "s"} · Completed ${formatOpportunityDate(trade.completedAt)}`}

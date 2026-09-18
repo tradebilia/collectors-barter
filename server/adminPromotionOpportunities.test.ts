@@ -36,6 +36,13 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).toContain("customGradingCompany");
   });
 
+  it("keeps historical qualifying listings and completed trades available for testing", () => {
+    expect(returnedOpportunityMappings).toContain("const highValueListings = ((listingRows[0] as unknown as any[]) || [])");
+    expect(returnedOpportunityMappings).toContain("const completedTrades = ((tradeRows[0] as unknown as any[]) || [])");
+    expect(returnedOpportunityMappings).not.toContain("filter((listing) => new Date(listing.createdAt) >= recentBoundary)");
+    expect(returnedOpportunityMappings).not.toContain("filter((trade) => new Date(trade.completedAt) >= recentBoundary)");
+  });
+
   it("resolves older saved high-value drafts back to the canonical item profile URL", () => {
     expect(promotionSection).toContain("getSocialPromotionItemLink");
     expect(promotionSection).toContain("SELECT id FROM listings WHERE title = ${input.title}");

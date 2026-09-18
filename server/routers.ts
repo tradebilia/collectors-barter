@@ -3036,7 +3036,6 @@ export const appRouter = router({
         ]);
 
         const highValueListings = ((listingRows[0] as unknown as any[]) || [])
-          .filter((listing) => new Date(listing.createdAt) >= recentBoundary)
           .slice(0, limit)
           .map((listing) => ({
             source: "High-Value Listing" as const,
@@ -3056,7 +3055,6 @@ export const appRouter = router({
           }));
 
         const completedTrades = ((tradeRows[0] as unknown as any[]) || [])
-          .filter((trade) => new Date(trade.completedAt) >= recentBoundary)
           .slice(0, limit)
           .map((trade) => ({
             source: "Completed Trade" as const,
