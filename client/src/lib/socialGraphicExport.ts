@@ -182,8 +182,8 @@ function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, 
 }
 
 function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, y: number, scale: number) {
-  const brandWidth = 420 * scale;
-  const brandHeight = 86 * scale;
+  const brandWidth = 360 * scale;
+  const brandHeight = 64 * scale;
   drawBrand(context, logo, (width - brandWidth) / 2, y, brandWidth, brandHeight);
 }
 
@@ -387,7 +387,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
     context.fillText(`Trade value  ${value}`, detailX, detailY);
   }
 
-  const ctaY = height - 112 * scale;
+  const ctaY = height - 188 * scale;
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
   context.fillText("↗  VIEW ITEM PROFILE", detailX, ctaY);
@@ -445,7 +445,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
     context.fillText(`Trade value  ${value}`, padding, y);
   }
 
-  const ctaY = height - 108 * scale;
+  const ctaY = height - 170 * scale;
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
   context.fillText("↗  VIEW ITEM PROFILE", padding, ctaY);
@@ -453,7 +453,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   context.font = `500 ${Math.round(12 * scale)}px Arial, sans-serif`;
   const url = splitLine(context, draft.destinationUrl || "tradebilia.manus.space", width - padding * 2, 1)[0] ?? "tradebilia.manus.space";
   context.fillText(url, padding, ctaY + 23 * scale);
-  drawCenteredBrand(context, brandLogo, width, height - 150 * scale, scale);
+  drawCenteredBrand(context, brandLogo, width, height - 112 * scale, scale);
 }
 
 export function getSocialGraphicExportFileName(draft: SocialDraft, platform: SocialPlatform) {
