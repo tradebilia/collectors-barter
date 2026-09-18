@@ -20,6 +20,15 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("isPublicMemberEligible");
   });
 
+  it("returns recently verified merchants with public profile-safe activity facts", () => {
+    expect(promotionSection).toContain("u.merchantVerified = 1");
+    expect(promotionSection).toContain("u.merchantVerifiedAt >=");
+    expect(returnedOpportunityMappings).toContain('source: "Verified Merchant" as const');
+    expect(returnedOpportunityMappings).toContain("profilePath: `/profile/${Number(merchant.merchantId)}`");
+    expect(returnedOpportunityMappings).toContain("activeListings");
+    expect(returnedOpportunityMappings).toContain("completedTrades");
+  });
+
   it("returns concise public item facts and a canonical existing listing path", () => {
     expect(promotionSection).toContain("getPromotionItemFacts");
     expect(returnedOpportunityMappings).toContain("itemPath: `/listings/${Number(listing.listingId)}`");
@@ -42,5 +51,8 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).not.toContain("tradeMessages");
     expect(returnedOpportunityMappings).not.toContain("tp.id");
     expect(returnedOpportunityMappings).not.toContain("ownerId");
+    expect(returnedOpportunityMappings).not.toContain("merchantVerifiedBy");
+    expect(returnedOpportunityMappings).not.toContain("businessLicense");
+    expect(returnedOpportunityMappings).not.toContain("taxId");
   });
 });

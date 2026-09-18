@@ -1,6 +1,6 @@
 export type SocialPlatform = "Facebook" | "Instagram" | "X" | "Pinterest" | "LinkedIn" | "YouTube";
 export type DraftStatus = "Draft" | "Needs Review" | "Approved" | "Scheduled" | "Published";
-export type SocialDraftSource = "Original" | "High-Value Listing" | "Completed Trade";
+export type SocialDraftSource = "Original" | "High-Value Listing" | "Completed Trade" | "Verified Merchant";
 
 export const TRADEBILIA_PUBLIC_ORIGIN = "https://tradebilia.manus.space";
 

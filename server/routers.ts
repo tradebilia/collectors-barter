@@ -2967,7 +2967,7 @@ export const appRouter = router({
         const limit = input?.limit ?? 12;
         const recentBoundary = new Date(Date.now() - recentDays * 24 * 60 * 60 * 1000);
 
-        const [listingRows, tradeRows] = await Promise.all([
+        const [listingRows, tradeRows, merchantRows] = await Promise.all([
           db.execute(sql`SELECT
               l.id AS listingId,
               l.title,
@@ -3017,6 +3017,22 @@ export const appRouter = router({
               AND ${isPublicMemberEligible(sql`tp.recipientId`)}
             ORDER BY tp.completedAt DESC
             LIMIT ${limit * 3}`),
+          db.execute(sql`SELECT
+              u.id AS merchantId,
+              COALESCE(up.displayName, u.name, CONCAT('Merchant ', u.id)) AS displayName,
+              up.avatarUrl,
+              u.merchantVerifiedAt,
+              (SELECT COUNT(*) FROM listings merchantListings WHERE merchantListings.ownerId = u.id AND merchantListings.status = 'active' AND merchantListings.isActive = 1) AS activeListings,
+              (SELECT COUNT(*) FROM tradeProposals merchantTrades WHERE (merchantTrades.requesterId = u.id OR merchantTrades.recipientId = u.id) AND merchantTrades.status = 'completed') AS completedTrades
+            FROM users u
+            LEFT JOIN userProfiles up ON up.userId = u.id
+            WHERE u.isMerchant = 1
+              AND u.merchantVerified = 1
+              AND u.merchantVerifiedAt IS NOT NULL
+              AND u.merchantVerifiedAt >= ${recentBoundary}
+              AND ${isPublicMemberEligible(sql`u.id`)}
+            ORDER BY u.merchantVerifiedAt DESC
+            LIMIT ${limit * 3}`),
         ]);
 
         const highValueListings = ((listingRows[0] as unknown as any[]) || [])
@@ -3061,7 +3077,23 @@ export const appRouter = router({
             cashIncluded: Boolean(Number(trade.cashIncluded ?? 0)),
           }));
 
-        return { highValueListings, completedTrades, listingValueMinimum, recentDays };
+        const verifiedMerchants = ((merchantRows[0] as unknown as any[]) || [])
+          .filter((merchant) => new Date(merchant.merchantVerifiedAt).getTime() >= recentBoundary.getTime())
+          .slice(0, limit)
+          .map((merchant) => ({
+            source: "Verified Merchant" as const,
+            merchantId: Number(merchant.merchantId),
+            profilePath: `/profile/${Number(merchant.merchantId)}`,
+            title: merchant.displayName || `Merchant ${Number(merchant.merchantId)}`,
+            imageUrl: merchant.avatarUrl ?? null,
+            merchantVerifiedAt: merchant.merchantVerifiedAt,
+            facts: [
+              { label: "Active listings", value: String(Number(merchant.activeListings ?? 0)) },
+              { label: "Completed trades", value: String(Number(merchant.completedTrades ?? 0)) },
+            ],
+          }));
+
+        return { highValueListings, completedTrades, verifiedMerchants, listingValueMinimum, recentDays };
       }),
     getSocialPromotionItemLink: protectedProcedure
       .input(z.object({ title: z.string().min(1).max(500) }))

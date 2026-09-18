@@ -28,6 +28,8 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
     ? "New High-Value Listing"
     : draft.source === "Completed Trade"
       ? "Trade Alert"
+      : draft.source === "Verified Merchant"
+        ? "Verified Merchant"
       : "Collectible Showcase";
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = draft.source === "Completed Trade" ? null : formatSocialValue(promotion?.estimatedValue);
@@ -52,7 +54,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10", isCompletedTrade ? "justify-start" : "justify-between")}>
           <img src={brandLogoUrl} alt="Tradebilia" className="h-24 w-auto max-w-[55%] shrink-0 object-contain sm:h-28" />
-          {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="absolute left-1/2 top-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-4 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">Trade Alert</span> : null}
+          {draft.source === "High-Value Listing" && promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">New High-Value Listing</span> : isCompletedTrade ? <span className="absolute left-1/2 top-1/2 shrink-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-4 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] leading-none text-[#ffe0a8]">Trade Alert</span> : null}
         </header>
 
         <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : isCompletedTrade ? "flex-col gap-[2%] pt-[17%]" : "items-stretch gap-[5%] pt-[29%]")}>

@@ -84,6 +84,7 @@ const sourceStyles: Record<SocialDraftSource, string> = {
   Original: "border-slate-200 bg-slate-100 text-slate-700",
   "High-Value Listing": "border-amber-200 bg-amber-50 text-amber-800",
   "Completed Trade": "border-violet-200 bg-violet-50 text-violet-800",
+  "Verified Merchant": "border-emerald-200 bg-emerald-50 text-emerald-800",
 };
 
 const starterDraft: SocialDraft = {
@@ -293,6 +294,7 @@ export function SocialContentManagerTab() {
   }), [drafts]);
   const highValueListings = autoListEnabled ? promotionQuery.data?.highValueListings ?? [] : [];
   const completedTrades = autoListEnabled ? promotionQuery.data?.completedTrades ?? [] : [];
+  const verifiedMerchants = autoListEnabled ? promotionQuery.data?.verifiedMerchants ?? [] : [];
 
   function updateDraft(patch: Partial<SocialDraft>) {
     if (!selectedDraft) return;
@@ -365,6 +367,32 @@ export function SocialContentManagerTab() {
     setDrafts((current) => [draft, ...current]);
     setSelectedId(draft.id);
     toast.success("Completed trade draft added to the Content Library");
+  }
+
+  function createVerifiedMerchantDraft(merchant: any) {
+    const destinationUrl = merchant.profilePath ? `${TRADEBILIA_PUBLIC_ORIGIN}${merchant.profilePath}` : TRADEBILIA_PUBLIC_ORIGIN;
+    const displayName = merchant.title || "Verified Tradebilia Merchant";
+    const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
+      source: "Verified Merchant",
+      sourceSummary: `Verified merchant · ${formatOpportunityDate(merchant.merchantVerifiedAt)}`,
+      title: `Verified merchant: ${displayName}`,
+      copy: `MEET A VERIFIED MERCHANT\n\n${displayName} is a verified Tradebilia merchant. Discover their public collector profile and explore their marketplace activity.\n\nView profile:\n${destinationUrl}`,
+      mediaUrl: merchant.imageUrl,
+      destinationUrl,
+      promotion: {
+        itemTitle: displayName,
+        itemPath: merchant.profilePath ?? null,
+        category: "Verified Merchant",
+        itemType: "Collector profile",
+        facts: Array.isArray(merchant.facts) ? merchant.facts : [],
+        estimatedValue: null,
+        createdAt: merchant.merchantVerifiedAt ?? null,
+        isNew: true,
+      },
+    });
+    setDrafts((current) => [draft, ...current]);
+    setSelectedId(draft.id);
+    toast.success("Verified merchant draft added to the Content Library");
   }
 
   function duplicateDraft() {
@@ -507,7 +535,7 @@ export function SocialContentManagerTab() {
               <Badge className="border border-amber-200 bg-amber-100 text-amber-900">Admin reviewed</Badge>
             </div>
             <h3 className="mt-5 text-xl font-bold text-slate-950">Promotion Opportunities</h3>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Review public listings added in the past 30 days at $1,000 or more, plus recent completed exchanges. Each selection creates an editable draft—nothing posts automatically.</p>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Review public listings added in the past 30 days at $1,000 or more, recent completed exchanges, and newly verified merchants. Each selection creates an editable draft—nothing posts automatically.</p>
             <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-white/80 p-3">
               <div><p className="text-sm font-bold text-slate-900">Auto-list promotion opportunities</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Surfaces qualifying activity in this admin workspace only.</p></div>
               <Switch checked={autoListEnabled === true} onCheckedChange={setAutoListEnabled} aria-label="Auto-list promotion opportunities" disabled={autoListEnabled === null} />
@@ -515,6 +543,7 @@ export function SocialContentManagerTab() {
             <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-700">
               <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-amber-200">{autoListEnabled ? `${highValueListings.length} high-value listings` : "Auto-list is off"}</span>
               <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-violet-200">{autoListEnabled ? `${completedTrades.length} completed trades` : "Manual posts remain available"}</span>
+              <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-emerald-200">{autoListEnabled ? `${verifiedMerchants.length} verified merchants` : "Manual posts remain available"}</span>
             </div>
           </CardContent>
         </Card>
@@ -545,6 +574,15 @@ export function SocialContentManagerTab() {
             opportunities={completedTrades}
             renderMeta={(trade: any) => `${Math.max(1, Number(trade.itemCount ?? 1))} item${Math.max(1, Number(trade.itemCount ?? 1)) === 1 ? "" : "s"} · Completed ${formatOpportunityDate(trade.completedAt)}`}
             onCreateDraft={createCompletedTradeDraft}
+          />
+          <OpportunityList
+            icon={<ShieldCheck className="h-4 w-4" />}
+            title="Newly verified merchants"
+            description="Public merchant profiles verified during this window."
+            emptyCopy={autoListEnabled ? "No merchants were newly verified during this window." : "Auto-list is off. Turn it on above to surface verified merchants."}
+            opportunities={verifiedMerchants}
+            renderMeta={(merchant: any) => `${Number(merchant.completedTrades ?? 0)} completed trade${Number(merchant.completedTrades ?? 0) === 1 ? "" : "s"} · Verified ${formatOpportunityDate(merchant.merchantVerifiedAt)}`}
+            onCreateDraft={createVerifiedMerchantDraft}
           />
         </CardContent>
       </Card>
