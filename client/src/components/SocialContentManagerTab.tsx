@@ -187,6 +187,7 @@ export function SocialContentManagerTab() {
   const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
   const [isExportingGraphic, setIsExportingGraphic] = useState(false);
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
+  const [preparedTradeImageUrls, setPreparedTradeImageUrls] = useState<string[]>([]);
   const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
   const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -241,6 +242,7 @@ export function SocialContentManagerTab() {
 
   useEffect(() => {
     setPreparedGraphicImageUrl(null);
+    setPreparedTradeImageUrls([]);
     setPreparedBrandLogoUrl(null);
     setPreparedHeroBackgroundUrl(null);
     preparedAssetRequestRef.current = null;
@@ -253,18 +255,21 @@ export function SocialContentManagerTab() {
     }
     if (!selectedDraft) return;
     const hasItemImage = Boolean(selectedDraft.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
+    const tradeImageSources = selectedDraft.source === "Completed Trade"
+      ? (selectedDraft.promotion?.tradeItems ?? []).map((item) => item.imageUrl).filter((url): url is string => Boolean(url)).slice(0, 4)
+      : [];
     const sourceUrl = hasItemImage ? selectedDraft.mediaUrl : TRADEBILIA_LOGO_URL;
     if ((hasItemImage && preparedGraphicImageUrl) || (!hasItemImage && preparedBrandLogoUrl)) return;
     if (preparedAssetRequestRef.current === sourceUrl) return;
     preparedAssetRequestRef.current = sourceUrl;
-    prepareSocialGraphicImage.mutate({ sourceUrl }, {
-        onSuccess: ({ dataUrl, brandLogoDataUrl, heroBackgroundDataUrl }) => {
-          setPreparedGraphicImageUrl(hasItemImage ? dataUrl : null);
-          setPreparedBrandLogoUrl(brandLogoDataUrl);
-          setPreparedHeroBackgroundUrl(heroBackgroundDataUrl);
-      },
-      onError: () => toast.error("The original item image or Tradebilia mark could not be prepared for export. Please close and reopen the preview to retry."),
-    });
+    Promise.all([prepareSocialGraphicImage.mutateAsync({ sourceUrl }), ...tradeImageSources.map((url) => prepareSocialGraphicImage.mutateAsync({ sourceUrl: url }))])
+      .then(([primary, ...tradeAssets]) => {
+        setPreparedGraphicImageUrl(hasItemImage ? primary.dataUrl : null);
+        setPreparedTradeImageUrls(tradeAssets.map((asset) => asset.dataUrl).filter((url): url is string => Boolean(url)));
+        setPreparedBrandLogoUrl(primary.brandLogoDataUrl);
+        setPreparedHeroBackgroundUrl(primary.heroBackgroundDataUrl);
+      })
+      .catch(() => toast.error("The original item image or Tradebilia mark could not be prepared for export. Please close and reopen the preview to retry."));
   }, [isPreviewOpen, preparedBrandLogoUrl, preparedGraphicImageUrl, prepareSocialGraphicImage, selectedDraft]);
 
   const filteredDrafts = useMemo(() => filterSocialDrafts(drafts, statusFilter), [drafts, statusFilter]);
@@ -320,21 +325,23 @@ export function SocialContentManagerTab() {
   }
 
   function createCompletedTradeDraft(trade: any) {
-    const itemCount = Math.max(1, Number(trade.itemCount ?? 1));
-    const itemWord = itemCount === 1 ? "item" : "items";
     const facts = buildPromotionFacts(trade);
     const destinationUrl = trade.itemPath ? `${TRADEBILIA_PUBLIC_ORIGIN}${trade.itemPath}` : TRADEBILIA_PUBLIC_ORIGIN;
+    const tradeItems = Array.isArray(trade.tradeItems) ? trade.tradeItems.filter((item: any) => item?.title).slice(0, 4) : [];
+    const cashIncluded = Boolean(trade.cashIncluded);
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "Completed Trade",
       sourceSummary: `Completed public exchange · ${formatOpportunityDate(trade.completedAt)}`,
       title: `Recent completed trade: ${trade.title}`,
-      copy: `A recent Tradebilia collector exchange has been completed. ${itemCount} ${itemWord} were exchanged, including ${trade.title}. Discover more collector-to-collector trades on Tradebilia.`,
+      copy: `COMPLETED TRADE\n\n${tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title}${cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nDiscover collector-to-collector trades on Tradebilia.`,
       mediaUrl: trade.imageUrl,
       destinationUrl,
       promotion: {
         itemTitle: trade.title,
         listingId: trade.listingId ?? null,
         itemPath: trade.itemPath ?? null,
+        tradeItems,
+        cashIncluded,
         category: trade.category ?? null,
         itemType: trade.itemType ?? null,
         facts,
@@ -409,7 +416,7 @@ export function SocialContentManagerTab() {
 
   async function downloadSocialGraphic() {
     if (!selectedDraft || !selectedPreviewPlatform) return;
-    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || (hasExportableItemImage && !preparedGraphicImageUrl)) {
+    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || (hasExportableItemImage && !preparedGraphicImageUrl) || (selectedDraft.source === "Completed Trade" && selectedDraft.promotion?.tradeItems?.some((item) => item.imageUrl) && preparedTradeImageUrls.length === 0)) {
       toast.error("Preparing the original item image and Tradebilia mark. Please wait a moment, then download the graphic.");
       return;
     }
@@ -419,6 +426,7 @@ export function SocialContentManagerTab() {
         draft: graphicDraft ?? selectedDraft,
         platform: selectedPreviewPlatform,
         itemImageUrl: preparedGraphicImageUrl,
+        tradeItemImageUrls: preparedTradeImageUrls,
         brandLogoUrl: preparedBrandLogoUrl,
         heroBackgroundUrl: preparedHeroBackgroundUrl,
       });

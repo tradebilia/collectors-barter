@@ -20,6 +20,7 @@ type SocialGraphicExportInput = {
   draft: SocialDraft;
   platform: SocialPlatform;
   itemImageUrl?: string | null;
+  tradeItemImageUrls?: Array<string | null>;
   brandLogoUrl?: string | null;
   heroBackgroundUrl?: string | null;
 };
@@ -218,6 +219,73 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
   context.restore();
 }
 
+function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: CanvasImage[], brandLogo: CanvasImage | null) {
+  const scale = width / 1200;
+  const padding = 54 * scale;
+  const items = draft.promotion?.tradeItems ?? [];
+  drawBrand(context, brandLogo, padding, 0, 580 * scale, 150 * scale);
+  const frameY = 168 * scale;
+  const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
+  const columns = itemCount > 2 ? 2 : 2;
+  const rows = Math.ceil(itemCount / columns);
+  const gap = 20 * scale;
+  const frameWidth = (width - padding * 2 - gap) / columns;
+  const frameHeight = (height - frameY - 82 * scale - gap * (rows - 1)) / rows;
+  Array.from({ length: itemCount }, (_, index) => {
+    const x = padding + (index % columns) * (frameWidth + gap);
+    const y = frameY + Math.floor(index / columns) * (frameHeight + gap);
+    drawMediaFrame(context, images[index] ?? null, x, y, frameWidth, frameHeight, `ITEM ${index + 1}`);
+  });
+  context.fillStyle = "#ffe0a8";
+  context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.fillText("SWAPPED", width / 2, frameY + (frameHeight * rows) / 2 - 14 * scale);
+  context.font = `700 ${Math.round(32 * scale)}px Arial, sans-serif`;
+  context.fillText("↔", width / 2, frameY + (frameHeight * rows) / 2 + 22 * scale);
+  if (draft.promotion?.cashIncluded) {
+    context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
+    context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
+  }
+  context.textAlign = "left";
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+  context.fillText("COMPLETED TRADE", padding, height - 92 * scale);
+  context.fillStyle = "rgba(255,255,255,0.82)";
+  drawCompleteFittedTitle(context, items.slice(0, 2).map((item) => item.title).join("  ↔  ") || "Collector exchange", padding, height - 66 * scale, width - padding * 2, 16 * scale, 10 * scale, 2);
+  context.strokeStyle = "rgba(255,255,255,0.18)";
+  context.beginPath();
+  context.moveTo(padding, height - 48 * scale);
+  context.lineTo(width - padding, height - 48 * scale);
+  context.stroke();
+  context.fillStyle = "rgba(255,255,255,0.85)";
+  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.fillText("DISCOVER · TRADE · COLLECT", width / 2, height - 24 * scale);
+  context.textAlign = "left";
+}
+
+function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: CanvasImage[], brandLogo: CanvasImage | null) {
+  const scale = width / 1080;
+  const padding = 62 * scale;
+  const items = draft.promotion?.tradeItems ?? [];
+  drawBrand(context, brandLogo, padding, 0, 580 * scale, 150 * scale);
+  const frameY = 182 * scale;
+  const frameHeight = platform === "Pinterest" ? height * 0.38 : height * 0.34;
+  const gap = 18 * scale;
+  const frameWidth = (width - padding * 2 - gap) / 2;
+  const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
+  Array.from({ length: itemCount }, (_, index) => drawMediaFrame(context, images[index] ?? null, padding + (index % 2) * (frameWidth + gap), frameY + Math.floor(index / 2) * (frameHeight / 2 + gap), frameWidth, frameHeight / 2, `ITEM ${index + 1}`));
+  const titleY = frameY + frameHeight + 52 * scale;
+  drawPromotionHeader(context, "COMPLETED TRADE", padding, titleY, scale);
+  context.fillStyle = "#ffffff";
+  drawCompleteFittedTitle(context, items.map((item) => item.title).join("  ↔ ") || "Collector exchange", padding, titleY + 50 * scale, width - padding * 2, 38 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
+  if (draft.promotion?.cashIncluded) {
+    context.fillStyle = "#ffe0a8";
+    context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
+    context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 78 * scale);
+  }
+}
+
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
   if (facts.length === 0) return 0;
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
@@ -366,7 +434,7 @@ export function getSocialGraphicExportFileName(draft: SocialDraft, platform: Soc
 }
 
 /** Renders the finished promotion to a native platform-size canvas without reading preview DOM or CSS. */
-export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, brandLogoUrl, heroBackgroundUrl }: SocialGraphicExportInput) {
+export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, tradeItemImageUrls, brandLogoUrl, heroBackgroundUrl }: SocialGraphicExportInput) {
   const { width, height } = SOCIAL_GRAPHIC_CANVAS_SIZES[platform];
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -374,13 +442,18 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const context = canvas.getContext("2d");
   if (!context) throw new Error("A canvas graphics context is not available in this browser.");
 
-  const [itemImage, brandLogo, heroBackground] = await Promise.all([
+  const [itemImage, tradeItemImages, brandLogo, heroBackground] = await Promise.all([
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
+    Promise.all((tradeItemImageUrls ?? []).slice(0, 2).map((url) => loadCanvasImage(url, false))),
     loadCanvasImage(brandLogoUrl),
     loadCanvasImage(heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
   ]);
   drawBackground(context, width, height, heroBackground);
-  if (isTallCanvas(platform)) {
+  if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
+    drawCompletedTradeLandscape(context, draft, width, height, tradeItemImages.filter((image): image is CanvasImage => Boolean(image)), brandLogo);
+  } else if (draft.source === "Completed Trade") {
+    drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages.filter((image): image is CanvasImage => Boolean(image)), brandLogo);
+  } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {
     drawLandscapeGraphic(context, draft, platform, width, height, itemImage, brandLogo);

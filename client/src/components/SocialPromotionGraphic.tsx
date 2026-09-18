@@ -30,8 +30,9 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
       ? "Completed Trade"
       : "Collectible Showcase";
   const itemType = formatSocialItemType(promotion?.itemType);
-  const value = formatSocialValue(promotion?.estimatedValue);
-  const facts = promotion?.facts.slice(0, 4) ?? [];
+  const value = draft.source === "Completed Trade" ? null : formatSocialValue(promotion?.estimatedValue);
+  const facts = draft.source === "Completed Trade" ? [] : promotion?.facts.slice(0, 4) ?? [];
+  const completedItems = promotion?.tradeItems?.slice(0, 4) ?? [];
   const isTallCanvas = platform === "Instagram" || platform === "Pinterest";
   const hasMedia = Boolean(draft.mediaUrl);
 
@@ -53,7 +54,20 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = SOCIAL_
         <div className={classNames("flex min-h-0 flex-1", isTallCanvas ? "flex-col gap-[4%]" : "items-stretch gap-[5%] pt-[29%]")}>
           <div className={classNames("relative flex min-h-0 items-center justify-center overflow-hidden rounded-[1rem] border border-white/15 bg-white/[0.07]", isTallCanvas ? "min-h-0 flex-[1.45] p-[5%]" : "w-[53%] p-[4%]")}>
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.17),transparent_68%)]" />
-            {hasMedia && !isVideoMediaUrl(draft.mediaUrl) ? (
+            {draft.source === "Completed Trade" && completedItems.length > 0 ? (
+              <div className="relative z-10 grid h-full w-full grid-cols-2 items-center gap-[4%]">
+                {completedItems.map((item, index) => (
+                  <div key={`${item.title}-${index}`} className="flex h-full min-h-0 flex-col items-center justify-center gap-2">
+                    <div className="flex min-h-0 flex-1 items-center justify-center">
+                      {item.imageUrl ? <img src={item.imageUrl} alt={item.title} className="block max-h-full max-w-full object-contain" /> : <ImageIcon className="h-10 w-10 text-[#f6ca7a]" aria-hidden="true" />}
+                    </div>
+                    <span className="line-clamp-2 text-center text-[clamp(0.48rem,0.8cqw,0.64rem)] font-semibold text-white/85">{item.title}</span>
+                  </div>
+                ))}
+                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-lg font-bold text-[#ffe0a8]" aria-label={promotion?.cashIncluded ? "Items swapped with cash included" : "Items swapped"}>↔</span>
+                {promotion?.cashIncluded ? <span className="absolute bottom-[5%] left-1/2 -translate-x-1/2 rounded-full bg-[#f3be63]/20 px-2 py-1 text-[clamp(0.42rem,0.7cqw,0.55rem)] font-bold uppercase tracking-wide text-[#ffe0a8]">Cash included</span> : null}
+              </div>
+            ) : hasMedia && !isVideoMediaUrl(draft.mediaUrl) ? (
               <img
                 src={draft.mediaUrl}
                 alt={itemTitle}

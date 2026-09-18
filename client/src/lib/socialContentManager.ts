@@ -13,6 +13,8 @@ export type SocialPromotionDetails = {
   itemTitle: string;
   listingId?: number | null;
   itemPath?: string | null;
+  tradeItems?: Array<{ title: string; imageUrl?: string | null; direction?: "offered" | "requested" }>;
+  cashIncluded?: boolean;
   category: string | null;
   itemType: string | null;
   facts: SocialPromotionFact[];
