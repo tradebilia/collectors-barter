@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const componentSource = readFileSync(new URL("../components/SocialContentManagerTab.tsx", import.meta.url), "utf8");
+const graphicSource = readFileSync(new URL("../components/SocialPromotionGraphic.tsx", import.meta.url), "utf8");
 
 describe("Social Content Manager post preview", () => {
   it("provides an internal Preview Post action in the Create and Review workflow", () => {
@@ -11,17 +12,20 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("Close Preview");
   });
 
-  it("renders the selected platform, current draft content, media, source, and status", () => {
-    expect(componentSource).toContain("selectedPreviewPlatform");
-    expect(componentSource).toContain("selectedDraft.platforms.map");
-    expect(componentSource).toContain("selectedDraft.copy");
-    expect(componentSource).toContain("selectedDraft.mediaUrl");
-    expect(componentSource).toContain("isVideoMediaUrl");
-    expect(componentSource).toContain("selectedDraft.source");
-    expect(componentSource).toContain("selectedDraft.status");
+  it("renders a platform-specific graphic, caption, direct item link, and export action", () => {
+    expect(componentSource).toContain("SocialPromotionGraphic");
+    expect(componentSource).toContain("SOCIAL_GRAPHIC_SPECS");
+    expect(componentSource).toContain("Generated social caption");
+    expect(componentSource).toContain("Copy caption");
+    expect(componentSource).toContain("Download Graphic");
+    expect(componentSource).toContain("downloadSocialGraphic");
+    expect(graphicSource).toContain("draft.destinationUrl");
   });
 
-  it("retains the manual-publishing boundary in the preview", () => {
+  it("retains the original image and manual-publishing safeguards", () => {
+    expect(componentSource).toContain("original item image is fitted in full and is never cropped or altered");
+    expect(componentSource).toContain("The download exports the displayed platform graphic. It never changes the original uploaded collectible image.");
+    expect(componentSource).not.toContain("object-cover");
     expect(componentSource).toContain("Internal planning preview only. It does not publish");
     expect(componentSource).toContain("Platform layouts can vary after manual publishing.");
     expect(componentSource).not.toContain("publishSocialPost");

@@ -1,6 +1,23 @@
-export type SocialPlatform = "Facebook" | "Instagram" | "X" | "LinkedIn" | "YouTube";
+export type SocialPlatform = "Facebook" | "Instagram" | "X" | "Pinterest" | "LinkedIn" | "YouTube";
 export type DraftStatus = "Draft" | "Needs Review" | "Approved" | "Scheduled" | "Published";
 export type SocialDraftSource = "Original" | "High-Value Listing" | "Completed Trade";
+
+export const TRADEBILIA_PUBLIC_ORIGIN = "https://tradebilia.manus.space";
+
+export type SocialPromotionFact = {
+  label: string;
+  value: string;
+};
+
+export type SocialPromotionDetails = {
+  itemTitle: string;
+  category: string | null;
+  itemType: string | null;
+  facts: SocialPromotionFact[];
+  estimatedValue: number | null;
+  createdAt: string | null;
+  isNew: boolean;
+};
 
 export type SocialDraft = {
   id: string;
@@ -10,13 +27,65 @@ export type SocialDraft = {
   copy: string;
   platforms: SocialPlatform[];
   mediaUrl: string;
+  destinationUrl: string;
+  promotion: SocialPromotionDetails | null;
   plannedDate: string;
   status: DraftStatus;
   updatedAt: string;
 };
 
-export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "LinkedIn", "YouTube"];
+export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "Pinterest", "LinkedIn", "YouTube"];
 export const SOCIAL_DRAFT_STATUSES: DraftStatus[] = ["Draft", "Needs Review", "Approved", "Scheduled", "Published"];
+
+export function formatSocialCategory(category: string | null | undefined) {
+  if (!category) return null;
+  return category.replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+export function formatSocialItemType(itemType: string | null | undefined) {
+  if (!itemType) return null;
+  return itemType.replace(/_/g, " ").replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+export function formatSocialValue(value: number | null | undefined) {
+  if (!Number.isFinite(value) || !value || value < 0) return null;
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+}
+
+function buildCategoryAwareSocialCta(category: string | null | undefined, itemType: string | null | undefined) {
+  const subject = formatSocialItemType(itemType)?.toLowerCase() || formatSocialCategory(category)?.toLowerCase();
+  return subject ? `Discover this ${subject} on Tradebilia.` : "Discover, trade, and collect on Tradebilia.";
+}
+
+export function buildListingSocialCopy({
+  itemTitle,
+  category,
+  itemType,
+  facts,
+  estimatedValue,
+  isNew,
+  destinationUrl,
+}: Pick<SocialPromotionDetails, "itemTitle" | "category" | "itemType" | "facts" | "estimatedValue" | "isNew"> & { destinationUrl: string }) {
+  const itemInformation = [
+    formatSocialCategory(category),
+    formatSocialItemType(itemType),
+    ...facts.slice(0, 3).map((fact) => fact.value),
+  ].filter((value): value is string => Boolean(value));
+  const tradeValue = formatSocialValue(estimatedValue);
+
+  return [
+    isNew ? "NEW TO TRADEBILIA" : "NOW ON TRADEBILIA",
+    "",
+    itemTitle,
+    itemInformation.length ? itemInformation.join(" · ") : "",
+    tradeValue ? `Trade value: ${tradeValue}` : "",
+    "",
+    buildCategoryAwareSocialCta(category, itemType),
+    "",
+    "View this item:",
+    destinationUrl,
+  ].filter((line, index, lines) => line || (index > 0 && lines[index - 1] !== "")).join("\n").trim();
+}
 
 export function createSocialDraft(id: string, now = new Date().toISOString()): SocialDraft {
   return {
@@ -27,6 +96,8 @@ export function createSocialDraft(id: string, now = new Date().toISOString()): S
     copy: "",
     platforms: ["Facebook"],
     mediaUrl: "",
+    destinationUrl: TRADEBILIA_PUBLIC_ORIGIN,
+    promotion: null,
     plannedDate: "",
     status: "Draft",
     updatedAt: now,
@@ -39,6 +110,8 @@ export type PromotionDraftInput = {
   title: string;
   copy: string;
   mediaUrl?: string | null;
+  destinationUrl?: string | null;
+  promotion?: SocialPromotionDetails | null;
 };
 
 export function createPromotionSocialDraft(
@@ -53,7 +126,9 @@ export function createPromotionSocialDraft(
     title: input.title,
     copy: input.copy,
     mediaUrl: input.mediaUrl ?? "",
-    platforms: ["Facebook", "Instagram", "X"],
+    destinationUrl: input.destinationUrl || TRADEBILIA_PUBLIC_ORIGIN,
+    promotion: input.promotion ?? null,
+    platforms: ["Facebook", "Instagram", "X", "Pinterest"],
   };
 }
 

@@ -160,6 +160,39 @@ const ADMIN_REVEAL_CASH_IDENTIFIER_PHRASE = "REVEAL CASH PAYMENT IDENTIFIER";
 
 const externalPaymentMethodSchema = z.enum(EXTERNAL_PAYMENT_METHODS);
 
+const SOCIAL_PROMOTION_FACT_FIELDS = [
+  { label: "Year", keys: ["year", "releaseYear", "publicationYear", "manufactureYear"] },
+  { label: "Manufacturer", keys: ["manufacturer", "manufacturerName"] },
+  { label: "Brand", keys: ["brand", "brandName"] },
+  { label: "Set", keys: ["set", "setName", "series"] },
+  { label: "Edition", keys: ["edition", "printRun"] },
+  { label: "Card No.", keys: ["cardNumber", "card_no", "cardNo"] },
+  { label: "Catalog No.", keys: ["catalogNumber", "catalog_no", "catalogNo"] },
+] as const;
+
+/** Returns only concise, public-safe collectible facts for social planning. */
+function getPromotionItemFacts(itemDetails: unknown): Array<{ label: string; value: string }> {
+  if (!itemDetails) return [];
+  let details: Record<string, unknown> | null = null;
+  if (typeof itemDetails === "string") {
+    try {
+      const parsed = JSON.parse(itemDetails) as unknown;
+      details = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+    } catch {
+      return [];
+    }
+  } else if (typeof itemDetails === "object" && !Array.isArray(itemDetails)) {
+    details = itemDetails as Record<string, unknown>;
+  }
+  if (!details) return [];
+
+  return SOCIAL_PROMOTION_FACT_FIELDS.flatMap(({ label, keys }) => {
+    const candidate = keys.map((key) => details?.[key]).find((value) => (typeof value === "string" || typeof value === "number") && String(value).trim());
+    const value = typeof candidate === "string" || typeof candidate === "number" ? String(candidate).trim().slice(0, 80) : "";
+    return value ? [{ label, value }] : [];
+  });
+}
+
 const externalPaymentMethodsInputSchema = z.object({
   enabledMethods: z.object({
     paypal: z.boolean(),
@@ -2856,8 +2889,10 @@ export const appRouter = router({
 
         const [listingRows, tradeRows] = await Promise.all([
           db.execute(sql`SELECT
+              l.id AS listingId,
               l.title,
               l.category,
+              l.itemType,
               l.condition,
               l.grade,
               l.certificationCompany,
@@ -2874,8 +2909,10 @@ export const appRouter = router({
             LIMIT ${limit * 3}`),
           db.execute(sql`SELECT
               tp.completedAt,
+              l.id AS requestedListingId,
               l.title AS requestedListingTitle,
               l.category AS requestedListingCategory,
+              l.itemType AS requestedListingItemType,
               l.condition AS requestedListingCondition,
               l.grade AS requestedListingGrade,
               l.certificationCompany AS requestedListingCertificationCompany,
@@ -2899,12 +2936,16 @@ export const appRouter = router({
           .slice(0, limit)
           .map((listing) => ({
             source: "High-Value Listing" as const,
+            listingId: Number(listing.listingId),
+            itemPath: `/listings/${Number(listing.listingId)}`,
             title: listing.title,
             category: listing.category,
+            itemType: listing.itemType ?? null,
             condition: listing.condition,
             grade: listing.grade ?? null,
             certificationCompany: listing.certificationCompany ?? null,
             customGradingCompany: getCustomGradingCompany(listing.itemDetails),
+            itemFacts: getPromotionItemFacts(listing.itemDetails),
             estimatedValue: Number(listing.estimatedValue ?? 0),
             createdAt: listing.createdAt,
             imageUrl: listing.imageUrl ?? null,
@@ -2915,12 +2956,16 @@ export const appRouter = router({
           .slice(0, limit)
           .map((trade) => ({
             source: "Completed Trade" as const,
+            listingId: trade.requestedListingId ? Number(trade.requestedListingId) : null,
+            itemPath: trade.requestedListingId ? `/listings/${Number(trade.requestedListingId)}` : null,
             title: trade.requestedListingTitle || "Collector exchange",
             category: trade.requestedListingCategory ?? null,
+            itemType: trade.requestedListingItemType ?? null,
             condition: trade.requestedListingCondition ?? null,
             grade: trade.requestedListingGrade ?? null,
             certificationCompany: trade.requestedListingCertificationCompany ?? null,
             customGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails),
+            itemFacts: getPromotionItemFacts(trade.requestedListingItemDetails),
             itemCount: Number(trade.itemCount ?? 0),
             completedAt: trade.completedAt,
             imageUrl: trade.imageUrl ?? null,

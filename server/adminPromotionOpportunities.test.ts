@@ -20,7 +20,14 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("isPublicMemberEligible");
   });
 
-  it("returns promotion-safe fields without participant, cash, shipping, message, or raw record identifiers", () => {
+  it("returns concise public item facts and a canonical existing listing path", () => {
+    expect(promotionSection).toContain("getPromotionItemFacts");
+    expect(returnedOpportunityMappings).toContain("itemPath: `/listings/${Number(listing.listingId)}`");
+    expect(returnedOpportunityMappings).toContain("itemFacts: getPromotionItemFacts(listing.itemDetails)");
+    expect(returnedOpportunityMappings).toContain("customGradingCompany");
+  });
+
+  it("excludes participant, cash, shipping, message, and trade identifiers", () => {
     expect(returnedOpportunityMappings).not.toContain("requesterDisplayName");
     expect(returnedOpportunityMappings).not.toContain("recipientDisplayName");
     expect(returnedOpportunityMappings).not.toContain("cashFromRequester");
@@ -28,6 +35,6 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).not.toContain("trackingNumber");
     expect(returnedOpportunityMappings).not.toContain("tradeMessages");
     expect(returnedOpportunityMappings).not.toContain("tp.id");
-    expect(returnedOpportunityMappings).not.toContain("l.id");
+    expect(returnedOpportunityMappings).not.toContain("ownerId");
   });
 });

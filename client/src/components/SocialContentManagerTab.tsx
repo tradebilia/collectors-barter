@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   ArrowRight,
@@ -7,6 +7,7 @@ import {
   Clock3,
   Copy,
   DollarSign,
+  Download,
   Eye,
   FileText,
   Image as ImageIcon,
@@ -43,12 +44,16 @@ import {
   requestSocialReview,
   SOCIAL_DRAFT_STATUSES,
   SOCIAL_PLATFORMS,
+  TRADEBILIA_PUBLIC_ORIGIN,
+  buildListingSocialCopy,
+  formatSocialCategory,
   toggleSocialPlatform,
   type DraftStatus,
   type SocialDraft,
   type SocialDraftSource,
   type SocialPlatform,
 } from "@/lib/socialContentManager";
+import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
 
 const STORAGE_KEY = "tradebilia-admin-social-drafts-v1";
 const PREFERENCES_KEY = "tradebilia-admin-social-preferences-v1";
@@ -59,6 +64,7 @@ const platformStyles: Record<SocialPlatform, string> = {
   Facebook: "border-blue-200 bg-blue-50 text-blue-700",
   Instagram: "border-pink-200 bg-pink-50 text-pink-700",
   X: "border-slate-300 bg-slate-50 text-slate-800",
+  Pinterest: "border-red-200 bg-red-50 text-red-700",
   LinkedIn: "border-sky-200 bg-sky-50 text-sky-700",
   YouTube: "border-red-200 bg-red-50 text-red-700",
 };
@@ -99,6 +105,8 @@ function normalizeDraft(draft: Partial<SocialDraft> & { id: string }): SocialDra
     ...draft,
     source: draft.source ?? "Original",
     sourceSummary: draft.sourceSummary ?? "Original Tradebilia-created content",
+    destinationUrl: draft.destinationUrl || fallback.destinationUrl,
+    promotion: draft.promotion ?? fallback.promotion,
   };
 }
 
@@ -137,7 +145,24 @@ function platformIcon(platform: SocialPlatform) {
   if (platform === "LinkedIn") return <Linkedin className="h-3.5 w-3.5" />;
   if (platform === "YouTube") return <Youtube className="h-3.5 w-3.5" />;
   if (platform === "X") return <X className="h-3.5 w-3.5" />;
+  if (platform === "Pinterest") return <span className="text-[11px] font-bold">P</span>;
   return <span className="text-[11px] font-bold">f</span>;
+}
+
+function buildPromotionFacts(opportunity: any) {
+  const gradingCompany = opportunity.customGradingCompany || opportunity.certificationCompany;
+  const facts = Array.isArray(opportunity.itemFacts) ? opportunity.itemFacts : [];
+  const coreFacts = [
+    opportunity.grade ? { label: "Grade", value: String(opportunity.grade) } : null,
+    gradingCompany ? { label: "Graded by", value: String(gradingCompany) } : null,
+    opportunity.condition ? { label: "Condition", value: String(opportunity.condition).replace(/_/g, " ") } : null,
+  ].filter((fact): fact is { label: string; value: string } => Boolean(fact));
+  return [...facts, ...coreFacts].filter((fact, index, allFacts) => allFacts.findIndex((other) => other.label === fact.label) === index).slice(0, 4);
+}
+
+function isNewListing(createdAt: string | number | Date | null | undefined) {
+  const createdAtMs = createdAt ? new Date(createdAt).getTime() : Number.NaN;
+  return Number.isFinite(createdAtMs) && createdAtMs >= Date.now() - (30 * 24 * 60 * 60 * 1000);
 }
 
 export function SocialContentManagerTab() {
@@ -147,7 +172,9 @@ export function SocialContentManagerTab() {
   const [autoListEnabled, setAutoListEnabled] = useState<boolean | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
+  const [isExportingGraphic, setIsExportingGraphic] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const graphicRef = useRef<HTMLDivElement>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
 
@@ -207,14 +234,25 @@ export function SocialContentManagerTab() {
   }
 
   function createListingPromotionDraft(listing: any) {
-    const grading = listing.customGradingCompany || listing.certificationCompany;
-    const detail = grading && listing.grade ? ` · ${grading} ${listing.grade}` : listing.condition ? ` · ${listing.condition}` : "";
+    const facts = buildPromotionFacts(listing);
+    const destinationUrl = listing.itemPath ? `${TRADEBILIA_PUBLIC_ORIGIN}${listing.itemPath}` : TRADEBILIA_PUBLIC_ORIGIN;
+    const promotion = {
+      itemTitle: listing.title,
+      category: listing.category ?? null,
+      itemType: listing.itemType ?? null,
+      facts,
+      estimatedValue: Number.isFinite(Number(listing.estimatedValue)) ? Number(listing.estimatedValue) : null,
+      createdAt: listing.createdAt ?? null,
+      isNew: isNewListing(listing.createdAt),
+    };
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "High-Value Listing",
       sourceSummary: `New public listing · ${formatOpportunityDate(listing.createdAt)}`,
       title: `New high-value listing: ${listing.title}`,
-      copy: `New to Tradebilia: ${listing.title}${detail}. Now listed at ${formatWholeDollar(listing.estimatedValue)}. Explore collector-to-collector trading at Tradebilia.`,
+      copy: buildListingSocialCopy({ ...promotion, destinationUrl }),
       mediaUrl: listing.imageUrl,
+      destinationUrl,
+      promotion,
     });
     setDrafts((current) => [draft, ...current]);
     setSelectedId(draft.id);
@@ -224,12 +262,24 @@ export function SocialContentManagerTab() {
   function createCompletedTradeDraft(trade: any) {
     const itemCount = Math.max(1, Number(trade.itemCount ?? 1));
     const itemWord = itemCount === 1 ? "item" : "items";
+    const facts = buildPromotionFacts(trade);
+    const destinationUrl = trade.itemPath ? `${TRADEBILIA_PUBLIC_ORIGIN}${trade.itemPath}` : TRADEBILIA_PUBLIC_ORIGIN;
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "Completed Trade",
       sourceSummary: `Completed public exchange · ${formatOpportunityDate(trade.completedAt)}`,
       title: `Recent completed trade: ${trade.title}`,
       copy: `A recent Tradebilia collector exchange has been completed. ${itemCount} ${itemWord} were exchanged, including ${trade.title}. Discover more collector-to-collector trades on Tradebilia.`,
       mediaUrl: trade.imageUrl,
+      destinationUrl,
+      promotion: {
+        itemTitle: trade.title,
+        category: trade.category ?? null,
+        itemType: trade.itemType ?? null,
+        facts,
+        estimatedValue: null,
+        createdAt: trade.completedAt ?? null,
+        isNew: false,
+      },
     });
     setDrafts((current) => [draft, ...current]);
     setSelectedId(draft.id);
@@ -283,6 +333,45 @@ export function SocialContentManagerTab() {
     }
     setPreviewPlatform(selectedDraft.platforms[0]);
     setIsPreviewOpen(true);
+  }
+
+  async function copySocialCaption() {
+    if (!selectedDraft?.copy.trim()) return toast.error("Add social copy before copying the caption.");
+    try {
+      await navigator.clipboard.writeText(selectedDraft.copy);
+      toast.success("Social caption copied");
+    } catch {
+      toast.error("The caption could not be copied. Please select and copy it manually.");
+    }
+  }
+
+  async function downloadSocialGraphic() {
+    const graphic = graphicRef.current;
+    if (!graphic || !selectedDraft || !selectedPreviewPlatform) return;
+    setIsExportingGraphic(true);
+    try {
+      const { default: html2canvas } = await import("html2canvas");
+      const canvas = await html2canvas(graphic, {
+        backgroundColor: "#080d1d",
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+      const downloadLink = document.createElement("a");
+      const safeTitle = (selectedDraft.promotion?.itemTitle || selectedDraft.title || "tradebilia-item")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "")
+        .slice(0, 60) || "tradebilia-item";
+      downloadLink.download = `tradebilia-${safeTitle}-${selectedPreviewPlatform.toLowerCase()}.png`;
+      downloadLink.href = canvas.toDataURL("image/png");
+      downloadLink.click();
+      toast.success("Social graphic download prepared");
+    } catch {
+      toast.error("The graphic could not be exported. Your original item image was not changed.");
+    } finally {
+      setIsExportingGraphic(false);
+    }
   }
 
   async function uploadOriginalMedia(file: File) {
@@ -431,27 +520,37 @@ export function SocialContentManagerTab() {
               <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs text-slate-500">Last edited {formatUpdatedAt(selectedDraft.updatedAt)}</span><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={openPreview}><Eye className="mr-2 h-4 w-4" />Preview Post</Button><Button variant="outline" onClick={() => updateDraft({ status: "Draft" })}><Save className="mr-2 h-4 w-4" />Save Draft</Button>{selectedDraft.status === "Needs Review" ? <Button onClick={approveDraft} className="bg-emerald-600 text-white hover:bg-emerald-700"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button> : <Button onClick={requestReview} className="bg-indigo-600 text-white hover:bg-indigo-700"><Send className="mr-2 h-4 w-4" />Request Review</Button>}</div></div>
             </CardContent>
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-              <DialogContent className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
+              <DialogContent className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
                 <DialogHeader className="border-b border-slate-100 px-5 pt-5 sm:px-6 sm:pt-6">
-                  <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-indigo-600" />Post Preview</DialogTitle>
-                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account.</DialogDescription>
+                  <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-indigo-600" />Social Graphic Preview</DialogTitle>
+                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account. The original item image is fitted in full and is never cropped or altered.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 px-5 sm:px-6">
+                <div className="space-y-5 px-5 sm:px-6">
                   <div className="flex flex-wrap gap-2" aria-label="Preview platform">
-                    {selectedDraft.platforms.map((platform) => <button key={platform} type="button" onClick={() => setPreviewPlatform(platform)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selectedPreviewPlatform === platform ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className={selectedPreviewPlatform === platform ? "" : "opacity-70"}>{platformIcon(platform)}</span>{platform}</button>)}
+                    {selectedDraft.platforms.map((platform) => <button key={platform} type="button" onClick={() => setPreviewPlatform(platform)} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${selectedPreviewPlatform === platform ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className={selectedPreviewPlatform === platform ? "" : "opacity-70"}>{platformIcon(platform)}</span>{platform}<span className="text-[10px] font-medium opacity-70">{SOCIAL_GRAPHIC_SPECS[platform].size}</span></button>)}
                   </div>
-                  <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm" aria-label={`${selectedPreviewPlatform ?? "Social"} post preview`}>
-                    <div className={`flex items-center justify-between border-b px-4 py-3 ${selectedPreviewPlatform ? platformStyles[selectedPreviewPlatform] : "border-slate-200 bg-slate-50 text-slate-700"}`}>
-                      <div className="flex items-center gap-2 text-sm font-bold"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/80 text-slate-900">{selectedPreviewPlatform ? platformIcon(selectedPreviewPlatform) : <Megaphone className="h-3.5 w-3.5" />}</span>Tradebilia</div>
-                      <Badge className={`border bg-white/80 text-[10px] ${sourceStyles[selectedDraft.source]}`}>{selectedDraft.source}</Badge>
+
+                  {selectedPreviewPlatform ? <div className="space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div><p className="text-sm font-bold text-slate-900">Finished promotional graphic</p><p className="mt-0.5 text-xs text-slate-500">{SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].label} · {SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].size} · original item image contained in full</p></div>
+                      {selectedDraft.promotion ? <Badge className="w-fit border border-indigo-100 bg-indigo-50 text-indigo-700">{formatSocialCategory(selectedDraft.promotion.category) || "Collectible"}</Badge> : null}
                     </div>
-                    <div className="space-y-3 p-4">
-                      <div><h4 className="text-base font-bold text-slate-950">{selectedDraft.title || "Untitled social post"}</h4><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{selectedDraft.copy || "Your post copy will appear here."}</p></div>
-                      {selectedDraft.mediaUrl ? isVideoMediaUrl(selectedDraft.mediaUrl) ? <video className="max-h-80 w-full rounded-xl border border-slate-100 bg-slate-950" controls preload="metadata"><source src={selectedDraft.mediaUrl} /></video> : <img src={selectedDraft.mediaUrl} alt="Draft post media preview" className="max-h-80 w-full rounded-xl border border-slate-100 object-cover" /> : <div className="flex min-h-44 flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 px-5 text-center"><ImageIcon className="mb-2 h-8 w-8 text-slate-300" /><p className="text-sm font-semibold text-slate-600">No media attached</p><p className="mt-1 text-xs leading-5 text-slate-500">Upload an original image or video, or add an existing media URL, to include it in this preview.</p></div>}
-                      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs text-slate-500"><span>{selectedPreviewPlatform ?? "Social"} planning preview</span><span aria-hidden="true">•</span><span>{selectedDraft.status}</span>{selectedDraft.plannedDate ? <><span aria-hidden="true">•</span><span>Planned {selectedDraft.plannedDate}</span></> : null}</div>
+                    <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
+                      <div ref={graphicRef} className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
+                        <SocialPromotionGraphic draft={selectedDraft} platform={selectedPreviewPlatform} />
+                      </div>
                     </div>
-                  </article>
-                  <p className="text-xs leading-5 text-slate-500">Platform layouts can vary after manual publishing. Review this draft, then use the existing approval workflow before posting outside Tradebilia.</p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs leading-5 text-slate-500">The download exports the displayed platform graphic. It never changes the original uploaded collectible image.</p>
+                      <Button type="button" size="sm" onClick={() => void downloadSocialGraphic()} disabled={isExportingGraphic} className="shrink-0 bg-indigo-600 text-white hover:bg-indigo-700"><Download className="mr-1.5 h-4 w-4" />{isExportingGraphic ? "Preparing…" : "Download Graphic"}</Button>
+                    </div>
+                  </div> : null}
+
+                  <section className="rounded-xl border border-slate-200 bg-slate-50 p-4" aria-label="Generated social caption">
+                    <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-bold text-slate-900">Social caption</p><p className="mt-0.5 text-xs text-slate-500">Uses the actual item details and direct Tradebilia item link when available.</p></div><Button type="button" size="sm" variant="outline" onClick={() => void copySocialCaption()}><Copy className="mr-1.5 h-3.5 w-3.5" />Copy caption</Button></div>
+                    <p className="mt-3 whitespace-pre-wrap rounded-lg border border-slate-200 bg-white p-3 text-sm leading-6 text-slate-700">{selectedDraft.copy || "Your post copy will appear here."}</p>
+                  </section>
+                  <p className="text-xs leading-5 text-slate-500">Platform layouts can vary after manual publishing. Review this graphic and caption, then use the existing approval workflow before posting outside Tradebilia.</p>
                 </div>
                 <DialogFooter className="border-t border-slate-100 px-5 pb-5 sm:px-6 sm:pb-6"><Button variant="outline" onClick={() => setIsPreviewOpen(false)}>Close Preview</Button></DialogFooter>
               </DialogContent>
@@ -491,7 +590,7 @@ function OpportunityList({
     <div className="mb-3 flex items-start gap-2"><span className="mt-0.5 rounded-md bg-slate-100 p-1.5 text-slate-700">{icon}</span><div><h3 className="text-sm font-bold text-slate-950">{title}</h3><p className="mt-0.5 text-xs leading-5 text-slate-500">{description}</p></div></div>
     <div className="space-y-2">
       {opportunities.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-7 text-center text-xs leading-5 text-slate-500">{emptyCopy}</div> : opportunities.map((opportunity, index) => <article key={`${opportunity.title}-${index}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-        {opportunity.imageUrl ? <img src={opportunity.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 object-cover" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400"><ImageIcon className="h-5 w-5" /></span>}
+        {opportunity.imageUrl ? <img src={opportunity.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-slate-50 object-contain" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400"><ImageIcon className="h-5 w-5" /></span>}
         <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{opportunity.title}</p><p className="mt-0.5 truncate text-xs text-slate-500">{renderMeta(opportunity)}</p></div>
         <Button type="button" variant="outline" size="sm" onClick={() => onCreateDraft(opportunity)} className="shrink-0 border-indigo-200 text-indigo-700 hover:bg-indigo-50"><span className="hidden sm:inline">Create draft</span><ArrowRight className="h-4 w-4 sm:ml-1.5" /></Button>
       </article>)}
