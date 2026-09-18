@@ -13,11 +13,14 @@ export const SOCIAL_GRAPHIC_CANVAS_SIZES: Record<SocialPlatform, SocialGraphicCa
 
 type CanvasImage = HTMLImageElement;
 
+export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg";
+
 type SocialGraphicExportInput = {
   draft: SocialDraft;
   platform: SocialPlatform;
   itemImageUrl?: string | null;
   brandLogoUrl?: string | null;
+  heroBackgroundUrl?: string | null;
 };
 
 function isTallCanvas(platform: SocialPlatform) {
@@ -129,7 +132,13 @@ function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string
   return lines.length * lineHeight;
 }
 
-function drawBackground(context: CanvasRenderingContext2D, width: number, height: number) {
+function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null) {
+  if (heroBackground) {
+    context.drawImage(heroBackground, 0, 0, width, height);
+    context.fillStyle = "rgba(3, 18, 55, 0.66)";
+    context.fillRect(0, 0, width, height);
+    return;
+  }
   const background = context.createLinearGradient(0, 0, width, height);
   background.addColorStop(0, "#090e20");
   background.addColorStop(0.54, "#172348");
@@ -242,7 +251,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 10 * scale, 660 * scale, 150 * scale);
+  drawBrand(context, brandLogo, padding, 8 * scale, 760 * scale, 190 * scale);
 
   const imageX = padding;
   const imageY = 168 * scale;
@@ -287,11 +296,10 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   context.moveTo(padding, height - 48 * scale);
   context.lineTo(width - padding, height - 48 * scale);
   context.stroke();
-  context.fillStyle = "rgba(255,255,255,0.65)";
+  context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  context.fillText("DISCOVER · TRADE · COLLECT", padding, height - 24 * scale);
-  context.textAlign = "right";
-  context.fillText("TRADEBILIA", width - padding, height - 24 * scale);
+  context.textAlign = "center";
+  context.fillText("DISCOVER · TRADE · COLLECT", width / 2, height - 24 * scale);
   context.textAlign = "left";
 
   void platform;
@@ -307,7 +315,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawBrand(context, brandLogo, padding, 12 * scale, 660 * scale, 150 * scale);
+  drawBrand(context, brandLogo, padding, 10 * scale, 760 * scale, 190 * scale);
 
   const imageY = 182 * scale;
   const imageHeight = platform === "Pinterest" ? height * 0.46 : height * 0.43;
@@ -353,7 +361,7 @@ export function getSocialGraphicExportFileName(draft: SocialDraft, platform: Soc
 }
 
 /** Renders the finished promotion to a native platform-size canvas without reading preview DOM or CSS. */
-export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, brandLogoUrl }: SocialGraphicExportInput) {
+export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, brandLogoUrl, heroBackgroundUrl }: SocialGraphicExportInput) {
   const { width, height } = SOCIAL_GRAPHIC_CANVAS_SIZES[platform];
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -361,11 +369,12 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const context = canvas.getContext("2d");
   if (!context) throw new Error("A canvas graphics context is not available in this browser.");
 
-  const [itemImage, brandLogo] = await Promise.all([
+  const [itemImage, brandLogo, heroBackground] = await Promise.all([
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     loadCanvasImage(brandLogoUrl),
+    loadCanvasImage(heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
   ]);
-  drawBackground(context, width, height);
+  drawBackground(context, width, height, heroBackground);
   if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

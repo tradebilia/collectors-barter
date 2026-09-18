@@ -188,6 +188,7 @@ export function SocialContentManagerTab() {
   const [isExportingGraphic, setIsExportingGraphic] = useState(false);
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
   const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
+  const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const preparedAssetRequestRef = useRef<string | null>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
@@ -236,11 +237,12 @@ export function SocialContentManagerTab() {
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
-    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl);
+    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl);
 
   useEffect(() => {
     setPreparedGraphicImageUrl(null);
     setPreparedBrandLogoUrl(null);
+    setPreparedHeroBackgroundUrl(null);
     preparedAssetRequestRef.current = null;
   }, [selectedDraft?.id, selectedDraft?.mediaUrl]);
 
@@ -256,9 +258,10 @@ export function SocialContentManagerTab() {
     if (preparedAssetRequestRef.current === sourceUrl) return;
     preparedAssetRequestRef.current = sourceUrl;
     prepareSocialGraphicImage.mutate({ sourceUrl }, {
-      onSuccess: ({ dataUrl, brandLogoDataUrl }) => {
-        setPreparedGraphicImageUrl(hasItemImage ? dataUrl : null);
-        setPreparedBrandLogoUrl(brandLogoDataUrl);
+        onSuccess: ({ dataUrl, brandLogoDataUrl, heroBackgroundDataUrl }) => {
+          setPreparedGraphicImageUrl(hasItemImage ? dataUrl : null);
+          setPreparedBrandLogoUrl(brandLogoDataUrl);
+          setPreparedHeroBackgroundUrl(heroBackgroundDataUrl);
       },
       onError: () => toast.error("The original item image or Tradebilia mark could not be prepared for export. Please close and reopen the preview to retry."),
     });
@@ -406,7 +409,7 @@ export function SocialContentManagerTab() {
 
   async function downloadSocialGraphic() {
     if (!selectedDraft || !selectedPreviewPlatform) return;
-    if (!preparedBrandLogoUrl || (hasExportableItemImage && !preparedGraphicImageUrl)) {
+    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || (hasExportableItemImage && !preparedGraphicImageUrl)) {
       toast.error("Preparing the original item image and Tradebilia mark. Please wait a moment, then download the graphic.");
       return;
     }
@@ -417,6 +420,7 @@ export function SocialContentManagerTab() {
         platform: selectedPreviewPlatform,
         itemImageUrl: preparedGraphicImageUrl,
         brandLogoUrl: preparedBrandLogoUrl,
+        heroBackgroundUrl: preparedHeroBackgroundUrl,
       });
       downloadSocialGraphicCanvas(canvas, getSocialGraphicExportFileName(selectedDraft, selectedPreviewPlatform));
       toast.success("Social graphic download prepared");

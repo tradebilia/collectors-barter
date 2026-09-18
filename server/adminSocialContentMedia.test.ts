@@ -28,9 +28,11 @@ describe("admin social-content media upload contract", () => {
   it("prepares known Tradebilia images server-side for reliable graphic export", () => {
     expect(uploadSection).toContain("prepareSocialGraphicImage");
     expect(uploadSection).toContain("brandLogoDataUrl");
+    expect(uploadSection).toContain("heroBackgroundDataUrl");
     expect(uploadSection).toContain('ctx.user.role !== "admin"');
     expect(imagePreparationSection).toContain("SOCIAL_GRAPHIC_ALLOWED_IMAGE_HOSTS");
     expect(routerSource).toContain("SOCIAL_GRAPHIC_BRAND_LOGO_URL");
+    expect(routerSource).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
     expect(routerSource).toContain('"image/svg+xml"');
     expect(imagePreparationSection).toContain("https://tradebilia.manus.space");
     expect(imagePreparationSection).toContain("SOCIAL_GRAPHIC_MAX_IMAGE_BYTES");

@@ -169,6 +169,7 @@ const SOCIAL_GRAPHIC_ALLOWED_REDIRECT_HOSTS = new Set([
   "d36hbw14aib5lz.cloudfront.net",
 ]);
 const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
+const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "https://assets.tradebilia.com/Background_23084d14.jpg";
 const SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -2945,11 +2946,12 @@ export const appRouter = router({
       .input(z.object({ sourceUrl: z.string().min(1).max(2_000) }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        const [dataUrl, brandLogoDataUrl] = await Promise.all([
+        const [dataUrl, brandLogoDataUrl, heroBackgroundDataUrl] = await Promise.all([
           getSocialGraphicImageDataUrl(input.sourceUrl),
           getSocialGraphicImageDataUrl(SOCIAL_GRAPHIC_BRAND_LOGO_URL),
+          getSocialGraphicImageDataUrl(SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
         ]);
-        return { dataUrl, brandLogoDataUrl };
+        return { dataUrl, brandLogoDataUrl, heroBackgroundDataUrl };
       }),
     getPromotionOpportunities: protectedProcedure
       .input(z.object({

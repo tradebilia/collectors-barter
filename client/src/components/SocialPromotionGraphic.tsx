@@ -1,6 +1,7 @@
 import React from "react";
 import { ExternalLink, Image as ImageIcon, PlayCircle } from "lucide-react";
 import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
+import { SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
 import { formatSocialItemType, formatSocialValue, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
@@ -42,12 +43,11 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBI
       data-social-promotion-graphic="true"
       data-platform={platform}
     >
-      <div className="absolute inset-0 -z-20 bg-[radial-gradient(circle_at_0%_0%,#2c168f_0%,transparent_38%),radial-gradient(circle_at_100%_100%,#1488b6_0%,transparent_33%),linear-gradient(135deg,#080d1d_0%,#111b35_52%,#090d18_100%)]" />
-      <div className="absolute inset-0 -z-10 opacity-[0.18] [background-image:linear-gradient(115deg,transparent_0%,transparent_47%,white_47.2%,transparent_47.7%,transparent_100%)] [background-size:26px_26px]" />
+      <div className="absolute inset-0 -z-20 bg-cover bg-center" style={{ backgroundImage: `linear-gradient(rgba(3,18,55,0.66),rgba(3,18,55,0.66)), url(${SOCIAL_GRAPHIC_HERO_BACKGROUND_URL})` }} />
 
       <div className={classNames("relative flex h-full min-h-0", isTallCanvas ? "flex-col p-[6%]" : "p-[4.5%]")}>
         <header className={classNames("flex shrink-0 items-center justify-between gap-3", isTallCanvas ? "mb-[4%]" : "absolute left-[4.5%] right-[4.5%] top-[5%] z-10")}>
-          <img src={brandLogoUrl} alt="Tradebilia" className="h-12 w-auto max-w-[62%] shrink-0 object-contain sm:h-16" />
+          <img src={brandLogoUrl} alt="Tradebilia" className="h-20 w-auto max-w-[72%] shrink-0 object-contain sm:h-28" />
           {promotion?.isNew ? <span className="shrink-0 rounded-full border border-[#f6ca7a]/80 bg-[#f3be63]/20 px-3 py-1.5 text-[clamp(0.5rem,0.9cqw,0.7rem)] font-extrabold uppercase tracking-[0.12em] text-[#ffe0a8]">New High-Value Listing</span> : null}
         </header>
 
@@ -86,7 +86,7 @@ export function SocialPromotionGraphic({ draft, platform, brandLogoUrl = TRADEBI
           </div>
         </div>
 
-        {!isTallCanvas ? <footer className="absolute bottom-[4.5%] left-[4.5%] right-[4.5%] flex items-center justify-between border-t border-white/15 pt-[2%] text-[clamp(0.42rem,0.67cqw,0.54rem)] font-semibold uppercase tracking-[0.13em] text-white/60"><span>Discover · Trade · Collect</span><span>tradebilia</span></footer> : null}
+        {!isTallCanvas ? <footer className="absolute bottom-[4.5%] left-[4.5%] right-[4.5%] flex items-center justify-center border-t border-white/15 pt-[2%] text-[clamp(0.42rem,0.67cqw,0.54rem)] font-semibold uppercase tracking-[0.13em] text-white/85"><span>Discover · Trade · Collect</span></footer> : null}
       </div>
     </article>
   );

@@ -31,5 +31,9 @@ describe("Social promotion graphic", () => {
     expect(source).toContain("View item profile");
     expect(source).toContain("draft.destinationUrl");
     expect(source).toContain("promotion?.facts.slice(0, 4)");
+    expect(source).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
+    expect(source).toContain("h-20 w-auto");
+    expect(source).toContain("justify-center border-t");
+    expect(source).not.toContain("<span>tradebilia</span>");
   });
 });

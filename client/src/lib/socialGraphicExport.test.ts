@@ -40,7 +40,11 @@ describe("native Social graphic exporter", () => {
   it("uses an explicit new-listing header, enlarged official brand space, and a complete fitted title without image labels", () => {
     expect(exporterSource).toContain("NEW HIGH-VALUE LISTING");
     expect(exporterSource).toContain("drawCompleteFittedTitle");
-    expect(exporterSource).toContain("660 * scale, 150 * scale");
+    expect(exporterSource).toContain("760 * scale, 190 * scale");
+    expect(exporterSource).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
+    expect(exporterSource).toContain("drawBackground(context, width, height, heroBackground)");
+    expect(exporterSource).toContain('context.textAlign = "center"');
+    expect(exporterSource).not.toContain('context.fillText("TRADEBILIA", width - padding');
     expect(exporterSource).toContain("getSocialPromotionItemTitle");
     expect(exporterSource).not.toContain("ORIGINAL IMAGE · FULLY SHOWN");
     expect(exporterSource).toContain("VIEW ITEM PROFILE");
