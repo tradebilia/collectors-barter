@@ -239,8 +239,12 @@ export function SocialContentManagerTab() {
     ? { ...selectedDraft, mediaUrl: preparedGraphicImageUrl, destinationUrl: canonicalDestinationUrl }
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
+  const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
+    ? (selectedDraft.promotion?.tradeItems ?? []).filter((item) => Boolean(item.imageUrl)).length
+    : 0;
+  const completedTradeImagesReady = selectedDraft?.source !== "Completed Trade" || preparedTradeImageUrls.length >= completedTradeImageCount;
   const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
-    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl);
+    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady);
 
   useEffect(() => {
     setPreparedGraphicImageUrl(null);
@@ -264,14 +268,21 @@ export function SocialContentManagerTab() {
     if ((hasItemImage && preparedGraphicImageUrl) || (!hasItemImage && preparedBrandLogoUrl)) return;
     if (preparedAssetRequestRef.current === sourceUrl) return;
     preparedAssetRequestRef.current = sourceUrl;
-    Promise.all([prepareSocialGraphicImage.mutateAsync({ sourceUrl }), ...tradeImageSources.map((url) => prepareSocialGraphicImage.mutateAsync({ sourceUrl: url }))])
+    (async () => {
+      const primary = await prepareSocialGraphicImage.mutateAsync({ sourceUrl });
+      const tradeAssets = [] as Array<{ dataUrl?: string | null }>;
+      for (const url of tradeImageSources) {
+        tradeAssets.push(await prepareSocialGraphicImage.mutateAsync({ sourceUrl: url }));
+      }
+      return [primary, ...tradeAssets] as const;
+    })()
       .then(([primary, ...tradeAssets]) => {
         setPreparedGraphicImageUrl(hasItemImage ? primary.dataUrl : null);
         setPreparedTradeImageUrls(tradeAssets.map((asset) => asset.dataUrl).filter((url): url is string => Boolean(url)));
         setPreparedBrandLogoUrl(primary.brandLogoDataUrl);
         setPreparedHeroBackgroundUrl(primary.heroBackgroundDataUrl);
       })
-      .catch(() => toast.error("The original item image or Tradebilia mark could not be prepared for export. Please close and reopen the preview to retry."));
+      .catch(() => toast.error("One or more traded item images could not be prepared for export. Please close and reopen the preview to retry."));
   }, [isPreviewOpen, preparedBrandLogoUrl, preparedGraphicImageUrl, prepareSocialGraphicImage, selectedDraft]);
 
   const filteredDrafts = useMemo(() => filterSocialDrafts(drafts, statusFilter), [drafts, statusFilter]);
@@ -418,7 +429,7 @@ export function SocialContentManagerTab() {
 
   async function downloadSocialGraphic() {
     if (!selectedDraft || !selectedPreviewPlatform) return;
-    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || (hasExportableItemImage && !preparedGraphicImageUrl) || (selectedDraft.source === "Completed Trade" && selectedDraft.promotion?.tradeItems?.some((item) => item.imageUrl) && preparedTradeImageUrls.length === 0)) {
+    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || (hasExportableItemImage && !preparedGraphicImageUrl)) {
       toast.error("Preparing the original item image and Tradebilia mark. Please wait a moment, then download the graphic.");
       return;
     }
