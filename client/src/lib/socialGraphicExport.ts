@@ -119,7 +119,7 @@ function wrapCompleteText(context: CanvasRenderingContext2D, text: string, maxWi
   return lines;
 }
 
-function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, preferredSize: number, minimumSize: number, preferredMaxLines: number) {
+function getCompleteFittedTitleLayout(context: CanvasRenderingContext2D, text: string, maxWidth: number, preferredSize: number, minimumSize: number, preferredMaxLines: number) {
   let fontSize = preferredSize;
   let lines: string[] = [];
   while (fontSize >= minimumSize) {
@@ -130,8 +130,14 @@ function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string
   }
   context.font = `600 ${Math.round(fontSize)}px Georgia, serif`;
   const lineHeight = Math.round(fontSize * 1.04);
+  return { fontSize, lines, lineHeight, height: lines.length * lineHeight };
+}
+
+function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, preferredSize: number, minimumSize: number, preferredMaxLines: number) {
+  const { fontSize, lines, lineHeight, height } = getCompleteFittedTitleLayout(context, text, maxWidth, preferredSize, minimumSize, preferredMaxLines);
+  context.font = `600 ${Math.round(fontSize)}px Georgia, serif`;
   lines.forEach((line, index) => context.fillText(line, x, y + index * lineHeight));
-  return lines.length * lineHeight;
+  return height;
 }
 
 function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null) {
@@ -478,10 +484,19 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
   drawCenteredPromotionHeader(context, promotionHeader, width, 104 * scale, scale);
 
   const imageY = 146 * scale;
-  const imageHeight = platform === "Pinterest" ? height * 0.40 : height * 0.36;
+  const titleGap = platform === "Instagram" ? 58 * scale : 38 * scale;
+  const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, width - padding * 2, 43 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
+  const itemTypeHeight = itemType ? 50 * scale : 34 * scale;
+  const factHeight = promotion?.facts?.length ? Math.ceil(Math.min(promotion.facts.length, 4) / 2) * 54 * scale + 1 * scale : 0;
+  const valueHeight = value ? 38 * scale + 22 * scale : 0;
+  // Instagram uses the available content area for a larger contained image,
+  // while reserving clear title, detail, logo, divider, and phrase zones.
+  const imageHeight = platform === "Instagram"
+    ? Math.max(160 * scale, height - imageY - titleGap - titleLayout.height - itemTypeHeight - 34 * scale - factHeight - valueHeight - 126 * scale - 18 * scale)
+    : height * 0.40;
   drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
 
-  let y = imageY + imageHeight + 38 * scale;
+  let y = imageY + imageHeight + titleGap;
   context.fillStyle = "#ffffff";
   y += drawCompleteFittedTitle(context, itemTitle, padding, y, width - padding * 2, 43 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
   if (itemType) {
@@ -499,12 +514,20 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
     context.fillText(`Trade value  ${value}`, padding, y);
   }
 
+  const footerDividerY = platform === "Instagram" ? height - 58 * scale : height - 42 * scale;
   context.strokeStyle = "rgba(255,255,255,0.18)";
   context.beginPath();
-  context.moveTo(padding, height - 42 * scale);
-  context.lineTo(width - padding, height - 42 * scale);
+  context.moveTo(padding, footerDividerY);
+  context.lineTo(width - padding, footerDividerY);
   context.stroke();
-  drawCenteredBrand(context, brandLogo, width, height - 112 * scale, scale);
+  drawCenteredBrand(context, brandLogo, width, platform === "Instagram" ? height - 126 * scale : height - 112 * scale, scale);
+  if (platform === "Instagram") {
+    context.fillStyle = "rgba(255,255,255,0.85)";
+    context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+    context.textAlign = "center";
+    context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 18 * scale);
+  }
+  context.textAlign = "left";
 }
 
 export function getSocialGraphicExportFileName(draft: SocialDraft, platform: SocialPlatform) {

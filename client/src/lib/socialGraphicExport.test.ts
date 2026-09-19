@@ -66,4 +66,15 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('getSocialFooterPhrase(draft.id, "Instagram")');
     expect(exporterSource).toContain('platform === "Instagram"');
   });
+
+  it("gives Instagram high-value posts a larger image, clear title gap, and a visible footer phrase", () => {
+    expect(exporterSource).toContain("getCompleteFittedTitleLayout");
+    expect(exporterSource).toContain('const titleGap = platform === "Instagram" ? 58 * scale : 38 * scale');
+    expect(exporterSource).toContain('const imageHeight = platform === "Instagram"');
+    expect(exporterSource).toContain("height - imageY - titleGap - titleLayout.height");
+    expect(exporterSource).toContain("let y = imageY + imageHeight + titleGap");
+    expect(exporterSource).toContain('const footerDividerY = platform === "Instagram" ? height - 58 * scale : height - 42 * scale');
+    expect(exporterSource).toContain('platform === "Instagram" ? height - 126 * scale : height - 112 * scale');
+    expect(exporterSource).toContain('context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 18 * scale)');
+  });
 });
