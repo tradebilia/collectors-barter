@@ -36,6 +36,15 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).toContain("customGradingCompany");
   });
 
+  it("adds clearly labeled admin-only category test items only for missing qualifying categories", () => {
+    expect(promotionSection).toContain("const qualifyingCategories = new Set");
+    expect(promotionSection).toContain("const categoryTestListings = collectibleCategories");
+    expect(promotionSection).toContain("isCategoryTest: true as const");
+    expect(promotionSection).toContain("categoryTestFacts");
+    expect(promotionSection).toContain("categoryTestListings");
+    expect(promotionSection).toContain("!qualifyingCategories.has(category)");
+  });
+
   it("uses category-specific facts for sports cards and comics", () => {
     expect(routerSource).toContain('normalizedCategory.includes("sport")');
     expect(routerSource).toContain('normalizedCategory.includes("comic")');

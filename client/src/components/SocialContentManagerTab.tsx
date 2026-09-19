@@ -312,6 +312,7 @@ export function SocialContentManagerTab() {
     scheduled: drafts.filter((draft) => draft.status === "Scheduled").length,
   }), [drafts]);
   const highValueListings = autoListEnabled ? promotionQuery.data?.highValueListings ?? [] : [];
+  const categoryTestListings = autoListEnabled ? promotionQuery.data?.categoryTestListings ?? [] : [];
   const completedTrades = autoListEnabled ? promotionQuery.data?.completedTrades ?? [] : [];
   const verifiedMerchants = autoListEnabled ? promotionQuery.data?.verifiedMerchants ?? [] : [];
 
@@ -553,13 +554,14 @@ export function SocialContentManagerTab() {
               <Badge className="border border-amber-200 bg-amber-100 text-amber-900">Admin reviewed</Badge>
             </div>
             <h3 className="mt-5 text-xl font-bold text-slate-950">Promotion Opportunities</h3>
-            <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Review public high-value listings, completed exchanges, and newly verified merchants. Historical listings and trades remain available for testing; each selection creates an editable draft—nothing posts automatically.</p>
+            <p className="mt-2 max-w-lg text-sm leading-6 text-slate-600">Review public high-value listings, completed exchanges, newly verified merchants, and category test items. Historical listings and trades remain available for testing; each selection creates an editable draft—nothing posts automatically.</p>
             <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-white/80 p-3">
               <div><p className="text-sm font-bold text-slate-900">Auto-list promotion opportunities</p><p className="mt-0.5 text-xs leading-5 text-slate-500">Surfaces qualifying activity in this admin workspace only.</p></div>
               <Switch checked={autoListEnabled === true} onCheckedChange={setAutoListEnabled} aria-label="Auto-list promotion opportunities" disabled={autoListEnabled === null} />
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-700">
               <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-amber-200">{autoListEnabled ? `${highValueListings.length} high-value listings` : "Auto-list is off"}</span>
+              <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-cyan-200">{autoListEnabled ? `${categoryTestListings.length} category tests` : "Manual posts remain available"}</span>
               <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-violet-200">{autoListEnabled ? `${completedTrades.length} completed trades` : "Manual posts remain available"}</span>
               <span className="rounded-full bg-white px-3 py-1.5 shadow-sm ring-1 ring-emerald-200">{autoListEnabled ? `${verifiedMerchants.length} verified merchants` : "Manual posts remain available"}</span>
             </div>
@@ -582,6 +584,15 @@ export function SocialContentManagerTab() {
             emptyCopy={autoListEnabled ? "No qualifying listings were added during this window." : "Auto-list is off. Turn it on above to surface qualifying new listings."}
             opportunities={highValueListings}
             renderMeta={(listing: any) => `${formatWholeDollar(listing.estimatedValue)} · Added ${formatOpportunityDate(listing.createdAt)}`}
+            onCreateDraft={createListingPromotionDraft}
+          />
+          <OpportunityList
+            icon={<Sparkles className="h-4 w-4" />}
+            title="Category test items"
+            description="One clearly labeled admin-only sample for each category without a qualifying $1,000+ listing."
+            emptyCopy={autoListEnabled ? "Every category currently has a qualifying listing." : "Auto-list is off. Turn it on above to surface category tests."}
+            opportunities={categoryTestListings}
+            renderMeta={(listing: any) => `Layout test · ${formatOpportunityDate(listing.createdAt)}`}
             onCreateDraft={createListingPromotionDraft}
           />
           <OpportunityList
@@ -724,7 +735,7 @@ function OpportunityList({
     <div className="space-y-2">
       {opportunities.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-7 text-center text-xs leading-5 text-slate-500">{emptyCopy}</div> : opportunities.map((opportunity, index) => <article key={`${opportunity.title}-${index}`} className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
         {opportunity.imageUrl ? <img src={opportunity.imageUrl} alt="" className="h-12 w-12 shrink-0 rounded-lg border border-slate-100 bg-slate-50 object-contain" /> : <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-400"><ImageIcon className="h-5 w-5" /></span>}
-        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold text-slate-900">{opportunity.title}</p><p className="mt-0.5 truncate text-xs text-slate-500">{renderMeta(opportunity)}</p></div>
+        <div className="min-w-0 flex-1"><div className="flex min-w-0 items-center gap-1.5"><p className="truncate text-sm font-bold text-slate-900">{opportunity.title}</p>{opportunity.isCategoryTest ? <Badge className="shrink-0 border-cyan-200 bg-cyan-50 text-[9px] text-cyan-800">TEST</Badge> : null}</div><p className="mt-0.5 truncate text-xs text-slate-500">{renderMeta(opportunity)}</p></div>
         <Button type="button" variant="outline" size="sm" onClick={() => onCreateDraft(opportunity)} className="shrink-0 border-indigo-200 text-indigo-700 hover:bg-indigo-50"><span className="hidden sm:inline">Create draft</span><ArrowRight className="h-4 w-4 sm:ml-1.5" /></Button>
       </article>)}
     </div>

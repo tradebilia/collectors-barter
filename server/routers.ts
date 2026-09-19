@@ -3057,6 +3057,44 @@ export const appRouter = router({
             imageUrl: listing.imageUrl ?? null,
           }));
 
+        const qualifyingCategories = new Set(
+          highValueListings
+            .map((listing) => String(listing.category ?? "").trim().toLowerCase())
+            .filter(Boolean),
+        );
+        const categoryTestFacts: Record<string, Array<{ label: string; value: string }>> = {
+          comics: [{ label: "Title", value: "Amazing Fantasy" }, { label: "Issue No.", value: "15" }],
+          sports_cards: [{ label: "Year", value: "1986" }, { label: "Manufacturer", value: "Topps" }, { label: "Grading company", value: "PSA" }, { label: "Grade", value: "9" }],
+          vintage_toys: [{ label: "Year", value: "1984" }, { label: "Manufacturer", value: "Kenner" }, { label: "Edition", value: "Collector sample" }],
+          video_games: [{ label: "Year", value: "1998" }, { label: "Manufacturer", value: "Nintendo" }, { label: "Edition", value: "Sealed sample" }],
+          stamps: [{ label: "Year", value: "1930" }, { label: "Manufacturer", value: "USPS" }, { label: "Catalog No.", value: "TB-001" }],
+          coins: [{ label: "Year", value: "1921" }, { label: "Manufacturer", value: "U.S. Mint" }, { label: "Edition", value: "Mint sample" }],
+          pokemon: [{ label: "Year", value: "1999" }, { label: "Manufacturer", value: "Wizards of the Coast" }, { label: "Set", value: "Base Set" }],
+          movies: [{ label: "Year", value: "1977" }, { label: "Manufacturer", value: "Lucasfilm" }, { label: "Edition", value: "Archive sample" }],
+          music: [{ label: "Year", value: "1967" }, { label: "Manufacturer", value: "Capitol Records" }, { label: "Edition", value: "First pressing" }],
+          autographs: [{ label: "Year", value: "1989" }, { label: "Manufacturer", value: "Tradebilia Archive" }, { label: "Edition", value: "Authenticated sample" }],
+          disney_pins: [{ label: "Year", value: "2001" }, { label: "Manufacturer", value: "Disney" }, { label: "Edition", value: "Limited sample" }],
+        };
+        const categoryTestListings = collectibleCategories
+          .filter((category) => !qualifyingCategories.has(category))
+          .map((category) => ({
+            source: "High-Value Listing" as const,
+            isCategoryTest: true as const,
+            listingId: null,
+            itemPath: null,
+            title: `Category test — ${category.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")}`,
+            category,
+            itemType: "Category test item",
+            condition: "Near Mint",
+            grade: category === "sports_cards" ? "9" : null,
+            certificationCompany: category === "sports_cards" ? "PSA" : null,
+            customGradingCompany: null,
+            itemFacts: categoryTestFacts[category] ?? [{ label: "Edition", value: "Tradebilia sample" }],
+            estimatedValue: listingValueMinimum,
+            createdAt: new Date().toISOString(),
+            imageUrl: null,
+          }));
+
         const completedTrades = ((tradeRows[0] as unknown as any[]) || [])
           .map((trade) => ({
             source: "Completed Trade" as const,
@@ -3093,7 +3131,7 @@ export const appRouter = router({
             ],
           }));
 
-        return { highValueListings, completedTrades, verifiedMerchants, listingValueMinimum, recentDays };
+        return { highValueListings, categoryTestListings, completedTrades, verifiedMerchants, listingValueMinimum, recentDays };
       }),
     getSocialPromotionItemLink: protectedProcedure
       .input(z.object({ title: z.string().min(1).max(500) }))
