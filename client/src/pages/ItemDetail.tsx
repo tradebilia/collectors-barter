@@ -404,6 +404,12 @@ export default function ItemDetail() {
                 </div>
                 <h1 className="title-lining-nums mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
                 <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
+                  {listing.certificationCompany && (
+                    <div>
+                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grading Company</p>
+                      <p className="mt-2 text-sm font-medium text-gray-500">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
+                    </div>
+                  )}
                   {listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0 ? (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Numerical Grade</p>
@@ -415,12 +421,6 @@ export default function ItemDetail() {
                       <p className="mt-2 text-sm font-medium text-gray-500">{getConditionDisplayName(listing.condition)}</p>
                     </div>
                   ) : null}
-                  {listing.certificationCompany && (
-                    <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grading Company</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
-                    </div>
-                  )}
                   {listing.estimatedValue && (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Estimated Value</p>
