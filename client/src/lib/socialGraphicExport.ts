@@ -323,7 +323,9 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
   if (facts.length === 0) return 0;
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
-  const height = rows * 54 * scale + 20 * scale;
+  // Keep the lower rule the same distance below the final value as the upper
+  // rule is above the first fact label, avoiding excess space below row two.
+  const height = rows * 54 * scale + 1 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);
@@ -381,7 +383,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   detailY += 30 * scale;
   detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
   if (value) {
-    const valueY = Math.max(detailY + 28 * scale, height - 125 * scale);
+    const valueY = Math.max(detailY + 28 * scale, height - 144 * scale);
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(21 * scale)}px Arial, sans-serif`;
     context.fillText(`Trade value  ${value}`, detailX, valueY);
