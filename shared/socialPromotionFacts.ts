@@ -1,3 +1,5 @@
+import { formatPublicBooleanValue } from "./publicBooleanValues";
+
 export type SocialPromotionFact = { label: string; value: string };
 
 type PromotionField = {
@@ -220,8 +222,9 @@ function toDetailRecord(itemDetails: unknown): Record<string, unknown> {
 function normalizedValue(value: unknown): string | null {
   if (typeof value !== "string" && typeof value !== "number") return null;
   const normalized = String(value).trim();
-  if (!normalized || ["ungraded", "raw", "n/a", "none", "null", "undefined"].includes(normalized.toLowerCase())) return null;
-  return normalized.slice(0, 80);
+  const lowerCaseValue = normalized.toLowerCase();
+  if (!normalized || ["ungraded", "raw", "n/a", "none", "null", "undefined"].includes(lowerCaseValue)) return null;
+  return formatPublicBooleanValue(normalized).slice(0, 80);
 }
 
 function validGrade(value: unknown): string | null {

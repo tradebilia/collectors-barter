@@ -125,6 +125,30 @@ describe("item-type-specific high-value social facts", () => {
     ]);
   });
 
+  it("title-cases every public yes/no fact value without changing ordinary text", () => {
+    expect(getSocialPromotionFacts({
+      category: "comics",
+      itemType: "original_art",
+      itemDetails: {
+        artistName: "Todd McFarlane",
+        artType: "Cover Art",
+        signedByArtist: "yes",
+        coaIncluded: "TRUE",
+      },
+    })).toEqual([
+      { label: "Artist Name", value: "Todd McFarlane" },
+      { label: "Art Type", value: "Cover Art" },
+      { label: "Signed By Artist", value: "Yes" },
+      { label: "COA Included", value: "Yes" },
+    ]);
+
+    expect(getSocialPromotionFacts({
+      category: "pokemon",
+      itemType: "unopened_product",
+      itemDetails: { releaseYear: "1999", setName: "Base Set", productType: "Booster Box", factorySealed: "no" },
+    }).at(-1)).toEqual({ label: "Factory Sealed", value: "No" });
+  });
+
   it("uses the approved grading-specific set only for an explicitly graded item", () => {
     expect(getSocialPromotionFacts({
       category: "sports_cards",
@@ -163,7 +187,7 @@ describe("item-type-specific high-value social facts", () => {
       { label: "Year", value: "1999" },
       { label: "Set Name", value: "Base Set" },
       { label: "Product Type", value: "Booster Box" },
-      { label: "Factory Sealed", value: "yes" },
+      { label: "Factory Sealed", value: "Yes" },
     ]);
   });
 });

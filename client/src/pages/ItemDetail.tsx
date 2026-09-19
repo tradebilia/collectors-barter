@@ -31,6 +31,7 @@ import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getCategoryHeroTreatment } from "@/lib/categoryHeroTreatment";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { formatPublicBooleanValue } from "@shared/publicBooleanValues";
 
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, use the content portion of the category page gradient
@@ -680,7 +681,7 @@ export default function ItemDetail() {
                       'grade': 'Numerical Grade',
                     };
                     const label = labelOverrides[key] ?? formatFieldName(key);
-                    allFields.push({ label, value: String(value) });
+                    allFields.push({ label, value: formatPublicBooleanValue(String(value)) });
                   }
                 }
               }
@@ -743,7 +744,7 @@ export default function ItemDetail() {
                 </div>
                 <div className="px-6 py-5">
                   <p className="text-base font-medium text-gray-500 capitalize">
-                    {String(listing.itemDetails.shippingAvailable ?? listing.itemDetails.shipping_available).replace(/_/g, ' ')}
+                    {formatPublicBooleanValue(String(listing.itemDetails.shippingAvailable ?? listing.itemDetails.shipping_available).replace(/_/g, ' '))}
                   </p>
                 </div>
               </div>
