@@ -41,6 +41,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("NEW HIGH-VALUE LISTING");
     expect(exporterSource).toContain("drawCompleteFittedTitle");
     expect(exporterSource).toContain("drawCenteredBrand");
+    expect(exporterSource).toContain("/ 2 - 6 * scale");
+    expect(exporterSource).toContain('context.fillStyle = "#ffd45a"');
     expect(exporterSource).toContain('context.textAlign = "center"');
     expect(exporterSource).toContain('context.textBaseline = "middle"');
     expect(exporterSource).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");

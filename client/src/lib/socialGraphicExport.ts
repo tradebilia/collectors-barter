@@ -184,7 +184,9 @@ function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, 
 function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, y: number, scale: number) {
   const brandWidth = 360 * scale;
   const brandHeight = 64 * scale;
-  drawBrand(context, logo, (width - brandWidth) / 2, y, brandWidth, brandHeight);
+  // The supplied transparent mark carries a little more visual mass on its
+  // right side, so this small optical correction keeps the artwork centered.
+  drawBrand(context, logo, (width - brandWidth) / 2 - 6 * scale, y, brandWidth, brandHeight);
 }
 
 function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: string, width: number, y: number, scale: number) {
@@ -204,7 +206,7 @@ function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x
   const width = forcedWidth ?? context.measureText(label).width + 48 * scale;
   const height = 58 * scale;
   drawRoundedRect(context, x, y - height + 7 * scale, width, height, height / 2, "rgba(246,202,122,0.18)", "rgba(246,202,122,0.86)");
-  context.fillStyle = "#ffe0a8";
+  context.fillStyle = "#ffd45a";
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(label, x + width / 2, y - height / 2 + 7 * scale);
