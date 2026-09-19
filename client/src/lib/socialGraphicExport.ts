@@ -323,7 +323,7 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
   if (facts.length === 0) return 0;
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
-  const height = rows * 66 * scale + 24 * scale;
+  const height = rows * 54 * scale + 20 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);
@@ -336,14 +336,14 @@ function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: stri
     const column = index % 2;
     const row = Math.floor(index / 2);
     const cellX = x + column * (width / 2);
-    const cellY = y + 20 * scale + row * 66 * scale;
+    const cellY = y + 17 * scale + row * 54 * scale;
     context.fillStyle = "#b9caea";
     context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
     context.fillText(fact.label.toUpperCase(), cellX, cellY);
     context.fillStyle = "#ffffff";
     context.font = `700 ${Math.round(16 * scale)}px Arial, sans-serif`;
     const trimmedValue = splitLine(context, fact.value, width / 2 - 16 * scale, 1)[0] ?? "";
-    context.fillText(trimmedValue, cellX, cellY + 23 * scale);
+    context.fillText(trimmedValue, cellX, cellY + 21 * scale);
   });
   return height;
 }
@@ -358,10 +358,10 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
 
-  drawCenteredPromotionHeader(context, promotionHeader, width, 88 * scale, scale);
+  drawCenteredPromotionHeader(context, promotionHeader, width, 72 * scale, scale);
 
   const imageX = padding;
-  const imageY = 146 * scale;
+  const imageY = 130 * scale;
   const imageWidth = width * 0.47;
   const imageHeight = height - imageY - 150 * scale;
   drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
@@ -381,7 +381,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   detailY += 30 * scale;
   detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
   if (value) {
-    const valueY = Math.max(detailY + 36 * scale, height - 120 * scale);
+    const valueY = Math.max(detailY + 28 * scale, height - 125 * scale);
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(21 * scale)}px Arial, sans-serif`;
     context.fillText(`Trade value  ${value}`, detailX, valueY);
@@ -392,7 +392,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   context.moveTo(padding, height - 42 * scale);
   context.lineTo(width - padding, height - 42 * scale);
   context.stroke();
-  drawCenteredBrand(context, brandLogo, width, height - 90 * scale, scale);
+  drawCenteredBrand(context, brandLogo, width, height - 110 * scale, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";
