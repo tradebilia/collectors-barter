@@ -1,3 +1,5 @@
+import { formatPublicGradeValue } from "@shared/publicGradeValues";
+
 export const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
 export const tradebiliaCategories = [
@@ -225,11 +227,8 @@ export function formatItemValue(value: string | number | null | undefined, fallb
   return formatWholeDollar(value, 1, fallback);
 }
 
-export function formatGrade(grade: string | null | undefined): string {
-  if (!grade || grade === 'ungraded' || grade === '0') return '';
-  const num = parseFloat(grade);
-  if (isNaN(num)) return grade; // non-numeric grades returned as-is
-  return num % 1 === 0 ? String(num) : parseFloat(num.toFixed(1)).toString();
+export function formatGrade(grade: string | number | null | undefined): string {
+  return formatPublicGradeValue(grade);
 }
 
 export type TradebiliaBenchmarkNote = {

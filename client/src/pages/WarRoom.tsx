@@ -16,7 +16,7 @@ import { VideoChatPanel } from "@/components/VideoChatPanel";
 import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
 import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";
 import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
-import { formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
+import { formatGrade, formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
 import { getTradeProposalRevision, getTradeVideoRoomRevision, isIncomingProposalRevision } from "@/lib/tradeRoomSync";
 import { getLockedShipmentItems } from "@/lib/shippingItems";
@@ -3130,7 +3130,7 @@ export default function WarRoom() {
                           {/* Condition/Grade Badge */}
                           {(item.grade || item.condition) && (
                             <p className="text-gray-300 text-xs mb-1">
-                              {item.grade ? `Grade ${item.grade}` : item.conditionLabel || item.condition}
+                              {item.grade ? `Grade ${formatGrade(item.grade)}` : item.conditionLabel || item.condition}
                             </p>
                           )}
                           {/* Value */}

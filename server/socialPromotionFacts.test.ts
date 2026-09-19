@@ -171,12 +171,12 @@ describe("item-type-specific high-value social facts", () => {
       itemDetails: { isGraded: "yes", comicTitle: "Amazing Fantasy", issueNumber: "15", publisher: "Marvel" },
       condition: "near_mint",
       certificationCompany: "CGC",
-      grade: "9.6",
+      grade: "9.80",
     })).toEqual([
       { label: "Title", value: "Amazing Fantasy" },
       { label: "Issue No.", value: "15" },
       { label: "Grading Company", value: "CGC" },
-      { label: "Grade", value: "9.6" },
+      { label: "Grade", value: "9.8" },
     ]);
 
     expect(getSocialPromotionFacts({

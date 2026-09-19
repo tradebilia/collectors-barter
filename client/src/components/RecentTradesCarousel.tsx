@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, Hash, Package, ShieldC
 import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseParty, type TradeShowcaseTrade } from "@/lib/tradeShowcaseMovements";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { formatItemValue } from "@/lib/tradebilia";
+import { formatGrade, formatItemValue } from "@/lib/tradebilia";
 
 type RecentTrade = TradeShowcaseTrade & {
   id: number;
@@ -23,7 +23,7 @@ function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"] | Recen
 function getGradePresentation(item: TradeShowcaseItem) {
   const numericGrade = Number(item.grade);
   if (!Number.isFinite(numericGrade) || numericGrade <= 0) return null;
-  const formattedGrade = numericGrade.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const formattedGrade = formatGrade(item.grade);
   return { company: getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany), grade: formattedGrade };
 }
 

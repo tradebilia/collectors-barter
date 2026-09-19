@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
-import { formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
+import { formatGrade, formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation, useSearch } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
@@ -406,7 +406,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
               <option value="">— Select an item —</option>
               {selectableItems.map((i: any) => (
                 <option key={i.id} value={i.id}>
-                  {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${i.grade})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''}
+                  {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${formatGrade(i.grade)})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''}
                 </option>
               ))}
             </select>
@@ -438,7 +438,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
             <div className="flex flex-wrap gap-1 mt-1">
               {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="bg-slate-700/80 text-[10px] text-slate-100 border-slate-500/70">{item.category.replace(/_/g, ' ')}</Badge>}
               {getItemManufacturer(item) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{getItemManufacturer(item)}</Badge>}
-              {item.grade && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {item.grade}</Badge>}
+              {item.grade && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {formatGrade(item.grade)}</Badge>}
               {item.certificationCompany && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{item.certificationCompany}</Badge>}
             </div>
             {item.estimatedValue != null && <p className="text-green-400 text-sm font-semibold mt-1">{formatItemValue(item.estimatedValue)}</p>}
@@ -1173,7 +1173,7 @@ function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PWCC / Fanatics Collect</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
     <p className="text-gray-500 text-[10px]">Read-only Parse.bot sold listings. No current average or valuation is calculated; verify exact card, grade, and certification before comparing.</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
-    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${sale.grade}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
+    {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${formatGrade(sale.grade)}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
   </div>;
 }
 

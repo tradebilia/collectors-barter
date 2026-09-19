@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatItemValue, formatWholeDollar } from "./tradebilia";
+import { formatGrade, formatItemValue, formatWholeDollar } from "./tradebilia";
 
 describe("item value formatting", () => {
   it("rounds item values to whole dollars and clamps sub-dollar listings to $1", () => {
@@ -18,6 +18,14 @@ describe("item value formatting", () => {
   it("preserves explicit fallbacks for missing values", () => {
     expect(formatItemValue(null)).toBe("N/A");
     expect(formatItemValue(undefined, "$0")).toBe("$0");
+  });
+
+  it("renders numeric collectible grades with at most one decimal place", () => {
+    expect(formatGrade("9.80")).toBe("9.8");
+    expect(formatGrade("9.85")).toBe("9.9");
+    expect(formatGrade("10.0")).toBe("10");
+    expect(formatGrade("AFA 85")).toBe("AFA 85");
+    expect(formatGrade("ungraded")).toBe("");
   });
 });
 

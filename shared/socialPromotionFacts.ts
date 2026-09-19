@@ -1,4 +1,5 @@
 import { formatPublicBooleanValue } from "./publicBooleanValues";
+import { formatPublicGradeValue } from "./publicGradeValues";
 
 export type SocialPromotionFact = { label: string; value: string };
 
@@ -229,7 +230,8 @@ function normalizedValue(value: unknown): string | null {
 
 function validGrade(value: unknown): string | null {
   const normalized = normalizedValue(value);
-  return normalized && !/^0+(?:\.0+)?$/.test(normalized) ? normalized : null;
+  const formatted = normalized ? formatPublicGradeValue(normalized) : "";
+  return formatted || null;
 }
 
 function getValue(field: PromotionField, source: Record<string, unknown>): string | null {
