@@ -53,9 +53,17 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("ORIGINAL IMAGE · FULLY SHOWN");
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
     expect(exporterSource).not.toContain("const url = splitLine");
-    expect(exporterSource).toContain("height - 42 * scale");
+    expect(exporterSource).toContain("drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 42, 18)");
     expect(exporterSource).toContain("const height = rows * 54 * scale + 1 * scale");
     expect(exporterSource).toContain("const valueY = Math.max(detailY + 28 * scale, height - 144 * scale)");
+  });
+
+  it("always places the complete brand lockup above a divider-separated footer phrase", () => {
+    expect(exporterSource).toContain("function drawBrandFooter");
+    expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
+    expect(exporterSource).toContain("context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase()");
+    expect(exporterSource.match(/drawBrandFooter\(context, draft,/g)).toHaveLength(5);
+    expect(exporterSource).not.toContain("drawCenteredBrand(context, brandLogo");
   });
 
   it("uses the Facebook-style item-swap composition for Instagram completed trades", () => {
@@ -63,7 +71,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const frameHeight = height - frameY - 224 * scale");
     expect(exporterSource).toContain('context.fillText("SWAPPED"');
     expect(exporterSource).toContain('context.fillText("↔"');
-    expect(exporterSource).toContain('getSocialFooterPhrase(draft.id, "Instagram")');
+    expect(exporterSource).toContain('drawBrandFooter(context, draft, "Instagram", brandLogo, width, height, padding, scale, 116, 28)');
     expect(exporterSource).toContain('platform === "Instagram"');
   });
 
@@ -73,8 +81,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('const imageHeight = platform === "Instagram"');
     expect(exporterSource).toContain("height - imageY - titleGap - titleLayout.height");
     expect(exporterSource).toContain("let y = imageY + imageHeight + titleGap");
-    expect(exporterSource).toContain('const footerDividerY = platform === "Instagram" ? height - 58 * scale : height - 42 * scale');
-    expect(exporterSource).toContain('platform === "Instagram" ? height - 126 * scale : height - 112 * scale');
-    expect(exporterSource).toContain('context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 18 * scale)');
+    expect(exporterSource).toContain('platform === "Instagram" ? 58 : 42, 18');
+    expect(exporterSource).toContain('drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale');
   });
 });

@@ -195,6 +195,40 @@ function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage 
   drawBrand(context, logo, (width - brandWidth) / 2 - 6 * scale, y, brandWidth, brandHeight);
 }
 
+/**
+ * Draws the brand and footer as two separate zones. The divider is always
+ * below the full logo lockup, leaving the phrase in its own lower band.
+ */
+function drawBrandFooter(
+  context: CanvasRenderingContext2D,
+  draft: SocialDraft,
+  platform: SocialPlatform,
+  logo: CanvasImage | null,
+  width: number,
+  height: number,
+  padding: number,
+  scale: number,
+  dividerOffset: number,
+  phraseOffset: number,
+) {
+  const brandHeight = 64 * scale;
+  const dividerY = height - dividerOffset * scale;
+  const brandY = dividerY - brandHeight - 16 * scale;
+
+  context.strokeStyle = "rgba(255,255,255,0.18)";
+  context.beginPath();
+  context.moveTo(padding, dividerY);
+  context.lineTo(width - padding, dividerY);
+  context.stroke();
+
+  drawCenteredBrand(context, logo, width, brandY, scale);
+  context.fillStyle = "rgba(255,255,255,0.85)";
+  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - phraseOffset * scale);
+  context.textAlign = "left";
+}
+
 function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: string, width: number, y: number, scale: number) {
   context.font = `800 ${Math.round(35 * scale)}px Arial, sans-serif`;
   const bannerWidth = Math.min(width - 2 * 44 * scale, context.measureText(label).width + 96 * scale);
@@ -239,7 +273,7 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
   context.restore();
 }
 
-function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
+function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
   const scale = width / 1200;
   const padding = 54 * scale;
   const items = draft.promotion?.tradeItems ?? [];
@@ -289,17 +323,7 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
     context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
   }
   context.textAlign = "left";
-  context.strokeStyle = "rgba(255,255,255,0.18)";
-  context.beginPath();
-  context.moveTo(padding, height - 78 * scale);
-  context.lineTo(width - padding, height - 78 * scale);
-  context.stroke();
-  drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
-  context.fillStyle = "rgba(255,255,255,0.85)";
-  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  context.textAlign = "center";
-  context.fillText(getSocialFooterPhrase(draft.id, "Facebook").toUpperCase(), width / 2, height - 18 * scale);
-  context.textAlign = "left";
+  drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 78, 18);
 }
 
 /** Square Instagram trade posts keep the Facebook trade composition, with a taller item area. */
@@ -348,17 +372,7 @@ function drawCompletedTradeInstagram(context: CanvasRenderingContext2D, draft: S
     context.fillText("CASH INCLUDED", width / 2, frameY + frameHeight / 2 + 50 * scale);
   }
   context.textAlign = "left";
-  context.strokeStyle = "rgba(255,255,255,0.18)";
-  context.beginPath();
-  context.moveTo(padding, height - 116 * scale);
-  context.lineTo(width - padding, height - 116 * scale);
-  context.stroke();
-  drawCenteredBrand(context, brandLogo, width, height - 172 * scale, scale);
-  context.fillStyle = "rgba(255,255,255,0.85)";
-  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  context.textAlign = "center";
-  context.fillText(getSocialFooterPhrase(draft.id, "Instagram").toUpperCase(), width / 2, height - 28 * scale);
-  context.textAlign = "left";
+  drawBrandFooter(context, draft, "Instagram", brandLogo, width, height, padding, scale, 116, 28);
 }
 
 function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
@@ -378,13 +392,9 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   if (draft.promotion?.cashIncluded) {
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-    context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 142 * scale);
+    context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 190 * scale);
   }
-  drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
-  context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-  context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 28 * scale);
-  context.textAlign = "left";
+  drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 82, 28);
 }
 
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
@@ -456,17 +466,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
     context.fillText(`Trade value  ${value}`, detailX, valueY);
   }
 
-  context.strokeStyle = "rgba(255,255,255,0.18)";
-  context.beginPath();
-  context.moveTo(padding, height - 42 * scale);
-  context.lineTo(width - padding, height - 42 * scale);
-  context.stroke();
-  drawCenteredBrand(context, brandLogo, width, height - 110 * scale, scale);
-  context.fillStyle = "rgba(255,255,255,0.85)";
-  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
-  context.textAlign = "center";
-  context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 18 * scale);
-  context.textAlign = "left";
+  drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 42, 18);
 
   void platform;
 }
@@ -514,20 +514,7 @@ function drawTallGraphic(context: CanvasRenderingContext2D, draft: SocialDraft, 
     context.fillText(`Trade value  ${value}`, padding, y);
   }
 
-  const footerDividerY = platform === "Instagram" ? height - 58 * scale : height - 42 * scale;
-  context.strokeStyle = "rgba(255,255,255,0.18)";
-  context.beginPath();
-  context.moveTo(padding, footerDividerY);
-  context.lineTo(width - padding, footerDividerY);
-  context.stroke();
-  drawCenteredBrand(context, brandLogo, width, platform === "Instagram" ? height - 126 * scale : height - 112 * scale, scale);
-  if (platform === "Instagram") {
-    context.fillStyle = "rgba(255,255,255,0.85)";
-    context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
-    context.textAlign = "center";
-    context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 18 * scale);
-  }
-  context.textAlign = "left";
+  drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, platform === "Instagram" ? 58 : 42, 18);
 }
 
 export function getSocialGraphicExportFileName(draft: SocialDraft, platform: SocialPlatform) {
@@ -556,7 +543,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   ]);
   drawBackground(context, width, height, heroBackground);
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
-    drawCompletedTradeLandscape(context, draft, width, height, tradeItemImages, brandLogo);
+    drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, brandLogo);
   } else if (draft.source === "Completed Trade" && platform === "Instagram") {
     drawCompletedTradeInstagram(context, draft, width, height, tradeItemImages, brandLogo);
   } else if (draft.source === "Completed Trade") {
