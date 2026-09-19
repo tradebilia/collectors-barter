@@ -195,6 +195,40 @@ function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage 
   drawBrand(context, logo, (width - brandWidth) / 2 - 6 * scale, y, brandWidth, brandHeight);
 }
 
+/** Adds the faint electric-blue rules framing the completed-trade logo. */
+function drawTradeBrandAccentLines(context: CanvasRenderingContext2D, width: number, brandY: number, scale: number) {
+  const brandWidth = 360 * scale;
+  const brandX = (width - brandWidth) / 2 - 6 * scale;
+  const lineY = brandY + 32 * scale;
+  const gap = 16 * scale;
+  const outerInset = 30 * scale;
+
+  context.save();
+  context.lineWidth = Math.max(1, 1.25 * scale);
+  context.shadowColor = "rgba(49, 185, 255, 0.54)";
+  context.shadowBlur = 5 * scale;
+  const drawLine = (startX: number, endX: number, reverse: boolean) => {
+    const line = context.createLinearGradient(startX, lineY, endX, lineY);
+    if (reverse) {
+      line.addColorStop(0, "rgba(70, 197, 255, 0)");
+      line.addColorStop(0.68, "rgba(70, 197, 255, 0.72)");
+      line.addColorStop(1, "rgba(161, 229, 255, 0.94)");
+    } else {
+      line.addColorStop(0, "rgba(161, 229, 255, 0.94)");
+      line.addColorStop(0.32, "rgba(70, 197, 255, 0.72)");
+      line.addColorStop(1, "rgba(70, 197, 255, 0)");
+    }
+    context.strokeStyle = line;
+    context.beginPath();
+    context.moveTo(startX, lineY);
+    context.lineTo(endX, lineY);
+    context.stroke();
+  };
+  drawLine(outerInset, brandX - gap, true);
+  drawLine(brandX + brandWidth + gap, width - outerInset, false);
+  context.restore();
+}
+
 /**
  * Draws the brand and footer as two separate zones. The divider is always
  * below the full logo lockup, leaving the phrase in its own lower band.
@@ -221,6 +255,9 @@ function drawBrandFooter(
   context.lineTo(width - padding, dividerY);
   context.stroke();
 
+  if (draft.source === "Completed Trade") {
+    drawTradeBrandAccentLines(context, width, brandY, scale);
+  }
   drawCenteredBrand(context, logo, width, brandY, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
@@ -233,6 +270,34 @@ function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: s
   context.font = `800 ${Math.round(35 * scale)}px Arial, sans-serif`;
   const bannerWidth = Math.min(width - 2 * 44 * scale, context.measureText(label).width + 96 * scale);
   drawPromotionHeader(context, label, (width - bannerWidth) / 2, y, scale, bannerWidth);
+}
+
+function getTrackedTextWidth(context: CanvasRenderingContext2D, text: string, tracking: number) {
+  if (text.length <= 1) return context.measureText(text).width;
+  return Array.from(text).reduce((total, character) => total + context.measureText(character).width, 0) + tracking * (text.length - 1);
+}
+
+function drawTrackedText(context: CanvasRenderingContext2D, text: string, centerX: number, y: number, tracking: number) {
+  let cursorX = centerX - getTrackedTextWidth(context, text, tracking) / 2;
+  Array.from(text).forEach((character) => {
+    context.fillText(character, cursorX, y);
+    cursorX += context.measureText(character).width + tracking;
+  });
+}
+
+function drawTradeAlertHeader(context: CanvasRenderingContext2D, width: number, y: number, scale: number) {
+  const label = "TRADE ALERT";
+  context.font = `900 ${Math.round(32 * scale)}px Impact, "Arial Narrow", Arial, sans-serif`;
+  const tracking = 1.3 * scale;
+  const bannerWidth = Math.min(width - 2 * 44 * scale, getTrackedTextWidth(context, label, tracking) + 92 * scale);
+  const bannerX = (width - bannerWidth) / 2;
+  const height = 58 * scale;
+  drawRoundedRect(context, bannerX, y - height + 7 * scale, bannerWidth, height, height / 2, "rgba(10, 26, 52, 0.42)", "rgba(246,202,122,0.92)");
+  context.fillStyle = "#ffda64";
+  context.textAlign = "left";
+  context.textBaseline = "middle";
+  drawTrackedText(context, label, width / 2, y - height / 2 + 7 * scale, tracking);
+  context.textBaseline = "alphabetic";
 }
 
 function getPromotionHeader(draft: SocialDraft, category: string | null) {
@@ -362,8 +427,8 @@ function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, 
   context.fillStyle = "#ffd45a";
   context.shadowColor = "rgba(255, 188, 54, 0.40)";
   context.shadowBlur = 12 * scale;
-  context.font = `800 ${Math.round(25 * scale)}px Arial, sans-serif`;
-  context.fillText("TRADED", centerX, centerY - 20 * scale);
+  context.font = `900 ${Math.round(27 * scale)}px Impact, "Arial Narrow", Arial, sans-serif`;
+  drawTrackedText(context, "TRADED", centerX, centerY - 20 * scale, 1.1 * scale);
   context.shadowBlur = 0;
 
   const arrowWidth = 72 * scale;
@@ -373,9 +438,19 @@ function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, 
     const start = centerX - arrowWidth / 2;
     const end = centerX + arrowWidth / 2;
     const gradient = context.createLinearGradient(start, y, end, y);
-    gradient.addColorStop(0, "#ffb92e");
-    gradient.addColorStop(0.52, "#fff0a0");
-    gradient.addColorStop(1, "#ffd45a");
+    if (pointsRight) {
+      // The trailing end fades into the background while the active arrowhead
+      // remains bright, matching the supplied completed-trade reference.
+      gradient.addColorStop(0, "rgba(255, 185, 46, 0)");
+      gradient.addColorStop(0.48, "rgba(255, 191, 46, 0.48)");
+      gradient.addColorStop(0.78, "#fff0a0");
+      gradient.addColorStop(1, "#ffd45a");
+    } else {
+      gradient.addColorStop(0, "#ffd45a");
+      gradient.addColorStop(0.22, "#fff0a0");
+      gradient.addColorStop(0.52, "rgba(255, 191, 46, 0.48)");
+      gradient.addColorStop(1, "rgba(255, 185, 46, 0)");
+    }
     context.fillStyle = gradient;
     context.beginPath();
     if (pointsRight) {
@@ -436,7 +511,7 @@ function drawCompletedTradeSideBySide(
   const sideGap = 18 * scale;
   const frameWidth = (width - padding * 2 - centerWidth - sideGap * 2) / 2;
   const { offered, requested } = getTradeSides(draft);
-  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  drawTradeAlertHeader(context, width, 104 * scale, scale);
   drawTradeSide(context, offered, images, padding, frameY, frameWidth, frameHeight, scale);
   drawTradeSide(context, requested, images, width - padding - frameWidth, frameY, frameWidth, frameHeight, scale);
   drawTradeDirection(context, width / 2, frameY + frameHeight / 2, scale, Boolean(draft.promotion?.cashIncluded));
@@ -471,7 +546,7 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
   const tileGap = 18 * scale;
   const tileHeight = (frameHeight - tileGap) / 2;
-  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  drawTradeAlertHeader(context, width, 104 * scale, scale);
   Array.from({ length: itemCount }, (_, index) => {
     const item = items[index];
     const tileX = padding + (index % 2) * (frameWidth + gap);

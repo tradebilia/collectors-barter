@@ -71,10 +71,23 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const frameHeight = height - frameY - 224 * scale");
     expect(exporterSource).toContain("drawCompletedTradeSideBySide");
     expect(exporterSource).toContain("function drawTradeDirection");
-    expect(exporterSource).toContain('context.fillText("TRADED"');
+    expect(exporterSource).toContain("function drawTradeAlertHeader");
+    expect(exporterSource).toContain('Impact, "Arial Narrow", Arial, sans-serif');
+    expect(exporterSource).toContain("function drawTrackedText");
+    expect(exporterSource).toContain("drawTradeAlertHeader(context, width, 104 * scale, scale)");
+    expect(exporterSource).toContain('drawTrackedText(context, "TRADED"');
+    expect(exporterSource).toContain('gradient.addColorStop(0, "rgba(255, 185, 46, 0)")');
+    expect(exporterSource).toContain('gradient.addColorStop(1, "rgba(255, 185, 46, 0)")');
     expect(exporterSource).toContain("drawArrow(centerY + 5 * scale, true)");
     expect(exporterSource).toContain('drawCompletedTradeSideBySide(context, draft, "Instagram"');
     expect(exporterSource).toContain('platform === "Instagram"');
+  });
+
+  it("frames only completed-trade brand marks with fading blue side rules", () => {
+    expect(exporterSource).toContain("function drawTradeBrandAccentLines");
+    expect(exporterSource).toContain('if (draft.source === "Completed Trade")');
+    expect(exporterSource).toContain('rgba(70, 197, 255, 0.72)');
+    expect(exporterSource).toContain("drawTradeBrandAccentLines(context, width, brandY, scale)");
   });
 
   it("supports fuller item captions while retaining adaptive multi-item trade grids", () => {
