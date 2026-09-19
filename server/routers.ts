@@ -2936,7 +2936,7 @@ export const appRouter = router({
         const historicalOpportunityLimit = 500;
         const recentBoundary = new Date(Date.now() - recentDays * 24 * 60 * 60 * 1000);
 
-        const [listingRows, tradeRows, merchantRows] = await Promise.all([
+        const [listingRows, tradeRows, merchantRows, categorySampleRows] = await Promise.all([
           db.execute(sql`SELECT
               l.id AS listingId,
               l.title,
@@ -2997,6 +2997,25 @@ export const appRouter = router({
               AND ${isPublicMemberEligible(sql`u.id`)}
             ORDER BY u.createdAt DESC
             LIMIT ${limit * 3}`).catch(() => [[] as any[]]),
+          // Category tests should use a real existing item when the category has
+          // no qualifying high-value listing. Image preference is resolved in
+          // memory so this remains compatible with the production SQL dialect.
+          db.execute(sql`SELECT
+              l.id AS listingId,
+              l.title,
+              l.category,
+              l.itemType,
+              l.condition,
+              l.grade,
+              l.certificationCompany,
+              l.itemDetails,
+              l.estimatedValue,
+              l.createdAt,
+              (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl
+            FROM listings l
+            WHERE l.status IN ('active', 'traded')
+            ORDER BY l.createdAt DESC
+            LIMIT ${historicalOpportunityLimit}`),
         ]);
 
         const highValueListings = ((listingRows[0] as unknown as any[]) || [])
@@ -3046,25 +3065,66 @@ export const appRouter = router({
           autographs: [{ label: "Year", value: "1989" }, { label: "Manufacturer", value: "Tradebilia Archive" }, { label: "Edition", value: "Authenticated sample" }],
           disney_pins: [{ label: "Year", value: "2001" }, { label: "Manufacturer", value: "Disney" }, { label: "Edition", value: "Limited sample" }],
         };
+        const categorySamplesByCategory = new Map<string, any>();
+        ((categorySampleRows[0] as unknown as any[]) || []).forEach((listing) => {
+          const category = String(listing.category ?? "").trim().toLowerCase();
+          if (!(collectibleCategories as readonly string[]).includes(category)) return;
+          const existingSample = categorySamplesByCategory.get(category);
+          if (!existingSample || (!existingSample.imageUrl && listing.imageUrl)) categorySamplesByCategory.set(category, listing);
+        });
         const categoryTestListings = collectibleCategories
           .filter((category) => !qualifyingCategories.has(category))
-          .map((category) => ({
-            source: "High-Value Listing" as const,
-            isCategoryTest: true as const,
-            listingId: null,
-            itemPath: null,
-            title: `Category test — ${category.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")}`,
-            category,
-            itemType: "Category test item",
-            condition: "Near Mint",
-            grade: category === "sports_cards" ? "9" : null,
-            certificationCompany: category === "sports_cards" ? "PSA" : null,
-            customGradingCompany: null,
-            itemFacts: categoryTestFacts[category] ?? [{ label: "Edition", value: "Tradebilia sample" }],
-            estimatedValue: listingValueMinimum,
-            createdAt: new Date().toISOString(),
-            imageUrl: null,
-          }));
+          .map((category) => {
+            const sample = categorySamplesByCategory.get(category);
+            if (sample) {
+              const customGradingCompany = getCustomGradingCompany(sample.itemDetails);
+              return {
+                source: "High-Value Listing" as const,
+                isCategoryTest: true as const,
+                usesActualListing: true as const,
+                listingId: Number(sample.listingId),
+                itemPath: `/listings/${Number(sample.listingId)}`,
+                title: sample.title,
+                category,
+                itemType: sample.itemType ?? "Category test item",
+                condition: sample.condition ?? null,
+                grade: sample.grade ?? null,
+                certificationCompany: sample.certificationCompany ?? null,
+                customGradingCompany,
+                itemFacts: getSocialPromotionFacts({
+                  category,
+                  itemType: sample.itemType,
+                  itemDetails: sample.itemDetails,
+                  condition: sample.condition,
+                  grade: sample.grade,
+                  certificationCompany: sample.certificationCompany,
+                  customGradingCompany,
+                }),
+                estimatedValue: Number(sample.estimatedValue ?? 0),
+                createdAt: sample.createdAt,
+                imageUrl: sample.imageUrl ?? null,
+              };
+            }
+
+            return {
+              source: "High-Value Listing" as const,
+              isCategoryTest: true as const,
+              usesActualListing: false as const,
+              listingId: null,
+              itemPath: null,
+              title: `Category test — ${category.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ")}`,
+              category,
+              itemType: "Category test item",
+              condition: "Near Mint",
+              grade: category === "sports_cards" ? "9" : null,
+              certificationCompany: category === "sports_cards" ? "PSA" : null,
+              customGradingCompany: null,
+              itemFacts: categoryTestFacts[category] ?? [{ label: "Edition", value: "Tradebilia sample" }],
+              estimatedValue: listingValueMinimum,
+              createdAt: new Date().toISOString(),
+              imageUrl: null,
+            };
+          });
 
         const completedTrades = ((tradeRows[0] as unknown as any[]) || [])
           .map((trade) => {

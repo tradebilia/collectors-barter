@@ -46,6 +46,17 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("!qualifyingCategories.has(category)");
   });
 
+  it("uses a real image-bearing listing from each missing category before falling back to a blank test template", () => {
+    expect(promotionSection).toContain("categorySampleRows");
+    expect(promotionSection).toContain("const categorySamplesByCategory = new Map");
+    expect(promotionSection).toContain("usesActualListing: true as const");
+    expect(promotionSection).toContain("usesActualListing: false as const");
+    expect(promotionSection).toContain("Image preference is resolved in");
+    expect(promotionSection).toContain("!existingSample || (!existingSample.imageUrl && listing.imageUrl)");
+    expect(promotionSection).toContain("itemPath: `/listings/${Number(sample.listingId)}`");
+    expect(promotionSection).toContain("itemFacts: getSocialPromotionFacts({");
+  });
+
   it("passes category, item type, and grade context into the shared item-type field rules", () => {
     expect(returnedOpportunityMappings).toContain("category: listing.category");
     expect(returnedOpportunityMappings).toContain("itemType: listing.itemType");

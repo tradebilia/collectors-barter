@@ -339,8 +339,10 @@ export function SocialContentManagerTab() {
     };
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "High-Value Listing",
-      sourceSummary: `New public listing · ${formatOpportunityDate(listing.createdAt)}`,
-      title: `New high-value listing: ${listing.title}`,
+      sourceSummary: listing.isCategoryTest
+        ? `Category social layout test · ${formatOpportunityDate(listing.createdAt)}`
+        : `New public listing · ${formatOpportunityDate(listing.createdAt)}`,
+      title: listing.isCategoryTest ? `Category test listing: ${listing.title}` : `New high-value listing: ${listing.title}`,
       copy: buildListingSocialCopy({ ...promotion, destinationUrl }),
       mediaUrl: listing.imageUrl,
       destinationUrl,
@@ -348,7 +350,7 @@ export function SocialContentManagerTab() {
     });
     setDrafts((current) => [draft, ...current]);
     setSelectedId(draft.id);
-    toast.success("High-value listing draft added to the Content Library");
+    toast.success(listing.isCategoryTest ? "Category test draft added to the Content Library" : "High-value listing draft added to the Content Library");
   }
 
   function createCompletedTradeDraft(trade: any) {
@@ -582,10 +584,10 @@ export function SocialContentManagerTab() {
           <OpportunityList
             icon={<Sparkles className="h-4 w-4" />}
             title="Category test items"
-            description="One clearly labeled admin-only sample for each category without a qualifying $1,000+ listing."
+            description="One clearly labeled admin-only real listing for each category without a qualifying $1,000+ listing; a blank fallback appears only when no listing exists."
             emptyCopy={autoListEnabled ? "Every category currently has a qualifying listing." : "Auto-list is off. Turn it on above to surface category tests."}
             opportunities={categoryTestListings}
-            renderMeta={(listing: any) => `Layout test · ${formatOpportunityDate(listing.createdAt)}`}
+            renderMeta={(listing: any) => `${listing.usesActualListing ? "Existing item" : "Fallback layout test"} · ${formatOpportunityDate(listing.createdAt)}`}
             onCreateDraft={createListingPromotionDraft}
           />
           <OpportunityList
