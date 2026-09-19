@@ -30,9 +30,10 @@ describe("admin promotion opportunities contract", () => {
   });
 
   it("returns concise public item facts and a canonical existing listing path", () => {
-    expect(promotionSection).toContain("getPromotionItemFacts");
+    expect(routerSource).toContain('import { getSocialPromotionFacts } from "@shared/socialPromotionFacts"');
     expect(returnedOpportunityMappings).toContain("itemPath: `/listings/${Number(listing.listingId)}`");
-    expect(returnedOpportunityMappings).toContain("itemFacts: getPromotionItemFacts(listing.itemDetails, listing.category)");
+    expect(returnedOpportunityMappings).toContain("itemFacts: getSocialPromotionFacts({");
+    expect(returnedOpportunityMappings).toContain("itemType: listing.itemType");
     expect(returnedOpportunityMappings).toContain("customGradingCompany");
   });
 
@@ -45,11 +46,12 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("!qualifyingCategories.has(category)");
   });
 
-  it("uses category-specific facts for sports cards and comics", () => {
-    expect(routerSource).toContain('normalizedCategory.includes("sport")');
-    expect(routerSource).toContain('normalizedCategory.includes("comic")');
-    expect(routerSource).toContain('label: "Issue No."');
-    expect(routerSource).toContain('!isSportsCard || !["Set", "Card No."].includes(fact.label)');
+  it("passes category, item type, and grade context into the shared item-type field rules", () => {
+    expect(returnedOpportunityMappings).toContain("category: listing.category");
+    expect(returnedOpportunityMappings).toContain("itemType: listing.itemType");
+    expect(returnedOpportunityMappings).toContain("certificationCompany: listing.certificationCompany");
+    expect(returnedOpportunityMappings).toContain("customGradingCompany,");
+    expect(returnedOpportunityMappings).toContain("itemType: trade.requestedListingItemType");
   });
 
   it("keeps historical qualifying listings and completed trades available for testing", () => {

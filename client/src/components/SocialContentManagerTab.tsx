@@ -55,6 +55,7 @@ import {
   type SocialDraft,
   type SocialDraftSource,
   type SocialPlatform,
+  type SocialPromotionFact,
 } from "@/lib/socialContentManager";
 import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
 
@@ -178,25 +179,17 @@ function platformIcon(platform: SocialPlatform) {
 }
 
 function buildPromotionFacts(opportunity: any) {
-  const gradingCompany = opportunity.customGradingCompany || opportunity.certificationCompany;
-  const facts = Array.isArray(opportunity.itemFacts) ? opportunity.itemFacts : [];
-  const category = String(opportunity.category ?? "").toLowerCase();
-  const isSportsCard = category.includes("sport") && category.includes("card");
-  const isGradedComic = category.includes("comic") && Boolean(opportunity.grade || gradingCompany);
-  const coreFacts = [
-    gradingCompany ? { label: "Grading company", value: String(gradingCompany) } : null,
-    opportunity.grade ? { label: "Grade", value: String(opportunity.grade) } : null,
-    opportunity.condition && !isSportsCard && !isGradedComic ? { label: "Condition", value: String(opportunity.condition).replace(/_/g, " ") } : null,
-  ].filter((fact): fact is { label: string; value: string } => Boolean(fact));
-  const ordered = [...facts, ...coreFacts]
-    .filter((fact) => !(isSportsCard && ["Set", "Card No.", "Condition"].includes(fact.label)))
+  // The server applies the matching Add Inventory item-type rule, including
+  // grading only when that specific item type is explicitly graded.
+  const facts: unknown[] = Array.isArray(opportunity.itemFacts) ? opportunity.itemFacts : [];
+  return facts
+    .filter((fact): fact is SocialPromotionFact => {
+      if (!fact || typeof fact !== "object") return false;
+      const candidate = fact as { label?: unknown; value?: unknown };
+      return typeof candidate.label === "string" && typeof candidate.value === "string" && Boolean(candidate.value.trim());
+    })
     .filter((fact, index, allFacts) => allFacts.findIndex((other) => other.label === fact.label) === index)
     .slice(0, 4);
-  if (!isSportsCard) return ordered;
-  const byLabel = new Map(ordered.map((fact) => [fact.label, fact]));
-  return ["Year", "Manufacturer", "Grading company", "Grade"]
-    .map((label) => byLabel.get(label))
-    .filter((fact): fact is { label: string; value: string } => Boolean(fact));
 }
 
 function isNewListing(createdAt: string | number | Date | null | undefined) {

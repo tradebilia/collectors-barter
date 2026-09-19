@@ -3,6 +3,7 @@ import { verifyPayPalTransaction } from "./paypal";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
+import { getSocialPromotionFacts } from "@shared/socialPromotionFacts";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable, ensureSupportTicketsTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
@@ -227,47 +228,6 @@ async function getSocialGraphicImageDataUrl(sourceUrl: string) {
     throw new TRPCError({ code: "PAYLOAD_TOO_LARGE", message: "The selected graphic image must be a JPG, PNG, WEBP, GIF, or SVG no larger than 6 MB." });
   }
   return `data:${contentType};base64,${bytes.toString("base64")}`;
-}
-
-const SOCIAL_PROMOTION_FACT_FIELDS = [
-  { label: "Year", keys: ["year", "releaseYear", "publicationYear", "manufactureYear"] },
-  { label: "Manufacturer", keys: ["manufacturer", "manufacturerName"] },
-  { label: "Brand", keys: ["brand", "brandName"] },
-  { label: "Set", keys: ["set", "setName", "series"] },
-  { label: "Edition", keys: ["edition", "printRun"] },
-  { label: "Card No.", keys: ["cardNumber", "card_no", "cardNo"] },
-  { label: "Catalog No.", keys: ["catalogNumber", "catalog_no", "catalogNo"] },
-] as const;
-
-const SOCIAL_COMIC_FACT_FIELDS = [
-  { label: "Title", keys: ["title", "comicTitle", "series", "seriesTitle"] },
-  { label: "Issue No.", keys: ["issueNumber", "issueNo", "issue", "number"] },
-] as const;
-
-/** Returns only concise, public-safe collectible facts for social planning. */
-function getPromotionItemFacts(itemDetails: unknown, category?: string | null): Array<{ label: string; value: string }> {
-  if (!itemDetails) return [];
-  let details: Record<string, unknown> | null = null;
-  if (typeof itemDetails === "string") {
-    try {
-      const parsed = JSON.parse(itemDetails) as unknown;
-      details = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
-    } catch {
-      return [];
-    }
-  } else if (typeof itemDetails === "object" && !Array.isArray(itemDetails)) {
-    details = itemDetails as Record<string, unknown>;
-  }
-  if (!details) return [];
-
-  const normalizedCategory = String(category ?? "").toLowerCase();
-  const isSportsCard = normalizedCategory.includes("sport") && normalizedCategory.includes("card");
-  const fields = normalizedCategory.includes("comic") ? SOCIAL_COMIC_FACT_FIELDS : SOCIAL_PROMOTION_FACT_FIELDS;
-  return fields.flatMap(({ label, keys }) => {
-    const candidate = keys.map((key) => details?.[key]).find((value) => (typeof value === "string" || typeof value === "number") && String(value).trim());
-    const value = typeof candidate === "string" || typeof candidate === "number" ? String(candidate).trim().slice(0, 80) : "";
-    return value ? [{ label, value }] : [];
-  }).filter((fact) => !isSportsCard || !["Set", "Card No."].includes(fact.label));
 }
 
 const externalPaymentMethodsInputSchema = z.object({
@@ -3040,22 +3000,33 @@ export const appRouter = router({
         ]);
 
         const highValueListings = ((listingRows[0] as unknown as any[]) || [])
-          .map((listing) => ({
-            source: "High-Value Listing" as const,
-            listingId: Number(listing.listingId),
-            itemPath: `/listings/${Number(listing.listingId)}`,
-            title: listing.title,
-            category: listing.category,
-            itemType: listing.itemType ?? null,
-            condition: listing.condition,
-            grade: listing.grade ?? null,
-            certificationCompany: listing.certificationCompany ?? null,
-            customGradingCompany: getCustomGradingCompany(listing.itemDetails),
-            itemFacts: getPromotionItemFacts(listing.itemDetails, listing.category),
-            estimatedValue: Number(listing.estimatedValue ?? 0),
-            createdAt: listing.createdAt,
-            imageUrl: listing.imageUrl ?? null,
-          }));
+          .map((listing) => {
+            const customGradingCompany = getCustomGradingCompany(listing.itemDetails);
+            return {
+              source: "High-Value Listing" as const,
+              listingId: Number(listing.listingId),
+              itemPath: `/listings/${Number(listing.listingId)}`,
+              title: listing.title,
+              category: listing.category,
+              itemType: listing.itemType ?? null,
+              condition: listing.condition,
+              grade: listing.grade ?? null,
+              certificationCompany: listing.certificationCompany ?? null,
+              customGradingCompany,
+              itemFacts: getSocialPromotionFacts({
+                category: listing.category,
+                itemType: listing.itemType,
+                itemDetails: listing.itemDetails,
+                condition: listing.condition,
+                grade: listing.grade,
+                certificationCompany: listing.certificationCompany,
+                customGradingCompany,
+              }),
+              estimatedValue: Number(listing.estimatedValue ?? 0),
+              createdAt: listing.createdAt,
+              imageUrl: listing.imageUrl ?? null,
+            };
+          });
 
         const qualifyingCategories = new Set(
           highValueListings
@@ -3096,24 +3067,35 @@ export const appRouter = router({
           }));
 
         const completedTrades = ((tradeRows[0] as unknown as any[]) || [])
-          .map((trade) => ({
-            source: "Completed Trade" as const,
-            listingId: trade.requestedListingId ? Number(trade.requestedListingId) : null,
-            itemPath: trade.requestedListingId ? `/listings/${Number(trade.requestedListingId)}` : null,
-            title: trade.requestedListingTitle || "Collector exchange",
-            category: trade.requestedListingCategory ?? null,
-            itemType: trade.requestedListingItemType ?? null,
-            condition: trade.requestedListingCondition ?? null,
-            grade: trade.requestedListingGrade ?? null,
-            certificationCompany: trade.requestedListingCertificationCompany ?? null,
-            customGradingCompany: getCustomGradingCompany(trade.requestedListingItemDetails),
-            itemFacts: getPromotionItemFacts(trade.requestedListingItemDetails, trade.requestedListingCategory),
-            itemCount: Number(trade.itemCount ?? 0),
-            completedAt: trade.completedAt,
-            imageUrl: trade.imageUrl ?? null,
-            tradeItems: (() => { try { const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson; return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => ({ title: String(item.title), imageUrl: item.imageUrl ?? null, estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null, direction: item.direction === "offered" ? "offered" : "requested" })) : []; } catch { return []; } })(),
-            cashIncluded: Boolean(Number(trade.cashIncluded ?? 0)),
-          }));
+          .map((trade) => {
+            const customGradingCompany = getCustomGradingCompany(trade.requestedListingItemDetails);
+            return {
+              source: "Completed Trade" as const,
+              listingId: trade.requestedListingId ? Number(trade.requestedListingId) : null,
+              itemPath: trade.requestedListingId ? `/listings/${Number(trade.requestedListingId)}` : null,
+              title: trade.requestedListingTitle || "Collector exchange",
+              category: trade.requestedListingCategory ?? null,
+              itemType: trade.requestedListingItemType ?? null,
+              condition: trade.requestedListingCondition ?? null,
+              grade: trade.requestedListingGrade ?? null,
+              certificationCompany: trade.requestedListingCertificationCompany ?? null,
+              customGradingCompany,
+              itemFacts: getSocialPromotionFacts({
+                category: trade.requestedListingCategory,
+                itemType: trade.requestedListingItemType,
+                itemDetails: trade.requestedListingItemDetails,
+                condition: trade.requestedListingCondition,
+                grade: trade.requestedListingGrade,
+                certificationCompany: trade.requestedListingCertificationCompany,
+                customGradingCompany,
+              }),
+              itemCount: Number(trade.itemCount ?? 0),
+              completedAt: trade.completedAt,
+              imageUrl: trade.imageUrl ?? null,
+              tradeItems: (() => { try { const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson; return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => ({ title: String(item.title), imageUrl: item.imageUrl ?? null, estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null, direction: item.direction === "offered" ? "offered" : "requested" })) : []; } catch { return []; } })(),
+              cashIncluded: Boolean(Number(trade.cashIncluded ?? 0)),
+            };
+          });
 
         const verifiedMerchants = ((merchantRows[0] as unknown as any[]) || [])
           .filter((merchant) => new Date(merchant.merchantVerifiedAt).getTime() >= recentBoundary.getTime())
