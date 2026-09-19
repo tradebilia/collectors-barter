@@ -273,127 +273,219 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
   context.restore();
 }
 
-function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
+type TradeGraphicEntry = {
+  item: { title: string; estimatedValue?: number | null };
+  index: number;
+};
+
+function drawTradeItemCaption(context: CanvasRenderingContext2D, title: string, centerX: number, y: number, width: number, scale: number, maxLines: number, fontSize: number) {
+  context.save();
+  context.fillStyle = "#ffffff";
+  context.shadowColor = "rgba(2, 10, 30, 0.88)";
+  context.shadowBlur = 4 * scale;
+  context.font = `700 ${Math.round(fontSize * scale)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  const lineHeight = fontSize * 1.16 * scale;
+  drawWrappedText(context, title, centerX, y, width, lineHeight, maxLines);
+  context.restore();
+}
+
+function drawTradeMediaCell(
+  context: CanvasRenderingContext2D,
+  entry: TradeGraphicEntry,
+  image: CanvasImage | null,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  scale: number,
+  maxCaptionLines: number,
+  captionFontSize: number,
+) {
+  const captionLineHeight = captionFontSize * 1.16 * scale;
+  const captionReserve = 14 * scale + maxCaptionLines * captionLineHeight + 6 * scale;
+  const imageHeight = Math.max(38 * scale, height - captionReserve);
+  if (image) {
+    drawContainedImage(context, image, x, y, width, imageHeight);
+  } else {
+    context.fillStyle = "rgba(255,255,255,0.10)";
+    context.fillRect(x, y, width, imageHeight);
+  }
+  drawTradeItemCaption(context, entry.item.title, x + width / 2, y + imageHeight + 13 * scale, width - 8 * scale, scale, maxCaptionLines, captionFontSize);
+}
+
+function drawTradeSide(context: CanvasRenderingContext2D, entries: TradeGraphicEntry[], images: Array<CanvasImage | null>, x: number, y: number, width: number, height: number, scale: number) {
+  drawRoundedRect(context, x, y, width, height, Math.max(16, width * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
+  const innerX = x + 18 * scale;
+  const innerY = y + 18 * scale;
+  const innerWidth = width - 36 * scale;
+  const innerHeight = height - 32 * scale;
+  const itemEntries = entries.slice(0, 4);
+
+  if (itemEntries.length === 1) {
+    drawTradeMediaCell(context, itemEntries[0], images[itemEntries[0].index] ?? null, innerX, innerY, innerWidth, innerHeight, scale, 3, 14);
+    return;
+  }
+
+  if (itemEntries.length === 2) {
+    const cellGap = 10 * scale;
+    const cellHeight = (innerHeight - cellGap) / 2;
+    itemEntries.forEach((entry, index) => {
+      drawTradeMediaCell(context, entry, images[entry.index] ?? null, innerX, innerY + index * (cellHeight + cellGap), innerWidth, cellHeight, scale, 2, 10.5);
+    });
+    return;
+  }
+
+  if (itemEntries.length === 3) {
+    const cellGap = 12 * scale;
+    const leadWidth = (innerWidth - cellGap) / 2;
+    drawTradeMediaCell(context, itemEntries[0], images[itemEntries[0].index] ?? null, innerX, innerY, leadWidth, innerHeight, scale, 3, 10.5);
+    const stackedX = innerX + leadWidth + cellGap;
+    const stackedHeight = (innerHeight - cellGap) / 2;
+    itemEntries.slice(1).forEach((entry, index) => {
+      drawTradeMediaCell(context, entry, images[entry.index] ?? null, stackedX, innerY + index * (stackedHeight + cellGap), leadWidth, stackedHeight, scale, 2, 9);
+    });
+    return;
+  }
+
+  const cellGap = 10 * scale;
+  const cellWidth = (innerWidth - cellGap) / 2;
+  const cellHeight = (innerHeight - cellGap) / 2;
+  itemEntries.forEach((entry, index) => {
+    drawTradeMediaCell(context, entry, images[entry.index] ?? null, innerX + (index % 2) * (cellWidth + cellGap), innerY + Math.floor(index / 2) * (cellHeight + cellGap), cellWidth, cellHeight, scale, 2, 8.5);
+  });
+}
+
+function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
+  context.save();
+  context.textAlign = "center";
+  context.fillStyle = "#ffd45a";
+  context.shadowColor = "rgba(255, 188, 54, 0.40)";
+  context.shadowBlur = 12 * scale;
+  context.font = `800 ${Math.round(25 * scale)}px Arial, sans-serif`;
+  context.fillText("TRADED", centerX, centerY - 20 * scale);
+  context.shadowBlur = 0;
+
+  const arrowWidth = 72 * scale;
+  const arrowHeight = 14 * scale;
+  const arrowHead = 22 * scale;
+  const drawArrow = (y: number, pointsRight: boolean) => {
+    const start = centerX - arrowWidth / 2;
+    const end = centerX + arrowWidth / 2;
+    const gradient = context.createLinearGradient(start, y, end, y);
+    gradient.addColorStop(0, "#ffb92e");
+    gradient.addColorStop(0.52, "#fff0a0");
+    gradient.addColorStop(1, "#ffd45a");
+    context.fillStyle = gradient;
+    context.beginPath();
+    if (pointsRight) {
+      context.moveTo(start, y - arrowHeight / 2);
+      context.lineTo(end - arrowHead, y - arrowHeight / 2);
+      context.lineTo(end - arrowHead, y - arrowHeight);
+      context.lineTo(end, y);
+      context.lineTo(end - arrowHead, y + arrowHeight);
+      context.lineTo(end - arrowHead, y + arrowHeight / 2);
+      context.lineTo(start, y + arrowHeight / 2);
+    } else {
+      context.moveTo(end, y - arrowHeight / 2);
+      context.lineTo(start + arrowHead, y - arrowHeight / 2);
+      context.lineTo(start + arrowHead, y - arrowHeight);
+      context.lineTo(start, y);
+      context.lineTo(start + arrowHead, y + arrowHeight);
+      context.lineTo(start + arrowHead, y + arrowHeight / 2);
+      context.lineTo(end, y + arrowHeight / 2);
+    }
+    context.closePath();
+    context.fill();
+  };
+  drawArrow(centerY + 5 * scale, true);
+  drawArrow(centerY + 31 * scale, false);
+  if (cashIncluded) {
+    context.fillStyle = "#fff0b5";
+    context.font = `700 ${Math.round(11 * scale)}px Arial, sans-serif`;
+    context.fillText("CASH INCLUDED", centerX, centerY + 59 * scale);
+  }
+  context.restore();
+}
+
+function getTradeSides(draft: SocialDraft) {
+  const sortByValue = (a: TradeGraphicEntry, b: TradeGraphicEntry) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
+  const entries = (draft.promotion?.tradeItems ?? []).map((item, index) => ({ item, index }));
+  return {
+    offered: entries.filter(({ item }) => item.direction === "offered").sort(sortByValue),
+    requested: entries.filter(({ item }) => item.direction !== "offered").sort(sortByValue),
+  };
+}
+
+function drawCompletedTradeSideBySide(
+  context: CanvasRenderingContext2D,
+  draft: SocialDraft,
+  platform: SocialPlatform,
+  width: number,
+  height: number,
+  images: Array<CanvasImage | null>,
+  brandLogo: CanvasImage | null,
+  frameY: number,
+  frameHeight: number,
+  footerDividerOffset: number,
+  footerPhraseOffset: number,
+) {
   const scale = width / 1200;
   const padding = 54 * scale;
-  const items = draft.promotion?.tradeItems ?? [];
+  const centerWidth = Math.max(150 * scale, width * 0.145);
+  const sideGap = 18 * scale;
+  const frameWidth = (width - padding * 2 - centerWidth - sideGap * 2) / 2;
+  const { offered, requested } = getTradeSides(draft);
   drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  drawTradeSide(context, offered, images, padding, frameY, frameWidth, frameHeight, scale);
+  drawTradeSide(context, requested, images, width - padding - frameWidth, frameY, frameWidth, frameHeight, scale);
+  drawTradeDirection(context, width / 2, frameY + frameHeight / 2, scale, Boolean(draft.promotion?.cashIncluded));
+  drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, footerDividerOffset, footerPhraseOffset);
+}
+
+function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
+  const scale = width / 1200;
   const frameY = 146 * scale;
-  const gap = 20 * scale;
-  const frameWidth = (width - padding * 2 - gap) / 2;
   const frameHeight = height - frameY - 168 * scale;
-  const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
-  const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
-  const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
-  const drawSide = (entries: Array<{ item: { title: string }; index: number }>, x: number) => {
-    drawRoundedRect(context, x, frameY, frameWidth, frameHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
-    const columns = entries.length > 2 ? 2 : 1;
-    const cellWidth = (frameWidth - 28 * scale - (columns - 1) * 14 * scale) / columns;
-    const cellHeight = frameHeight - 52 * scale;
-    entries.forEach(({ item, index }, entryIndex) => {
-      const isThreeItemLead = entries.length === 3 && entryIndex === 0;
-      const imageWidth = cellWidth;
-      const imageHeight = isThreeItemLead ? cellHeight - 48 * scale : entries.length === 3 ? cellHeight / 2 - 28 * scale : columns > 1 ? cellHeight / 2 - 28 * scale : cellHeight - 48 * scale;
-      const cellX = x + 14 * scale + (entries.length === 3 && !isThreeItemLead ? cellWidth + 14 * scale : (entryIndex % columns) * (cellWidth + 14 * scale));
-      const cellY = frameY + 42 * scale + (entries.length === 3 && !isThreeItemLead ? (entryIndex - 1) * (cellHeight / 2) : columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
-      if (images[index]) {
-        drawContainedImage(context, images[index], cellX, cellY, imageWidth, imageHeight);
-      } else {
-        context.fillStyle = "rgba(255,255,255,0.10)";
-        context.fillRect(cellX, cellY, imageWidth, imageHeight);
-      }
-      context.fillStyle = "rgba(255,255,255,0.86)";
-      context.font = `600 ${Math.round(10 * scale)}px Arial, sans-serif`;
-      context.textAlign = "center";
-      drawWrappedText(context, item.title, cellX + imageWidth / 2, cellY + imageHeight + 14 * scale, imageWidth - 10 * scale, 12 * scale, 2);
-    });
-    context.textAlign = "left";
-  };
-  drawSide(offered, padding);
-  drawSide(requested, padding + frameWidth + gap);
-  const rows = 1;
-  context.fillStyle = "#ffe0a8";
-  context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
-  context.textAlign = "center";
-  context.fillText("SWAPPED", width / 2, frameY + frameHeight / 2 - 14 * scale);
-  context.font = `700 ${Math.round(32 * scale)}px Arial, sans-serif`;
-  context.fillText("↔", width / 2, frameY + frameHeight / 2 + 22 * scale);
-  if (draft.promotion?.cashIncluded) {
-    context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
-    context.fillText("CASH INCLUDED", width / 2, frameY + (frameHeight * rows) / 2 + 50 * scale);
-  }
-  context.textAlign = "left";
-  drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 78, 18);
+  drawCompletedTradeSideBySide(context, draft, platform, width, height, images, brandLogo, frameY, frameHeight, 78, 18);
 }
 
 /** Square Instagram trade posts keep the Facebook trade composition, with a taller item area. */
 function drawCompletedTradeInstagram(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
   const scale = width / 1200;
-  const padding = 54 * scale;
-  const items = draft.promotion?.tradeItems ?? [];
-  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
   const frameY = 146 * scale;
-  const gap = 20 * scale;
-  const frameWidth = (width - padding * 2 - gap) / 2;
   const frameHeight = height - frameY - 224 * scale;
-  const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
-  const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
-  const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
-  const drawSide = (entries: Array<{ item: { title: string }; index: number }>, x: number) => {
-    drawRoundedRect(context, x, frameY, frameWidth, frameHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
-    const columns = entries.length > 2 ? 2 : 1;
-    const cellWidth = (frameWidth - 28 * scale - (columns - 1) * 14 * scale) / columns;
-    const cellHeight = frameHeight - 52 * scale;
-    entries.forEach(({ item, index }, entryIndex) => {
-      const isThreeItemLead = entries.length === 3 && entryIndex === 0;
-      const imageWidth = cellWidth;
-      const imageHeight = isThreeItemLead ? cellHeight - 48 * scale : entries.length === 3 ? cellHeight / 2 - 28 * scale : columns > 1 ? cellHeight / 2 - 28 * scale : cellHeight - 48 * scale;
-      const cellX = x + 14 * scale + (entries.length === 3 && !isThreeItemLead ? cellWidth + 14 * scale : (entryIndex % columns) * (cellWidth + 14 * scale));
-      const cellY = frameY + 42 * scale + (entries.length === 3 && !isThreeItemLead ? (entryIndex - 1) * (cellHeight / 2) : columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
-      if (images[index]) drawContainedImage(context, images[index], cellX, cellY, imageWidth, imageHeight);
-      else { context.fillStyle = "rgba(255,255,255,0.10)"; context.fillRect(cellX, cellY, imageWidth, imageHeight); }
-      context.fillStyle = "rgba(255,255,255,0.86)";
-      context.font = `600 ${Math.round(10 * scale)}px Arial, sans-serif`;
-      context.textAlign = "center";
-      drawWrappedText(context, item.title, cellX + imageWidth / 2, cellY + imageHeight + 14 * scale, imageWidth - 10 * scale, 12 * scale, 2);
-    });
-    context.textAlign = "left";
-  };
-  drawSide(offered, padding);
-  drawSide(requested, padding + frameWidth + gap);
-  context.fillStyle = "#ffe0a8";
-  context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
-  context.textAlign = "center";
-  context.fillText("SWAPPED", width / 2, frameY + frameHeight / 2 - 14 * scale);
-  context.font = `700 ${Math.round(32 * scale)}px Arial, sans-serif`;
-  context.fillText("↔", width / 2, frameY + frameHeight / 2 + 22 * scale);
-  if (draft.promotion?.cashIncluded) {
-    context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
-    context.fillText("CASH INCLUDED", width / 2, frameY + frameHeight / 2 + 50 * scale);
-  }
-  context.textAlign = "left";
-  drawBrandFooter(context, draft, "Instagram", brandLogo, width, height, padding, scale, 116, 28);
+  drawCompletedTradeSideBySide(context, draft, "Instagram", width, height, images, brandLogo, frameY, frameHeight, 116, 28);
 }
 
 function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
   const scale = width / 1080;
   const padding = 62 * scale;
   const items = draft.promotion?.tradeItems ?? [];
-  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
   const frameY = 146 * scale;
-  const frameHeight = platform === "Pinterest" ? height * 0.34 : height * 0.30;
+  // Let Pinterest use its vertical canvas for legible images and complete
+  // item names rather than leaving an oversized empty lower field.
+  const frameHeight = platform === "Pinterest" ? height * 0.56 : height * 0.32;
   const gap = 18 * scale;
   const frameWidth = (width - padding * 2 - gap) / 2;
   const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
-  Array.from({ length: itemCount }, (_, index) => drawMediaFrame(context, images[index] ?? null, padding + (index % 2) * (frameWidth + gap), frameY + Math.floor(index / 2) * (frameHeight / 2 + gap), frameWidth, frameHeight / 2, `ITEM ${index + 1}`));
-  const titleY = frameY + frameHeight + 42 * scale;
-  context.fillStyle = "#ffffff";
-  drawCompleteFittedTitle(context, items.map((item) => item.title).join("  ↔ ") || "Trade Alert", padding, titleY, width - padding * 2, 32 * scale, 20 * scale, platform === "Pinterest" ? 4 : 3);
-  if (draft.promotion?.cashIncluded) {
-    context.fillStyle = "#ffe0a8";
-    context.font = `700 ${Math.round(15 * scale)}px Arial, sans-serif`;
-    context.fillText("CASH INCLUDED AS PART OF THE DEAL", padding, height - 190 * scale);
-  }
+  const tileGap = 18 * scale;
+  const tileHeight = (frameHeight - tileGap) / 2;
+  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  Array.from({ length: itemCount }, (_, index) => {
+    const item = items[index];
+    const tileX = padding + (index % 2) * (frameWidth + gap);
+    const tileY = frameY + Math.floor(index / 2) * (tileHeight + tileGap);
+    drawRoundedRect(context, tileX, tileY, frameWidth, tileHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
+    const captionReserve = 48 * scale;
+    if (images[index]) drawContainedImage(context, images[index], tileX + 18 * scale, tileY + 18 * scale, frameWidth - 36 * scale, tileHeight - captionReserve);
+    else {
+      context.fillStyle = "rgba(255,255,255,0.10)";
+      context.fillRect(tileX + 18 * scale, tileY + 18 * scale, frameWidth - 36 * scale, tileHeight - captionReserve);
+    }
+    drawTradeItemCaption(context, item?.title || `ITEM ${index + 1}`, tileX + frameWidth / 2, tileY + tileHeight - 28 * scale, frameWidth - 28 * scale, scale, 3, platform === "Pinterest" ? 14 : 12);
+  });
+  drawTradeDirection(context, width / 2, frameY + frameHeight + 72 * scale, scale, Boolean(draft.promotion?.cashIncluded));
   drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 82, 28);
 }
 

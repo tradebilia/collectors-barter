@@ -62,17 +62,31 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
     expect(exporterSource).toContain("context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase()");
-    expect(exporterSource.match(/drawBrandFooter\(context, draft,/g)).toHaveLength(5);
+    expect(exporterSource.match(/drawBrandFooter\(context, draft,/g)).toHaveLength(4);
     expect(exporterSource).not.toContain("drawCenteredBrand(context, brandLogo");
   });
 
-  it("uses the Facebook-style item-swap composition for Instagram completed trades", () => {
+  it("uses the stronger Facebook-style trade-alert composition for Instagram completed trades", () => {
     expect(exporterSource).toContain("drawCompletedTradeInstagram");
     expect(exporterSource).toContain("const frameHeight = height - frameY - 224 * scale");
-    expect(exporterSource).toContain('context.fillText("SWAPPED"');
-    expect(exporterSource).toContain('context.fillText("↔"');
-    expect(exporterSource).toContain('drawBrandFooter(context, draft, "Instagram", brandLogo, width, height, padding, scale, 116, 28)');
+    expect(exporterSource).toContain("drawCompletedTradeSideBySide");
+    expect(exporterSource).toContain("function drawTradeDirection");
+    expect(exporterSource).toContain('context.fillText("TRADED"');
+    expect(exporterSource).toContain("drawArrow(centerY + 5 * scale, true)");
+    expect(exporterSource).toContain('drawCompletedTradeSideBySide(context, draft, "Instagram"');
     expect(exporterSource).toContain('platform === "Instagram"');
+  });
+
+  it("supports fuller item captions while retaining adaptive multi-item trade grids", () => {
+    expect(exporterSource).toContain("function drawTradeItemCaption");
+    expect(exporterSource).toContain("context.fillStyle = \"#ffffff\"");
+    expect(exporterSource).toContain("drawWrappedText(context, title");
+    expect(exporterSource).toContain("drawTradeMediaCell");
+    expect(exporterSource).toContain("if (itemEntries.length === 3)");
+    expect(exporterSource).toContain("const itemEntries = entries.slice(0, 4)");
+    expect(exporterSource).toContain("const tileHeight = (frameHeight - tileGap) / 2");
+    expect(exporterSource).toContain('const frameHeight = platform === "Pinterest" ? height * 0.56 : height * 0.32');
+    expect(exporterSource).toContain('platform === "Pinterest" ? 14 : 12');
   });
 
   it("gives Instagram high-value posts a larger image, clear title gap, and a visible footer phrase", () => {
