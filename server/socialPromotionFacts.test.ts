@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getSocialPromotionFacts, SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE } from "../shared/socialPromotionFacts";
 
-const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: string[] }> = {
+const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: string[]; authenticated?: string[] }> = {
   "autographs:collection_lot": { standard: ["Number of Signed Items", "Condition", "Signers Included"] },
   "autographs:signed_item": { standard: ["Signer", "Signed Item Type", "Authentication", "Authentication Company"] },
   "coins:coin_set": { standard: ["Year", "Set Name", "Set Type", "Condition"] },
@@ -29,7 +29,10 @@ const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: str
   "sports_cards:card_set": { standard: ["Year", "Manufacturer", "Sport", "Set Name"] },
   "sports_cards:collection_lot": { standard: ["Card Count", "Years", "Manufacturers", "Notable Cards"] },
   "sports_cards:single_card": { standard: ["Year", "Manufacturer", "Card No", "Graded"], graded: ["Year", "Manufacturer", "Grading Company", "Grade"] },
-  "sports_cards:unopened_product": { standard: ["Year", "Manufacturer", "Sport", "Product Type"] },
+  "sports_cards:unopened_product": {
+    standard: ["Year", "Manufacturer", "Sport", "Product Type"],
+    authenticated: ["Year", "Manufacturer", "Sport", "Authenticated Company"],
+  },
   "stamps:collection_lot": { standard: ["Quantity", "Countries", "Years", "Condition"] },
   "stamps:single_stamp": { standard: ["Year", "Country", "Scott No.", "Condition"], graded: ["Year", "Country", "Grading Company", "Grade"] },
   "stamps:stamp_set": { standard: ["Year", "Country", "Set Name", "Condition"], graded: ["Year", "Country", "Grading Company", "Grade"] },
@@ -56,10 +59,11 @@ describe("item-type-specific high-value social facts", () => {
       const actual = SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE[itemType];
       expect(actual.facts.map((field) => field.label), `${itemType} standard display fields`).toEqual(expected.standard);
       expect(actual.gradedFacts?.map((field) => field.label), `${itemType} graded display fields`).toEqual(expected.graded);
+      expect(actual.authenticatedFacts?.map((field) => field.label), `${itemType} authenticated display fields`).toEqual(expected.authenticated);
     }
   });
 
-  it("uses the approved Sports Cards Unopened Product fields and never shows a grade", () => {
+  it("uses the approved standard Sports Cards Unopened Product fields when not authenticated", () => {
     const facts = getSocialPromotionFacts({
       category: "sports_cards",
       itemType: "unopened_product",
@@ -70,6 +74,7 @@ describe("item-type-specific high-value social facts", () => {
         productType: "Hobby Box",
         productFormat: "Box",
         factorySealed: "yes",
+        authenticated: "no",
         isGraded: "no",
       },
       condition: "mint",
@@ -85,6 +90,26 @@ describe("item-type-specific high-value social facts", () => {
     ]);
     expect(facts.map((fact) => fact.label)).not.toContain("Grade");
     expect(facts.map((fact) => fact.value)).not.toContain("0.00");
+  });
+
+  it("replaces Product Type with Authenticated Company for authenticated unopened Sports Cards", () => {
+    expect(getSocialPromotionFacts({
+      category: "sports_cards",
+      itemType: "unopened_product",
+      itemDetails: {
+        year: "1986",
+        manufacturer: "O-Pee-Chee",
+        sport: "Hockey",
+        productType: "Hobby",
+        authenticated: "yes",
+        authenticationCompany: "BBCE",
+      },
+    })).toEqual([
+      { label: "Year", value: "1986" },
+      { label: "Manufacturer", value: "O-Pee-Chee" },
+      { label: "Sport", value: "Hockey" },
+      { label: "Authenticated Company", value: "BBCE" },
+    ]);
   });
 
   it("displays Graded as Yes or No whenever the approved standard rule includes it", () => {

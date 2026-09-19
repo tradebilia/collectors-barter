@@ -10,6 +10,8 @@ type ItemTypePromotionRule = {
   facts: readonly PromotionField[];
   /** Replaces the ungraded facts when an explicitly graded item requires a grading-specific display. */
   gradedFacts?: readonly PromotionField[];
+  /** Replaces the standard facts when the item is explicitly authenticated. */
+  authenticatedFacts?: readonly PromotionField[];
 };
 
 const detail = (label: string, ...keys: string[]): PromotionField => ({ label, keys });
@@ -126,6 +128,7 @@ export const SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE: Readonly<Record<string, ItemT
   },
   "sports_cards:unopened_product": {
     facts: [detail("Year", "year"), detail("Manufacturer", "customManufacturer", "manufacturer"), detail("Sport", "customSport", "sport"), detail("Product Type", "customProductType", "productType")],
+    authenticatedFacts: [detail("Year", "year"), detail("Manufacturer", "customManufacturer", "manufacturer"), detail("Sport", "customSport", "sport"), detail("Authenticated Company", "customAuthenticationCompany", "authenticationCompany")],
   },
 
   "stamps:collection_lot": {
@@ -241,6 +244,11 @@ function isExplicitlyGraded(details: Record<string, unknown>, source: Record<str
   return Boolean(normalizedValue(source.$gradingCompany) || validGrade(source.grade));
 }
 
+function isExplicitlyAuthenticated(details: Record<string, unknown>): boolean {
+  const state = normalizedValue(details.authenticated)?.toLowerCase();
+  return state === "yes" || state === "true" || state === "1";
+}
+
 export function getSocialPromotionFacts(input: {
   category?: string | null;
   itemType?: string | null;
@@ -262,7 +270,9 @@ export function getSocialPromotionFacts(input: {
   source.$isGraded = isExplicitlyGraded(details, source) ? "Yes" : "No";
 
   const rule = SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE[`${category}:${itemType}`];
-  const fields = rule?.gradedFacts && isExplicitlyGraded(details, source)
+  const fields = rule?.authenticatedFacts && isExplicitlyAuthenticated(details)
+    ? rule.authenticatedFacts
+    : rule?.gradedFacts && isExplicitlyGraded(details, source)
     ? rule.gradedFacts
     : rule?.facts ?? FALLBACK_FIELDS;
 
