@@ -381,10 +381,10 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   detailY += 30 * scale;
   detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
   if (value) {
-    detailY = Math.min(detailY + 36 * scale, height - 188 * scale);
+    const valueY = Math.max(detailY + 36 * scale, height - 120 * scale);
     context.fillStyle = "#ffe0a8";
     context.font = `700 ${Math.round(21 * scale)}px Arial, sans-serif`;
-    context.fillText(`Trade value  ${value}`, detailX, detailY);
+    context.fillText(`Trade value  ${value}`, detailX, valueY);
   }
 
   context.strokeStyle = "rgba(255,255,255,0.18)";
@@ -392,7 +392,7 @@ function drawLandscapeGraphic(context: CanvasRenderingContext2D, draft: SocialDr
   context.moveTo(padding, height - 42 * scale);
   context.lineTo(width - padding, height - 42 * scale);
   context.stroke();
-  drawCenteredBrand(context, brandLogo, width, height - 128 * scale, scale);
+  drawCenteredBrand(context, brandLogo, width, height - 90 * scale, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
   context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
   context.textAlign = "center";

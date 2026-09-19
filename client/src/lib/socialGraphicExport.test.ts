@@ -52,5 +52,6 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
     expect(exporterSource).not.toContain("const url = splitLine");
     expect(exporterSource).toContain("height - 42 * scale");
+    expect(exporterSource).toContain("const valueY = Math.max(detailY + 36 * scale, height - 120 * scale)");
   });
 });
