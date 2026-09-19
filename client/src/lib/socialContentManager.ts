@@ -13,7 +13,15 @@ export type SocialPromotionDetails = {
   itemTitle: string;
   listingId?: number | null;
   itemPath?: string | null;
-  tradeItems?: Array<{ title: string; imageUrl?: string | null; estimatedValue?: number | null; direction?: "offered" | "requested" }>;
+  tradeItems?: Array<{
+    title: string;
+    imageUrl?: string | null;
+    estimatedValue?: number | null;
+    direction?: "offered" | "requested";
+    grade?: string | number | null;
+    certificationCompany?: string | null;
+    customGradingCompany?: string | null;
+  }>;
   cashIncluded?: boolean;
   category: string | null;
   itemType: string | null;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { getSocialGraphicExportFileName, SOCIAL_GRAPHIC_CANVAS_SIZES } from "@/lib/socialGraphicExport";
+import { getSocialGraphicExportFileName, getTradeItemGradeLine, SOCIAL_GRAPHIC_CANVAS_SIZES } from "@/lib/socialGraphicExport";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";
 
 const promotionDraft = createPromotionSocialDraft("graphic-export-1", {
@@ -61,7 +61,7 @@ describe("native Social graphic exporter", () => {
   it("always places the complete brand lockup above a divider-separated footer phrase", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
-    expect(exporterSource).toContain("context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase()");
+    expect(exporterSource).toContain("drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()");
     expect(exporterSource.match(/drawBrandFooter\(context, draft,/g)).toHaveLength(4);
     expect(exporterSource).not.toContain("drawCenteredBrand(context, brandLogo");
   });
@@ -72,7 +72,10 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCompletedTradeSideBySide");
     expect(exporterSource).toContain("function drawTradeDirection");
     expect(exporterSource).toContain("function drawTradeAlertHeader");
-    expect(exporterSource).toContain('Impact, "Arial Narrow", Arial, sans-serif');
+    expect(exporterSource).toContain('Anton, "Arial Narrow", Arial, sans-serif');
+    expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
+    expect(exporterSource).toContain('document.fonts.load(\'700 18px "Inter"\')');
+    expect(exporterSource).toContain("function drawCrispText");
     expect(exporterSource).toContain("function drawTrackedText");
     expect(exporterSource).toContain("drawTradeAlertHeader(context, width, 104 * scale, scale)");
     expect(exporterSource).toContain('drawTrackedText(context, "TRADED"');
@@ -81,6 +84,14 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawArrow(centerY + 5 * scale, true)");
     expect(exporterSource).toContain('drawCompletedTradeSideBySide(context, draft, "Instagram"');
     expect(exporterSource).toContain('platform === "Instagram"');
+  });
+
+  it("adds a clear grading company and one-decimal grade line only for graded trade items", () => {
+    expect(getTradeItemGradeLine({ title: "Graded card", certificationCompany: "PSA", grade: "9.80" })).toBe("PSA 9.8");
+    expect(getTradeItemGradeLine({ title: "Custom graded card", certificationCompany: "other", customGradingCompany: "CGA", grade: 8.95 })).toBe("CGA 9");
+    expect(getTradeItemGradeLine({ title: "Ungraded item", certificationCompany: "PSA", grade: null })).toBeNull();
+    expect(exporterSource).toContain("getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)");
+    expect(exporterSource).toContain("getTradeItemGradeLine(entry.item)");
   });
 
   it("frames only completed-trade brand marks with fading blue side rules", () => {
@@ -93,7 +104,8 @@ describe("native Social graphic exporter", () => {
   it("supports fuller item captions while retaining adaptive multi-item trade grids", () => {
     expect(exporterSource).toContain("function drawTradeItemCaption");
     expect(exporterSource).toContain("context.fillStyle = \"#ffffff\"");
-    expect(exporterSource).toContain("drawWrappedText(context, title");
+    expect(exporterSource).toContain("const titleLines = splitLine(context, item.title");
+    expect(exporterSource).toContain("drawCrispText(context, line, centerX");
     expect(exporterSource).toContain("drawTradeMediaCell");
     expect(exporterSource).toContain("if (itemEntries.length === 3)");
     expect(exporterSource).toContain("const itemEntries = entries.slice(0, 4)");

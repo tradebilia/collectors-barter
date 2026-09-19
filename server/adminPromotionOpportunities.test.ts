@@ -65,6 +65,14 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).toContain("itemType: trade.requestedListingItemType");
   });
 
+  it("returns public grading company and one-decimal-ready grade metadata for every completed-trade item", () => {
+    expect(promotionSection).toContain("requested.grade, requested.certificationCompany, requested.itemDetails");
+    expect(promotionSection).toContain("offered.grade, offered.certificationCompany, offered.itemDetails");
+    expect(returnedOpportunityMappings).toContain("grade: item.grade ?? null");
+    expect(returnedOpportunityMappings).toContain("certificationCompany: item.certificationCompany ?? null");
+    expect(returnedOpportunityMappings).toContain("customGradingCompany: getCustomGradingCompany(item.itemDetails)");
+  });
+
   it("keeps historical qualifying listings and completed trades available for testing", () => {
     expect(returnedOpportunityMappings).toContain("const highValueListings = ((listingRows[0] as unknown as any[]) || [])");
     expect(returnedOpportunityMappings).toContain("const completedTrades = ((tradeRows[0] as unknown as any[]) || [])");

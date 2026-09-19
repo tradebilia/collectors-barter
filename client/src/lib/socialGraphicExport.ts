@@ -1,4 +1,6 @@
 import { formatSocialCategory, formatSocialItemType, formatSocialValue, getSocialFooterPhrase, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { formatPublicGradeValue } from "@shared/publicGradeValues";
 
 export type SocialGraphicCanvasSize = { width: number; height: number };
 
@@ -12,6 +14,29 @@ export const SOCIAL_GRAPHIC_CANVAS_SIZES: Record<SocialPlatform, SocialGraphicCa
 };
 
 type CanvasImage = HTMLImageElement;
+
+const CANVAS_SANS_FONT = 'Inter, Arial, sans-serif';
+const CANVAS_TRADE_DISPLAY_FONT = 'Anton, "Arial Narrow", Arial, sans-serif';
+
+/**
+ * Canvas does not wait for CSS font downloads. Explicitly loading the two
+ * production faces before drawing prevents a temporary system fallback from
+ * being rasterized into the preview/download, which was the source of the
+ * soft, mismatched completed-trade lettering.
+ */
+async function ensureSocialCanvasFonts() {
+  if (!("fonts" in document)) return;
+  await Promise.all([
+    document.fonts.load('400 44px "Anton"'),
+    document.fonts.load('700 18px "Inter"'),
+    document.fonts.ready,
+  ]);
+}
+
+/** Draw glyphs on whole-pixel baselines so smaller social exports stay crisp. */
+function drawCrispText(context: CanvasRenderingContext2D, text: string, x: number, y: number) {
+  context.fillText(text, Math.round(x), Math.round(y));
+}
 
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
@@ -98,7 +123,7 @@ function splitLine(context: CanvasRenderingContext2D, text: string, maxWidth: nu
 
 function drawWrappedText(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, lineHeight: number, maxLines: number) {
   const lines = splitLine(context, text, maxWidth, maxLines);
-  lines.forEach((line, index) => context.fillText(line, x, y + index * lineHeight));
+  lines.forEach((line, index) => drawCrispText(context, line, x, y + index * lineHeight));
   return lines.length * lineHeight;
 }
 
@@ -136,7 +161,7 @@ function getCompleteFittedTitleLayout(context: CanvasRenderingContext2D, text: s
 function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string, x: number, y: number, maxWidth: number, preferredSize: number, minimumSize: number, preferredMaxLines: number) {
   const { fontSize, lines, lineHeight, height } = getCompleteFittedTitleLayout(context, text, maxWidth, preferredSize, minimumSize, preferredMaxLines);
   context.font = `600 ${Math.round(fontSize)}px Georgia, serif`;
-  lines.forEach((line, index) => context.fillText(line, x, y + index * lineHeight));
+  lines.forEach((line, index) => drawCrispText(context, line, x, y + index * lineHeight));
   return height;
 }
 
@@ -183,8 +208,8 @@ function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, 
     return;
   }
   context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.round(height * 0.54)}px Arial, sans-serif`;
-  context.fillText("TRADEBILIA", x, y + height * 0.72);
+  context.font = `700 ${Math.round(height * 0.54)}px ${CANVAS_SANS_FONT}`;
+  drawCrispText(context, "TRADEBILIA", x, y + height * 0.72);
 }
 
 function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, y: number, scale: number) {
@@ -260,14 +285,14 @@ function drawBrandFooter(
   }
   drawCenteredBrand(context, logo, width, brandY, scale);
   context.fillStyle = "rgba(255,255,255,0.85)";
-  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.font = `700 ${Math.round(12 * scale)}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
-  context.fillText(getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - phraseOffset * scale);
+  drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - phraseOffset * scale);
   context.textAlign = "left";
 }
 
 function drawCenteredPromotionHeader(context: CanvasRenderingContext2D, label: string, width: number, y: number, scale: number) {
-  context.font = `800 ${Math.round(35 * scale)}px Arial, sans-serif`;
+  context.font = `800 ${Math.round(35 * scale)}px ${CANVAS_SANS_FONT}`;
   const bannerWidth = Math.min(width - 2 * 44 * scale, context.measureText(label).width + 96 * scale);
   drawPromotionHeader(context, label, (width - bannerWidth) / 2, y, scale, bannerWidth);
 }
@@ -280,23 +305,23 @@ function getTrackedTextWidth(context: CanvasRenderingContext2D, text: string, tr
 function drawTrackedText(context: CanvasRenderingContext2D, text: string, centerX: number, y: number, tracking: number) {
   let cursorX = centerX - getTrackedTextWidth(context, text, tracking) / 2;
   Array.from(text).forEach((character) => {
-    context.fillText(character, cursorX, y);
+    drawCrispText(context, character, cursorX, y);
     cursorX += context.measureText(character).width + tracking;
   });
 }
 
 function drawTradeAlertHeader(context: CanvasRenderingContext2D, width: number, y: number, scale: number) {
   const label = "TRADE ALERT";
-  context.font = `900 ${Math.round(32 * scale)}px Impact, "Arial Narrow", Arial, sans-serif`;
-  const tracking = 1.3 * scale;
-  const bannerWidth = Math.min(width - 2 * 44 * scale, getTrackedTextWidth(context, label, tracking) + 92 * scale);
+  context.font = `400 ${Math.round(56 * scale)}px ${CANVAS_TRADE_DISPLAY_FONT}`;
+  const tracking = 0.28 * scale;
+  const bannerWidth = Math.min(width - 2 * 44 * scale, Math.max(width * 0.47, getTrackedTextWidth(context, label, tracking) + 112 * scale));
   const bannerX = (width - bannerWidth) / 2;
-  const height = 58 * scale;
+  const height = 88 * scale;
   drawRoundedRect(context, bannerX, y - height + 7 * scale, bannerWidth, height, height / 2, "rgba(10, 26, 52, 0.42)", "rgba(246,202,122,0.92)");
   context.fillStyle = "#ffda64";
   context.textAlign = "left";
   context.textBaseline = "middle";
-  drawTrackedText(context, label, width / 2, y - height / 2 + 7 * scale, tracking);
+  drawTrackedText(context, label, width / 2, y - height / 2 + 9 * scale, tracking);
   context.textBaseline = "alphabetic";
 }
 
@@ -339,19 +364,36 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
 }
 
 type TradeGraphicEntry = {
-  item: { title: string; estimatedValue?: number | null };
+  item: {
+    title: string;
+    estimatedValue?: number | null;
+    grade?: string | number | null;
+    certificationCompany?: string | null;
+    customGradingCompany?: string | null;
+  };
   index: number;
 };
 
-function drawTradeItemCaption(context: CanvasRenderingContext2D, title: string, centerX: number, y: number, width: number, scale: number, maxLines: number, fontSize: number) {
+export function getTradeItemGradeLine(item: TradeGraphicEntry["item"]) {
+  const grade = formatPublicGradeValue(item.grade);
+  if (!grade) return null;
+  return `${getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)} ${grade}`;
+}
+
+function drawTradeItemCaption(context: CanvasRenderingContext2D, item: TradeGraphicEntry["item"], centerX: number, y: number, width: number, scale: number, maxLines: number, fontSize: number) {
   context.save();
   context.fillStyle = "#ffffff";
-  context.shadowColor = "rgba(2, 10, 30, 0.88)";
-  context.shadowBlur = 4 * scale;
-  context.font = `700 ${Math.round(fontSize * scale)}px Arial, sans-serif`;
+  context.font = `700 ${Math.round(fontSize * scale)}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
   const lineHeight = fontSize * 1.16 * scale;
-  drawWrappedText(context, title, centerX, y, width, lineHeight, maxLines);
+  const titleLines = splitLine(context, item.title, width, maxLines);
+  titleLines.forEach((line, index) => drawCrispText(context, line, centerX, y + index * lineHeight));
+  const gradeLine = getTradeItemGradeLine(item);
+  if (gradeLine) {
+    context.fillStyle = "#dce9ff";
+    context.font = `700 ${Math.max(8, Math.round((fontSize - 1) * scale))}px ${CANVAS_SANS_FONT}`;
+    drawCrispText(context, gradeLine, centerX, y + titleLines.length * lineHeight + Math.max(8, fontSize * 0.92) * scale);
+  }
   context.restore();
 }
 
@@ -368,7 +410,8 @@ function drawTradeMediaCell(
   captionFontSize: number,
 ) {
   const captionLineHeight = captionFontSize * 1.16 * scale;
-  const captionReserve = 14 * scale + maxCaptionLines * captionLineHeight + 6 * scale;
+  const gradeReserve = getTradeItemGradeLine(entry.item) ? Math.max(10, (captionFontSize - 1) * 1.22) * scale : 0;
+  const captionReserve = 14 * scale + maxCaptionLines * captionLineHeight + gradeReserve + 6 * scale;
   const imageHeight = Math.max(38 * scale, height - captionReserve);
   if (image) {
     drawContainedImage(context, image, x, y, width, imageHeight);
@@ -376,7 +419,7 @@ function drawTradeMediaCell(
     context.fillStyle = "rgba(255,255,255,0.10)";
     context.fillRect(x, y, width, imageHeight);
   }
-  drawTradeItemCaption(context, entry.item.title, x + width / 2, y + imageHeight + 13 * scale, width - 8 * scale, scale, maxCaptionLines, captionFontSize);
+  drawTradeItemCaption(context, entry.item, x + width / 2, y + imageHeight + 13 * scale, width - 8 * scale, scale, maxCaptionLines, captionFontSize);
 }
 
 function drawTradeSide(context: CanvasRenderingContext2D, entries: TradeGraphicEntry[], images: Array<CanvasImage | null>, x: number, y: number, width: number, height: number, scale: number) {
@@ -426,9 +469,9 @@ function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, 
   context.textAlign = "center";
   context.fillStyle = "#ffd45a";
   context.shadowColor = "rgba(255, 188, 54, 0.40)";
-  context.shadowBlur = 12 * scale;
-  context.font = `900 ${Math.round(27 * scale)}px Impact, "Arial Narrow", Arial, sans-serif`;
-  drawTrackedText(context, "TRADED", centerX, centerY - 20 * scale, 1.1 * scale);
+  context.shadowBlur = 0;
+  context.font = `400 ${Math.round(50 * scale)}px ${CANVAS_TRADE_DISPLAY_FONT}`;
+  drawTrackedText(context, "TRADED", centerX, centerY - 20 * scale, 0.24 * scale);
   context.shadowBlur = 0;
 
   const arrowWidth = 72 * scale;
@@ -477,8 +520,8 @@ function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, 
   drawArrow(centerY + 31 * scale, false);
   if (cashIncluded) {
     context.fillStyle = "#fff0b5";
-    context.font = `700 ${Math.round(11 * scale)}px Arial, sans-serif`;
-    context.fillText("CASH INCLUDED", centerX, centerY + 59 * scale);
+    context.font = `700 ${Math.round(14 * scale)}px ${CANVAS_SANS_FONT}`;
+    drawCrispText(context, "CASH INCLUDED", centerX, centerY + 59 * scale);
   }
   context.restore();
 }
@@ -548,17 +591,17 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   const tileHeight = (frameHeight - tileGap) / 2;
   drawTradeAlertHeader(context, width, 104 * scale, scale);
   Array.from({ length: itemCount }, (_, index) => {
-    const item = items[index];
+    const item = items[index] ?? { title: `ITEM ${index + 1}` };
     const tileX = padding + (index % 2) * (frameWidth + gap);
     const tileY = frameY + Math.floor(index / 2) * (tileHeight + tileGap);
     drawRoundedRect(context, tileX, tileY, frameWidth, tileHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
-    const captionReserve = 48 * scale;
+    const captionReserve = (getTradeItemGradeLine(item) ? 62 : 48) * scale;
     if (images[index]) drawContainedImage(context, images[index], tileX + 18 * scale, tileY + 18 * scale, frameWidth - 36 * scale, tileHeight - captionReserve);
     else {
       context.fillStyle = "rgba(255,255,255,0.10)";
       context.fillRect(tileX + 18 * scale, tileY + 18 * scale, frameWidth - 36 * scale, tileHeight - captionReserve);
     }
-    drawTradeItemCaption(context, item?.title || `ITEM ${index + 1}`, tileX + frameWidth / 2, tileY + tileHeight - 28 * scale, frameWidth - 28 * scale, scale, 3, platform === "Pinterest" ? 14 : 12);
+    drawTradeItemCaption(context, item, tileX + frameWidth / 2, tileY + tileHeight - 28 * scale, frameWidth - 28 * scale, scale, 3, platform === "Pinterest" ? 14 : 12);
   });
   drawTradeDirection(context, width / 2, frameY + frameHeight + 72 * scale, scale, Boolean(draft.promotion?.cashIncluded));
   drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 82, 28);
@@ -702,7 +745,8 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const context = canvas.getContext("2d");
   if (!context) throw new Error("A canvas graphics context is not available in this browser.");
 
-  const [itemImage, tradeItemImages, brandLogo, heroBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, brandLogo, heroBackground] = await Promise.all([
+    ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, true))),
     loadCanvasImage(brandLogoUrl),

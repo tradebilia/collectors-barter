@@ -2965,11 +2965,11 @@ export const appRouter = router({
               l.certificationCompany AS requestedListingCertificationCompany,
               l.itemDetails AS requestedListingItemDetails,
               (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl,
-              (SELECT JSON_ARRAYAGG(JSON_OBJECT('title', swapItems.title, 'imageUrl', swapItems.imageUrl, 'estimatedValue', swapItems.estimatedValue, 'direction', swapItems.direction)) FROM (
-                SELECT requested.title, requested.estimatedValue, (SELECT imageUrl FROM listingPhotos WHERE listingId = requested.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'requested' AS direction
+              (SELECT JSON_ARRAYAGG(JSON_OBJECT('title', swapItems.title, 'imageUrl', swapItems.imageUrl, 'estimatedValue', swapItems.estimatedValue, 'direction', swapItems.direction, 'grade', swapItems.grade, 'certificationCompany', swapItems.certificationCompany, 'itemDetails', swapItems.itemDetails)) FROM (
+                SELECT requested.title, requested.estimatedValue, requested.grade, requested.certificationCompany, requested.itemDetails, (SELECT imageUrl FROM listingPhotos WHERE listingId = requested.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'requested' AS direction
                 FROM listings requested WHERE requested.id = tp.requestedListingId
                 UNION ALL
-                SELECT offered.title, offered.estimatedValue, (SELECT imageUrl FROM listingPhotos WHERE listingId = offered.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'offered' AS direction
+                SELECT offered.title, offered.estimatedValue, offered.grade, offered.certificationCompany, offered.itemDetails, (SELECT imageUrl FROM listingPhotos WHERE listingId = offered.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'offered' AS direction
                 FROM tradeProposalItems swapItem JOIN listings offered ON offered.id = swapItem.offeredListingId WHERE swapItem.proposalId = tp.id
               ) swapItems) AS tradeItemsJson,
               EXISTS (SELECT 1 FROM tradePayments cashPayment WHERE cashPayment.proposalId = tp.id AND cashPayment.amount > 0) AS cashIncluded,
@@ -3152,7 +3152,7 @@ export const appRouter = router({
               itemCount: Number(trade.itemCount ?? 0),
               completedAt: trade.completedAt,
               imageUrl: trade.imageUrl ?? null,
-              tradeItems: (() => { try { const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson; return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => ({ title: String(item.title), imageUrl: item.imageUrl ?? null, estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null, direction: item.direction === "offered" ? "offered" : "requested" })) : []; } catch { return []; } })(),
+              tradeItems: (() => { try { const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson; return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => ({ title: String(item.title), imageUrl: item.imageUrl ?? null, estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null, direction: item.direction === "offered" ? "offered" : "requested", grade: item.grade ?? null, certificationCompany: item.certificationCompany ?? null, customGradingCompany: getCustomGradingCompany(item.itemDetails) })) : []; } catch { return []; } })(),
               cashIncluded: Boolean(Number(trade.cashIncluded ?? 0)),
             };
           });
