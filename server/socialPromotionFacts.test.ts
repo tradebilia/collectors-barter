@@ -12,7 +12,7 @@ const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: str
   "comics:original_art": { standard: ["Artist Name", "Art Type", "Signed By Artist", "COA Included"] },
   "comics:single_comic": { standard: ["Title", "Issue No.", "Publisher", "Condition"], graded: ["Title", "Issue No.", "Grading Company", "Grade"] },
   "disney_pins:collection_lot": { standard: ["Pin Count", "Condition", "Characters", "Limited Editions"] },
-  "disney_pins:single_pin": { standard: ["Pin Name", "Condition", "Limited Edition", "Series"] },
+  "disney_pins:single_pin": { standard: ["Pin Name", "Character Name", "Condition", "Limited Edition"] },
   "disney_pins:pin_set": { standard: ["Set Name", "Complete Set", "Limited Edition", "Condition"] },
   "movies:box_set": { standard: ["Box Set", "Format", "Graded", "Sealed"], graded: ["Box Set", "Format", "Grading Company", "Grade"] },
   "movies:collection_lot": { standard: ["Quantity", "Notable Titles", "Sealed Items", "Condition"] },
@@ -164,6 +164,25 @@ describe("item-type-specific high-value social facts", () => {
       { label: "Accessory Name", value: "Power Set" },
       { label: "Accessory Type", value: "Power Set" },
       { label: "Condition", value: "Excellent" },
+    ]);
+  });
+
+  it("uses Character Name instead of Series for an individual Disney Pin social graphic", () => {
+    expect(getSocialPromotionFacts({
+      category: "disney_pins",
+      itemType: "single_pin",
+      itemDetails: {
+        pinName: "Mickey Through the Years",
+        character: "Mickey Mouse",
+        limitedEdition: "yes",
+        series: "Disney 100",
+      },
+      condition: "near_mint",
+    })).toEqual([
+      { label: "Pin Name", value: "Mickey Through the Years" },
+      { label: "Character Name", value: "Mickey Mouse" },
+      { label: "Condition", value: "Near Mint" },
+      { label: "Limited Edition", value: "Yes" },
     ]);
   });
 

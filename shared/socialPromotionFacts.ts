@@ -66,7 +66,7 @@ export const SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE: Readonly<Record<string, ItemT
     facts: [detail("Pin Count", "approximatePinCount"), condition, detail("Characters", "charactersIncluded"), detail("Limited Editions", "limitedEditionPinsIncluded")],
   },
   "disney_pins:single_pin": {
-    facts: [detail("Pin Name", "pinName"), condition, detail("Limited Edition", "limitedEdition"), detail("Series", "series")],
+    facts: [detail("Pin Name", "pinName"), detail("Character Name", "character", "characterName"), condition, detail("Limited Edition", "limitedEdition")],
   },
   "disney_pins:pin_set": {
     facts: [detail("Set Name", "setName"), detail("Complete Set", "completeSet"), detail("Limited Edition", "limitedEdition"), condition],
