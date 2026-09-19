@@ -762,31 +762,55 @@ export default function ItemDetail() {
               </div>
             )}
 
-            {/* Similar Items Section */}
-            <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
+            {/* Similar Items Section — shown only for closely comparable listings. */}
+            {similarListings.length > 0 && <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
               <div className="flex items-center justify-between gap-4 mb-8">
                 <div>
                   <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Similar Items</p>
-                  <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">More from {getTradebiliaCategoryLabel(listing.category)}</h2>
+                  <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">More like this</h2>
                 </div>
               </div>
               <ScrollArea className="w-full">
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6">
                   {similarListings.map(item => (
-                    <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-[1.5rem] border border-gray-200 bg-gray-50 transition hover:-translate-y-1 hover:bg-gray-100">
-                      <div className="aspect-[0.82] bg-gray-100">
-                        <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-cover" />
+                    <Link key={item.id} href={`/listings/${item.id}`} className="block overflow-hidden rounded-md border border-gray-200 bg-white text-black shadow-sm transition hover:opacity-90">
+                      <div className="aspect-[7/9] bg-white sm:aspect-[4/5]">
+                        <img src={resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl })} alt={item.title} className="h-full w-full object-contain" />
                       </div>
-                      <div className="space-y-3 p-5">
-                        <p className="text-xs uppercase tracking-[0.2em] text-gray-500">{getTradebiliaCategoryLabel(item.category)}</p>
-                        <h3 className="text-xl font-semibold text-gray-900">{item.title}</h3>
-                        <p className="text-sm text-gray-600">{item.owner.displayName}</p>
+                      <div className="space-y-1 p-1.5 text-[#153746]">
+                        <p className="truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600 sm:hidden">{getTradebiliaCategoryLabel(item.category)}</p>
+                        <h3 className="min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight">{item.title}</h3>
+                        <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
+                          <div>
+                            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{item.grade && parseFloat(String(item.grade)) > 0 ? "Grade" : "Condition"}</p>
+                            <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">
+                              {item.grade && parseFloat(String(item.grade)) > 0
+                                ? `${getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)} ${formatGrade(item.grade)}`
+                                : item.conditionLabel}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Value</p>
+                            <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight sm:text-[0.55rem] sm:font-semibold">{item.estimatedValue ? formatItemValue(item.estimatedValue) : "—"}</p>
+                          </div>
+                          <div>
+                            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">Collector</p>
+                            <p className="mt-0 truncate text-[0.65rem] font-semibold sm:text-[0.55rem]">{item.owner.displayName}</p>
+                          </div>
+                          <div>
+                            <p className="whitespace-nowrap text-[0.5rem] font-semibold uppercase tracking-[0.06em] opacity-80">Trader Rating</p>
+                            <div className="mt-0 flex items-center gap-0.5 font-semibold">
+                              <Star className="h-2 w-2 fill-current" />
+                              <span className="truncate text-[0.55rem]">{item.ownerRating.averageRating.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </Link>
                   ))}
                 </div>
               </ScrollArea>
-            </div>
+            </div>}
           </div>
         </section>
       </main>

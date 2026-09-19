@@ -40,6 +40,7 @@ import { isPublicMemberEligible } from "./publicVisibility";
 import { claimIdentity } from "./identityRegistry";
 import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference";
 import { buildPayPalComparisonProfile, type PayPalComparisonProfile, type PayPalIdentityReference } from "./paypalIdentity";
+import { selectSimilarListings } from "../shared/similarListings";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -1268,12 +1269,15 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     .where(eq(users.id, detailCard[0].ownerId))
     .limit(1);
 
-  const similarRows = await db
+  // Fetch a bounded category candidate set, then apply strict title/item-type
+  // similarity rules in code. Category alone is too broad to be meaningful.
+  const similarCandidateRows = await db
     .select({
       id: listings.id,
       ownerId: listings.ownerId,
       title: listings.title,
       category: listings.category,
+      itemType: listings.itemType,
       condition: listings.condition,
       grade: listings.grade,
       certificationCompany: listings.certificationCompany,
@@ -1296,7 +1300,9 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       isPublicMemberEligible(listings.ownerId),
     ))
     .orderBy(desc(listings.createdAt))
-    .limit(6);
+    .limit(50);
+
+  const similarRows = selectSimilarListings(detailCard[0], similarCandidateRows, 4);
 
   // Fetch primary photos for similar listings in a single query
   const similarListingIds = similarRows.map(r => r.id);
