@@ -121,7 +121,7 @@ export const SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE: Readonly<Record<string, ItemT
     facts: [detail("Card Count", "approximateCardCount"), detail("Years", "yearsIncluded"), detail("Manufacturers", "manufacturersIncluded"), detail("Notable Cards", "notableCards")],
   },
   "sports_cards:single_card": {
-    facts: [detail("Year", "year"), detail("Manufacturer", "customManufacturer", "manufacturer"), detail("Card No.", "cardNumber"), graded],
+    facts: [detail("Year", "year"), detail("Manufacturer", "customManufacturer", "manufacturer"), detail("Card No", "cardNumber"), graded],
     gradedFacts: [detail("Year", "year"), detail("Manufacturer", "customManufacturer", "manufacturer"), gradingCompany, grade],
   },
   "sports_cards:unopened_product": {
@@ -185,7 +185,7 @@ export const SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE: Readonly<Record<string, ItemT
     gradedFacts: [detail("Playset Name", "playsetName"), detail("Brand", "brand"), gradingCompany, grade],
   },
   "vintage_toys:plush_toy": {
-    facts: [detail("Toy Name / Character", "toyNameCharacter"), detail("Brand", "brand"), detail("Year", "year"), condition],
+    facts: [detail("Toy Name/ Character", "toyNameCharacter"), detail("Brand", "brand"), detail("Year", "year"), condition],
     gradedFacts: [detail("Toy Name / Character", "toyNameCharacter"), detail("Brand", "brand"), gradingCompany, grade],
   },
   "vintage_toys:vehicle": {

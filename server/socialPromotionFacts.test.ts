@@ -28,7 +28,7 @@ const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: str
   "pokemon:unopened_product": { standard: ["Year", "Set Name", "Product Type", "Factory Sealed"] },
   "sports_cards:card_set": { standard: ["Year", "Manufacturer", "Sport", "Set Name"] },
   "sports_cards:collection_lot": { standard: ["Card Count", "Years", "Manufacturers", "Notable Cards"] },
-  "sports_cards:single_card": { standard: ["Year", "Manufacturer", "Card No.", "Graded"], graded: ["Year", "Manufacturer", "Grading Company", "Grade"] },
+  "sports_cards:single_card": { standard: ["Year", "Manufacturer", "Card No", "Graded"], graded: ["Year", "Manufacturer", "Grading Company", "Grade"] },
   "sports_cards:unopened_product": { standard: ["Year", "Manufacturer", "Sport", "Product Type"] },
   "stamps:collection_lot": { standard: ["Quantity", "Countries", "Years", "Condition"] },
   "stamps:single_stamp": { standard: ["Year", "Country", "Scott No.", "Condition"], graded: ["Year", "Country", "Grading Company", "Grade"] },
@@ -44,7 +44,7 @@ const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: str
   "vintage_toys:lego": { standard: ["Set No.", "Theme", "Piece Count", "Complete"], graded: ["Set No.", "Theme", "Grading Company", "Grade"] },
   "vintage_toys:model_kit": { standard: ["Model / Kit Name", "Built or Unbuilt", "Brand", "Condition"], graded: ["Model / Kit Name", "Brand", "Grading Company", "Grade"] },
   "vintage_toys:playset": { standard: ["Playset Name", "Brand", "Year", "Condition"], graded: ["Playset Name", "Brand", "Grading Company", "Grade"] },
-  "vintage_toys:plush_toy": { standard: ["Toy Name / Character", "Brand", "Year", "Condition"], graded: ["Toy Name / Character", "Brand", "Grading Company", "Grade"] },
+  "vintage_toys:plush_toy": { standard: ["Toy Name/ Character", "Brand", "Year", "Condition"], graded: ["Toy Name / Character", "Brand", "Grading Company", "Grade"] },
   "vintage_toys:vehicle": { standard: ["Vehicle Name", "Brand", "Year", "Condition"], graded: ["Vehicle", "Brand", "Grading Company", "Grade"] },
 };
 
@@ -95,7 +95,7 @@ describe("item-type-specific high-value social facts", () => {
     })).toEqual([
       { label: "Year", value: "1986" },
       { label: "Manufacturer", value: "Fleer" },
-      { label: "Card No.", value: "57" },
+      { label: "Card No", value: "57" },
       { label: "Graded", value: "No" },
     ]);
   });
