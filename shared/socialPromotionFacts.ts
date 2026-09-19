@@ -1,5 +1,5 @@
-import { formatPublicBooleanValue } from "./publicBooleanValues";
 import { formatPublicGradeValue } from "./publicGradeValues";
+import { formatPublicFieldValue } from "./publicFieldValues";
 
 export type SocialPromotionFact = { label: string; value: string };
 
@@ -225,7 +225,7 @@ function normalizedValue(value: unknown): string | null {
   const normalized = String(value).trim();
   const lowerCaseValue = normalized.toLowerCase();
   if (!normalized || ["ungraded", "raw", "n/a", "none", "null", "undefined"].includes(lowerCaseValue)) return null;
-  return formatPublicBooleanValue(normalized).slice(0, 80);
+  return formatPublicFieldValue(normalized).slice(0, 80);
 }
 
 function validGrade(value: unknown): string | null {

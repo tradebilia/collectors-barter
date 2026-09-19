@@ -31,7 +31,7 @@ import { getLoginUrl } from "@/const";
 import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getCategoryHeroTreatment } from "@/lib/categoryHeroTreatment";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
-import { formatPublicBooleanValue } from "@shared/publicBooleanValues";
+import { formatPublicFieldValue } from "@shared/publicFieldValues";
 
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, use the content portion of the category page gradient
@@ -96,21 +96,6 @@ import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TRADEBILIA_LOGO_URL = "https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg";
 
-
-const getConditionDisplayName = (condition: string): string => {
-  const conditionMap: Record<string, string> = {
-    'mint': 'Mint',
-    'near_mint': 'Near Mint',
-    'excellent': 'Excellent',
-    'very_good': 'Very Good',
-    'good': 'Good',
-    'fair': 'Fair',
-    'poor': 'Poor',
-    'raw': 'Raw',
-    'ungraded': 'Ungraded',
-  };
-  return conditionMap[condition?.toLowerCase()] || condition;
-};
 
 const formatFieldName = (fieldName: string): string => {
   return fieldName
@@ -418,7 +403,7 @@ export default function ItemDetail() {
                   ) : listing.condition ? (
                     <div>
                       <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Condition</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{getConditionDisplayName(listing.condition)}</p>
+                      <p className="mt-2 text-sm font-medium text-gray-500">{formatPublicFieldValue(listing.condition)}</p>
                     </div>
                   ) : null}
                   {listing.estimatedValue && (
@@ -665,7 +650,7 @@ export default function ItemDetail() {
               const isGradedListing = Boolean(listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0);
               // Core fields first
               allFields.push({ label: 'Category', value: getTradebiliaCategoryLabel(listing.category) });
-              if (!isGradedListing && listing.condition) allFields.push({ label: 'Condition', value: getConditionDisplayName(listing.condition) });
+              if (!isGradedListing && listing.condition) allFields.push({ label: 'Condition', value: formatPublicFieldValue(listing.condition) });
               if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany) });
               if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: formatItemValue(listing.estimatedValue) });
               if (listing.itemType) allFields.push({ label: 'Item Type', value: listing.itemType.replace(/_/g, ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
@@ -681,7 +666,7 @@ export default function ItemDetail() {
                       'grade': 'Numerical Grade',
                     };
                     const label = labelOverrides[key] ?? formatFieldName(key);
-                    allFields.push({ label, value: formatPublicBooleanValue(String(value)) });
+                    allFields.push({ label, value: formatPublicFieldValue(String(value)) });
                   }
                 }
               }
@@ -744,7 +729,7 @@ export default function ItemDetail() {
                 </div>
                 <div className="px-6 py-5">
                   <p className="text-base font-medium text-gray-500 capitalize">
-                    {formatPublicBooleanValue(String(listing.itemDetails.shippingAvailable ?? listing.itemDetails.shipping_available).replace(/_/g, ' '))}
+                    {formatPublicFieldValue(String(listing.itemDetails.shippingAvailable ?? listing.itemDetails.shipping_available).replace(/_/g, ' '))}
                   </p>
                 </div>
               </div>

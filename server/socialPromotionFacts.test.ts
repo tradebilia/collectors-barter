@@ -149,6 +149,24 @@ describe("item-type-specific high-value social facts", () => {
     }).at(-1)).toEqual({ label: "Factory Sealed", value: "No" });
   });
 
+  it("uses polished capitalization for categorical fact values without changing item names", () => {
+    expect(getSocialPromotionFacts({
+      category: "video_games",
+      itemType: "accessory",
+      itemDetails: {
+        platform: "NES",
+        accessoryName: "Power Set",
+        accessoryType: "Power Set",
+      },
+      condition: "excellent",
+    })).toEqual([
+      { label: "Platform", value: "NES" },
+      { label: "Accessory Name", value: "Power Set" },
+      { label: "Accessory Type", value: "Power Set" },
+      { label: "Condition", value: "Excellent" },
+    ]);
+  });
+
   it("uses the approved grading-specific set only for an explicitly graded item", () => {
     expect(getSocialPromotionFacts({
       category: "sports_cards",
