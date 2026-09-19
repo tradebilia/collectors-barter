@@ -57,4 +57,13 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const height = rows * 54 * scale + 1 * scale");
     expect(exporterSource).toContain("const valueY = Math.max(detailY + 28 * scale, height - 144 * scale)");
   });
+
+  it("uses the Facebook-style item-swap composition for Instagram completed trades", () => {
+    expect(exporterSource).toContain("drawCompletedTradeInstagram");
+    expect(exporterSource).toContain("const frameHeight = height - frameY - 224 * scale");
+    expect(exporterSource).toContain('context.fillText("SWAPPED"');
+    expect(exporterSource).toContain('context.fillText("↔"');
+    expect(exporterSource).toContain('getSocialFooterPhrase(draft.id, "Instagram")');
+    expect(exporterSource).toContain('platform === "Instagram"');
+  });
 });

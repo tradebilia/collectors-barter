@@ -296,6 +296,65 @@ function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: S
   context.textAlign = "left";
 }
 
+/** Square Instagram trade posts keep the Facebook trade composition, with a taller item area. */
+function drawCompletedTradeInstagram(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
+  const scale = width / 1200;
+  const padding = 54 * scale;
+  const items = draft.promotion?.tradeItems ?? [];
+  drawCenteredPromotionHeader(context, "TRADE ALERT", width, 104 * scale, scale);
+  const frameY = 146 * scale;
+  const gap = 20 * scale;
+  const frameWidth = (width - padding * 2 - gap) / 2;
+  const frameHeight = height - frameY - 224 * scale;
+  const sortByValue = (a: { item: { estimatedValue?: number | null } }, b: { item: { estimatedValue?: number | null } }) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
+  const offered = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction === "offered").sort(sortByValue);
+  const requested = items.map((item, index) => ({ item, index })).filter(({ item }) => item.direction !== "offered").sort(sortByValue);
+  const drawSide = (entries: Array<{ item: { title: string }; index: number }>, x: number) => {
+    drawRoundedRect(context, x, frameY, frameWidth, frameHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
+    const columns = entries.length > 2 ? 2 : 1;
+    const cellWidth = (frameWidth - 28 * scale - (columns - 1) * 14 * scale) / columns;
+    const cellHeight = frameHeight - 52 * scale;
+    entries.forEach(({ item, index }, entryIndex) => {
+      const isThreeItemLead = entries.length === 3 && entryIndex === 0;
+      const imageWidth = cellWidth;
+      const imageHeight = isThreeItemLead ? cellHeight - 48 * scale : entries.length === 3 ? cellHeight / 2 - 28 * scale : columns > 1 ? cellHeight / 2 - 28 * scale : cellHeight - 48 * scale;
+      const cellX = x + 14 * scale + (entries.length === 3 && !isThreeItemLead ? cellWidth + 14 * scale : (entryIndex % columns) * (cellWidth + 14 * scale));
+      const cellY = frameY + 42 * scale + (entries.length === 3 && !isThreeItemLead ? (entryIndex - 1) * (cellHeight / 2) : columns > 1 ? Math.floor(entryIndex / columns) * (cellHeight / 2) : 0);
+      if (images[index]) drawContainedImage(context, images[index], cellX, cellY, imageWidth, imageHeight);
+      else { context.fillStyle = "rgba(255,255,255,0.10)"; context.fillRect(cellX, cellY, imageWidth, imageHeight); }
+      context.fillStyle = "rgba(255,255,255,0.86)";
+      context.font = `600 ${Math.round(10 * scale)}px Arial, sans-serif`;
+      context.textAlign = "center";
+      drawWrappedText(context, item.title, cellX + imageWidth / 2, cellY + imageHeight + 14 * scale, imageWidth - 10 * scale, 12 * scale, 2);
+    });
+    context.textAlign = "left";
+  };
+  drawSide(offered, padding);
+  drawSide(requested, padding + frameWidth + gap);
+  context.fillStyle = "#ffe0a8";
+  context.font = `800 ${Math.round(19 * scale)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.fillText("SWAPPED", width / 2, frameY + frameHeight / 2 - 14 * scale);
+  context.font = `700 ${Math.round(32 * scale)}px Arial, sans-serif`;
+  context.fillText("↔", width / 2, frameY + frameHeight / 2 + 22 * scale);
+  if (draft.promotion?.cashIncluded) {
+    context.font = `700 ${Math.round(13 * scale)}px Arial, sans-serif`;
+    context.fillText("CASH INCLUDED", width / 2, frameY + frameHeight / 2 + 50 * scale);
+  }
+  context.textAlign = "left";
+  context.strokeStyle = "rgba(255,255,255,0.18)";
+  context.beginPath();
+  context.moveTo(padding, height - 116 * scale);
+  context.lineTo(width - padding, height - 116 * scale);
+  context.stroke();
+  drawCenteredBrand(context, brandLogo, width, height - 172 * scale, scale);
+  context.fillStyle = "rgba(255,255,255,0.85)";
+  context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
+  context.textAlign = "center";
+  context.fillText(getSocialFooterPhrase(draft.id, "Instagram").toUpperCase(), width / 2, height - 28 * scale);
+  context.textAlign = "left";
+}
+
 function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, brandLogo: CanvasImage | null) {
   const scale = width / 1080;
   const padding = 62 * scale;
@@ -475,6 +534,8 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   drawBackground(context, width, height, heroBackground);
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
     drawCompletedTradeLandscape(context, draft, width, height, tradeItemImages, brandLogo);
+  } else if (draft.source === "Completed Trade" && platform === "Instagram") {
+    drawCompletedTradeInstagram(context, draft, width, height, tradeItemImages, brandLogo);
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, brandLogo);
   } else if (isTallCanvas(platform)) {
