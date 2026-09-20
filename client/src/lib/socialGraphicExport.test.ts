@@ -10,7 +10,6 @@ import {
   TRADED_EXCHANGE_LOGO_URL,
   TRADE_ALERT_STAGE_IMAGE_URLS,
   TRADE_ALERT_THEME_IMAGE_URLS,
-  TRADE_ALERT_FOREGROUND_IMAGE_URLS,
 } from "@/lib/socialGraphicExport";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";
 
@@ -78,7 +77,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
-    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-arrows-strong_5128768f.svg");
+    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-arrows-final_476a7cce.svg");
     expect(exporterSource).toContain("+ CASH INCLUDED");
     expect(exporterSource).toContain("drawCinematicFooterPhrase");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
@@ -104,10 +103,6 @@ describe("native Social graphic exporter", () => {
       "sports-baseball", "sports-football", "sports-basketball", "sports-hockey", "sports-collectibles",
       "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins", "collectibles",
     ]));
-    expect(Object.keys(TRADE_ALERT_FOREGROUND_IMAGE_URLS)).toEqual(expect.arrayContaining([
-      "sports-baseball", "sports-football", "sports-basketball", "sports-hockey", "sports-collectibles",
-      "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins", "collectibles",
-    ]));
     expect(TRADE_ALERT_STAGE_IMAGE_URLS).toEqual(expect.objectContaining({
       "sports-baseball-football": expect.stringContaining("sports-baseball-football-stage"),
       "sports-baseball": expect.stringContaining("sports-baseball-stage"),
@@ -127,7 +122,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
-    expect(exporterSource).toContain("tradeForegroundImageUrls");
+    expect(exporterSource).toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5, false)");
+    expect(exporterSource).not.toContain("TRADE_ALERT_FOREGROUND_IMAGE_URLS");
     expect(exporterSource).toContain("tradeStageImageUrls");
     expect(exporterSource).toContain("drawCinematicTradeScene(");
   });
