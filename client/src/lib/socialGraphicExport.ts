@@ -44,7 +44,7 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
-export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-exchange-logo-directional_b8ca6ba9.svg";
+export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-exchange-logo-reference_8e5e3f79.svg";
 
 /** Curated environments support the real listing photo; they never replace it. */
 export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKey, string>> = {
@@ -1156,9 +1156,12 @@ function drawCinematicFooterPhrase(context: CanvasRenderingContext2D, phrase: st
   context.save();
   context.fillStyle = "rgba(255, 244, 205, 0.96)";
   context.font = `700 ${Math.max(10, Math.round(13 * scale))}px ${CANVAS_SANS_FONT}`;
-  context.textAlign = "center";
+  // drawTrackedText positions individual glyphs from a calculated left edge;
+  // a centered canvas textAlign would re-center every glyph independently.
+  context.textAlign = "left";
   context.textBaseline = "middle";
-  drawTrackedText(context, phrase.toUpperCase(), width / 2, y, 0.35 * scale);
+  const text = phrase.toUpperCase();
+  drawTrackedText(context, text, width / 2, y, 0.35 * scale);
   context.restore();
 }
 
