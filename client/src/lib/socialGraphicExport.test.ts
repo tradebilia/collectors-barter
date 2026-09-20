@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   getSocialGraphicExportFileName,
+  getTradeAlertStageKey,
   getTradeItemFactLine,
   getTradeItemGradeLine,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
+  TRADE_ALERT_BRUSH_IMAGE_URL,
   TRADE_ALERT_STAGE_IMAGE_URLS,
   TRADE_ALERT_THEME_IMAGE_URLS,
 } from "@/lib/socialGraphicExport";
@@ -44,6 +46,10 @@ describe("native Social graphic exporter", () => {
     expect(getSocialGraphicExportFileName(promotionDraft, "Facebook")).toBe("tradebilia-1986-fleer-michael-jordan-rookie-psa-10-facebook.png");
   });
 
+  it("loads prepared storage assets safely for canvas preview and export", () => {
+    expect(exporterSource).toContain('image.crossOrigin = "anonymous"');
+  });
+
   it("preserves the high-value graphic hierarchy and contained original image behavior", () => {
     expect(exporterSource).toContain("NEW HIGH-VALUE LISTING");
     expect(exporterSource).toContain("drawCompleteFittedTitle");
@@ -64,11 +70,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCinematicTradeCta(context, width, ctaY, scale)");
   });
 
-  it("uses a brush-stroke Trade Alert and compact circular exchange mark", () => {
+  it("uses a textured brush-stroke Trade Alert and compact circular exchange mark", () => {
     expect(exporterSource).toContain('Anton, "Arial Narrow", Arial, sans-serif');
-    expect(exporterSource).toContain('"Permanent Marker", "Brush Script MT", cursive');
+    expect(exporterSource).toContain('Knewave, "Permanent Marker", "Brush Script MT", cursive');
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
-    expect(exporterSource).toContain('document.fonts.load(\'400 48px "Permanent Marker"\')');
+    expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
+    expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-brush");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
     expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
@@ -83,7 +90,7 @@ describe("native Social graphic exporter", () => {
     expect(getTradeItemFactLine({ title: "Public item", facts: [{ label: "Year", value: "1982" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }] })).toBe("1982");
   });
 
-  it("uses one physical sports stage for compatible card pairings while keeping actual item photos contained", () => {
+  it("uses real category stages and a dedicated crossover stage while keeping actual item photos contained", () => {
     expect(Object.keys(TRADE_ALERT_THEME_IMAGE_URLS)).toEqual(expect.arrayContaining([
       "sports_cards", "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins",
     ]));
@@ -91,6 +98,8 @@ describe("native Social graphic exporter", () => {
       "sports-baseball-football": expect.stringContaining("sports-baseball-football-stage"),
       "sports-baseball": expect.stringContaining("sports-baseball-stage"),
       "sports-football": expect.stringContaining("sports-football-stage"),
+      comics: expect.stringContaining("comics-stage"),
+      "mixed-collectibles": expect.stringContaining("mixed-collectibles-stage"),
     }));
     expect(exporterSource).toContain("function drawCinematicTradeScene");
     expect(exporterSource).toContain("function drawCinematicTradeItem");
@@ -102,10 +111,16 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCinematicTradeScene(");
   });
 
-  it("centers the Tradebilia lockup above the brush heading and anchors item captions outward", () => {
+  it("uses one genuine category scene for uniform trades and a neutral crossover scene for mixed-category trades", () => {
+    expect(getTradeAlertStageKey([{ category: "comics", title: "Star Wars" }, { category: "comics", title: "Daredevil" }])).toBe("comics");
+    expect(getTradeAlertStageKey([{ category: "comics", title: "Star Wars" }, { category: "vintage_toys", title: "Action figure" }])).toBe("mixed-collectibles");
+    expect(getTradeAlertStageKey([{ category: "sports_cards", title: "1982 Topps", visualHints: ["baseball"] }, { category: "sports_cards", title: "1989 Score", visualHints: ["football"] }])).toBe("sports-baseball-football");
+  });
+
+  it("centers the Tradebilia lockup above the brush heading and groups multiple items by trade side", () => {
     expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 11 * scale");
-    expect(exporterSource).toContain('width * 0.08, "left"');
-    expect(exporterSource).toContain('width * 0.92, "right"');
+    expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.565');
+    expect(exporterSource).toContain('images[entry.index] ?? null');
   });
 
   it("routes every completed-trade platform through the cinematic composition", () => {
@@ -116,5 +131,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('drawCompletedTradeCinematic(context, draft, "Instagram"');
     expect(exporterSource).toContain("const isTall = platform === \"Instagram\" || platform === \"Pinterest\"");
     expect(exporterSource).toContain("const isPinterest = platform === \"Pinterest\"");
+    expect(exporterSource).toContain("function drawCinematicTradeGroup");
+    expect(exporterSource).toContain("drawCinematicTradeGroup(context, offered");
+    expect(exporterSource).toContain("drawCinematicTradeGroup(context, requested");
   });
 });
