@@ -59,12 +59,36 @@ export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKe
   disney_pins: "/manus-storage/disney-pins-environment_c041b8f7.jpg",
 };
 
+/**
+ * Full-scene art is deliberately limited to compatible sports pairings. It is
+ * a single physical collector setting, not two unrelated images behind the
+ * cards. Other category combinations retain their dedicated abstract settings.
+ */
+export type TradeAlertStageKey = "sports-baseball-football" | "sports-baseball" | "sports-football";
+
+export const TRADE_ALERT_STAGE_IMAGE_URLS: Record<TradeAlertStageKey, string> = {
+  "sports-baseball-football": "/manus-storage/sports-baseball-football-stage_2dd0e69b.jpg",
+  "sports-baseball": "/manus-storage/sports-baseball-stage_f1ed2f40.jpg",
+  "sports-football": "/manus-storage/sports-football-stage_3d769f71.jpg",
+};
+
+type TradeAlertStageInput = Pick<TradeGraphicEntry["item"], "category" | "itemType" | "title" | "visualHints">;
+
+export function getTradeAlertStageKey(items: readonly TradeAlertStageInput[]): TradeAlertStageKey | null {
+  const themeKeys = new Set(items.map((item) => getTradeItemTheme(item).key));
+  if (themeKeys.has("sports-baseball") && themeKeys.has("sports-football")) return "sports-baseball-football";
+  if (themeKeys.size === 1 && themeKeys.has("sports-baseball")) return "sports-baseball";
+  if (themeKeys.size === 1 && themeKeys.has("sports-football")) return "sports-football";
+  return null;
+}
+
 type SocialGraphicExportInput = {
   draft: SocialDraft;
   platform: SocialPlatform;
   itemImageUrl?: string | null;
   tradeItemImageUrls?: Array<string | null>;
   tradeThemeImageUrls?: Partial<Record<TradeAlertThemeAssetKey, string | null>>;
+  tradeStageImageUrls?: Partial<Record<TradeAlertStageKey, string | null>>;
   brandLogoUrl?: string | null;
   heroBackgroundUrl?: string | null;
 };
@@ -620,6 +644,7 @@ type TradeGraphicEntry = {
 };
 
 type TradeThemeImages = Partial<Record<TradeAlertThemeAssetKey, CanvasImage | null>>;
+type TradeStageImages = Partial<Record<TradeAlertStageKey, CanvasImage | null>>;
 
 function getTradeItemTheme(item: TradeGraphicEntry["item"]) {
   return resolveTradeAlertTheme({
@@ -844,7 +869,29 @@ function drawCinematicTradeScene(
   rightTheme: TradeAlertTheme,
   leftEnvironment: CanvasImage | null,
   rightEnvironment: CanvasImage | null,
+  stageImage: CanvasImage | null,
 ) {
+  if (stageImage) {
+    // A compatible sports pair is shown inside one physical collector room.
+    // This deliberately avoids the prior split-screen treatment that made the
+    // graphic read as two dashboard panels instead of one premium trade scene.
+    drawCoverImage(context, stageImage, 0, 0, width, height, 0.5);
+    const topShade = context.createLinearGradient(0, 0, 0, height * 0.62);
+    topShade.addColorStop(0, "rgba(1, 3, 5, 0.26)");
+    topShade.addColorStop(0.26, "rgba(1, 3, 5, 0.30)");
+    topShade.addColorStop(1, "rgba(1, 3, 5, 0.56)");
+    context.fillStyle = topShade;
+    context.fillRect(0, 0, width, height * 0.62);
+    const edgeShade = context.createLinearGradient(0, 0, width, 0);
+    edgeShade.addColorStop(0, "rgba(1, 3, 5, 0.24)");
+    edgeShade.addColorStop(0.18, "rgba(1, 3, 5, 0)");
+    edgeShade.addColorStop(0.82, "rgba(1, 3, 5, 0)");
+    edgeShade.addColorStop(1, "rgba(1, 3, 5, 0.24)");
+    context.fillStyle = edgeShade;
+    context.fillRect(0, 0, width, height);
+    return;
+  }
+
   const base = context.createLinearGradient(0, 0, width, height);
   base.addColorStop(0, "#060b13");
   base.addColorStop(0.48, "#121824");
@@ -901,38 +948,53 @@ function drawCinematicTradeScene(
 }
 
 function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, scale: number) {
-  const logoWidth = 220 * scale;
-  drawBrand(context, logo, 48 * scale, 22 * scale, logoWidth, 46 * scale);
+  const logoWidth = 360 * scale;
+  drawBrand(context, logo, (width - logoWidth) / 2, 11 * scale, logoWidth, 57 * scale);
 
-  const strokeWidth = Math.min(width * 0.60, 540 * scale);
-  const strokeHeight = 64 * scale;
+  const strokeWidth = Math.min(width * 0.76, 900 * scale);
+  const strokeHeight = 54 * scale;
   const strokeX = (width - strokeWidth) / 2;
-  const strokeY = 78 * scale;
-  const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY + strokeHeight);
-  gold.addColorStop(0, "#bd842c");
-  gold.addColorStop(0.18, "#f6ce63");
-  gold.addColorStop(0.52, "#d7a53f");
-  gold.addColorStop(0.82, "#f4ca5a");
-  gold.addColorStop(1, "#aa7223");
+  const strokeY = 76 * scale;
+  const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
+  gold.addColorStop(0, "rgba(239, 169, 35, 0.22)");
+  gold.addColorStop(0.06, "#d3972e");
+  gold.addColorStop(0.48, "#ffd45a");
+  gold.addColorStop(0.94, "#d3972e");
+  gold.addColorStop(1, "rgba(239, 169, 35, 0.22)");
   context.save();
-  context.fillStyle = gold;
-  context.beginPath();
-  context.moveTo(strokeX + 10 * scale, strokeY + 7 * scale);
-  context.lineTo(strokeX + strokeWidth - 14 * scale, strokeY);
-  context.lineTo(strokeX + strokeWidth, strokeY + strokeHeight * 0.43);
-  context.lineTo(strokeX + strokeWidth - 18 * scale, strokeY + strokeHeight);
-  context.lineTo(strokeX + 6 * scale, strokeY + strokeHeight * 0.88);
-  context.lineTo(strokeX, strokeY + strokeHeight * 0.25);
-  context.closePath();
-  context.fill();
-  context.globalAlpha = 0.24;
-  context.fillStyle = "#fff4c7";
-  for (let offset = 18; offset < strokeWidth - 12; offset += 36) {
-    context.fillRect(strokeX + offset * scale, strokeY + 12 * scale, 16 * scale, 2 * scale);
+  // Layered, uneven brush lines create a paint swipe rather than a framed
+  // ribbon. The reference’s headline depends on this hand-painted silhouette.
+  context.strokeStyle = gold;
+  context.lineCap = "round";
+  const brushRows = [
+    { y: 8, width: 0.92, line: 7, alpha: 0.48 },
+    { y: 15, width: 0.98, line: 11, alpha: 0.88 },
+    { y: 25, width: 1, line: 13, alpha: 1 },
+    { y: 35, width: 0.97, line: 11, alpha: 0.92 },
+    { y: 44, width: 0.88, line: 7, alpha: 0.52 },
+  ];
+  brushRows.forEach((row, index) => {
+    const rowWidth = strokeWidth * row.width;
+    const rowX = strokeX + (strokeWidth - rowWidth) / 2 + (index % 2 === 0 ? -3 : 3) * scale;
+    context.globalAlpha = row.alpha;
+    context.lineWidth = row.line * scale;
+    context.beginPath();
+    context.moveTo(rowX, strokeY + row.y * scale);
+    context.lineTo(rowX + rowWidth, strokeY + row.y * scale + (index % 2 === 0 ? 1 : -1) * scale);
+    context.stroke();
+  });
+  context.globalAlpha = 0.35;
+  context.lineWidth = 1.4 * scale;
+  for (let bristle = 0; bristle < 10; bristle += 1) {
+    const x = strokeX + strokeWidth * (0.025 + bristle * 0.105);
+    context.beginPath();
+    context.moveTo(x, strokeY + 2 * scale);
+    context.lineTo(x + 26 * scale, strokeY + strokeHeight - 2 * scale);
+    context.stroke();
   }
   context.globalAlpha = 1;
   context.fillStyle = "#071324";
-  context.font = `400 ${Math.round(44 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
+  context.font = `400 ${Math.round(39 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
   context.textAlign = "center";
   context.textBaseline = "middle";
   drawCrispText(context, "TRADE ALERT", width / 2, strokeY + strokeHeight * 0.55);
@@ -999,6 +1061,8 @@ function drawCinematicTradeItem(
   imageHeight: number,
   captionY: number,
   captionWidth: number,
+  captionX: number,
+  captionAlign: CanvasTextAlign,
   scale: number,
 ) {
   if (!entry) return;
@@ -1016,23 +1080,23 @@ function drawCinematicTradeItem(
 
   context.fillStyle = "#ffffff";
   context.font = `700 ${Math.max(10, Math.round(13 * scale))}px ${CANVAS_SANS_FONT}`;
-  context.textAlign = "center";
+  context.textAlign = captionAlign;
   const titleLines = splitLine(context, item.title, captionWidth, 2);
   const titleLineHeight = Math.max(12, 15 * scale);
-  titleLines.forEach((line, index) => drawCrispText(context, line, centerX, captionY + index * titleLineHeight));
+  titleLines.forEach((line, index) => drawCrispText(context, line, captionX, captionY + index * titleLineHeight));
   let detailY = captionY + titleLines.length * titleLineHeight + 5 * scale;
   const factLine = getTradeItemFactLine(item);
   if (factLine) {
     context.fillStyle = "rgba(252, 243, 215, 0.90)";
     context.font = `600 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
-    drawCrispText(context, splitLine(context, factLine, captionWidth, 1)[0] ?? "", centerX, detailY);
+    drawCrispText(context, splitLine(context, factLine, captionWidth, 1)[0] ?? "", captionX, detailY);
     detailY += 14 * scale;
   }
   const gradeLine = getTradeItemGradeLine(item);
   if (gradeLine) {
     context.fillStyle = "#ffffff";
     context.font = `800 ${Math.max(9, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
-    drawCrispText(context, gradeLine, centerX, detailY);
+    drawCrispText(context, gradeLine, captionX, detailY);
   }
   context.restore();
 }
@@ -1060,6 +1124,7 @@ function drawCompletedTradeCinematic(
   height: number,
   images: Array<CanvasImage | null>,
   themeImages: TradeThemeImages,
+  stageImages: TradeStageImages,
   brandLogo: CanvasImage | null,
 ) {
   const scale = width / 1200;
@@ -1068,6 +1133,7 @@ function drawCompletedTradeCinematic(
   const rightEntry = requested[0];
   const leftTheme = getTradeItemTheme(leftEntry?.item ?? { title: "Collectible" });
   const rightTheme = getTradeItemTheme(rightEntry?.item ?? { title: "Collectible" });
+  const stageKey = getTradeAlertStageKey([leftEntry?.item, rightEntry?.item].filter((item): item is TradeGraphicEntry["item"] => Boolean(item)));
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const isPinterest = platform === "Pinterest";
   const imageY = isTall ? 184 * scale : 164 * scale;
@@ -1087,10 +1153,11 @@ function drawCompletedTradeCinematic(
     rightTheme,
     themeImages[leftTheme.assetKey] ?? null,
     themeImages[rightTheme.assetKey] ?? null,
+    stageKey ? stageImages[stageKey] ?? null : null,
   );
   drawCinematicTradeHeader(context, brandLogo, width, scale);
-  drawCinematicTradeItem(context, leftEntry, leftEntry ? images[leftEntry.index] ?? null : null, leftCenter, imageY, imageWidth, imageHeight, captionY, width * 0.31, scale);
-  drawCinematicTradeItem(context, rightEntry, rightEntry ? images[rightEntry.index] ?? null : null, rightCenter, imageY, imageWidth, imageHeight, captionY, width * 0.31, scale);
+  drawCinematicTradeItem(context, leftEntry, leftEntry ? images[leftEntry.index] ?? null : null, leftCenter, imageY, imageWidth, imageHeight, captionY, width * 0.28, width * 0.08, "left", scale);
+  drawCinematicTradeItem(context, rightEntry, rightEntry ? images[rightEntry.index] ?? null : null, rightCenter, imageY, imageWidth, imageHeight, captionY, width * 0.28, width * 0.92, "right", scale);
   drawCinematicExchangeMark(context, width / 2, exchangeY, scale, Boolean(draft.promotion?.cashIncluded));
   drawCinematicTradeCta(context, width, ctaY, scale);
 }
@@ -1130,17 +1197,17 @@ function drawCompletedTradeSideBySide(
   drawTradeBrandFooter(context, brandLogo, width, height, padding, scale, footerDividerOffset);
 }
 
-function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, brandLogo: CanvasImage | null) {
-  drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, brandLogo);
+function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, stageImages: TradeStageImages, brandLogo: CanvasImage | null) {
+  drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, stageImages, brandLogo);
 }
 
 /** Square Instagram trade posts keep the Facebook trade composition, with a taller item area. */
-function drawCompletedTradeInstagram(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, brandLogo: CanvasImage | null) {
-  drawCompletedTradeCinematic(context, draft, "Instagram", width, height, images, themeImages, brandLogo);
+function drawCompletedTradeInstagram(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, stageImages: TradeStageImages, brandLogo: CanvasImage | null) {
+  drawCompletedTradeCinematic(context, draft, "Instagram", width, height, images, themeImages, stageImages, brandLogo);
 }
 
-function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, brandLogo: CanvasImage | null) {
-  drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, brandLogo);
+function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, stageImages: TradeStageImages, brandLogo: CanvasImage | null) {
+  drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, stageImages, brandLogo);
 }
 
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
@@ -1273,7 +1340,7 @@ export function getSocialGraphicExportFileName(draft: SocialDraft, platform: Soc
 }
 
 /** Renders the finished promotion to a native platform-size canvas without reading preview DOM or CSS. */
-export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, tradeItemImageUrls, tradeThemeImageUrls, brandLogoUrl, heroBackgroundUrl }: SocialGraphicExportInput) {
+export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl, tradeItemImageUrls, tradeThemeImageUrls, tradeStageImageUrls, brandLogoUrl, heroBackgroundUrl }: SocialGraphicExportInput) {
   const { width, height } = SOCIAL_GRAPHIC_CANVAS_SIZES[platform];
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -1288,23 +1355,28 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const themeSourceEntries = usedTradeThemeKeys
     .map((assetKey) => [assetKey, tradeThemeImageUrls?.[assetKey] || TRADE_ALERT_THEME_IMAGE_URLS[assetKey]] as const)
     .filter((entry): entry is readonly [TradeAlertThemeAssetKey, string] => Boolean(entry[1]));
+  const tradeItems = draft.source === "Completed Trade" ? draft.promotion?.tradeItems ?? [] : [];
+  const stageKey = getTradeAlertStageKey(tradeItems);
+  const stageSourceUrl = stageKey ? tradeStageImageUrls?.[stageKey] || TRADE_ALERT_STAGE_IMAGE_URLS[stageKey] : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, brandLogo, heroBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, stageImage, brandLogo, heroBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
     Promise.all(themeSourceEntries.map(([, sourceUrl]) => loadCanvasImage(sourceUrl, true))),
+    loadCanvasImage(stageSourceUrl, Boolean(stageSourceUrl)),
     loadCanvasImage(brandLogoUrl),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
+  const tradeStageImages: TradeStageImages = stageKey ? { [stageKey]: stageImage } : {};
   if (draft.source !== "Completed Trade") drawBackground(context, width, height, heroBackground);
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
-    drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, brandLogo);
+    drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo);
   } else if (draft.source === "Completed Trade" && platform === "Instagram") {
-    drawCompletedTradeInstagram(context, draft, width, height, tradeItemImages, tradeThemeImages, brandLogo);
+    drawCompletedTradeInstagram(context, draft, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo);
   } else if (draft.source === "Completed Trade") {
-    drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, brandLogo);
+    drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

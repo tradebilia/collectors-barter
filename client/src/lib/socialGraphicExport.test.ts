@@ -5,6 +5,7 @@ import {
   getTradeItemFactLine,
   getTradeItemGradeLine,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
+  TRADE_ALERT_STAGE_IMAGE_URLS,
   TRADE_ALERT_THEME_IMAGE_URLS,
 } from "@/lib/socialGraphicExport";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";
@@ -82,16 +83,29 @@ describe("native Social graphic exporter", () => {
     expect(getTradeItemFactLine({ title: "Public item", facts: [{ label: "Year", value: "1982" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }] })).toBe("1982");
   });
 
-  it("uses one cinematic scene with side-specific environments while keeping actual item photos contained", () => {
+  it("uses one physical sports stage for compatible card pairings while keeping actual item photos contained", () => {
     expect(Object.keys(TRADE_ALERT_THEME_IMAGE_URLS)).toEqual(expect.arrayContaining([
       "sports_cards", "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins",
     ]));
+    expect(TRADE_ALERT_STAGE_IMAGE_URLS).toEqual(expect.objectContaining({
+      "sports-baseball-football": expect.stringContaining("sports-baseball-football-stage"),
+      "sports-baseball": expect.stringContaining("sports-baseball-stage"),
+      "sports-football": expect.stringContaining("sports-football-stage"),
+    }));
     expect(exporterSource).toContain("function drawCinematicTradeScene");
     expect(exporterSource).toContain("function drawCinematicTradeItem");
-    expect(exporterSource).toContain("resolveTradeAlertTheme");
+    expect(exporterSource).toContain("function getTradeAlertStageKey");
+    expect(exporterSource).toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
+    expect(exporterSource).toContain("tradeStageImageUrls");
     expect(exporterSource).toContain("drawCinematicTradeScene(");
+  });
+
+  it("centers the Tradebilia lockup above the brush heading and anchors item captions outward", () => {
+    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 11 * scale");
+    expect(exporterSource).toContain('width * 0.08, "left"');
+    expect(exporterSource).toContain('width * 0.92, "right"');
   });
 
   it("routes every completed-trade platform through the cinematic composition", () => {

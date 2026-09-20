@@ -37,7 +37,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
-import { downloadSocialGraphicCanvas, getSocialGraphicExportFileName, renderSocialGraphicCanvas, TRADE_ALERT_THEME_IMAGE_URLS } from "@/lib/socialGraphicExport";
+import {
+  downloadSocialGraphicCanvas,
+  getSocialGraphicExportFileName,
+  getTradeAlertStageKey,
+  renderSocialGraphicCanvas,
+  TRADE_ALERT_STAGE_IMAGE_URLS,
+  TRADE_ALERT_THEME_IMAGE_URLS,
+  type TradeAlertStageKey,
+} from "@/lib/socialGraphicExport";
 import { getTradeAlertThemeAssetKeys, type TradeAlertThemeAssetKey } from "@shared/tradeAlertThemes";
 import {
   approveSocialDraft,
@@ -211,6 +219,7 @@ export function SocialContentManagerTab() {
   // photo would otherwise assign a later item's photo to the wrong caption.
   const [preparedTradeImageUrls, setPreparedTradeImageUrls] = useState<Array<string | null>>([]);
   const [preparedTradeThemeImageUrls, setPreparedTradeThemeImageUrls] = useState<Partial<Record<TradeAlertThemeAssetKey, string | null>>>({});
+  const [preparedTradeStageImageUrls, setPreparedTradeStageImageUrls] = useState<Partial<Record<TradeAlertStageKey, string | null>>>({});
   const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
   const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -271,13 +280,20 @@ export function SocialContentManagerTab() {
     : [];
   const completedTradeThemesReady = selectedDraft?.source !== "Completed Trade"
     || completedTradeThemeKeys.every((assetKey) => Boolean(preparedTradeThemeImageUrls[assetKey]));
+  const completedTradeStageKey = selectedDraft?.source === "Completed Trade"
+    ? getTradeAlertStageKey(selectedDraft.promotion?.tradeItems ?? [])
+    : null;
+  const completedTradeStageReady = selectedDraft?.source !== "Completed Trade"
+    || !completedTradeStageKey
+    || Boolean(preparedTradeStageImageUrls[completedTradeStageKey]);
   const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
-    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady);
+    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || !completedTradeStageReady);
 
   useEffect(() => {
     setPreparedGraphicImageUrl(null);
     setPreparedTradeImageUrls([]);
     setPreparedTradeThemeImageUrls({});
+    setPreparedTradeStageImageUrls({});
     setPreparedBrandLogoUrl(null);
     setPreparedHeroBackgroundUrl(null);
     preparedAssetRequestRef.current = null;
@@ -300,12 +316,16 @@ export function SocialContentManagerTab() {
     const tradeThemeSources = tradeThemeKeys
       .map((assetKey) => ({ assetKey, sourceUrl: TRADE_ALERT_THEME_IMAGE_URLS[assetKey] }))
       .filter((theme): theme is { assetKey: TradeAlertThemeAssetKey; sourceUrl: string } => Boolean(theme.sourceUrl));
+    const tradeStageKey = getTradeAlertStageKey(tradeItems);
+    const tradeStageSources = tradeStageKey
+      ? [{ stageKey: tradeStageKey, sourceUrl: TRADE_ALERT_STAGE_IMAGE_URLS[tradeStageKey] }]
+      : [];
     const sourceUrl = hasItemImage ? selectedDraft.mediaUrl : TRADEBILIA_LOGO_URL;
     if ((hasItemImage && preparedGraphicImageUrl) || (!hasItemImage && preparedBrandLogoUrl)) return;
-    const requestKey = [sourceUrl, ...tradeImageSources.map((item) => item.sourceUrl), ...tradeThemeSources.map((theme) => theme.sourceUrl)].join("|");
+    const requestKey = [sourceUrl, ...tradeImageSources.map((item) => item.sourceUrl), ...tradeThemeSources.map((theme) => theme.sourceUrl), ...tradeStageSources.map((stage) => stage.sourceUrl)].join("|");
     if (preparedAssetRequestRef.current === requestKey) return;
     preparedAssetRequestRef.current = requestKey;
-    prepareSocialGraphicImage.mutateAsync({ sourceUrls: [sourceUrl, ...tradeImageSources.map((item) => item.sourceUrl), ...tradeThemeSources.map((theme) => theme.sourceUrl)] })
+    prepareSocialGraphicImage.mutateAsync({ sourceUrls: [sourceUrl, ...tradeImageSources.map((item) => item.sourceUrl), ...tradeThemeSources.map((theme) => theme.sourceUrl), ...tradeStageSources.map((stage) => stage.sourceUrl)] })
       .then((result) => {
         setPreparedGraphicImageUrl(hasItemImage ? result.dataUrls[0] ?? null : null);
         const alignedTradeImageUrls: Array<string | null> = Array.from({ length: tradeItems.length }, () => null);
@@ -318,6 +338,11 @@ export function SocialContentManagerTab() {
           preparedThemeUrls[assetKey] = result.dataUrls[tradeImageSources.length + themeIndex + 1] ?? null;
         });
         setPreparedTradeThemeImageUrls(preparedThemeUrls);
+        const preparedStageUrls: Partial<Record<TradeAlertStageKey, string | null>> = {};
+        tradeStageSources.forEach(({ stageKey }, stageIndex) => {
+          preparedStageUrls[stageKey] = result.dataUrls[tradeImageSources.length + tradeThemeSources.length + stageIndex + 1] ?? null;
+        });
+        setPreparedTradeStageImageUrls(preparedStageUrls);
         setPreparedBrandLogoUrl(result.brandLogoDataUrl);
         setPreparedHeroBackgroundUrl(result.heroBackgroundDataUrl);
       })
@@ -498,7 +523,7 @@ export function SocialContentManagerTab() {
 
   async function downloadSocialGraphic() {
     if (!selectedDraft || !selectedPreviewPlatform) return;
-    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || (hasExportableItemImage && !preparedGraphicImageUrl)) {
+    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || !completedTradeStageReady || (hasExportableItemImage && !preparedGraphicImageUrl)) {
       toast.error("Preparing original item images and Trade Alert environments. Please wait a moment, then download the graphic.");
       return;
     }
@@ -510,6 +535,7 @@ export function SocialContentManagerTab() {
         itemImageUrl: preparedGraphicImageUrl,
         tradeItemImageUrls: preparedTradeImageUrls,
         tradeThemeImageUrls: preparedTradeThemeImageUrls,
+        tradeStageImageUrls: preparedTradeStageImageUrls,
         brandLogoUrl: preparedBrandLogoUrl,
         heroBackgroundUrl: preparedHeroBackgroundUrl,
       });
@@ -704,7 +730,7 @@ export function SocialContentManagerTab() {
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
                       <div className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
-                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} tradeThemeImageUrls={preparedTradeThemeImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />
+                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} tradeThemeImageUrls={preparedTradeThemeImageUrls} tradeStageImageUrls={preparedTradeStageImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

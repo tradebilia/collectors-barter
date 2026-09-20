@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { renderSocialGraphicCanvas, SOCIAL_GRAPHIC_BRAND_LOGO_URL, SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
 import type { TradeAlertThemeAssetKey } from "@shared/tradeAlertThemes";
+import type { TradeAlertStageKey } from "@/lib/socialGraphicExport";
 import type { SocialDraft, SocialPlatform } from "@/lib/socialContentManager";
 
 export const SOCIAL_GRAPHIC_SPECS: Record<SocialPlatform, { label: string; size: string; aspect: string; previewClass: string }> = {
@@ -20,6 +21,7 @@ export function SocialPromotionGraphic({
   itemImageUrl,
   tradeItemImageUrls = [],
   tradeThemeImageUrls,
+  tradeStageImageUrls,
   heroBackgroundUrl = SOCIAL_GRAPHIC_HERO_BACKGROUND_URL,
 }: {
   draft: SocialDraft;
@@ -28,6 +30,7 @@ export function SocialPromotionGraphic({
   itemImageUrl?: string | null;
   tradeItemImageUrls?: Array<string | null>;
   tradeThemeImageUrls?: Partial<Record<TradeAlertThemeAssetKey, string | null>>;
+  tradeStageImageUrls?: Partial<Record<TradeAlertStageKey, string | null>>;
   heroBackgroundUrl?: string;
 }) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -43,6 +46,7 @@ export function SocialPromotionGraphic({
       itemImageUrl: itemImageUrl ?? draft.mediaUrl ?? null,
       tradeItemImageUrls,
       tradeThemeImageUrls,
+      tradeStageImageUrls,
       brandLogoUrl,
       heroBackgroundUrl,
     }).then((canvas) => {
@@ -54,7 +58,7 @@ export function SocialPromotionGraphic({
       if (!cancelled) setIsRendering(false);
     });
     return () => { cancelled = true; };
-  }, [draft, platform, brandLogoUrl, itemImageUrl, tradeItemImageUrls, tradeThemeImageUrls, heroBackgroundUrl]);
+  }, [draft, platform, brandLogoUrl, itemImageUrl, tradeItemImageUrls, tradeThemeImageUrls, tradeStageImageUrls, heroBackgroundUrl]);
 
   const spec = SOCIAL_GRAPHIC_SPECS[platform];
   return (
