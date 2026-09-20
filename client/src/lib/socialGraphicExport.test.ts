@@ -62,13 +62,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
   });
 
-  it("keeps the high-value brand footer intact and gives completed trades a focused CTA", () => {
+  it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
     expect(exporterSource).toContain("drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()");
-    expect(exporterSource).toContain("function drawCinematicTradeCta");
-    expect(exporterSource).toContain('const label = "VIEW THIS TRADE ON TRADEBILIA  →"');
-    expect(exporterSource).toContain("drawCinematicTradeCta(context, width, ctaY, scale)");
+    expect(exporterSource).not.toContain("function drawCinematicTradeCta");
+    expect(exporterSource).not.toContain('const label = "VIEW THIS TRADE ON TRADEBILIA  →"');
   });
 
   it("uses a textured brush-stroke Trade Alert and compact circular exchange mark", () => {
@@ -119,12 +118,13 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
-    expect(exporterSource).toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5, false)");
+    expect(exporterSource).toContain("drawCoverImage(context, leftStageImage ?? leftEnvironment, 0, 0, split + width * 0.06, height, 0.48, false)");
+    expect(exporterSource).toContain("drawCoverImage(context, rightStageImage ?? rightEnvironment, split - width * 0.06, 0, split + width * 0.06, height, 0.52, true)");
     expect(exporterSource).not.toContain("TRADE_ALERT_FOREGROUND_IMAGE_URLS");
     expect(exporterSource).toContain("tradeStageImageUrls");
     expect(exporterSource).toContain("drawCinematicTradeScene(");
-    expect(exporterSource).toContain("const strokeWidth = Math.min(width * 0.84");
-    expect(exporterSource).toContain("const strokeHeight = 150 * scale");
+    expect(exporterSource).toContain("const strokeWidth = Math.min(width * 0.92");
+    expect(exporterSource).toContain("const strokeHeight = 174 * scale");
     expect(exporterSource).toContain("0.35 * scale");
   });
 
@@ -135,7 +135,7 @@ describe("native Social graphic exporter", () => {
   });
 
   it("centers the Tradebilia lockup above the brush heading and groups multiple items by trade side", () => {
-    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 11 * scale");
+    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 3 * scale");
     expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.565');
     expect(exporterSource).toContain('images[entry.index] ?? null');
   });
