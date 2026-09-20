@@ -43,7 +43,7 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
-export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-brush_3bcabadd.png";
+export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
 
 /** Curated environments support the real listing photo; they never replace it. */
 export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKey, string>> = {
@@ -960,15 +960,15 @@ function drawCinematicTradeScene(
     const environment = image ?? fallbackImage;
     if (environment) {
       const focalX = 0.10 + (sceneSeed % 4) * 0.06;
-      context.globalAlpha = 0.42 + ((sceneSeed >>> 3) % 4) * 0.035;
+      context.globalAlpha = 0.62 + ((sceneSeed >>> 3) % 4) * 0.035;
       drawCoverImage(context, environment, x, 0, sideWidth, height, focalX, mirrored);
     }
     const wash = mirrored
       ? context.createLinearGradient(x + sideWidth, 0, x, height)
       : context.createLinearGradient(x, 0, x + sideWidth, height);
-    wash.addColorStop(0, withAlpha(theme.primary, 0.34));
-    wash.addColorStop(0.58, "rgba(7, 11, 17, 0.18)");
-    wash.addColorStop(1, "rgba(5, 8, 13, 0.86)");
+    wash.addColorStop(0, withAlpha(theme.primary, 0.24));
+    wash.addColorStop(0.58, "rgba(7, 11, 17, 0.10)");
+    wash.addColorStop(1, "rgba(5, 8, 13, 0.70)");
     context.globalAlpha = 1;
     context.fillStyle = wash;
     context.fillRect(x, 0, sideWidth, height);
@@ -985,9 +985,9 @@ function drawCinematicTradeScene(
   drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, stageImage, rightSceneSeed, true);
 
   const centeredVignette = context.createRadialGradient(width / 2, height * 0.46, 0, width / 2, height * 0.46, width * 0.54);
-  centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.22)");
-  centeredVignette.addColorStop(0.58, "rgba(4, 7, 12, 0.42)");
-  centeredVignette.addColorStop(1, "rgba(2, 4, 8, 0.86)");
+  centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.12)");
+  centeredVignette.addColorStop(0.58, "rgba(4, 7, 12, 0.26)");
+  centeredVignette.addColorStop(1, "rgba(2, 4, 8, 0.72)");
   context.fillStyle = centeredVignette;
   context.fillRect(0, 0, width, height);
 
@@ -995,8 +995,8 @@ function drawCinematicTradeScene(
   const floorStart = height > width ? height * 0.64 : height * 0.74;
   const floor = context.createLinearGradient(0, floorStart, 0, height);
   floor.addColorStop(0, "rgba(82, 49, 24, 0.10)");
-  floor.addColorStop(0.28, "rgba(53, 29, 15, 0.62)");
-  floor.addColorStop(1, "rgba(7, 8, 11, 0.92)");
+  floor.addColorStop(0.28, "rgba(53, 29, 15, 0.46)");
+  floor.addColorStop(1, "rgba(7, 8, 11, 0.82)");
   context.fillStyle = floor;
   context.fillRect(0, floorStart, width, height - floorStart);
   context.strokeStyle = "rgba(246, 201, 80, 0.12)";
@@ -1022,8 +1022,8 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   if (brushImage) {
     // Crop away the transparent canvas around the generated brush so the
     // textured paint—not a rounded ribbon—maps to the reference silhouette.
-    const sourceY = brushImage.naturalHeight * 0.31;
-    const sourceHeight = brushImage.naturalHeight * 0.48;
+    const sourceY = brushImage.naturalHeight * 0.17;
+    const sourceHeight = brushImage.naturalHeight * 0.57;
     context.drawImage(brushImage, 0, sourceY, brushImage.naturalWidth, sourceHeight, strokeX, strokeY, strokeWidth, strokeHeight);
   } else {
     const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);

@@ -75,7 +75,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('Knewave, "Permanent Marker", "Brush Script MT", cursive');
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
-    expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-brush");
+    expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
     expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
