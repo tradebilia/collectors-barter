@@ -18,6 +18,7 @@ type CanvasImage = HTMLImageElement;
 
 const CANVAS_SANS_FONT = 'Inter, Arial, sans-serif';
 const CANVAS_TRADE_DISPLAY_FONT = 'Anton, "Arial Narrow", Arial, sans-serif';
+const CANVAS_TRADE_BRUSH_FONT = '"Permanent Marker", "Brush Script MT", cursive';
 
 /**
  * Canvas does not wait for CSS font downloads. Explicitly loading the two
@@ -29,6 +30,7 @@ async function ensureSocialCanvasFonts() {
   if (!("fonts" in document)) return;
   await Promise.all([
     document.fonts.load('400 44px "Anton"'),
+    document.fonts.load('400 48px "Permanent Marker"'),
     document.fonts.load('700 18px "Inter"'),
     document.fonts.ready,
   ]);
@@ -829,6 +831,270 @@ function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, 
   context.restore();
 }
 
+/**
+ * The completed-trade treatment intentionally does not reuse the high-value
+ * listing card layout. It is a single cinematic scene: the real collectibles
+ * are staged in the environment, joined by a compact exchange mark.
+ */
+function drawCinematicTradeScene(
+  context: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  leftTheme: TradeAlertTheme,
+  rightTheme: TradeAlertTheme,
+  leftEnvironment: CanvasImage | null,
+  rightEnvironment: CanvasImage | null,
+) {
+  const base = context.createLinearGradient(0, 0, width, height);
+  base.addColorStop(0, "#060b13");
+  base.addColorStop(0.48, "#121824");
+  base.addColorStop(1, "#090b0e");
+  context.fillStyle = base;
+  context.fillRect(0, 0, width, height);
+
+  const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, focalX: number) => {
+    context.save();
+    context.beginPath();
+    context.rect(x, 0, sideWidth, height);
+    context.clip();
+    if (image) {
+      context.globalAlpha = 0.46;
+      drawCoverImage(context, image, x, 0, sideWidth, height, focalX);
+    }
+    const wash = context.createLinearGradient(x, 0, x + sideWidth, height);
+    wash.addColorStop(0, withAlpha(theme.primary, 0.34));
+    wash.addColorStop(0.58, "rgba(7, 11, 17, 0.18)");
+    wash.addColorStop(1, "rgba(5, 8, 13, 0.86)");
+    context.globalAlpha = 1;
+    context.fillStyle = wash;
+    context.fillRect(x, 0, sideWidth, height);
+    context.restore();
+  };
+
+  drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, 0.16);
+  drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, 0.84);
+
+  const centeredVignette = context.createRadialGradient(width / 2, height * 0.46, 0, width / 2, height * 0.46, width * 0.54);
+  centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.22)");
+  centeredVignette.addColorStop(0.58, "rgba(4, 7, 12, 0.42)");
+  centeredVignette.addColorStop(1, "rgba(2, 4, 8, 0.86)");
+  context.fillStyle = centeredVignette;
+  context.fillRect(0, 0, width, height);
+
+  // A quiet display surface creates depth without turning the graphic into a UI card.
+  const floorStart = height > width ? height * 0.64 : height * 0.74;
+  const floor = context.createLinearGradient(0, floorStart, 0, height);
+  floor.addColorStop(0, "rgba(82, 49, 24, 0.10)");
+  floor.addColorStop(0.28, "rgba(53, 29, 15, 0.62)");
+  floor.addColorStop(1, "rgba(7, 8, 11, 0.92)");
+  context.fillStyle = floor;
+  context.fillRect(0, floorStart, width, height - floorStart);
+  context.strokeStyle = "rgba(246, 201, 80, 0.12)";
+  context.lineWidth = Math.max(1, width / 1200);
+  for (let row = 1; row <= 4; row += 1) {
+    const y = floorStart + row * ((height - floorStart) / 5);
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(width, y + width * 0.026);
+    context.stroke();
+  }
+}
+
+function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, scale: number) {
+  const logoWidth = 220 * scale;
+  drawBrand(context, logo, 48 * scale, 22 * scale, logoWidth, 46 * scale);
+
+  const strokeWidth = Math.min(width * 0.60, 540 * scale);
+  const strokeHeight = 64 * scale;
+  const strokeX = (width - strokeWidth) / 2;
+  const strokeY = 78 * scale;
+  const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY + strokeHeight);
+  gold.addColorStop(0, "#bd842c");
+  gold.addColorStop(0.18, "#f6ce63");
+  gold.addColorStop(0.52, "#d7a53f");
+  gold.addColorStop(0.82, "#f4ca5a");
+  gold.addColorStop(1, "#aa7223");
+  context.save();
+  context.fillStyle = gold;
+  context.beginPath();
+  context.moveTo(strokeX + 10 * scale, strokeY + 7 * scale);
+  context.lineTo(strokeX + strokeWidth - 14 * scale, strokeY);
+  context.lineTo(strokeX + strokeWidth, strokeY + strokeHeight * 0.43);
+  context.lineTo(strokeX + strokeWidth - 18 * scale, strokeY + strokeHeight);
+  context.lineTo(strokeX + 6 * scale, strokeY + strokeHeight * 0.88);
+  context.lineTo(strokeX, strokeY + strokeHeight * 0.25);
+  context.closePath();
+  context.fill();
+  context.globalAlpha = 0.24;
+  context.fillStyle = "#fff4c7";
+  for (let offset = 18; offset < strokeWidth - 12; offset += 36) {
+    context.fillRect(strokeX + offset * scale, strokeY + 12 * scale, 16 * scale, 2 * scale);
+  }
+  context.globalAlpha = 1;
+  context.fillStyle = "#071324";
+  context.font = `400 ${Math.round(44 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  drawCrispText(context, "TRADE ALERT", width / 2, strokeY + strokeHeight * 0.55);
+  context.fillStyle = "rgba(252, 240, 201, 0.92)";
+  context.font = `700 ${Math.max(8, Math.round(9 * scale))}px ${CANVAS_SANS_FONT}`;
+  drawTrackedText(context, "REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE", width / 2, strokeY + strokeHeight + 20 * scale, 1.55 * scale);
+  context.restore();
+}
+
+function drawCinematicExchangeMark(context: CanvasRenderingContext2D, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
+  const radius = 38 * scale;
+  context.save();
+  context.strokeStyle = "#f3c850";
+  context.lineWidth = Math.max(2, 3 * scale);
+  context.lineCap = "round";
+  context.beginPath();
+  context.arc(centerX, centerY - 3 * scale, radius, Math.PI * 0.96, Math.PI * 1.84);
+  context.stroke();
+  context.beginPath();
+  context.arc(centerX, centerY - 3 * scale, radius, Math.PI * 0.02, Math.PI * 0.88);
+  context.stroke();
+
+  const arrowSize = 8 * scale;
+  context.fillStyle = "#f3c850";
+  const triangle = (x: number, y: number, angle: number) => {
+    context.save();
+    context.translate(x, y);
+    context.rotate(angle);
+    context.beginPath();
+    context.moveTo(arrowSize, 0);
+    context.lineTo(-arrowSize, -arrowSize * 0.72);
+    context.lineTo(-arrowSize, arrowSize * 0.72);
+    context.closePath();
+    context.fill();
+    context.restore();
+  };
+  triangle(centerX - radius * 0.83, centerY + radius * 0.17, Math.PI * 0.80);
+  triangle(centerX + radius * 0.83, centerY - radius * 0.17, -Math.PI * 0.20);
+
+  context.font = `400 ${Math.round(29 * scale)}px ${CANVAS_TRADE_DISPLAY_FONT}`;
+  const label = "TRADED";
+  const labelWidth = context.measureText(label).width + 24 * scale;
+  const labelHeight = 34 * scale;
+  drawRoundedRect(context, centerX - labelWidth / 2, centerY - labelHeight / 2 - 3 * scale, labelWidth, labelHeight, 7 * scale, "rgba(6, 12, 21, 0.94)", "rgba(246, 202, 91, 0.92)");
+  context.fillStyle = "#ffffff";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  drawCrispText(context, label, centerX, centerY - 2 * scale);
+  if (cashIncluded) {
+    context.fillStyle = "#f7d76d";
+    context.font = `800 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
+    drawCrispText(context, "CASH INCLUDED", centerX, centerY + radius + 18 * scale);
+  }
+  context.restore();
+}
+
+function drawCinematicTradeItem(
+  context: CanvasRenderingContext2D,
+  entry: TradeGraphicEntry | undefined,
+  image: CanvasImage | null,
+  centerX: number,
+  imageY: number,
+  imageWidth: number,
+  imageHeight: number,
+  captionY: number,
+  captionWidth: number,
+  scale: number,
+) {
+  if (!entry) return;
+  const { item } = entry;
+  context.save();
+  const shadowY = imageY + imageHeight - 5 * scale;
+  const shadow = context.createRadialGradient(centerX, shadowY, 4 * scale, centerX, shadowY, imageWidth * 0.54);
+  shadow.addColorStop(0, "rgba(0, 0, 0, 0.68)");
+  shadow.addColorStop(1, "rgba(0, 0, 0, 0)");
+  context.fillStyle = shadow;
+  context.beginPath();
+  context.ellipse(centerX, shadowY, imageWidth * 0.45, 11 * scale, 0, 0, Math.PI * 2);
+  context.fill();
+  if (image) drawContainedImage(context, image, centerX - imageWidth / 2, imageY, imageWidth, imageHeight);
+
+  context.fillStyle = "#ffffff";
+  context.font = `700 ${Math.max(10, Math.round(13 * scale))}px ${CANVAS_SANS_FONT}`;
+  context.textAlign = "center";
+  const titleLines = splitLine(context, item.title, captionWidth, 2);
+  const titleLineHeight = Math.max(12, 15 * scale);
+  titleLines.forEach((line, index) => drawCrispText(context, line, centerX, captionY + index * titleLineHeight));
+  let detailY = captionY + titleLines.length * titleLineHeight + 5 * scale;
+  const factLine = getTradeItemFactLine(item);
+  if (factLine) {
+    context.fillStyle = "rgba(252, 243, 215, 0.90)";
+    context.font = `600 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
+    drawCrispText(context, splitLine(context, factLine, captionWidth, 1)[0] ?? "", centerX, detailY);
+    detailY += 14 * scale;
+  }
+  const gradeLine = getTradeItemGradeLine(item);
+  if (gradeLine) {
+    context.fillStyle = "#ffffff";
+    context.font = `800 ${Math.max(9, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
+    drawCrispText(context, gradeLine, centerX, detailY);
+  }
+  context.restore();
+}
+
+function drawCinematicTradeCta(context: CanvasRenderingContext2D, width: number, y: number, scale: number) {
+  const label = "VIEW THIS TRADE ON TRADEBILIA  →";
+  context.save();
+  context.font = `800 ${Math.max(9, Math.round(11 * scale))}px ${CANVAS_SANS_FONT}`;
+  const buttonWidth = Math.min(width * 0.64, context.measureText(label).width + 58 * scale);
+  const buttonHeight = 34 * scale;
+  const buttonX = (width - buttonWidth) / 2;
+  drawRoundedRect(context, buttonX, y - buttonHeight / 2, buttonWidth, buttonHeight, buttonHeight / 2, "#f3c64c");
+  context.fillStyle = "#101923";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  drawCrispText(context, label, width / 2, y + 0.5 * scale);
+  context.restore();
+}
+
+function drawCompletedTradeCinematic(
+  context: CanvasRenderingContext2D,
+  draft: SocialDraft,
+  platform: SocialPlatform,
+  width: number,
+  height: number,
+  images: Array<CanvasImage | null>,
+  themeImages: TradeThemeImages,
+  brandLogo: CanvasImage | null,
+) {
+  const scale = width / 1200;
+  const { offered, requested } = getTradeSides(draft);
+  const leftEntry = offered[0];
+  const rightEntry = requested[0];
+  const leftTheme = getTradeItemTheme(leftEntry?.item ?? { title: "Collectible" });
+  const rightTheme = getTradeItemTheme(rightEntry?.item ?? { title: "Collectible" });
+  const isTall = platform === "Instagram" || platform === "Pinterest";
+  const isPinterest = platform === "Pinterest";
+  const imageY = isTall ? 184 * scale : 164 * scale;
+  const imageHeight = isTall ? (isPinterest ? height * 0.42 : height * 0.38) : height * 0.39;
+  const imageWidth = isTall ? width * 0.34 : width * 0.23;
+  const captionY = imageY + imageHeight + 18 * scale;
+  const exchangeY = isTall ? captionY + (isPinterest ? 92 : 105) * scale : imageY + imageHeight * 0.48;
+  const ctaY = isPinterest ? height * 0.89 : height - (isTall ? 58 * scale : 48 * scale);
+  const leftCenter = width * 0.24;
+  const rightCenter = width * 0.76;
+
+  drawCinematicTradeScene(
+    context,
+    width,
+    height,
+    leftTheme,
+    rightTheme,
+    themeImages[leftTheme.assetKey] ?? null,
+    themeImages[rightTheme.assetKey] ?? null,
+  );
+  drawCinematicTradeHeader(context, brandLogo, width, scale);
+  drawCinematicTradeItem(context, leftEntry, leftEntry ? images[leftEntry.index] ?? null : null, leftCenter, imageY, imageWidth, imageHeight, captionY, width * 0.31, scale);
+  drawCinematicTradeItem(context, rightEntry, rightEntry ? images[rightEntry.index] ?? null : null, rightCenter, imageY, imageWidth, imageHeight, captionY, width * 0.31, scale);
+  drawCinematicExchangeMark(context, width / 2, exchangeY, scale, Boolean(draft.promotion?.cashIncluded));
+  drawCinematicTradeCta(context, width, ctaY, scale);
+}
+
 function getTradeSides(draft: SocialDraft) {
   const sortByValue = (a: TradeGraphicEntry, b: TradeGraphicEntry) => Number(b.item.estimatedValue ?? 0) - Number(a.item.estimatedValue ?? 0);
   const entries = (draft.promotion?.tradeItems ?? []).map((item, index) => ({ item, index }));
@@ -865,59 +1131,16 @@ function drawCompletedTradeSideBySide(
 }
 
 function drawCompletedTradeLandscape(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, brandLogo: CanvasImage | null) {
-  const scale = width / 1200;
-  const frameY = 150 * scale;
-  const frameHeight = height - frameY - 180 * scale;
-  drawCompletedTradeSideBySide(context, draft, platform, width, height, images, themeImages, brandLogo, frameY, frameHeight, 82);
+  drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, brandLogo);
 }
 
 /** Square Instagram trade posts keep the Facebook trade composition, with a taller item area. */
 function drawCompletedTradeInstagram(context: CanvasRenderingContext2D, draft: SocialDraft, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, brandLogo: CanvasImage | null) {
-  const scale = width / 1200;
-  const frameY = 150 * scale;
-  const frameHeight = height - frameY - 246 * scale;
-  drawCompletedTradeSideBySide(context, draft, "Instagram", width, height, images, themeImages, brandLogo, frameY, frameHeight, 128);
+  drawCompletedTradeCinematic(context, draft, "Instagram", width, height, images, themeImages, brandLogo);
 }
 
 function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, images: Array<CanvasImage | null>, themeImages: TradeThemeImages, brandLogo: CanvasImage | null) {
-  const scale = width / 1080;
-  const padding = 62 * scale;
-  const items = draft.promotion?.tradeItems ?? [];
-  const frameY = 150 * scale;
-  // Let Pinterest use its vertical canvas for legible images and complete
-  // item names rather than leaving an oversized empty lower field.
-  const frameHeight = platform === "Pinterest" ? height * 0.58 : height * 0.32;
-  const gap = 18 * scale;
-  const frameWidth = (width - padding * 2 - gap) / 2;
-  const itemCount = Math.max(2, Math.min(4, Math.max(items.length, images.length)));
-  const tileGap = 18 * scale;
-  const rowCount = Math.ceil(itemCount / 2);
-  const tileHeight = (frameHeight - tileGap * (rowCount - 1)) / rowCount;
-  drawTradeAlertHeader(context, width, 104 * scale, scale);
-  Array.from({ length: itemCount }, (_, index) => {
-    const item = items[index] ?? { title: `ITEM ${index + 1}` };
-    const tileX = padding + (index % 2) * (frameWidth + gap);
-    const tileY = frameY + Math.floor(index / 2) * (tileHeight + tileGap);
-    drawRoundedRect(context, tileX, tileY, frameWidth, tileHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
-    const captionFontSize = platform === "Pinterest" ? 14 : 12;
-    const captionTopGap = 22 * scale;
-    const captionLineHeight = captionFontSize * 1.16 * scale;
-    const factReserve = getTradeItemFactLine(item) ? Math.max(11 * scale, (captionFontSize - 1) * scale) + 5 * scale : 0;
-    const gradeReserve = getTradeItemGradeLine(item) ? Math.max(14 * scale, (captionFontSize - 1) * 1.7 * scale) + 8 * scale : 0;
-    const captionReserve = captionTopGap + 3 * captionLineHeight + factReserve + gradeReserve + 8 * scale;
-    const imageInset = 18 * scale;
-    const imageHeight = tileHeight - imageInset - captionReserve;
-    const itemTheme = getTradeItemTheme(item);
-    drawTradeItemEnvironment(context, itemTheme, themeImages[itemTheme.assetKey] ?? null, tileX + imageInset, tileY + imageInset, frameWidth - imageInset * 2, imageHeight, index % 2 ? 0.7 : 0.3);
-    if (images[index]) drawContainedImage(context, images[index], tileX + imageInset * 1.5, tileY + imageInset * 1.5, frameWidth - imageInset * 3, imageHeight - imageInset);
-    else {
-      context.fillStyle = "rgba(255,255,255,0.10)";
-      context.fillRect(tileX + imageInset, tileY + imageInset, frameWidth - imageInset * 2, imageHeight);
-    }
-    drawTradeItemCaption(context, item, tileX + frameWidth / 2, tileY + imageInset + imageHeight + captionTopGap, frameWidth - 28 * scale, scale, 3, captionFontSize);
-  });
-  drawTradeDirection(context, width / 2, frameY + frameHeight + 72 * scale, scale, Boolean(draft.promotion?.cashIncluded));
-  drawTradeBrandFooter(context, brandLogo, width, height, padding, scale, 126);
+  drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, brandLogo);
 }
 
 function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
@@ -1075,9 +1298,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
-  const completedTradeThemes = (draft.promotion?.tradeItems ?? []).map((item) => getTradeItemTheme(item));
-  if (draft.source === "Completed Trade") drawTradeStage(context, width, height, completedTradeThemes);
-  else drawBackground(context, width, height, heroBackground);
+  if (draft.source !== "Completed Trade") drawBackground(context, width, height, heroBackground);
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
     drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, brandLogo);
   } else if (draft.source === "Completed Trade" && platform === "Instagram") {

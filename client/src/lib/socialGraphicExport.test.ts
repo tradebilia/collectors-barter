@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
   getSocialGraphicExportFileName,
-  getTradeGradeBadgeStyle,
   getTradeItemFactLine,
   getTradeItemGradeLine,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
@@ -55,24 +54,25 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
   });
 
-  it("keeps logos above their divider and gives completed trades a clear CTA footer", () => {
+  it("keeps the high-value brand footer intact and gives completed trades a focused CTA", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
-    expect(exporterSource).toContain("function drawTradeBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
     expect(exporterSource).toContain("drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()");
-    expect(exporterSource).toContain('const label = "VIEW THIS TRADE ON TRADEBILIA"');
-    expect(exporterSource).toContain("drawTradeBrandFooter(context, brandLogo");
+    expect(exporterSource).toContain("function drawCinematicTradeCta");
+    expect(exporterSource).toContain('const label = "VIEW THIS TRADE ON TRADEBILIA  →"');
+    expect(exporterSource).toContain("drawCinematicTradeCta(context, width, ctaY, scale)");
   });
 
-  it("uses crisp Anton display typography, a centered Trade Alert hierarchy, and readable exchange arrows", () => {
+  it("uses a brush-stroke Trade Alert and compact circular exchange mark", () => {
     expect(exporterSource).toContain('Anton, "Arial Narrow", Arial, sans-serif');
+    expect(exporterSource).toContain('"Permanent Marker", "Brush Script MT", cursive');
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
-    expect(exporterSource).toContain("function drawTradeAlertHeader");
+    expect(exporterSource).toContain('document.fonts.load(\'400 48px "Permanent Marker"\')');
+    expect(exporterSource).toContain("function drawCinematicTradeHeader");
+    expect(exporterSource).toContain("function drawCinematicExchangeMark");
     expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
-    expect(exporterSource).toContain("const textBaseline = bannerY + height / 2 + (ascent - descent) / 2");
-    expect(exporterSource).toContain('drawTrackedText(context, "TRADED"');
-    expect(exporterSource).toContain('gradient.addColorStop(0, "rgba(255, 185, 46, 0)")');
-    expect(exporterSource).toContain('gradient.addColorStop(1, "rgba(255, 185, 46, 0)")');
+    expect(exporterSource).toContain('const label = "TRADED"');
+    expect(exporterSource).toContain("context.arc(centerX, centerY - 3 * scale, radius");
   });
 
   it("adds public detail and grade information only when present", () => {
@@ -80,38 +80,27 @@ describe("native Social graphic exporter", () => {
     expect(getTradeItemGradeLine({ title: "Custom graded card", certificationCompany: "other", customGradingCompany: "CGA", grade: 8.95 })).toBe("CGA 9");
     expect(getTradeItemGradeLine({ title: "Ungraded item", certificationCompany: "PSA", grade: null })).toBeNull();
     expect(getTradeItemFactLine({ title: "Public item", facts: [{ label: "Year", value: "1982" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }] })).toBe("1982");
-    expect(getTradeGradeBadgeStyle("sports_cards")).toEqual({ fill: "#fee2e2", stroke: "#fecaca", text: "#991b1b" });
-    expect(getTradeGradeBadgeStyle("comics")).toEqual({ fill: "#ede9fe", stroke: "#ddd6fe", text: "#5b21b6" });
   });
 
-  it("uses reusable category environments while keeping actual item photos contained", () => {
+  it("uses one cinematic scene with side-specific environments while keeping actual item photos contained", () => {
     expect(Object.keys(TRADE_ALERT_THEME_IMAGE_URLS)).toEqual(expect.arrayContaining([
       "sports_cards", "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins",
     ]));
-    expect(exporterSource).toContain("function drawTradeStage");
-    expect(exporterSource).toContain("function drawTradeItemEnvironment");
+    expect(exporterSource).toContain("function drawCinematicTradeScene");
+    expect(exporterSource).toContain("function drawCinematicTradeItem");
     expect(exporterSource).toContain("resolveTradeAlertTheme");
-    expect(exporterSource).toContain("drawContainedImage(context, image, x + 8 * scale");
+    expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
-    expect(exporterSource).toContain("drawTradeStage(context, width, height, completedTradeThemes)");
+    expect(exporterSource).toContain("drawCinematicTradeScene(");
   });
 
-  it("retains adaptive mixed-item layouts across Facebook, Instagram, and Pinterest", () => {
+  it("routes every completed-trade platform through the cinematic composition", () => {
     expect(exporterSource).toContain("drawCompletedTradeLandscape");
     expect(exporterSource).toContain("drawCompletedTradeInstagram");
     expect(exporterSource).toContain("drawCompletedTradeTall");
-    expect(exporterSource).toContain("const frameHeight = height - frameY - 246 * scale");
-    expect(exporterSource).toContain("if (itemEntries.length === 3)");
-    expect(exporterSource).toContain("const captionTopGap = 22 * scale");
-    expect(exporterSource).toContain("const factReserve = getTradeItemFactLine(entry.item)");
-    expect(exporterSource).toContain('const frameHeight = platform === "Pinterest" ? height * 0.58 : height * 0.32');
-    expect(exporterSource).toContain("const rowCount = Math.ceil(itemCount / 2)");
-    expect(exporterSource).toContain("const tileHeight = (frameHeight - tileGap * (rowCount - 1)) / rowCount");
-  });
-
-  it("uses fading blue rules only around the completed-trade brand lockup", () => {
-    expect(exporterSource).toContain("function drawTradeBrandAccentLines");
-    expect(exporterSource).toContain('rgba(70, 197, 255, 0.72)');
-    expect(exporterSource).toContain("drawTradeBrandAccentLines(context, width, brandY, scale)");
+    expect(exporterSource).toContain("drawCompletedTradeCinematic(context, draft, platform");
+    expect(exporterSource).toContain('drawCompletedTradeCinematic(context, draft, "Instagram"');
+    expect(exporterSource).toContain("const isTall = platform === \"Instagram\" || platform === \"Pinterest\"");
+    expect(exporterSource).toContain("const isPinterest = platform === \"Pinterest\"");
   });
 });
