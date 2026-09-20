@@ -77,12 +77,14 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
-    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-smooth_e56e944e.svg");
+    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-arrows_b53f317a.svg");
+    expect(exporterSource).toContain("+ CASH INCLUDED");
+    expect(exporterSource).toContain("drawCinematicFooterPhrase");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
     expect(exporterSource).toContain("if (!brushImage)");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
     expect(exporterSource).toContain("drawContainedImage(context, logoImage");
-    expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
+    expect(exporterSource).not.toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
     expect(exporterSource).toContain('const label = "TRADED"');
     expect(exporterSource).toContain("context.arc(centerX, centerY - 3 * scale, radius");
   });
