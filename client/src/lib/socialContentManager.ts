@@ -18,6 +18,7 @@ export type SocialPromotionDetails = {
     imageUrl?: string | null;
     estimatedValue?: number | null;
     direction?: "offered" | "requested";
+    category?: string | null;
     grade?: string | number | null;
     certificationCompany?: string | null;
     customGradingCompany?: string | null;

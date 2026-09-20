@@ -317,11 +317,19 @@ function drawTradeAlertHeader(context: CanvasRenderingContext2D, width: number, 
   const bannerWidth = Math.min(width - 2 * 44 * scale, Math.max(width * 0.47, getTrackedTextWidth(context, label, tracking) + 112 * scale));
   const bannerX = (width - bannerWidth) / 2;
   const height = 88 * scale;
-  drawRoundedRect(context, bannerX, y - height + 7 * scale, bannerWidth, height, height / 2, "rgba(10, 26, 52, 0.42)", "rgba(246,202,122,0.92)");
+  const bannerY = y - height + 7 * scale;
+  drawRoundedRect(context, bannerX, bannerY, bannerWidth, height, height / 2, "rgba(10, 26, 52, 0.42)", "rgba(246,202,122,0.92)");
   context.fillStyle = "#ffda64";
   context.textAlign = "left";
-  context.textBaseline = "middle";
-  drawTrackedText(context, label, width / 2, y - height / 2 + 9 * scale, tracking);
+  context.textBaseline = "alphabetic";
+  // The visual glyph bounds of Anton are not centered on a "middle" baseline.
+  // Center by the measured ascent/descent so the gold pill is even around the
+  // actual letters, not merely the font's line box.
+  const metrics = context.measureText(label);
+  const ascent = metrics.actualBoundingBoxAscent || 40 * scale;
+  const descent = metrics.actualBoundingBoxDescent || 12 * scale;
+  const textBaseline = bannerY + height / 2 + (ascent - descent) / 2;
+  drawTrackedText(context, label, width / 2, textBaseline, tracking);
   context.textBaseline = "alphabetic";
 }
 
@@ -367,6 +375,7 @@ type TradeGraphicEntry = {
   item: {
     title: string;
     estimatedValue?: number | null;
+    category?: string | null;
     grade?: string | number | null;
     certificationCompany?: string | null;
     customGradingCompany?: string | null;
@@ -380,6 +389,21 @@ export function getTradeItemGradeLine(item: TradeGraphicEntry["item"]) {
   return `${getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)} ${grade}`;
 }
 
+/** Matches the category-tinted, outlined grade badges used by the homepage carousel. */
+export function getTradeGradeBadgeStyle(category?: string | null) {
+  const normalized = category?.trim().toLowerCase() || "";
+  if (normalized.includes("sport")) return { fill: "#fee2e2", stroke: "#fecaca", text: "#991b1b" };
+  if (normalized.includes("comic")) return { fill: "#ede9fe", stroke: "#ddd6fe", text: "#5b21b6" };
+  if (normalized.includes("pokemon")) return { fill: "#fef9c3", stroke: "#fde68a", text: "#854d0e" };
+  if (normalized.includes("coin") || normalized.includes("toy")) return { fill: "#fef3c7", stroke: "#fde68a", text: "#92400e" };
+  if (normalized.includes("stamp")) return { fill: "#e0f2fe", stroke: "#bae6fd", text: "#075985" };
+  if (normalized.includes("game")) return { fill: "#e0e7ff", stroke: "#c7d2fe", text: "#3730a3" };
+  if (normalized.includes("movie")) return { fill: "#ffe4e6", stroke: "#fecdd3", text: "#9f1239" };
+  if (normalized.includes("autograph")) return { fill: "#f3e8ff", stroke: "#e9d5ff", text: "#6b21a8" };
+  if (normalized.includes("disney")) return { fill: "#fce7f3", stroke: "#fbcfe8", text: "#9d174d" };
+  return { fill: "#dbeafe", stroke: "#bfdbfe", text: "#1e40af" };
+}
+
 function drawTradeItemCaption(context: CanvasRenderingContext2D, item: TradeGraphicEntry["item"], centerX: number, y: number, width: number, scale: number, maxLines: number, fontSize: number) {
   context.save();
   context.fillStyle = "#ffffff";
@@ -390,9 +414,18 @@ function drawTradeItemCaption(context: CanvasRenderingContext2D, item: TradeGrap
   titleLines.forEach((line, index) => drawCrispText(context, line, centerX, y + index * lineHeight));
   const gradeLine = getTradeItemGradeLine(item);
   if (gradeLine) {
-    context.fillStyle = "#dce9ff";
-    context.font = `700 ${Math.max(8, Math.round((fontSize - 1) * scale))}px ${CANVAS_SANS_FONT}`;
-    drawCrispText(context, gradeLine, centerX, y + titleLines.length * lineHeight + Math.max(8, fontSize * 0.92) * scale);
+    const gradeFontSize = Math.max(8, Math.round((fontSize - 1) * scale));
+    context.font = `800 ${gradeFontSize}px ${CANVAS_SANS_FONT}`;
+    const badgePaddingX = 6 * scale;
+    const badgeHeight = Math.max(14 * scale, gradeFontSize * 1.7);
+    const badgeWidth = Math.min(width, context.measureText(gradeLine).width + badgePaddingX * 2);
+    const badgeY = y + titleLines.length * lineHeight + 8 * scale;
+    const badge = getTradeGradeBadgeStyle(item.category);
+    drawRoundedRect(context, centerX - badgeWidth / 2, badgeY, badgeWidth, badgeHeight, Math.max(3 * scale, badgeHeight * 0.22), badge.fill, badge.stroke);
+    context.fillStyle = badge.text;
+    context.textBaseline = "middle";
+    drawCrispText(context, gradeLine, centerX, badgeY + badgeHeight / 2);
+    context.textBaseline = "alphabetic";
   }
   context.restore();
 }
@@ -410,8 +443,9 @@ function drawTradeMediaCell(
   captionFontSize: number,
 ) {
   const captionLineHeight = captionFontSize * 1.16 * scale;
-  const gradeReserve = getTradeItemGradeLine(entry.item) ? Math.max(10, (captionFontSize - 1) * 1.22) * scale : 0;
-  const captionReserve = 14 * scale + maxCaptionLines * captionLineHeight + gradeReserve + 6 * scale;
+  const captionTopGap = 22 * scale;
+  const gradeReserve = getTradeItemGradeLine(entry.item) ? Math.max(14 * scale, (captionFontSize - 1) * 1.7 * scale) + 8 * scale : 0;
+  const captionReserve = captionTopGap + maxCaptionLines * captionLineHeight + gradeReserve + 6 * scale;
   const imageHeight = Math.max(38 * scale, height - captionReserve);
   if (image) {
     drawContainedImage(context, image, x, y, width, imageHeight);
@@ -419,7 +453,7 @@ function drawTradeMediaCell(
     context.fillStyle = "rgba(255,255,255,0.10)";
     context.fillRect(x, y, width, imageHeight);
   }
-  drawTradeItemCaption(context, entry.item, x + width / 2, y + imageHeight + 13 * scale, width - 8 * scale, scale, maxCaptionLines, captionFontSize);
+  drawTradeItemCaption(context, entry.item, x + width / 2, y + imageHeight + captionTopGap, width - 8 * scale, scale, maxCaptionLines, captionFontSize);
 }
 
 function drawTradeSide(context: CanvasRenderingContext2D, entries: TradeGraphicEntry[], images: Array<CanvasImage | null>, x: number, y: number, width: number, height: number, scale: number) {
@@ -595,13 +629,19 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
     const tileX = padding + (index % 2) * (frameWidth + gap);
     const tileY = frameY + Math.floor(index / 2) * (tileHeight + tileGap);
     drawRoundedRect(context, tileX, tileY, frameWidth, tileHeight, Math.max(16, frameWidth * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
-    const captionReserve = (getTradeItemGradeLine(item) ? 62 : 48) * scale;
-    if (images[index]) drawContainedImage(context, images[index], tileX + 18 * scale, tileY + 18 * scale, frameWidth - 36 * scale, tileHeight - captionReserve);
+    const captionFontSize = platform === "Pinterest" ? 14 : 12;
+    const captionTopGap = 22 * scale;
+    const captionLineHeight = captionFontSize * 1.16 * scale;
+    const gradeReserve = getTradeItemGradeLine(item) ? Math.max(14 * scale, (captionFontSize - 1) * 1.7 * scale) + 8 * scale : 0;
+    const captionReserve = captionTopGap + 3 * captionLineHeight + gradeReserve + 6 * scale;
+    const imageInset = 18 * scale;
+    const imageHeight = tileHeight - imageInset - captionReserve;
+    if (images[index]) drawContainedImage(context, images[index], tileX + imageInset, tileY + imageInset, frameWidth - imageInset * 2, imageHeight);
     else {
       context.fillStyle = "rgba(255,255,255,0.10)";
-      context.fillRect(tileX + 18 * scale, tileY + 18 * scale, frameWidth - 36 * scale, tileHeight - captionReserve);
+      context.fillRect(tileX + imageInset, tileY + imageInset, frameWidth - imageInset * 2, imageHeight);
     }
-    drawTradeItemCaption(context, item, tileX + frameWidth / 2, tileY + tileHeight - 28 * scale, frameWidth - 28 * scale, scale, 3, platform === "Pinterest" ? 14 : 12);
+    drawTradeItemCaption(context, item, tileX + frameWidth / 2, tileY + imageInset + imageHeight + captionTopGap, frameWidth - 28 * scale, scale, 3, captionFontSize);
   });
   drawTradeDirection(context, width / 2, frameY + frameHeight + 72 * scale, scale, Boolean(draft.promotion?.cashIncluded));
   drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 82, 28);

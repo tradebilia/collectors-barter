@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { getSocialGraphicExportFileName, getTradeItemGradeLine, SOCIAL_GRAPHIC_CANVAS_SIZES } from "@/lib/socialGraphicExport";
+import { getSocialGraphicExportFileName, getTradeGradeBadgeStyle, getTradeItemGradeLine, SOCIAL_GRAPHIC_CANVAS_SIZES } from "@/lib/socialGraphicExport";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";
 
 const promotionDraft = createPromotionSocialDraft("graphic-export-1", {
@@ -78,6 +78,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawCrispText");
     expect(exporterSource).toContain("function drawTrackedText");
     expect(exporterSource).toContain("drawTradeAlertHeader(context, width, 104 * scale, scale)");
+    expect(exporterSource).toContain("const textBaseline = bannerY + height / 2 + (ascent - descent) / 2");
+    expect(exporterSource).toContain("const metrics = context.measureText(label)");
     expect(exporterSource).toContain('drawTrackedText(context, "TRADED"');
     expect(exporterSource).toContain('gradient.addColorStop(0, "rgba(255, 185, 46, 0)")');
     expect(exporterSource).toContain('gradient.addColorStop(1, "rgba(255, 185, 46, 0)")');
@@ -90,7 +92,12 @@ describe("native Social graphic exporter", () => {
     expect(getTradeItemGradeLine({ title: "Graded card", certificationCompany: "PSA", grade: "9.80" })).toBe("PSA 9.8");
     expect(getTradeItemGradeLine({ title: "Custom graded card", certificationCompany: "other", customGradingCompany: "CGA", grade: 8.95 })).toBe("CGA 9");
     expect(getTradeItemGradeLine({ title: "Ungraded item", certificationCompany: "PSA", grade: null })).toBeNull();
+    expect(getTradeGradeBadgeStyle("sports_cards")).toEqual({ fill: "#fee2e2", stroke: "#fecaca", text: "#991b1b" });
+    expect(getTradeGradeBadgeStyle("comics")).toEqual({ fill: "#ede9fe", stroke: "#ddd6fe", text: "#5b21b6" });
+    expect(getTradeGradeBadgeStyle(null)).toEqual({ fill: "#dbeafe", stroke: "#bfdbfe", text: "#1e40af" });
     expect(exporterSource).toContain("getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)");
+    expect(exporterSource).toContain("function getTradeGradeBadgeStyle");
+    expect(exporterSource).toContain("drawRoundedRect(context, centerX - badgeWidth / 2");
     expect(exporterSource).toContain("getTradeItemGradeLine(entry.item)");
   });
 
@@ -107,9 +114,13 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const titleLines = splitLine(context, item.title");
     expect(exporterSource).toContain("drawCrispText(context, line, centerX");
     expect(exporterSource).toContain("drawTradeMediaCell");
+    expect(exporterSource).toContain("const captionTopGap = 22 * scale");
+    expect(exporterSource).toContain("y + imageHeight + captionTopGap");
     expect(exporterSource).toContain("if (itemEntries.length === 3)");
     expect(exporterSource).toContain("const itemEntries = entries.slice(0, 4)");
     expect(exporterSource).toContain("const tileHeight = (frameHeight - tileGap) / 2");
+    expect(exporterSource).toContain("const imageInset = 18 * scale");
+    expect(exporterSource).toContain("tileY + imageInset + imageHeight + captionTopGap");
     expect(exporterSource).toContain('const frameHeight = platform === "Pinterest" ? height * 0.56 : height * 0.32');
     expect(exporterSource).toContain('platform === "Pinterest" ? 14 : 12');
   });
