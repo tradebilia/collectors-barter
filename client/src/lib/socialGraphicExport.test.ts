@@ -120,6 +120,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("tradeThemeImageUrls");
     expect(exporterSource).toContain("context.rect(0, 0, split, height)");
     expect(exporterSource).toContain("context.rect(split, 0, split, height)");
+    expect(exporterSource).toContain("const leftScene = leftEnvironment ?? leftStageImage");
+    expect(exporterSource).toContain("const rightScene = rightEnvironment ?? rightStageImage");
     expect(exporterSource).toContain("drawCoverImage(context, leftScene, 0, 0, split, height, 0.04, false)");
     expect(exporterSource).toContain("drawCoverImage(context, rightScene, split, 0, split, height, 0.04, true)");
     expect(exporterSource).not.toContain("TRADE_ALERT_FOREGROUND_IMAGE_URLS");

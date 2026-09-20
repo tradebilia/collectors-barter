@@ -952,8 +952,13 @@ function drawCinematicTradeScene(
 
   if (isMixedCategoryScene && leftEnvironment && rightEnvironment) {
     const split = width / 2;
-    const leftScene = leftStageImage ?? leftEnvironment;
-    const rightScene = rightStageImage ?? rightEnvironment;
+    // Mixed trades need the same category-specific foreground treatment as
+    // the sports crossover. The collector environments contain the curated
+    // tabletop objects (robot, comic archive, console, glove, etc.); the
+    // generic stage files are intentionally backdrop-only and would erase
+    // that foreground language when they take precedence.
+    const leftScene = leftEnvironment ?? leftStageImage;
+    const rightScene = rightEnvironment ?? rightStageImage;
     context.save();
     context.beginPath();
     context.rect(0, 0, split, height);
