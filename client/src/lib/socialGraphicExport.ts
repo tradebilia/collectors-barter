@@ -952,7 +952,9 @@ function drawCinematicTradeScene(
 
   const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, fallbackImage: CanvasImage | null, sceneSeed: number, mirrored: boolean) => {
     const layerCanvas = document.createElement("canvas");
-    layerCanvas.width = Math.ceil(sideWidth);
+    // Preserve the full scene ratio before masking it to a side so foreground
+    // props such as toys are not aggressively cropped by a half-width cover.
+    layerCanvas.width = width;
     layerCanvas.height = height;
     const layer = layerCanvas.getContext("2d");
     if (!layer) return;
@@ -962,20 +964,20 @@ function drawCinematicTradeScene(
     const environment = image ?? fallbackImage;
     if (environment) {
       const focalX = 0.10 + (sceneSeed % 4) * 0.06;
-      layer.globalAlpha = 0.62 + ((sceneSeed >>> 3) % 4) * 0.035;
-      drawCoverImage(layer, environment, 0, 0, sideWidth, height, focalX, mirrored);
+      layer.globalAlpha = 0.78 + ((sceneSeed >>> 3) % 4) * 0.025;
+      drawCoverImage(layer, environment, 0, 0, width, height, focalX, mirrored);
     }
     const wash = mirrored
-      ? layer.createLinearGradient(sideWidth, 0, 0, height)
-      : layer.createLinearGradient(0, 0, sideWidth, height);
+      ? layer.createLinearGradient(width, 0, 0, height)
+      : layer.createLinearGradient(0, 0, width, height);
     wash.addColorStop(0, withAlpha(theme.primary, 0.24));
     wash.addColorStop(0.58, "rgba(7, 11, 17, 0.10)");
-    wash.addColorStop(1, "rgba(5, 8, 13, 0.70)");
+    wash.addColorStop(1, "rgba(5, 8, 13, 0.44)");
     layer.globalAlpha = 1;
     layer.fillStyle = wash;
-    layer.fillRect(0, 0, sideWidth, height);
-    const outerLightX = mirrored ? sideWidth * 0.86 : sideWidth * 0.14;
-    const outerLight = layer.createRadialGradient(outerLightX, height * 0.50, 0, outerLightX, height * 0.50, sideWidth * (0.50 + ((sceneSeed >>> 5) % 3) * 0.08));
+    layer.fillRect(0, 0, width, height);
+    const outerLightX = mirrored ? width * 0.86 : width * 0.14;
+    const outerLight = layer.createRadialGradient(outerLightX, height * 0.50, 0, outerLightX, height * 0.50, width * (0.28 + ((sceneSeed >>> 5) % 3) * 0.04));
     outerLight.addColorStop(0, withAlpha(theme.glow, 0.12 + ((sceneSeed >>> 1) % 3) * 0.03));
     outerLight.addColorStop(1, "rgba(0, 0, 0, 0)");
     layer.fillStyle = outerLight;
@@ -989,17 +991,17 @@ function drawCinematicTradeScene(
       : layer.createLinearGradient(0, 0, sideWidth, 0);
     if (mirrored) {
       edgeFade.addColorStop(0, "rgba(0,0,0,0)");
-      edgeFade.addColorStop(Math.min(1, feather / sideWidth), "rgba(0,0,0,1)");
+      edgeFade.addColorStop(0.38, "rgba(0,0,0,1)");
       edgeFade.addColorStop(1, "rgba(0,0,0,1)");
     } else {
       edgeFade.addColorStop(0, "rgba(0,0,0,1)");
-      edgeFade.addColorStop(Math.max(0, 1 - feather / sideWidth), "rgba(0,0,0,1)");
+      edgeFade.addColorStop(0.62, "rgba(0,0,0,1)");
       edgeFade.addColorStop(1, "rgba(0,0,0,0)");
     }
     layer.globalCompositeOperation = "destination-in";
     layer.fillStyle = edgeFade;
-    layer.fillRect(0, 0, sideWidth, height);
-    context.drawImage(layerCanvas, x, 0);
+    layer.fillRect(0, 0, width, height);
+    context.drawImage(layerCanvas, 0, 0);
   };
 
   drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, stageImage, leftSceneSeed, false);
@@ -1008,7 +1010,7 @@ function drawCinematicTradeScene(
   const centeredVignette = context.createRadialGradient(width / 2, height * 0.46, 0, width / 2, height * 0.46, width * 0.54);
   centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.12)");
   centeredVignette.addColorStop(0.58, "rgba(4, 7, 12, 0.26)");
-  centeredVignette.addColorStop(1, "rgba(2, 4, 8, 0.72)");
+  centeredVignette.addColorStop(1, "rgba(2, 4, 8, 0.50)");
   context.fillStyle = centeredVignette;
   context.fillRect(0, 0, width, height);
 
@@ -1017,7 +1019,7 @@ function drawCinematicTradeScene(
   const floor = context.createLinearGradient(0, floorStart, 0, height);
   floor.addColorStop(0, "rgba(82, 49, 24, 0.10)");
   floor.addColorStop(0.28, "rgba(53, 29, 15, 0.46)");
-  floor.addColorStop(1, "rgba(7, 8, 11, 0.82)");
+  floor.addColorStop(1, "rgba(7, 8, 11, 0.66)");
   context.fillStyle = floor;
   context.fillRect(0, floorStart, width, height - floorStart);
   context.strokeStyle = "rgba(246, 201, 80, 0.12)";
