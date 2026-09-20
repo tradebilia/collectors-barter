@@ -1036,11 +1036,16 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
     context.fillStyle = gold;
     context.fillRect(strokeX, strokeY + 10 * scale, strokeWidth, strokeHeight - 20 * scale);
   }
-  context.fillStyle = "#071324";
-  context.font = `400 ${Math.round(45 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  drawCrispText(context, "TRADE ALERT", width / 2, strokeY + strokeHeight * 0.53);
+  // The approved paint-swipe asset already contains the finished TRADE ALERT
+  // lettering. Only draw fallback lettering when the asset is unavailable;
+  // otherwise the two banner layers visibly overlap.
+  if (!brushImage) {
+    context.fillStyle = "#071324";
+    context.font = `400 ${Math.round(45 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    drawCrispText(context, "TRADE ALERT", width / 2, strokeY + strokeHeight * 0.53);
+  }
   context.fillStyle = "rgba(252, 240, 201, 0.92)";
   context.font = `700 ${Math.max(8, Math.round(9 * scale))}px ${CANVAS_SANS_FONT}`;
   drawTrackedText(context, "REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE", width / 2, strokeY + strokeHeight + 13 * scale, 1.55 * scale);

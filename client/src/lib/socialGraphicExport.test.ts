@@ -79,6 +79,7 @@ describe("native Social graphic exporter", () => {
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
     expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-approved-transparent_45135968");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
+    expect(exporterSource).toContain("if (!brushImage)");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
     expect(exporterSource).toContain("drawContainedImage(context, logoImage");
     expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
