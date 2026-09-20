@@ -90,7 +90,7 @@ describe("native Social graphic exporter", () => {
     expect(getTradeItemFactLine({ title: "Public item", facts: [{ label: "Year", value: "1982" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }] })).toBe("1982");
   });
 
-  it("uses real category stages and a dedicated crossover stage while keeping actual item photos contained", () => {
+  it("uses real category environments on each trade side while keeping actual item photos contained", () => {
     expect(Object.keys(TRADE_ALERT_THEME_IMAGE_URLS)).toEqual(expect.arrayContaining([
       "sports_cards", "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins",
     ]));
@@ -104,7 +104,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawCinematicTradeScene");
     expect(exporterSource).toContain("function drawCinematicTradeItem");
     expect(exporterSource).toContain("function getTradeAlertStageKey");
-    expect(exporterSource).toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
+    expect(exporterSource).toContain("drawEnvironmentSide(leftEnvironment, leftTheme");
+    expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme");
+    expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
     expect(exporterSource).toContain("tradeStageImageUrls");

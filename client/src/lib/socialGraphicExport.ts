@@ -913,27 +913,6 @@ function drawCinematicTradeScene(
   rightEnvironment: CanvasImage | null,
   stageImage: CanvasImage | null,
 ) {
-  if (stageImage) {
-    // A compatible sports pair is shown inside one physical collector room.
-    // This deliberately avoids the prior split-screen treatment that made the
-    // graphic read as two dashboard panels instead of one premium trade scene.
-    drawCoverImage(context, stageImage, 0, 0, width, height, 0.5);
-    const topShade = context.createLinearGradient(0, 0, 0, height * 0.62);
-    topShade.addColorStop(0, "rgba(1, 3, 5, 0.26)");
-    topShade.addColorStop(0.26, "rgba(1, 3, 5, 0.30)");
-    topShade.addColorStop(1, "rgba(1, 3, 5, 0.56)");
-    context.fillStyle = topShade;
-    context.fillRect(0, 0, width, height * 0.62);
-    const edgeShade = context.createLinearGradient(0, 0, width, 0);
-    edgeShade.addColorStop(0, "rgba(1, 3, 5, 0.24)");
-    edgeShade.addColorStop(0.18, "rgba(1, 3, 5, 0)");
-    edgeShade.addColorStop(0.82, "rgba(1, 3, 5, 0)");
-    edgeShade.addColorStop(1, "rgba(1, 3, 5, 0.24)");
-    context.fillStyle = edgeShade;
-    context.fillRect(0, 0, width, height);
-    return;
-  }
-
   const base = context.createLinearGradient(0, 0, width, height);
   base.addColorStop(0, "#060b13");
   base.addColorStop(0.48, "#121824");
@@ -941,14 +920,18 @@ function drawCinematicTradeScene(
   context.fillStyle = base;
   context.fillRect(0, 0, width, height);
 
-  const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, focalX: number) => {
+  const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, focalX: number, fallbackImage: CanvasImage | null) => {
     context.save();
     context.beginPath();
     context.rect(x, 0, sideWidth, height);
     context.clip();
-    if (image) {
+    // Each side gets its own category environment. The curated stage is only
+    // a resilience fallback for a missing category asset; it is never used as
+    // the default full-canvas background for every trade.
+    const environment = image ?? fallbackImage;
+    if (environment) {
       context.globalAlpha = 0.46;
-      drawCoverImage(context, image, x, 0, sideWidth, height, focalX);
+      drawCoverImage(context, environment, x, 0, sideWidth, height, focalX);
     }
     const wash = context.createLinearGradient(x, 0, x + sideWidth, height);
     wash.addColorStop(0, withAlpha(theme.primary, 0.34));
@@ -960,8 +943,8 @@ function drawCinematicTradeScene(
     context.restore();
   };
 
-  drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, 0.16);
-  drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, 0.84);
+  drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, 0.16, stageImage);
+  drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, 0.84, stageImage);
 
   const centeredVignette = context.createRadialGradient(width / 2, height * 0.46, 0, width / 2, height * 0.46, width * 0.54);
   centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.22)");
