@@ -942,8 +942,8 @@ function drawCinematicTradeScene(
   stageImage: CanvasImage | null,
   leftSceneSeed: number,
   rightSceneSeed: number,
-) {
-  const base = context.createLinearGradient(0, 0, width, height);
+  ) {
+    const base = context.createLinearGradient(0, 0, width, height);
   base.addColorStop(0, "#060b13");
   base.addColorStop(0.48, "#121824");
   base.addColorStop(1, "#090b0e");
@@ -951,35 +951,55 @@ function drawCinematicTradeScene(
   context.fillRect(0, 0, width, height);
 
   const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, fallbackImage: CanvasImage | null, sceneSeed: number, mirrored: boolean) => {
-    context.save();
-    context.beginPath();
-    context.rect(x, 0, sideWidth, height);
-    context.clip();
+    const layerCanvas = document.createElement("canvas");
+    layerCanvas.width = Math.ceil(sideWidth);
+    layerCanvas.height = height;
+    const layer = layerCanvas.getContext("2d");
+    if (!layer) return;
     // Each side gets its own category environment. The curated stage is only
     // a resilience fallback for a missing category asset; it is never used as
     // the default full-canvas background for every trade.
     const environment = image ?? fallbackImage;
     if (environment) {
       const focalX = 0.10 + (sceneSeed % 4) * 0.06;
-      context.globalAlpha = 0.62 + ((sceneSeed >>> 3) % 4) * 0.035;
-      drawCoverImage(context, environment, x, 0, sideWidth, height, focalX, mirrored);
+      layer.globalAlpha = 0.62 + ((sceneSeed >>> 3) % 4) * 0.035;
+      drawCoverImage(layer, environment, 0, 0, sideWidth, height, focalX, mirrored);
     }
     const wash = mirrored
-      ? context.createLinearGradient(x + sideWidth, 0, x, height)
-      : context.createLinearGradient(x, 0, x + sideWidth, height);
+      ? layer.createLinearGradient(sideWidth, 0, 0, height)
+      : layer.createLinearGradient(0, 0, sideWidth, height);
     wash.addColorStop(0, withAlpha(theme.primary, 0.24));
     wash.addColorStop(0.58, "rgba(7, 11, 17, 0.10)");
     wash.addColorStop(1, "rgba(5, 8, 13, 0.70)");
-    context.globalAlpha = 1;
-    context.fillStyle = wash;
-    context.fillRect(x, 0, sideWidth, height);
-    const outerLightX = mirrored ? x + sideWidth * 0.86 : x + sideWidth * 0.14;
-    const outerLight = context.createRadialGradient(outerLightX, height * 0.50, 0, outerLightX, height * 0.50, sideWidth * (0.50 + ((sceneSeed >>> 5) % 3) * 0.08));
+    layer.globalAlpha = 1;
+    layer.fillStyle = wash;
+    layer.fillRect(0, 0, sideWidth, height);
+    const outerLightX = mirrored ? sideWidth * 0.86 : sideWidth * 0.14;
+    const outerLight = layer.createRadialGradient(outerLightX, height * 0.50, 0, outerLightX, height * 0.50, sideWidth * (0.50 + ((sceneSeed >>> 5) % 3) * 0.08));
     outerLight.addColorStop(0, withAlpha(theme.glow, 0.12 + ((sceneSeed >>> 1) % 3) * 0.03));
     outerLight.addColorStop(1, "rgba(0, 0, 0, 0)");
-    context.fillStyle = outerLight;
-    context.fillRect(x, 0, sideWidth, height);
-    context.restore();
+    layer.fillStyle = outerLight;
+    layer.fillRect(0, 0, sideWidth, height);
+
+    // The two category environments intentionally overlap, but their inner
+    // edges must cross-fade rather than stack as a visible vertical band.
+    const feather = Math.min(sideWidth * 0.30, width * 0.18);
+    const edgeFade = mirrored
+      ? layer.createLinearGradient(0, 0, sideWidth, 0)
+      : layer.createLinearGradient(0, 0, sideWidth, 0);
+    if (mirrored) {
+      edgeFade.addColorStop(0, "rgba(0,0,0,0)");
+      edgeFade.addColorStop(Math.min(1, feather / sideWidth), "rgba(0,0,0,1)");
+      edgeFade.addColorStop(1, "rgba(0,0,0,1)");
+    } else {
+      edgeFade.addColorStop(0, "rgba(0,0,0,1)");
+      edgeFade.addColorStop(Math.max(0, 1 - feather / sideWidth), "rgba(0,0,0,1)");
+      edgeFade.addColorStop(1, "rgba(0,0,0,0)");
+    }
+    layer.globalCompositeOperation = "destination-in";
+    layer.fillStyle = edgeFade;
+    layer.fillRect(0, 0, sideWidth, height);
+    context.drawImage(layerCanvas, x, 0);
   };
 
   drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, stageImage, leftSceneSeed, false);

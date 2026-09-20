@@ -114,7 +114,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawEnvironmentSide(leftEnvironment, leftTheme");
     expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme");
     expect(exporterSource).toContain("function getTradeSceneSeed");
-    expect(exporterSource).toContain("drawCoverImage(context, environment, x, 0, sideWidth, height, focalX, mirrored)");
+    expect(exporterSource).toContain("drawCoverImage(layer, environment, 0, 0, sideWidth, height, focalX, mirrored)");
+    expect(exporterSource).toContain("globalCompositeOperation = \"destination-in\"");
     expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, stageImage, rightSceneSeed, true)");
     expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
