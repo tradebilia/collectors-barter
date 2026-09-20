@@ -118,8 +118,10 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
-    expect(exporterSource).toContain("drawCoverImage(context, leftStageImage ?? leftEnvironment, 0, 0, split + width * 0.06, height, 0.48, false)");
-    expect(exporterSource).toContain("drawCoverImage(context, rightStageImage ?? rightEnvironment, split - width * 0.06, 0, split + width * 0.06, height, 0.52, true)");
+    expect(exporterSource).toContain("context.rect(0, 0, split, height)");
+    expect(exporterSource).toContain("context.rect(split, 0, split, height)");
+    expect(exporterSource).toContain("drawCoverImage(context, leftScene, 0, 0, split, height, 0.04, false)");
+    expect(exporterSource).toContain("drawCoverImage(context, rightScene, split, 0, split, height, 0.04, true)");
     expect(exporterSource).not.toContain("TRADE_ALERT_FOREGROUND_IMAGE_URLS");
     expect(exporterSource).toContain("tradeStageImageUrls");
     expect(exporterSource).toContain("drawCinematicTradeScene(");
@@ -135,7 +137,7 @@ describe("native Social graphic exporter", () => {
   });
 
   it("centers the Tradebilia lockup above the brush heading and groups multiple items by trade side", () => {
-    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 3 * scale");
+    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 0, logoWidth, 72 * scale");
     expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.565');
     expect(exporterSource).toContain('images[entry.index] ?? null');
   });

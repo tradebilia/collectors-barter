@@ -952,15 +952,30 @@ function drawCinematicTradeScene(
 
   if (isMixedCategoryScene && leftEnvironment && rightEnvironment) {
     const split = width / 2;
+    const leftScene = leftStageImage ?? leftEnvironment;
+    const rightScene = rightStageImage ?? rightEnvironment;
     context.save();
-    drawCoverImage(context, leftStageImage ?? leftEnvironment, 0, 0, split + width * 0.06, height, 0.48, false);
-    drawCoverImage(context, rightStageImage ?? rightEnvironment, split - width * 0.06, 0, split + width * 0.06, height, 0.52, true);
-    const feather = context.createLinearGradient(split - width * 0.12, 0, split + width * 0.12, 0);
-    feather.addColorStop(0, "rgba(5, 10, 18, 0)");
-    feather.addColorStop(0.5, "rgba(5, 10, 18, 0.22)");
-    feather.addColorStop(1, "rgba(5, 10, 18, 0)");
-    context.fillStyle = feather;
-    context.fillRect(split - width * 0.12, 0, width * 0.24, height);
+    context.beginPath();
+    context.rect(0, 0, split, height);
+    context.clip();
+    drawCoverImage(context, leftScene, 0, 0, split, height, 0.04, false);
+    context.restore();
+    context.save();
+    context.beginPath();
+    context.rect(split, 0, split, height);
+    context.clip();
+    // Both curated category stages keep their foreground prop on the source
+    // image's left side; mirroring the right half puts that prop inside the
+    // right trade zone without crossing the exact center seam.
+    drawCoverImage(context, rightScene, split, 0, split, height, 0.04, true);
+    context.restore();
+    context.save();
+    context.strokeStyle = "rgba(8, 14, 24, 0.42)";
+    context.lineWidth = Math.max(1, 2 * (width / 1200));
+    context.beginPath();
+    context.moveTo(split, 0);
+    context.lineTo(split, height);
+    context.stroke();
     context.restore();
   } else if (stageImage) {
     context.save();
@@ -997,15 +1012,15 @@ function drawCinematicTradeScene(
 }
 
 function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
-  const logoWidth = 430 * scale;
-  drawBrand(context, logo, (width - logoWidth) / 2, 3 * scale, logoWidth, 62 * scale);
+  const logoWidth = 520 * scale;
+  drawBrand(context, logo, (width - logoWidth) / 2, 0, logoWidth, 72 * scale);
 
   // The reference banner is wide but visually substantial vertically: increase
   // the paint body rather than extending it past the canvas edges.
   const strokeWidth = Math.min(width * 0.92, 1104 * scale);
   const strokeHeight = 174 * scale;
   const strokeX = (width - strokeWidth) / 2;
-  const strokeY = 63 * scale;
+  const strokeY = 68 * scale;
   context.save();
   if (brushImage) {
     // Crop away the transparent canvas around the generated brush so the
@@ -1046,7 +1061,7 @@ function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage:
     if (cashIncluded) {
       context.save();
       context.fillStyle = "#f7d76d";
-      context.font = `800 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
+      context.font = `800 ${Math.max(12, Math.round(16 * scale))}px ${CANVAS_SANS_FONT}`;
       context.textAlign = "center";
       context.textBaseline = "middle";
       drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + 124 * scale);
@@ -1094,7 +1109,7 @@ function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage:
   drawCrispText(context, label, centerX, centerY - 2 * scale);
   if (cashIncluded) {
     context.fillStyle = "#f7d76d";
-    context.font = `800 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
+    context.font = `800 ${Math.max(12, Math.round(16 * scale))}px ${CANVAS_SANS_FONT}`;
     drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + radius + 48 * scale);
   }
   context.restore();
