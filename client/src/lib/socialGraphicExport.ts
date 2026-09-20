@@ -44,7 +44,7 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
-export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-exchange-logo-clean-alpha_d50729a1.png";
+export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-exchange-logo-smooth_e56e944e.svg";
 
 /** Curated environments support the real listing photo; they never replace it. */
 export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKey, string>> = {
@@ -1017,20 +1017,11 @@ function drawCinematicTradeScene(
   // A quiet display surface creates depth without turning the graphic into a UI card.
   const floorStart = height > width ? height * 0.64 : height * 0.74;
   const floor = context.createLinearGradient(0, floorStart, 0, height);
-  floor.addColorStop(0, "rgba(82, 49, 24, 0.10)");
-  floor.addColorStop(0.28, "rgba(53, 29, 15, 0.46)");
-  floor.addColorStop(1, "rgba(7, 8, 11, 0.66)");
+  floor.addColorStop(0, "rgba(82, 49, 24, 0.04)");
+  floor.addColorStop(0.28, "rgba(53, 29, 15, 0.20)");
+  floor.addColorStop(1, "rgba(7, 8, 11, 0.38)");
   context.fillStyle = floor;
   context.fillRect(0, floorStart, width, height - floorStart);
-  context.strokeStyle = "rgba(246, 201, 80, 0.12)";
-  context.lineWidth = Math.max(1, width / 1200);
-  for (let row = 1; row <= 4; row += 1) {
-    const y = floorStart + row * ((height - floorStart) / 5);
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(width, y + width * 0.026);
-    context.stroke();
-  }
 }
 
 function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
@@ -1038,7 +1029,7 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   drawBrand(context, logo, (width - logoWidth) / 2, 11 * scale, logoWidth, 57 * scale);
 
   const strokeWidth = Math.min(width * 0.76, 900 * scale);
-  const strokeHeight = 90 * scale;
+  const strokeHeight = 112 * scale;
   const strokeX = (width - strokeWidth) / 2;
   const strokeY = 70 * scale;
   context.save();
@@ -1046,7 +1037,7 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
     // Crop away the transparent canvas around the generated brush so the
     // textured paint—not a rounded ribbon—maps to the reference silhouette.
     const sourceY = brushImage.naturalHeight * 0.17;
-    const sourceHeight = brushImage.naturalHeight * 0.57;
+    const sourceHeight = brushImage.naturalHeight * 0.64;
     context.drawImage(brushImage, 0, sourceY, brushImage.naturalWidth, sourceHeight, strokeX, strokeY, strokeWidth, strokeHeight);
   } else {
     const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
@@ -1076,8 +1067,8 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
 
 function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage: CanvasImage | null, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
   if (logoImage) {
-    const logoWidth = 210 * scale;
-    const logoHeight = 158 * scale;
+    const logoWidth = 248 * scale;
+    const logoHeight = 190 * scale;
     drawContainedImage(context, logoImage, centerX - logoWidth / 2, centerY - logoHeight / 2 - 2 * scale, logoWidth, logoHeight);
     if (cashIncluded) {
       context.save();
@@ -1236,7 +1227,7 @@ function drawCinematicTradeGroup(
   };
 
   if (visibleEntries.length === 1) {
-    draw(visibleEntries[0], mainCenter, imageY, groupWidth * 0.62, imageHeight, groupWidth * 0.94);
+    draw(visibleEntries[0], mainCenter, imageY, groupWidth * 0.78, imageHeight * 1.04, groupWidth * 0.98);
     return;
   }
 

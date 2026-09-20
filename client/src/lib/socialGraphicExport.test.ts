@@ -77,7 +77,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
-    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-clean-alpha_d50729a1");
+    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-smooth_e56e944e.svg");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
     expect(exporterSource).toContain("if (!brushImage)");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
