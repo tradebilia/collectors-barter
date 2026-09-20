@@ -22,7 +22,11 @@ export type TradeAlertThemeKey =
   | "collectibles";
 
 export type TradeAlertThemeAssetKey =
-  | "sports_cards"
+  | "sports-baseball"
+  | "sports-football"
+  | "sports-basketball"
+  | "sports-hockey"
+  | "sports-collectibles"
   | "comics"
   | "pokemon"
   | "vintage_toys"
@@ -83,11 +87,11 @@ function theme(
 }
 
 const THEME_LIBRARY: Record<TradeAlertThemeKey, TradeAlertTheme> = {
-  "sports-baseball": theme("sports-baseball", "sports_cards", "Baseball collectibles", "#0f4f4a", "#122a51", "#f2c66e", "field"),
-  "sports-football": theme("sports-football", "sports_cards", "Football collectibles", "#31533b", "#1a2949", "#e5b651", "field"),
-  "sports-basketball": theme("sports-basketball", "sports_cards", "Basketball collectibles", "#8a3b16", "#1b294b", "#f1a33b", "field"),
-  "sports-hockey": theme("sports-hockey", "sports_cards", "Hockey collectibles", "#255b82", "#172a48", "#d4efff", "field"),
-  "sports-collectibles": theme("sports-collectibles", "sports_cards", "Sports collectibles", "#1e5b63", "#182d52", "#eec66d", "field"),
+  "sports-baseball": theme("sports-baseball", "sports-baseball", "Baseball collectibles", "#0f4f4a", "#122a51", "#f2c66e", "field"),
+  "sports-football": theme("sports-football", "sports-football", "Football collectibles", "#31533b", "#1a2949", "#e5b651", "field"),
+  "sports-basketball": theme("sports-basketball", "sports-basketball", "Basketball collectibles", "#8a3b16", "#1b294b", "#f1a33b", "field"),
+  "sports-hockey": theme("sports-hockey", "sports-hockey", "Hockey collectibles", "#255b82", "#172a48", "#d4efff", "field"),
+  "sports-collectibles": theme("sports-collectibles", "sports-collectibles", "Sports collectibles", "#1e5b63", "#182d52", "#eec66d", "field"),
   comics: theme("comics", "comics", "Comic collectibles", "#661f38", "#251c43", "#f1bd60", "halftone"),
   pokemon: theme("pokemon", "pokemon", "Trading card collectibles", "#1a4a95", "#22245d", "#f0c342", "lattice"),
   "vintage-toys": theme("vintage-toys", "vintage_toys", "Vintage toys", "#40503a", "#253447", "#d5af61", "shelves"),

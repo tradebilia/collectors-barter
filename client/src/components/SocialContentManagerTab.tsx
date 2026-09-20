@@ -734,7 +734,7 @@ export function SocialContentManagerTab() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs leading-5 text-slate-500">{isPreparingGraphicImage ? "Preparing the original image for a reliable download…" : "The download exports the displayed platform graphic. It never changes the original uploaded collectible image."}</p>
+                      <p className="text-xs leading-5 text-slate-500">{isPreparingGraphicImage ? "Preparing the original item image and Trade Alert environments for a reliable download…" : "The download exports the displayed platform graphic. It never changes the original uploaded collectible image."}</p>
                       <Button type="button" size="sm" onClick={() => void downloadSocialGraphic()} disabled={isExportingGraphic || isPreparingGraphicImage} className="shrink-0 bg-indigo-600 text-white hover:bg-indigo-700"><Download className="mr-1.5 h-4 w-4" />{isPreparingGraphicImage || isExportingGraphic ? "Preparing…" : "Download Graphic"}</Button>
                     </div>
                   </div> : null}

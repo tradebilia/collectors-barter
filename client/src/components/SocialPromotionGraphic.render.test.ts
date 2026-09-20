@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
-import { SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
+import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";
 
 const promotionDraft = createPromotionSocialDraft("social-graphic-1", {
@@ -24,22 +24,20 @@ const promotionDraft = createPromotionSocialDraft("social-graphic-1", {
 });
 
 describe("rendered Social promotion graphic", () => {
-  it("renders the complete source image inside a landscape social canvas", () => {
+  it("reserves the correct landscape canvas while the native renderer prepares the graphic", () => {
     const markup = renderToStaticMarkup(createElement(SocialPromotionGraphic, { draft: promotionDraft, platform: "Facebook" }));
+    expect(SOCIAL_GRAPHIC_SPECS.Facebook).toMatchObject({ size: "1200 × 630", aspect: "aspect-[1.91/1]" });
     expect(markup).toContain("aspect-[1.91/1]");
-    expect(markup).toContain("object-contain");
-    expect(markup).toContain("1986 Fleer Michael Jordan Rookie PSA 10");
-    expect(markup).toContain("New High-Value Listing");
-    expect(markup).not.toContain("New high-value listing: 1986 Fleer");
-    expect(markup).toContain("Trade value");
-    expect(markup).toContain("$125,000");
-    expect(markup).toContain("https://tradebilia.manus.space/listings/42");
+    expect(markup).toContain('data-platform="Facebook"');
+    expect(markup).toContain("Rendering promotional graphic");
+    expect(markup).not.toContain("html2canvas");
   });
 
-  it("renders a full-image tall canvas for a Pinterest promotion", () => {
+  it("reserves the correct tall canvas while the native renderer prepares the graphic", () => {
     const markup = renderToStaticMarkup(createElement(SocialPromotionGraphic, { draft: promotionDraft, platform: "Pinterest" }));
+    expect(SOCIAL_GRAPHIC_SPECS.Pinterest).toMatchObject({ size: "1000 × 1500", aspect: "aspect-[2/3]" });
     expect(markup).toContain("aspect-[2/3]");
-    expect(markup).not.toContain("Original image · fully shown");
-    expect(markup).toContain("Grade");
+    expect(markup).toContain('data-platform="Pinterest"');
+    expect(markup).toContain("Rendering promotional graphic");
   });
 });

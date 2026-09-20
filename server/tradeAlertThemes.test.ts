@@ -6,6 +6,7 @@ describe("Trade Alert visual theme resolver", () => {
     expect(resolveTradeAlertTheme({ category: "sports_cards", itemType: "single_card", title: "1982 Topps Rickey Henderson Baseball Rookie", visualHints: ["Baseball"] }).key).toBe("sports-baseball");
     expect(resolveTradeAlertTheme({ category: "sports_cards", itemType: "single_card", title: "1989 Score Barry Sanders Rookie", visualHints: ["Football"] }).key).toBe("sports-football");
     expect(resolveTradeAlertTheme({ category: "sports_cards", itemType: "single_card", title: "1996 Topps Hockey Prospect", visualHints: ["Hockey"] }).key).toBe("sports-hockey");
+    expect(resolveTradeAlertTheme({ category: "sports_cards", itemType: "single_card", title: "Basketball rookie", visualHints: ["Basketball"] }).assetKey).toBe("sports-basketball");
   });
 
   it("uses format-aware environments for music and video-game items", () => {
@@ -28,7 +29,7 @@ describe("Trade Alert visual theme resolver", () => {
       { category: "sports_cards", itemType: "single_card", title: "Baseball card", visualHints: ["Baseball"] },
       { category: "comics", itemType: "single_comic", title: "Key comic" },
       { category: "music", itemType: "vinyl_record", title: "Vinyl" },
-    ])).toEqual(["sports_cards", "comics", "music"]);
+    ])).toEqual(["sports-baseball", "comics", "music"]);
   });
 
   it("extracts only public-safe visual hints from item metadata", () => {

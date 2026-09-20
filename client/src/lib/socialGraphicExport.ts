@@ -47,17 +47,22 @@ export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-brush_3bc
 
 /** Curated environments support the real listing photo; they never replace it. */
 export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKey, string>> = {
-  sports_cards: "/manus-storage/sports-cards-environment_6e52200c.jpg",
-  comics: "/manus-storage/comics-environment_1a659781.jpg",
-  pokemon: "/manus-storage/pokemon-tcg-environment_f2d6c424.jpg",
-  vintage_toys: "/manus-storage/vintage-toys-environment_58156f60.jpg",
-  video_games: "/manus-storage/video-games-environment_01ecd5a6.jpg",
-  coins: "/manus-storage/coins-environment_7ac34b5a.jpg",
-  stamps: "/manus-storage/stamps-environment_489a6ec6.jpg",
-  movies: "/manus-storage/movies-environment_86ce2916.jpg",
-  music: "/manus-storage/music-environment_aa86ec01.jpg",
-  autographs: "/manus-storage/autographs-environment_fbaeee1f.jpg",
-  disney_pins: "/manus-storage/disney-pins-environment_c041b8f7.jpg",
+  "sports-baseball": "/manus-storage/sports-baseball-collector_451a17d0.jpg",
+  "sports-football": "/manus-storage/sports-football-collector_56ee480a.jpg",
+  "sports-basketball": "/manus-storage/sports-basketball-collector_dc2fa42b.jpg",
+  "sports-hockey": "/manus-storage/sports-hockey-collector_b568ce9e.jpg",
+  "sports-collectibles": "/manus-storage/sports-general-collector_906f6d56.jpg",
+  comics: "/manus-storage/comic-archive-collector_c552bfb8.jpg",
+  pokemon: "/manus-storage/pokemon-tcg-collector_e71edfcf.jpg",
+  vintage_toys: "/manus-storage/vintage-toy-collector_5530d4f4.jpg",
+  video_games: "/manus-storage/video-game-collector_31820949.jpg",
+  coins: "/manus-storage/coin-curator-collector_a422a1cc.jpg",
+  stamps: "/manus-storage/stamp-archive-collector_b7d532c3.jpg",
+  movies: "/manus-storage/movie-media-collector_e86fe326.jpg",
+  music: "/manus-storage/music-listening-room-collector_5ca7c926.jpg",
+  autographs: "/manus-storage/autograph-archive-collector_d8376eaa.jpg",
+  disney_pins: "/manus-storage/disney-pin-collector_9fdd1184.jpg",
+  collectibles: "/manus-storage/general-collectibles-collector_4e57c74e.jpg",
 };
 
 /**
@@ -287,7 +292,7 @@ function drawBackground(context: CanvasRenderingContext2D, width: number, height
   }
 }
 
-function drawCoverImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number, focalX = 0.5) {
+function drawCoverImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number, focalX = 0.5, mirrored = false) {
   const naturalWidth = image.naturalWidth || 1;
   const naturalHeight = image.naturalHeight || 1;
   const scale = Math.max(width / naturalWidth, height / naturalHeight);
@@ -295,6 +300,14 @@ function drawCoverImage(context: CanvasRenderingContext2D, image: CanvasImage, x
   const drawHeight = naturalHeight * scale;
   const overflowX = Math.max(0, drawWidth - width);
   const overflowY = Math.max(0, drawHeight - height);
+  if (mirrored) {
+    context.save();
+    context.translate(x + width, y);
+    context.scale(-1, 1);
+    context.drawImage(image, -overflowX * focalX, -overflowY / 2, drawWidth, drawHeight);
+    context.restore();
+    return;
+  }
   context.drawImage(image, x - overflowX * focalX, y - overflowY / 2, drawWidth, drawHeight);
 }
 
@@ -697,6 +710,20 @@ function getTradeItemTheme(item: TradeGraphicEntry["item"]) {
   });
 }
 
+/**
+ * A public-metadata-only seed makes repeated category trades feel distinct
+ * without storing or displaying private users, trade IDs, or draft IDs.
+ */
+function getTradeSceneSeed(entries: readonly TradeGraphicEntry[]) {
+  const value = entries.map(({ item }) => [item.listingId ?? "", item.category ?? "", item.itemType ?? "", item.title].join("|")).join("::");
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
 export function getTradeItemGradeLine(item: TradeGraphicEntry["item"]) {
   const grade = formatPublicGradeValue(item.grade);
   if (!grade) return null;
@@ -912,6 +939,8 @@ function drawCinematicTradeScene(
   leftEnvironment: CanvasImage | null,
   rightEnvironment: CanvasImage | null,
   stageImage: CanvasImage | null,
+  leftSceneSeed: number,
+  rightSceneSeed: number,
 ) {
   const base = context.createLinearGradient(0, 0, width, height);
   base.addColorStop(0, "#060b13");
@@ -920,7 +949,7 @@ function drawCinematicTradeScene(
   context.fillStyle = base;
   context.fillRect(0, 0, width, height);
 
-  const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, focalX: number, fallbackImage: CanvasImage | null) => {
+  const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, fallbackImage: CanvasImage | null, sceneSeed: number, mirrored: boolean) => {
     context.save();
     context.beginPath();
     context.rect(x, 0, sideWidth, height);
@@ -930,21 +959,30 @@ function drawCinematicTradeScene(
     // the default full-canvas background for every trade.
     const environment = image ?? fallbackImage;
     if (environment) {
-      context.globalAlpha = 0.46;
-      drawCoverImage(context, environment, x, 0, sideWidth, height, focalX);
+      const focalX = 0.10 + (sceneSeed % 4) * 0.06;
+      context.globalAlpha = 0.42 + ((sceneSeed >>> 3) % 4) * 0.035;
+      drawCoverImage(context, environment, x, 0, sideWidth, height, focalX, mirrored);
     }
-    const wash = context.createLinearGradient(x, 0, x + sideWidth, height);
+    const wash = mirrored
+      ? context.createLinearGradient(x + sideWidth, 0, x, height)
+      : context.createLinearGradient(x, 0, x + sideWidth, height);
     wash.addColorStop(0, withAlpha(theme.primary, 0.34));
     wash.addColorStop(0.58, "rgba(7, 11, 17, 0.18)");
     wash.addColorStop(1, "rgba(5, 8, 13, 0.86)");
     context.globalAlpha = 1;
     context.fillStyle = wash;
     context.fillRect(x, 0, sideWidth, height);
+    const outerLightX = mirrored ? x + sideWidth * 0.86 : x + sideWidth * 0.14;
+    const outerLight = context.createRadialGradient(outerLightX, height * 0.50, 0, outerLightX, height * 0.50, sideWidth * (0.50 + ((sceneSeed >>> 5) % 3) * 0.08));
+    outerLight.addColorStop(0, withAlpha(theme.glow, 0.12 + ((sceneSeed >>> 1) % 3) * 0.03));
+    outerLight.addColorStop(1, "rgba(0, 0, 0, 0)");
+    context.fillStyle = outerLight;
+    context.fillRect(x, 0, sideWidth, height);
     context.restore();
   };
 
-  drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, 0.16, stageImage);
-  drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, 0.84, stageImage);
+  drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, stageImage, leftSceneSeed, false);
+  drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, stageImage, rightSceneSeed, true);
 
   const centeredVignette = context.createRadialGradient(width / 2, height * 0.46, 0, width / 2, height * 0.46, width * 0.54);
   centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.22)");
@@ -1107,9 +1145,17 @@ function drawCinematicTradeItem(
   }
   const gradeLine = getTradeItemGradeLine(item);
   if (gradeLine) {
-    context.fillStyle = "#ffffff";
-    context.font = `800 ${Math.max(9, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
-    drawCrispText(context, gradeLine, captionX, detailY);
+    const gradeFontSize = Math.max(9, Math.round(10 * scale));
+    context.font = `800 ${gradeFontSize}px ${CANVAS_SANS_FONT}`;
+    const badgePaddingX = 6 * scale;
+    const badgeHeight = Math.max(14 * scale, gradeFontSize * 1.7);
+    const badgeWidth = Math.min(captionWidth, context.measureText(gradeLine).width + badgePaddingX * 2);
+    const badge = getTradeGradeBadgeStyle(item.category);
+    drawRoundedRect(context, captionX - badgeWidth / 2, detailY - gradeFontSize * 0.85, badgeWidth, badgeHeight, Math.max(3 * scale, badgeHeight * 0.22), badge.fill, badge.stroke);
+    context.fillStyle = badge.text;
+    context.textBaseline = "middle";
+    drawCrispText(context, gradeLine, captionX, detailY - gradeFontSize * 0.85 + badgeHeight / 2);
+    context.textBaseline = "alphabetic";
   }
   context.restore();
 }
@@ -1219,6 +1265,8 @@ function drawCompletedTradeCinematic(
   const leftTheme = getTradeItemTheme(leftEntry?.item ?? { title: "Collectible" });
   const rightTheme = getTradeItemTheme(rightEntry?.item ?? { title: "Collectible" });
   const stageKey = getTradeAlertStageKey([...offered, ...requested].map(({ item }) => item));
+  const leftSceneSeed = getTradeSceneSeed(offered);
+  const rightSceneSeed = getTradeSceneSeed(requested);
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const isPinterest = platform === "Pinterest";
   const imageY = isTall ? 204 * scale : 196 * scale;
@@ -1236,6 +1284,8 @@ function drawCompletedTradeCinematic(
     themeImages[leftTheme.assetKey] ?? null,
     themeImages[rightTheme.assetKey] ?? null,
     stageKey ? stageImages[stageKey] ?? null : null,
+    leftSceneSeed,
+    rightSceneSeed,
   );
   drawCinematicTradeHeader(context, brandLogo, brushImage, width, scale);
   drawCinematicTradeGroup(context, offered, images, "left", width, imageY, imageHeight, scale);

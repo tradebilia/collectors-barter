@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { renderSocialGraphicCanvas, SOCIAL_GRAPHIC_BRAND_LOGO_URL, SOCIAL_GRAPHIC_HERO_BACKGROUND_URL } from "@/lib/socialGraphicExport";
 import type { TradeAlertThemeAssetKey } from "@shared/tradeAlertThemes";
@@ -69,9 +69,9 @@ export function SocialPromotionGraphic({
       data-platform={platform}
     >
       {previewUrl ? (
-        <img src={previewUrl} alt={`${spec.label} finished promotional graphic`} className="block h-auto w-full" />
+        <img src={previewUrl} alt={`${spec.label} finished promotional graphic`} className="block h-auto w-full object-contain" />
       ) : (
-        <div className="flex aspect-[1.91/1] items-center justify-center text-white/70">
+        <div className={`flex ${spec.aspect} items-center justify-center text-white/70`}>
           {isRendering ? <Loader2 className="h-7 w-7 animate-spin" aria-label="Rendering promotional graphic" /> : <span className="text-xs">Preview unavailable</span>}
         </div>
       )}

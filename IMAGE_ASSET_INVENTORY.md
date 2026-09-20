@@ -34,6 +34,31 @@ The archive was created from active project storage through the project server�
 
 The prior re-upload work on August 4 was caused by missing **old project-storage paths**: a pre-restoration Comics background path now returns `403`, while its restored current-project replacement returns `200`. This is evidence of a project-storage migration/rebuild issue rather than routine chat-session loss. The required next-session test remains the final confirmation.
 
+## Trade Alert Category Environment Library
+
+Completed-trade social graphics use this deliberately text-free, project-storage scene library. Each side resolves its environment independently from public category, type, title, and visual-hint data; the canvas renderer mirrors the right-side environment, varies the crop and outer light deterministically, and places the actual listing media on top. The assets are design backdrops only. They do not contain customer data, trade IDs, names, or generated item replacements.
+
+| Theme asset key | Intended trade-side context | Current project-storage path |
+|---|---|---|
+| `sports-baseball` | Baseball cards and memorabilia | `/manus-storage/sports-baseball-collector_451a17d0.jpg` |
+| `sports-football` | Football cards and memorabilia | `/manus-storage/sports-football-collector_56ee480a.jpg` |
+| `sports-basketball` | Basketball cards and memorabilia | `/manus-storage/sports-basketball-collector_dc2fa42b.jpg` |
+| `sports-hockey` | Hockey cards and memorabilia | `/manus-storage/sports-hockey-collector_b568ce9e.jpg` |
+| `sports-collectibles` | Other or unspecified sports collectibles | `/manus-storage/sports-general-collector_906f6d56.jpg` |
+| `comics` | Comics and comic original art | `/manus-storage/comic-archive-collector_c552bfb8.jpg` |
+| `pokemon` | Pokémon and TCG items | `/manus-storage/pokemon-tcg-collector_e71edfcf.jpg` |
+| `vintage_toys` | Vintage toys | `/manus-storage/vintage-toy-collector_5530d4f4.jpg` |
+| `video_games` | Video games, consoles, and accessories | `/manus-storage/video-game-collector_31820949.jpg` |
+| `coins` | Coins and numismatic items | `/manus-storage/coin-curator-collector_a422a1cc.jpg` |
+| `stamps` | Stamps and philatelic items | `/manus-storage/stamp-archive-collector_b7d532c3.jpg` |
+| `movies` | Movies and physical media | `/manus-storage/movie-media-collector_e86fe326.jpg` |
+| `music` | Music and physical recordings | `/manus-storage/music-listening-room-collector_5ca7c926.jpg` |
+| `autographs` | Autographs and signed memorabilia | `/manus-storage/autograph-archive-collector_d8376eaa.jpg` |
+| `disney_pins` | Disney pins | `/manus-storage/disney-pin-collector_9fdd1184.jpg` |
+| `collectibles` | Unknown or future categories | `/manus-storage/general-collectibles-collector_4e57c74e.jpg` |
+
+The renderer’s `TRADE_ALERT_THEME_IMAGE_URLS` map is the executable source of truth. This inventory is the recovery record that must be updated whenever one of the scene URLs changes.
+
 ## Authorized Database-Backed Media Cleanup
 
 A full public listing-detail audit initially found one obsolete secondary photo record for listing `1110009` — **Barry Sanders Score Rookie** — that referenced a 403 storage object. Rich authorized removal rather than re-upload. A guarded transaction deleted exactly that one record, retained the working cover photo, and public detail no longer returns the obsolete path. The other **27 audited listing/owner media paths were rechecked and all returned `200`**.

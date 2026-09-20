@@ -88,11 +88,14 @@ describe("native Social graphic exporter", () => {
     expect(getTradeItemGradeLine({ title: "Custom graded card", certificationCompany: "other", customGradingCompany: "CGA", grade: 8.95 })).toBe("CGA 9");
     expect(getTradeItemGradeLine({ title: "Ungraded item", certificationCompany: "PSA", grade: null })).toBeNull();
     expect(getTradeItemFactLine({ title: "Public item", facts: [{ label: "Year", value: "1982" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }] })).toBe("1982");
+    expect(exporterSource).toContain("const badge = getTradeGradeBadgeStyle(item.category)");
+    expect(exporterSource).toContain("drawRoundedRect(context, captionX - badgeWidth / 2");
   });
 
   it("uses real category environments on each trade side while keeping actual item photos contained", () => {
     expect(Object.keys(TRADE_ALERT_THEME_IMAGE_URLS)).toEqual(expect.arrayContaining([
-      "sports_cards", "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins",
+      "sports-baseball", "sports-football", "sports-basketball", "sports-hockey", "sports-collectibles",
+      "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins", "collectibles",
     ]));
     expect(TRADE_ALERT_STAGE_IMAGE_URLS).toEqual(expect.objectContaining({
       "sports-baseball-football": expect.stringContaining("sports-baseball-football-stage"),
@@ -106,6 +109,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function getTradeAlertStageKey");
     expect(exporterSource).toContain("drawEnvironmentSide(leftEnvironment, leftTheme");
     expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme");
+    expect(exporterSource).toContain("function getTradeSceneSeed");
+    expect(exporterSource).toContain("drawCoverImage(context, environment, x, 0, sideWidth, height, focalX, mirrored)");
+    expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, stageImage, rightSceneSeed, true)");
     expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
