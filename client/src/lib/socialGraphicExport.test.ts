@@ -77,7 +77,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
-    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-arrows-final_476a7cce.svg");
+    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-directional_b8ca6ba9.svg");
     expect(exporterSource).toContain("+ CASH INCLUDED");
     expect(exporterSource).toContain("drawCinematicFooterPhrase");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
@@ -113,12 +113,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawCinematicTradeScene");
     expect(exporterSource).toContain("function drawCinematicTradeItem");
     expect(exporterSource).toContain("function getTradeAlertStageKey");
-    expect(exporterSource).toContain("drawEnvironmentSide(leftEnvironment, leftTheme");
-    expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme");
     expect(exporterSource).toContain("function getTradeSceneSeed");
-    expect(exporterSource).toContain("drawCoverImage(layer, environment, 0, 0, width, height, focalX, mirrored)");
-    expect(exporterSource).toContain("globalCompositeOperation = \"destination-in\"");
-    expect(exporterSource).toContain("drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, stageImage, rightSceneSeed, true)");
+    expect(exporterSource).toContain("The curated stage is already a complete environment");
+    expect(exporterSource).not.toContain("drawEnvironmentSide");
     expect(exporterSource).not.toContain("drawCoverImage(context, stageImage, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("drawContainedImage(context, image, centerX - imageWidth / 2");
     expect(exporterSource).toContain("tradeThemeImageUrls");
@@ -126,6 +123,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("TRADE_ALERT_FOREGROUND_IMAGE_URLS");
     expect(exporterSource).toContain("tradeStageImageUrls");
     expect(exporterSource).toContain("drawCinematicTradeScene(");
+    expect(exporterSource).toContain("const strokeWidth = Math.min(width * 0.84");
+    expect(exporterSource).toContain("const strokeHeight = 150 * scale");
+    expect(exporterSource).toContain("0.35 * scale");
   });
 
   it("uses one genuine category scene for uniform trades and a neutral crossover scene for mixed-category trades", () => {

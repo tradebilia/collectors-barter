@@ -44,7 +44,7 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
-export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-exchange-logo-arrows-final_476a7cce.svg";
+export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-exchange-logo-directional_b8ca6ba9.svg";
 
 /** Curated environments support the real listing photo; they never replace it. */
 export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKey, string>> = {
@@ -954,64 +954,14 @@ function drawCinematicTradeScene(
     context.restore();
   }
 
-  const drawEnvironmentSide = (image: CanvasImage | null, theme: TradeAlertTheme, x: number, sideWidth: number, fallbackImage: CanvasImage | null, sceneSeed: number, mirrored: boolean) => {
-    const layerCanvas = document.createElement("canvas");
-    // Preserve the full scene ratio before masking it to a side so foreground
-    // props such as toys are not aggressively cropped by a half-width cover.
-    layerCanvas.width = width;
-    layerCanvas.height = height;
-    const layer = layerCanvas.getContext("2d");
-    if (!layer) return;
-    // Each side gets its own category environment. The curated stage is only
-    // a resilience fallback for a missing category asset; it is never used as
-    // the default full-canvas background for every trade.
-    const environment = image ?? fallbackImage;
-    if (environment) {
-      const focalX = 0.10 + (sceneSeed % 4) * 0.06;
-      // The curated stage remains the visible foreground. Category themes are
-      // a restrained side color/environment wash, not an opaque replacement.
-      layer.globalAlpha = 0.30 + ((sceneSeed >>> 3) % 3) * 0.03;
-      drawCoverImage(layer, environment, 0, 0, width, height, focalX, mirrored);
-    }
-    const wash = mirrored
-      ? layer.createLinearGradient(width, 0, 0, height)
-      : layer.createLinearGradient(0, 0, width, height);
-    wash.addColorStop(0, withAlpha(theme.primary, 0.07));
-    wash.addColorStop(0.58, "rgba(7, 11, 17, 0.015)");
-    wash.addColorStop(1, "rgba(5, 8, 13, 0.06)");
-    layer.globalAlpha = 1;
-    layer.fillStyle = wash;
-    layer.fillRect(0, 0, width, height);
-    const outerLightX = mirrored ? width * 0.86 : width * 0.14;
-    const outerLight = layer.createRadialGradient(outerLightX, height * 0.50, 0, outerLightX, height * 0.50, width * (0.28 + ((sceneSeed >>> 5) % 3) * 0.04));
-    outerLight.addColorStop(0, withAlpha(theme.glow, 0.12 + ((sceneSeed >>> 1) % 3) * 0.02));
-    outerLight.addColorStop(1, "rgba(0, 0, 0, 0)");
-    layer.fillStyle = outerLight;
-    layer.fillRect(0, 0, sideWidth, height);
-
-    // The two category environments intentionally overlap, but their inner
-    // edges must cross-fade rather than stack as a visible vertical band.
-    const feather = Math.min(sideWidth * 0.30, width * 0.18);
-    const edgeFade = mirrored
-      ? layer.createLinearGradient(0, 0, sideWidth, 0)
-      : layer.createLinearGradient(0, 0, sideWidth, 0);
-    if (mirrored) {
-      edgeFade.addColorStop(0, "rgba(0,0,0,0)");
-      edgeFade.addColorStop(0.38, "rgba(0,0,0,1)");
-      edgeFade.addColorStop(1, "rgba(0,0,0,1)");
-    } else {
-      edgeFade.addColorStop(0, "rgba(0,0,0,1)");
-      edgeFade.addColorStop(0.62, "rgba(0,0,0,1)");
-      edgeFade.addColorStop(1, "rgba(0,0,0,0)");
-    }
-    layer.globalCompositeOperation = "destination-in";
-    layer.fillStyle = edgeFade;
-    layer.fillRect(0, 0, width, height);
-    context.drawImage(layerCanvas, 0, 0);
-  };
-
-  drawEnvironmentSide(leftEnvironment, leftTheme, 0, width * 0.62, stageImage, leftSceneSeed, false);
-  drawEnvironmentSide(rightEnvironment, rightTheme, width * 0.38, width * 0.62, stageImage, rightSceneSeed, true);
+  // The curated stage is already a complete environment, including its
+  // category-appropriate foreground props. Do not composite a second copy of
+  // the category environments over it: that creates the visible ghosted glove,
+  // helmet, and other duplicated props seen in the previous export.
+  void leftEnvironment;
+  void rightEnvironment;
+  void leftSceneSeed;
+  void rightSceneSeed;
 
   const centeredVignette = context.createRadialGradient(width / 2, height * 0.46, 0, width / 2, height * 0.46, width * 0.54);
   centeredVignette.addColorStop(0, "rgba(2, 5, 10, 0.04)");
@@ -1035,8 +985,10 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   const logoWidth = 360 * scale;
   drawBrand(context, logo, (width - logoWidth) / 2, 11 * scale, logoWidth, 57 * scale);
 
-  const strokeWidth = Math.min(width * 1.06, 1272 * scale);
-  const strokeHeight = 126 * scale;
+  // The reference banner is wide but visually substantial vertically: increase
+  // the paint body rather than extending it past the canvas edges.
+  const strokeWidth = Math.min(width * 0.84, 1008 * scale);
+  const strokeHeight = 150 * scale;
   const strokeX = (width - strokeWidth) / 2;
   const strokeY = 70 * scale;
   context.save();
@@ -1082,7 +1034,7 @@ function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage:
       context.font = `800 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
       context.textAlign = "center";
       context.textBaseline = "middle";
-      drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + 106 * scale);
+      drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + 124 * scale);
       context.restore();
     }
     return;
@@ -1128,7 +1080,7 @@ function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage:
   if (cashIncluded) {
     context.fillStyle = "#f7d76d";
     context.font = `800 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
-    drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + radius + 34 * scale);
+    drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + radius + 48 * scale);
   }
   context.restore();
 }
@@ -1206,7 +1158,7 @@ function drawCinematicFooterPhrase(context: CanvasRenderingContext2D, phrase: st
   context.font = `700 ${Math.max(10, Math.round(13 * scale))}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
   context.textBaseline = "middle";
-  drawTrackedText(context, phrase.toUpperCase(), width / 2, y, 1.25 * scale);
+  drawTrackedText(context, phrase.toUpperCase(), width / 2, y, 0.35 * scale);
   context.restore();
 }
 
