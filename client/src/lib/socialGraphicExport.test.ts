@@ -7,6 +7,7 @@ import {
   getTradeItemGradeLine,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
   TRADE_ALERT_BRUSH_IMAGE_URL,
+  TRADED_EXCHANGE_LOGO_URL,
   TRADE_ALERT_STAGE_IMAGE_URLS,
   TRADE_ALERT_THEME_IMAGE_URLS,
 } from "@/lib/socialGraphicExport";
@@ -76,8 +77,10 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
+    expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-exchange-logo-approved-transparent_45135968");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
+    expect(exporterSource).toContain("drawContainedImage(context, logoImage");
     expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
     expect(exporterSource).toContain('const label = "TRADED"');
     expect(exporterSource).toContain("context.arc(centerX, centerY - 3 * scale, radius");
