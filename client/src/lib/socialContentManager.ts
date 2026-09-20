@@ -14,11 +14,15 @@ export type SocialPromotionDetails = {
   listingId?: number | null;
   itemPath?: string | null;
   tradeItems?: Array<{
+    listingId?: number | null;
     title: string;
     imageUrl?: string | null;
     estimatedValue?: number | null;
     direction?: "offered" | "requested";
     category?: string | null;
+    itemType?: string | null;
+    visualHints?: string[] | null;
+    facts?: SocialPromotionFact[] | null;
     grade?: string | number | null;
     certificationCompany?: string | null;
     customGradingCompany?: string | null;

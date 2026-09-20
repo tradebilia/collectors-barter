@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { getSocialGraphicExportFileName, getTradeGradeBadgeStyle, getTradeItemGradeLine, SOCIAL_GRAPHIC_CANVAS_SIZES } from "@/lib/socialGraphicExport";
+import {
+  getSocialGraphicExportFileName,
+  getTradeGradeBadgeStyle,
+  getTradeItemFactLine,
+  getTradeItemGradeLine,
+  SOCIAL_GRAPHIC_CANVAS_SIZES,
+  TRADE_ALERT_THEME_IMAGE_URLS,
+} from "@/lib/socialGraphicExport";
 import { createPromotionSocialDraft } from "@/lib/socialContentManager";
 
 const promotionDraft = createPromotionSocialDraft("graphic-export-1", {
@@ -33,105 +40,78 @@ describe("native Social graphic exporter", () => {
     expect(SOCIAL_GRAPHIC_CANVAS_SIZES.YouTube).toEqual({ width: 1280, height: 720 });
   });
 
-  it("creates a stable, descriptive PNG filename without relying on preview DOM", () => {
+  it("creates a stable descriptive filename without relying on preview DOM", () => {
     expect(getSocialGraphicExportFileName(promotionDraft, "Facebook")).toBe("tradebilia-1986-fleer-michael-jordan-rookie-psa-10-facebook.png");
   });
 
-  it("uses an explicit new-listing header, enlarged official brand space, and a complete fitted title without image labels", () => {
+  it("preserves the high-value graphic hierarchy and contained original image behavior", () => {
     expect(exporterSource).toContain("NEW HIGH-VALUE LISTING");
     expect(exporterSource).toContain("drawCompleteFittedTitle");
     expect(exporterSource).toContain("drawCenteredBrand");
-    expect(exporterSource).toContain("/ 2 - 6 * scale");
-    expect(exporterSource).toContain('context.fillStyle = "#ffd45a"');
-    expect(exporterSource).toContain('context.textAlign = "center"');
-    expect(exporterSource).toContain('context.textBaseline = "middle"');
     expect(exporterSource).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
     expect(exporterSource).toContain("drawBackground(context, width, height, heroBackground)");
-    expect(exporterSource).toContain('context.textAlign = "center"');
-    expect(exporterSource).not.toContain('context.fillText("TRADEBILIA", width - padding');
     expect(exporterSource).toContain("getSocialPromotionItemTitle");
     expect(exporterSource).not.toContain("ORIGINAL IMAGE · FULLY SHOWN");
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
-    expect(exporterSource).not.toContain("const url = splitLine");
-    expect(exporterSource).toContain("drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale, 42, 18)");
-    expect(exporterSource).toContain("const height = rows * 54 * scale + 1 * scale");
-    expect(exporterSource).toContain("const valueY = Math.max(detailY + 28 * scale, height - 144 * scale)");
   });
 
-  it("always places the complete brand lockup above a divider-separated footer phrase", () => {
+  it("keeps logos above their divider and gives completed trades a clear CTA footer", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
+    expect(exporterSource).toContain("function drawTradeBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
     expect(exporterSource).toContain("drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()");
-    expect(exporterSource.match(/drawBrandFooter\(context, draft,/g)).toHaveLength(4);
-    expect(exporterSource).not.toContain("drawCenteredBrand(context, brandLogo");
+    expect(exporterSource).toContain('const label = "VIEW THIS TRADE ON TRADEBILIA"');
+    expect(exporterSource).toContain("drawTradeBrandFooter(context, brandLogo");
   });
 
-  it("uses the stronger Facebook-style trade-alert composition for Instagram completed trades", () => {
-    expect(exporterSource).toContain("drawCompletedTradeInstagram");
-    expect(exporterSource).toContain("const frameHeight = height - frameY - 224 * scale");
-    expect(exporterSource).toContain("drawCompletedTradeSideBySide");
-    expect(exporterSource).toContain("function drawTradeDirection");
-    expect(exporterSource).toContain("function drawTradeAlertHeader");
+  it("uses crisp Anton display typography, a centered Trade Alert hierarchy, and readable exchange arrows", () => {
     expect(exporterSource).toContain('Anton, "Arial Narrow", Arial, sans-serif');
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
-    expect(exporterSource).toContain('document.fonts.load(\'700 18px "Inter"\')');
-    expect(exporterSource).toContain("function drawCrispText");
-    expect(exporterSource).toContain("function drawTrackedText");
-    expect(exporterSource).toContain("drawTradeAlertHeader(context, width, 104 * scale, scale)");
+    expect(exporterSource).toContain("function drawTradeAlertHeader");
+    expect(exporterSource).toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
     expect(exporterSource).toContain("const textBaseline = bannerY + height / 2 + (ascent - descent) / 2");
-    expect(exporterSource).toContain("const metrics = context.measureText(label)");
     expect(exporterSource).toContain('drawTrackedText(context, "TRADED"');
     expect(exporterSource).toContain('gradient.addColorStop(0, "rgba(255, 185, 46, 0)")');
     expect(exporterSource).toContain('gradient.addColorStop(1, "rgba(255, 185, 46, 0)")');
-    expect(exporterSource).toContain("drawArrow(centerY + 5 * scale, true)");
-    expect(exporterSource).toContain('drawCompletedTradeSideBySide(context, draft, "Instagram"');
-    expect(exporterSource).toContain('platform === "Instagram"');
   });
 
-  it("adds a clear grading company and one-decimal grade line only for graded trade items", () => {
+  it("adds public detail and grade information only when present", () => {
     expect(getTradeItemGradeLine({ title: "Graded card", certificationCompany: "PSA", grade: "9.80" })).toBe("PSA 9.8");
     expect(getTradeItemGradeLine({ title: "Custom graded card", certificationCompany: "other", customGradingCompany: "CGA", grade: 8.95 })).toBe("CGA 9");
     expect(getTradeItemGradeLine({ title: "Ungraded item", certificationCompany: "PSA", grade: null })).toBeNull();
+    expect(getTradeItemFactLine({ title: "Public item", facts: [{ label: "Year", value: "1982" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }] })).toBe("1982");
     expect(getTradeGradeBadgeStyle("sports_cards")).toEqual({ fill: "#fee2e2", stroke: "#fecaca", text: "#991b1b" });
     expect(getTradeGradeBadgeStyle("comics")).toEqual({ fill: "#ede9fe", stroke: "#ddd6fe", text: "#5b21b6" });
-    expect(getTradeGradeBadgeStyle(null)).toEqual({ fill: "#dbeafe", stroke: "#bfdbfe", text: "#1e40af" });
-    expect(exporterSource).toContain("getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)");
-    expect(exporterSource).toContain("function getTradeGradeBadgeStyle");
-    expect(exporterSource).toContain("drawRoundedRect(context, centerX - badgeWidth / 2");
-    expect(exporterSource).toContain("getTradeItemGradeLine(entry.item)");
   });
 
-  it("frames only completed-trade brand marks with fading blue side rules", () => {
+  it("uses reusable category environments while keeping actual item photos contained", () => {
+    expect(Object.keys(TRADE_ALERT_THEME_IMAGE_URLS)).toEqual(expect.arrayContaining([
+      "sports_cards", "comics", "pokemon", "vintage_toys", "video_games", "coins", "stamps", "movies", "music", "autographs", "disney_pins",
+    ]));
+    expect(exporterSource).toContain("function drawTradeStage");
+    expect(exporterSource).toContain("function drawTradeItemEnvironment");
+    expect(exporterSource).toContain("resolveTradeAlertTheme");
+    expect(exporterSource).toContain("drawContainedImage(context, image, x + 8 * scale");
+    expect(exporterSource).toContain("tradeThemeImageUrls");
+    expect(exporterSource).toContain("drawTradeStage(context, width, height, completedTradeThemes)");
+  });
+
+  it("retains adaptive mixed-item layouts across Facebook, Instagram, and Pinterest", () => {
+    expect(exporterSource).toContain("drawCompletedTradeLandscape");
+    expect(exporterSource).toContain("drawCompletedTradeInstagram");
+    expect(exporterSource).toContain("drawCompletedTradeTall");
+    expect(exporterSource).toContain("const frameHeight = height - frameY - 246 * scale");
+    expect(exporterSource).toContain("if (itemEntries.length === 3)");
+    expect(exporterSource).toContain("const captionTopGap = 22 * scale");
+    expect(exporterSource).toContain("const factReserve = getTradeItemFactLine(entry.item)");
+    expect(exporterSource).toContain('const frameHeight = platform === "Pinterest" ? height * 0.58 : height * 0.32');
+    expect(exporterSource).toContain("const rowCount = Math.ceil(itemCount / 2)");
+    expect(exporterSource).toContain("const tileHeight = (frameHeight - tileGap * (rowCount - 1)) / rowCount");
+  });
+
+  it("uses fading blue rules only around the completed-trade brand lockup", () => {
     expect(exporterSource).toContain("function drawTradeBrandAccentLines");
-    expect(exporterSource).toContain('if (draft.source === "Completed Trade")');
     expect(exporterSource).toContain('rgba(70, 197, 255, 0.72)');
     expect(exporterSource).toContain("drawTradeBrandAccentLines(context, width, brandY, scale)");
-  });
-
-  it("supports fuller item captions while retaining adaptive multi-item trade grids", () => {
-    expect(exporterSource).toContain("function drawTradeItemCaption");
-    expect(exporterSource).toContain("context.fillStyle = \"#ffffff\"");
-    expect(exporterSource).toContain("const titleLines = splitLine(context, item.title");
-    expect(exporterSource).toContain("drawCrispText(context, line, centerX");
-    expect(exporterSource).toContain("drawTradeMediaCell");
-    expect(exporterSource).toContain("const captionTopGap = 22 * scale");
-    expect(exporterSource).toContain("y + imageHeight + captionTopGap");
-    expect(exporterSource).toContain("if (itemEntries.length === 3)");
-    expect(exporterSource).toContain("const itemEntries = entries.slice(0, 4)");
-    expect(exporterSource).toContain("const tileHeight = (frameHeight - tileGap) / 2");
-    expect(exporterSource).toContain("const imageInset = 18 * scale");
-    expect(exporterSource).toContain("tileY + imageInset + imageHeight + captionTopGap");
-    expect(exporterSource).toContain('const frameHeight = platform === "Pinterest" ? height * 0.56 : height * 0.32');
-    expect(exporterSource).toContain('platform === "Pinterest" ? 14 : 12');
-  });
-
-  it("gives Instagram high-value posts a larger image, clear title gap, and a visible footer phrase", () => {
-    expect(exporterSource).toContain("getCompleteFittedTitleLayout");
-    expect(exporterSource).toContain('const titleGap = platform === "Instagram" ? 58 * scale : 38 * scale');
-    expect(exporterSource).toContain('const imageHeight = platform === "Instagram"');
-    expect(exporterSource).toContain("height - imageY - titleGap - titleLayout.height");
-    expect(exporterSource).toContain("let y = imageY + imageHeight + titleGap");
-    expect(exporterSource).toContain('platform === "Instagram" ? 58 : 42, 18');
-    expect(exporterSource).toContain('drawBrandFooter(context, draft, platform, brandLogo, width, height, padding, scale');
   });
 });

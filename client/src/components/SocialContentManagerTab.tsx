@@ -37,7 +37,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { TRADEBILIA_LOGO_URL } from "@/lib/tradebilia";
-import { downloadSocialGraphicCanvas, getSocialGraphicExportFileName, renderSocialGraphicCanvas } from "@/lib/socialGraphicExport";
+import { downloadSocialGraphicCanvas, getSocialGraphicExportFileName, renderSocialGraphicCanvas, TRADE_ALERT_THEME_IMAGE_URLS } from "@/lib/socialGraphicExport";
+import { getTradeAlertThemeAssetKeys, type TradeAlertThemeAssetKey } from "@shared/tradeAlertThemes";
 import {
   approveSocialDraft,
   createPromotionSocialDraft,
@@ -206,7 +207,10 @@ export function SocialContentManagerTab() {
   const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
   const [isExportingGraphic, setIsExportingGraphic] = useState(false);
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
-  const [preparedTradeImageUrls, setPreparedTradeImageUrls] = useState<string[]>([]);
+  // Keep these positions aligned to promotion.tradeItems. Filtering a missing
+  // photo would otherwise assign a later item's photo to the wrong caption.
+  const [preparedTradeImageUrls, setPreparedTradeImageUrls] = useState<Array<string | null>>([]);
+  const [preparedTradeThemeImageUrls, setPreparedTradeThemeImageUrls] = useState<Partial<Record<TradeAlertThemeAssetKey, string | null>>>({});
   const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
   const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -259,15 +263,21 @@ export function SocialContentManagerTab() {
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
-    ? (selectedDraft.promotion?.tradeItems ?? []).filter((item) => Boolean(item.imageUrl)).length
+    ? (selectedDraft.promotion?.tradeItems ?? []).length
     : 0;
-  const completedTradeImagesReady = selectedDraft?.source !== "Completed Trade" || preparedTradeImageUrls.length >= completedTradeImageCount;
+  const completedTradeImagesReady = selectedDraft?.source !== "Completed Trade" || preparedTradeImageUrls.length === completedTradeImageCount;
+  const completedTradeThemeKeys = selectedDraft?.source === "Completed Trade"
+    ? getTradeAlertThemeAssetKeys(selectedDraft.promotion?.tradeItems ?? [])
+    : [];
+  const completedTradeThemesReady = selectedDraft?.source !== "Completed Trade"
+    || completedTradeThemeKeys.every((assetKey) => Boolean(preparedTradeThemeImageUrls[assetKey]));
   const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
-    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady);
+    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady);
 
   useEffect(() => {
     setPreparedGraphicImageUrl(null);
     setPreparedTradeImageUrls([]);
+    setPreparedTradeThemeImageUrls({});
     setPreparedBrandLogoUrl(null);
     setPreparedHeroBackgroundUrl(null);
     preparedAssetRequestRef.current = null;
@@ -280,17 +290,34 @@ export function SocialContentManagerTab() {
     }
     if (!selectedDraft) return;
     const hasItemImage = Boolean(selectedDraft.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
-    const tradeImageSources = selectedDraft.source === "Completed Trade"
-      ? (selectedDraft.promotion?.tradeItems ?? []).map((item) => item.imageUrl).filter((url): url is string => Boolean(url)).slice(0, 4)
+    const tradeItems = selectedDraft.source === "Completed Trade"
+      ? (selectedDraft.promotion?.tradeItems ?? []).slice(0, 4)
       : [];
+    const tradeImageSources = tradeItems
+      .map((item, itemIndex) => ({ itemIndex, sourceUrl: item.imageUrl }))
+      .filter((item): item is { itemIndex: number; sourceUrl: string } => Boolean(item.sourceUrl));
+    const tradeThemeKeys = getTradeAlertThemeAssetKeys(tradeItems);
+    const tradeThemeSources = tradeThemeKeys
+      .map((assetKey) => ({ assetKey, sourceUrl: TRADE_ALERT_THEME_IMAGE_URLS[assetKey] }))
+      .filter((theme): theme is { assetKey: TradeAlertThemeAssetKey; sourceUrl: string } => Boolean(theme.sourceUrl));
     const sourceUrl = hasItemImage ? selectedDraft.mediaUrl : TRADEBILIA_LOGO_URL;
     if ((hasItemImage && preparedGraphicImageUrl) || (!hasItemImage && preparedBrandLogoUrl)) return;
-    if (preparedAssetRequestRef.current === sourceUrl) return;
-    preparedAssetRequestRef.current = sourceUrl;
-    prepareSocialGraphicImage.mutateAsync({ sourceUrls: [sourceUrl, ...tradeImageSources] })
+    const requestKey = [sourceUrl, ...tradeImageSources.map((item) => item.sourceUrl), ...tradeThemeSources.map((theme) => theme.sourceUrl)].join("|");
+    if (preparedAssetRequestRef.current === requestKey) return;
+    preparedAssetRequestRef.current = requestKey;
+    prepareSocialGraphicImage.mutateAsync({ sourceUrls: [sourceUrl, ...tradeImageSources.map((item) => item.sourceUrl), ...tradeThemeSources.map((theme) => theme.sourceUrl)] })
       .then((result) => {
         setPreparedGraphicImageUrl(hasItemImage ? result.dataUrls[0] ?? null : null);
-        setPreparedTradeImageUrls(result.dataUrls.slice(1).filter((url): url is string => Boolean(url)));
+        const alignedTradeImageUrls: Array<string | null> = Array.from({ length: tradeItems.length }, () => null);
+        tradeImageSources.forEach(({ itemIndex }, sourceIndex) => {
+          alignedTradeImageUrls[itemIndex] = result.dataUrls[sourceIndex + 1] ?? null;
+        });
+        setPreparedTradeImageUrls(alignedTradeImageUrls);
+        const preparedThemeUrls: Partial<Record<TradeAlertThemeAssetKey, string | null>> = {};
+        tradeThemeSources.forEach(({ assetKey }, themeIndex) => {
+          preparedThemeUrls[assetKey] = result.dataUrls[tradeImageSources.length + themeIndex + 1] ?? null;
+        });
+        setPreparedTradeThemeImageUrls(preparedThemeUrls);
         setPreparedBrandLogoUrl(result.brandLogoDataUrl);
         setPreparedHeroBackgroundUrl(result.heroBackgroundDataUrl);
       })
@@ -471,8 +498,8 @@ export function SocialContentManagerTab() {
 
   async function downloadSocialGraphic() {
     if (!selectedDraft || !selectedPreviewPlatform) return;
-    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || (hasExportableItemImage && !preparedGraphicImageUrl)) {
-      toast.error("Preparing the original item image and Tradebilia mark. Please wait a moment, then download the graphic.");
+    if (!preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || (hasExportableItemImage && !preparedGraphicImageUrl)) {
+      toast.error("Preparing original item images and Trade Alert environments. Please wait a moment, then download the graphic.");
       return;
     }
     setIsExportingGraphic(true);
@@ -482,6 +509,7 @@ export function SocialContentManagerTab() {
         platform: selectedPreviewPlatform,
         itemImageUrl: preparedGraphicImageUrl,
         tradeItemImageUrls: preparedTradeImageUrls,
+        tradeThemeImageUrls: preparedTradeThemeImageUrls,
         brandLogoUrl: preparedBrandLogoUrl,
         heroBackgroundUrl: preparedHeroBackgroundUrl,
       });
@@ -676,7 +704,7 @@ export function SocialContentManagerTab() {
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
                       <div className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
-                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />
+                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} tradeThemeImageUrls={preparedTradeThemeImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
