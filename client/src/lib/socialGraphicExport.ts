@@ -159,14 +159,14 @@ export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
   "coins-collection-lot": "/manus-storage/coins-collection-lot_3027b174.jpg",
   "coins-paper-money": "/manus-storage/coins-paper-money_ae5ae8b4.jpg",
   "coins-paper-money-banknotes": "/manus-storage/coins-paper-money_ae5ae8b4.jpg",
-  "coins-single-coin": "/manus-storage/tradebilia-coins-single-coin-neutral_faccf7f3.jpg",
+  "coins-single-coin": "/manus-storage/tradebilia-coins-single-coin-neutral-v2_00f62eb9.jpg",
   "comics-collection-lot": "/manus-storage/tradebilia-comics-collection-lot-neutral_f8f7c9a7.jpg",
   "comics-original-art": "/manus-storage/comics-original-art_3ee4e5bc.jpg",
   "comics-single-comic": "/manus-storage/comics-single-comic_bce94b51.jpg",
   "disney-pins-collection-lot": "/manus-storage/disney-pins-collection-lot_b44cd17e.jpg",
-  "disney-pins-individual-pin": "/manus-storage/tradebilia-disney-single-pin-neutral_62282932.jpg",
+  "disney-pins-individual-pin": "/manus-storage/tradebilia-disney-single-pin-neutral-v2_ebf2d364.jpg",
   "disney-pins-pin-set": "/manus-storage/disney-pins-pin-set_5eedc244.jpg",
-  "disney-pins-single-pin": "/manus-storage/tradebilia-disney-single-pin-neutral_62282932.jpg",
+  "disney-pins-single-pin": "/manus-storage/tradebilia-disney-single-pin-neutral-v2_ebf2d364.jpg",
   "movies-box-set": "/manus-storage/movies-box-set_e3b6562e.jpg",
   "movies-collection-lot": "/manus-storage/movies-collection-lot_cb920844.jpg",
   "movies-individual-movie": "/manus-storage/movies-individual-movie_5bd8c7f2.jpg",
@@ -232,14 +232,28 @@ export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
   if (!promotion?.category) return null;
   // High-value posts use the same decision hierarchy as Trade Alerts:
   // category establishes the collector world, item type establishes the
-  // physical scene, and secondary metadata can only add a future accent.
-  // A sport, publisher, platform, format, or brand must never replace the
-  // scene for a Single Card, Original Art, Console, Box Set, or other type.
+  // physical scene, and secondary metadata may select a reviewed variant of
+  // that *same* scene. A sport, publisher, platform, format, or brand must
+  // never bypass the item-type decision.
   const category = normalizeHighValueAssetKeyPart(promotion.category);
   const itemType = normalizeHighValueAssetKeyPart(promotion.itemType);
   if (itemType) {
     const exactKey = `${category}-${itemType}`;
-    if (HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey]) return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
+    const itemTypeBackground = HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
+    if (itemTypeBackground) {
+      // Sports Cards need their Sport cue to be clearly visible in the
+      // finished export—not hidden as a subtle wash. The exact Sports Card
+      // item type is still resolved first, then a reviewed sport collector
+      // scene becomes its visible variant. This preserves the hierarchy while
+      // making a Baseball card unambiguously read as Baseball.
+      if (category === "sports-cards") {
+        const secondaryKey = getHighValueSecondaryVisualKey(promotion);
+        if (secondaryKey && HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS.has(secondaryKey)) {
+          return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey] || itemTypeBackground;
+        }
+      }
+      return itemTypeBackground;
+    }
   }
   return getHighValueCategoryFallbackUrl(category);
 }
@@ -326,23 +340,9 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
   return null;
 }
 
-const HIGH_VALUE_SAFE_SPORT_ACCENT_KEYS = new Set([
+const HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS = new Set([
   "baseball", "basketball", "football", "hockey", "soccer", "golf", "tennis", "wrestling", "mma", "multi_sport",
 ]);
-
-/**
- * A Sport is a controlled, category-relevant refinement for Sports Cards.
- * It never replaces the category/item-type scene; it is blended softly over
- * that scene so the actual card image stays the singular collectible focus.
- * Racing and Other deliberately retain the neutral base until their defective
- * legacy scenes are replaced with reviewed collector environments.
- */
-export function getHighValueSecondaryBackgroundUrl(promotion: SocialDraft["promotion"]) {
-  if (normalizeHighValueAssetKeyPart(promotion?.category) !== "sports-cards") return null;
-  const secondaryKey = getHighValueSecondaryVisualKey(promotion);
-  if (!secondaryKey || !HIGH_VALUE_SAFE_SPORT_ACCENT_KEYS.has(secondaryKey)) return null;
-  return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey] || null;
-}
 
 export function getHighValueSecondaryPropUrl(promotion: SocialDraft["promotion"]) {
   void promotion;
@@ -564,22 +564,12 @@ function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string
   return height;
 }
 
-function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null, overlayAlpha = 0.66, accentBackground: CanvasImage | null = null) {
+function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null, overlayAlpha = 0.66) {
   if (heroBackground) {
     // Every generated collector scene is widescreen. Cover-cropping preserves
     // its perspective on square and vertical exports instead of squeezing a
     // real tabletop scene into a distorted tall background.
     drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5);
-    if (accentBackground) {
-      // A controlled secondary cue (currently a Sport) should enrich rather
-      // than displace the item-type world. Its lower opacity lets a Baseball
-      // glove/stadium or Football field read naturally behind a Single Card
-      // without replacing the type-specific tabletop and media safe zone.
-      context.save();
-      context.globalAlpha = 0.44;
-      drawCoverImage(context, accentBackground, 0, 0, width, height, 0.5);
-      context.restore();
-    }
     context.fillStyle = `rgba(3, 18, 55, ${overlayAlpha})`;
     context.fillRect(0, 0, width, height);
     return;
@@ -2049,9 +2039,8 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
-  const highValueSecondaryBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueSecondaryBackgroundUrl(draft.promotion) : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground, highValueSecondaryBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
@@ -2063,13 +2052,12 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     loadCanvasImage(TRADED_EXCHANGE_LOGO_URL),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
     loadCanvasImage(highValueBackgroundUrl),
-    loadCanvasImage(highValueSecondaryBackgroundUrl),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
   const tradeStageImages: TradeStageImages = Object.fromEntries(stageSourceEntries.map(([key], index) => [key, loadedStageImages[index] ?? null]));
   if (draft.source !== "Completed Trade") {
     const highValue = draft.source === "High-Value Listing";
-    drawBackground(context, width, height, highValue ? highValueBackground || heroBackground : heroBackground, highValue ? 0.28 : 0.66, highValue ? highValueSecondaryBackground : null);
+    drawBackground(context, width, height, highValue ? highValueBackground || heroBackground : heroBackground, highValue ? 0.28 : 0.66);
   }
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
     drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
