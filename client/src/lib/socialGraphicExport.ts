@@ -1017,8 +1017,10 @@ function drawCinematicTradeScene(
 }
 
 function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
-  const logoWidth = 600 * scale;
-  drawBrand(context, logo, (width - logoWidth) / 2, 0, logoWidth, 82 * scale);
+  // Give the full lockup enough height for the small “Collectors, Trading,
+  // Exchange” line to remain readable without moving the banner into the item zone.
+  const logoWidth = 700 * scale;
+  drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
 
   // The reference banner is wide but visually substantial vertically: increase
   // the paint body rather than extending it past the canvas edges.
@@ -1157,7 +1159,7 @@ function drawCinematicTradeItem(
   if (image) drawContainedImage(context, image, centerX - imageWidth / 2, imageY, imageWidth, imageHeight);
 
   context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.max(10, Math.round(13 * scale))}px ${CANVAS_SANS_FONT}`;
+  context.font = `700 ${Math.max(11, Math.round(15 * scale))}px ${CANVAS_SANS_FONT}`;
   context.textAlign = captionAlign;
   const titleLines = splitLine(context, item.title, captionWidth, 2);
   const titleLineHeight = Math.max(12, 15 * scale);
@@ -1224,7 +1226,7 @@ function drawCinematicTradeGroup(
       y,
       itemWidth,
       itemHeight,
-      y + itemHeight + 14 * scale,
+      y + itemHeight + 24 * scale,
       captionWidth,
       centerX,
       "center",
@@ -1322,7 +1324,7 @@ function drawCompletedTradeCinematic(
   drawCinematicTradeGroup(context, offered, images, "left", width, imageY, imageHeight, scale);
   drawCinematicTradeGroup(context, requested, images, "right", width, imageY, imageHeight, scale);
   drawCinematicExchangeMark(context, exchangeLogo, width / 2, exchangeY, scale, Boolean(draft.promotion?.cashIncluded));
-  const footerY = isPinterest ? height * 0.94 : isTall ? height - 70 * scale : height - 46 * scale;
+  const footerY = isPinterest ? height * 0.965 : isTall ? height - 52 * scale : height - 30 * scale;
   drawCinematicFooterPhrase(context, footerPhrase, width, footerY, scale);
 }
 

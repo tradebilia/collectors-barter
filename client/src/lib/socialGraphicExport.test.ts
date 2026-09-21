@@ -131,7 +131,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const strokeHeight = 174 * scale");
     expect(exporterSource).toContain("0.18 * scale");
     expect(exporterSource).toContain("Math.round(16 * scale)");
-    expect(exporterSource).toContain("const logoWidth = 600 * scale");
+    expect(exporterSource).toContain("const logoWidth = 700 * scale");
   });
 
   it("uses one genuine category scene for uniform trades and a neutral crossover scene for mixed-category trades", () => {
@@ -141,7 +141,9 @@ describe("native Social graphic exporter", () => {
   });
 
   it("centers the Tradebilia lockup above the brush heading and groups multiple items by trade side", () => {
-    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 0, logoWidth, 82 * scale");
+    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale");
+    expect(exporterSource).toContain("const logoWidth = 700 * scale");
+    expect(exporterSource).toContain("height - 30 * scale");
     expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.565');
     expect(exporterSource).toContain('images[entry.index] ?? null');
   });
