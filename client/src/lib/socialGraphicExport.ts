@@ -67,6 +67,11 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   video_xbox: "/manus-storage/tradebilia-secondary-video-xbox-prop_ec7aba77.png",
   pokemon_vintage: "/manus-storage/tradebilia-secondary-pokemon-vintage-prop_838365e1.png",
   pokemon_modern: "/manus-storage/tradebilia-secondary-pokemon-modern-prop_5e74a96f.png",
+  comics_marvel: "/manus-storage/tradebilia-secondary-comic-marvel-prop_ac696b3c.png",
+  comics_dc: "/manus-storage/tradebilia-secondary-comic-dc-prop_6fecae55.png",
+  movie_vhs: "/manus-storage/tradebilia-secondary-movie-vhs-prop_24d12737.png",
+  movie_disc: "/manus-storage/tradebilia-secondary-movie-disc-prop_acb17063.png",
+  movie_4k: "/manus-storage/tradebilia-secondary-movie-4k-prop_047e33fc.png",
   music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
   comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
   video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
@@ -91,6 +96,11 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   video_xbox: "/manus-storage/tradebilia-secondary-video-xbox-background_8d73340a.jpg",
   pokemon_vintage: "/manus-storage/tradebilia-secondary-pokemon-vintage-background_070b5fd1.jpg",
   pokemon_modern: "/manus-storage/tradebilia-secondary-pokemon-modern-background_16d52b74.jpg",
+  comics_marvel: "/manus-storage/tradebilia-secondary-comic-marvel-background_f818497a.jpg",
+  comics_dc: "/manus-storage/tradebilia-secondary-comic-dc-background_f4124ea3.jpg",
+  movie_vhs: "/manus-storage/tradebilia-secondary-movie-vhs-background_981bec9d.jpg",
+  movie_disc: "/manus-storage/tradebilia-secondary-movie-disc-background_705e19ba.jpg",
+  movie_4k: "/manus-storage/tradebilia-secondary-movie-4k-background_51ba3c81.jpg",
   music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
   comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
@@ -212,6 +222,17 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
     const setValue = normalizeVisualToken((promotion.facts ?? []).find((fact) => /set|era|series/.test(normalizeVisualToken(fact.label)))?.value);
     if (/wizards of the coast|1st edition|shadowless|base set|jungle|fossil|team rocket|vintage|wotc/.test(setValue)) return "pokemon_vintage";
     if (/ex|diamond pearl|platinum|heartgold|soul silver|black white|xy|sun moon|sword shield|scarlet violet|modern/.test(setValue)) return "pokemon_modern";
+  }
+  if (category === "comics") {
+    const publisher = normalizeVisualToken((promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "publisher")?.value);
+    if (publisher === "marvel") return "comics_marvel";
+    if (publisher === "dc") return "comics_dc";
+  }
+  if (category === "movies") {
+    const format = normalizeVisualToken((promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "format")?.value);
+    if (format === "vhs") return "movie_vhs";
+    if (/dvd|blu ray/.test(format)) return "movie_disc";
+    if (/4k uhd|laserdisc/.test(format)) return "movie_4k";
   }
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";

@@ -118,6 +118,14 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Pokémon", itemType: "single_card", facts: [{ label: "Set Name", value: "Scarlet & Violet" }] })).toBe("pokemon_modern");
   });
 
+  it("uses comic publisher and movie format dropdown facts when available", () => {
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "Marvel" }] })).toBe("comics_marvel");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "DC" }] })).toBe("comics_dc");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Movies", itemType: "individual_movie", facts: [{ label: "Format", value: "VHS" }] })).toBe("movie_vhs");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Movies", itemType: "individual_movie", facts: [{ label: "Format", value: "Blu-ray" }] })).toBe("movie_disc");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Movies", itemType: "individual_movie", facts: [{ label: "Format", value: "4K UHD" }] })).toBe("movie_4k");
+  });
+
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
