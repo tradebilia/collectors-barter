@@ -10,6 +10,7 @@ import {
   getHighValueSecondaryVisualKey,
   HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
   HIGH_VALUE_BRUSH_IMAGE_URL,
+  SPORTS_CARD_SECONDARY_VISUAL_KEYS,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
   TRADE_ALERT_BRUSH_IMAGE_URL,
   TRADED_EXCHANGE_LOGO_URL,
@@ -99,6 +100,15 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Music", itemType: "vinyl_record", facts: [{ label: "Artist / Performer", value: "Miles Davis" }] })).toBe("music");
     expect(exporterSource).toContain("drawSecondaryCollectorProp");
     expect(exporterSource).toContain("getHighValueSecondaryPropUrl");
+  });
+
+  it("covers every Sports Cards sport dropdown value", () => {
+    expect(Object.keys(SPORTS_CARD_SECONDARY_VISUAL_KEYS)).toEqual([
+      "baseball", "basketball", "football", "hockey", "soccer", "racing", "wrestling", "golf", "mma", "tennis", "multi sport", "mixed", "other",
+    ]);
+    for (const [sport, visualKey] of Object.entries(SPORTS_CARD_SECONDARY_VISUAL_KEYS)) {
+      expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: sport }] })).toBe(visualKey);
+    }
   });
 
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {

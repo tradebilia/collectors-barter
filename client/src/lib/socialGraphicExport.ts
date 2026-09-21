@@ -51,6 +51,17 @@ export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2
 export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   baseball: "/manus-storage/tradebilia-secondary-baseball-prop_b9cf41c7.png",
   football: "/manus-storage/tradebilia-secondary-football-prop_f50d7120.png",
+  basketball: "/manus-storage/tradebilia-secondary-basketball-prop_5319158a.png",
+  hockey: "/manus-storage/tradebilia-secondary-hockey-prop_ba9f7e65.png",
+  soccer: "/manus-storage/tradebilia-secondary-soccer-prop_7bc7cbf2.png",
+  golf: "/manus-storage/tradebilia-secondary-golf-prop_9bc1398d.png",
+  tennis: "/manus-storage/tradebilia-secondary-tennis-prop_2fa05f98.png",
+  racing: "/manus-storage/tradebilia-secondary-racing-prop_3d071c26.png",
+  wrestling: "/manus-storage/tradebilia-secondary-wrestling-prop_1f509e10.png",
+  mma: "/manus-storage/tradebilia-secondary-mma-prop_78686917.png",
+  multi_sport: "/manus-storage/tradebilia-secondary-multi-sport-prop_8156fed8.png",
+  mixed: "/manus-storage/tradebilia-secondary-multi-sport-prop_8156fed8.png",
+  other: "/manus-storage/tradebilia-secondary-other-sport-prop_02777e81.png",
   music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
   comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
   video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
@@ -59,9 +70,37 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
 export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   baseball: "/manus-storage/tradebilia-secondary-baseball-background_2c9391d0.jpg",
   football: "/manus-storage/tradebilia-secondary-football-background_fdf1d3af.jpg",
+  basketball: "/manus-storage/tradebilia-secondary-basketball-background_e77deb61.jpg",
+  hockey: "/manus-storage/tradebilia-secondary-hockey-background_3fe88350.jpg",
+  soccer: "/manus-storage/tradebilia-secondary-soccer-background_829bdf28.jpg",
+  golf: "/manus-storage/tradebilia-secondary-golf-background_ec2b8e7a.jpg",
+  tennis: "/manus-storage/tradebilia-secondary-tennis-background_7845b084.jpg",
+  racing: "/manus-storage/tradebilia-secondary-racing-background_bc54ac22.jpg",
+  wrestling: "/manus-storage/tradebilia-secondary-wrestling-background_846cd7a9.jpg",
+  mma: "/manus-storage/tradebilia-secondary-mma-background_6bb13392.jpg",
+  multi_sport: "/manus-storage/tradebilia-secondary-multi-sport-background_ac8b2033.jpg",
+  mixed: "/manus-storage/tradebilia-secondary-multi-sport-background_ac8b2033.jpg",
+  other: "/manus-storage/tradebilia-secondary-other-sport-background_6a3dd0d9.jpg",
   music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
   comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
+};
+
+/** Mirrors the authoritative Sports Cards dropdown values in fieldDefinitionsGenerated.ts. */
+export const SPORTS_CARD_SECONDARY_VISUAL_KEYS: Record<string, string> = {
+  baseball: "baseball",
+  basketball: "basketball",
+  football: "football",
+  hockey: "hockey",
+  soccer: "soccer",
+  racing: "racing",
+  wrestling: "wrestling",
+  golf: "golf",
+  mma: "mma",
+  tennis: "tennis",
+  "multi sport": "multi_sport",
+  mixed: "mixed",
+  other: "other",
 };
 
 /** Item-type environments keep the high-value post as specific as the traded post. */
@@ -143,12 +182,13 @@ function normalizeVisualToken(value: unknown) {
 export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion"]) {
   if (!promotion) return null;
   const category = normalizeVisualToken(promotion.category);
+  const sportFact = (promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "sport");
   const factSearchable = (promotion.facts ?? []).flatMap((fact) => [fact.label, fact.value])
     .map(normalizeVisualToken)
     .join(" ");
   if (category === "sports cards") {
-    if (/\bbaseball\b/.test(factSearchable)) return "baseball";
-    if (/\bfootball\b/.test(factSearchable)) return "football";
+    const sportKey = SPORTS_CARD_SECONDARY_VISUAL_KEYS[normalizeVisualToken(sportFact?.value)];
+    if (sportKey) return sportKey;
   }
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";
