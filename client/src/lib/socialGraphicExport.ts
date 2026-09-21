@@ -50,7 +50,7 @@ export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/TradeAlert_00575de4.w
 export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/NewHighValueListing_66f4a9ee.webp";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
-/** Secondary-characteristic props are layered behind the real listing image. */
+/** Secondary-characteristic props occupy the protected right-side visual lane. */
 export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   baseball: "/manus-storage/tradebilia-secondary-baseball-prop_b9cf41c7.png",
   football: "/manus-storage/tradebilia-secondary-football-prop_f50d7120.png",
@@ -397,13 +397,8 @@ const HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS = new Set([
 ]);
 
 export function getHighValueSecondaryPropUrl(promotion: SocialDraft["promotion"]) {
-  void promotion;
-  // The old detached cutouts sat behind the opaque real-item frame and were
-  // visible only as clipped slivers. Trade Alert scenes already carry their
-  // category foreground naturally, so until each output has a dedicated,
-  // unobstructed tabletop lane, the actual listing image remains the only
-  // foreground object in high-value posts.
-  return null;
+  const secondaryKey = getHighValueSecondaryVisualKey(promotion);
+  return secondaryKey ? HIGH_VALUE_SECONDARY_PROP_URLS[secondaryKey] || null : null;
 }
 
 /** Curated environments support the real listing photo; they never replace it. */
@@ -1456,7 +1451,9 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
   // be drawn as one complete asset with no second headline layered on top.
   const logoWidth = 700 * scale;
   drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
-  const strokeWidth = Math.min(width * 0.92, 1104 * scale);
+  // The finished banner includes a substantial lower brush edge. Keep its
+  // full artwork compact enough to leave an explicit title band below it.
+  const strokeWidth = Math.min(width * 0.76, 912 * scale);
   const strokeHeight = 174 * scale;
   const strokeX = (width - strokeWidth) / 2;
   const strokeY = 62 * scale;
@@ -1467,7 +1464,7 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
     // full source is intentionally drawn rather than cropped like the old
     // text-free swipe asset.
     const bannerHeight = strokeWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
-    const bannerY = 38 * scale;
+    const bannerY = 2 * scale;
     context.drawImage(brushImage, strokeX, bannerY, strokeWidth, bannerHeight);
     context.restore();
     return;
@@ -1587,7 +1584,7 @@ function drawSecondaryCollectorProp(context: CanvasRenderingContext2D, propImage
   context.restore();
 }
 
-function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
+function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null, foregroundPropImage: CanvasImage | null) {
   const scale = width / 1200;
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -1602,7 +1599,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
 
   if (isTall) {
     const padding = 58 * scale;
-    const imageY = 250 * scale;
+    const imageY = 330 * scale;
     const plaqueHeight = 112 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
     const plaqueY = plaqueBottomLimit - plaqueHeight;
@@ -1611,6 +1608,9 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const detailWidth = Math.max(220 * scale, width - detailX - padding);
     const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     const imageHeight = Math.max(260 * scale, Math.min(platform === "Pinterest" ? height * 0.42 : height * 0.48, plaqueY - imageY - 28 * scale));
+    // Keep the real listing media on the left. A reviewed semantic foreground
+    // is allowed only in the open right-side lane below the copy.
+    drawSecondaryCollectorProp(context, foregroundPropImage, width * 0.76, imageY + 242 * scale, width * 0.19, 142 * scale, scale);
     drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
     let detailY = imageY + 30 * scale;
     context.fillStyle = "#ffffff";
@@ -1634,23 +1634,26 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 140 * scale;
-  const imageY = 238 * scale;
+  const imageX = 122 * scale;
+  const imageY = 300 * scale;
   const imageWidth = 330 * scale;
   const imageHeight = height - imageY - 54 * scale;
+  // Preserve the rightmost collector-prop lane so the real listing media
+  // remains completely protected in its dedicated left-side frame.
+  drawSecondaryCollectorProp(context, foregroundPropImage, 930 * scale, 344 * scale, 210 * scale, 142 * scale, scale);
   drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
-  const detailX = 520 * scale;
-  const detailWidth = width - detailX - 70 * scale;
-  let detailY = 282 * scale;
+  const detailX = 500 * scale;
+  const detailWidth = 390 * scale;
+  let detailY = 300 * scale;
   context.fillStyle = "#ffffff";
-  detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 43 * scale, 25 * scale, 3);
+  detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 36 * scale, 20 * scale, 2);
   if (itemType) {
-    detailY += 16 * scale;
+    detailY += 12 * scale;
     context.fillStyle = "rgba(252,243,215,0.92)";
     context.font = `700 ${Math.round(18 * scale)}px ${CANVAS_SANS_FONT}`;
     context.fillText(itemType, detailX, detailY);
   }
-  detailY += 28 * scale;
+  detailY += 22 * scale;
   // Keep the compact landscape fact grid above the plaque; the plaque is
   // placed from the measured lower rule rather than from a fixed canvas Y.
   const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 36);
@@ -2148,8 +2151,9 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
+  const highValueForegroundUrl = draft.source === "High-Value Listing" ? getHighValueSecondaryPropUrl(draft.promotion) : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground, highValueForeground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
@@ -2161,6 +2165,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     loadCanvasImage(TRADED_EXCHANGE_LOGO_URL),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
     loadCanvasImage(highValueBackgroundUrl),
+    loadCanvasImage(highValueForegroundUrl),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
   const tradeStageImages: TradeStageImages = Object.fromEntries(stageSourceEntries.map(([key], index) => [key, loadedStageImages[index] ?? null]));
@@ -2179,7 +2184,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "High-Value Listing") {
-    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage);
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage, highValueForeground);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

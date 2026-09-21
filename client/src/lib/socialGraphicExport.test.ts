@@ -12,6 +12,7 @@ import {
   getHighValueSecondaryVisualKey,
   HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
   HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS,
+  HIGH_VALUE_SECONDARY_PROP_URLS,
   HIGH_VALUE_SECONDARY_BACKGROUND_URLS,
   HIGH_VALUE_BRUSH_IMAGE_URL,
   SPORTS_CARD_SECONDARY_VISUAL_KEYS,
@@ -81,6 +82,8 @@ describe("native Social graphic exporter", () => {
     expect(HIGH_VALUE_BRUSH_IMAGE_URL).toContain("NewHighValueListing");
     expect(exporterSource).toContain("isFinishedListingBanner");
     expect(exporterSource).toContain("full source is intentionally drawn");
+    expect(exporterSource).toContain("const strokeWidth = Math.min(width * 0.76, 912 * scale)");
+    expect(exporterSource).toContain("const bannerY = 2 * scale");
     expect(exporterSource).toContain("const strokeHeight = 174 * scale");
     expect(exporterSource).toContain("const logoWidth = 700 * scale");
     expect(exporterSource).toContain("const strokeY = 62 * scale");
@@ -99,6 +102,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
+    expect(exporterSource).toContain("const imageY = 300 * scale");
+    expect(exporterSource).toContain("drawSecondaryCollectorProp(context, foregroundPropImage, 930 * scale");
+    expect(exporterSource).toContain("const detailWidth = 390 * scale");
   });
 
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
@@ -152,7 +158,7 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Star Wars #1", category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "Marvel" }] })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["comics-single-comic"]);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Alex Ross Original Art", category: "Comics", itemType: "original_art", facts: [{ label: "Artist Name", value: "Alex Ross" }] })).toContain("comics-original-art");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Miles Davis Kind of Blue LP", category: "Music", itemType: "vinyl_record", facts: [{ label: "Artist / Performer", value: "Miles Davis" }] })).toContain("music-vinyl-record");
-    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toBeNull();
+    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toBe(HIGH_VALUE_SECONDARY_PROP_URLS.football);
     expect(exporterSource).toContain("return null;");
     expect(exporterSource).toContain("drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS");
@@ -187,7 +193,7 @@ describe("native Social graphic exporter", () => {
       ...promotionDraft.promotion!,
       facts: [{ label: "Year", value: "1988" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "9" }],
       visualHints: ["Barry Sanders", "Football", "Score"],
-    })).toBeNull();
+    })).toBe(HIGH_VALUE_SECONDARY_PROP_URLS.football);
   });
 
   it("routes every current high-value opportunity into a category, item-type, or secondary-specific environment", () => {
@@ -211,7 +217,7 @@ describe("native Social graphic exporter", () => {
         || HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS[item.environmentKey]
         || HIGH_VALUE_SECONDARY_BACKGROUND_URLS[item.environmentKey];
       expect(getHighValueBackgroundUrl(promotion), item.itemTitle).toBe(expectedEnvironment);
-      expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).toBeNull();
+      expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).not.toBeNull();
     }
   });
 
