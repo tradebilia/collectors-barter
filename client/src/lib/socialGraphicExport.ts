@@ -44,7 +44,7 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
-export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/gold-paint-swipe-clean_86af68ba.png";
+export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/NewHighValueListing_66f4a9ee.webp";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
 /** Secondary-characteristic props are layered behind the real listing image. */
@@ -145,6 +145,9 @@ export const HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS: Record<string, string> =
   ken_griffey_jr: "/manus-storage/tradebilia-player-ref-ken-griffey-jr-mariners-mlb_17fd6941.jpg",
   wayne_gretzky: "/manus-storage/tradebilia-player-ref-wayne-gretzky-oilers-nhl_a15c4f1f.jpg",
   barry_sanders: "/manus-storage/tradebilia-player-ref-barry-sanders-lions-nfl_85bd80bd.jpg",
+  beatles_sgt_pepper: "/manus-storage/tradebilia-category-ref-music-vinyl-beatles-sgt-pepper_c7929aca.jpg",
+  megatron_transformers: "/manus-storage/tradebilia-category-ref-vintage-toys-megatron-g1_2660b9f0.jpg",
+  daredevil_elektra: "/manus-storage/tradebilia-category-ref-comics-daredevil-elektra-marvel_363ef144.jpg",
 };
 
 /** Mirrors the authoritative Sports Cards dropdown values in fieldDefinitionsGenerated.ts. */
@@ -243,13 +246,15 @@ function getHighValueCategoryFallbackUrl(category: string) {
 
 export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
   if (!promotion?.category) return null;
-  // High-value posts use the same decision hierarchy as Trade Alerts:
-  // category establishes the collector world, item type establishes the
-  // physical scene, and secondary metadata may select a reviewed variant of
-  // that *same* scene. A sport, publisher, platform, format, or brand must
-  // never bypass the item-type decision.
+  // A reviewed subject reference is the strongest semantic cue and is valid
+  // for any category/item-type combination. If no curated subject matches,
+  // retain the established category -> item type -> secondary fallback.
   const category = normalizeHighValueAssetKeyPart(promotion.category);
   const itemType = normalizeHighValueAssetKeyPart(promotion.itemType);
+  const subjectReferenceKey = getHighValueSubjectReferenceKey(promotion);
+  if (subjectReferenceKey) {
+    return HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS[subjectReferenceKey] || getHighValueCategoryFallbackUrl(category);
+  }
   if (itemType) {
     const exactKey = `${category}-${itemType}`;
     const itemTypeBackground = HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
@@ -260,10 +265,6 @@ export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
       // scene becomes its visible variant. This preserves the hierarchy while
       // making a Baseball card unambiguously read as Baseball.
       if (category === "sports-cards") {
-        const itemReferenceKey = getHighValueItemReferenceKey(promotion);
-        if (itemReferenceKey) {
-          return HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS[itemReferenceKey] || itemTypeBackground;
-        }
         const secondaryKey = getHighValueSecondaryVisualKey(promotion);
         if (secondaryKey && HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS.has(secondaryKey)) {
           return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey] || itemTypeBackground;
@@ -357,9 +358,9 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
   return null;
 }
 
-/** Resolve recognizable sports-card subjects before falling back to the sport-only environment. */
+/** Backward-compatible subject lookup name retained for existing sports tests/callers. */
 export function getHighValueItemReferenceKey(promotion: SocialDraft["promotion"]) {
-  if (!promotion || normalizeVisualToken(promotion.category) !== "sports cards") return null;
+  if (!promotion) return null;
   const searchable = [
     promotion.itemTitle,
     ...(promotion.visualHints ?? []),
@@ -369,6 +370,22 @@ export function getHighValueItemReferenceKey(promotion: SocialDraft["promotion"]
   if (/ken griffey(?: jr| junior)?/.test(searchable)) return "ken_griffey_jr";
   if (/wayne gretzky/.test(searchable)) return "wayne_gretzky";
   if (/barry sanders/.test(searchable)) return "barry_sanders";
+  return null;
+}
+
+/** Resolve curated subject references for any category and item type. */
+export function getHighValueSubjectReferenceKey(promotion: SocialDraft["promotion"]) {
+  if (!promotion) return null;
+  const sportsReference = getHighValueItemReferenceKey(promotion);
+  if (sportsReference) return sportsReference;
+  const searchable = [
+    promotion.itemTitle,
+    ...(promotion.visualHints ?? []),
+    ...(promotion.facts ?? []).flatMap((fact) => [fact.label, fact.value]),
+  ].map(normalizeVisualToken).join(" ");
+  if (/beatles|sgt pepper|sergeant pepper/.test(searchable)) return "beatles_sgt_pepper";
+  if (/megatron|transformers/.test(searchable)) return "megatron_transformers";
+  if (/daredevil|electra|elektra/.test(searchable)) return "daredevil_elektra";
   return null;
 }
 
@@ -1431,16 +1448,27 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
 }
 
 function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
-  // Match the completed-trade treatment exactly: same lockup scale, vertical
-  // rhythm, textured swipe crop, and substantial brush body. The only change
-  // is the live listing headline drawn over a text-free swipe asset.
+  // Use Rich's supplied finished banner when available. It already contains
+  // the angled brush, texture, and NEW HIGH-VALUE LISTING lettering, so it must
+  // be drawn as one complete asset with no second headline layered on top.
   const logoWidth = 700 * scale;
   drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
   const strokeWidth = Math.min(width * 0.92, 1104 * scale);
   const strokeHeight = 174 * scale;
   const strokeX = (width - strokeWidth) / 2;
   const strokeY = 62 * scale;
+  const isFinishedListingBanner = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5);
   context.save();
+  if (isFinishedListingBanner && brushImage) {
+    // Preserve the transparent margins and the supplied upward angle. The
+    // full source is intentionally drawn rather than cropped like the old
+    // text-free swipe asset.
+    const bannerHeight = strokeWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
+    const bannerY = 38 * scale;
+    context.drawImage(brushImage, strokeX, bannerY, strokeWidth, bannerHeight);
+    context.restore();
+    return;
+  }
   // Keep the paint swipe and its headline locked together on the same subtle
   // upward angle, rather than leaving the listing banner visually flat.
   const bannerCenterX = width / 2;

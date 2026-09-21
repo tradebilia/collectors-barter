@@ -2,7 +2,7 @@
 
 ## Purpose and design rule
 
-This audit reviewed the complete High-Value Listing visual system against the established **Trade Alert** standard. The required selection hierarchy is now explicit: **category** establishes the collector world and palette; **item type** selects the physical environment; and only a relevant, public, structured **secondary field** may add a restrained visual cue. The listing photo remains the only featured collectible. Free-form title words are not primary visual selectors.
+This audit reviewed the complete High-Value Listing visual system against the established **Trade Alert** standard. The required selection hierarchy is now explicit: a reviewed **subject reference** is the strongest semantic cue and may apply across any category or item type; when no subject reference matches, **category** establishes the collector world and palette, **item type** selects the physical environment, and only a relevant, public, structured **secondary field** may add a restrained visual cue. The listing photo remains the only featured collectible. Subject matching is whitelist-based rather than arbitrary free-form styling.
 
 The audit found that the prior implementation reversed this order. Secondary details such as Sport, Publisher, Platform, Brand, or Format could replace the item-type environment. It also found that large transparent foreground PNGs were drawn behind the opaque listing-media frame, which made them appear clipped, faded, or absent. The implementation now corrects the shared foundation instead of hiding individual examples.
 
@@ -13,7 +13,7 @@ The audit found that the prior implementation reversed this order. Secondary det
 | Category | Establishes a category-specific Trade Alert-quality collector context and provides the fallback for unsupported or missing item types. |
 | Item type | Always selects the base high-value environment before any secondary cue. Canonical aliases such as `other_music_format`, `individual_pin`, `paper_money_banknotes`, and Vintage Toys display names now resolve correctly. |
 | Secondary fields | Never bypass the item-type decision. The first safe implementation is Sports Cards: exact controlled Sport selects a reviewed, visible sport-specific variant only after the Single Card, Set, Collection Lot, or Unopened Product base is established. |
-| Titles and broad keywords | Do not select the environment. They remain display content unless a future curated structured field explicitly supports a narrow refinement. |
+| Reviewed subject references | May select a dedicated semantic scene across any category and item type. Matching is restricted to explicitly reviewed subject aliases; unrelated or unrecognized titles retain the category/item-type fallback. |
 | Foreground cutouts | Temporarily suppressed in High-Value posts. The previous placement hid them under the real item image; the actual listing media is now the only foreground object until a dedicated unobstructed collector-surface lane is designed. |
 | Image composition | Backgrounds use aspect-preserving cover cropping on Facebook, Instagram, Pinterest, X, LinkedIn, and YouTube instead of being horizontally compressed on tall formats. |
 
@@ -77,3 +77,17 @@ Each route was checked in a native 1200×630 Social Content Manager preview. The
 ## Subject-reference refinement — Michael Jordan
 
 The first Jordan Basketball scene was rejected during direct visual review because it communicated only a generic basketball arena. The subject-first resolver now uses a dedicated reference scene after category, item type, and Sport: Basketball are resolved. The replacement visibly includes Bulls red-and-black styling, a framed `BULLS 23` jersey, basketball hoop, championship-banner forms, hardwood court, and a basketball while preserving a dark uncluttered left zone for the actual graded card. The native 1200×630 export was re-rendered and visually checked; the scene now communicates the item’s Michael Jordan/Bulls/NBA semantic references rather than only the sport.
+
+## Subject-reference expansion — Music, Vintage Toys, and Comics
+
+The subject-reference layer now runs universally before the category/item-type fallback. It is intentionally whitelist-based: only reviewed public subject references can replace the base scene, so arbitrary title text cannot cause an unsafe or irrelevant background. The initial non-sports routes are:
+
+| Category | Recognized subject | Registered scene | Hierarchy behavior |
+|---|---|---|---|
+| Music | The Beatles, Sgt. Pepper, or Sergeant Pepper | Beatles Sgt. Pepper reference scene | Applies to any category/item-type combination whose public subject facts match the reviewed aliases. |
+| Vintage Toys | Megatron or Transformers | Transformers Megatron G1 reference scene | Applies to any category/item-type combination whose public subject facts match the reviewed aliases. |
+| Comics | Daredevil, Elektra, or Electra | Daredevil/Elektra Marvel reference scene | Applies to any category/item-type combination whose public subject facts match the reviewed aliases. |
+
+The existing curated sports subjects—Michael Jordan, Ken Griffey Jr., Wayne Gretzky, and Barry Sanders—now use the same universal helper. All other categories continue to use their reviewed item-type and structured-secondary routes until a dedicated subject scene is generated and inspected. This prevents a generic subject keyword from becoming an unreviewed visual selector while allowing a reviewed subject to work regardless of category or item type.
+
+Focused regression coverage verifies the three new routes, confirms that item type remains authoritative, and checks that all current high-value opportunity samples resolve to a valid category, item-type, secondary, or subject environment.
