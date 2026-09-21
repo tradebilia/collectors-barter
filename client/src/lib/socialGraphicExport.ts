@@ -92,7 +92,10 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
 };
 
 export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
-  baseball: "/manus-storage/tradebilia-secondary-baseball-background_2c9391d0.jpg",
+  // Reuse the approved Trade Alert Baseball stage: the glove and ball remain
+  // clearly visible in the left safe area while the empty tabletop preserves
+  // the high-value title/facts lane on the right.
+  baseball: "/manus-storage/sports-baseball-stage_f1ed2f40.jpg",
   football: "/manus-storage/tradebilia-secondary-football-background_fdf1d3af.jpg",
   basketball: "/manus-storage/tradebilia-secondary-basketball-background_e77deb61.jpg",
   hockey: "/manus-storage/tradebilia-secondary-hockey-background_3fe88350.jpg",

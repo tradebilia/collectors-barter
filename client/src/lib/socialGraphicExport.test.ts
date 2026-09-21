@@ -115,7 +115,7 @@ describe("native Social graphic exporter", () => {
 
   it("uses verified Sport-specific variants only after resolving the Sports Card item type", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toBe("baseball");
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toContain("secondary-baseball-background");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toContain("sports-baseball-stage");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Racing" }] })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["sports-cards-single-card"]);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "Marvel" }] })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["comics-single-comic"]);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Comics", itemType: "original_art", facts: [{ label: "Artist Name", value: "Alex Ross" }] })).toContain("comics-original-art");
