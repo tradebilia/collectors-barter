@@ -3089,6 +3089,7 @@ export const appRouter = router({
                 title: sample.title,
                 category,
                 itemType: sample.itemType ?? "Category test item",
+                visualHints: getTradeAlertVisualHints({ category, itemType: sample.itemType, title: sample.title, itemDetails: sample.itemDetails }),
                 condition: sample.condition ?? null,
                 grade: sample.grade ?? null,
                 certificationCompany: sample.certificationCompany ?? null,

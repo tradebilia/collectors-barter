@@ -16,4 +16,10 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).toContain("Manual publishing safeguard");
     expect(componentSource).not.toContain("publishSocialPost");
   });
+
+  it("refreshes saved high-value draft visual hints from current opportunity metadata", () => {
+    expect(componentSource).toContain("currentVisualOpportunities");
+    expect(componentSource).toContain("reconcileSocialDraftVisualHints(current, currentVisualOpportunities)");
+    expect(componentSource).toContain("drafts never keep a generic environment");
+  });
 });

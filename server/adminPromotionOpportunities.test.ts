@@ -55,6 +55,7 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("Image preference is resolved in");
     expect(promotionSection).toContain("!existingSample || (!existingSample.imageUrl && listing.imageUrl)");
     expect(promotionSection).toContain("itemPath: `/listings/${Number(sample.listingId)}`");
+    expect(promotionSection).toContain("visualHints: getTradeAlertVisualHints({ category, itemType: sample.itemType");
     expect(promotionSection).toContain("itemFacts: getSocialPromotionFacts({");
   });
 

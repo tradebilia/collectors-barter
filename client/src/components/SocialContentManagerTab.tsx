@@ -59,6 +59,7 @@ import {
   buildListingSocialCopy,
   formatSocialCategory,
   getSocialPromotionItemTitle,
+  reconcileSocialDraftVisualHints,
   toggleSocialPlatform,
   type DraftStatus,
   type SocialDraft,
@@ -225,6 +226,10 @@ export function SocialContentManagerTab() {
   const [hydrated, setHydrated] = useState(false);
   const preparedAssetRequestRef = useRef<string | null>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
+  const currentVisualOpportunities = useMemo(
+    () => [...(promotionQuery.data?.highValueListings ?? []), ...(promotionQuery.data?.categoryTestListings ?? [])],
+    [promotionQuery.data?.categoryTestListings, promotionQuery.data?.highValueListings],
+  );
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
   const prepareSocialGraphicImage = trpc.admin.prepareSocialGraphicImage.useMutation();
 
@@ -250,6 +255,14 @@ export function SocialContentManagerTab() {
   useEffect(() => {
     if (hydrated) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(drafts));
   }, [drafts, hydrated]);
+
+  // Listing details can gain a sport, brand, platform, or publisher visual hint
+  // after a draft is created. Reconcile only that cosmetic metadata so old
+  // drafts never keep a generic environment when the live listing is specific.
+  useEffect(() => {
+    if (!hydrated || currentVisualOpportunities.length === 0) return;
+    setDrafts((current) => reconcileSocialDraftVisualHints(current, currentVisualOpportunities));
+  }, [currentVisualOpportunities, hydrated]);
 
   useEffect(() => {
     if (hydrated && autoListEnabled !== null) window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ autoListEnabled }));

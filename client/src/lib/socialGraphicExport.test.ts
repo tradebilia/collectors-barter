@@ -89,7 +89,11 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
     expect(exporterSource).toContain("const plaqueHeight = 108 * scale");
-    expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, y + height * 0.70)");
+    expect(exporterSource).toContain("const textBlockTop = y + (height - textBlockHeight) / 2");
+    expect(exporterSource).toContain("const opticalVerticalOffset = 6 * scale");
+    expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
+    expect(exporterSource).toContain("const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset");
+    expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
   });
 
   it("selects a specific high-value environment from category and item type", () => {
@@ -138,6 +142,28 @@ describe("native Social graphic exporter", () => {
       facts: [{ label: "Year", value: "1988" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "9" }],
       visualHints: ["Barry Sanders", "Football", "Score"],
     })).toContain("secondary-football-prop");
+  });
+
+  it("routes every current high-value opportunity into a category, item-type, or secondary-specific environment", () => {
+    const currentInventory = [
+      { itemTitle: "1986 OPC Hockey Box BBCE", category: "sports_cards", itemType: "unopened_product", visualHints: ["Hockey"], facts: [], environment: "secondary-hockey-background", prop: true },
+      { itemTitle: "McFarlane King Spawn Original Art", category: "comics", itemType: "original_art", visualHints: ["Image", "Cover Art"], facts: [{ label: "Artist Name", value: "Todd McFarlane" }], environment: "secondary-comic-background", prop: true },
+      { itemTitle: "The Beatles Sgt Pepper's Lonely Hearts Club Band Stereo LP Graded 8", category: "music", itemType: "vinyl_record", visualHints: ["The Beatles", "Rock"], facts: [{ label: "Artist / Performer", value: "The Beatles" }], environment: "secondary-music-background", prop: true },
+      { itemTitle: "1986 Fleer Michael Jordan Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Basketball"], facts: [], environment: "secondary-basketball-background", prop: true },
+      { itemTitle: "Star Wars #1", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environment: "secondary-comic-marvel-background", prop: true },
+      { itemTitle: "Barry Sanders Score Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Football"], facts: [], environment: "secondary-football-background", prop: true },
+      { itemTitle: "Wayne Gretzky Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Hockey"], facts: [], environment: "secondary-hockey-background", prop: true },
+      { itemTitle: "Rickey Henderson Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environment: "secondary-baseball-background", prop: true },
+      { itemTitle: "DareDevil 1st Electra", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environment: "secondary-comic-marvel-background", prop: true },
+      { itemTitle: "Ken Griffey Jr Upper Deck Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environment: "secondary-baseball-background", prop: true },
+      { itemTitle: "Transformers Megatron G1", category: "vintage_toys", itemType: "action_figure", visualHints: ["Hasbro", "Transformers"], facts: [{ label: "Brand", value: "Hasbro" }], environment: "secondary-toys-hasbro-background", prop: true },
+    ];
+
+    for (const item of currentInventory) {
+      const promotion = { ...promotionDraft.promotion!, ...item };
+      expect(getHighValueBackgroundUrl(promotion), item.itemTitle).toContain(item.environment);
+      if (item.prop) expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).toBeTruthy();
+    }
   });
 
   it("uses comic publisher and movie format dropdown facts when available", () => {

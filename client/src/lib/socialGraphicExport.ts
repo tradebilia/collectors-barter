@@ -1390,22 +1390,42 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   context.shadowBlur = 0;
   context.fillStyle = "#f8ce4f";
   context.font = `800 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
+  const labelMetrics = context.measureText("TRADE VALUE");
+  const labelAscent = labelMetrics.actualBoundingBoxAscent || 15 * scale;
+  const labelDescent = labelMetrics.actualBoundingBoxDescent || 4 * scale;
+  const labelHeight = labelAscent + labelDescent;
+  context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
+  const valueMetrics = context.measureText(value);
+  const valueAscent = valueMetrics.actualBoundingBoxAscent || 44 * scale;
+  const valueDescent = valueMetrics.actualBoundingBoxDescent || 10 * scale;
+  const valueHeight = valueAscent + valueDescent;
+  const textGap = 8 * scale;
+  const textBlockHeight = labelHeight + textGap + valueHeight;
+  const textBlockTop = y + (height - textBlockHeight) / 2;
+  // Inter's dollar sign and comma render slightly higher than their canvas
+  // metrics. This measured optical offset balances the visible top and bottom
+  // clearance inside the outlined plaque on every supported export size.
+  const opticalVerticalOffset = 6 * scale;
+  const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset;
+  const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset;
+  const labelVisualCenterY = labelBaselineY + (labelDescent - labelAscent) / 2;
   context.textAlign = "center";
-  context.textBaseline = "middle";
-  drawCrispText(context, "TRADE VALUE", plaqueX + plaqueWidth / 2, y + height * 0.29);
+  context.textBaseline = "alphabetic";
+  context.font = `800 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
+  drawCrispText(context, "TRADE VALUE", plaqueX + plaqueWidth / 2, labelBaselineY);
   context.strokeStyle = "rgba(248, 206, 79, 0.78)";
   context.lineWidth = Math.max(1, 2 * scale);
   const dividerGap = labelWidth / 2 + 24 * scale;
   const dividerLength = Math.max(26 * scale, Math.min(62 * scale, (plaqueWidth - labelWidth - 2 * dividerGap) / 2));
   context.beginPath();
-  context.moveTo(plaqueX + plaqueWidth / 2 - dividerGap - dividerLength, y + height * 0.29);
-  context.lineTo(plaqueX + plaqueWidth / 2 - dividerGap, y + height * 0.29);
-  context.moveTo(plaqueX + plaqueWidth / 2 + dividerGap, y + height * 0.29);
-  context.lineTo(plaqueX + plaqueWidth / 2 + dividerGap + dividerLength, y + height * 0.29);
+  context.moveTo(plaqueX + plaqueWidth / 2 - dividerGap - dividerLength, labelVisualCenterY);
+  context.lineTo(plaqueX + plaqueWidth / 2 - dividerGap, labelVisualCenterY);
+  context.moveTo(plaqueX + plaqueWidth / 2 + dividerGap, labelVisualCenterY);
+  context.lineTo(plaqueX + plaqueWidth / 2 + dividerGap + dividerLength, labelVisualCenterY);
   context.stroke();
   context.fillStyle = "#ffd44f";
   context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
-  drawCrispText(context, value, plaqueX + plaqueWidth / 2, y + height * 0.70);
+  drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY);
   context.restore();
 }
 

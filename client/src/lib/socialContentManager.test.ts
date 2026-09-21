@@ -7,6 +7,7 @@ import {
   createSocialDraft,
   filterSocialDrafts,
   getSocialPromotionItemTitle,
+  reconcileSocialDraftVisualHints,
   requestSocialReview,
   toggleSocialPlatform,
   SOCIAL_PLATFORMS,
@@ -78,6 +79,40 @@ describe("social content manager draft workflow", () => {
   it("uses the true item title rather than the saved promotion heading", () => {
     expect(getSocialPromotionItemTitle("New high-value listing: 1986 Fleer Michael Jordan Rookie PSA 10")).toBe("1986 Fleer Michael Jordan Rookie PSA 10");
     expect(getSocialPromotionItemTitle("Recent completed trade: Example collectible")).toBe("Example collectible");
+  });
+
+  it("refreshes only visual hints on stale high-value drafts when the current listing has a specific sport", () => {
+    const staleDraft = createPromotionSocialDraft("rickey-draft", {
+      source: "High-Value Listing",
+      sourceSummary: "New public listing",
+      title: "New high-value listing: Rickey Henderson Rookie",
+      copy: "Existing user-edited copy stays intact.",
+      mediaUrl: "https://images.example/rickey.jpg",
+      promotion: {
+        itemTitle: "Rickey Henderson Rookie",
+        listingId: 810001,
+        itemPath: "/listings/810001",
+        visualHints: [],
+        category: "sports_cards",
+        itemType: "single_card",
+        facts: [{ label: "Year", value: "1980" }],
+        estimatedValue: 2100,
+        createdAt: "2026-07-03T00:00:00.000Z",
+        isNew: false,
+      },
+    });
+
+    const [refreshed] = reconcileSocialDraftVisualHints([staleDraft], [{
+      listingId: 810001,
+      itemPath: "/listings/810001",
+      title: "Rickey Henderson Rookie",
+      category: "sports_cards",
+      itemType: "single_card",
+      visualHints: ["Rickey Henderson Rookie", "Single Card", "Baseball"],
+    }]);
+
+    expect(refreshed?.promotion?.visualHints).toEqual(["Rickey Henderson Rookie", "Single Card", "Baseball"]);
+    expect(refreshed).toMatchObject({ copy: staleDraft.copy, mediaUrl: staleDraft.mediaUrl, status: staleDraft.status, plannedDate: staleDraft.plannedDate });
   });
 
   it("toggles additional platforms without mutating the original draft", () => {

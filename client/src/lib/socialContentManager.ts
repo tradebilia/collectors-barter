@@ -53,6 +53,71 @@ export type SocialDraft = {
   updatedAt: string;
 };
 
+/** Public opportunity metadata used to refresh only visual environment hints in saved drafts. */
+export type SocialPromotionVisualOpportunity = {
+  listingId?: number | null;
+  itemPath?: string | null;
+  title?: string | null;
+  category?: string | null;
+  itemType?: string | null;
+  visualHints?: unknown;
+};
+
+function normalizeVisualHintValues(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value
+    .filter((hint): hint is string => typeof hint === "string")
+    .map((hint) => hint.trim())
+    .filter(Boolean)));
+}
+
+function normalizeVisualMatchValue(value: string | null | undefined) {
+  return String(value ?? "").trim().toLowerCase().replace(/[\s_-]+/g, " ");
+}
+
+function findVisualOpportunity(promotion: SocialPromotionDetails, opportunities: readonly SocialPromotionVisualOpportunity[]) {
+  const listingId = Number(promotion.listingId);
+  if (Number.isFinite(listingId) && listingId > 0) {
+    const byListingId = opportunities.find((opportunity) => Number(opportunity.listingId) === listingId);
+    if (byListingId) return byListingId;
+  }
+  if (promotion.itemPath) {
+    const byItemPath = opportunities.find((opportunity) => opportunity.itemPath === promotion.itemPath);
+    if (byItemPath) return byItemPath;
+  }
+  const title = normalizeVisualMatchValue(promotion.itemTitle);
+  const category = normalizeVisualMatchValue(promotion.category);
+  const itemType = normalizeVisualMatchValue(promotion.itemType);
+  return opportunities.find((opportunity) => (
+    title === normalizeVisualMatchValue(opportunity.title)
+    && category === normalizeVisualMatchValue(opportunity.category)
+    && itemType === normalizeVisualMatchValue(opportunity.itemType)
+  ));
+}
+
+/**
+ * Refresh only public-safe environment hints on existing high-value drafts.
+ * Copy, media, value, workflow status, and every user edit remain unchanged.
+ */
+export function reconcileSocialDraftVisualHints(
+  drafts: readonly SocialDraft[],
+  opportunities: readonly SocialPromotionVisualOpportunity[],
+): SocialDraft[] {
+  if (opportunities.length === 0) return drafts as SocialDraft[];
+  let hasChanges = false;
+  const reconciled = drafts.map((draft) => {
+    if (draft.source !== "High-Value Listing" || !draft.promotion) return draft;
+    const opportunity = findVisualOpportunity(draft.promotion, opportunities);
+    const visualHints = normalizeVisualHintValues(opportunity?.visualHints);
+    if (visualHints.length === 0) return draft;
+    const currentHints = normalizeVisualHintValues(draft.promotion.visualHints);
+    if (currentHints.join("\u001f") === visualHints.join("\u001f")) return draft;
+    hasChanges = true;
+    return { ...draft, promotion: { ...draft.promotion, visualHints } };
+  });
+  return hasChanges ? reconciled : drafts as SocialDraft[];
+}
+
 export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "Pinterest", "LinkedIn", "YouTube"];
 export const SOCIAL_DRAFT_STATUSES: DraftStatus[] = ["Draft", "Needs Review", "Approved", "Scheduled", "Published"];
 
