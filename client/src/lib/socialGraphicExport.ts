@@ -43,7 +43,10 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
-export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
+// Rich's supplied finished Trade Alert paint-swipe. It contains the complete
+// lettering and transparent surrounding pixels, so the renderer must never
+// layer a second "TRADE ALERT" title over it.
+export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/TradeAlert_00575de4.webp";
 export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/NewHighValueListing_66f4a9ee.webp";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
@@ -1906,7 +1909,10 @@ function drawCompletedTradeCinematic(
   const rightSceneSeed = getTradeSceneSeed(requested);
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const isPinterest = platform === "Pinterest";
-  const imageY = isTall ? 246 * scale : 238 * scale;
+  // The supplied finished Trade Alert brush carries a more substantial lower
+  // paint edge than the retired asset. Keep the item frames below it with a
+  // visible air gap on both landscape and tall exports.
+  const imageY = isTall ? 280 * scale : 274 * scale;
   const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.36) : height * 0.36;
   const captionBottom = imageY + imageHeight * 1.14 + 58 * scale;
   // Instagram keeps the exchange mark in the open horizontal channel between

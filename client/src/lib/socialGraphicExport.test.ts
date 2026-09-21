@@ -256,7 +256,10 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('Knewave, "Permanent Marker", "Brush Script MT", cursive');
     expect(exporterSource).toContain('document.fonts.load(\'400 44px "Anton"\')');
     expect(exporterSource).toContain('document.fonts.load(\'400 48px "Knewave"\')');
-    expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("trade-alert-banner-paint-swipe");
+    expect(TRADE_ALERT_BRUSH_IMAGE_URL).toContain("TradeAlert_00575de4.webp");
+    expect(TRADE_ALERT_BRUSH_IMAGE_URL).not.toContain("trade-alert-banner-paint-swipe");
+    expect(exporterSource).toContain('The approved paint-swipe asset already contains the finished TRADE ALERT');
+    expect(exporterSource).toContain("const imageY = isTall ? 280 * scale : 274 * scale");
     expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-mockup-1_4a1f25d2.png");
     expect(exporterSource).toContain("+ CASH INCLUDED");
     expect(exporterSource).toContain("drawCinematicFooterPhrase");
