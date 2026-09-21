@@ -1060,6 +1060,138 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   context.restore();
 }
 
+function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
+  const logoWidth = Math.min(width * 0.52, 620 * scale);
+  drawBrand(context, logo, (width - logoWidth) / 2, 6 * scale, logoWidth, 94 * scale);
+  const strokeWidth = Math.min(width * 0.92, 1120 * scale);
+  const strokeHeight = 136 * scale;
+  const strokeX = (width - strokeWidth) / 2;
+  const strokeY = 94 * scale;
+  context.save();
+  if (brushImage) {
+    const sourceX = brushImage.naturalWidth * 0.02;
+    const sourceWidth = brushImage.naturalWidth * 0.96;
+    const sourceY = brushImage.naturalHeight * 0.11;
+    const sourceHeight = brushImage.naturalHeight * 0.70;
+    context.drawImage(brushImage, sourceX, sourceY, sourceWidth, sourceHeight, strokeX, strokeY, strokeWidth, strokeHeight);
+  } else {
+    const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
+    gold.addColorStop(0, "rgba(239, 169, 35, 0.15)");
+    gold.addColorStop(0.08, "#d3972e");
+    gold.addColorStop(0.50, "#ffd45a");
+    gold.addColorStop(0.92, "#d3972e");
+    gold.addColorStop(1, "rgba(239, 169, 35, 0.15)");
+    context.fillStyle = gold;
+    context.fillRect(strokeX, strokeY + 10 * scale, strokeWidth, strokeHeight - 20 * scale);
+    context.fillStyle = "#071324";
+    context.font = `400 ${Math.round(42 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    drawCrispText(context, "NEW HIGH-VALUE LISTING", width / 2, strokeY + strokeHeight * 0.53);
+  }
+  context.restore();
+}
+
+function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, height: number, scale: number) {
+  context.save();
+  const cut = 24 * scale;
+  context.beginPath();
+  context.moveTo(x + cut, y);
+  context.lineTo(x + width - cut, y);
+  context.lineTo(x + width, y + cut);
+  context.lineTo(x + width, y + height - cut);
+  context.lineTo(x + width - cut, y + height);
+  context.lineTo(x + cut, y + height);
+  context.lineTo(x, y + height - cut);
+  context.lineTo(x, y + cut);
+  context.closePath();
+  context.fillStyle = "rgba(5, 13, 25, 0.94)";
+  context.strokeStyle = "#f5c94f";
+  context.lineWidth = Math.max(2, 3 * scale);
+  context.shadowColor = "rgba(255, 205, 76, 0.32)";
+  context.shadowBlur = 12 * scale;
+  context.fill();
+  context.stroke();
+  context.shadowBlur = 0;
+  context.fillStyle = "#f8ce4f";
+  context.font = `800 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  drawCrispText(context, "TRADE VALUE", x + width / 2, y + 30 * scale);
+  context.strokeStyle = "rgba(248, 206, 79, 0.78)";
+  context.lineWidth = Math.max(1, 2 * scale);
+  context.beginPath();
+  context.moveTo(x + 62 * scale, y + 30 * scale);
+  context.lineTo(x + 124 * scale, y + 30 * scale);
+  context.moveTo(x + width - 124 * scale, y + 30 * scale);
+  context.lineTo(x + width - 62 * scale, y + 30 * scale);
+  context.stroke();
+  context.fillStyle = "#ffd44f";
+  context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
+  drawCrispText(context, value, x + width / 2, y + height * 0.72);
+  context.restore();
+}
+
+function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
+  const scale = width / 1200;
+  const promotion = draft.promotion;
+  const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
+  const itemType = formatSocialItemType(promotion?.itemType);
+  const value = formatSocialValue(promotion?.estimatedValue);
+  const isTall = platform === "Instagram" || platform === "Pinterest";
+  drawCinematicListingHeader(context, brandLogo, brushImage, width, scale);
+
+  if (isTall) {
+    const padding = 58 * scale;
+    const imageY = 250 * scale;
+    const imageHeight = platform === "Pinterest" ? height * 0.35 : height * 0.31;
+    drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, "ORIGINAL ITEM MEDIA");
+    let detailY = imageY + imageHeight + 38 * scale;
+    context.fillStyle = "#ffffff";
+    detailY += drawCompleteFittedTitle(context, itemTitle, padding, detailY, width - padding * 2, 42 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
+    if (itemType) {
+      detailY += 14 * scale;
+      context.fillStyle = "rgba(252,243,215,0.90)";
+      context.font = `700 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
+      context.fillText(itemType, padding, detailY);
+    }
+    detailY += 28 * scale;
+    detailY += drawFacts(context, promotion?.facts ?? [], padding, detailY, width - padding * 2, scale);
+    if (value) drawTradeValuePlaque(context, value, padding, Math.min(detailY + 26 * scale, height - 198 * scale), width - padding * 2, 112 * scale, scale);
+    context.fillStyle = "rgba(255,244,205,0.96)";
+    context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
+    context.textAlign = "center";
+    drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 34 * scale);
+    context.textAlign = "left";
+    return;
+  }
+
+  const imageX = 140 * scale;
+  const imageY = 238 * scale;
+  const imageWidth = 330 * scale;
+  const imageHeight = height - imageY - 54 * scale;
+  drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
+  const detailX = 520 * scale;
+  const detailWidth = width - detailX - 70 * scale;
+  let detailY = 282 * scale;
+  context.fillStyle = "#ffffff";
+  detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 43 * scale, 25 * scale, 3);
+  if (itemType) {
+    detailY += 16 * scale;
+    context.fillStyle = "rgba(252,243,215,0.92)";
+    context.font = `700 ${Math.round(18 * scale)}px ${CANVAS_SANS_FONT}`;
+    context.fillText(itemType, detailX, detailY);
+  }
+  detailY += 28 * scale;
+  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
+  if (value) drawTradeValuePlaque(context, value, detailX, Math.max(detailY + factsHeight + 20 * scale, 446 * scale), detailWidth, 124 * scale, scale);
+  context.fillStyle = "rgba(255,244,205,0.96)";
+  context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
+  context.textAlign = "center";
+  drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 24 * scale);
+  context.textAlign = "left";
+}
+
 function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage: CanvasImage | null, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
   if (logoImage) {
     const logoWidth = 300 * scale;
@@ -1551,6 +1683,8 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     drawCompletedTradeInstagram(context, draft, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
+  } else if (draft.source === "High-Value Listing") {
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, brushImage);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

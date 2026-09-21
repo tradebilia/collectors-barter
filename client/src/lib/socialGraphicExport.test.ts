@@ -62,6 +62,16 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
   });
 
+  it("routes high-value listings through the cinematic listing composition with a phrase footer", () => {
+    expect(exporterSource).toContain("function drawCinematicListingHeader");
+    expect(exporterSource).toContain("function drawTradeValuePlaque");
+    expect(exporterSource).toContain("function drawHighValueListingCinematic");
+    expect(exporterSource).toContain('drawHighValueListingCinematic(context, draft, platform');
+    expect(exporterSource).toContain('"NEW HIGH-VALUE LISTING"');
+    expect(exporterSource).toContain('drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()');
+    expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
+  });
+
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
