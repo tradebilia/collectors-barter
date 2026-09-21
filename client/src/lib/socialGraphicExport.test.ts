@@ -5,6 +5,8 @@ import {
   getTradeAlertStageKey,
   getTradeItemFactLine,
   getTradeItemGradeLine,
+  getHighValueBackgroundUrl,
+  HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
   TRADE_ALERT_BRUSH_IMAGE_URL,
   TRADED_EXCHANGE_LOGO_URL,
@@ -56,7 +58,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCompleteFittedTitle");
     expect(exporterSource).toContain("drawCenteredBrand");
     expect(exporterSource).toContain("SOCIAL_GRAPHIC_HERO_BACKGROUND_URL");
-    expect(exporterSource).toContain("drawBackground(context, width, height, heroBackground)");
+    expect(exporterSource).toContain("drawBackground(context, width, height");
     expect(exporterSource).toContain("getSocialPromotionItemTitle");
     expect(exporterSource).not.toContain("ORIGINAL IMAGE · FULLY SHOWN");
     expect(exporterSource).not.toContain("VIEW ITEM PROFILE");
@@ -70,6 +72,16 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('"NEW HIGH-VALUE LISTING"');
     expect(exporterSource).toContain('drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()');
     expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
+  });
+
+  it("selects a specific high-value environment from category and item type", () => {
+    expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(44);
+    expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toContain("sports-cards-single-card");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Music", itemType: "vinyl_record" })).toContain("music-vinyl-record");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "plush_toy" })).toContain("vintage-toys-plush-toy");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Video Games", itemType: "console" })).toContain("video-games-console");
+    expect(exporterSource).toContain("overlayAlpha = 0.66");
+    expect(exporterSource).toContain("highValueBackground || heroBackground");
   });
 
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {

@@ -46,6 +46,64 @@ export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cro
 export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
+/** Item-type environments keep the high-value post as specific as the traded post. */
+export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
+  "autographs-collection-lot": "/manus-storage/autographs-collection-lot_5379e722.jpg",
+  "autographs-signed-item": "/manus-storage/autographs-signed-item_53cd3c95.jpg",
+  "coins-coin-set": "/manus-storage/coins-coin-set_9d7e4b3d.jpg",
+  "coins-collection-lot": "/manus-storage/coins-collection-lot_3027b174.jpg",
+  "coins-paper-money": "/manus-storage/coins-paper-money_ae5ae8b4.jpg",
+  "coins-single-coin": "/manus-storage/coins-single-coin_ed34c7e6.jpg",
+  "comics-collection-lot": "/manus-storage/comics-collection-lot_e96715ed.jpg",
+  "comics-original-art": "/manus-storage/comics-original-art_3ee4e5bc.jpg",
+  "comics-single-comic": "/manus-storage/comics-single-comic_bce94b51.jpg",
+  "disney-pins-collection-lot": "/manus-storage/disney-pins-collection-lot_b44cd17e.jpg",
+  "disney-pins-pin-set": "/manus-storage/disney-pins-pin-set_5eedc244.jpg",
+  "disney-pins-single-pin": "/manus-storage/disney-pins-single-pin_78af70e5.jpg",
+  "movies-box-set": "/manus-storage/movies-box-set_e3b6562e.jpg",
+  "movies-collection-lot": "/manus-storage/movies-collection-lot_cb920844.jpg",
+  "movies-individual-movie": "/manus-storage/movies-individual-movie_5bd8c7f2.jpg",
+  "music-cassette-tape": "/manus-storage/music-cassette-tape_2ab012b8.jpg",
+  "music-compact-disc": "/manus-storage/music-compact-disc_638efcd4.jpg",
+  "music-eight-track-tape": "/manus-storage/music-eight-track-tape_ad55dc42.jpg",
+  "music-other-format": "/manus-storage/music-other-format_6aa3399d.jpg",
+  "music-vinyl-record": "/manus-storage/music-vinyl-record_9193c963.jpg",
+  "pokemon-collection-lot": "/manus-storage/pokemon-collection-lot_e5e2e8c3.jpg",
+  "pokemon-set": "/manus-storage/pokemon-set_7b7fcafe.jpg",
+  "pokemon-single-card": "/manus-storage/pokemon-single-card_5d03a53a.jpg",
+  "pokemon-unopened-product": "/manus-storage/pokemon-unopened-product_1b5f775e.jpg",
+  "sports-cards-card-set": "/manus-storage/sports-cards-card-set_da31e725.jpg",
+  "sports-cards-collection-lot": "/manus-storage/sports-cards-collection-lot_93cdf18c.jpg",
+  "sports-cards-single-card": "/manus-storage/sports-cards-single-card_6d40433d.jpg",
+  "sports-cards-unopened-product": "/manus-storage/sports-cards-unopened-product_711e8cea.jpg",
+  "stamps-collection-lot": "/manus-storage/stamps-collection-lot_5aa60932.jpg",
+  "stamps-single-stamp": "/manus-storage/stamps-single-stamp_bc4519b8.jpg",
+  "stamps-stamp-set-sheet": "/manus-storage/stamps-stamp-set-sheet_fc753e56.jpg",
+  "video-games-accessory": "/manus-storage/video-games-accessory_b358c9c7.jpg",
+  "video-games-collection-lot": "/manus-storage/video-games-collection-lot_65e411ec.jpg",
+  "video-games-console": "/manus-storage/video-games-console_6d43890b.jpg",
+  "video-games-game": "/manus-storage/video-games-game_5c03fb7c.jpg",
+  "vintage-toys-action-figure": "/manus-storage/vintage-toys-action-figure_6eb84cb6.jpg",
+  "vintage-toys-board-game": "/manus-storage/vintage-toys-board-game_2ea87026.jpg",
+  "vintage-toys-collection-lot": "/manus-storage/vintage-toys-collection-lot_90b0fc41.jpg",
+  "vintage-toys-electronic-toy": "/manus-storage/vintage-toys-electronic-toy_3b4460c4.jpg",
+  "vintage-toys-lego": "/manus-storage/vintage-toys-lego_f7378657.jpg",
+  "vintage-toys-model-kit": "/manus-storage/vintage-toys-model-kit_eb59c73b.jpg",
+  "vintage-toys-playset": "/manus-storage/vintage-toys-playset_8d3f6808.jpg",
+  "vintage-toys-plush-toy": "/manus-storage/vintage-toys-plush-toy_b2abb611.jpg",
+  "vintage-toys-vehicle": "/manus-storage/vintage-toys-vehicle_fa19ad90.jpg",
+};
+
+export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
+  if (!promotion?.category || !promotion.itemType) return null;
+  const category = promotion.category.replace(/[\s_]+/g, "-").trim().toLowerCase();
+  const itemType = promotion.itemType.replace(/[\s_]+/g, "-").trim().toLowerCase();
+  const exactKey = `${category}-${itemType}`;
+  if (HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey]) return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
+  const collectionKey = `${category}-collection-lot`;
+  return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[collectionKey] || null;
+}
+
 /** Curated environments support the real listing photo; they never replace it. */
 export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKey, string>> = {
   "sports-baseball": "/manus-storage/sports-baseball-collector_451a17d0.jpg",
@@ -256,10 +314,10 @@ function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string
   return height;
 }
 
-function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null) {
+function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null, overlayAlpha = 0.66) {
   if (heroBackground) {
     context.drawImage(heroBackground, 0, 0, width, height);
-    context.fillStyle = "rgba(3, 18, 55, 0.66)";
+    context.fillStyle = `rgba(3, 18, 55, ${overlayAlpha})`;
     context.fillRect(0, 0, width, height);
     return;
   }
@@ -1183,8 +1241,12 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     context.fillText(itemType, detailX, detailY);
   }
   detailY += 28 * scale;
-  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale);
-  if (value) drawTradeValuePlaque(context, value, detailX, Math.max(detailY + factsHeight + 20 * scale, 446 * scale), detailWidth, 124 * scale, scale);
+  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 38);
+  if (value) {
+    const plaqueHeight = 96 * scale;
+    const plaqueY = Math.min(Math.max(detailY + factsHeight + 12 * scale, 426 * scale), height - 128 * scale);
+    drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth, plaqueHeight, scale);
+  }
   context.fillStyle = "rgba(255,244,205,0.96)";
   context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
@@ -1508,12 +1570,12 @@ function drawCompletedTradeTall(context: CanvasRenderingContext2D, draft: Social
   drawCompletedTradeCinematic(context, draft, platform, width, height, images, themeImages, stageImages, brandLogo, brushImage, exchangeLogo);
 }
 
-function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number) {
+function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: string; value: string }>, x: number, y: number, width: number, scale: number, rowStep = 54) {
   if (facts.length === 0) return 0;
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
   // Keep the lower rule the same distance below the final value as the upper
   // rule is above the first fact label, avoiding excess space below row two.
-  const height = rows * 54 * scale + 1 * scale;
+  const height = rows * rowStep * scale + 1 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);
@@ -1526,7 +1588,7 @@ function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: stri
     const column = index % 2;
     const row = Math.floor(index / 2);
     const cellX = x + column * (width / 2);
-    const cellY = y + 17 * scale + row * 54 * scale;
+    const cellY = y + 17 * scale + row * rowStep * scale;
     context.fillStyle = "#b9caea";
     context.font = `700 ${Math.round(12 * scale)}px Arial, sans-serif`;
     context.fillText(fact.label.toUpperCase(), cellX, cellY);
@@ -1662,8 +1724,9 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const stageSourceEntries = stageKeysToLoad
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
+  const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, exchangeLogo, heroBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
@@ -1673,10 +1736,14 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     loadCanvasImage(TRADE_ALERT_BRUSH_IMAGE_URL),
     loadCanvasImage(TRADED_EXCHANGE_LOGO_URL),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
+    loadCanvasImage(highValueBackgroundUrl),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
   const tradeStageImages: TradeStageImages = Object.fromEntries(stageSourceEntries.map(([key], index) => [key, loadedStageImages[index] ?? null]));
-  if (draft.source !== "Completed Trade") drawBackground(context, width, height, heroBackground);
+  if (draft.source !== "Completed Trade") {
+    const highValue = draft.source === "High-Value Listing";
+    drawBackground(context, width, height, highValue ? highValueBackground || heroBackground : heroBackground, highValue ? 0.28 : 0.66);
+  }
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
     drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "Completed Trade" && platform === "Instagram") {
