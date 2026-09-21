@@ -140,6 +140,12 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "model_kit", facts: [{ label: "Brand", value: "Revell" }] })).toBe("toys_other");
   });
 
+  it("uses every Coins Set Type dropdown value", () => {
+    for (const [setType, visualKey] of Object.entries({ "Proof Set": "coins_proof", "Mint Set": "coins_mint", "Commemorative Set": "coins_commemorative", "Type Set": "coins_type" })) {
+      expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Coins", itemType: "coin_set", facts: [{ label: "Set Type", value: setType }] })).toBe(visualKey);
+    }
+  });
+
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");

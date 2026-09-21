@@ -82,6 +82,10 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   toys_lego: "/manus-storage/tradebilia-secondary-toys-lego-prop_391e7d69.png",
   toys_plush: "/manus-storage/tradebilia-secondary-toys-plush-prop_6ffc2bcb.png",
   toys_other: "/manus-storage/tradebilia-secondary-toys-other-prop_fec51c83.png",
+  coins_proof: "/manus-storage/tradebilia-secondary-coins-proof-prop_1bb0b6d2.png",
+  coins_mint: "/manus-storage/tradebilia-secondary-coins-mint-prop_03f81fb7.png",
+  coins_commemorative: "/manus-storage/tradebilia-secondary-coins-commemorative-prop_488804de.png",
+  coins_type: "/manus-storage/tradebilia-secondary-coins-type-prop_2b0ab7d4.png",
   music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
   comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
   video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
@@ -121,6 +125,10 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   toys_lego: "/manus-storage/tradebilia-secondary-toys-lego-background_99ee4611.jpg",
   toys_plush: "/manus-storage/tradebilia-secondary-toys-plush-background_f858d6b6.jpg",
   toys_other: "/manus-storage/tradebilia-secondary-toys-other-background_cc6b5753.jpg",
+  coins_proof: "/manus-storage/tradebilia-secondary-coins-proof-background_ef1faa18.jpg",
+  coins_mint: "/manus-storage/tradebilia-secondary-coins-mint-background_539e13f3.jpg",
+  coins_commemorative: "/manus-storage/tradebilia-secondary-coins-commemorative-background_53c77459.jpg",
+  coins_type: "/manus-storage/tradebilia-secondary-coins-type-background_7a94d6f2.jpg",
   music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
   comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
@@ -270,6 +278,13 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
     if (brand === "lego") return "toys_lego";
     if (itemType === "plush toy" && /ty|disney|gund|applause/.test(brand)) return "toys_plush";
     if (/fisher price|kenner|playmates|bandai|milton bradley|parker brothers|ideal|avalon hill|tsr|games workshop|tiger electronics|coleco|radio shack|revell|monogram|amt|tamiya|mpc|other/.test(brand)) return "toys_other";
+  }
+  if (category === "coins") {
+    const setType = normalizeVisualToken((promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "set type")?.value);
+    if (setType === "proof set") return "coins_proof";
+    if (setType === "mint set") return "coins_mint";
+    if (setType === "commemorative set") return "coins_commemorative";
+    if (setType === "type set") return "coins_type";
   }
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";
