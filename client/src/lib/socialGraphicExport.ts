@@ -97,7 +97,9 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   // the high-value title/facts lane on the right.
   baseball: "/manus-storage/sports-baseball-stage_f1ed2f40.jpg",
   football: "/manus-storage/tradebilia-secondary-football-background_fdf1d3af.jpg",
-  basketball: "/manus-storage/tradebilia-secondary-basketball-background_e77deb61.jpg",
+  // The high-value variant deliberately makes the sport readable on both sides:
+  // ball and court on the left, hoop/backboard and arena on the right.
+  basketball: "/manus-storage/tradebilia-basketball-high-value-v2_0be0e8af.jpg",
   hockey: "/manus-storage/tradebilia-hockey-single-card-category-v3_9f9f6d9d.jpg",
   soccer: "/manus-storage/tradebilia-secondary-soccer-background_829bdf28.jpg",
   golf: "/manus-storage/tradebilia-secondary-golf-background_ec2b8e7a.jpg",
@@ -1521,7 +1523,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const footerBaselineY = height - (isTall ? 34 : 24) * scale;
   // Reserve a visible breathing zone for the footer phrase; the plaque must
   // never visually collide with it even when glyph metrics vary by browser.
-  const footerClearance = (isTall ? 38 : 44) * scale;
+  const footerClearance = (isTall ? 38 : 18) * scale;
   drawCinematicListingHeader(context, brandLogo, brushImage, width, scale);
 
   if (isTall) {
@@ -1575,11 +1577,13 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     context.fillText(itemType, detailX, detailY);
   }
   detailY += 28 * scale;
-  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 38);
+  // Keep the compact landscape fact grid above the plaque; the plaque is
+  // placed from the measured lower rule rather than from a fixed canvas Y.
+  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 36);
   if (value) {
-    const plaqueHeight = 108 * scale;
+    const plaqueHeight = 90 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
-    const plaqueY = Math.min(Math.max(detailY + factsHeight + 12 * scale, 426 * scale), plaqueBottomLimit - plaqueHeight);
+    const plaqueY = Math.min(Math.max(detailY + factsHeight + 14 * scale, 420 * scale), plaqueBottomLimit - plaqueHeight);
     drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth, plaqueHeight, scale);
   }
   context.fillStyle = "rgba(255,244,205,0.96)";

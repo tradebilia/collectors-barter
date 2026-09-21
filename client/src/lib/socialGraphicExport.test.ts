@@ -90,13 +90,13 @@ describe("native Social graphic exporter", () => {
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
     expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
-    expect(exporterSource).toContain("const plaqueHeight = 108 * scale");
+    expect(exporterSource).toContain("const plaqueHeight = 90 * scale");
     expect(exporterSource).toContain("const textBlockTop = y + (height - textBlockHeight) / 2");
     expect(exporterSource).toContain("const opticalVerticalOffset = 6 * scale");
     expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
     expect(exporterSource).toContain("const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset");
     expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
-    expect(exporterSource).toContain("const footerClearance = (isTall ? 38 : 44) * scale");
+    expect(exporterSource).toContain("const footerClearance = (isTall ? 38 : 18) * scale");
     expect(exporterSource).toContain("const plaqueBottomLimit = footerBaselineY - footerClearance");
     expect(exporterSource).toContain("plaqueBottomLimit - plaqueHeight");
   });
