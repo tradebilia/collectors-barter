@@ -62,6 +62,11 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   multi_sport: "/manus-storage/tradebilia-secondary-multi-sport-prop_8156fed8.png",
   mixed: "/manus-storage/tradebilia-secondary-multi-sport-prop_8156fed8.png",
   other: "/manus-storage/tradebilia-secondary-other-sport-prop_02777e81.png",
+  video_nintendo: "/manus-storage/tradebilia-secondary-video-nintendo-prop_2e2cc47e.png",
+  video_playstation: "/manus-storage/tradebilia-secondary-video-playstation-prop_8e009ad3.png",
+  video_xbox: "/manus-storage/tradebilia-secondary-video-xbox-prop_ec7aba77.png",
+  pokemon_vintage: "/manus-storage/tradebilia-secondary-pokemon-vintage-prop_838365e1.png",
+  pokemon_modern: "/manus-storage/tradebilia-secondary-pokemon-modern-prop_5e74a96f.png",
   music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
   comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
   video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
@@ -81,6 +86,11 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   multi_sport: "/manus-storage/tradebilia-secondary-multi-sport-background_ac8b2033.jpg",
   mixed: "/manus-storage/tradebilia-secondary-multi-sport-background_ac8b2033.jpg",
   other: "/manus-storage/tradebilia-secondary-other-sport-background_6a3dd0d9.jpg",
+  video_nintendo: "/manus-storage/tradebilia-secondary-video-nintendo-background_cb5beb96.jpg",
+  video_playstation: "/manus-storage/tradebilia-secondary-video-playstation-background_292aa1b7.jpg",
+  video_xbox: "/manus-storage/tradebilia-secondary-video-xbox-background_8d73340a.jpg",
+  pokemon_vintage: "/manus-storage/tradebilia-secondary-pokemon-vintage-background_070b5fd1.jpg",
+  pokemon_modern: "/manus-storage/tradebilia-secondary-pokemon-modern-background_16d52b74.jpg",
   music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
   comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
@@ -169,6 +179,8 @@ function normalizeVisualToken(value: unknown) {
   return String(value ?? "")
     .trim()
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[\u2013\u2014]/g, "-")
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
@@ -189,6 +201,17 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
   if (category === "sports cards") {
     const sportKey = SPORTS_CARD_SECONDARY_VISUAL_KEYS[normalizeVisualToken(sportFact?.value)];
     if (sportKey) return sportKey;
+  }
+  if (category === "video games") {
+    const platform = normalizeVisualToken((promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "platform")?.value);
+    if (/^(nes|snes|n64|gamecube|wii|wii u|switch|switch 2|nintendo)$/.test(platform)) return "video_nintendo";
+    if (/^(playstation|ps1|ps2|ps3|ps4|ps5)$/.test(platform)) return "video_playstation";
+    if (/^(xbox|xbox 360|xbox one|xbox series x s)$/.test(platform)) return "video_xbox";
+  }
+  if (category === "pokemon") {
+    const setValue = normalizeVisualToken((promotion.facts ?? []).find((fact) => /set|era|series/.test(normalizeVisualToken(fact.label)))?.value);
+    if (/wizards of the coast|1st edition|shadowless|base set|jungle|fossil|team rocket|vintage|wotc/.test(setValue)) return "pokemon_vintage";
+    if (/ex|diamond pearl|platinum|heartgold|soul silver|black white|xy|sun moon|sword shield|scarlet violet|modern/.test(setValue)) return "pokemon_modern";
   }
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";

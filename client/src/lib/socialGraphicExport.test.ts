@@ -111,6 +111,13 @@ describe("native Social graphic exporter", () => {
     }
   });
 
+  it("uses platform and Pokémon set-family dropdown facts when available", () => {
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Video Games", itemType: "game", facts: [{ label: "Platform", value: "PlayStation" }] })).toBe("video_playstation");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Video Games", itemType: "console", facts: [{ label: "Platform", value: "NES" }] })).toBe("video_nintendo");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Pokémon", itemType: "single_card", facts: [{ label: "Set Name", value: "Wizards of the Coast" }] })).toBe("pokemon_vintage");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Pokémon", itemType: "single_card", facts: [{ label: "Set Name", value: "Scarlet & Violet" }] })).toBe("pokemon_modern");
+  });
+
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
