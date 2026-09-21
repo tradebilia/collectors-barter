@@ -55,8 +55,8 @@ export const TRADE_ALERT_THEME_IMAGE_URLS: Partial<Record<TradeAlertThemeAssetKe
   "sports-collectibles": "/manus-storage/sports-general-collector_906f6d56.jpg",
   comics: "/manus-storage/comic-archive-collector_c552bfb8.jpg",
   pokemon: "/manus-storage/pokemon-tcg-collector_e71edfcf.jpg",
-  vintage_toys: "/manus-storage/vintage-toy-collector_5530d4f4.jpg",
-  video_games: "/manus-storage/video-game-collector_31820949.jpg",
+  vintage_toys: "/manus-storage/vintage-toy-collector-sharp_336bfd99.jpg",
+  video_games: "/manus-storage/video-game-collector-foreground_74c899b2.jpg",
   coins: "/manus-storage/coin-curator-collector_a422a1cc.jpg",
   stamps: "/manus-storage/stamp-archive-collector_b7d532c3.jpg",
   movies: "/manus-storage/movie-media-collector_e86fe326.jpg",
@@ -485,8 +485,8 @@ function drawBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, 
 }
 
 function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage | null, width: number, y: number, scale: number) {
-  const brandWidth = 360 * scale;
-  const brandHeight = 64 * scale;
+  const brandWidth = 400 * scale;
+  const brandHeight = 72 * scale;
   // The supplied transparent mark carries a little more visual mass on its
   // right side, so this small optical correction keeps the artwork centered.
   drawBrand(context, logo, (width - brandWidth) / 2 - 6 * scale, y, brandWidth, brandHeight);
@@ -494,7 +494,7 @@ function drawCenteredBrand(context: CanvasRenderingContext2D, logo: CanvasImage 
 
 /** Adds the faint electric-blue rules framing the completed-trade logo. */
 function drawTradeBrandAccentLines(context: CanvasRenderingContext2D, width: number, brandY: number, scale: number) {
-  const brandWidth = 360 * scale;
+  const brandWidth = 400 * scale;
   const brandX = (width - brandWidth) / 2 - 6 * scale;
   const lineY = brandY + 32 * scale;
   const gap = 16 * scale;
@@ -1017,15 +1017,15 @@ function drawCinematicTradeScene(
 }
 
 function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
-  const logoWidth = 520 * scale;
-  drawBrand(context, logo, (width - logoWidth) / 2, 0, logoWidth, 72 * scale);
+  const logoWidth = 600 * scale;
+  drawBrand(context, logo, (width - logoWidth) / 2, 0, logoWidth, 82 * scale);
 
   // The reference banner is wide but visually substantial vertically: increase
   // the paint body rather than extending it past the canvas edges.
   const strokeWidth = Math.min(width * 0.92, 1104 * scale);
   const strokeHeight = 174 * scale;
   const strokeX = (width - strokeWidth) / 2;
-  const strokeY = 68 * scale;
+  const strokeY = 82 * scale;
   context.save();
   if (brushImage) {
     // Crop away the transparent canvas around the generated brush so the
@@ -1190,13 +1190,13 @@ function drawCinematicTradeItem(
 function drawCinematicFooterPhrase(context: CanvasRenderingContext2D, phrase: string, width: number, y: number, scale: number) {
   context.save();
   context.fillStyle = "rgba(255, 244, 205, 0.96)";
-  context.font = `700 ${Math.max(10, Math.round(13 * scale))}px ${CANVAS_SANS_FONT}`;
+  context.font = `700 ${Math.max(11, Math.round(16 * scale))}px ${CANVAS_SANS_FONT}`;
   // drawTrackedText positions individual glyphs from a calculated left edge;
   // a centered canvas textAlign would re-center every glyph independently.
   context.textAlign = "left";
   context.textBaseline = "middle";
   const text = phrase.toUpperCase();
-  drawTrackedText(context, text, width / 2, y, 0.35 * scale);
+  drawTrackedText(context, text, width / 2, y, 0.18 * scale);
   context.restore();
 }
 
@@ -1297,7 +1297,7 @@ function drawCompletedTradeCinematic(
   const rightSceneSeed = getTradeSceneSeed(requested);
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const isPinterest = platform === "Pinterest";
-  const imageY = isTall ? 254 * scale : 226 * scale;
+  const imageY = isTall ? 268 * scale : 238 * scale;
   const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.36) : height * 0.36;
   const captionBottom = imageY + imageHeight + 56 * scale;
   const exchangeY = isTall ? captionBottom + (isPinterest ? 76 : 92) * scale : imageY + imageHeight * 0.48;
