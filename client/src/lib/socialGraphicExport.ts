@@ -1329,6 +1329,7 @@ function drawCinematicTradeItem(
   captionX: number,
   captionAlign: CanvasTextAlign,
   scale: number,
+  isTall: boolean,
 ) {
   if (!entry) return;
   const { item } = entry;
@@ -1353,22 +1354,22 @@ function drawCinematicTradeItem(
   if (image) drawContainedImage(context, image, centerX - imageWidth / 2, imageY, imageWidth, imageHeight);
 
   context.fillStyle = "#ffffff";
-  context.font = `700 ${Math.max(11, Math.round(15 * scale))}px ${CANVAS_SANS_FONT}`;
+    context.font = `700 ${Math.max(11, Math.round((isTall ? 22 : 15) * scale))}px ${CANVAS_SANS_FONT}`;
   context.textAlign = captionAlign;
   const titleLines = splitLine(context, item.title, captionWidth, 2);
-  const titleLineHeight = Math.max(12, 15 * scale);
+    const titleLineHeight = Math.max(12, (isTall ? 22 : 15) * scale);
   titleLines.forEach((line, index) => drawCrispText(context, line, captionX, captionY + index * titleLineHeight));
-  let detailY = captionY + titleLines.length * titleLineHeight + 5 * scale;
+  let detailY = captionY + titleLines.length * titleLineHeight + (isTall ? 8 : 5) * scale;
   const factLine = getTradeItemFactLine(item);
   if (factLine) {
     context.fillStyle = "rgba(252, 243, 215, 0.90)";
-    context.font = `600 ${Math.max(8, Math.round(10 * scale))}px ${CANVAS_SANS_FONT}`;
+    context.font = `600 ${Math.max(8, Math.round((isTall ? 12 : 10) * scale))}px ${CANVAS_SANS_FONT}`;
     drawCrispText(context, splitLine(context, factLine, captionWidth, 1)[0] ?? "", captionX, detailY);
-    detailY += 14 * scale;
+    detailY += (isTall ? 17 : 14) * scale;
   }
   const gradeLine = getTradeItemGradeLine(item);
   if (gradeLine) {
-    const gradeFontSize = Math.max(9, Math.round(10 * scale));
+    const gradeFontSize = Math.max(9, Math.round((isTall ? 12 : 10) * scale));
     context.font = `800 ${gradeFontSize}px ${CANVAS_SANS_FONT}`;
     const badgePaddingX = 6 * scale;
     const badgeHeight = Math.max(14 * scale, gradeFontSize * 1.7);
@@ -1405,6 +1406,7 @@ function drawCinematicTradeGroup(
   imageY: number,
   imageHeight: number,
   scale: number,
+  isTall: boolean,
 ) {
   const visibleEntries = entries.slice(0, 4);
   if (visibleEntries.length === 0) return;
@@ -1425,6 +1427,7 @@ function drawCinematicTradeGroup(
       centerX,
       "center",
       scale,
+      isTall,
     );
   };
 
@@ -1493,10 +1496,14 @@ function drawCompletedTradeCinematic(
   const rightSceneSeed = getTradeSceneSeed(requested);
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const isPinterest = platform === "Pinterest";
-  const imageY = isTall ? 268 * scale : 238 * scale;
+  const imageY = isTall ? 246 * scale : 238 * scale;
   const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.36) : height * 0.36;
-  const captionBottom = imageY + imageHeight + 56 * scale;
-  const exchangeY = isTall ? captionBottom + (isPinterest ? 76 : 92) * scale : imageY + imageHeight * 0.48;
+  const captionBottom = imageY + imageHeight * 1.14 + 58 * scale;
+  // Instagram keeps the exchange mark in the open horizontal channel between
+  // the two item columns. Pinterest remains a vertically stacked tall layout.
+  const exchangeY = isTall
+    ? (isPinterest ? captionBottom + 66 * scale : imageY + imageHeight * 0.68)
+    : imageY + imageHeight * 0.48;
   const footerPhrase = getSocialFooterPhrase(draft.id || draft.title || "trade-alert", platform);
 
   drawCinematicTradeScene(
@@ -1515,9 +1522,9 @@ function drawCompletedTradeCinematic(
     rightSceneSeed,
   );
   drawCinematicTradeHeader(context, brandLogo, brushImage, width, scale);
-  drawCinematicTradeGroup(context, offered, images, "left", width, imageY, imageHeight, scale);
-  drawCinematicTradeGroup(context, requested, images, "right", width, imageY, imageHeight, scale);
-  drawCinematicExchangeMark(context, exchangeLogo, width / 2, exchangeY, scale, Boolean(draft.promotion?.cashIncluded));
+  drawCinematicTradeGroup(context, offered, images, "left", width, imageY, imageHeight, scale, isTall);
+  drawCinematicTradeGroup(context, requested, images, "right", width, imageY, imageHeight, scale, isTall);
+  drawCinematicExchangeMark(context, exchangeLogo, width / 2, exchangeY, scale * (isTall ? 1.16 : 1), Boolean(draft.promotion?.cashIncluded));
   const footerY = isPinterest ? height * 0.965 : isTall ? height - 52 * scale : height - 30 * scale;
   drawCinematicFooterPhrase(context, footerPhrase, width, footerY, scale);
 }

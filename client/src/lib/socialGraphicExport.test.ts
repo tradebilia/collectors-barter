@@ -181,5 +181,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawCinematicTradeGroup");
     expect(exporterSource).toContain("drawCinematicTradeGroup(context, offered");
     expect(exporterSource).toContain("drawCinematicTradeGroup(context, requested");
+    expect(exporterSource).toContain("const captionBottom = imageY + imageHeight * 1.14 + 58 * scale");
+    expect(exporterSource).toContain("scale * (isTall ? 1.16 : 1)");
+    expect(exporterSource).toContain("(isTall ? 22 : 15) * scale");
+    expect(exporterSource).toContain("isPinterest ? captionBottom + 66 * scale : imageY + imageHeight * 0.68");
   });
 });
