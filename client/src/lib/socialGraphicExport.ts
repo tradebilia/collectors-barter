@@ -1119,6 +1119,10 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
 }
 
 function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
+  // The completed-trade brush asset contains baked-in “TRADE ALERT” lettering.
+  // Never reuse it for a high-value listing: draw the shared gold treatment here
+  // and supply the listing-specific headline as live text instead.
+  void brushImage;
   const logoWidth = Math.min(width * 0.52, 620 * scale);
   drawBrand(context, logo, (width - logoWidth) / 2, 6 * scale, logoWidth, 94 * scale);
   const strokeWidth = Math.min(width * 0.92, 1120 * scale);
@@ -1126,27 +1130,19 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
   const strokeX = (width - strokeWidth) / 2;
   const strokeY = 94 * scale;
   context.save();
-  if (brushImage) {
-    const sourceX = brushImage.naturalWidth * 0.02;
-    const sourceWidth = brushImage.naturalWidth * 0.96;
-    const sourceY = brushImage.naturalHeight * 0.11;
-    const sourceHeight = brushImage.naturalHeight * 0.70;
-    context.drawImage(brushImage, sourceX, sourceY, sourceWidth, sourceHeight, strokeX, strokeY, strokeWidth, strokeHeight);
-  } else {
-    const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
-    gold.addColorStop(0, "rgba(239, 169, 35, 0.15)");
-    gold.addColorStop(0.08, "#d3972e");
-    gold.addColorStop(0.50, "#ffd45a");
-    gold.addColorStop(0.92, "#d3972e");
-    gold.addColorStop(1, "rgba(239, 169, 35, 0.15)");
-    context.fillStyle = gold;
-    context.fillRect(strokeX, strokeY + 10 * scale, strokeWidth, strokeHeight - 20 * scale);
-    context.fillStyle = "#071324";
-    context.font = `400 ${Math.round(42 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    drawCrispText(context, "NEW HIGH-VALUE LISTING", width / 2, strokeY + strokeHeight * 0.53);
-  }
+  const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
+  gold.addColorStop(0, "rgba(239, 169, 35, 0.15)");
+  gold.addColorStop(0.08, "#d3972e");
+  gold.addColorStop(0.50, "#ffd45a");
+  gold.addColorStop(0.92, "#d3972e");
+  gold.addColorStop(1, "rgba(239, 169, 35, 0.15)");
+  context.fillStyle = gold;
+  context.fillRect(strokeX, strokeY + 10 * scale, strokeWidth, strokeHeight - 20 * scale);
+  context.fillStyle = "#071324";
+  context.font = `400 ${Math.round(42 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  drawCrispText(context, "NEW HIGH-VALUE LISTING", width / 2, strokeY + strokeHeight * 0.53);
   context.restore();
 }
 

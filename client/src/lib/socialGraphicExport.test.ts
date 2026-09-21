@@ -70,6 +70,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawHighValueListingCinematic");
     expect(exporterSource).toContain('drawHighValueListingCinematic(context, draft, platform');
     expect(exporterSource).toContain('"NEW HIGH-VALUE LISTING"');
+    expect(exporterSource).toContain("The completed-trade brush asset contains baked-in");
+    expect(exporterSource).toContain("void brushImage");
     expect(exporterSource).toContain('drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()');
     expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
   });
