@@ -43,7 +43,9 @@ export function SocialPromotionGraphic({
     void renderSocialGraphicCanvas({
       draft,
       platform,
-      itemImageUrl: itemImageUrl ?? draft.mediaUrl ?? null,
+      // An explicit null means the manager is still preparing a CORS-safe
+      // image; only fall back when callers omit the prop entirely.
+      itemImageUrl: itemImageUrl === undefined ? draft.mediaUrl ?? null : itemImageUrl,
       tradeItemImageUrls,
       tradeThemeImageUrls,
       tradeStageImageUrls,
@@ -54,7 +56,8 @@ export function SocialPromotionGraphic({
         setPreviewUrl(canvas.toDataURL("image/png"));
         setIsRendering(false);
       }
-    }).catch(() => {
+    }).catch((error) => {
+      console.error("[SocialPromotionGraphic] render failed", error);
       if (!cancelled) setIsRendering(false);
     });
     return () => { cancelled = true; };

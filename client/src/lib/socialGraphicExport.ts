@@ -493,7 +493,7 @@ function loadCanvasImage(source: string | null | undefined, required = false): P
     const image = new Image();
     // /manus-storage redirects to CORS-enabled CloudFront assets. Explicitly
     // opting into that mode preserves a clean canvas for Preview and Download.
-    image.crossOrigin = "anonymous";
+    if (/^https?:\/\//i.test(source) || source.startsWith("/")) image.crossOrigin = "anonymous";
     image.decoding = "async";
     image.onload = () => resolve(image);
     image.onerror = () => required ? reject(new Error("The prepared item image could not be rendered for export.")) : resolve(null);
@@ -1383,7 +1383,7 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
   const strokeWidth = Math.min(width * 0.92, 1104 * scale);
   const strokeHeight = 174 * scale;
   const strokeX = (width - strokeWidth) / 2;
-  const strokeY = 82 * scale;
+  const strokeY = 62 * scale;
   context.save();
   // Keep the paint swipe and its headline locked together on the same subtle
   // upward angle, rather than leaving the listing banner visually flat.
@@ -1507,6 +1507,8 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
   const isTall = platform === "Instagram" || platform === "Pinterest";
+  const footerBaselineY = height - (isTall ? 34 : 24) * scale;
+  const footerClearance = 28 * scale;
   drawCinematicListingHeader(context, brandLogo, brushImage, width, scale);
 
   if (isTall) {
@@ -1525,11 +1527,16 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     }
     detailY += 28 * scale;
     detailY += drawFacts(context, promotion?.facts ?? [], padding, detailY, width - padding * 2, scale);
-    if (value) drawTradeValuePlaque(context, value, padding, Math.min(detailY + 26 * scale, height - 198 * scale), width - padding * 2, 112 * scale, scale);
+    if (value) {
+      const plaqueHeight = 112 * scale;
+      const plaqueBottomLimit = footerBaselineY - footerClearance;
+      const plaqueY = Math.min(detailY + 26 * scale, plaqueBottomLimit - plaqueHeight);
+      drawTradeValuePlaque(context, value, padding, plaqueY, width - padding * 2, plaqueHeight, scale);
+    }
     context.fillStyle = "rgba(255,244,205,0.96)";
     context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
     context.textAlign = "center";
-    drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 34 * scale);
+    drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, footerBaselineY);
     context.textAlign = "left";
     return;
   }
@@ -1554,13 +1561,14 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 38);
   if (value) {
     const plaqueHeight = 108 * scale;
-    const plaqueY = Math.min(Math.max(detailY + factsHeight + 12 * scale, 426 * scale), height - 128 * scale);
+    const plaqueBottomLimit = footerBaselineY - footerClearance;
+    const plaqueY = Math.min(Math.max(detailY + factsHeight + 12 * scale, 426 * scale), plaqueBottomLimit - plaqueHeight);
     drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth, plaqueHeight, scale);
   }
   context.fillStyle = "rgba(255,244,205,0.96)";
   context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
-  drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, height - 24 * scale);
+  drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, footerBaselineY);
   context.textAlign = "left";
 }
 

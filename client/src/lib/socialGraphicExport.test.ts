@@ -79,6 +79,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("text-free swipe asset");
     expect(exporterSource).toContain("const strokeHeight = 174 * scale");
     expect(exporterSource).toContain("const logoWidth = 700 * scale");
+    expect(exporterSource).toContain("const strokeY = 62 * scale");
     expect(exporterSource).toContain("const sourceY = brushImage.naturalHeight * 0.11");
     expect(exporterSource).toContain("const bannerAngle = (-2.25 * Math.PI) / 180");
     expect(exporterSource).toContain("context.rotate(bannerAngle)");
@@ -95,6 +96,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
     expect(exporterSource).toContain("const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset");
     expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
+    expect(exporterSource).toContain("const footerClearance = 28 * scale");
+    expect(exporterSource).toContain("const plaqueBottomLimit = footerBaselineY - footerClearance");
+    expect(exporterSource).toContain("plaqueBottomLimit - plaqueHeight");
   });
 
   it("selects a specific high-value environment from category and item type", () => {
