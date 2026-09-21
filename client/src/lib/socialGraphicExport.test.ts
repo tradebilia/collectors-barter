@@ -87,6 +87,16 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
   });
 
+  it("protects the left item zone and keeps tall listing details on the right", () => {
+    expect(exporterSource).toContain("function drawHighValueBackground");
+    expect(exporterSource).toContain("const itemZone = context.createLinearGradient");
+    expect(exporterSource).toContain("const imageWidth = Math.min(width * 0.38, 410 * scale)");
+    expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
+    expect(exporterSource).toContain("drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight");
+    expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
+    expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
+  });
+
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
     expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");

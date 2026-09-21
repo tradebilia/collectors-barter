@@ -620,6 +620,22 @@ function drawBackground(context: CanvasRenderingContext2D, width: number, height
   }
 }
 
+/**
+ * High-value listings reserve the left side for the actual item image. Keep
+ * semantic background cues visible while using a restrained left-to-center
+ * scrim to protect the item from busy props and bright highlights.
+ */
+function drawHighValueBackground(context: CanvasRenderingContext2D, width: number, height: number, background: CanvasImage | null) {
+  drawBackground(context, width, height, background, 0.18);
+  const itemZone = context.createLinearGradient(0, 0, width * 0.58, 0);
+  itemZone.addColorStop(0, "rgba(3, 12, 30, 0.56)");
+  itemZone.addColorStop(0.42, "rgba(3, 12, 30, 0.30)");
+  itemZone.addColorStop(0.78, "rgba(3, 12, 30, 0.08)");
+  itemZone.addColorStop(1, "rgba(3, 12, 30, 0)");
+  context.fillStyle = itemZone;
+  context.fillRect(0, 0, width * 0.62, height);
+}
+
 function drawCoverImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number, focalX = 0.5, mirrored = false) {
   const naturalWidth = image.naturalWidth || 1;
   const naturalHeight = image.naturalHeight || 1;
@@ -1532,25 +1548,25 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const plaqueHeight = 112 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
     const plaqueY = plaqueBottomLimit - plaqueHeight;
-    const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, width - padding * 2, 42 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
-    const itemTypeHeight = itemType ? 45 * scale : 0;
-    const factsHeight = promotion?.facts?.length ? Math.ceil(Math.min(promotion.facts.length, 4) / 2) * 54 * scale + 1 * scale : 0;
-    const detailReserve = 38 * scale + titleLayout.height + itemTypeHeight + 28 * scale + factsHeight + 22 * scale;
-    const imageHeight = Math.max(150 * scale, Math.min(platform === "Pinterest" ? height * 0.34 : height * 0.32, plaqueY - imageY - detailReserve));
-    drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, "ORIGINAL ITEM MEDIA");
-    let detailY = imageY + imageHeight + 38 * scale;
+    const imageWidth = Math.min(width * 0.38, 410 * scale);
+    const detailX = padding + imageWidth + 28 * scale;
+    const detailWidth = Math.max(220 * scale, width - detailX - padding);
+    const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
+    const imageHeight = Math.max(260 * scale, Math.min(platform === "Pinterest" ? height * 0.42 : height * 0.48, plaqueY - imageY - 28 * scale));
+    drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
+    let detailY = imageY + 30 * scale;
     context.fillStyle = "#ffffff";
-    detailY += drawCompleteFittedTitle(context, itemTitle, padding, detailY, width - padding * 2, 42 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
+    detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     if (itemType) {
       detailY += 14 * scale;
       context.fillStyle = "rgba(252,243,215,0.90)";
-      context.font = `700 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
-      context.fillText(itemType, padding, detailY);
+      context.font = `700 ${Math.round(16 * scale)}px ${CANVAS_SANS_FONT}`;
+      context.fillText(itemType, detailX, detailY);
     }
     detailY += 28 * scale;
-    detailY += drawFacts(context, promotion?.facts ?? [], padding, detailY, width - padding * 2, scale);
+    detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 42);
     if (value) {
-      drawTradeValuePlaque(context, value, padding, plaqueY, width - padding * 2, plaqueHeight, scale);
+      drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth, plaqueHeight, scale);
     }
     context.fillStyle = "rgba(255,244,205,0.96)";
     context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
@@ -2089,7 +2105,11 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const tradeStageImages: TradeStageImages = Object.fromEntries(stageSourceEntries.map(([key], index) => [key, loadedStageImages[index] ?? null]));
   if (draft.source !== "Completed Trade") {
     const highValue = draft.source === "High-Value Listing";
-    drawBackground(context, width, height, highValue ? highValueBackground || heroBackground : heroBackground, highValue ? 0.28 : 0.66);
+    if (highValue) {
+      drawHighValueBackground(context, width, height, highValueBackground || heroBackground);
+    } else {
+      drawBackground(context, width, height, heroBackground, 0.66);
+    }
   }
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
     drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
