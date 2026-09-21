@@ -139,6 +139,14 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
 };
 
+/** Known collectible subjects get a richer environment built from the item reference, not only the sport. */
+export const HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS: Record<string, string> = {
+  michael_jordan: "/manus-storage/tradebilia-player-ref-michael-jordan-bulls-nba-v2_0ead084c.jpg",
+  ken_griffey_jr: "/manus-storage/tradebilia-player-ref-ken-griffey-jr-mariners-mlb_17fd6941.jpg",
+  wayne_gretzky: "/manus-storage/tradebilia-player-ref-wayne-gretzky-oilers-nhl_a15c4f1f.jpg",
+  barry_sanders: "/manus-storage/tradebilia-player-ref-barry-sanders-lions-nfl_85bd80bd.jpg",
+};
+
 /** Mirrors the authoritative Sports Cards dropdown values in fieldDefinitionsGenerated.ts. */
 export const SPORTS_CARD_SECONDARY_VISUAL_KEYS: Record<string, string> = {
   baseball: "baseball",
@@ -252,6 +260,10 @@ export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
       // scene becomes its visible variant. This preserves the hierarchy while
       // making a Baseball card unambiguously read as Baseball.
       if (category === "sports-cards") {
+        const itemReferenceKey = getHighValueItemReferenceKey(promotion);
+        if (itemReferenceKey) {
+          return HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS[itemReferenceKey] || itemTypeBackground;
+        }
         const secondaryKey = getHighValueSecondaryVisualKey(promotion);
         if (secondaryKey && HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS.has(secondaryKey)) {
           return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey] || itemTypeBackground;
@@ -342,6 +354,21 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";
   if (category === "video games" && /\b(platform|console|controller|accessory type|handheld)\b/.test(factSearchable)) return "video_games";
+  return null;
+}
+
+/** Resolve recognizable sports-card subjects before falling back to the sport-only environment. */
+export function getHighValueItemReferenceKey(promotion: SocialDraft["promotion"]) {
+  if (!promotion || normalizeVisualToken(promotion.category) !== "sports cards") return null;
+  const searchable = [
+    promotion.itemTitle,
+    ...(promotion.visualHints ?? []),
+    ...(promotion.facts ?? []).flatMap((fact) => [fact.label, fact.value]),
+  ].map(normalizeVisualToken).join(" ");
+  if (/michael jordan/.test(searchable)) return "michael_jordan";
+  if (/ken griffey(?: jr| junior)?/.test(searchable)) return "ken_griffey_jr";
+  if (/wayne gretzky/.test(searchable)) return "wayne_gretzky";
+  if (/barry sanders/.test(searchable)) return "barry_sanders";
   return null;
 }
 

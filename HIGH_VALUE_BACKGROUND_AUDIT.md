@@ -73,3 +73,7 @@ On 2026-09-21, five backgrounds were regenerated because the previous scenes did
 | Sports Cards — Sport: Hockey | `tradebilia-hockey-single-card-category-v3` | Pass |
 
 Each route was checked in a native 1200×630 Social Content Manager preview. The scenes visibly communicate their category while preserving the title/facts lane and Trade Value plaque. The actual listing image remains the only featured collectible in the final graphic.
+
+## Subject-reference refinement — Michael Jordan
+
+The first Jordan Basketball scene was rejected during direct visual review because it communicated only a generic basketball arena. The subject-first resolver now uses a dedicated reference scene after category, item type, and Sport: Basketball are resolved. The replacement visibly includes Bulls red-and-black styling, a framed `BULLS 23` jersey, basketball hoop, championship-banner forms, hardwood court, and a basketball while preserving a dark uncluttered left zone for the actual graded card. The native 1200×630 export was re-rendered and visually checked; the scene now communicates the item’s Michael Jordan/Bulls/NBA semantic references rather than only the sport.
