@@ -96,7 +96,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
     expect(exporterSource).toContain("const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset");
     expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
-    expect(exporterSource).toContain("const footerClearance = 28 * scale");
+    expect(exporterSource).toContain("const footerClearance = (isTall ? 38 : 44) * scale");
     expect(exporterSource).toContain("const plaqueBottomLimit = footerBaselineY - footerClearance");
     expect(exporterSource).toContain("plaqueBottomLimit - plaqueHeight");
   });
@@ -132,6 +132,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("return null;");
     expect(exporterSource).toContain("drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS");
+    expect(exporterSource).toContain('context.filter = "blur(24px)"');
+    expect(exporterSource).toContain("drawContainedImage(context, heroBackground, 0, 0, width, height)");
+    expect(exporterSource).toContain("const plaqueY = plaqueBottomLimit - plaqueHeight");
   });
 
   it("covers every Sports Cards sport dropdown value", () => {

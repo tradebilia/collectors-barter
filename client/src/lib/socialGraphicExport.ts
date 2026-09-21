@@ -569,10 +569,21 @@ function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string
 
 function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null, overlayAlpha = 0.66) {
   if (heroBackground) {
-    // Every generated collector scene is widescreen. Cover-cropping preserves
-    // its perspective on square and vertical exports instead of squeezing a
-    // real tabletop scene into a distorted tall background.
-    drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5);
+    // Collector scenes are widescreen. For square/vertical exports, preserve
+    // the complete scene in a crisp contained band over a softly blurred
+    // cover-fill instead of cutting away the category-defining objects.
+    if (height > width * 1.12) {
+      context.save();
+      context.filter = "blur(24px)";
+      drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5);
+      context.restore();
+      context.save();
+      context.globalAlpha = 0.96;
+      drawContainedImage(context, heroBackground, 0, 0, width, height);
+      context.restore();
+    } else {
+      drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5);
+    }
     context.fillStyle = `rgba(3, 18, 55, ${overlayAlpha})`;
     context.fillRect(0, 0, width, height);
     return;
@@ -1508,13 +1519,22 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const value = formatSocialValue(promotion?.estimatedValue);
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const footerBaselineY = height - (isTall ? 34 : 24) * scale;
-  const footerClearance = 28 * scale;
+  // Reserve a visible breathing zone for the footer phrase; the plaque must
+  // never visually collide with it even when glyph metrics vary by browser.
+  const footerClearance = (isTall ? 38 : 44) * scale;
   drawCinematicListingHeader(context, brandLogo, brushImage, width, scale);
 
   if (isTall) {
     const padding = 58 * scale;
     const imageY = 250 * scale;
-    const imageHeight = platform === "Pinterest" ? height * 0.35 : height * 0.31;
+    const plaqueHeight = 112 * scale;
+    const plaqueBottomLimit = footerBaselineY - footerClearance;
+    const plaqueY = plaqueBottomLimit - plaqueHeight;
+    const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, width - padding * 2, 42 * scale, 25 * scale, platform === "Pinterest" ? 4 : 3);
+    const itemTypeHeight = itemType ? 45 * scale : 0;
+    const factsHeight = promotion?.facts?.length ? Math.ceil(Math.min(promotion.facts.length, 4) / 2) * 54 * scale + 1 * scale : 0;
+    const detailReserve = 38 * scale + titleLayout.height + itemTypeHeight + 28 * scale + factsHeight + 22 * scale;
+    const imageHeight = Math.max(150 * scale, Math.min(platform === "Pinterest" ? height * 0.34 : height * 0.32, plaqueY - imageY - detailReserve));
     drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, "ORIGINAL ITEM MEDIA");
     let detailY = imageY + imageHeight + 38 * scale;
     context.fillStyle = "#ffffff";
@@ -1528,9 +1548,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     detailY += 28 * scale;
     detailY += drawFacts(context, promotion?.facts ?? [], padding, detailY, width - padding * 2, scale);
     if (value) {
-      const plaqueHeight = 112 * scale;
-      const plaqueBottomLimit = footerBaselineY - footerClearance;
-      const plaqueY = Math.min(detailY + 26 * scale, plaqueBottomLimit - plaqueHeight);
       drawTradeValuePlaque(context, value, padding, plaqueY, width - padding * 2, plaqueHeight, scale);
     }
     context.fillStyle = "rgba(255,244,205,0.96)";
