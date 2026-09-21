@@ -1325,6 +1325,14 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
   const strokeX = (width - strokeWidth) / 2;
   const strokeY = 82 * scale;
   context.save();
+  // Keep the paint swipe and its headline locked together on the same subtle
+  // upward angle, rather than leaving the listing banner visually flat.
+  const bannerCenterX = width / 2;
+  const bannerCenterY = strokeY + strokeHeight / 2;
+  const bannerAngle = (-2.25 * Math.PI) / 180;
+  context.translate(bannerCenterX, bannerCenterY);
+  context.rotate(bannerAngle);
+  context.translate(-bannerCenterX, -bannerCenterY);
   if (brushImage) {
     const sourceX = brushImage.naturalWidth * 0.02;
     const sourceWidth = brushImage.naturalWidth * 0.96;

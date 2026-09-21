@@ -79,6 +79,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const strokeHeight = 174 * scale");
     expect(exporterSource).toContain("const logoWidth = 700 * scale");
     expect(exporterSource).toContain("const sourceY = brushImage.naturalHeight * 0.11");
+    expect(exporterSource).toContain("const bannerAngle = (-2.25 * Math.PI) / 180");
+    expect(exporterSource).toContain("context.rotate(bannerAngle)");
     expect(exporterSource).toContain('drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()');
     expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
   });
