@@ -126,6 +126,12 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Movies", itemType: "individual_movie", facts: [{ label: "Format", value: "4K UHD" }] })).toBe("movie_4k");
   });
 
+  it("uses the exact Autograph Category dropdown values", () => {
+    for (const [category, visualKey] of Object.entries({ Sports: "autograph_sports", Entertainment: "autograph_entertainment", Historical: "autograph_historical", Music: "autograph_music", Other: "autograph_other" })) {
+      expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Autographs", itemType: "signed_item", facts: [{ label: "Autograph Category", value: category }] })).toBe(visualKey);
+    }
+  });
+
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");

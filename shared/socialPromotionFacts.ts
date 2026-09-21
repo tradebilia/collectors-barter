@@ -33,7 +33,7 @@ export const SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE: Readonly<Record<string, ItemT
     facts: [detail("Number of Signed Items", "numberOfSignedItems"), condition, detail("Signers Included", "signersIncluded")],
   },
   "autographs:signed_item": {
-    facts: [detail("Signer", "signer"), detail("Signed Item Type", "signedItemType"), detail("Authentication", "authenticationIncluded"), detail("Authentication Company", "customAuthenticationCompany", "authenticationCompany")],
+    facts: [detail("Signer", "signer"), detail("Signed Item Type", "signedItemType"), detail("Autograph Category", "autographCategory"), detail("Authentication Company", "customAuthenticationCompany", "authenticationCompany")],
   },
 
   "coins:coin_set": {

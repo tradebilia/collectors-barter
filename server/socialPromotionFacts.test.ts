@@ -3,7 +3,7 @@ import { getSocialPromotionFacts, SOCIAL_PROMOTION_FIELDS_BY_ITEM_TYPE } from ".
 
 const APPROVED_DISPLAY_LABELS: Record<string, { standard: string[]; graded?: string[]; authenticated?: string[] }> = {
   "autographs:collection_lot": { standard: ["Number of Signed Items", "Condition", "Signers Included"] },
-  "autographs:signed_item": { standard: ["Signer", "Signed Item Type", "Authentication", "Authentication Company"] },
+  "autographs:signed_item": { standard: ["Signer", "Signed Item Type", "Autograph Category", "Authentication Company"] },
   "coins:coin_set": { standard: ["Year", "Set Name", "Set Type", "Condition"] },
   "coins:collection_lot": { standard: ["Coin Count", "Condition", "Country"] },
   "coins:paper_money": { standard: ["Year", "Denomination", "Country", "Condition"], graded: ["Year", "Denomination", "Grading Company", "Grade"] },
@@ -225,6 +225,19 @@ describe("item-type-specific high-value social facts", () => {
       { label: "Set Name", value: "Base Set" },
       { label: "Product Type", value: "Booster Box" },
       { label: "Factory Sealed", value: "Yes" },
+    ]);
+  });
+
+  it("exposes Autograph Category for secondary visual selection", () => {
+    expect(getSocialPromotionFacts({
+      category: "autographs",
+      itemType: "signed_item",
+      itemDetails: { signer: "Example", signedItemType: "Baseball", autographCategory: "Sports", authenticationCompany: "JSA" },
+    })).toEqual([
+      { label: "Signer", value: "Example" },
+      { label: "Signed Item Type", value: "Baseball" },
+      { label: "Autograph Category", value: "Sports" },
+      { label: "Authentication Company", value: "JSA" },
     ]);
   });
 });

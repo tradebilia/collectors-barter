@@ -72,6 +72,11 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   movie_vhs: "/manus-storage/tradebilia-secondary-movie-vhs-prop_24d12737.png",
   movie_disc: "/manus-storage/tradebilia-secondary-movie-disc-prop_acb17063.png",
   movie_4k: "/manus-storage/tradebilia-secondary-movie-4k-prop_047e33fc.png",
+  autograph_sports: "/manus-storage/tradebilia-secondary-autograph-sports-prop_df7393ff.png",
+  autograph_entertainment: "/manus-storage/tradebilia-secondary-autograph-entertainment-prop_985bd4c6.png",
+  autograph_historical: "/manus-storage/tradebilia-secondary-autograph-historical-prop_8a37ab8a.png",
+  autograph_music: "/manus-storage/tradebilia-secondary-autograph-music-prop_f40bec3f.png",
+  autograph_other: "/manus-storage/tradebilia-secondary-autograph-other-prop_38d2c20c.png",
   music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
   comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
   video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
@@ -101,6 +106,11 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   movie_vhs: "/manus-storage/tradebilia-secondary-movie-vhs-background_981bec9d.jpg",
   movie_disc: "/manus-storage/tradebilia-secondary-movie-disc-background_705e19ba.jpg",
   movie_4k: "/manus-storage/tradebilia-secondary-movie-4k-background_51ba3c81.jpg",
+  autograph_sports: "/manus-storage/tradebilia-secondary-autograph-sports-background_35e30724.jpg",
+  autograph_entertainment: "/manus-storage/tradebilia-secondary-autograph-entertainment-background_4ae9a881.jpg",
+  autograph_historical: "/manus-storage/tradebilia-secondary-autograph-historical-background_d4b1b2a5.jpg",
+  autograph_music: "/manus-storage/tradebilia-secondary-autograph-music-background_af3c2563.jpg",
+  autograph_other: "/manus-storage/tradebilia-secondary-autograph-other-background_3ec507d9.jpg",
   music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
   comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
@@ -233,6 +243,14 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
     if (format === "vhs") return "movie_vhs";
     if (/dvd|blu ray/.test(format)) return "movie_disc";
     if (/4k uhd|laserdisc/.test(format)) return "movie_4k";
+  }
+  if (category === "autographs") {
+    const autographCategory = normalizeVisualToken((promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "autograph category")?.value);
+    if (autographCategory === "sports") return "autograph_sports";
+    if (autographCategory === "entertainment") return "autograph_entertainment";
+    if (autographCategory === "historical") return "autograph_historical";
+    if (autographCategory === "music") return "autograph_music";
+    if (autographCategory === "other") return "autograph_other";
   }
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";
