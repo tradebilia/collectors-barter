@@ -153,18 +153,20 @@ export const SPORTS_CARD_SECONDARY_VISUAL_KEYS: Record<string, string> = {
 
 /** Item-type environments keep the high-value post as specific as the traded post. */
 export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
-  "autographs-collection-lot": "/manus-storage/autographs-collection-lot_5379e722.jpg",
-  "autographs-signed-item": "/manus-storage/autographs-signed-item_53cd3c95.jpg",
+  "autographs-collection-lot": "/manus-storage/tradebilia-autographs-collection-lot-neutral_0793d897.jpg",
+  "autographs-signed-item": "/manus-storage/tradebilia-autographs-signed-item-neutral_955f2745.jpg",
   "coins-coin-set": "/manus-storage/coins-coin-set_9d7e4b3d.jpg",
   "coins-collection-lot": "/manus-storage/coins-collection-lot_3027b174.jpg",
   "coins-paper-money": "/manus-storage/coins-paper-money_ae5ae8b4.jpg",
-  "coins-single-coin": "/manus-storage/coins-single-coin_ed34c7e6.jpg",
-  "comics-collection-lot": "/manus-storage/comics-collection-lot_e96715ed.jpg",
+  "coins-paper-money-banknotes": "/manus-storage/coins-paper-money_ae5ae8b4.jpg",
+  "coins-single-coin": "/manus-storage/tradebilia-coins-single-coin-neutral_faccf7f3.jpg",
+  "comics-collection-lot": "/manus-storage/tradebilia-comics-collection-lot-neutral_f8f7c9a7.jpg",
   "comics-original-art": "/manus-storage/comics-original-art_3ee4e5bc.jpg",
   "comics-single-comic": "/manus-storage/comics-single-comic_bce94b51.jpg",
   "disney-pins-collection-lot": "/manus-storage/disney-pins-collection-lot_b44cd17e.jpg",
+  "disney-pins-individual-pin": "/manus-storage/tradebilia-disney-single-pin-neutral_62282932.jpg",
   "disney-pins-pin-set": "/manus-storage/disney-pins-pin-set_5eedc244.jpg",
-  "disney-pins-single-pin": "/manus-storage/disney-pins-single-pin_78af70e5.jpg",
+  "disney-pins-single-pin": "/manus-storage/tradebilia-disney-single-pin-neutral_62282932.jpg",
   "movies-box-set": "/manus-storage/movies-box-set_e3b6562e.jpg",
   "movies-collection-lot": "/manus-storage/movies-collection-lot_cb920844.jpg",
   "movies-individual-movie": "/manus-storage/movies-individual-movie_5bd8c7f2.jpg",
@@ -172,15 +174,17 @@ export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
   "music-compact-disc": "/manus-storage/music-compact-disc_638efcd4.jpg",
   "music-eight-track-tape": "/manus-storage/music-eight-track-tape_ad55dc42.jpg",
   "music-other-format": "/manus-storage/music-other-format_6aa3399d.jpg",
+  "music-other-music-format": "/manus-storage/music-other-format_6aa3399d.jpg",
   "music-vinyl-record": "/manus-storage/music-vinyl-record_9193c963.jpg",
   "pokemon-collection-lot": "/manus-storage/pokemon-collection-lot_e5e2e8c3.jpg",
   "pokemon-set": "/manus-storage/pokemon-set_7b7fcafe.jpg",
-  "pokemon-single-card": "/manus-storage/pokemon-single-card_5d03a53a.jpg",
+  "pokemon-single-card": "/manus-storage/tradebilia-pokemon-single-card-neutral_5397941b.jpg",
   "pokemon-unopened-product": "/manus-storage/pokemon-unopened-product_1b5f775e.jpg",
   "sports-cards-card-set": "/manus-storage/sports-cards-card-set_da31e725.jpg",
+  "sports-cards-set": "/manus-storage/sports-cards-card-set_da31e725.jpg",
   "sports-cards-collection-lot": "/manus-storage/sports-cards-collection-lot_93cdf18c.jpg",
-  "sports-cards-single-card": "/manus-storage/sports-cards-single-card_6d40433d.jpg",
-  "sports-cards-unopened-product": "/manus-storage/sports-cards-unopened-product_711e8cea.jpg",
+  "sports-cards-single-card": "/manus-storage/tradebilia-sports-single-card-neutral_1cae88d4.jpg",
+  "sports-cards-unopened-product": "/manus-storage/tradebilia-sports-unopened-neutral-v2_7a70c161.jpg",
   "stamps-collection-lot": "/manus-storage/stamps-collection-lot_5aa60932.jpg",
   "stamps-single-stamp": "/manus-storage/stamps-single-stamp_bc4519b8.jpg",
   "stamps-stamp-set-sheet": "/manus-storage/stamps-stamp-set-sheet_fc753e56.jpg",
@@ -189,28 +193,55 @@ export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
   "video-games-console": "/manus-storage/video-games-console_6d43890b.jpg",
   "video-games-game": "/manus-storage/video-games-game_5c03fb7c.jpg",
   "vintage-toys-action-figure": "/manus-storage/vintage-toys-action-figure_6eb84cb6.jpg",
+  "vintage-toys-action-figure-doll": "/manus-storage/vintage-toys-action-figure_6eb84cb6.jpg",
   "vintage-toys-board-game": "/manus-storage/vintage-toys-board-game_2ea87026.jpg",
+  "vintage-toys-board-game-puzzle": "/manus-storage/vintage-toys-board-game_2ea87026.jpg",
   "vintage-toys-collection-lot": "/manus-storage/vintage-toys-collection-lot_90b0fc41.jpg",
   "vintage-toys-electronic-toy": "/manus-storage/vintage-toys-electronic-toy_3b4460c4.jpg",
   "vintage-toys-lego": "/manus-storage/vintage-toys-lego_f7378657.jpg",
   "vintage-toys-model-kit": "/manus-storage/vintage-toys-model-kit_eb59c73b.jpg",
   "vintage-toys-playset": "/manus-storage/vintage-toys-playset_8d3f6808.jpg",
   "vintage-toys-plush-toy": "/manus-storage/vintage-toys-plush-toy_b2abb611.jpg",
+  "vintage-toys-plush-stuffed-toy": "/manus-storage/vintage-toys-plush-toy_b2abb611.jpg",
   "vintage-toys-vehicle": "/manus-storage/vintage-toys-vehicle_fa19ad90.jpg",
 };
 
+function normalizeHighValueAssetKeyPart(value: string | null | undefined) {
+  return normalizeVisualToken(value).replace(/\s+/g, "-");
+}
+
+function getHighValueCategoryFallbackUrl(category: string) {
+  const themeKeyByCategory: Record<string, TradeAlertThemeAssetKey> = {
+    "sports-cards": "sports-collectibles",
+    comics: "comics",
+    pokemon: "pokemon",
+    "vintage-toys": "vintage_toys",
+    "video-games": "video_games",
+    coins: "coins",
+    stamps: "stamps",
+    movies: "movies",
+    music: "music",
+    autographs: "autographs",
+    "disney-pins": "disney_pins",
+  };
+  const assetKey = themeKeyByCategory[category];
+  return assetKey ? TRADE_ALERT_THEME_IMAGE_URLS[assetKey] || null : null;
+}
+
 export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
-  if (!promotion?.category || !promotion.itemType) return null;
-  const secondaryKey = getHighValueSecondaryVisualKey(promotion);
-  if (secondaryKey && HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey]) {
-    return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey];
+  if (!promotion?.category) return null;
+  // High-value posts use the same decision hierarchy as Trade Alerts:
+  // category establishes the collector world, item type establishes the
+  // physical scene, and secondary metadata can only add a future accent.
+  // A sport, publisher, platform, format, or brand must never replace the
+  // scene for a Single Card, Original Art, Console, Box Set, or other type.
+  const category = normalizeHighValueAssetKeyPart(promotion.category);
+  const itemType = normalizeHighValueAssetKeyPart(promotion.itemType);
+  if (itemType) {
+    const exactKey = `${category}-${itemType}`;
+    if (HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey]) return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
   }
-  const category = promotion.category.replace(/[\s_]+/g, "-").trim().toLowerCase();
-  const itemType = promotion.itemType.replace(/[\s_]+/g, "-").trim().toLowerCase();
-  const exactKey = `${category}-${itemType}`;
-  if (HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey]) return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
-  const collectionKey = `${category}-collection-lot`;
-  return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[collectionKey] || null;
+  return getHighValueCategoryFallbackUrl(category);
 }
 
 function normalizeVisualToken(value: unknown) {
@@ -295,9 +326,32 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
   return null;
 }
 
+const HIGH_VALUE_SAFE_SPORT_ACCENT_KEYS = new Set([
+  "baseball", "basketball", "football", "hockey", "soccer", "golf", "tennis", "wrestling", "mma", "multi_sport",
+]);
+
+/**
+ * A Sport is a controlled, category-relevant refinement for Sports Cards.
+ * It never replaces the category/item-type scene; it is blended softly over
+ * that scene so the actual card image stays the singular collectible focus.
+ * Racing and Other deliberately retain the neutral base until their defective
+ * legacy scenes are replaced with reviewed collector environments.
+ */
+export function getHighValueSecondaryBackgroundUrl(promotion: SocialDraft["promotion"]) {
+  if (normalizeHighValueAssetKeyPart(promotion?.category) !== "sports-cards") return null;
+  const secondaryKey = getHighValueSecondaryVisualKey(promotion);
+  if (!secondaryKey || !HIGH_VALUE_SAFE_SPORT_ACCENT_KEYS.has(secondaryKey)) return null;
+  return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey] || null;
+}
+
 export function getHighValueSecondaryPropUrl(promotion: SocialDraft["promotion"]) {
-  const key = getHighValueSecondaryVisualKey(promotion);
-  return key ? HIGH_VALUE_SECONDARY_PROP_URLS[key] || null : null;
+  void promotion;
+  // The old detached cutouts sat behind the opaque real-item frame and were
+  // visible only as clipped slivers. Trade Alert scenes already carry their
+  // category foreground naturally, so until each output has a dedicated,
+  // unobstructed tabletop lane, the actual listing image remains the only
+  // foreground object in high-value posts.
+  return null;
 }
 
 /** Curated environments support the real listing photo; they never replace it. */
@@ -510,9 +564,22 @@ function drawCompleteFittedTitle(context: CanvasRenderingContext2D, text: string
   return height;
 }
 
-function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null, overlayAlpha = 0.66) {
+function drawBackground(context: CanvasRenderingContext2D, width: number, height: number, heroBackground: CanvasImage | null, overlayAlpha = 0.66, accentBackground: CanvasImage | null = null) {
   if (heroBackground) {
-    context.drawImage(heroBackground, 0, 0, width, height);
+    // Every generated collector scene is widescreen. Cover-cropping preserves
+    // its perspective on square and vertical exports instead of squeezing a
+    // real tabletop scene into a distorted tall background.
+    drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5);
+    if (accentBackground) {
+      // A controlled secondary cue (currently a Sport) should enrich rather
+      // than displace the item-type world. Its lower opacity lets a Baseball
+      // glove/stadium or Football field read naturally behind a Single Card
+      // without replacing the type-specific tabletop and media safe zone.
+      context.save();
+      context.globalAlpha = 0.44;
+      drawCoverImage(context, accentBackground, 0, 0, width, height, 0.5);
+      context.restore();
+    }
     context.fillStyle = `rgba(3, 18, 55, ${overlayAlpha})`;
     context.fillRect(0, 0, width, height);
     return;
@@ -1440,7 +1507,7 @@ function drawSecondaryCollectorProp(context: CanvasRenderingContext2D, propImage
   context.restore();
 }
 
-function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, secondaryPropImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
+function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
   const scale = width / 1200;
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -1453,7 +1520,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const padding = 58 * scale;
     const imageY = 250 * scale;
     const imageHeight = platform === "Pinterest" ? height * 0.35 : height * 0.31;
-    drawSecondaryCollectorProp(context, secondaryPropImage, width - 310 * scale, imageY + imageHeight - 195 * scale, 260 * scale, 210 * scale, scale);
     drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, "ORIGINAL ITEM MEDIA");
     let detailY = imageY + imageHeight + 38 * scale;
     context.fillStyle = "#ffffff";
@@ -1479,7 +1545,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const imageY = 238 * scale;
   const imageWidth = 330 * scale;
   const imageHeight = height - imageY - 54 * scale;
-  drawSecondaryCollectorProp(context, secondaryPropImage, imageX - 55 * scale, imageY + imageHeight - 235 * scale, 270 * scale, 220 * scale, scale);
   drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
   const detailX = 520 * scale;
   const detailWidth = width - detailX - 70 * scale;
@@ -1984,9 +2049,9 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
-  const highValueSecondaryPropUrl = draft.source === "High-Value Listing" ? getHighValueSecondaryPropUrl(draft.promotion) : null;
+  const highValueSecondaryBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueSecondaryBackgroundUrl(draft.promotion) : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground, highValueSecondaryProp] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground, highValueSecondaryBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
@@ -1998,13 +2063,13 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     loadCanvasImage(TRADED_EXCHANGE_LOGO_URL),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
     loadCanvasImage(highValueBackgroundUrl),
-    loadCanvasImage(highValueSecondaryPropUrl),
+    loadCanvasImage(highValueSecondaryBackgroundUrl),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
   const tradeStageImages: TradeStageImages = Object.fromEntries(stageSourceEntries.map(([key], index) => [key, loadedStageImages[index] ?? null]));
   if (draft.source !== "Completed Trade") {
     const highValue = draft.source === "High-Value Listing";
-    drawBackground(context, width, height, highValue ? highValueBackground || heroBackground : heroBackground, highValue ? 0.28 : 0.66);
+    drawBackground(context, width, height, highValue ? highValueBackground || heroBackground : heroBackground, highValue ? 0.28 : 0.66, highValue ? highValueSecondaryBackground : null);
   }
   if (draft.source === "Completed Trade" && !isTallCanvas(platform)) {
     drawCompletedTradeLandscape(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
@@ -2013,7 +2078,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "High-Value Listing") {
-    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, highValueSecondaryProp, brandLogo, listingBrushImage);
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

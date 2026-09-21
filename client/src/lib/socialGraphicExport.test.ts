@@ -6,6 +6,7 @@ import {
   getTradeItemFactLine,
   getTradeItemGradeLine,
   getHighValueBackgroundUrl,
+  getHighValueSecondaryBackgroundUrl,
   getHighValueSecondaryPropUrl,
   getHighValueSecondaryVisualKey,
   HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
@@ -97,22 +98,31 @@ describe("native Social graphic exporter", () => {
   });
 
   it("selects a specific high-value environment from category and item type", () => {
-    expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(44);
-    expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toContain("sports-cards-single-card");
+    expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(51);
+    expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["sports-cards-single-card"]);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Music", itemType: "vinyl_record" })).toContain("music-vinyl-record");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "plush_toy" })).toContain("vintage-toys-plush-toy");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Video Games", itemType: "console" })).toContain("video-games-console");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Music", itemType: "other_music_format" })).toContain("music-other-format");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Disney Pins", itemType: "individual_pin" })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["disney-pins-individual-pin"]);
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Coins", itemType: "paper_money_banknotes" })).toContain("coins-paper-money");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Pokémon", itemType: "unknown" })).toContain("pokemon-tcg-collector");
     expect(exporterSource).toContain("overlayAlpha = 0.66");
     expect(exporterSource).toContain("highValueBackground || heroBackground");
   });
 
-  it("selects a secondary visual from public facts without changing the item-type environment", () => {
+  it("detects secondary visual metadata without allowing it to replace the item-type environment", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toBe("baseball");
-    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toContain("secondary-football-prop");
-    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Comics", itemType: "original_art", facts: [{ label: "Artist Name", value: "Alex Ross" }] })).toBe("comics");
-    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Music", itemType: "vinyl_record", facts: [{ label: "Artist / Performer", value: "Miles Davis" }] })).toBe("music");
-    expect(exporterSource).toContain("drawSecondaryCollectorProp");
-    expect(exporterSource).toContain("getHighValueSecondaryPropUrl");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["sports-cards-single-card"]);
+    expect(getHighValueSecondaryBackgroundUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toContain("secondary-baseball-background");
+    expect(getHighValueSecondaryBackgroundUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Racing" }] })).toBeNull();
+    expect(getHighValueSecondaryBackgroundUrl({ ...promotionDraft.promotion!, category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "Marvel" }] })).toBeNull();
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Comics", itemType: "original_art", facts: [{ label: "Artist Name", value: "Alex Ross" }] })).toContain("comics-original-art");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Music", itemType: "vinyl_record", facts: [{ label: "Artist / Performer", value: "Miles Davis" }] })).toContain("music-vinyl-record");
+    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toBeNull();
+    expect(exporterSource).toContain("return null;");
+    expect(exporterSource).toContain("drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5)");
+    expect(exporterSource).toContain("context.globalAlpha = 0.44");
   });
 
   it("covers every Sports Cards sport dropdown value", () => {
@@ -141,28 +151,28 @@ describe("native Social graphic exporter", () => {
       ...promotionDraft.promotion!,
       facts: [{ label: "Year", value: "1988" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "9" }],
       visualHints: ["Barry Sanders", "Football", "Score"],
-    })).toContain("secondary-football-prop");
+    })).toBeNull();
   });
 
   it("routes every current high-value opportunity into a category, item-type, or secondary-specific environment", () => {
     const currentInventory = [
-      { itemTitle: "1986 OPC Hockey Box BBCE", category: "sports_cards", itemType: "unopened_product", visualHints: ["Hockey"], facts: [], environment: "secondary-hockey-background", prop: true },
-      { itemTitle: "McFarlane King Spawn Original Art", category: "comics", itemType: "original_art", visualHints: ["Image", "Cover Art"], facts: [{ label: "Artist Name", value: "Todd McFarlane" }], environment: "secondary-comic-background", prop: true },
-      { itemTitle: "The Beatles Sgt Pepper's Lonely Hearts Club Band Stereo LP Graded 8", category: "music", itemType: "vinyl_record", visualHints: ["The Beatles", "Rock"], facts: [{ label: "Artist / Performer", value: "The Beatles" }], environment: "secondary-music-background", prop: true },
-      { itemTitle: "1986 Fleer Michael Jordan Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Basketball"], facts: [], environment: "secondary-basketball-background", prop: true },
-      { itemTitle: "Star Wars #1", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environment: "secondary-comic-marvel-background", prop: true },
-      { itemTitle: "Barry Sanders Score Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Football"], facts: [], environment: "secondary-football-background", prop: true },
-      { itemTitle: "Wayne Gretzky Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Hockey"], facts: [], environment: "secondary-hockey-background", prop: true },
-      { itemTitle: "Rickey Henderson Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environment: "secondary-baseball-background", prop: true },
-      { itemTitle: "DareDevil 1st Electra", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environment: "secondary-comic-marvel-background", prop: true },
-      { itemTitle: "Ken Griffey Jr Upper Deck Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environment: "secondary-baseball-background", prop: true },
-      { itemTitle: "Transformers Megatron G1", category: "vintage_toys", itemType: "action_figure", visualHints: ["Hasbro", "Transformers"], facts: [{ label: "Brand", value: "Hasbro" }], environment: "secondary-toys-hasbro-background", prop: true },
+      { itemTitle: "1986 OPC Hockey Box BBCE", category: "sports_cards", itemType: "unopened_product", visualHints: ["Hockey"], facts: [], environmentKey: "sports-cards-unopened-product" },
+      { itemTitle: "McFarlane King Spawn Original Art", category: "comics", itemType: "original_art", visualHints: ["Image", "Cover Art"], facts: [{ label: "Artist Name", value: "Todd McFarlane" }], environmentKey: "comics-original-art" },
+      { itemTitle: "The Beatles Sgt Pepper's Lonely Hearts Club Band Stereo LP Graded 8", category: "music", itemType: "vinyl_record", visualHints: ["The Beatles", "Rock"], facts: [{ label: "Artist / Performer", value: "The Beatles" }], environmentKey: "music-vinyl-record" },
+      { itemTitle: "1986 Fleer Michael Jordan Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Basketball"], facts: [], environmentKey: "sports-cards-single-card" },
+      { itemTitle: "Star Wars #1", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environmentKey: "comics-single-comic" },
+      { itemTitle: "Barry Sanders Score Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Football"], facts: [], environmentKey: "sports-cards-single-card" },
+      { itemTitle: "Wayne Gretzky Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Hockey"], facts: [], environmentKey: "sports-cards-single-card" },
+      { itemTitle: "Rickey Henderson Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environmentKey: "sports-cards-single-card" },
+      { itemTitle: "DareDevil 1st Electra", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environmentKey: "comics-single-comic" },
+      { itemTitle: "Ken Griffey Jr Upper Deck Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environmentKey: "sports-cards-single-card" },
+      { itemTitle: "Transformers Megatron G1", category: "vintage_toys", itemType: "action_figure", visualHints: ["Hasbro", "Transformers"], facts: [{ label: "Brand", value: "Hasbro" }], environmentKey: "vintage-toys-action-figure" },
     ];
 
     for (const item of currentInventory) {
       const promotion = { ...promotionDraft.promotion!, ...item };
-      expect(getHighValueBackgroundUrl(promotion), item.itemTitle).toContain(item.environment);
-      if (item.prop) expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).toBeTruthy();
+      expect(getHighValueBackgroundUrl(promotion), item.itemTitle).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[item.environmentKey]);
+      expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).toBeNull();
     }
   });
 
