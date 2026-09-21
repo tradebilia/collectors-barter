@@ -59,3 +59,17 @@ Future secondary visuals must be added only after the category and item-type bas
 ## Validation
 
 Focused social-rendering, draft-reconciliation, promotion-opportunity tests, TypeScript checking, production build, whitespace validation, and browser-native Facebook/Instagram visual inspection were run after the audit changes.
+
+## Targeted regeneration — Pokémon, Autographs, Disney Pins, Stamps, Hockey
+
+On 2026-09-21, five backgrounds were regenerated because the previous scenes did not communicate their categories strongly enough. The approved replacements are now registered in the high-value resolver and uploaded to managed WebDev storage:
+
+| Visual route | Registered replacement | Native verification |
+|---|---|---|
+| Pokémon — Single Card | `tradebilia-pokemon-single-card-category-v3` | Pass |
+| Autographs — Signed Item | `tradebilia-autographs-signed-item-category-v3` | Pass |
+| Disney Pins — Single/Individual Pin | `tradebilia-disney-single-pin-category-v3` | Pass |
+| Stamps — Single Stamp | `tradebilia-stamps-single-stamp-category-v3` | Pass |
+| Sports Cards — Sport: Hockey | `tradebilia-hockey-single-card-category-v3` | Pass |
+
+Each route was checked in a native 1200×630 Social Content Manager preview. The scenes visibly communicate their category while preserving the title/facts lane and Trade Value plaque. The actual listing image remains the only featured collectible in the final graphic.

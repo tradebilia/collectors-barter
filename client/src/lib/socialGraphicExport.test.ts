@@ -105,7 +105,11 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Video Games", itemType: "console" })).toContain("video-games-console");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Music", itemType: "other_music_format" })).toContain("music-other-format");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Disney Pins", itemType: "individual_pin" })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["disney-pins-individual-pin"]);
-    expect(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["disney-pins-individual-pin"]).toContain("disney-single-pin-neutral-v2");
+    expect(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["disney-pins-individual-pin"]).toContain("disney-single-pin-category-v3");
+    expect(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["pokemon-single-card"]).toContain("pokemon-single-card-category-v3");
+    expect(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["autographs-signed-item"]).toContain("autographs-signed-item-category-v3");
+    expect(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["stamps-single-stamp"]).toContain("stamps-single-stamp-category-v3");
+    expect(HIGH_VALUE_SECONDARY_BACKGROUND_URLS.hockey).toContain("hockey-single-card-category-v3");
     expect(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["coins-single-coin"]).toContain("coins-single-coin-neutral-v2");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Coins", itemType: "paper_money_banknotes" })).toContain("coins-paper-money");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Pokémon", itemType: "unknown" })).toContain("pokemon-tcg-collector");
