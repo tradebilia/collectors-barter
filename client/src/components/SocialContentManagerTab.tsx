@@ -382,6 +382,7 @@ export function SocialContentManagerTab() {
       itemTitle: listing.title,
       listingId: listing.listingId ?? null,
       itemPath: listing.itemPath ?? null,
+      visualHints: Array.isArray(listing.visualHints) ? listing.visualHints : [],
       category: listing.category ?? null,
       itemType: listing.itemType ?? null,
       facts,

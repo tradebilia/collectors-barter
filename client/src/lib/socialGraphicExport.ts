@@ -233,11 +233,14 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
   if (!promotion) return null;
   const category = normalizeVisualToken(promotion.category);
   const sportFact = (promotion.facts ?? []).find((fact) => normalizeVisualToken(fact.label) === "sport");
+  const visualHints = (promotion.visualHints ?? []).map(normalizeVisualToken);
   const factSearchable = (promotion.facts ?? []).flatMap((fact) => [fact.label, fact.value])
     .map(normalizeVisualToken)
     .join(" ");
   if (category === "sports cards") {
-    const sportKey = SPORTS_CARD_SECONDARY_VISUAL_KEYS[normalizeVisualToken(sportFact?.value)];
+    const hintedSport = visualHints.find((hint) => SPORTS_CARD_SECONDARY_VISUAL_KEYS[hint]);
+    const sportKey = SPORTS_CARD_SECONDARY_VISUAL_KEYS[normalizeVisualToken(sportFact?.value)]
+      || (hintedSport ? SPORTS_CARD_SECONDARY_VISUAL_KEYS[hintedSport] : undefined);
     if (sportKey) return sportKey;
   }
   if (category === "video games") {

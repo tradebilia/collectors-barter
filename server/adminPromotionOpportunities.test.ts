@@ -33,6 +33,7 @@ describe("admin promotion opportunities contract", () => {
     expect(routerSource).toContain('import { getSocialPromotionFacts } from "@shared/socialPromotionFacts"');
     expect(returnedOpportunityMappings).toContain("itemPath: `/listings/${Number(listing.listingId)}`");
     expect(returnedOpportunityMappings).toContain("itemFacts: getSocialPromotionFacts({");
+    expect(returnedOpportunityMappings).toContain("visualHints: getTradeAlertVisualHints({ category: listing.category");
     expect(returnedOpportunityMappings).toContain("itemType: listing.itemType");
     expect(returnedOpportunityMappings).toContain("customGradingCompany");
   });

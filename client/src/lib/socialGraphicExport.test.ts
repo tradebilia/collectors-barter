@@ -118,6 +118,19 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Pokémon", itemType: "single_card", facts: [{ label: "Set Name", value: "Scarlet & Violet" }] })).toBe("pokemon_modern");
   });
 
+  it("uses non-displayed Sport hints when a single-card fact layout omits Sport", () => {
+    expect(getHighValueSecondaryVisualKey({
+      ...promotionDraft.promotion!,
+      facts: [{ label: "Year", value: "1989" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "10" }],
+      visualHints: ["Ken Griffey Jr", "Baseball", "Upper Deck"],
+    })).toBe("baseball");
+    expect(getHighValueSecondaryPropUrl({
+      ...promotionDraft.promotion!,
+      facts: [{ label: "Year", value: "1988" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "9" }],
+      visualHints: ["Barry Sanders", "Football", "Score"],
+    })).toContain("secondary-football-prop");
+  });
+
   it("uses comic publisher and movie format dropdown facts when available", () => {
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "Marvel" }] })).toBe("comics_marvel");
     expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "DC" }] })).toBe("comics_dc");

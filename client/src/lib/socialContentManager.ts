@@ -13,6 +13,8 @@ export type SocialPromotionDetails = {
   itemTitle: string;
   listingId?: number | null;
   itemPath?: string | null;
+  /** Public-safe metadata used only for choosing an abstract visual environment. */
+  visualHints?: string[] | null;
   tradeItems?: Array<{
     listingId?: number | null;
     title: string;
