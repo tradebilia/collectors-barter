@@ -83,6 +83,13 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
   });
 
+  it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
+    expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
+    expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
+    expect(exporterSource).toContain("const plaqueHeight = 108 * scale");
+    expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, y + height * 0.70)");
+  });
+
   it("selects a specific high-value environment from category and item type", () => {
     expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(44);
     expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toContain("sports-cards-single-card");

@@ -1351,16 +1351,26 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
 
 function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, height: number, scale: number) {
   context.save();
+  // The former full-detail-column plaque looked visibly lopsided around short
+  // values such as $2,400. Size the frame from the widest text line, then
+  // center that compact frame inside the available detail column.
+  context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
+  const valueWidth = context.measureText(value).width;
+  context.font = `800 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
+  const labelWidth = context.measureText("TRADE VALUE").width;
+  const horizontalPadding = 62 * scale;
+  const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15));
+  const plaqueX = x + (width - plaqueWidth) / 2;
   const cut = 24 * scale;
   context.beginPath();
-  context.moveTo(x + cut, y);
-  context.lineTo(x + width - cut, y);
-  context.lineTo(x + width, y + cut);
-  context.lineTo(x + width, y + height - cut);
-  context.lineTo(x + width - cut, y + height);
-  context.lineTo(x + cut, y + height);
-  context.lineTo(x, y + height - cut);
-  context.lineTo(x, y + cut);
+  context.moveTo(plaqueX + cut, y);
+  context.lineTo(plaqueX + plaqueWidth - cut, y);
+  context.lineTo(plaqueX + plaqueWidth, y + cut);
+  context.lineTo(plaqueX + plaqueWidth, y + height - cut);
+  context.lineTo(plaqueX + plaqueWidth - cut, y + height);
+  context.lineTo(plaqueX + cut, y + height);
+  context.lineTo(plaqueX, y + height - cut);
+  context.lineTo(plaqueX, y + cut);
   context.closePath();
   context.fillStyle = "rgba(5, 13, 25, 0.94)";
   context.strokeStyle = "#f5c94f";
@@ -1374,18 +1384,20 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   context.font = `800 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
   context.textBaseline = "middle";
-  drawCrispText(context, "TRADE VALUE", x + width / 2, y + 30 * scale);
+  drawCrispText(context, "TRADE VALUE", plaqueX + plaqueWidth / 2, y + height * 0.29);
   context.strokeStyle = "rgba(248, 206, 79, 0.78)";
   context.lineWidth = Math.max(1, 2 * scale);
+  const dividerGap = labelWidth / 2 + 24 * scale;
+  const dividerLength = Math.max(26 * scale, Math.min(62 * scale, (plaqueWidth - labelWidth - 2 * dividerGap) / 2));
   context.beginPath();
-  context.moveTo(x + 62 * scale, y + 30 * scale);
-  context.lineTo(x + 124 * scale, y + 30 * scale);
-  context.moveTo(x + width - 124 * scale, y + 30 * scale);
-  context.lineTo(x + width - 62 * scale, y + 30 * scale);
+  context.moveTo(plaqueX + plaqueWidth / 2 - dividerGap - dividerLength, y + height * 0.29);
+  context.lineTo(plaqueX + plaqueWidth / 2 - dividerGap, y + height * 0.29);
+  context.moveTo(plaqueX + plaqueWidth / 2 + dividerGap, y + height * 0.29);
+  context.lineTo(plaqueX + plaqueWidth / 2 + dividerGap + dividerLength, y + height * 0.29);
   context.stroke();
   context.fillStyle = "#ffd44f";
   context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
-  drawCrispText(context, value, x + width / 2, y + height * 0.72);
+  drawCrispText(context, value, plaqueX + plaqueWidth / 2, y + height * 0.70);
   context.restore();
 }
 
@@ -1455,7 +1467,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   detailY += 28 * scale;
   const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 38);
   if (value) {
-    const plaqueHeight = 96 * scale;
+    const plaqueHeight = 108 * scale;
     const plaqueY = Math.min(Math.max(detailY + factsHeight + 12 * scale, 426 * scale), height - 128 * scale);
     drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth, plaqueHeight, scale);
   }

@@ -1161,7 +1161,7 @@
 - [x] Make Step 5 retain read-only tracking details and require recipient confirmation of each expected item and any cash owed before completion, with a clear issue-report path for missing or incorrect fulfillment.
 - [x] Keep payment destinations private from public pages, directory cards, notification previews, activity text, review, and print receipt; accurately describe methods as member-provided rather than platform-verified.
 - [x] Add focused regression coverage and TypeScript/build/whitespace validation for Profile, Account Setup, two-party cash, cash-only, and late-stage Trade Room flows. Unauthenticated visual capture confirmed the access gate; an authenticated two-member manual test remains required.
-- [ ] Perform an authenticated two-member manual test for item-only, cash-only, and item-plus-cash exchanges before treating the redesigned flow as production-ready. Deferred by Rich on 2026-09-19; keep pending until physical two-member validation is scheduled.
+- [ ] Perform an authenticated two-member manual test for item-only, cash-only, and item-plus-cash exchanges before treating the redesigned flow as production-ready. Deferred by Rich on 2026-09-19 and reconfirmed on 2026-09-21; keep pending until physical two-member validation is scheduled.
 - [x] Push the verified direct-cash workflow commit to a safe dedicated branch in the canonical Tradebilia GitHub repository for source backup; do not overwrite its divergent main branch. Pushed commit 9bd0073 to `manus/direct-cash-workflow-20260831`.
 - [x] Save the updated managed WebDev version so Rich can perform the authenticated two-member test. Checkpoint version 3ef077d8 was saved and automatically published under the current project setting.
 - [x] Make a single proposed item in Trade Room Step 1 use a larger, prominent card while automatically retaining compact cards after additional items are added.
@@ -1661,10 +1661,10 @@
 
 - [x] Document the mobile preview capture limitation: the authenticated Trade Room route rendered correctly in the browser, but the mobile screenshot service returned the homepage for `/trade-room/240003`; mobile Trade Room validation remains pending until the route can be captured reliably or tested on a physical device.
 
-- [ ] Verify the signed-in Messages workspace on a physical phone, including folder/list/conversation stacking, metadata wrapping, Item # behavior, and the contained reply composer. Deferred by Rich on 2026-09-19; keep pending until physical-device validation is scheduled.
-- [ ] Verify the signed-in My Inventory workspace on a physical phone, including hero/category-bar alignment, title edge spacing, Add Item prominence, and filter-label alignment. Deferred by Rich on 2026-09-19; keep pending until physical-device validation is scheduled.
-- [ ] Verify the signed-in Social Content Manager on a physical phone, including the admin layout, Auto-list switch, and draft editor wrapping. Deferred by Rich on 2026-09-19; keep pending until physical-device validation is scheduled.
-- [ ] Verify the signed-in forum reply/media flow on a physical phone, including composer controls, attached filename display, nested replies, and mobile wrapping. Deferred by Rich on 2026-09-19; keep pending until physical-device validation is scheduled.
+- [ ] Verify the signed-in Messages workspace on a physical phone, including folder/list/conversation stacking, metadata wrapping, Item # behavior, and the contained reply composer. Deferred by Rich on 2026-09-19 and reconfirmed on 2026-09-21; keep pending until physical-device validation is scheduled.
+- [ ] Verify the signed-in My Inventory workspace on a physical phone, including hero/category-bar alignment, title edge spacing, Add Item prominence, and filter-label alignment. Deferred by Rich on 2026-09-19 and reconfirmed on 2026-09-21; keep pending until physical-device validation is scheduled.
+- [ ] Verify the signed-in Social Content Manager on a physical phone, including the admin layout, Auto-list switch, and draft editor wrapping. Deferred by Rich on 2026-09-19 and reconfirmed on 2026-09-21; keep pending until physical-device validation is scheduled.
+- [ ] Verify the signed-in forum reply/media flow on a physical phone, including composer controls, attached filename display, nested replies, and mobile wrapping. Deferred by Rich on 2026-09-19 and reconfirmed on 2026-09-21; keep pending until physical-device validation is scheduled.
 
 - [x] Move the Traders Showcase Good Trade / Bad Trade voting section below the completed exchange/item exchange summary on each card, preserving vote behavior and responsive layout. Focused layout/voting tests passed 8/8, TypeScript, production build, and desktop/mobile screenshots passed.
 
