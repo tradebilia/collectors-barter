@@ -77,6 +77,11 @@ export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
   autograph_historical: "/manus-storage/tradebilia-secondary-autograph-historical-prop_8a37ab8a.png",
   autograph_music: "/manus-storage/tradebilia-secondary-autograph-music-prop_f40bec3f.png",
   autograph_other: "/manus-storage/tradebilia-secondary-autograph-other-prop_38d2c20c.png",
+  toys_hasbro: "/manus-storage/tradebilia-secondary-toys-hasbro-prop_347e51fb.png",
+  toys_mattel: "/manus-storage/tradebilia-secondary-toys-mattel-prop_20292567.png",
+  toys_lego: "/manus-storage/tradebilia-secondary-toys-lego-prop_391e7d69.png",
+  toys_plush: "/manus-storage/tradebilia-secondary-toys-plush-prop_6ffc2bcb.png",
+  toys_other: "/manus-storage/tradebilia-secondary-toys-other-prop_fec51c83.png",
   music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
   comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
   video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
@@ -111,6 +116,11 @@ export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
   autograph_historical: "/manus-storage/tradebilia-secondary-autograph-historical-background_d4b1b2a5.jpg",
   autograph_music: "/manus-storage/tradebilia-secondary-autograph-music-background_af3c2563.jpg",
   autograph_other: "/manus-storage/tradebilia-secondary-autograph-other-background_3ec507d9.jpg",
+  toys_hasbro: "/manus-storage/tradebilia-secondary-toys-hasbro-background_16361593.jpg",
+  toys_mattel: "/manus-storage/tradebilia-secondary-toys-mattel-background_59b947af.jpg",
+  toys_lego: "/manus-storage/tradebilia-secondary-toys-lego-background_99ee4611.jpg",
+  toys_plush: "/manus-storage/tradebilia-secondary-toys-plush-background_f858d6b6.jpg",
+  toys_other: "/manus-storage/tradebilia-secondary-toys-other-background_cc6b5753.jpg",
   music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
   comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
   video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
@@ -251,6 +261,15 @@ export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion
     if (autographCategory === "historical") return "autograph_historical";
     if (autographCategory === "music") return "autograph_music";
     if (autographCategory === "other") return "autograph_other";
+  }
+  if (category === "vintage toys") {
+    const brand = normalizeVisualToken((promotion.facts ?? []).find((fact) => /brand|publisher/.test(normalizeVisualToken(fact.label)))?.value);
+    const itemType = normalizeVisualToken(promotion.itemType);
+    if (brand === "hasbro") return "toys_hasbro";
+    if (brand === "mattel") return "toys_mattel";
+    if (brand === "lego") return "toys_lego";
+    if (itemType === "plush toy" && /ty|disney|gund|applause/.test(brand)) return "toys_plush";
+    if (/fisher price|kenner|playmates|bandai|milton bradley|parker brothers|ideal|avalon hill|tsr|games workshop|tiger electronics|coleco|radio shack|revell|monogram|amt|tamiya|mpc|other/.test(brand)) return "toys_other";
   }
   if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
   if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";

@@ -132,6 +132,14 @@ describe("native Social graphic exporter", () => {
     }
   });
 
+  it("routes Vintage Toys brand dropdown values into safe family environments", () => {
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "action_figure", facts: [{ label: "Brand", value: "Hasbro" }] })).toBe("toys_hasbro");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "action_figure", facts: [{ label: "Brand", value: "Mattel" }] })).toBe("toys_mattel");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "lego", facts: [{ label: "Brand", value: "LEGO" }] })).toBe("toys_lego");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "plush_toy", facts: [{ label: "Brand", value: "Ty" }] })).toBe("toys_plush");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Vintage Toys", itemType: "model_kit", facts: [{ label: "Brand", value: "Revell" }] })).toBe("toys_other");
+  });
+
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
     expect(exporterSource).toContain("function drawBrandFooter");
     expect(exporterSource).toContain("const brandY = dividerY - brandHeight - 16 * scale");
