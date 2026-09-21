@@ -47,6 +47,23 @@ export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-pa
 export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/gold-paint-swipe-clean_86af68ba.png";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
+/** Secondary-characteristic props are layered behind the real listing image. */
+export const HIGH_VALUE_SECONDARY_PROP_URLS: Record<string, string> = {
+  baseball: "/manus-storage/tradebilia-secondary-baseball-prop_b9cf41c7.png",
+  football: "/manus-storage/tradebilia-secondary-football-prop_f50d7120.png",
+  music: "/manus-storage/tradebilia-secondary-music-prop_c15f3992.png",
+  comics: "/manus-storage/tradebilia-secondary-comic-prop_c0d5b803.png",
+  video_games: "/manus-storage/tradebilia-secondary-video-game-prop_959da924.png",
+};
+
+export const HIGH_VALUE_SECONDARY_BACKGROUND_URLS: Record<string, string> = {
+  baseball: "/manus-storage/tradebilia-secondary-baseball-background_2c9391d0.jpg",
+  football: "/manus-storage/tradebilia-secondary-football-background_fdf1d3af.jpg",
+  music: "/manus-storage/tradebilia-secondary-music-background_bf8df102.jpg",
+  comics: "/manus-storage/tradebilia-secondary-comic-background_490e2b79.jpg",
+  video_games: "/manus-storage/tradebilia-secondary-video-game-background_42cb4653.jpg",
+};
+
 /** Item-type environments keep the high-value post as specific as the traded post. */
 export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
   "autographs-collection-lot": "/manus-storage/autographs-collection-lot_5379e722.jpg",
@@ -97,12 +114,51 @@ export const HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS: Record<string, string> = {
 
 export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
   if (!promotion?.category || !promotion.itemType) return null;
+  const secondaryKey = getHighValueSecondaryVisualKey(promotion);
+  if (secondaryKey && HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey]) {
+    return HIGH_VALUE_SECONDARY_BACKGROUND_URLS[secondaryKey];
+  }
   const category = promotion.category.replace(/[\s_]+/g, "-").trim().toLowerCase();
   const itemType = promotion.itemType.replace(/[\s_]+/g, "-").trim().toLowerCase();
   const exactKey = `${category}-${itemType}`;
   if (HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey]) return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[exactKey];
   const collectionKey = `${category}-collection-lot`;
   return HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS[collectionKey] || null;
+}
+
+function normalizeVisualToken(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\u2013\u2014]/g, "-")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+/**
+ * Resolve secondary characteristics from the same public facts shown on the
+ * graphic. This deliberately uses labels and values rather than private item
+ * metadata, so preview and downloaded graphics make the same decision.
+ */
+export function getHighValueSecondaryVisualKey(promotion: SocialDraft["promotion"]) {
+  if (!promotion) return null;
+  const category = normalizeVisualToken(promotion.category);
+  const factSearchable = (promotion.facts ?? []).flatMap((fact) => [fact.label, fact.value])
+    .map(normalizeVisualToken)
+    .join(" ");
+  if (category === "sports cards") {
+    if (/\bbaseball\b/.test(factSearchable)) return "baseball";
+    if (/\bfootball\b/.test(factSearchable)) return "football";
+  }
+  if (category === "music" && /\b(genre|artist|performer|album|release|record label)\b/.test(factSearchable)) return "music";
+  if (category === "comics" && /\b(artist|art type|signed by artist|coa|illustration|ink)\b/.test(factSearchable)) return "comics";
+  if (category === "video games" && /\b(platform|console|controller|accessory type|handheld)\b/.test(factSearchable)) return "video_games";
+  return null;
+}
+
+export function getHighValueSecondaryPropUrl(promotion: SocialDraft["promotion"]) {
+  const key = getHighValueSecondaryVisualKey(promotion);
+  return key ? HIGH_VALUE_SECONDARY_PROP_URLS[key] || null : null;
 }
 
 /** Curated environments support the real listing photo; they never replace it. */
@@ -1194,7 +1250,18 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   context.restore();
 }
 
-function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
+function drawSecondaryCollectorProp(context: CanvasRenderingContext2D, propImage: CanvasImage | null, x: number, y: number, width: number, height: number, scale: number) {
+  if (!propImage) return;
+  context.save();
+  context.globalAlpha = 0.96;
+  context.shadowColor = "rgba(0, 0, 0, 0.62)";
+  context.shadowBlur = 22 * scale;
+  context.shadowOffsetY = 9 * scale;
+  drawContainedImage(context, propImage, x, y, width, height);
+  context.restore();
+}
+
+function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, secondaryPropImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
   const scale = width / 1200;
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -1207,6 +1274,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const padding = 58 * scale;
     const imageY = 250 * scale;
     const imageHeight = platform === "Pinterest" ? height * 0.35 : height * 0.31;
+    drawSecondaryCollectorProp(context, secondaryPropImage, width - 310 * scale, imageY + imageHeight - 195 * scale, 260 * scale, 210 * scale, scale);
     drawMediaFrame(context, itemImage, padding, imageY, width - padding * 2, imageHeight, "ORIGINAL ITEM MEDIA");
     let detailY = imageY + imageHeight + 38 * scale;
     context.fillStyle = "#ffffff";
@@ -1232,6 +1300,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const imageY = 238 * scale;
   const imageWidth = 330 * scale;
   const imageHeight = height - imageY - 54 * scale;
+  drawSecondaryCollectorProp(context, secondaryPropImage, imageX - 55 * scale, imageY + imageHeight - 235 * scale, 270 * scale, 220 * scale, scale);
   drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
   const detailX = 520 * scale;
   const detailWidth = width - detailX - 70 * scale;
@@ -1736,8 +1805,9 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
+  const highValueSecondaryPropUrl = draft.source === "High-Value Listing" ? getHighValueSecondaryPropUrl(draft.promotion) : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground, highValueSecondaryProp] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
@@ -1749,6 +1819,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     loadCanvasImage(TRADED_EXCHANGE_LOGO_URL),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
     loadCanvasImage(highValueBackgroundUrl),
+    loadCanvasImage(highValueSecondaryPropUrl),
   ]);
   const tradeThemeImages: TradeThemeImages = Object.fromEntries(themeSourceEntries.map(([assetKey], index) => [assetKey, loadedThemeImages[index] ?? null]));
   const tradeStageImages: TradeStageImages = Object.fromEntries(stageSourceEntries.map(([key], index) => [key, loadedStageImages[index] ?? null]));
@@ -1763,7 +1834,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "High-Value Listing") {
-    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage);
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, highValueSecondaryProp, brandLogo, listingBrushImage);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

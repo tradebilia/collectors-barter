@@ -6,6 +6,8 @@ import {
   getTradeItemFactLine,
   getTradeItemGradeLine,
   getHighValueBackgroundUrl,
+  getHighValueSecondaryPropUrl,
+  getHighValueSecondaryVisualKey,
   HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
   HIGH_VALUE_BRUSH_IMAGE_URL,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
@@ -88,6 +90,15 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: "Video Games", itemType: "console" })).toContain("video-games-console");
     expect(exporterSource).toContain("overlayAlpha = 0.66");
     expect(exporterSource).toContain("highValueBackground || heroBackground");
+  });
+
+  it("selects a secondary visual from public facts without changing the item-type environment", () => {
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Baseball" }] })).toBe("baseball");
+    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toContain("secondary-football-prop");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Comics", itemType: "original_art", facts: [{ label: "Artist Name", value: "Alex Ross" }] })).toBe("comics");
+    expect(getHighValueSecondaryVisualKey({ ...promotionDraft.promotion!, category: "Music", itemType: "vinyl_record", facts: [{ label: "Artist / Performer", value: "Miles Davis" }] })).toBe("music");
+    expect(exporterSource).toContain("drawSecondaryCollectorProp");
+    expect(exporterSource).toContain("getHighValueSecondaryPropUrl");
   });
 
   it("keeps the high-value brand footer intact and omits the completed-trade CTA button", () => {
