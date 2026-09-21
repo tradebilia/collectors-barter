@@ -7,6 +7,7 @@ import {
   getTradeItemGradeLine,
   getHighValueBackgroundUrl,
   HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
+  HIGH_VALUE_BRUSH_IMAGE_URL,
   SOCIAL_GRAPHIC_CANVAS_SIZES,
   TRADE_ALERT_BRUSH_IMAGE_URL,
   TRADED_EXCHANGE_LOGO_URL,
@@ -70,8 +71,11 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawHighValueListingCinematic");
     expect(exporterSource).toContain('drawHighValueListingCinematic(context, draft, platform');
     expect(exporterSource).toContain('"NEW HIGH-VALUE LISTING"');
-    expect(exporterSource).toContain("The completed-trade brush asset contains baked-in");
-    expect(exporterSource).toContain("void brushImage");
+    expect(HIGH_VALUE_BRUSH_IMAGE_URL).toContain("gold-paint-swipe-clean");
+    expect(exporterSource).toContain("text-free swipe asset");
+    expect(exporterSource).toContain("const strokeHeight = 174 * scale");
+    expect(exporterSource).toContain("const logoWidth = 700 * scale");
+    expect(exporterSource).toContain("const sourceY = brushImage.naturalHeight * 0.11");
     expect(exporterSource).toContain('drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase()');
     expect(exporterSource).not.toContain('"VIEW THIS ITEM ON TRADEBILIA"');
   });

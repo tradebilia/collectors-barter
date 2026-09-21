@@ -44,6 +44,7 @@ function drawCrispText(context: CanvasRenderingContext2D, text: string, x: numbe
 export const SOCIAL_GRAPHIC_HERO_BACKGROUND_URL = "/manus-storage/generated-social-background-fuller_2df3107e.jpg";
 export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cropped_8932eaec.svg";
 export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/trade-alert-banner-paint-swipe_e59e6660.png";
+export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/gold-paint-swipe-clean_86af68ba.png";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
 /** Item-type environments keep the high-value post as specific as the traded post. */
@@ -1119,27 +1120,34 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
 }
 
 function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: CanvasImage | null, brushImage: CanvasImage | null, width: number, scale: number) {
-  // The completed-trade brush asset contains baked-in “TRADE ALERT” lettering.
-  // Never reuse it for a high-value listing: draw the shared gold treatment here
-  // and supply the listing-specific headline as live text instead.
-  void brushImage;
-  const logoWidth = Math.min(width * 0.52, 620 * scale);
-  drawBrand(context, logo, (width - logoWidth) / 2, 6 * scale, logoWidth, 94 * scale);
-  const strokeWidth = Math.min(width * 0.92, 1120 * scale);
-  const strokeHeight = 136 * scale;
+  // Match the completed-trade treatment exactly: same lockup scale, vertical
+  // rhythm, textured swipe crop, and substantial brush body. The only change
+  // is the live listing headline drawn over a text-free swipe asset.
+  const logoWidth = 700 * scale;
+  drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
+  const strokeWidth = Math.min(width * 0.92, 1104 * scale);
+  const strokeHeight = 174 * scale;
   const strokeX = (width - strokeWidth) / 2;
-  const strokeY = 94 * scale;
+  const strokeY = 82 * scale;
   context.save();
-  const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
-  gold.addColorStop(0, "rgba(239, 169, 35, 0.15)");
-  gold.addColorStop(0.08, "#d3972e");
-  gold.addColorStop(0.50, "#ffd45a");
-  gold.addColorStop(0.92, "#d3972e");
-  gold.addColorStop(1, "rgba(239, 169, 35, 0.15)");
-  context.fillStyle = gold;
-  context.fillRect(strokeX, strokeY + 10 * scale, strokeWidth, strokeHeight - 20 * scale);
+  if (brushImage) {
+    const sourceX = brushImage.naturalWidth * 0.02;
+    const sourceWidth = brushImage.naturalWidth * 0.96;
+    const sourceY = brushImage.naturalHeight * 0.11;
+    const sourceHeight = brushImage.naturalHeight * 0.70;
+    context.drawImage(brushImage, sourceX, sourceY, sourceWidth, sourceHeight, strokeX, strokeY, strokeWidth, strokeHeight);
+  } else {
+    const gold = context.createLinearGradient(strokeX, strokeY, strokeX + strokeWidth, strokeY);
+    gold.addColorStop(0, "rgba(239, 169, 35, 0.15)");
+    gold.addColorStop(0.08, "#d3972e");
+    gold.addColorStop(0.50, "#ffd45a");
+    gold.addColorStop(0.92, "#d3972e");
+    gold.addColorStop(1, "rgba(239, 169, 35, 0.15)");
+    context.fillStyle = gold;
+    context.fillRect(strokeX, strokeY + 10 * scale, strokeWidth, strokeHeight - 20 * scale);
+  }
   context.fillStyle = "#071324";
-  context.font = `400 ${Math.round(42 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
+  context.font = `400 ${Math.round(45 * scale)}px ${CANVAS_TRADE_BRUSH_FONT}`;
   context.textAlign = "center";
   context.textBaseline = "middle";
   drawCrispText(context, "NEW HIGH-VALUE LISTING", width / 2, strokeY + strokeHeight * 0.53);
@@ -1729,7 +1737,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
 
-  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
+  const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
     Promise.all((tradeItemImageUrls ?? []).slice(0, 4).map((url) => loadCanvasImage(url, Boolean(url)))),
@@ -1737,6 +1745,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     Promise.all(stageSourceEntries.map(([, sourceUrl]) => loadCanvasImage(sourceUrl, true))),
     loadCanvasImage(brandLogoUrl),
     loadCanvasImage(TRADE_ALERT_BRUSH_IMAGE_URL),
+    loadCanvasImage(HIGH_VALUE_BRUSH_IMAGE_URL),
     loadCanvasImage(TRADED_EXCHANGE_LOGO_URL),
     loadCanvasImage(draft.source === "Completed Trade" ? null : heroBackgroundUrl || SOCIAL_GRAPHIC_HERO_BACKGROUND_URL),
     loadCanvasImage(highValueBackgroundUrl),
@@ -1754,7 +1763,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "High-Value Listing") {
-    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, brushImage);
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {
