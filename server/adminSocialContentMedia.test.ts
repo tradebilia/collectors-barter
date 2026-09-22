@@ -49,10 +49,18 @@ describe("admin social-content media upload contract", () => {
     expect(uploadSection).toContain("generateHighValueListingScene");
     expect(uploadSection).toContain('ctx.user.role !== "admin"');
     expect(uploadSection).toContain("buildAutomaticHighValueScenePrompt");
+    expect(uploadSection).toContain("listingImageDataUrl");
+    expect(uploadSection).toContain("parseAutomaticSceneReferenceImage");
+    expect(uploadSection).toContain("extractListingImageVisualReferences");
+    expect(uploadSection).toContain("originalImages: [originalImage]");
     expect(uploadSection).toContain('model: "MODEL_GPT_IMAGE_2"');
     expect(uploadSection).toContain('quality: "medium"');
     expect(uploadSection).toContain('url?.startsWith("/manus-storage/")');
     expect(routerSource).toContain("cleanSocialScenePromptValue");
+    expect(routerSource).toContain("attached listing image is a visual reference only");
+    expect(routerSource).toContain('model: "gpt-5-mini"');
+    expect(routerSource).toContain("References extracted from the actual listing image");
+    expect(routerSource).toContain("Do not identify people, teams, brands, logos");
     expect(routerSource).toContain("far-left third must be dark, quiet, and entirely empty");
   });
 });

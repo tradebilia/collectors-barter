@@ -132,6 +132,7 @@ import { claimIdentity, setIdentityRestrictionStatus } from "./identityRegistry"
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, tradeShowcaseVotes, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { storagePut } from "./storage";
 import { generateImage } from "./_core/imageGeneration";
+import { invokeLLM } from "./_core/llm";
 import { forumTaxonomy, forumParentLevelSubcategory } from "@shared/forum";
 import { eq, sql, desc, asc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
@@ -193,27 +194,78 @@ function buildAutomaticHighValueScenePrompt(input: {
   itemType: string;
   facts: Array<{ label: string; value: string }>;
   visualHints: string[];
+  imageVisualReferences?: string[];
 }) {
   const facts = input.facts
     .map(({ label, value }) => `${cleanSocialScenePromptValue(label, 48)}: ${cleanSocialScenePromptValue(value, 96)}`)
     .filter((fact) => fact !== ":")
     .join("; ");
   const hints = input.visualHints.map((hint) => cleanSocialScenePromptValue(hint, 96)).filter(Boolean).join("; ");
+  const imageReferences = (input.imageVisualReferences ?? []).map((hint) => cleanSocialScenePromptValue(hint, 96)).filter(Boolean).join("; ");
   const subject = [
     `Listing title: ${cleanSocialScenePromptValue(input.itemTitle, 180)}.`,
     `Category: ${cleanSocialScenePromptValue(input.category, 96)}.`,
     `Item type: ${cleanSocialScenePromptValue(input.itemType, 96)}.`,
     facts ? `Public display facts: ${facts}.` : "",
     hints ? `Public visual references: ${hints}.` : "",
+    imageReferences ? `References extracted from the actual listing image: ${imageReferences}. Make these visual cues unmistakable at the far-right edge.` : "",
   ].filter(Boolean).join(" ");
 
   return [
     "Create one cinematic, photorealistic 16:9 collector-background scene for a Tradebilia social listing.",
     subject,
-    "Interpret the public item references into tasteful environmental cues, but never render the collectible itself, an alternate card/cover/toy/coin/stamp, a person, a portrait, text, lettering, readable signs, logos, watermarks, or a product label.",
+    "The attached listing image is a visual reference only. Study its subject, colors, era, category, and non-sensitive public visual cues, then translate those into tasteful environmental references. Do not reproduce, redraw, crop, or place the listing image or its collectible into the result. Never render an alternate card/cover/toy/coin/stamp, a person, a portrait, text, lettering, readable signs, logos, watermarks, or a product label.",
     "Composition is mandatory: the far-left third must be dark, quiet, and entirely empty for the real item image; the center-right information lane must be low-contrast and free of props for the title, facts, and value; reserve visual reference props and atmospheric cues for the far-right edge only.",
     "Use a premium auction-catalog editorial aesthetic with depth, a coherent collector surface, and crisp non-blurry objects. No collage, no split panels, no overlapping featured objects.",
   ].join(" ");
+}
+
+function parseAutomaticSceneReferenceImage(dataUrl: string) {
+  const match = /^data:(image\/(?:jpeg|png|webp|gif));base64,([a-zA-Z0-9+/=]+)$/.exec(dataUrl);
+  if (!match) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "The listing image could not be prepared as a visual reference." });
+  }
+  return { mimeType: match[1], b64Json: match[2] };
+}
+
+async function extractListingImageVisualReferences(listingImageDataUrl: string) {
+  try {
+    const response = await invokeLLM({
+      model: "gpt-5-mini",
+      maxTokens: 500,
+      messages: [
+        { role: "system", content: "You extract safe visual scene cues from public collectible listing photos. Return only the requested JSON." },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Analyze this public listing image. Return 3–6 concise, non-branded visual motifs that a background image generator can use to make a social graphic unmistakably specific to this listing. Focus on object type, colors, era, setting, equipment, materials, and pose/composition cues. Do not identify people, teams, brands, logos, readable text, values, serial numbers, or reproduce the collectible. Do not include any private data." },
+            { type: "image_url", image_url: { url: listingImageDataUrl, detail: "auto" } },
+          ],
+        },
+      ],
+      outputSchema: {
+        name: "listing_image_visual_references",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: { references: { type: "array", items: { type: "string" }, minItems: 3, maxItems: 6 } },
+          required: ["references"],
+          additionalProperties: false,
+        },
+      },
+    });
+    const content = response.choices[0]?.message.content;
+    const parsed = typeof content === "string" ? JSON.parse(content) as { references?: unknown } : null;
+    if (!Array.isArray(parsed?.references)) return [];
+    return parsed.references
+      .filter((reference): reference is string => typeof reference === "string")
+      .map((reference) => cleanSocialScenePromptValue(reference, 96))
+      .filter(Boolean)
+      .slice(0, 6);
+  } catch (error) {
+    console.warn("[admin.generateHighValueListingScene] listing-image reference extraction failed; continuing with public metadata", error);
+    return [];
+  }
 }
 
 /** Fetches known public Tradebilia images into a one-request data URL for canvas export. */
@@ -2961,12 +3013,16 @@ export const appRouter = router({
         itemType: z.string().trim().min(1).max(96),
         facts: z.array(z.object({ label: z.string().trim().min(1).max(48), value: z.string().trim().min(1).max(96) })).max(6),
         visualHints: z.array(z.string().trim().min(1).max(96)).max(10),
+        listingImageDataUrl: z.string().min(32).max(8_500_000),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         try {
+          const originalImage = parseAutomaticSceneReferenceImage(input.listingImageDataUrl);
+          const imageVisualReferences = await extractListingImageVisualReferences(input.listingImageDataUrl);
           const { url } = await generateImage({
-            prompt: buildAutomaticHighValueScenePrompt(input),
+            prompt: buildAutomaticHighValueScenePrompt({ ...input, imageVisualReferences }),
+            originalImages: [originalImage],
             model: "MODEL_GPT_IMAGE_2",
             quality: "medium",
           });

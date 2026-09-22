@@ -296,8 +296,9 @@ export function SocialContentManagerTab() {
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const isAutomaticHighValueScene = selectedDraft?.source === "High-Value Listing" && Boolean(selectedDraft.promotion);
-  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/"));
-  const isGeneratingHighValueScene = isAutomaticHighValueScene && !hasGeneratedHighValueScene && generateHighValueListingScene.isPending;
+  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 4);
+  const needsAutomaticHighValueScene = isAutomaticHighValueScene && hasExportableItemImage && !hasGeneratedHighValueScene;
+  const isGeneratingHighValueScene = needsAutomaticHighValueScene && generateHighValueListingScene.isPending;
   const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
     ? (selectedDraft.promotion?.tradeItems ?? []).length
     : 0;
@@ -313,7 +314,7 @@ export function SocialContentManagerTab() {
   const completedTradeStageReady = selectedDraft?.source !== "Completed Trade"
     || !completedTradeStageKey
     || Boolean(preparedTradeStageImageUrls[completedTradeStageKey]);
-  const isPreparingGraphicImage = isGeneratingHighValueScene || (prepareSocialGraphicImage.isPending
+  const isPreparingGraphicImage = needsAutomaticHighValueScene || (prepareSocialGraphicImage.isPending
     && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || !completedTradeStageReady));
 
   useEffect(() => {
@@ -327,8 +328,8 @@ export function SocialContentManagerTab() {
   }, [selectedDraft?.id, selectedDraft?.mediaUrl]);
 
   useEffect(() => {
-    if (!isPreviewOpen || selectedDraft?.source !== "High-Value Listing" || !selectedDraft.promotion) return;
-    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/")) return;
+    if (!isPreviewOpen || selectedDraft?.source !== "High-Value Listing" || !selectedDraft.promotion || !preparedGraphicImageUrl) return;
+    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 4) return;
     const requestKey = `${selectedDraft.id}:${selectedDraft.promotion.itemTitle}:${selectedDraft.promotion.category}:${selectedDraft.promotion.itemType}`;
     if (generatedSceneRequestRef.current === requestKey) return;
     generatedSceneRequestRef.current = requestKey;
@@ -342,15 +343,16 @@ export function SocialContentManagerTab() {
       itemType: getSceneMetadataValue(selectedDraft.promotion.itemType, 96, "Collectible"),
       facts,
       visualHints: (selectedDraft.promotion.visualHints ?? []).map((hint) => getSceneMetadataValue(hint, 96)).filter(Boolean).slice(0, 10),
+      listingImageDataUrl: preparedGraphicImageUrl,
     }).then(({ url }) => {
       setDrafts((current) => current.map((draft) => draft.id !== selectedDraft.id || !draft.promotion
         ? draft
-        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url }, updatedAt: new Date().toISOString() }));
+        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url, generatedBackgroundVersion: 4 }, updatedAt: new Date().toISOString() }));
     }).catch(() => {
       generatedSceneRequestRef.current = null;
       toast.error("The item-specific background could not be generated. Close and reopen the preview to retry.");
     });
-  }, [isPreviewOpen, selectedDraft, generateHighValueListingScene]);
+  }, [isPreviewOpen, preparedGraphicImageUrl, selectedDraft, generateHighValueListingScene]);
 
   useEffect(() => {
     if (!isPreviewOpen) {
