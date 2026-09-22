@@ -42,6 +42,8 @@ import {
   getSocialGraphicExportFileName,
   getTradeAlertStageKey,
   renderSocialGraphicCanvas,
+  SOCIAL_GRAPHIC_BRAND_LOGO_URL,
+  SOCIAL_GRAPHIC_HERO_BACKGROUND_URL,
   TRADE_ALERT_STAGE_IMAGE_URLS,
   TRADE_ALERT_THEME_IMAGE_URLS,
   type TradeAlertStageKey,
@@ -221,8 +223,11 @@ export function SocialContentManagerTab() {
   const [preparedTradeImageUrls, setPreparedTradeImageUrls] = useState<Array<string | null>>([]);
   const [preparedTradeThemeImageUrls, setPreparedTradeThemeImageUrls] = useState<Partial<Record<TradeAlertThemeAssetKey, string | null>>>({});
   const [preparedTradeStageImageUrls, setPreparedTradeStageImageUrls] = useState<Partial<Record<TradeAlertStageKey, string | null>>>({});
-  const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState<string | null>(null);
-  const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState<string | null>(null);
+  // These managed assets live on the active WebDev origin and do not need a
+  // server-side copy. Preparing only external listing/trade media avoids one
+  // inaccessible production-domain asset blocking the real item image.
+  const [preparedBrandLogoUrl, setPreparedBrandLogoUrl] = useState(SOCIAL_GRAPHIC_BRAND_LOGO_URL);
+  const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState(SOCIAL_GRAPHIC_HERO_BACKGROUND_URL);
   const [hydrated, setHydrated] = useState(false);
   const preparedAssetRequestRef = useRef<string | null>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
@@ -307,8 +312,8 @@ export function SocialContentManagerTab() {
     setPreparedTradeImageUrls([]);
     setPreparedTradeThemeImageUrls({});
     setPreparedTradeStageImageUrls({});
-    setPreparedBrandLogoUrl(null);
-    setPreparedHeroBackgroundUrl(null);
+    setPreparedBrandLogoUrl(SOCIAL_GRAPHIC_BRAND_LOGO_URL);
+    setPreparedHeroBackgroundUrl(SOCIAL_GRAPHIC_HERO_BACKGROUND_URL);
     preparedAssetRequestRef.current = null;
   }, [selectedDraft?.id, selectedDraft?.mediaUrl]);
 
@@ -356,10 +361,11 @@ export function SocialContentManagerTab() {
           preparedStageUrls[stageKey] = result.dataUrls[tradeImageSources.length + tradeThemeSources.length + stageIndex + 1] ?? null;
         });
         setPreparedTradeStageImageUrls(preparedStageUrls);
-        setPreparedBrandLogoUrl(result.brandLogoDataUrl);
-        setPreparedHeroBackgroundUrl(result.heroBackgroundDataUrl);
       })
-      .catch(() => toast.error("One or more traded item images could not be prepared for export. Please close and reopen the preview to retry."));
+      .catch(() => {
+        preparedAssetRequestRef.current = null;
+        toast.error("The original item image could not be prepared for export. Please close and reopen the preview to retry.");
+      });
   }, [isPreviewOpen, preparedBrandLogoUrl, preparedGraphicImageUrl, prepareSocialGraphicImage, selectedDraft]);
 
   const filteredDrafts = useMemo(() => filterSocialDrafts(drafts, statusFilter), [drafts, statusFilter]);

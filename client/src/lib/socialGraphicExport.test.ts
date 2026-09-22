@@ -12,7 +12,6 @@ import {
   getHighValueSecondaryVisualKey,
   HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS,
   HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS,
-  HIGH_VALUE_SECONDARY_PROP_URLS,
   HIGH_VALUE_SECONDARY_BACKGROUND_URLS,
   HIGH_VALUE_BRUSH_IMAGE_URL,
   SPORTS_CARD_SECONDARY_VISUAL_KEYS,
@@ -103,7 +102,6 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
     expect(exporterSource).toContain("const imageY = 300 * scale");
-    expect(exporterSource).toContain("drawSecondaryCollectorProp(context, foregroundPropImage, 930 * scale");
     expect(exporterSource).toContain("const detailWidth = 390 * scale");
   });
 
@@ -130,6 +128,7 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "The Beatles Sgt Pepper Console", category: "Video Games", itemType: "console" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.beatles_sgt_pepper);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Transformers Megatron G1", category: "Vintage Toys", itemType: "action_figure" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.megatron_transformers);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "DareDevil 1st Electra", category: "Comics", itemType: "single_comic" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.daredevil_elektra);
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Rickey Henderson Rookie", category: "Sports Cards", itemType: "single_card" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.rickey_henderson);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Vintage Teddy Bear", category: "Vintage Toys", itemType: "plush_toy" })).toContain("vintage-toys-plush-toy");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Nintendo NES Console", category: "Video Games", itemType: "console" })).toContain("video-games-console");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Unknown Music Format", category: "Music", itemType: "other_music_format" })).toContain("music-other-format");
@@ -158,7 +157,7 @@ describe("native Social graphic exporter", () => {
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Star Wars #1", category: "Comics", itemType: "single_comic", facts: [{ label: "Publisher", value: "Marvel" }] })).toBe(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS["comics-single-comic"]);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Alex Ross Original Art", category: "Comics", itemType: "original_art", facts: [{ label: "Artist Name", value: "Alex Ross" }] })).toContain("comics-original-art");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Miles Davis Kind of Blue LP", category: "Music", itemType: "vinyl_record", facts: [{ label: "Artist / Performer", value: "Miles Davis" }] })).toContain("music-vinyl-record");
-    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toBe(HIGH_VALUE_SECONDARY_PROP_URLS.football);
+    expect(getHighValueSecondaryPropUrl({ ...promotionDraft.promotion!, facts: [{ label: "Sport", value: "Football" }] })).toBeNull();
     expect(exporterSource).toContain("return null;");
     expect(exporterSource).toContain("drawCoverImage(context, heroBackground, 0, 0, width, height, 0.5)");
     expect(exporterSource).toContain("HIGH_VALUE_SAFE_SPORT_VARIANT_KEYS");
@@ -193,7 +192,7 @@ describe("native Social graphic exporter", () => {
       ...promotionDraft.promotion!,
       facts: [{ label: "Year", value: "1988" }, { label: "Grading Company", value: "PSA" }, { label: "Grade", value: "9" }],
       visualHints: ["Barry Sanders", "Football", "Score"],
-    })).toBe(HIGH_VALUE_SECONDARY_PROP_URLS.football);
+    })).toBeNull();
   });
 
   it("routes every current high-value opportunity into a category, item-type, or secondary-specific environment", () => {
@@ -205,7 +204,7 @@ describe("native Social graphic exporter", () => {
       { itemTitle: "Star Wars #1", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environmentKey: "comics-single-comic" },
       { itemTitle: "Barry Sanders Score Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Football"], facts: [], environmentKey: "barry_sanders" },
       { itemTitle: "Wayne Gretzky Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Hockey"], facts: [], environmentKey: "wayne_gretzky" },
-      { itemTitle: "Rickey Henderson Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environmentKey: "baseball" },
+      { itemTitle: "Rickey Henderson Rookie", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environmentKey: "rickey_henderson" },
       { itemTitle: "DareDevil 1st Electra", category: "comics", itemType: "single_comic", visualHints: ["Marvel"], facts: [{ label: "Publisher", value: "Marvel" }], environmentKey: "daredevil_elektra" },
       { itemTitle: "Ken Griffey Jr Upper Deck Rookie PSA 10", category: "sports_cards", itemType: "single_card", visualHints: ["Baseball"], facts: [], environmentKey: "ken_griffey_jr" },
       { itemTitle: "Transformers Megatron G1", category: "vintage_toys", itemType: "action_figure", visualHints: ["Hasbro", "Transformers"], facts: [{ label: "Brand", value: "Hasbro" }], environmentKey: "megatron_transformers" },
@@ -217,7 +216,7 @@ describe("native Social graphic exporter", () => {
         || HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS[item.environmentKey]
         || HIGH_VALUE_SECONDARY_BACKGROUND_URLS[item.environmentKey];
       expect(getHighValueBackgroundUrl(promotion), item.itemTitle).toBe(expectedEnvironment);
-      expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).not.toBeNull();
+      expect(getHighValueSecondaryPropUrl(promotion), item.itemTitle).toBeNull();
     }
   });
 
