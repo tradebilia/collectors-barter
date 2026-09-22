@@ -1081,6 +1081,8 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
   // media feel like a secondary card inside the listing.
   drawRoundedRect(context, x, y, width, height, Math.max(16, width * 0.035), "rgba(255,255,255,0.025)", "rgba(255,255,255,0.13)");
   context.save();
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
   roundedRectPath(context, x + 5, y + 5, width - 10, height - 10, Math.max(10, width * 0.022));
   context.clip();
   if (image) {
@@ -1551,7 +1553,10 @@ function getCinematicListingBannerBottom(brushImage: CanvasImage | null, width: 
   const bannerWidth = Math.min(width * 0.76, 912 * scale);
   const isFinishedListingBanner = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5);
   if (isFinishedListingBanner && brushImage) {
-    return 2 * scale + bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
+    // The supplied asset has transparent brush-tail pixels below the visible
+    // paint. Use the visible paint boundary so the focal item can rise toward
+    // the banner without touching its painted edge.
+    return 2 * scale + bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth) * 0.78;
   }
   return 62 * scale + 174 * scale;
 }
@@ -1688,15 +1693,15 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 42 * scale;
+  const imageX = 28 * scale;
   // Measure the finished banner asset so the focal item can never be placed
   // beneath or touching the banner, even when the asset aspect ratio changes.
   const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
-  const imageY = Math.max(280 * scale, listingBannerBottom + 24 * scale);
-  const imageWidth = 470 * scale;
+  const imageY = Math.max(250 * scale, listingBannerBottom + 20 * scale);
+  const imageWidth = 500 * scale;
   const imageHeight = height - imageY - 44 * scale;
-  const detailX = 548 * scale;
-  const detailWidth = 350 * scale;
+  const detailX = 560 * scale;
+  const detailWidth = 338 * scale;
   let detailY = 280 * scale;
   if (showOriginalItem) {
     drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
@@ -2059,7 +2064,7 @@ function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: stri
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
   // Keep the lower rule the same distance below the final value as the upper
   // rule is above the first fact label, avoiding excess space below row two.
-  const height = rows * rowStep * scale + 1 * scale;
+  const height = rows * rowStep * scale + 18 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);

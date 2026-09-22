@@ -85,7 +85,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const bannerY = 2 * scale");
     expect(exporterSource).toContain("const strokeHeight = 174 * scale");
     expect(exporterSource).toContain("function getCinematicListingBannerBottom");
-    expect(exporterSource).toContain("listingBannerBottom + 24 * scale");
+    expect(exporterSource).toContain("listingBannerBottom + 20 * scale");
     expect(exporterSource).toContain("const logoWidth = 700 * scale");
     expect(exporterSource).toContain("const strokeY = 62 * scale");
     expect(exporterSource).toContain("const sourceY = brushImage.naturalHeight * 0.11");
@@ -106,12 +106,14 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
-    expect(exporterSource).toContain("const imageX = 42 * scale");
+    expect(exporterSource).toContain("const imageX = 28 * scale");
     expect(exporterSource).toContain("const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale)");
-    expect(exporterSource).toContain("const imageY = Math.max(280 * scale, listingBannerBottom + 24 * scale)");
-    expect(exporterSource).toContain("const imageWidth = 470 * scale");
-    expect(exporterSource).toContain("const detailWidth = 350 * scale");
-    expect(exporterSource).toContain("const detailX = 548 * scale");
+    expect(exporterSource).toContain("const imageY = Math.max(250 * scale, listingBannerBottom + 20 * scale)");
+    expect(exporterSource).toContain("const imageWidth = 500 * scale");
+    expect(exporterSource).toContain("const detailWidth = 338 * scale");
+    expect(exporterSource).toContain("const detailX = 560 * scale");
+    expect(exporterSource).toContain("const height = rows * rowStep * scale + 18 * scale");
+    expect(exporterSource).toContain('context.imageSmoothingQuality = "high"');
     expect(exporterSource).toContain("factsHeight + 24 * scale");
     expect(exporterSource).toContain('context.fillStyle = "#fff6d6"');
     expect(exporterSource).toContain("900 ${Math.round(19 * scale)}px");

@@ -155,3 +155,9 @@ Focused renderer, preview, server-contract, TypeScript, production-build, and wh
 The exact source listing image is now given a larger left-side frame with more available width, while the information column was narrowed and shifted right to preserve separation. The high-value facts-to-plaque gap was increased so the divider below the grading company and grade cannot crowd the Trade Value plaque. The brand lockup was lowered slightly from the top edge. The bottom phrase now uses a larger, heavier, higher-contrast canvas font with whole-pixel baseline rendering for improved sharpness.
 
 Focused social renderer tests, TypeScript validation, production build, and whitespace validation passed.
+
+## Second landscape focal-item polish
+
+The landscape high-value item now rises closer to the visible lower edge of the supplied banner, while retaining a measured clearance. Its frame is wider and taller, and the canvas image smoothing quality is explicitly set to high. The generated banner’s transparent tail is excluded from the clearance calculation so it no longer creates an excessive empty gap. The fact-grid lower rule now has an explicit 18px scaled buffer below the final values, matching the intended breathing room around the upper rule and preventing the line from crossing the grade number visually.
+
+Focused renderer tests, TypeScript validation, production build, and whitespace validation passed.
