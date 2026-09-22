@@ -46,7 +46,7 @@ export const SOCIAL_GRAPHIC_BRAND_LOGO_URL = "/manus-storage/tradebilia-logo-cro
 // Rich's supplied finished Trade Alert paint-swipe. It contains the complete
 // lettering and transparent surrounding pixels, so the renderer must never
 // layer a second "TRADE ALERT" title over it.
-export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/TradeAlert_00575de4.webp";
+export const TRADE_ALERT_BRUSH_IMAGE_URL = "/manus-storage/TradeAlertRichV2_097ffc75.webp";
 export const HIGH_VALUE_BRUSH_IMAGE_URL = "/manus-storage/NewHighValueListing_66f4a9ee.webp";
 export const TRADED_EXCHANGE_LOGO_URL = "/manus-storage/traded-mockup-1_4a1f25d2.png";
 
@@ -1436,6 +1436,20 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   const logoWidth = 700 * scale;
   drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
 
+  // Rich's supplied replacement includes generous transparent margins and a
+  // roughly 3:1 aspect ratio. Preserve the complete brush silhouette, but
+  // size it from the source ratio so its painted lower edge ends above the
+  // item lane instead of being stretched into the item captions.
+  const isSuppliedTradeAlert = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5);
+  if (isSuppliedTradeAlert && brushImage) {
+    const bannerWidth = Math.min(width * 0.92, 920 * scale);
+    const bannerHeight = bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
+    context.save();
+    context.drawImage(brushImage, (width - bannerWidth) / 2, 0, bannerWidth, bannerHeight);
+    context.restore();
+    return;
+  }
+
   // The reference banner is wide but visually substantial vertically: increase
   // the paint body rather than extending it past the canvas edges.
   const strokeWidth = Math.min(width * 0.92, 1104 * scale);
@@ -1937,8 +1951,10 @@ function drawCompletedTradeCinematic(
   const isPinterest = platform === "Pinterest";
   // The supplied finished Trade Alert brush carries a more substantial lower
   // paint edge than the retired asset. Keep the item frames below it with a
-  // visible air gap on both landscape and tall exports.
-  const imageY = isTall ? 280 * scale : 274 * scale;
+  // visible air gap on both landscape and tall exports. The tall value is
+  // measured against the preserved 3:1 banner ratio at Instagram/Pinterest
+  // scale, not copied from the old shorter banner.
+  const imageY = isTall ? 310 * scale : 274 * scale;
   const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.36) : height * 0.36;
   const captionBottom = imageY + imageHeight * 1.14 + 58 * scale;
   // Instagram keeps the exchange mark in the open horizontal channel between
