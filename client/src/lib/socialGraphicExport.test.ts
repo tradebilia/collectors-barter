@@ -106,12 +106,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
-    expect(exporterSource).toContain("const imageX = 72 * scale");
+    expect(exporterSource).toContain("const imageX = 100 * scale");
     expect(exporterSource).toContain("const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale)");
     expect(exporterSource).toContain("const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale)");
     expect(exporterSource).toContain("const imageWidth = 532 * scale");
     expect(exporterSource).toContain("const detailWidth = width - detailX - 48 * scale");
-    expect(exporterSource).toContain("const detailX = 620 * scale");
+    expect(exporterSource).toContain("const detailX = 640 * scale");
     expect(exporterSource).toContain("const height = rows * rowStep * scale + 5 * scale");
     expect(exporterSource).toContain('context.imageSmoothingQuality = "high"');
     expect(exporterSource).toContain("factsHeight + 24 * scale");

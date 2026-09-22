@@ -1706,17 +1706,17 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 72 * scale;
+  const imageX = 100 * scale;
   // Measure the finished banner asset so the focal item can never be placed
   // beneath or touching the banner, even when the asset aspect ratio changes.
   const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
   const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale);
   const imageWidth = 532 * scale;
   const imageHeight = height - imageY - 38 * scale;
-  // The item frame ends at 604px on the 1200px baseline. Keep a deliberate
-  // 16px breathing gap before the detail panel instead of the former 36px
-  // separation, while retaining a hard non-overlap boundary.
-  const detailX = 620 * scale;
+  // The item frame ends at 632px on the 1200px baseline. Keep a deliberate
+  // 8px breathing gap before the detail panel while retaining a hard
+  // non-overlap boundary.
+  const detailX = 640 * scale;
   const detailWidth = width - detailX - 48 * scale;
   let detailY = 258 * scale;
   if (showOriginalItem) {
