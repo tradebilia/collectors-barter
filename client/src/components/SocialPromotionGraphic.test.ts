@@ -15,7 +15,8 @@ describe("Social promotion graphic", () => {
   it("uses the exact native canvas export so preview and download cannot diverge", () => {
     expect(source).toContain("renderSocialGraphicCanvas");
     expect(source).toContain("canvas.toDataURL(\"image/png\")");
-    expect(source).toContain("itemImageUrl: itemImageUrl ?? draft.mediaUrl");
+    expect(source).toContain("itemImageUrl: itemImageUrl === undefined ? draft.mediaUrl ?? null : itemImageUrl");
+    expect(source).toContain("An explicit null means the manager is still preparing a CORS-safe");
     expect(source).toContain("tradeItemImageUrls");
     expect(source).not.toContain("object-cover");
     expect(source).not.toContain("crossOrigin");

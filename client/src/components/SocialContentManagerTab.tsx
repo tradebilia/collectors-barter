@@ -209,6 +209,10 @@ function isNewListing(createdAt: string | number | Date | null | undefined) {
   return Number.isFinite(createdAtMs) && createdAtMs >= Date.now() - (30 * 24 * 60 * 60 * 1000);
 }
 
+function getSceneMetadataValue(value: unknown, maximumLength: number, fallback = "") {
+  return String(value ?? "").trim().slice(0, maximumLength) || fallback;
+}
+
 export function SocialContentManagerTab() {
   const [drafts, setDrafts] = useState<SocialDraft[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -230,6 +234,7 @@ export function SocialContentManagerTab() {
   const [preparedHeroBackgroundUrl, setPreparedHeroBackgroundUrl] = useState(SOCIAL_GRAPHIC_HERO_BACKGROUND_URL);
   const [hydrated, setHydrated] = useState(false);
   const preparedAssetRequestRef = useRef<string | null>(null);
+  const generatedSceneRequestRef = useRef<string | null>(null);
   const promotionQuery = trpc.admin.getPromotionOpportunities.useQuery({ listingValueMinimum: 1000, recentDays: 30, limit: 8 }, { enabled: autoListEnabled === true });
   const currentVisualOpportunities = useMemo(
     () => [...(promotionQuery.data?.highValueListings ?? []), ...(promotionQuery.data?.categoryTestListings ?? [])],
@@ -237,6 +242,7 @@ export function SocialContentManagerTab() {
   );
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
   const prepareSocialGraphicImage = trpc.admin.prepareSocialGraphicImage.useMutation();
+  const generateHighValueListingScene = trpc.admin.generateHighValueListingScene.useMutation();
 
   useEffect(() => {
     try {
@@ -289,6 +295,9 @@ export function SocialContentManagerTab() {
     ? { ...selectedDraft, mediaUrl: preparedGraphicImageUrl, destinationUrl: canonicalDestinationUrl }
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
+  const isAutomaticHighValueScene = selectedDraft?.source === "High-Value Listing" && Boolean(selectedDraft.promotion);
+  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/"));
+  const isGeneratingHighValueScene = isAutomaticHighValueScene && !hasGeneratedHighValueScene && generateHighValueListingScene.isPending;
   const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
     ? (selectedDraft.promotion?.tradeItems ?? []).length
     : 0;
@@ -304,8 +313,8 @@ export function SocialContentManagerTab() {
   const completedTradeStageReady = selectedDraft?.source !== "Completed Trade"
     || !completedTradeStageKey
     || Boolean(preparedTradeStageImageUrls[completedTradeStageKey]);
-  const isPreparingGraphicImage = prepareSocialGraphicImage.isPending
-    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || !completedTradeStageReady);
+  const isPreparingGraphicImage = isGeneratingHighValueScene || (prepareSocialGraphicImage.isPending
+    && ((hasExportableItemImage && !preparedGraphicImageUrl) || !preparedBrandLogoUrl || !preparedHeroBackgroundUrl || !completedTradeImagesReady || !completedTradeThemesReady || !completedTradeStageReady));
 
   useEffect(() => {
     setPreparedGraphicImageUrl(null);
@@ -318,8 +327,35 @@ export function SocialContentManagerTab() {
   }, [selectedDraft?.id, selectedDraft?.mediaUrl]);
 
   useEffect(() => {
+    if (!isPreviewOpen || selectedDraft?.source !== "High-Value Listing" || !selectedDraft.promotion) return;
+    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/")) return;
+    const requestKey = `${selectedDraft.id}:${selectedDraft.promotion.itemTitle}:${selectedDraft.promotion.category}:${selectedDraft.promotion.itemType}`;
+    if (generatedSceneRequestRef.current === requestKey) return;
+    generatedSceneRequestRef.current = requestKey;
+    const facts = selectedDraft.promotion.facts
+      .filter((fact) => Boolean(fact.label?.trim() && fact.value?.trim()))
+      .slice(0, 6)
+      .map((fact) => ({ label: getSceneMetadataValue(fact.label, 48), value: getSceneMetadataValue(fact.value, 96) }));
+    generateHighValueListingScene.mutateAsync({
+      itemTitle: getSceneMetadataValue(selectedDraft.promotion.itemTitle, 180, "Tradebilia collectible"),
+      category: getSceneMetadataValue(selectedDraft.promotion.category, 96, "Collectibles"),
+      itemType: getSceneMetadataValue(selectedDraft.promotion.itemType, 96, "Collectible"),
+      facts,
+      visualHints: (selectedDraft.promotion.visualHints ?? []).map((hint) => getSceneMetadataValue(hint, 96)).filter(Boolean).slice(0, 10),
+    }).then(({ url }) => {
+      setDrafts((current) => current.map((draft) => draft.id !== selectedDraft.id || !draft.promotion
+        ? draft
+        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url }, updatedAt: new Date().toISOString() }));
+    }).catch(() => {
+      generatedSceneRequestRef.current = null;
+      toast.error("The item-specific background could not be generated. Close and reopen the preview to retry.");
+    });
+  }, [isPreviewOpen, selectedDraft, generateHighValueListingScene]);
+
+  useEffect(() => {
     if (!isPreviewOpen) {
       preparedAssetRequestRef.current = null;
+      generatedSceneRequestRef.current = null;
       return;
     }
     if (!selectedDraft) return;
@@ -750,11 +786,11 @@ export function SocialContentManagerTab() {
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
                       <div className={`mx-auto min-w-[280px] ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].previewClass}`}>
-                        <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} tradeThemeImageUrls={preparedTradeThemeImageUrls} tradeStageImageUrls={preparedTradeStageImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />
+                        {isPreparingGraphicImage ? <div className={`flex ${SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].aspect} items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 text-center text-sm font-medium text-white/80`}><Loader2 className="h-5 w-5 animate-spin" />{isGeneratingHighValueScene ? "Creating item-specific scene…" : "Preparing original item media…"}</div> : <SocialPromotionGraphic draft={graphicDraft ?? selectedDraft} platform={selectedPreviewPlatform} itemImageUrl={preparedGraphicImageUrl} brandLogoUrl={preparedBrandLogoUrl ?? undefined} tradeItemImageUrls={preparedTradeImageUrls} tradeThemeImageUrls={preparedTradeThemeImageUrls} tradeStageImageUrls={preparedTradeStageImageUrls} heroBackgroundUrl={preparedHeroBackgroundUrl ?? undefined} />}
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs leading-5 text-slate-500">{isPreparingGraphicImage ? "Preparing the original item image and Trade Alert environments for a reliable download…" : "The download exports the displayed platform graphic. It never changes the original uploaded collectible image."}</p>
+                      <p className="text-xs leading-5 text-slate-500">{isGeneratingHighValueScene ? "Reading public listing references and creating this item’s unique collector background…" : isPreparingGraphicImage ? "Preparing the original item image and Trade Alert environments for a reliable download…" : "The download exports the displayed platform graphic. It never changes the original uploaded collectible image."}</p>
                       <Button type="button" size="sm" onClick={() => void downloadSocialGraphic()} disabled={isExportingGraphic || isPreparingGraphicImage} className="shrink-0 bg-indigo-600 text-white hover:bg-indigo-700"><Download className="mr-1.5 h-4 w-4" />{isPreparingGraphicImage || isExportingGraphic ? "Preparing…" : "Download Graphic"}</Button>
                     </div>
                   </div> : null}

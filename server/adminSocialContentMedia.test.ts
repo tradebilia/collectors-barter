@@ -44,4 +44,15 @@ describe("admin social-content media upload contract", () => {
     expect(imagePreparationSection).toContain('redirect: "error"');
     expect(imagePreparationSection).toContain("data:${contentType};base64");
   });
+
+  it("generates automatic high-value scenes only from bounded public display metadata", () => {
+    expect(uploadSection).toContain("generateHighValueListingScene");
+    expect(uploadSection).toContain('ctx.user.role !== "admin"');
+    expect(uploadSection).toContain("buildAutomaticHighValueScenePrompt");
+    expect(uploadSection).toContain('model: "MODEL_GPT_IMAGE_2"');
+    expect(uploadSection).toContain('quality: "medium"');
+    expect(uploadSection).toContain('url?.startsWith("/manus-storage/")');
+    expect(routerSource).toContain("cleanSocialScenePromptValue");
+    expect(routerSource).toContain("far-left third must be dark, quiet, and entirely empty");
+  });
 });

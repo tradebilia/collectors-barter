@@ -15,6 +15,8 @@ export type SocialPromotionDetails = {
   itemPath?: string | null;
   /** Public-safe metadata used only for choosing an abstract visual environment. */
   visualHints?: string[] | null;
+  /** Browser-local managed storage URL for the generated per-listing scene. */
+  generatedBackgroundUrl?: string | null;
   tradeItems?: Array<{
     listingId?: number | null;
     title: string;

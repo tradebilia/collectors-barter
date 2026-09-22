@@ -249,6 +249,12 @@ function getHighValueCategoryFallbackUrl(category: string) {
 }
 
 export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
+  // Option A: an admin-triggered automatic scene is generated from the
+  // listing's public metadata and cached with the browser-local draft. Only
+  // managed WebDev storage is accepted as an override.
+  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/")) {
+    return promotion.generatedBackgroundUrl;
+  }
   if (!promotion?.category) return null;
   // A reviewed subject reference is the strongest semantic cue and is valid
   // for any category/item-type combination. If no curated subject matches,

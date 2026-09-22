@@ -131,6 +131,7 @@ import { getOrCreateDirectMessageThread, persistDirectMessage } from "./directMe
 import { claimIdentity, setIdentityRestrictionStatus } from "./identityRegistry";
 import { users, userProfiles, listings, deletedAccounts, tradeProposals, tradeProposalItems, tradeMessages, tradeReviews, tradeShowcaseVotes, watchlistEntries, draftListings, passwordResetTokens, referralRequests, userFollows, directMessageThreads, directMessages, tradePayments, tradeActivityLog, emailTemplates, accountApprovalReviews, accountClosureRequests, apiHealthEvents, adminActivityLog, lowFeedbackFlags } from "../drizzle/schema";
 import { storagePut } from "./storage";
+import { generateImage } from "./_core/imageGeneration";
 import { forumTaxonomy, forumParentLevelSubcategory } from "@shared/forum";
 import { eq, sql, desc, asc, or, inArray, and, isNull } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
@@ -177,6 +178,43 @@ const SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES = new Set([
   "image/gif",
   "image/svg+xml",
 ]);
+
+function cleanSocialScenePromptValue(value: unknown, maximumLength: number) {
+  return String(value ?? "")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maximumLength);
+}
+
+function buildAutomaticHighValueScenePrompt(input: {
+  itemTitle: string;
+  category: string;
+  itemType: string;
+  facts: Array<{ label: string; value: string }>;
+  visualHints: string[];
+}) {
+  const facts = input.facts
+    .map(({ label, value }) => `${cleanSocialScenePromptValue(label, 48)}: ${cleanSocialScenePromptValue(value, 96)}`)
+    .filter((fact) => fact !== ":")
+    .join("; ");
+  const hints = input.visualHints.map((hint) => cleanSocialScenePromptValue(hint, 96)).filter(Boolean).join("; ");
+  const subject = [
+    `Listing title: ${cleanSocialScenePromptValue(input.itemTitle, 180)}.`,
+    `Category: ${cleanSocialScenePromptValue(input.category, 96)}.`,
+    `Item type: ${cleanSocialScenePromptValue(input.itemType, 96)}.`,
+    facts ? `Public display facts: ${facts}.` : "",
+    hints ? `Public visual references: ${hints}.` : "",
+  ].filter(Boolean).join(" ");
+
+  return [
+    "Create one cinematic, photorealistic 16:9 collector-background scene for a Tradebilia social listing.",
+    subject,
+    "Interpret the public item references into tasteful environmental cues, but never render the collectible itself, an alternate card/cover/toy/coin/stamp, a person, a portrait, text, lettering, readable signs, logos, watermarks, or a product label.",
+    "Composition is mandatory: the far-left third must be dark, quiet, and entirely empty for the real item image; the center-right information lane must be low-contrast and free of props for the title, facts, and value; reserve visual reference props and atmospheric cues for the far-right edge only.",
+    "Use a premium auction-catalog editorial aesthetic with depth, a coherent collector surface, and crisp non-blurry objects. No collage, no split panels, no overlapping featured objects.",
+  ].join(" ");
+}
 
 /** Fetches known public Tradebilia images into a one-request data URL for canvas export. */
 async function getSocialGraphicImageDataUrl(sourceUrl: string) {
@@ -2915,6 +2953,29 @@ export const appRouter = router({
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         const dataUrls = await Promise.all(input.sourceUrls.map((sourceUrl) => getSocialGraphicImageDataUrl(sourceUrl)));
         return { dataUrls };
+      }),
+    generateHighValueListingScene: protectedProcedure
+      .input(z.object({
+        itemTitle: z.string().trim().min(1).max(180),
+        category: z.string().trim().min(1).max(96),
+        itemType: z.string().trim().min(1).max(96),
+        facts: z.array(z.object({ label: z.string().trim().min(1).max(48), value: z.string().trim().min(1).max(96) })).max(6),
+        visualHints: z.array(z.string().trim().min(1).max(96)).max(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        try {
+          const { url } = await generateImage({
+            prompt: buildAutomaticHighValueScenePrompt(input),
+            model: "MODEL_GPT_IMAGE_2",
+            quality: "medium",
+          });
+          if (!url?.startsWith("/manus-storage/")) throw new Error("Generated scene did not return managed storage.");
+          return { url };
+        } catch (error) {
+          console.error("[admin.generateHighValueListingScene] generation failed", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "The subject-aware scene could not be generated. Please retry the preview." });
+        }
       }),
     getPromotionOpportunities: protectedProcedure
       .input(z.object({
