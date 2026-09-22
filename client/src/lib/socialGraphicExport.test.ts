@@ -295,6 +295,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const logoWidth = 260 * scale");
     expect(exporterSource).toContain("const groupLeft = side === \"left\" ? width * 0.055 : width * 0.615");
     expect(exporterSource).toContain("const groupWidth = width * 0.36");
+    expect(exporterSource).toContain("const singleItemCenter = side === \"left\" ? width * 0.225 : width * 0.775");
+    expect(exporterSource).toContain("groupWidth * 0.92, imageHeight * 1.16");
     expect(exporterSource).toContain("const imageY = isTall ? 290 * scale : 296 * scale");
     expect(exporterSource).toContain("const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.39) : height * 0.37");
     expect(exporterSource).toContain("y + itemHeight + 8 * scale");

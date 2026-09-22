@@ -1937,7 +1937,11 @@ function drawCinematicTradeGroup(
   };
 
   if (visibleEntries.length === 1) {
-    draw(visibleEntries[0], mainCenter, imageY, groupWidth * 0.86, imageHeight * 1.14, groupWidth * 1.04);
+    // Single-item trades use mirrored centers around the exchange mark. This
+    // keeps both collectibles equally close to the protected center lane while
+    // giving the focal images a little more visual weight.
+    const singleItemCenter = side === "left" ? width * 0.225 : width * 0.775;
+    draw(visibleEntries[0], singleItemCenter, imageY, groupWidth * 0.92, imageHeight * 1.16, groupWidth * 1.04);
     return;
   }
 
