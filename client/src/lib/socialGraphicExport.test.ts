@@ -111,7 +111,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale)");
     expect(exporterSource).toContain("const imageWidth = 532 * scale");
     expect(exporterSource).toContain("const detailWidth = width - detailX - 48 * scale");
-    expect(exporterSource).toContain("const detailX = 632 * scale");
+    expect(exporterSource).toContain("const detailX = 664 * scale");
     expect(exporterSource).toContain("const height = rows * rowStep * scale + 5 * scale");
     expect(exporterSource).toContain('context.imageSmoothingQuality = "high"');
     expect(exporterSource).toContain("factsHeight + 24 * scale");
