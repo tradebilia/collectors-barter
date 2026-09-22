@@ -684,7 +684,22 @@ function drawHighValueBackground(context: CanvasRenderingContext2D, width: numbe
   // Keep the scene visibly cinematic across the whole canvas. The item frame
   // and information panel provide local protection; a full-width dark wash
   // would make the generated reference environment disappear.
-  drawBackground(context, width, height, background, 0.08);
+  // The DareDevil reference has a parchment archive frame that reads like a
+  // map once composited. Crop that outer treatment while preserving the
+  // rooftop/comic-world scene.
+  if (background && /daredevil|elektra/i.test(background.src ?? "")) {
+    const crop = Math.min(width, height) * 0.055;
+    context.save();
+    context.beginPath();
+    context.rect(0, 0, width, height);
+    context.clip();
+    drawCoverImage(context, background, -crop, -crop, width + crop * 2, height + crop * 2, 0.5);
+    context.fillStyle = "rgba(3, 18, 55, 0.08)";
+    context.fillRect(0, 0, width, height);
+    context.restore();
+  } else {
+    drawBackground(context, width, height, background, 0.08);
+  }
   const itemZone = context.createLinearGradient(0, 0, width * 0.48, 0);
   itemZone.addColorStop(0, "rgba(3, 12, 30, 0.30)");
   itemZone.addColorStop(0.42, "rgba(3, 12, 30, 0.15)");
@@ -1568,12 +1583,15 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   // The former full-detail-column plaque looked visibly lopsided around short
   // values such as $2,400. Size the frame from the widest text line, then
   // center that compact frame inside the available detail column.
-  context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
+  const preferredValueFontSize = 58 * scale;
+  context.font = `900 ${Math.round(preferredValueFontSize)}px ${CANVAS_SANS_FONT}`;
   const valueWidth = context.measureText(value).width;
   context.font = `800 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
   const labelWidth = context.measureText("TRADE VALUE").width;
   const horizontalPadding = 62 * scale;
   const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15));
+  const safeValueWidth = Math.max(1, plaqueWidth - 92 * scale);
+  const valueFontSize = Math.min(preferredValueFontSize, preferredValueFontSize * safeValueWidth / Math.max(valueWidth, 1));
   const plaqueX = x + (width - plaqueWidth) / 2;
   const cut = 24 * scale;
   context.beginPath();
@@ -1600,7 +1618,7 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   const labelAscent = labelMetrics.actualBoundingBoxAscent || 15 * scale;
   const labelDescent = labelMetrics.actualBoundingBoxDescent || 4 * scale;
   const labelHeight = labelAscent + labelDescent;
-  context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
+  context.font = `900 ${Math.round(valueFontSize)}px ${CANVAS_SANS_FONT}`;
   const valueMetrics = context.measureText(value);
   const valueAscent = valueMetrics.actualBoundingBoxAscent || 44 * scale;
   const valueDescent = valueMetrics.actualBoundingBoxDescent || 10 * scale;
@@ -1630,7 +1648,7 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   context.lineTo(plaqueX + plaqueWidth / 2 + dividerGap + dividerLength, labelVisualCenterY);
   context.stroke();
   context.fillStyle = "#ffd44f";
-  context.font = `900 ${Math.round(58 * scale)}px ${CANVAS_SANS_FONT}`;
+  context.font = `900 ${Math.round(valueFontSize)}px ${CANVAS_SANS_FONT}`;
   drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY);
   context.restore();
 }
@@ -1652,7 +1670,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
   const value = formatSocialValue(promotion?.estimatedValue);
   const isTall = platform === "Instagram" || platform === "Pinterest";
-  const footerBaselineY = height - (isTall ? 34 : 24) * scale;
+  const footerBaselineY = height - (isTall ? 34 : 16) * scale;
   // Reserve a visible breathing zone for the footer phrase; the plaque must
   // never visually collide with it even when glyph metrics vary by browser.
   const footerClearance = (isTall ? 38 : 18) * scale;
@@ -1688,16 +1706,16 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 48 * scale;
+  const imageX = 72 * scale;
   // Measure the finished banner asset so the focal item can never be placed
   // beneath or touching the banner, even when the asset aspect ratio changes.
   const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
-  const imageY = Math.max(250 * scale, listingBannerBottom + 20 * scale);
-  const imageWidth = 500 * scale;
-  const imageHeight = height - imageY - 44 * scale;
-  const detailX = 560 * scale;
-  const detailWidth = 338 * scale;
-  let detailY = 280 * scale;
+  const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale);
+  const imageWidth = 532 * scale;
+  const imageHeight = height - imageY - 38 * scale;
+  const detailX = 640 * scale;
+  const detailWidth = width - detailX - 48 * scale;
+  let detailY = 258 * scale;
   if (showOriginalItem) {
     drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
   }
@@ -1706,7 +1724,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   detailY += 26 * scale;
   // Keep the compact landscape fact grid above the plaque; the plaque is
   // placed from the measured lower rule rather than from a fixed canvas Y.
-  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 44);
+  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 50);
   if (value) {
     const plaqueHeight = 90 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
@@ -2052,8 +2070,9 @@ function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: stri
   if (facts.length === 0) return 0;
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
   // Keep the lower rule the same distance below the final value as the upper
-  // rule is above the first fact label, avoiding excess space below row two.
-  const height = rows * rowStep * scale + 11 * scale;
+  // rule is above the first fact label. With a 17px top label inset and a
+  // 21px value line, the matching lower buffer is 5px.
+  const height = rows * rowStep * scale + 5 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);

@@ -179,3 +179,11 @@ Focused completed-trade renderer tests (25), TypeScript validation, production b
 The DareDevil preview failure was traced to the managed image-generation and vision providers returning `usage exhausted`, not to the comic listing or its media. The Social Content Manager no longer remains indefinitely in “Creating item-specific scene…” after that failure. It records the failed request for the current preview, shows a clear fallback notice, and allows the canvas to render using the existing reviewed category/item-type/subject-aware background. Closing and reopening the preview resets the request guard so automatic generation can be retried when the provider is available.
 
 Focused preview, renderer, and server media tests, TypeScript validation, production build, and whitespace validation passed.
+
+## DareDevil background and high-value geometry refinement
+
+The DareDevil/Elektra high-value composition now crops the reviewed reference scene's parchment archive edge, which had read as an unrelated map-like overlay after compositing. The rooftop and comic-collector environment remains visible without the distracting border treatment.
+
+The landscape high-value layout now shifts the exact listing image rightward, enlarges its available focal area, and keeps it below the visible banner boundary. The information panel moves upward and uses a wider field row step with matched rule-to-text breathing room above and below. The item-type line remains omitted as requested. Trade Value amounts are measured against the actual plaque width and reduced when necessary so comma glyphs remain inside the outline. The footer phrase sits lower while retaining a safe separation from the value plaque.
+
+Focused renderer and preview tests passed, TypeScript validation passed, production build passed, and `git diff --check` passed. No database, publishing, production-domain, or social-posting changes were made.
