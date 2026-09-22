@@ -297,7 +297,11 @@ export function SocialContentManagerTab() {
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const isAutomaticHighValueScene = selectedDraft?.source === "High-Value Listing" && Boolean(selectedDraft.promotion);
   const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 12);
-  const needsAutomaticHighValueScene = isAutomaticHighValueScene && hasExportableItemImage && !hasGeneratedHighValueScene;
+  const automaticSceneRequestKey = selectedDraft?.promotion
+    ? `${selectedDraft.id}:${selectedDraft.promotion.itemTitle}:${selectedDraft.promotion.category}:${selectedDraft.promotion.itemType}`
+    : null;
+  const automaticSceneRequestFailed = Boolean(automaticSceneRequestKey && generatedSceneRequestRef.current === automaticSceneRequestKey && !generateHighValueListingScene.isPending);
+  const needsAutomaticHighValueScene = isAutomaticHighValueScene && hasExportableItemImage && !hasGeneratedHighValueScene && !automaticSceneRequestFailed;
   const isGeneratingHighValueScene = needsAutomaticHighValueScene && generateHighValueListingScene.isPending;
   const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
     ? (selectedDraft.promotion?.tradeItems ?? []).length
@@ -349,8 +353,11 @@ export function SocialContentManagerTab() {
         ? draft
         : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url, generatedBackgroundVersion: 12 }, updatedAt: new Date().toISOString() }));
     }).catch(() => {
-      generatedSceneRequestRef.current = null;
-      toast.error("The item-specific background could not be generated. Close and reopen the preview to retry.");
+      // Keep the request key so this preview does not loop forever when the
+      // image/vision provider is temporarily unavailable. The renderer will
+      // fall back to its reviewed category/item-type/subject scene instead.
+      generatedSceneRequestRef.current = requestKey;
+      toast.error("The item-specific scene is temporarily unavailable. Using the reviewed category-aware background instead.");
     });
   }, [isPreviewOpen, preparedGraphicImageUrl, selectedDraft, generateHighValueListingScene]);
 

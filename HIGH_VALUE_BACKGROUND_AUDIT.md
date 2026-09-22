@@ -173,3 +173,9 @@ Focused renderer tests (24), TypeScript validation, production build, and whites
 The supplied Trade Alert banner is now rendered at a reduced 72% canvas width, with its full source aspect ratio preserved and a measured vertical offset below the centered Tradebilia lockup. The completed-trade item lane begins below the banner’s visible paint boundary. The Traded exchange mark was reduced slightly, and the two trade groups were narrowed and moved outward to preserve a protected center lane, preventing the exchange mark from touching item images or their captions.
 
 Focused completed-trade renderer tests (25), TypeScript validation, production build, and whitespace validation passed. The authenticated Social Content Manager was refreshed and a completed-trade preview was opened after the hot reload for visual verification.
+
+## Automatic scene provider-exhaustion fallback
+
+The DareDevil preview failure was traced to the managed image-generation and vision providers returning `usage exhausted`, not to the comic listing or its media. The Social Content Manager no longer remains indefinitely in “Creating item-specific scene…” after that failure. It records the failed request for the current preview, shows a clear fallback notice, and allows the canvas to render using the existing reviewed category/item-type/subject-aware background. Closing and reopening the preview resets the request guard so automatic generation can be retried when the provider is available.
+
+Focused preview, renderer, and server media tests, TypeScript validation, production build, and whitespace validation passed.

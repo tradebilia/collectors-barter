@@ -59,4 +59,11 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("Platform layouts can vary after manual publishing.");
     expect(componentSource).not.toContain("publishSocialPost");
   });
+
+  it("falls back to the reviewed scene when automatic generation is temporarily unavailable", () => {
+    expect(componentSource).toContain("automaticSceneRequestFailed");
+    expect(componentSource).toContain("!automaticSceneRequestFailed");
+    expect(componentSource).toContain("Using the reviewed category-aware background instead.");
+    expect(componentSource).toContain("generatedSceneRequestRef.current = requestKey");
+  });
 });
