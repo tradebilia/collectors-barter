@@ -252,7 +252,7 @@ export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
   // Option A: an admin-triggered automatic scene is generated from the
   // listing's public metadata and cached with the browser-local draft. Only
   // managed WebDev storage is accepted as an override.
-  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && promotion.generatedBackgroundVersion === 11) {
+  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && promotion.generatedBackgroundVersion === 12) {
     return promotion.generatedBackgroundUrl;
   }
   if (!promotion?.category) return null;
@@ -1547,6 +1547,15 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
   context.restore();
 }
 
+function getCinematicListingBannerBottom(brushImage: CanvasImage | null, width: number, scale: number) {
+  const bannerWidth = Math.min(width * 0.76, 912 * scale);
+  const isFinishedListingBanner = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5);
+  if (isFinishedListingBanner && brushImage) {
+    return 2 * scale + bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
+  }
+  return 62 * scale + 174 * scale;
+}
+
 function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, x: number, y: number, width: number, height: number, scale: number) {
   context.save();
   // The former full-detail-column plaque looked visibly lopsided around short
@@ -1680,7 +1689,10 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   }
 
   const imageX = 76 * scale;
-  const imageY = 280 * scale;
+  // Measure the finished banner asset so the focal item can never be placed
+  // beneath or touching the banner, even when the asset aspect ratio changes.
+  const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
+  const imageY = Math.max(280 * scale, listingBannerBottom + 24 * scale);
   const imageWidth = 400 * scale;
   const imageHeight = height - imageY - 44 * scale;
   const detailX = 520 * scale;
@@ -2197,10 +2209,6 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
-  const hasCurrentGeneratedHighValueScene = draft.source === "High-Value Listing"
-    && draft.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/")
-    && draft.promotion.generatedBackgroundVersion === 11;
-
   const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
     loadCanvasImage(itemImageUrl, Boolean(itemImageUrl)),
@@ -2231,7 +2239,9 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "High-Value Listing") {
-    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage, !hasCurrentGeneratedHighValueScene);
+    // The exact listing image is the single source of truth for the collectible.
+    // Generated scenes are contextual backgrounds only and never replace it.
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage, true);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

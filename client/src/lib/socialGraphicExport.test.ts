@@ -84,6 +84,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const strokeWidth = Math.min(width * 0.76, 912 * scale)");
     expect(exporterSource).toContain("const bannerY = 2 * scale");
     expect(exporterSource).toContain("const strokeHeight = 174 * scale");
+    expect(exporterSource).toContain("function getCinematicListingBannerBottom");
+    expect(exporterSource).toContain("listingBannerBottom + 24 * scale");
     expect(exporterSource).toContain("const logoWidth = 700 * scale");
     expect(exporterSource).toContain("const strokeY = 62 * scale");
     expect(exporterSource).toContain("const sourceY = brushImage.naturalHeight * 0.11");
@@ -105,7 +107,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
     expect(exporterSource).toContain("const imageX = 76 * scale");
-    expect(exporterSource).toContain("const imageY = 280 * scale");
+    expect(exporterSource).toContain("const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale)");
+    expect(exporterSource).toContain("const imageY = Math.max(280 * scale, listingBannerBottom + 24 * scale)");
     expect(exporterSource).toContain("const imageWidth = 400 * scale");
     expect(exporterSource).toContain("const detailWidth = 380 * scale");
     expect(exporterSource).toContain("const detailX = 520 * scale");
@@ -136,8 +139,8 @@ describe("native Social graphic exporter", () => {
   it("selects a specific high-value environment from category and item type", () => {
     expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(51);
     expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/high-value-jordan.png", generatedBackgroundVersion: 11 })).toBe("/manus-storage/generated/high-value-jordan.png");
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: null, itemType: null, generatedBackgroundUrl: "/manus-storage/generated/high-value-unclassified.png", generatedBackgroundVersion: 11 })).toBe("/manus-storage/generated/high-value-unclassified.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/high-value-jordan.png", generatedBackgroundVersion: 12 })).toBe("/manus-storage/generated/high-value-jordan.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: null, itemType: null, generatedBackgroundUrl: "/manus-storage/generated/high-value-unclassified.png", generatedBackgroundVersion: 12 })).toBe("/manus-storage/generated/high-value-unclassified.png");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/stale-scene.png", generatedBackgroundVersion: 9 })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "https://untrusted.example/scene.png" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Miles Davis Kind of Blue LP", category: "Music", itemType: "vinyl_record" })).toContain("music-vinyl-record");

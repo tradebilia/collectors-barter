@@ -23,7 +23,7 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("prepareSocialGraphicImage");
     expect(componentSource).toContain("generateHighValueListingScene");
     expect(componentSource).toContain("generatedBackgroundUrl");
-    expect(componentSource).toContain("generatedBackgroundVersion === 11");
+    expect(componentSource).toContain("generatedBackgroundVersion === 12");
     expect(componentSource).toContain("listingImageDataUrl: preparedGraphicImageUrl");
     expect(componentSource).toContain("Reading the public listing photo as a visual reference and creating one left-side item-inspired collector scene");
     expect(componentSource).toContain("Creating item-specific scene");
