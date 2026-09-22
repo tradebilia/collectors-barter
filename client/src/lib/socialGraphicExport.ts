@@ -1937,11 +1937,20 @@ function drawCinematicTradeGroup(
   };
 
   if (visibleEntries.length === 1) {
-    // Single-item trades use mirrored centers around the exchange mark. This
-    // keeps both collectibles equally close to the protected center lane while
-    // giving the focal images a little more visual weight.
-    const singleItemCenter = side === "left" ? width * 0.225 : width * 0.775;
-    draw(visibleEntries[0], singleItemCenter, imageY, groupWidth * 0.92, imageHeight * 1.16, groupWidth * 1.04);
+    // Single-item trades use one shared edge gap from the exchange mark rather
+    // than mirrored centers. This keeps the visible item frames equally close
+    // to the Traded logo even when the two source images have different widths.
+    const itemWidth = groupWidth * 0.92;
+    const exchangeWidth = 260 * scale;
+    const centerX = width / 2;
+    const exchangeEdge = side === "left"
+      ? centerX - exchangeWidth / 2
+      : centerX + exchangeWidth / 2;
+    const itemGap = 24 * scale;
+    const itemCenter = side === "left"
+      ? exchangeEdge - itemGap - itemWidth / 2
+      : exchangeEdge + itemGap + itemWidth / 2;
+    draw(visibleEntries[0], itemCenter, imageY, itemWidth, imageHeight * 1.16, groupWidth * 1.04);
     return;
   }
 
