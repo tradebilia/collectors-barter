@@ -532,13 +532,23 @@ function drawRoundedRect(context: CanvasRenderingContext2D, x: number, y: number
   }
 }
 
-function drawContainedImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number) {
+function getContainedImageRect(image: CanvasImage, x: number, y: number, width: number, height: number, align: "center" | "right" = "center") {
   const naturalWidth = image.naturalWidth || 1;
   const naturalHeight = image.naturalHeight || 1;
   const scale = Math.min(width / naturalWidth, height / naturalHeight);
   const drawWidth = naturalWidth * scale;
   const drawHeight = naturalHeight * scale;
-  context.drawImage(image, x + (width - drawWidth) / 2, y + (height - drawHeight) / 2, drawWidth, drawHeight);
+  return {
+    x: align === "right" ? x + width - drawWidth : x + (width - drawWidth) / 2,
+    y: y + (height - drawHeight) / 2,
+    width: drawWidth,
+    height: drawHeight,
+  };
+}
+
+function drawContainedImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number, align: "center" | "right" = "center") {
+  const rect = getContainedImageRect(image, x, y, width, height, align);
+  context.drawImage(image, rect.x, rect.y, rect.width, rect.height);
 }
 
 function loadCanvasImage(source: string | null | undefined, required = false): Promise<CanvasImage | null> {
@@ -1093,7 +1103,7 @@ function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x
   context.textBaseline = "alphabetic";
 }
 
-function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | null, x: number, y: number, width: number, height: number, label: string) {
+function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | null, x: number, y: number, width: number, height: number, label: string, align: "center" | "right" = "center") {
   // The original collectible is the focal point. Do not draw an enclosure or
   // border around it; the source image should sit directly in the scene.
   context.save();
@@ -1102,7 +1112,7 @@ function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | 
   roundedRectPath(context, x + 5, y + 5, width - 10, height - 10, Math.max(10, width * 0.022));
   context.clip();
   if (image) {
-    drawContainedImage(context, image, x + 8, y + 8, width - 16, height - 16);
+    drawContainedImage(context, image, x + 8, y + 8, width - 16, height - 16, align);
   } else {
     context.fillStyle = "rgba(255,255,255,0.10)";
     context.fillRect(x + 10, y + 10, width - 20, height - 20);
@@ -1713,14 +1723,13 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale);
   const imageWidth = 532 * scale;
   const imageHeight = height - imageY - 38 * scale;
-  // The item frame ends at 632px on the 1200px baseline. Keep a deliberate
-  // 8px breathing gap before the detail panel while retaining a hard
-  // non-overlap boundary.
-  const detailX = 640 * scale;
+  // The visible right-aligned item ends at 624px on the 1200px baseline.
+  // Keep an 8px breathing gap before the detail panel.
+  const detailX = 632 * scale;
   const detailWidth = width - detailX - 48 * scale;
   let detailY = 258 * scale;
   if (showOriginalItem) {
-    drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
+    drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA", "right");
   }
   context.fillStyle = "#ffffff";
   detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 36 * scale, 20 * scale, 2);
