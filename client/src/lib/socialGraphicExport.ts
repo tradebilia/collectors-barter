@@ -1759,8 +1759,8 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
 
 function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage: CanvasImage | null, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
   if (logoImage) {
-    const logoWidth = 260 * scale;
-    const logoHeight = 198 * scale;
+    const logoWidth = 300 * scale;
+    const logoHeight = 228 * scale;
     drawContainedImage(context, logoImage, centerX - logoWidth / 2, centerY - logoHeight / 2 - 2 * scale, logoWidth, logoHeight);
     if (cashIncluded) {
       context.save();
@@ -1941,12 +1941,13 @@ function drawCinematicTradeGroup(
     // than mirrored centers. This keeps the visible item frames equally close
     // to the Traded logo even when the two source images have different widths.
     const itemWidth = groupWidth * 0.92;
-    const exchangeWidth = 260 * scale;
+    const exchangeWidth = 300 * scale;
     const centerX = width / 2;
     const exchangeEdge = side === "left"
       ? centerX - exchangeWidth / 2
       : centerX + exchangeWidth / 2;
-    const itemGap = 24 * scale;
+    // Bring both item frames 20 baseline pixels closer to the enlarged mark.
+    const itemGap = 4 * scale;
     const itemCenter = side === "left"
       ? exchangeEdge - itemGap - itemWidth / 2
       : exchangeEdge + itemGap + itemWidth / 2;

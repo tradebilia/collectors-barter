@@ -292,11 +292,11 @@ describe("native Social graphic exporter", () => {
   it("keeps the supplied Trade Alert banner below the brand lockup and protects the Traded center lane", () => {
     expect(exporterSource).toContain("const bannerWidth = Math.min(width * 0.56, 672 * scale)");
     expect(exporterSource).toContain("const bannerY = 64 * scale");
-    expect(exporterSource).toContain("const logoWidth = 260 * scale");
+    expect(exporterSource).toContain("const logoWidth = 300 * scale");
     expect(exporterSource).toContain("const groupLeft = side === \"left\" ? width * 0.055 : width * 0.615");
     expect(exporterSource).toContain("const groupWidth = width * 0.36");
-    expect(exporterSource).toContain("const exchangeWidth = 260 * scale");
-    expect(exporterSource).toContain("const itemGap = 24 * scale");
+    expect(exporterSource).toContain("const exchangeWidth = 300 * scale");
+    expect(exporterSource).toContain("const itemGap = 4 * scale");
     expect(exporterSource).toContain("exchangeEdge - itemGap - itemWidth / 2");
     expect(exporterSource).toContain("exchangeEdge + itemGap + itemWidth / 2");
     expect(exporterSource).toContain("draw(visibleEntries[0], itemCenter, imageY, itemWidth, imageHeight * 1.16");
