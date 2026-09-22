@@ -1724,9 +1724,9 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const imageWidth = 532 * scale;
   const imageHeight = height - imageY - 38 * scale;
   // The visible right-aligned item ends at approximately 624px on the 1200px
-  // baseline. Use a deliberate 40px separation so the item and detail panel
+  // baseline. Use a deliberate 80px separation so the item and detail panel
   // read as one composition without appearing crowded.
-  const detailX = 664 * scale;
+  const detailX = 704 * scale;
   const detailWidth = width - detailX - 48 * scale;
   let detailY = 258 * scale;
   if (showOriginalItem) {
