@@ -2439,6 +2439,11 @@ export const tradeFlowRouter = router({
         spreadPct: number;  // (max-min)/avg * 100
         count: number;
         confidence: 'high' | 'medium' | 'low';
+        completedSalesCount: number;
+        nearClosingAuctionCount: number;
+        askingPriceCount: number;
+        valuationMedian: number | null;
+        evidenceBasis: 'completed_sales' | 'near_closing_auction' | 'asking_price_context';
         fetchedAt: string;
       }
 
@@ -2452,9 +2457,10 @@ export const tradeFlowRouter = router({
           const estimatedValue = parseFloat(item.estimatedValue || '0');
           console.log(`[AI Analyzer] eBay query for "${item.title}": "${query}"`);
 
-          // Fetch more results (25) so we can filter outliers more effectively
+          // Active asking prices are context only. A listing is authoritative
+          // only when it is a bid-supported auction ending within one hour.
           const res = await fetch(
-            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=25&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
+            `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=25`,
             { headers: { 'Authorization': `Bearer ${ebayToken}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
           );
           const data = await res.json() as any;
@@ -2463,11 +2469,27 @@ export const tradeFlowRouter = router({
             return null;
           }
 
-          let allPrices = data.itemSummaries
-            .map((i: any) => parseFloat(i.price?.value || '0'))
+          const now = Date.now();
+          const completedSales: number[] = [];
+          const nearClosingAuctions: number[] = [];
+          const askingListings: number[] = [];
+          for (const listing of data.itemSummaries) {
+            const buyingOptions = Array.isArray(listing.buyingOptions) ? listing.buyingOptions : [];
+            const isAuction = buyingOptions.includes('AUCTION');
+            const bidCount = Number(listing.bidCount ?? listing.bids ?? 0);
+            const endTime = Date.parse(listing.itemEndDate || listing.endDate || '');
+            const endsWithinHour = Number.isFinite(endTime) && endTime > now && endTime - now <= 60 * 60 * 1000;
+            const price = parseFloat((isAuction ? listing.currentBidPrice?.value : listing.price?.value) || listing.price?.value || '0');
+            if (!(price > 0)) continue;
+            if (listing.soldDate || listing.saleType === 'SOLD') completedSales.push(price);
+            else if (isAuction && bidCount > 0 && endsWithinHour) nearClosingAuctions.push(price);
+            else askingListings.push(price);
+          }
+          let allPrices = [...completedSales, ...nearClosingAuctions, ...askingListings]
             .filter((p: number) => p > 0)
             .sort((a: number, b: number) => a - b);
           if (!allPrices.length) return null;
+          const authoritativePrices = [...completedSales, ...nearClosingAuctions].sort((a, b) => a - b);
 
           // Remove statistical outliers using IQR method to filter unrelated cheap/expensive listings
           const q1idx = Math.floor(allPrices.length * 0.25);
@@ -2489,15 +2511,24 @@ export const tradeFlowRouter = router({
           const min = Math.round(finalPrices[0]);
           const max = Math.round(finalPrices[count - 1]);
           const spreadPct = avg > 0 ? Math.round(((max - min) / avg) * 100) : 0;
+          const valuationMedian = authoritativePrices.length > 0
+            ? authoritativePrices.length % 2 !== 0
+              ? authoritativePrices[Math.floor(authoritativePrices.length / 2)]
+              : Math.round((authoritativePrices[authoritativePrices.length / 2 - 1] + authoritativePrices[authoritativePrices.length / 2]) / 2)
+            : null;
+          const evidenceBasis = completedSales.length > 0
+            ? 'completed_sales' as const
+            : nearClosingAuctions.length > 0
+              ? 'near_closing_auction' as const
+              : 'asking_price_context' as const;
 
           // Confidence: high = 7+ results with tight spread, medium = 4-6 or wide spread, low = <4
-          let confidence: 'high' | 'medium' | 'low';
-          if (count >= 7 && spreadPct < 80) confidence = 'high';
-          else if (count >= 4) confidence = 'medium';
-          else confidence = 'low';
+          let confidence: 'high' | 'medium' | 'low' = 'low';
+          if (valuationMedian !== null && authoritativePrices.length >= 7 && spreadPct < 80) confidence = 'high';
+          else if (valuationMedian !== null && authoritativePrices.length >= 4) confidence = 'medium';
 
-          console.log(`[AI Analyzer] eBay metrics for "${query}": avg=$${avg} median=$${median} min=$${min} max=$${max} spread=${spreadPct}% count=${count}/${allPrices.length} (after outlier removal) confidence=${confidence}`);
-          return { avg, median, min, max, spreadPct, count, confidence, fetchedAt: new Date().toISOString() };
+          console.log(`[AI Analyzer] eBay metrics for "${query}": contextMedian=$${median} valuationMedian=${valuationMedian === null ? 'unavailable' : `$${valuationMedian}`} basis=${evidenceBasis} completed=${completedSales.length} nearClosing=${nearClosingAuctions.length} asking=${askingListings.length} confidence=${confidence}`);
+          return { avg, median, min, max, spreadPct, count, confidence, completedSalesCount: completedSales.length, nearClosingAuctionCount: nearClosingAuctions.length, askingPriceCount: askingListings.length, valuationMedian, evidenceBasis, fetchedAt: new Date().toISOString() };
         } catch (err: any) {
           console.log(`[AI Analyzer] eBay fetch error for "${item.title}":`, err?.message);
           return null;
@@ -2528,11 +2559,15 @@ export const tradeFlowRouter = router({
           line += ` | Owner Estimated Value: $${estimatedValue.toLocaleString()} [UNVERIFIED]`;
 
           if (metrics) {
-            line += ` | eBay Active Listings (${metrics.count} results, confidence: ${metrics.confidence}):`;
+            line += ` | eBay Market Evidence (${metrics.count} active results, confidence: ${metrics.confidence}, basis: ${metrics.evidenceBasis}):`;
             line += ` Avg=$${metrics.avg.toLocaleString()}`;
-            line += ` Median=$${metrics.median.toLocaleString()}`;
+            line += ` AskingPriceMedian=$${metrics.median.toLocaleString()}`;
             line += ` Range=$${metrics.min.toLocaleString()}-$${metrics.max.toLocaleString()}`;
             line += ` PriceSpread=${metrics.spreadPct}%`;
+            line += ` CompletedSales=${metrics.completedSalesCount} NearClosingBidAuctions=${metrics.nearClosingAuctionCount} AskingPriceListings=${metrics.askingPriceCount}`;
+            line += metrics.valuationMedian === null
+              ? ` | eBay Valuation: UNAVAILABLE (active asking prices are context only; use owner estimate with low confidence)`
+              : ` | eBay Valuation Median=$${metrics.valuationMedian.toLocaleString()} [${metrics.evidenceBasis === 'completed_sales' ? 'COMPLETED SALES' : 'BID-SUPPORTED AUCTION ENDING <1 HOUR'}]`;
             if (metrics.spreadPct > 100) line += ` [HIGH VARIANCE — market is inconsistent]`;
           } else {
             line += ` | eBay Data: UNAVAILABLE [use owner estimate with low confidence]`;
@@ -2565,24 +2600,25 @@ export const tradeFlowRouter = router({
 
       for (const item of myItems) {
         const m = itemMetricsMap.get(item.id);
-        if (m) { myEbayTotal += m.median; totalDataPoints += m.count; allConfidenceLevels.push(m.confidence); }
+        if (m?.valuationMedian !== null && m?.valuationMedian !== undefined) { myEbayTotal += m.valuationMedian; totalDataPoints += m.completedSalesCount || m.nearClosingAuctionCount; allConfidenceLevels.push(m.confidence); }
         else myEbayTotal += (typeof item.estimatedValue === 'number' ? item.estimatedValue : parseFloat(item.estimatedValue || '0'));
       }
       for (const item of theirItems) {
         const m = itemMetricsMap.get(item.id);
-        if (m) { theirEbayTotal += m.median; totalDataPoints += m.count; allConfidenceLevels.push(m.confidence); }
+        if (m?.valuationMedian !== null && m?.valuationMedian !== undefined) { theirEbayTotal += m.valuationMedian; totalDataPoints += m.completedSalesCount || m.nearClosingAuctionCount; allConfidenceLevels.push(m.confidence); }
         else theirEbayTotal += (typeof item.estimatedValue === 'number' ? item.estimatedValue : parseFloat(item.estimatedValue || '0'));
       }
 
-      const ebayDiff = theirEbayTotal - myEbayTotal;
-      const ebayDiffStr = ebayDiff > 0
-        ? `+$${Math.abs(Math.round(ebayDiff)).toLocaleString()} IN YOUR FAVOR (you receive more eBay value than you give)`
-        : ebayDiff < 0
-        ? `-$${Math.abs(Math.round(ebayDiff)).toLocaleString()} AGAINST YOU (you give more eBay value than you receive)`
-        : `$0 — perfectly balanced on eBay prices`;
-
       // Overall confidence score (1-10) based on data completeness
       const hasAllEbayData = allConfidenceLevels.length === (myItems.length + theirItems.length);
+      const ebayDiff = theirEbayTotal - myEbayTotal;
+      const ebayDiffStr = !hasAllEbayData
+        ? `UNAVAILABLE — one or more items lack completed-sale or qualifying near-closing auction evidence; owner estimates are unverified`
+        : ebayDiff > 0
+          ? `+$${Math.abs(Math.round(ebayDiff)).toLocaleString()} IN YOUR FAVOR (you receive more verified eBay value than you give)`
+          : ebayDiff < 0
+          ? `-$${Math.abs(Math.round(ebayDiff)).toLocaleString()} AGAINST YOU (you give more verified eBay value than you receive)`
+          : `$0 — perfectly balanced on verified eBay prices`;
       const highCount = allConfidenceLevels.filter(c => c === 'high').length;
       const medCount = allConfidenceLevels.filter(c => c === 'medium').length;
       const overallConfidence = !hasAllEbayData ? 3
@@ -2595,9 +2631,9 @@ export const tradeFlowRouter = router({
       const prompt = `You are a professional collectibles trade analyst for Tradebilia. Evaluate this trade with the depth and precision of a seasoned appraiser.
 
 === DATA RULES (CRITICAL — FOLLOW EXACTLY) ===
-1. The trade data below contains VERIFIED MARKET DATA (eBay listings) and UNVERIFIED OWNER ESTIMATES.
+1. The trade data below contains VERIFIED MARKET DATA (completed sales or qualifying near-closing auctions), ACTIVE ASKING-PRICE CONTEXT, and UNVERIFIED OWNER ESTIMATES.
 2. NEVER invent, substitute, or override verified numerical data with your own estimates.
-3. If eBay data is marked UNAVAILABLE, use the owner estimate but explicitly label it as unverified and lower your confidence.
+3. Active eBay asking prices are NOT realized market value. Use them only as context unless a listing is a bid-supported auction ending in less than one hour. If verified eBay valuation data is unavailable, use the owner estimate but explicitly label it as unverified and lower your confidence.
 4. Clearly distinguish between: [VERIFIED DATA] vs [AI INTERPRETATION] vs [FUTURE PROJECTION].
 5. Do NOT include URLs, citations, or links.
 6. ALWAYS cite specific dollar amounts — never say "high value", always say "$3,399".
@@ -2631,7 +2667,7 @@ ${mySide}${myCashStr}
 ${theirSide}${theirCashStr}
 
 === PRE-COMPUTED METRICS (authoritative — do not override) ===
-- eBay Median Value Gap: ${ebayDiffStr}
+- Verified eBay Median Value Gap: ${ebayDiffStr}
 - Owner Estimated Value Gap: ${valueDiffStr}
 - Data Confidence Level: ${overallConfidence}/10 (based on ${totalDataPoints} eBay data points)
 
