@@ -1496,7 +1496,7 @@ function drawCinematicListingHeader(context: CanvasRenderingContext2D, logo: Can
   // the angled brush, texture, and NEW HIGH-VALUE LISTING lettering, so it must
   // be drawn as one complete asset with no second headline layered on top.
   const logoWidth = 700 * scale;
-  drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
+  drawBrand(context, logo, (width - logoWidth) / 2, 8 * scale, logoWidth, 94 * scale);
   // The finished banner includes a substantial lower brush edge. Keep its
   // full artwork compact enough to leave an explicit title band below it.
   const strokeWidth = Math.min(width * 0.76, 912 * scale);
@@ -1688,15 +1688,15 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 76 * scale;
+  const imageX = 42 * scale;
   // Measure the finished banner asset so the focal item can never be placed
   // beneath or touching the banner, even when the asset aspect ratio changes.
   const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
   const imageY = Math.max(280 * scale, listingBannerBottom + 24 * scale);
-  const imageWidth = 400 * scale;
+  const imageWidth = 470 * scale;
   const imageHeight = height - imageY - 44 * scale;
-  const detailX = 520 * scale;
-  const detailWidth = 380 * scale;
+  const detailX = 548 * scale;
+  const detailWidth = 350 * scale;
   let detailY = 280 * scale;
   if (showOriginalItem) {
     drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
@@ -1716,11 +1716,11 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   if (value) {
     const plaqueHeight = 90 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
-    const plaqueY = Math.min(Math.max(detailY + factsHeight + 14 * scale, 420 * scale), plaqueBottomLimit - plaqueHeight);
+    const plaqueY = Math.min(Math.max(detailY + factsHeight + 24 * scale, 420 * scale), plaqueBottomLimit - plaqueHeight);
     drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth, plaqueHeight, scale);
   }
-  context.fillStyle = "rgba(255,244,205,0.96)";
-  context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
+  context.fillStyle = "#fff6d6";
+  context.font = `900 ${Math.round(19 * scale)}px ${CANVAS_SANS_FONT}`;
   context.textAlign = "center";
   drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, footerBaselineY);
   context.textAlign = "left";

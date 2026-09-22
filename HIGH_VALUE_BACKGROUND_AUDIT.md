@@ -149,3 +149,9 @@ Existing version-ten scenes are treated as stale and regenerate under the versio
 Rich confirmed that the generated collectible should not be trusted to recreate or complete the item. The high-value renderer now always places the actual prepared listing image once as the left-side focal collectible. Generated scenes are version twelve contextual backgrounds only: they read the listing image for public associations such as team, sport, franchise, era, venue, materials, and display objects, but they are explicitly forbidden from redrawing the collectible, creating a card/slab/package/figure duplicate, or placing an item-like subject elsewhere. The lower-left zone is reserved for the exact source item, the center-right lane remains clear for listing copy, and the right side contains only contextual environment and lighting. The listing banner is measured from the rendered asset and the item begins at least 24 scaled pixels below its bottom edge.
 
 Focused renderer, preview, server-contract, TypeScript, production-build, and whitespace validation passed. The image and vision providers remain usage-exhausted, so a fresh generated context scene was not claimed as visually approved during this correction. No database, migration, publishing, production-domain, or social-posting change was made.
+
+## Landscape focal-item and spacing polish
+
+The exact source listing image is now given a larger left-side frame with more available width, while the information column was narrowed and shifted right to preserve separation. The high-value facts-to-plaque gap was increased so the divider below the grading company and grade cannot crowd the Trade Value plaque. The brand lockup was lowered slightly from the top edge. The bottom phrase now uses a larger, heavier, higher-contrast canvas font with whole-pixel baseline rendering for improved sharpness.
+
+Focused social renderer tests, TypeScript validation, production build, and whitespace validation passed.
