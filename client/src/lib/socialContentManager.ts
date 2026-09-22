@@ -17,7 +17,7 @@ export type SocialPromotionDetails = {
   visualHints?: string[] | null;
   /** Browser-local managed storage URL for the generated per-listing scene. */
   generatedBackgroundUrl?: string | null;
-  /** Scene-generation prompt version; v6 extracts listing-image cues with the correct GPT completion budget and requires a visible full environment. */
+  /** Scene-generation prompt version; v10 adds item-specific supporting elements around the single generated hero. */
   generatedBackgroundVersion?: number | null;
   tradeItems?: Array<{
     listingId?: number | null;

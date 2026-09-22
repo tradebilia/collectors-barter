@@ -1630,7 +1630,7 @@ function drawSecondaryCollectorProp(context: CanvasRenderingContext2D, propImage
   context.restore();
 }
 
-function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
+function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, _itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
   const scale = width / 1200;
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -1654,7 +1654,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const detailWidth = Math.max(220 * scale, width - detailX - padding);
     const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     const imageHeight = Math.max(260 * scale, Math.min(platform === "Pinterest" ? height * 0.42 : height * 0.48, plaqueY - imageY - 28 * scale));
-    drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
     let detailY = imageY + 30 * scale;
     context.fillStyle = "#ffffff";
     detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
@@ -1681,7 +1680,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const imageY = 280 * scale;
   const imageWidth = 400 * scale;
   const imageHeight = height - imageY - 44 * scale;
-  drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
   const detailX = 520 * scale;
   const detailWidth = 380 * scale;
   let detailY = 280 * scale;

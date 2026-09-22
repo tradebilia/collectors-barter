@@ -123,3 +123,11 @@ The active completed-trade banner now uses Rich's newly supplied `TradeAlert.web
 ## Original item emphasis
 
 The high-value landscape composition now gives the original listing media greater visual priority: the media lane moved left, increased from 330 to 400 baseline pixels, and begins higher at 280 baseline pixels. The information lane was narrowed and shifted right to preserve a collision-free title, fact grid, Trade Value plaque, and footer. The previous heavy translucent media enclosure was reduced to a quiet glass boundary with a smaller inset, so the boundary separates the item from the scene without competing with the collectible. A fresh native 1200 × 630 Michael Jordan export was inspected and confirmed the original card is larger and visually dominant with no title, fact, plaque, or footer overlap. No database writes, publishing, production-domain changes, or social posts occurred.
+
+## Version-ten item-specific supporting elements
+
+The automatic per-listing scene prompt now requires more than a generated substitute for the collectible. It must create one generated hero subject in the protected lower-left zone plus two to four supporting environmental elements tied to the actual listing. For sports cards, the scene may use clearly supported public team or league context, sport equipment, venue or field cues, team colors, and era details; analogous public character, franchise, material, or display cues apply to non-sports items. The source listing image remains a visual reference only and is never reproduced as an exact collectible or duplicated on the right.
+
+The version-ten prompt also preserves the strict upper 48% banner-safe band and lower-left placement target of approximately x=6%–34% and y=55%–94%. Structured image-reference parsing now tolerates fenced or wrapped JSON responses and uses a larger completion budget.
+
+Focused renderer, preview, server-contract, TypeScript, production-build, and diff validation passed. Native version-eight inspection previously confirmed the single generated left-side subject and no right-side duplicate, but the version-ten live regeneration could not be visually approved because the configured image and vision providers returned an external `usage exhausted` error. No replacement image was accepted as version-ten, and no publishing or production-domain change was made.

@@ -102,7 +102,6 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain("rgba(3, 12, 30, 0.97)");
     expect(exporterSource).toContain("const imageWidth = Math.min(width * 0.38, 410 * scale)");
     expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
-    expect(exporterSource).toContain("drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
     expect(exporterSource).toContain("const imageX = 76 * scale");
@@ -111,6 +110,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const detailWidth = 380 * scale");
     expect(exporterSource).toContain("const detailX = 520 * scale");
     expect(exporterSource).toContain("rgba(255,255,255,0.025)");
+    const highValueRenderer = exporterSource.slice(
+      exporterSource.indexOf("function drawHighValueListingCinematic"),
+      exporterSource.indexOf("function drawCinematicExchangeMark"),
+    );
+    expect(highValueRenderer).not.toContain("drawMediaFrame(context, itemImage");
+    expect(highValueRenderer).toContain("_itemImage");
   });
 
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {

@@ -296,7 +296,7 @@ export function SocialContentManagerTab() {
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const isAutomaticHighValueScene = selectedDraft?.source === "High-Value Listing" && Boolean(selectedDraft.promotion);
-  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 6);
+  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 10);
   const needsAutomaticHighValueScene = isAutomaticHighValueScene && hasExportableItemImage && !hasGeneratedHighValueScene;
   const isGeneratingHighValueScene = needsAutomaticHighValueScene && generateHighValueListingScene.isPending;
   const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
@@ -329,7 +329,7 @@ export function SocialContentManagerTab() {
 
   useEffect(() => {
     if (!isPreviewOpen || selectedDraft?.source !== "High-Value Listing" || !selectedDraft.promotion || !preparedGraphicImageUrl) return;
-    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 6) return;
+    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 10) return;
     const requestKey = `${selectedDraft.id}:${selectedDraft.promotion.itemTitle}:${selectedDraft.promotion.category}:${selectedDraft.promotion.itemType}`;
     if (generatedSceneRequestRef.current === requestKey) return;
     generatedSceneRequestRef.current = requestKey;
@@ -347,7 +347,7 @@ export function SocialContentManagerTab() {
     }).then(({ url }) => {
       setDrafts((current) => current.map((draft) => draft.id !== selectedDraft.id || !draft.promotion
         ? draft
-        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url, generatedBackgroundVersion: 6 }, updatedAt: new Date().toISOString() }));
+        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url, generatedBackgroundVersion: 10 }, updatedAt: new Date().toISOString() }));
     }).catch(() => {
       generatedSceneRequestRef.current = null;
       toast.error("The item-specific background could not be generated. Close and reopen the preview to retry.");
@@ -774,7 +774,7 @@ export function SocialContentManagerTab() {
               <DialogContent className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
                 <DialogHeader className="relative z-10 shrink-0 border-b border-slate-100 bg-white px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
                   <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-indigo-600" />Social Graphic Preview</DialogTitle>
-                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account. The original item image is fitted in full and is never cropped or altered.</DialogDescription>
+                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account. High-value graphics use one generated item-inspired visual; the original listing photo is used only as a private visual reference and is never altered.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-5 px-5 pb-5 pt-4 sm:px-6">
                   <div className="relative z-10 flex flex-wrap gap-2" aria-label="Preview platform">
@@ -783,7 +783,7 @@ export function SocialContentManagerTab() {
 
                   {selectedPreviewPlatform ? <div className="space-y-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div><p className="text-sm font-bold text-slate-900">Finished promotional graphic</p><p className="mt-0.5 text-xs text-slate-500">{SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].label} · {SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].size} · original item image contained in full</p></div>
+                      <div><p className="text-sm font-bold text-slate-900">Finished promotional graphic</p><p className="mt-0.5 text-xs text-slate-500">{SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].label} · {SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].size} · one generated item-inspired visual</p></div>
                       {selectedDraft.promotion ? <Badge className="w-fit border border-indigo-100 bg-indigo-50 text-indigo-700">{formatSocialCategory(selectedDraft.promotion.category) || "Collectible"}</Badge> : null}
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">
@@ -792,7 +792,7 @@ export function SocialContentManagerTab() {
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs leading-5 text-slate-500">{isGeneratingHighValueScene ? "Reading public listing references and creating this item’s unique collector background…" : isPreparingGraphicImage ? "Preparing the original item image and Trade Alert environments for a reliable download…" : "The download exports the displayed platform graphic. It never changes the original uploaded collectible image."}</p>
+                      <p className="text-xs leading-5 text-slate-500">{isGeneratingHighValueScene ? "Reading the public listing photo as a visual reference and creating one left-side item-inspired collector scene…" : isPreparingGraphicImage ? "Preparing the listing reference and Trade Alert environments for a reliable download…" : "The download exports the displayed platform graphic. The original uploaded collectible image is not placed into high-value artwork or changed."}</p>
                       <Button type="button" size="sm" onClick={() => void downloadSocialGraphic()} disabled={isExportingGraphic || isPreparingGraphicImage} className="shrink-0 bg-indigo-600 text-white hover:bg-indigo-700"><Download className="mr-1.5 h-4 w-4" />{isPreparingGraphicImage || isExportingGraphic ? "Preparing…" : "Download Graphic"}</Button>
                     </div>
                   </div> : null}

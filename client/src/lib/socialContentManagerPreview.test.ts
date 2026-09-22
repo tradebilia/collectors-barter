@@ -23,9 +23,9 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("prepareSocialGraphicImage");
     expect(componentSource).toContain("generateHighValueListingScene");
     expect(componentSource).toContain("generatedBackgroundUrl");
-    expect(componentSource).toContain("generatedBackgroundVersion === 6");
+    expect(componentSource).toContain("generatedBackgroundVersion === 10");
     expect(componentSource).toContain("listingImageDataUrl: preparedGraphicImageUrl");
-    expect(componentSource).toContain("Reading public listing references and creating this item’s unique collector background");
+    expect(componentSource).toContain("Reading the public listing photo as a visual reference and creating one left-side item-inspired collector scene");
     expect(componentSource).toContain("Creating item-specific scene");
     expect(componentSource).toContain("preparedGraphicImageUrl");
     expect(componentSource).toContain("preparedBrandLogoUrl");
@@ -41,7 +41,7 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("navigator.clipboard.writeText(previewCaption)");
     expect(componentSource).toContain('if (draft.source !== "High-Value Listing") return draft.copy;');
     expect(componentSource).not.toContain("brandLogoDataUrl");
-    expect(componentSource).toContain("Preparing the original item image");
+    expect(componentSource).toContain("Preparing the listing reference");
     expect(componentSource).toContain("renderSocialGraphicCanvas");
     expect(componentSource).not.toContain("html2canvas");
     expect(exporterSource).toContain("document.createElement(\"canvas\")");
@@ -51,9 +51,9 @@ describe("Social Content Manager post preview", () => {
     expect(graphicSource).toContain("draft,");
   });
 
-  it("retains the original image and manual-publishing safeguards", () => {
-    expect(componentSource).toContain("original item image is fitted in full and is never cropped or altered");
-    expect(componentSource).toContain("The download exports the displayed platform graphic. It never changes the original uploaded collectible image.");
+  it("uses the original image only as a reference and retains manual-publishing safeguards", () => {
+    expect(componentSource).toContain("one generated item-inspired visual");
+    expect(componentSource).toContain("The original uploaded collectible image is not placed into high-value artwork or changed.");
     expect(componentSource).not.toContain("object-cover");
     expect(componentSource).toContain("Internal planning preview only. It does not publish");
     expect(componentSource).toContain("Platform layouts can vary after manual publishing.");

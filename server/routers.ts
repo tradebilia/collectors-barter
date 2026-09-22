@@ -208,14 +208,14 @@ function buildAutomaticHighValueScenePrompt(input: {
     `Item type: ${cleanSocialScenePromptValue(input.itemType, 96)}.`,
     facts ? `Public display facts: ${facts}.` : "",
     hints ? `Public visual references: ${hints}.` : "",
-    imageReferences ? `References extracted from the actual listing image: ${imageReferences}. Make these visual cues unmistakable at the far-right edge.` : "",
+    imageReferences ? `References extracted from the actual listing image: ${imageReferences}. Make these visual cues unmistakable in one generated hero subject on the far-left side.` : "",
   ].filter(Boolean).join(" ");
 
   return [
     "Create one cinematic, photorealistic 16:9 collector-background scene for a Tradebilia social listing.",
     subject,
-    "The attached listing image is a visual reference only. Study its subject, colors, era, category, and non-sensitive public visual cues, then translate those into tasteful environmental references. Do not reproduce, redraw, crop, or place the listing image or its collectible into the result. Never render an alternate card/cover/toy/coin/stamp, a person, a portrait, text, lettering, readable signs, logos, watermarks, or a product label.",
-    "Composition is mandatory: create a visibly detailed collector environment across the whole 16:9 canvas—use atmospheric surfaces, lighting, depth, and setting in the left and center as well as the right. Keep the far-left third free of featured objects and bright highlights for the real item image, but do not leave it black or blank. Keep the center-right information lane low-contrast and free of props for title, facts, and value, while retaining visibly meaningful environmental detail. Place larger visual-reference props at the far-right edge. Avoid broad black voids, broad dark gradients, empty studio backdrops, or an image where the scene is visible only on the right.",
+    "The attached listing image is a visual reference only. Study its subject and translate its public identity into a complete item-specific collector world: one tasteful generated hero subject on the far-left side plus 2–4 supporting environmental elements tied to the item, such as public team or league colors, sport equipment, field or venue context, character or franchise motifs, era cues, materials, or display objects. For a sports-card example, the player’s team and sport should be visually apparent through color palette, equipment, venue, and era cues. Do not reproduce, redraw, crop, or place the actual listing image, exact card, exact cover, exact packaging, or recognizable duplicate collectible anywhere in the result. The hero subject must be an environmental or contextual interpretation—not a copy of the listing photo—and the generated scene must not contain a person, portrait, readable text, lettering, readable signs, logos, watermarks, or product labels.",
+    "Composition is mandatory: create a visibly detailed collector environment across the whole 16:9 canvas. Reserve the entire upper 48% of the canvas as a strict banner-safe band plus a visible buffer: absolutely no part of the generated hero subject, card, slab, package, figure, equipment, or other featured object may enter or touch that band. Place one generated item-inspired hero subject entirely in the lower-left zone, approximately x=6%–34% and y=55%–94%, leaving a clear empty gap above it. The Tradebilia logo and banner must have zero visual overlap with the generated subject. Keep the center-right information lane low-contrast and free of featured props for title, facts, and value. Do not place any item-like duplicate, card, packaging, or source-image recreation on the right side; the right side should contain only supporting environmental detail and lighting. Avoid broad black voids, broad dark gradients, empty studio backdrops, or an image where the scene is visible only on the right.",
     "Use a premium auction-catalog editorial aesthetic with depth, a coherent collector surface, and crisp non-blurry objects. No collage, no split panels, no overlapping featured objects.",
   ].join(" ");
 }
@@ -232,13 +232,13 @@ async function extractListingImageVisualReferences(listingImageDataUrl: string) 
   try {
     const response = await invokeLLM({
       model: "gpt-5-mini",
-      maxCompletionTokens: 500,
+      maxCompletionTokens: 800,
       messages: [
         { role: "system", content: "You extract safe visual scene cues from public collectible listing photos. Return only the requested JSON." },
         {
           role: "user",
           content: [
-            { type: "text", text: "Analyze this public listing image. Return 3–6 concise, non-branded visual motifs that a background image generator can use to make a social graphic unmistakably specific to this listing. Focus on object type, colors, era, setting, equipment, materials, and pose/composition cues. Do not identify people, teams, brands, logos, readable text, values, serial numbers, or reproduce the collectible. Do not include any private data." },
+            { type: "text", text: "Analyze this public listing image. Return 3–6 concise visual motifs that a background image generator can use to make a social graphic unmistakably specific to this listing. Focus on object type, public team or league context when clearly supported, character or franchise context when clearly supported, colors, era, setting, equipment, materials, and pose/composition cues. Do not copy the collectible, reproduce readable text, logos, serial numbers, values, private data, or sensitive personal information. Public team, league, character, and franchise cues are allowed when clearly relevant to the item." },
             { type: "image_url", image_url: { url: listingImageDataUrl, detail: "auto" } },
           ],
         },
@@ -255,7 +255,13 @@ async function extractListingImageVisualReferences(listingImageDataUrl: string) 
       },
     });
     const content = response.choices[0]?.message.content;
-    const parsed = typeof content === "string" ? JSON.parse(content) as { references?: unknown } : null;
+    const normalizedContent = typeof content === "string" ? content.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim() : "";
+    const objectStart = normalizedContent.indexOf("{");
+    const objectEnd = normalizedContent.lastIndexOf("}");
+    const jsonContent = objectStart >= 0 && objectEnd > objectStart
+      ? normalizedContent.slice(objectStart, objectEnd + 1)
+      : normalizedContent;
+    const parsed = jsonContent ? JSON.parse(jsonContent) as { references?: unknown } : null;
     if (!Array.isArray(parsed?.references)) return [];
     return parsed.references
       .filter((reference): reference is string => typeof reference === "string")
