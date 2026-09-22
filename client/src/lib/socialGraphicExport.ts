@@ -1687,20 +1687,24 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   drawCinematicListingHeader(context, brandLogo, brushImage, width, scale);
 
   if (isTall) {
-    const padding = 38 * scale;
-    const imageY = 330 * scale;
+    const isInstagram = platform === "Instagram";
+    const padding = (isInstagram ? 32 : 38) * scale;
+    // Instagram has enough square-canvas height to give the collectible a
+    // stronger focal presence. Start the lower composition closer to the
+    // banner while retaining a measured gap below the painted edge.
+    const imageY = (isInstagram ? 315 : 330) * scale;
     const plaqueHeight = 112 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
     const plaqueY = plaqueBottomLimit - plaqueHeight;
-    const imageWidth = Math.min(width * 0.38, 410 * scale);
-    const detailX = padding + imageWidth + 28 * scale;
+    const imageWidth = Math.min(width * (isInstagram ? 0.43 : 0.38), (isInstagram ? 460 : 410) * scale);
+    const detailX = padding + imageWidth + (isInstagram ? 24 : 28) * scale;
     const detailWidth = Math.max(220 * scale, width - detailX - padding);
     const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     const imageHeight = Math.max(260 * scale, Math.min(platform === "Pinterest" ? height * 0.42 : height * 0.48, plaqueY - imageY - 28 * scale));
     if (showOriginalItem) {
       drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
     }
-    let detailY = imageY + 30 * scale;
+    let detailY = imageY + (isInstagram ? 20 : 30) * scale;
     context.fillStyle = "#ffffff";
     detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     detailY += 28 * scale;

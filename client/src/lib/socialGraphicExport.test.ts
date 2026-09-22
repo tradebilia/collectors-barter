@@ -102,8 +102,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const panelX = isTall ? width * 0.40 : width * 0.37");
     expect(exporterSource).toContain("const panelWidth = isTall ? width * 0.56 : width * 0.43");
     expect(exporterSource).not.toContain("rgba(3, 12, 30, 0.97)");
-    expect(exporterSource).toContain("const imageWidth = Math.min(width * 0.38, 410 * scale)");
-    expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
+    expect(exporterSource).toContain("const imageWidth = Math.min(width * (isInstagram ? 0.43 : 0.38), (isInstagram ? 460 : 410) * scale)");
+    expect(exporterSource).toContain("const detailX = padding + imageWidth + (isInstagram ? 24 : 28) * scale");
+    expect(exporterSource).toContain("const isInstagram = platform === \"Instagram\"");
+    expect(exporterSource).toContain("const imageY = (isInstagram ? 315 : 330) * scale");
+    expect(exporterSource).toContain("(isInstagram ? 460 : 410) * scale");
+    expect(exporterSource).toContain("(isInstagram ? 24 : 28) * scale");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
     expect(exporterSource).toContain("const imageX = 80 * scale");
