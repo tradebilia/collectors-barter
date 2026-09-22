@@ -295,8 +295,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const logoWidth = 260 * scale");
     expect(exporterSource).toContain("const groupLeft = side === \"left\" ? width * 0.055 : width * 0.615");
     expect(exporterSource).toContain("const groupWidth = width * 0.33");
-    expect(exporterSource).toContain("const imageY = isTall ? 290 * scale : 340 * scale");
-    expect(exporterSource).toContain("const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.39) : height * 0.38");
+    expect(exporterSource).toContain("const imageY = isTall ? 290 * scale : 320 * scale");
+    expect(exporterSource).toContain("const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.39) : height * 0.35");
+    expect(exporterSource).toContain("y + itemHeight + 8 * scale");
   });
 
   it("uses a textured brush-stroke Trade Alert and compact circular exchange mark", () => {
@@ -310,7 +311,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const isSuppliedTradeAlert = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5)");
     expect(exporterSource).toContain("const bannerWidth = Math.min(width * 0.64, 768 * scale)");
     expect(exporterSource).toContain("const bannerHeight = bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth)");
-    expect(exporterSource).toContain("const imageY = isTall ? 290 * scale : 340 * scale");
+    expect(exporterSource).toContain("const imageY = isTall ? 290 * scale : 320 * scale");
     expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-mockup-1_4a1f25d2.png");
     expect(exporterSource).toContain("+ CASH INCLUDED");
     expect(exporterSource).toContain("drawCinematicFooterPhrase");

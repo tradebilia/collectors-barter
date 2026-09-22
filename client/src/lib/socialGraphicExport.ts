@@ -1925,7 +1925,9 @@ function drawCinematicTradeGroup(
       y,
       itemWidth,
       itemHeight,
-      y + itemHeight + 24 * scale,
+      // The enlarged item row needs a compact caption lead-in so the title,
+      // fact line, and grade badge remain above the footer safety band.
+      y + itemHeight + 8 * scale,
       captionWidth,
       centerX,
       "center",
@@ -2004,8 +2006,8 @@ function drawCompletedTradeCinematic(
   // visible air gap on both landscape and tall exports. The tall value is
   // measured against the preserved 3:1 banner ratio at Instagram/Pinterest
   // scale, not copied from the old shorter banner.
-  const imageY = isTall ? 290 * scale : 340 * scale;
-  const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.39) : height * 0.38;
+  const imageY = isTall ? 290 * scale : 320 * scale;
+  const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.39) : height * 0.35;
   const captionBottom = imageY + imageHeight * 1.14 + 58 * scale;
   // Instagram keeps the exchange mark in the open horizontal channel between
   // the two item columns. Pinterest remains a vertically stacked tall layout.
