@@ -1638,12 +1638,16 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   const textGap = 8 * scale;
   const textBlockHeight = labelHeight + textGap + valueHeight;
   const textBlockTop = y + (height - textBlockHeight) / 2;
-  // Inter's dollar sign and comma render slightly higher than their canvas
-  // metrics. This measured optical offset balances the visible top and bottom
-  // clearance inside the outlined plaque on every supported export size.
-  const opticalVerticalOffset = 6 * scale;
+  // Keep punctuation descenders (especially the comma in values such as
+  // "$1,500") above the angled lower plaque edge. The font metrics are useful
+  // for the initial placement, but the final baseline is hard-clamped to the
+  // visible interior so rasterized glyphs cannot breach the outline.
+  const opticalVerticalOffset = 0;
   const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset;
-  const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset;
+  const valueBaselineY = Math.min(
+    textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset,
+    y + height - cut - 10 * scale - valueDescent,
+  );
   const labelVisualCenterY = labelBaselineY + (labelDescent - labelAscent) / 2;
   context.textAlign = "center";
   context.textBaseline = "alphabetic";

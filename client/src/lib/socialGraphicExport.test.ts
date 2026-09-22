@@ -139,9 +139,10 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
     expect(exporterSource).toContain("const plaqueHeight = 90 * scale");
     expect(exporterSource).toContain("const textBlockTop = y + (height - textBlockHeight) / 2");
-    expect(exporterSource).toContain("const opticalVerticalOffset = 6 * scale");
+    expect(exporterSource).toContain("const opticalVerticalOffset = 0");
     expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
-    expect(exporterSource).toContain("const valueBaselineY = textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset");
+    expect(exporterSource).toContain("const valueBaselineY = Math.min(");
+    expect(exporterSource).toContain("y + height - cut - 10 * scale - valueDescent");
     expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
     expect(exporterSource).toContain("const footerClearance = (isTall ? 38 : 18) * scale");
     expect(exporterSource).toContain("const plaqueBottomLimit = footerBaselineY - footerClearance");
@@ -387,6 +388,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("height - 30 * scale");
     expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.615');
     expect(exporterSource).toContain('images[entry.index] ?? null');
+  });
+
+  it("keeps trade-value punctuation inside the plaque outline", () => {
+    expect(exporterSource).toContain('values such as');
+    expect(exporterSource).toContain('y + height - cut - 10 * scale - valueDescent');
+    expect(exporterSource).toContain('const valueBaselineY = Math.min(');
   });
 
   it("routes every completed-trade platform through the cinematic composition", () => {
