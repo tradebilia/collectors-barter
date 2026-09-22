@@ -106,18 +106,20 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
-    expect(exporterSource).toContain("const imageX = 28 * scale");
+    expect(exporterSource).toContain("const imageX = 48 * scale");
     expect(exporterSource).toContain("const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale)");
     expect(exporterSource).toContain("const imageY = Math.max(250 * scale, listingBannerBottom + 20 * scale)");
     expect(exporterSource).toContain("const imageWidth = 500 * scale");
     expect(exporterSource).toContain("const detailWidth = 338 * scale");
     expect(exporterSource).toContain("const detailX = 560 * scale");
-    expect(exporterSource).toContain("const height = rows * rowStep * scale + 18 * scale");
+    expect(exporterSource).toContain("const height = rows * rowStep * scale + 11 * scale");
     expect(exporterSource).toContain('context.imageSmoothingQuality = "high"');
     expect(exporterSource).toContain("factsHeight + 24 * scale");
     expect(exporterSource).toContain('context.fillStyle = "#fff6d6"');
     expect(exporterSource).toContain("900 ${Math.round(19 * scale)}px");
-    expect(exporterSource).toContain("rgba(255,255,255,0.025)");
+    expect(exporterSource).toContain("protectedText");
+    expect(exporterSource).toContain("drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 44)");
+    expect(exporterSource).not.toContain('"rgba(255,255,255,0.13)"');
     const highValueRenderer = exporterSource.slice(
       exporterSource.indexOf("function drawHighValueListingCinematic"),
       exporterSource.indexOf("function drawCinematicExchangeMark"),

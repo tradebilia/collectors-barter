@@ -584,7 +584,10 @@ function drawWrappedText(context: CanvasRenderingContext2D, text: string, x: num
 }
 
 function wrapCompleteText(context: CanvasRenderingContext2D, text: string, maxWidth: number) {
-  const words = text.trim().split(/\s+/).filter(Boolean);
+  const protectedText = text.trim()
+    .replace(/\b(Upper Deck|O-Pee-Chee|Topps Chrome)\b/gi, (match) => match.replace(/\s+/g, "\u00a0"))
+    .replace(/\b(PSA|BGS|SGC)\s+(\d+(?:\.\d+)?)\b/gi, "$1\u00a0$2");
+  const words = protectedText.split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -1076,10 +1079,8 @@ function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x
 }
 
 function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | null, x: number, y: number, width: number, height: number, label: string) {
-  // The original collectible is the focal point. Keep only a quiet glass
-  // boundary to separate it from the scene; the old heavy enclosure made the
-  // media feel like a secondary card inside the listing.
-  drawRoundedRect(context, x, y, width, height, Math.max(16, width * 0.035), "rgba(255,255,255,0.025)", "rgba(255,255,255,0.13)");
+  // The original collectible is the focal point. Do not draw an enclosure or
+  // border around it; the source image should sit directly in the scene.
   context.save();
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
@@ -1648,7 +1649,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const scale = width / 1200;
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
-  const itemType = formatSocialItemType(promotion?.itemType);
   const value = formatSocialValue(promotion?.estimatedValue);
   const isTall = platform === "Instagram" || platform === "Pinterest";
   const footerBaselineY = height - (isTall ? 34 : 24) * scale;
@@ -1674,12 +1674,6 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     let detailY = imageY + 30 * scale;
     context.fillStyle = "#ffffff";
     detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
-    if (itemType) {
-      detailY += 14 * scale;
-      context.fillStyle = "rgba(252,243,215,0.90)";
-      context.font = `700 ${Math.round(16 * scale)}px ${CANVAS_SANS_FONT}`;
-      context.fillText(itemType, detailX, detailY);
-    }
     detailY += 28 * scale;
     detailY += drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 42);
     if (value) {
@@ -1693,7 +1687,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 28 * scale;
+  const imageX = 48 * scale;
   // Measure the finished banner asset so the focal item can never be placed
   // beneath or touching the banner, even when the asset aspect ratio changes.
   const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
@@ -1708,16 +1702,10 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   }
   context.fillStyle = "#ffffff";
   detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 36 * scale, 20 * scale, 2);
-  if (itemType) {
-    detailY += 12 * scale;
-    context.fillStyle = "rgba(252,243,215,0.92)";
-    context.font = `700 ${Math.round(18 * scale)}px ${CANVAS_SANS_FONT}`;
-    context.fillText(itemType, detailX, detailY);
-  }
-  detailY += 22 * scale;
+  detailY += 26 * scale;
   // Keep the compact landscape fact grid above the plaque; the plaque is
   // placed from the measured lower rule rather than from a fixed canvas Y.
-  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 36);
+  const factsHeight = drawFacts(context, promotion?.facts ?? [], detailX, detailY, detailWidth, scale, 44);
   if (value) {
     const plaqueHeight = 90 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
@@ -2064,7 +2052,7 @@ function drawFacts(context: CanvasRenderingContext2D, facts: Array<{ label: stri
   const rows = Math.ceil(Math.min(facts.length, 4) / 2);
   // Keep the lower rule the same distance below the final value as the upper
   // rule is above the first fact label, avoiding excess space below row two.
-  const height = rows * rowStep * scale + 18 * scale;
+  const height = rows * rowStep * scale + 11 * scale;
   context.strokeStyle = "rgba(255,255,255,0.22)";
   context.beginPath();
   context.moveTo(x, y);

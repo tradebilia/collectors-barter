@@ -161,3 +161,9 @@ Focused social renderer tests, TypeScript validation, production build, and whit
 The landscape high-value item now rises closer to the visible lower edge of the supplied banner, while retaining a measured clearance. Its frame is wider and taller, and the canvas image smoothing quality is explicitly set to high. The generated banner’s transparent tail is excluded from the clearance calculation so it no longer creates an excessive empty gap. The fact-grid lower rule now has an explicit 18px scaled buffer below the final values, matching the intended breathing room around the upper rule and preventing the line from crossing the grade number visually.
 
 Focused renderer tests, TypeScript validation, production build, and whitespace validation passed.
+
+## High-value information hierarchy refinement
+
+The high-value landscape and tall compositions no longer print the redundant item-type line beneath the title. Title wrapping now protects common semantic groups, including brand names such as “Upper Deck” and grading pairs such as “PSA 10,” so they remain intact when the title wraps. The exact source item is shifted slightly right and its faint enclosure/border is removed entirely. Fact rows use increased vertical spacing, and the lower rule retains an equal visual buffer below the final value.
+
+Focused renderer tests (24), TypeScript validation, production build, and whitespace validation passed.
