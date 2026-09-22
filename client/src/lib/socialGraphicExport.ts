@@ -1440,7 +1440,7 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   // Give the full lockup enough height for the small “Collectors, Trading,
   // Exchange” line to remain readable without moving the banner into the item zone.
   const logoWidth = 700 * scale;
-  drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale);
+  drawBrand(context, logo, (width - logoWidth) / 2, 4 * scale, logoWidth, 94 * scale);
 
   // Rich's supplied replacement includes generous transparent margins and a
   // roughly 3:1 aspect ratio. Preserve the complete brush silhouette, but
@@ -1448,10 +1448,11 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   // item lane instead of being stretched into the item captions.
   const isSuppliedTradeAlert = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5);
   if (isSuppliedTradeAlert && brushImage) {
-    const bannerWidth = Math.min(width * 0.92, 920 * scale);
+    const bannerWidth = Math.min(width * 0.72, 864 * scale);
     const bannerHeight = bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
+    const bannerY = 76 * scale;
     context.save();
-    context.drawImage(brushImage, (width - bannerWidth) / 2, 0, bannerWidth, bannerHeight);
+    context.drawImage(brushImage, (width - bannerWidth) / 2, bannerY, bannerWidth, bannerHeight);
     context.restore();
     return;
   }
@@ -1721,8 +1722,8 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
 
 function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage: CanvasImage | null, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
   if (logoImage) {
-    const logoWidth = 300 * scale;
-    const logoHeight = 228 * scale;
+    const logoWidth = 260 * scale;
+    const logoHeight = 198 * scale;
     drawContainedImage(context, logoImage, centerX - logoWidth / 2, centerY - logoHeight / 2 - 2 * scale, logoWidth, logoHeight);
     if (cashIncluded) {
       context.save();
@@ -1875,8 +1876,8 @@ function drawCinematicTradeGroup(
 ) {
   const visibleEntries = entries.slice(0, 4);
   if (visibleEntries.length === 0) return;
-  const groupLeft = side === "left" ? width * 0.055 : width * 0.565;
-  const groupWidth = width * 0.38;
+  const groupLeft = side === "left" ? width * 0.055 : width * 0.615;
+  const groupWidth = width * 0.33;
   const mainCenter = groupLeft + groupWidth / 2;
   const draw = (entry: TradeGraphicEntry, centerX: number, y: number, itemWidth: number, itemHeight: number, captionWidth: number) => {
     drawCinematicTradeItem(
@@ -1966,7 +1967,7 @@ function drawCompletedTradeCinematic(
   // visible air gap on both landscape and tall exports. The tall value is
   // measured against the preserved 3:1 banner ratio at Instagram/Pinterest
   // scale, not copied from the old shorter banner.
-  const imageY = isTall ? 310 * scale : 274 * scale;
+  const imageY = isTall ? 310 * scale : 388 * scale;
   const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.36) : height * 0.36;
   const captionBottom = imageY + imageHeight * 1.14 + 58 * scale;
   // Instagram keeps the exchange mark in the open horizontal channel between

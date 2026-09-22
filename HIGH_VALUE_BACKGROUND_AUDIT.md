@@ -167,3 +167,9 @@ Focused renderer tests, TypeScript validation, production build, and whitespace 
 The high-value landscape and tall compositions no longer print the redundant item-type line beneath the title. Title wrapping now protects common semantic groups, including brand names such as “Upper Deck” and grading pairs such as “PSA 10,” so they remain intact when the title wraps. The exact source item is shifted slightly right and its faint enclosure/border is removed entirely. Fact rows use increased vertical spacing, and the lower rule retains an equal visual buffer below the final value.
 
 Focused renderer tests (24), TypeScript validation, production build, and whitespace validation passed.
+
+## Completed-trade banner and center-lane collision correction
+
+The supplied Trade Alert banner is now rendered at a reduced 72% canvas width, with its full source aspect ratio preserved and a measured vertical offset below the centered Tradebilia lockup. The completed-trade item lane begins below the banner’s visible paint boundary. The Traded exchange mark was reduced slightly, and the two trade groups were narrowed and moved outward to preserve a protected center lane, preventing the exchange mark from touching item images or their captions.
+
+Focused completed-trade renderer tests (25), TypeScript validation, production build, and whitespace validation passed. The authenticated Social Content Manager was refreshed and a completed-trade preview was opened after the hot reload for visual verification.

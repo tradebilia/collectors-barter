@@ -284,6 +284,15 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).not.toContain('const label = "VIEW THIS TRADE ON TRADEBILIA  →"');
   });
 
+  it("keeps the supplied Trade Alert banner below the brand lockup and protects the Traded center lane", () => {
+    expect(exporterSource).toContain("const bannerWidth = Math.min(width * 0.72, 864 * scale)");
+    expect(exporterSource).toContain("const bannerY = 76 * scale");
+    expect(exporterSource).toContain("const logoWidth = 260 * scale");
+    expect(exporterSource).toContain("const groupLeft = side === \"left\" ? width * 0.055 : width * 0.615");
+    expect(exporterSource).toContain("const groupWidth = width * 0.33");
+    expect(exporterSource).toContain("const imageY = isTall ? 310 * scale : 388 * scale");
+  });
+
   it("uses a textured brush-stroke Trade Alert and compact circular exchange mark", () => {
     expect(exporterSource).toContain('Anton, "Arial Narrow", Arial, sans-serif');
     expect(exporterSource).toContain('Knewave, "Permanent Marker", "Brush Script MT", cursive');
@@ -293,9 +302,9 @@ describe("native Social graphic exporter", () => {
     expect(TRADE_ALERT_BRUSH_IMAGE_URL).not.toContain("trade-alert-banner-paint-swipe");
     expect(exporterSource).toContain('The approved paint-swipe asset already contains the finished TRADE ALERT');
     expect(exporterSource).toContain("const isSuppliedTradeAlert = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5)");
-    expect(exporterSource).toContain("const bannerWidth = Math.min(width * 0.92, 920 * scale)");
+    expect(exporterSource).toContain("const bannerWidth = Math.min(width * 0.72, 864 * scale)");
     expect(exporterSource).toContain("const bannerHeight = bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth)");
-    expect(exporterSource).toContain("const imageY = isTall ? 310 * scale : 274 * scale");
+    expect(exporterSource).toContain("const imageY = isTall ? 310 * scale : 388 * scale");
     expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-mockup-1_4a1f25d2.png");
     expect(exporterSource).toContain("+ CASH INCLUDED");
     expect(exporterSource).toContain("drawCinematicFooterPhrase");
@@ -361,10 +370,10 @@ describe("native Social graphic exporter", () => {
   });
 
   it("centers the Tradebilia lockup above the brush heading and groups multiple items by trade side", () => {
-    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, -5 * scale, logoWidth, 94 * scale");
+    expect(exporterSource).toContain("drawBrand(context, logo, (width - logoWidth) / 2, 4 * scale, logoWidth, 94 * scale");
     expect(exporterSource).toContain("const logoWidth = 700 * scale");
     expect(exporterSource).toContain("height - 30 * scale");
-    expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.565');
+    expect(exporterSource).toContain('const groupLeft = side === "left" ? width * 0.055 : width * 0.615');
     expect(exporterSource).toContain('images[entry.index] ?? null');
   });
 
