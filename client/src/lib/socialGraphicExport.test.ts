@@ -114,8 +114,9 @@ describe("native Social graphic exporter", () => {
       exporterSource.indexOf("function drawHighValueListingCinematic"),
       exporterSource.indexOf("function drawCinematicExchangeMark"),
     );
-    expect(highValueRenderer).not.toContain("drawMediaFrame(context, itemImage");
-    expect(highValueRenderer).toContain("_itemImage");
+    expect(highValueRenderer).toContain("drawMediaFrame(context, itemImage");
+    expect(highValueRenderer).toContain("showOriginalItem");
+    expect(highValueRenderer).toContain("ORIGINAL ITEM MEDIA");
   });
 
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
@@ -135,8 +136,9 @@ describe("native Social graphic exporter", () => {
   it("selects a specific high-value environment from category and item type", () => {
     expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(51);
     expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/high-value-jordan.png" })).toBe("/manus-storage/generated/high-value-jordan.png");
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: null, itemType: null, generatedBackgroundUrl: "/manus-storage/generated/high-value-unclassified.png" })).toBe("/manus-storage/generated/high-value-unclassified.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/high-value-jordan.png", generatedBackgroundVersion: 10 })).toBe("/manus-storage/generated/high-value-jordan.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: null, itemType: null, generatedBackgroundUrl: "/manus-storage/generated/high-value-unclassified.png", generatedBackgroundVersion: 10 })).toBe("/manus-storage/generated/high-value-unclassified.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/stale-scene.png", generatedBackgroundVersion: 9 })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "https://untrusted.example/scene.png" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Miles Davis Kind of Blue LP", category: "Music", itemType: "vinyl_record" })).toContain("music-vinyl-record");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "The Beatles Sgt Pepper LP", category: "Music", itemType: "vinyl_record" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.beatles_sgt_pepper);

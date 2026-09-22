@@ -252,7 +252,7 @@ export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
   // Option A: an admin-triggered automatic scene is generated from the
   // listing's public metadata and cached with the browser-local draft. Only
   // managed WebDev storage is accepted as an override.
-  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/")) {
+  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && promotion.generatedBackgroundVersion === 10) {
     return promotion.generatedBackgroundUrl;
   }
   if (!promotion?.category) return null;
@@ -1630,7 +1630,7 @@ function drawSecondaryCollectorProp(context: CanvasRenderingContext2D, propImage
   context.restore();
 }
 
-function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, _itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null) {
+function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft: SocialDraft, platform: SocialPlatform, width: number, height: number, itemImage: CanvasImage | null, brandLogo: CanvasImage | null, brushImage: CanvasImage | null, showOriginalItem: boolean) {
   const scale = width / 1200;
   const promotion = draft.promotion;
   const itemTitle = getSocialPromotionItemTitle(promotion?.itemTitle || draft.title);
@@ -1654,6 +1654,9 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const detailWidth = Math.max(220 * scale, width - detailX - padding);
     const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     const imageHeight = Math.max(260 * scale, Math.min(platform === "Pinterest" ? height * 0.42 : height * 0.48, plaqueY - imageY - 28 * scale));
+    if (showOriginalItem) {
+      drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
+    }
     let detailY = imageY + 30 * scale;
     context.fillStyle = "#ffffff";
     detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
@@ -1683,6 +1686,9 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const detailX = 520 * scale;
   const detailWidth = 380 * scale;
   let detailY = 280 * scale;
+  if (showOriginalItem) {
+    drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA");
+  }
   context.fillStyle = "#ffffff";
   detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 36 * scale, 20 * scale, 2);
   if (itemType) {
@@ -2191,6 +2197,9 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
     .map((key) => [key, tradeStageImageUrls?.[key] || TRADE_ALERT_STAGE_IMAGE_URLS[key]] as const)
     .filter((entry): entry is readonly [TradeAlertStageKey, string] => Boolean(entry[1]));
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
+  const hasCurrentGeneratedHighValueScene = draft.source === "High-Value Listing"
+    && draft.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/")
+    && draft.promotion.generatedBackgroundVersion === 10;
 
   const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
     ensureSocialCanvasFonts(),
@@ -2222,7 +2231,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   } else if (draft.source === "Completed Trade") {
     drawCompletedTradeTall(context, draft, platform, width, height, tradeItemImages, tradeThemeImages, tradeStageImages, brandLogo, brushImage, exchangeLogo);
   } else if (draft.source === "High-Value Listing") {
-    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage);
+    drawHighValueListingCinematic(context, draft, platform, width, height, itemImage, brandLogo, listingBrushImage, !hasCurrentGeneratedHighValueScene);
   } else if (isTallCanvas(platform)) {
     drawTallGraphic(context, draft, platform, width, height, itemImage, brandLogo);
   } else {

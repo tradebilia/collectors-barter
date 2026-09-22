@@ -131,3 +131,9 @@ The automatic per-listing scene prompt now requires more than a generated substi
 The version-ten prompt also preserves the strict upper 48% banner-safe band and lower-left placement target of approximately x=6%–34% and y=55%–94%. Structured image-reference parsing now tolerates fenced or wrapped JSON responses and uses a larger completion budget.
 
 Focused renderer, preview, server-contract, TypeScript, production-build, and diff validation passed. Native version-eight inspection previously confirmed the single generated left-side subject and no right-side duplicate, but the version-ten live regeneration could not be visually approved because the configured image and vision providers returned an external `usage exhausted` error. No replacement image was accepted as version-ten, and no publishing or production-domain change was made.
+
+## Guaranteed left-side item fallback after unavailable generation
+
+A live Wayne Gretzky preview exposed that the previous version-ten transition could leave a high-value graphic with only a generic or stale background when image generation was unavailable. The renderer now accepts a generated background override only when it is explicitly marked as version ten. For stale, missing, or failed generated scenes, the high-value renderer uses the reviewed category/subject environment and draws the actual listing media as one large, contained left-side focal item. Version-ten generated scenes retain ownership of the left hero and therefore do not draw the original listing media a second time.
+
+Focused renderer, preview, server-contract, TypeScript, production-build, and whitespace validation passed. Native admin recheck remained provider-blocked by the configured image/vision services returning `usage exhausted`; no generated Wayne scene was claimed as visually approved. No database, migration, publishing, production-domain, or social-posting change was made.
