@@ -1473,7 +1473,9 @@ function drawCinematicTradeHeader(context: CanvasRenderingContext2D, logo: Canva
   // item lane instead of being stretched into the item captions.
   const isSuppliedTradeAlert = Boolean(brushImage && brushImage.naturalWidth / brushImage.naturalHeight > 2.5);
   if (isSuppliedTradeAlert && brushImage) {
-    const bannerWidth = Math.min(width * 0.72, 864 * scale);
+    // Keep the supplied brush prominent but compact enough to leave the
+    // collectible lane open below the brand lockup.
+    const bannerWidth = Math.min(width * 0.64, 768 * scale);
     const bannerHeight = bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth);
     const bannerY = 76 * scale;
     context.save();
@@ -2002,8 +2004,8 @@ function drawCompletedTradeCinematic(
   // visible air gap on both landscape and tall exports. The tall value is
   // measured against the preserved 3:1 banner ratio at Instagram/Pinterest
   // scale, not copied from the old shorter banner.
-  const imageY = isTall ? 310 * scale : 388 * scale;
-  const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.36) : height * 0.36;
+  const imageY = isTall ? 290 * scale : 340 * scale;
+  const imageHeight = isTall ? (isPinterest ? height * 0.40 : height * 0.39) : height * 0.38;
   const captionBottom = imageY + imageHeight * 1.14 + 58 * scale;
   // Instagram keeps the exchange mark in the open horizontal channel between
   // the two item columns. Pinterest remains a vertically stacked tall layout.
