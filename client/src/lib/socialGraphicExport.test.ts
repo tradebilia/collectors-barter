@@ -105,8 +105,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
-    expect(exporterSource).toContain("const imageY = 300 * scale");
-    expect(exporterSource).toContain("const detailWidth = 390 * scale");
+    expect(exporterSource).toContain("const imageX = 76 * scale");
+    expect(exporterSource).toContain("const imageY = 280 * scale");
+    expect(exporterSource).toContain("const imageWidth = 400 * scale");
+    expect(exporterSource).toContain("const detailWidth = 380 * scale");
+    expect(exporterSource).toContain("const detailX = 520 * scale");
+    expect(exporterSource).toContain("rgba(255,255,255,0.025)");
   });
 
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {

@@ -1076,12 +1076,15 @@ function drawPromotionHeader(context: CanvasRenderingContext2D, label: string, x
 }
 
 function drawMediaFrame(context: CanvasRenderingContext2D, image: CanvasImage | null, x: number, y: number, width: number, height: number, label: string) {
-  drawRoundedRect(context, x, y, width, height, Math.max(16, width * 0.035), "rgba(255,255,255,0.07)", "rgba(255,255,255,0.22)");
+  // The original collectible is the focal point. Keep only a quiet glass
+  // boundary to separate it from the scene; the old heavy enclosure made the
+  // media feel like a secondary card inside the listing.
+  drawRoundedRect(context, x, y, width, height, Math.max(16, width * 0.035), "rgba(255,255,255,0.025)", "rgba(255,255,255,0.13)");
   context.save();
-  roundedRectPath(context, x + 10, y + 10, width - 20, height - 20, Math.max(10, width * 0.022));
+  roundedRectPath(context, x + 5, y + 5, width - 10, height - 10, Math.max(10, width * 0.022));
   context.clip();
   if (image) {
-    drawContainedImage(context, image, x + 18, y + 18, width - 36, height - 36);
+    drawContainedImage(context, image, x + 8, y + 8, width - 16, height - 16);
   } else {
     context.fillStyle = "rgba(255,255,255,0.10)";
     context.fillRect(x + 10, y + 10, width - 20, height - 20);
@@ -1674,14 +1677,14 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 122 * scale;
-  const imageY = 300 * scale;
-  const imageWidth = 330 * scale;
-  const imageHeight = height - imageY - 54 * scale;
+  const imageX = 76 * scale;
+  const imageY = 280 * scale;
+  const imageWidth = 400 * scale;
+  const imageHeight = height - imageY - 44 * scale;
   drawMediaFrame(context, itemImage, imageX, imageY, imageWidth, imageHeight, "ORIGINAL ITEM MEDIA");
-  const detailX = 500 * scale;
-  const detailWidth = 390 * scale;
-  let detailY = 300 * scale;
+  const detailX = 520 * scale;
+  const detailWidth = 380 * scale;
+  let detailY = 280 * scale;
   context.fillStyle = "#ffffff";
   detailY += drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth, 36 * scale, 20 * scale, 2);
   if (itemType) {
