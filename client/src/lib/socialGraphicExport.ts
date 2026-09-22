@@ -678,27 +678,33 @@ function drawBackground(context: CanvasRenderingContext2D, width: number, height
  * scrim to protect the item from busy props and bright highlights.
  */
 function drawHighValueBackground(context: CanvasRenderingContext2D, width: number, height: number, background: CanvasImage | null) {
-  drawBackground(context, width, height, background, 0.18);
-  const itemZone = context.createLinearGradient(0, 0, width * 0.58, 0);
-  itemZone.addColorStop(0, "rgba(3, 12, 30, 0.56)");
-  itemZone.addColorStop(0.42, "rgba(3, 12, 30, 0.30)");
-  itemZone.addColorStop(0.78, "rgba(3, 12, 30, 0.08)");
+  // Keep the scene visibly cinematic across the whole canvas. The item frame
+  // and information panel provide local protection; a full-width dark wash
+  // would make the generated reference environment disappear.
+  drawBackground(context, width, height, background, 0.08);
+  const itemZone = context.createLinearGradient(0, 0, width * 0.48, 0);
+  itemZone.addColorStop(0, "rgba(3, 12, 30, 0.30)");
+  itemZone.addColorStop(0.42, "rgba(3, 12, 30, 0.15)");
+  itemZone.addColorStop(0.78, "rgba(3, 12, 30, 0.03)");
   itemZone.addColorStop(1, "rgba(3, 12, 30, 0)");
   context.fillStyle = itemZone;
-  context.fillRect(0, 0, width * 0.62, height);
+  context.fillRect(0, 0, width * 0.50, height);
 
-  // All collector references live in the background, but the headline, facts,
-  // and value plaque still need a quiet central reading lane. This keeps
-  // right-weighted scene props visible at the edge without letting them merge
-  // into actual listing information.
-  const copyZone = context.createLinearGradient(0, 0, width, 0);
-  copyZone.addColorStop(0.34, "rgba(3, 12, 30, 0)");
-  copyZone.addColorStop(0.43, "rgba(3, 12, 30, 0.94)");
-  copyZone.addColorStop(0.78, "rgba(3, 12, 30, 0.97)");
-  copyZone.addColorStop(0.91, "rgba(3, 12, 30, 0.10)");
-  copyZone.addColorStop(1, "rgba(3, 12, 30, 0)");
+  // Limit the reading treatment to the actual information panel instead of
+  // dimming most of the lower canvas. This preserves the full collector scene
+  // while keeping the title, facts, and value safely legible.
+  const isTall = height > width * 1.12;
+  const panelX = isTall ? width * 0.40 : width * 0.37;
+  const panelY = isTall ? height * 0.28 : height * 0.38;
+  const panelWidth = isTall ? width * 0.56 : width * 0.43;
+  const panelHeight = isTall ? height * 0.58 : height * 0.54;
+  const copyZone = context.createLinearGradient(panelX, 0, panelX + panelWidth, 0);
+  copyZone.addColorStop(0, "rgba(3, 12, 30, 0.10)");
+  copyZone.addColorStop(0.12, "rgba(3, 12, 30, 0.62)");
+  copyZone.addColorStop(0.88, "rgba(3, 12, 30, 0.68)");
+  copyZone.addColorStop(1, "rgba(3, 12, 30, 0.12)");
   context.fillStyle = copyZone;
-  context.fillRect(0, 210 * (width / 1200), width, height - 210 * (width / 1200));
+  context.fillRect(panelX, panelY, panelWidth, panelHeight);
 }
 
 function drawCoverImage(context: CanvasRenderingContext2D, image: CanvasImage, x: number, y: number, width: number, height: number, focalX = 0.5, mirrored = false) {

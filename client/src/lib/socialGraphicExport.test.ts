@@ -96,6 +96,10 @@ describe("native Social graphic exporter", () => {
   it("protects the left item zone and keeps tall listing details on the right", () => {
     expect(exporterSource).toContain("function drawHighValueBackground");
     expect(exporterSource).toContain("const itemZone = context.createLinearGradient");
+    expect(exporterSource).toContain("drawBackground(context, width, height, background, 0.08)");
+    expect(exporterSource).toContain("const panelX = isTall ? width * 0.40 : width * 0.37");
+    expect(exporterSource).toContain("const panelWidth = isTall ? width * 0.56 : width * 0.43");
+    expect(exporterSource).not.toContain("rgba(3, 12, 30, 0.97)");
     expect(exporterSource).toContain("const imageWidth = Math.min(width * 0.38, 410 * scale)");
     expect(exporterSource).toContain("const detailX = padding + imageWidth + 28 * scale");
     expect(exporterSource).toContain("drawMediaFrame(context, itemImage, padding, imageY, imageWidth, imageHeight");

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
+const llmSource = readFileSync(new URL("./_core/llm.ts", import.meta.url), "utf8");
 const uploadSection = routerSource.slice(
   routerSource.indexOf("uploadSocialContentMedia:"),
   routerSource.indexOf("getPromotionOpportunities:"),
@@ -59,8 +60,13 @@ describe("admin social-content media upload contract", () => {
     expect(routerSource).toContain("cleanSocialScenePromptValue");
     expect(routerSource).toContain("attached listing image is a visual reference only");
     expect(routerSource).toContain('model: "gpt-5-mini"');
+    expect(routerSource).toContain("maxCompletionTokens: 500");
     expect(routerSource).toContain("References extracted from the actual listing image");
     expect(routerSource).toContain("Do not identify people, teams, brands, logos");
-    expect(routerSource).toContain("far-left third must be dark, quiet, and entirely empty");
+    expect(routerSource).toContain("visibly detailed collector environment across the whole 16:9 canvas");
+    expect(routerSource).toContain("Avoid broad black voids");
+    expect(routerSource).toContain("far-left third free of featured objects and bright highlights");
+    expect(llmSource).toContain("maxCompletionTokens?: number");
+    expect(llmSource).toContain("payload.max_completion_tokens = resolvedMaxCompletionTokens");
   });
 });

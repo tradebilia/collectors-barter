@@ -296,7 +296,7 @@ export function SocialContentManagerTab() {
     : selectedDraft ? { ...selectedDraft, destinationUrl: canonicalDestinationUrl } : null;
   const hasExportableItemImage = Boolean(selectedDraft?.mediaUrl && !isVideoMediaUrl(selectedDraft.mediaUrl));
   const isAutomaticHighValueScene = selectedDraft?.source === "High-Value Listing" && Boolean(selectedDraft.promotion);
-  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 4);
+  const hasGeneratedHighValueScene = Boolean(selectedDraft?.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 6);
   const needsAutomaticHighValueScene = isAutomaticHighValueScene && hasExportableItemImage && !hasGeneratedHighValueScene;
   const isGeneratingHighValueScene = needsAutomaticHighValueScene && generateHighValueListingScene.isPending;
   const completedTradeImageCount = selectedDraft?.source === "Completed Trade"
@@ -329,7 +329,7 @@ export function SocialContentManagerTab() {
 
   useEffect(() => {
     if (!isPreviewOpen || selectedDraft?.source !== "High-Value Listing" || !selectedDraft.promotion || !preparedGraphicImageUrl) return;
-    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 4) return;
+    if (selectedDraft.promotion.generatedBackgroundUrl?.startsWith("/manus-storage/") && selectedDraft.promotion.generatedBackgroundVersion === 6) return;
     const requestKey = `${selectedDraft.id}:${selectedDraft.promotion.itemTitle}:${selectedDraft.promotion.category}:${selectedDraft.promotion.itemType}`;
     if (generatedSceneRequestRef.current === requestKey) return;
     generatedSceneRequestRef.current = requestKey;
@@ -347,7 +347,7 @@ export function SocialContentManagerTab() {
     }).then(({ url }) => {
       setDrafts((current) => current.map((draft) => draft.id !== selectedDraft.id || !draft.promotion
         ? draft
-        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url, generatedBackgroundVersion: 4 }, updatedAt: new Date().toISOString() }));
+        : { ...draft, promotion: { ...draft.promotion, generatedBackgroundUrl: url, generatedBackgroundVersion: 6 }, updatedAt: new Date().toISOString() }));
     }).catch(() => {
       generatedSceneRequestRef.current = null;
       toast.error("The item-specific background could not be generated. Close and reopen the preview to retry.");

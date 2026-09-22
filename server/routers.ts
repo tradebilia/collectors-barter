@@ -215,7 +215,7 @@ function buildAutomaticHighValueScenePrompt(input: {
     "Create one cinematic, photorealistic 16:9 collector-background scene for a Tradebilia social listing.",
     subject,
     "The attached listing image is a visual reference only. Study its subject, colors, era, category, and non-sensitive public visual cues, then translate those into tasteful environmental references. Do not reproduce, redraw, crop, or place the listing image or its collectible into the result. Never render an alternate card/cover/toy/coin/stamp, a person, a portrait, text, lettering, readable signs, logos, watermarks, or a product label.",
-    "Composition is mandatory: the far-left third must be dark, quiet, and entirely empty for the real item image; the center-right information lane must be low-contrast and free of props for the title, facts, and value; reserve visual reference props and atmospheric cues for the far-right edge only.",
+    "Composition is mandatory: create a visibly detailed collector environment across the whole 16:9 canvas—use atmospheric surfaces, lighting, depth, and setting in the left and center as well as the right. Keep the far-left third free of featured objects and bright highlights for the real item image, but do not leave it black or blank. Keep the center-right information lane low-contrast and free of props for title, facts, and value, while retaining visibly meaningful environmental detail. Place larger visual-reference props at the far-right edge. Avoid broad black voids, broad dark gradients, empty studio backdrops, or an image where the scene is visible only on the right.",
     "Use a premium auction-catalog editorial aesthetic with depth, a coherent collector surface, and crisp non-blurry objects. No collage, no split panels, no overlapping featured objects.",
   ].join(" ");
 }
@@ -232,7 +232,7 @@ async function extractListingImageVisualReferences(listingImageDataUrl: string) 
   try {
     const response = await invokeLLM({
       model: "gpt-5-mini",
-      maxTokens: 500,
+      maxCompletionTokens: 500,
       messages: [
         { role: "system", content: "You extract safe visual scene cues from public collectible listing photos. Return only the requested JSON." },
         {
