@@ -1687,7 +1687,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   drawCinematicListingHeader(context, brandLogo, brushImage, width, scale);
 
   if (isTall) {
-    const padding = 58 * scale;
+    const padding = 38 * scale;
     const imageY = 330 * scale;
     const plaqueHeight = 112 * scale;
     const plaqueBottomLimit = footerBaselineY - footerClearance;
@@ -1716,7 +1716,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     return;
   }
 
-  const imageX = 100 * scale;
+  const imageX = 80 * scale;
   // Measure the finished banner asset so the focal item can never be placed
   // beneath or touching the banner, even when the asset aspect ratio changes.
   const listingBannerBottom = getCinematicListingBannerBottom(brushImage, width, scale);
@@ -1726,7 +1726,7 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   // The visible right-aligned item ends at approximately 624px on the 1200px
   // baseline. Use a deliberate 80px separation so the item and detail panel
   // read as one composition without appearing crowded.
-  const detailX = 704 * scale;
+  const detailX = 684 * scale;
   const detailWidth = width - detailX - 48 * scale;
   let detailY = 258 * scale;
   if (showOriginalItem) {
