@@ -252,7 +252,7 @@ export function getHighValueBackgroundUrl(promotion: SocialDraft["promotion"]) {
   // Option A: an admin-triggered automatic scene is generated from the
   // listing's public metadata and cached with the browser-local draft. Only
   // managed WebDev storage is accepted as an override.
-  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && promotion.generatedBackgroundVersion === 10) {
+  if (promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/") && promotion.generatedBackgroundVersion === 11) {
     return promotion.generatedBackgroundUrl;
   }
   if (!promotion?.category) return null;
@@ -2199,7 +2199,7 @@ export async function renderSocialGraphicCanvas({ draft, platform, itemImageUrl,
   const highValueBackgroundUrl = draft.source === "High-Value Listing" ? getHighValueBackgroundUrl(draft.promotion) : null;
   const hasCurrentGeneratedHighValueScene = draft.source === "High-Value Listing"
     && draft.promotion?.generatedBackgroundUrl?.startsWith("/manus-storage/")
-    && draft.promotion.generatedBackgroundVersion === 10;
+    && draft.promotion.generatedBackgroundVersion === 11;
 
   const [, itemImage, tradeItemImages, loadedThemeImages, loadedStageImages, brandLogo, brushImage, listingBrushImage, exchangeLogo, heroBackground, highValueBackground] = await Promise.all([
     ensureSocialCanvasFonts(),

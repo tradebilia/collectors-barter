@@ -17,7 +17,7 @@ export type SocialPromotionDetails = {
   visualHints?: string[] | null;
   /** Browser-local managed storage URL for the generated per-listing scene. */
   generatedBackgroundUrl?: string | null;
-  /** Scene-generation prompt version; v10 adds item-specific supporting elements around the single generated hero. */
+  /** Scene-generation prompt version; v11 requires a complete faithful hero below the banner plus item-specific supporting elements. */
   generatedBackgroundVersion?: number | null;
   tradeItems?: Array<{
     listingId?: number | null;

@@ -136,8 +136,8 @@ describe("native Social graphic exporter", () => {
   it("selects a specific high-value environment from category and item type", () => {
     expect(Object.keys(HIGH_VALUE_ITEM_TYPE_BACKGROUND_URLS)).toHaveLength(51);
     expect(getHighValueBackgroundUrl(promotionDraft.promotion)).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/high-value-jordan.png", generatedBackgroundVersion: 10 })).toBe("/manus-storage/generated/high-value-jordan.png");
-    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: null, itemType: null, generatedBackgroundUrl: "/manus-storage/generated/high-value-unclassified.png", generatedBackgroundVersion: 10 })).toBe("/manus-storage/generated/high-value-unclassified.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/high-value-jordan.png", generatedBackgroundVersion: 11 })).toBe("/manus-storage/generated/high-value-jordan.png");
+    expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, category: null, itemType: null, generatedBackgroundUrl: "/manus-storage/generated/high-value-unclassified.png", generatedBackgroundVersion: 11 })).toBe("/manus-storage/generated/high-value-unclassified.png");
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "/manus-storage/generated/stale-scene.png", generatedBackgroundVersion: 9 })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, generatedBackgroundUrl: "https://untrusted.example/scene.png" })).toBe(HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS.michael_jordan);
     expect(getHighValueBackgroundUrl({ ...promotionDraft.promotion!, itemTitle: "Miles Davis Kind of Blue LP", category: "Music", itemType: "vinyl_record" })).toContain("music-vinyl-record");
