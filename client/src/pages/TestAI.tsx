@@ -1439,6 +1439,36 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
             {result.tradeFairness && <div className="text-xs font-normal opacity-80 mt-1">{result.tradeFairness}</div>}
           </div>
           {result.valueSummary && <p className="text-gray-300 text-sm leading-relaxed">{result.valueSummary}</p>}
+          {result.leftMarketProfile && result.rightMarketProfile && result.deterministicComparison && (
+            <div className="rounded-lg border border-indigo-700/40 bg-indigo-950/20 p-3 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-wide">Trade Analyzer 2.0 · Deterministic Evidence Layer</p>
+                  <p className="text-gray-500 text-[10px] mt-0.5">The server computes these values before the AI explanation; asking prices are not treated as realized sales.</p>
+                </div>
+                <span className="rounded bg-indigo-900/50 px-2 py-1 text-[10px] font-semibold text-indigo-200">{result.deterministicComparison.verdict}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Item A', profile: result.leftMarketProfile, color: 'cyan' },
+                  { label: 'Item B', profile: result.rightMarketProfile, color: 'amber' },
+                ].map(({ label, profile, color }) => (
+                  <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
+                    <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
+                    <p className="text-gray-300 text-[10px]">Evidence: <span className="text-white">{profile.evidenceState.replace(/_/g, ' ')}</span></p>
+                    <p className="text-gray-300 text-[10px]">Value: <span className="text-white">{profile.weightedValue ? `$${profile.weightedValue.toLocaleString()}` : 'Not verified'}</span> · Range: {profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'unsupported'}</p>
+                    <p className="text-gray-400 text-[10px]">Confidence: {profile.evidenceQuality} evidence · {profile.itemIdentificationConfidence} identity · {profile.marketStability} stability · {profile.liquidity} liquidity</p>
+                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.comparableCount} accepted · {profile.rejectedComparableCount} rejected</p>
+                  </div>
+                ))}
+              </div>
+              {(result.valuationWarnings?.length > 0 || result.missingInformation?.length > 0) && (
+                <div className="rounded bg-orange-950/30 p-2 text-[10px] text-orange-200">
+                  <span className="font-bold uppercase">Evidence warnings:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].join(' ')}
+                </div>
+              )}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             {[
             { item: leftItem, insights: result.itemAInsights, potential: result.itemAFuturePotential, strengths: result.itemAStrengths, risks: result.itemARisks, gradeCliff: result.itemAGradeCliff, liquidity: result.itemALiquidity, liquidityNote: result.itemALiquidityNote, color: 'cyan' },

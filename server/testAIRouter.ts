@@ -20,6 +20,7 @@ import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
+import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1243,6 +1244,18 @@ export const testAIRouter = router({
       const leftEvidenceContext = formatTestAiEvidenceForAnalysis(leftEvidenceSummary, 'ITEM A');
       const rightEvidenceContext = formatTestAiEvidenceForAnalysis(rightEvidenceSummary, 'ITEM B');
 
+      // Trade Analyzer 2.0 is intentionally additive and sandbox-only. It
+      // scores the individual historical observations before the LLM sees
+      // them; the LLM explains these profiles but never performs valuation math.
+      const leftProfile = buildMarketProfile(leftItem as ComparableTarget, (leftHistoricalTrendSales ?? []) as MarketSale[], leftSoldCompsMetrics);
+      const rightProfile = buildMarketProfile(rightItem as ComparableTarget, (rightHistoricalTrendSales ?? []) as MarketSale[], rightSoldCompsMetrics);
+      const deterministicComparison = deterministicTradeComparison(
+        leftProfile,
+        rightProfile,
+        leftItem.estimatedValue ?? 0,
+        rightItem.estimatedValue ?? 0,
+      );
+
       // Prefer sold prices (real transactions) over active listing prices for valuation
       const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
       const rightVal = rightSoldCompsMetrics?.median ?? rightEbayMetrics?.median ?? rightItem.estimatedValue ?? 0;
@@ -1280,13 +1293,17 @@ ${rightTrendContext}
 ${leftEvidenceContext}
 ${rightEvidenceContext}
 
+=== TRADE ANALYZER 2.0 DETERMINISTIC PROFILES ===
+${marketProfileForPrompt('ITEM A', leftProfile)}
+${marketProfileForPrompt('ITEM B', rightProfile)}
+
 === PRE-COMPUTED VALUE GAP ===
 ${diffStr}
 
 === INSTRUCTIONS ===
 Respond with ONLY this JSON object:
 {
-  "verdict": <"Item A Worth More" | "Item B Worth More" | "Roughly Equal">,
+  "verdict": <"Item A Worth More" | "Item B Worth More" | "Roughly Equal" | "Insufficient Evidence">,
   "valueSummary": <2-3 sentences comparing market values, noting which data source was used (sold prices vs asking prices)>,
   "itemAInsights": <4-6 sentences covering: market position, collector demand, liquidity, whether this is a key/iconic item, and any overvaluation/undervaluation vs market data>,
   "itemBInsights": <4-6 sentences covering same dimensions as itemAInsights>,
@@ -1303,6 +1320,9 @@ Respond with ONLY this JSON object:
   "itemBStrengths": <array of 3-5 strength strings ranked by relevance>,
   "itemBRisks": <array of 2-4 risk strings ranked by severity>,
   "tradeFairness": <"Fair trade" | "Slight advantage to A" | "Slight advantage to B" | "Strong advantage to A" | "Strong advantage to B">,
+  "majorAssumptions": ["<assumption>"],
+  "missingInformation": ["<missing identifier>"],
+  "valuationWarnings": ["<warning>"],
   "liquidityWarning": <null or a string warning if one item is significantly less liquid than the other — this matters even if values match>,
   "negotiationTip": <1-2 specific actionable tips with dollar amounts, considering both value and liquidity>,
   "dataQuality": <"High — sold price data for both" | "High — eBay data for both" | "Medium — data for one item only" | "Low — no market data, using estimates only">
@@ -1323,7 +1343,20 @@ Respond with ONLY this JSON object:
       const cleanContent = rawContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
 
       try {
-        return JSON.parse(cleanContent);
+        const parsed = JSON.parse(cleanContent);
+        // Keep the existing LLM response contract, but make the structured
+        // market layer authoritative for the values and verdict shown in the
+        // experimental sandbox.
+        return {
+          ...parsed,
+          verdict: deterministicComparison.verdict,
+          leftMarketProfile: leftProfile,
+          rightMarketProfile: rightProfile,
+          deterministicComparison,
+          majorAssumptions: [...new Set([...(parsed.majorAssumptions ?? []), ...leftProfile.majorAssumptions, ...rightProfile.majorAssumptions])],
+          missingInformation: [...new Set([...(parsed.missingInformation ?? []), ...leftProfile.missingInformation, ...rightProfile.missingInformation])],
+          valuationWarnings: [...new Set([...(parsed.valuationWarnings ?? []), ...leftProfile.valuationWarnings, ...rightProfile.valuationWarnings])],
+        };
       } catch {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI returned invalid JSON. Please try again.' });
       }

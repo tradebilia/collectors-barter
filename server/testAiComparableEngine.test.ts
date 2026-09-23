@@ -1,0 +1,71 @@
+import { describe, expect, it } from 'vitest';
+import { buildMarketProfile, deterministicTradeComparison, scoreComparable } from './testAiComparableEngine';
+
+const target = {
+  title: '1996 Topps Kobe Bryant #138 PSA 10',
+  category: 'sports_cards',
+  grade: '10',
+  certificationCompany: 'PSA',
+  itemDetails: JSON.stringify({ year: '1996', manufacturer: 'Topps', player: 'Kobe Bryant', cardNumber: '138' }),
+};
+
+const sale = (title: string, price: number, date: string) => ({ title, price, currency: 'USD', date });
+
+describe('Trade Analyzer 2.0 comparable engine', () => {
+  it('scores exact identity and grade matches above weaker comparables', () => {
+    const exact = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-01'));
+    const wrongGrade = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 PSA 9', 450, '2026-09-01'));
+    const parallel = scoreComparable(target, sale('1996 Topps Kobe Bryant Refractor #138 PSA 10', 3200, '2026-09-01'));
+    expect(exact.score).toBeGreaterThan(wrongGrade.score);
+    expect(exact.score).toBeGreaterThan(parallel.score);
+    expect(exact.accepted).toBe(true);
+    expect(wrongGrade.reasons).toContain('grade differs');
+  });
+
+  it('weights recent exact sales more heavily than older accepted sales', () => {
+    const profile = buildMarketProfile(target, [
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 1100, '2026-08-20'),
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 2000, '2025-01-01'),
+    ], null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.weightedValue).not.toBeNull();
+    expect(profile.weightedValue!).toBeLessThan(1400);
+    expect(profile.recentSaleCount).toBe(2);
+    expect(profile.salesVelocity.thirtyDay).toBe(1);
+  });
+
+  it('does not manufacture a verified value from active-only aggregate context', () => {
+    const profile = buildMarketProfile(target, [], { median: 800, count: 12, confidence: 'high' });
+    expect(profile.marketRange.supported).toBe(false);
+    expect(profile.weightedValue).toBeNull();
+    expect(profile.evidenceState).toBe('no_market_evidence');
+    expect(profile.valuationMethod).toContain('no verified valuation');
+  });
+
+  it('exposes sparse, volatile, and low-liquidity evidence instead of hiding it', () => {
+    const profile = buildMarketProfile(target, [
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 100, '2026-09-20'),
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 3000, '2026-09-18'),
+    ], null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.marketStability).toBe('low');
+    expect(profile.liquidity).toBe('low');
+    expect(profile.evidenceState).toBe('sparse_market_evidence');
+    expect(profile.marketRange.supported).toBe(true);
+  });
+
+  it('uses deterministic profile values for the trade verdict', () => {
+    const left = buildMarketProfile(target, [sale(target.title, 1000, '2026-09-15'), sale(target.title, 1100, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
+    const right = buildMarketProfile(target, [sale(target.title, 1600, '2026-09-15'), sale(target.title, 1700, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
+    const comparison = deterministicTradeComparison(left, right);
+    expect(comparison.verdict).toBe('Item B Worth More');
+    expect(comparison.difference).toBeGreaterThan(0);
+  });
+
+  it('does not issue a definitive verdict from owner estimates alone', () => {
+    const left = buildMarketProfile(target, []);
+    const right = buildMarketProfile(target, []);
+    expect(deterministicTradeComparison(left, right, 2000, 200).verdict).toBe('Insufficient Evidence');
+  });
+});
+
+export {};
