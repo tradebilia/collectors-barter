@@ -1603,7 +1603,7 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   const horizontalPadding = 62 * scale;
   const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15));
   const safeValueWidth = Math.max(1, plaqueWidth - 92 * scale);
-  const valueFontSize = Math.min(preferredValueFontSize, preferredValueFontSize * safeValueWidth / Math.max(valueWidth, 1));
+  let valueFontSize = Math.min(preferredValueFontSize, preferredValueFontSize * safeValueWidth / Math.max(valueWidth, 1));
   const plaqueX = x + (width - plaqueWidth) / 2;
   const cut = 24 * scale;
   context.beginPath();
@@ -1630,12 +1630,25 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   const labelAscent = labelMetrics.actualBoundingBoxAscent || 15 * scale;
   const labelDescent = labelMetrics.actualBoundingBoxDescent || 4 * scale;
   const labelHeight = labelAscent + labelDescent;
-  context.font = `900 ${Math.round(valueFontSize)}px ${CANVAS_SANS_FONT}`;
-  const valueMetrics = context.measureText(value);
-  const valueAscent = valueMetrics.actualBoundingBoxAscent || 44 * scale;
-  const valueDescent = valueMetrics.actualBoundingBoxDescent || 10 * scale;
-  const valueHeight = valueAscent + valueDescent;
   const textGap = 8 * scale;
+  context.font = `900 ${Math.round(valueFontSize)}px ${CANVAS_SANS_FONT}`;
+  let valueMetrics = context.measureText(value);
+  let valueAscent = valueMetrics.actualBoundingBoxAscent || 44 * scale;
+  let valueDescent = valueMetrics.actualBoundingBoxDescent || 10 * scale;
+  let valueHeight = valueAscent + valueDescent;
+  // Fit the label, gap, and complete amount as one block before applying any
+  // edge clamp. The previous lower-edge clamp could move a tall amount up
+  // into the label, producing the visible overlap seen with "$1,500".
+  const verticalTextPadding = 20 * scale;
+  const maxValueHeight = Math.max(1, height - verticalTextPadding - labelHeight - textGap);
+  if (valueHeight > maxValueHeight) {
+    valueFontSize *= maxValueHeight / valueHeight;
+    context.font = `900 ${Math.max(1, Math.round(valueFontSize))}px ${CANVAS_SANS_FONT}`;
+    valueMetrics = context.measureText(value);
+    valueAscent = valueMetrics.actualBoundingBoxAscent || valueFontSize * 0.76;
+    valueDescent = valueMetrics.actualBoundingBoxDescent || valueFontSize * 0.18;
+    valueHeight = valueAscent + valueDescent;
+  }
   const textBlockHeight = labelHeight + textGap + valueHeight;
   const textBlockTop = y + (height - textBlockHeight) / 2;
   // Keep punctuation descenders (especially the comma in values such as

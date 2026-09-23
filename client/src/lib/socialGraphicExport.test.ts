@@ -141,6 +141,9 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const textBlockTop = y + (height - textBlockHeight) / 2");
     expect(exporterSource).toContain("const opticalVerticalOffset = 0");
     expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
+    expect(exporterSource).toContain("const verticalTextPadding = 20 * scale");
+    expect(exporterSource).toContain("const maxValueHeight = Math.max(1, height - verticalTextPadding - labelHeight - textGap)");
+    expect(exporterSource).toContain("valueFontSize *= maxValueHeight / valueHeight");
     expect(exporterSource).toContain("const valueBaselineY = Math.min(");
     expect(exporterSource).toContain("y + height - cut - 10 * scale - valueDescent");
     expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
