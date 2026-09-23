@@ -1458,6 +1458,11 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHistoricalTrendSales: rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []) : [],
       leftEvidenceSummary: leftEvidenceSummary ?? undefined,
       rightEvidenceSummary: rightEvidenceSummary ?? undefined,
+      marketNews: marketNewsQuery.data ? {
+        itemA: marketNewsQuery.data.itemA,
+        itemB: marketNewsQuery.data.itemB,
+        categorySummaries: marketNewsQuery.data.categorySummaries,
+      } : undefined,
     });
   };
 
@@ -1587,12 +1592,13 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
           )}
           <div className="grid grid-cols-2 gap-4">
             {[
-            { item: leftItem, insights: result.itemAInsights, potential: result.itemAFuturePotential, strengths: result.itemAStrengths, risks: result.itemARisks, gradeCliff: result.itemAGradeCliff, liquidity: result.itemALiquidity, liquidityNote: result.itemALiquidityNote, color: 'cyan' },
-            { item: rightItem, insights: result.itemBInsights, potential: result.itemBFuturePotential, strengths: result.itemBStrengths, risks: result.itemBRisks, gradeCliff: result.itemBGradeCliff, liquidity: result.itemBLiquidity, liquidityNote: result.itemBLiquidityNote, color: 'amber' },
-          ].map(({ item, insights, potential, strengths, risks, gradeCliff, liquidity, liquidityNote, color }) => (
+            { item: leftItem, insights: result.itemAInsights, marketNews: result.itemAMarketNews, potential: result.itemAFuturePotential, strengths: result.itemAStrengths, risks: result.itemARisks, gradeCliff: result.itemAGradeCliff, liquidity: result.itemALiquidity, liquidityNote: result.itemALiquidityNote, color: 'cyan' },
+            { item: rightItem, insights: result.itemBInsights, marketNews: result.itemBMarketNews, potential: result.itemBFuturePotential, strengths: result.itemBStrengths, risks: result.itemBRisks, gradeCliff: result.itemBGradeCliff, liquidity: result.itemBLiquidity, liquidityNote: result.itemBLiquidityNote, color: 'amber' },
+          ].map(({ item, insights, marketNews, potential, strengths, risks, gradeCliff, liquidity, liquidityNote, color }) => (
             <div key={color} className="space-y-2">
               <p className={`text-${color}-300 font-semibold text-sm`}>{item.title}</p>
               {insights && <p className="text-gray-300 text-xs leading-relaxed">{insights}</p>}
+              {marketNews && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-sky-300 text-[9px] font-bold uppercase">Item-specific RSS note</p><p className="text-gray-400 text-[10px] leading-relaxed mt-1">{marketNews}</p></div>}
               {(liquidity || gradeCliff) && (
                 <div className="grid grid-cols-2 gap-2">
                   {liquidity && (
