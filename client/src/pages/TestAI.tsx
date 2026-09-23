@@ -1500,8 +1500,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
   const handleAnalyze = () => {
     analyzeMutation.mutate({
-      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails, imageUrl: leftItem.primaryPhotoUrl },
-      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails, imageUrl: rightItem.primaryPhotoUrl },
+      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: leftItem.primaryPhotoUrl },
+      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: rightItem.primaryPhotoUrl },
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
