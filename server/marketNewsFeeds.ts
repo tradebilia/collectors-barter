@@ -25,6 +25,7 @@ export type MarketNewsItem = {
   evidenceType: 'industry_news' | 'official_announcement' | 'auction_event' | 'risk_alert' | 'specialist_context';
   valuationImpact: 'context_only';
   matchedTerms: string[];
+  significance: string;
 };
 
 type FeedDefinition = {
@@ -94,7 +95,7 @@ function parseFeed(xml: string, feed: FeedDefinition): MarketNewsItem[] {
           : 'specialist_context';
     const relevance: MarketNewsItem['relevance'] = 'medium';
     const valuationImpact: MarketNewsItem['valuationImpact'] = 'context_only';
-    return { id, title, url, source: feed.source, sourceType: feed.sourceType, category: feed.category, publishedAt, excerpt: excerpt.slice(0, 320), relevance, matchScore: 0, evidenceType, valuationImpact, matchedTerms: [] };
+    return { id, title, url, source: feed.source, sourceType: feed.sourceType, category: feed.category, publishedAt, excerpt: excerpt.slice(0, 320), relevance, matchScore: 0, evidenceType, valuationImpact, matchedTerms: [], significance: '' };
   }).filter((item) => item.url && item.title !== 'Untitled article');
 }
 
@@ -103,6 +104,20 @@ function itemTerms(item: { title: string; category: string; itemType?: string; i
   try { detailText = item.itemDetails ? JSON.stringify(JSON.parse(item.itemDetails)) : ''; } catch { detailText = item.itemDetails ?? ''; }
   const raw = `${item.title} ${item.itemType ?? ''} ${detailText}`;
   return [...new Set(raw.toLowerCase().replace(/[^a-z0-9À-ÿ]+/gi, ' ').split(/\s+/).filter((term) => term.length >= 4))].slice(0, 40);
+}
+
+function buildSignificanceSummary(article: MarketNewsItem, item: { title: string; category: string }): string {
+  const subject = item.title.trim() || `this ${item.category} item`;
+  const terms = article.matchedTerms.slice(0, 3).join(', ');
+  const topic = terms ? `through the terms “${terms}”` : `through its ${item.category.toLowerCase()} coverage`;
+  const implication = article.evidenceType === 'risk_alert'
+    ? 'It may flag an authenticity, safety, or market-risk factor to review before relying on the listing.'
+    : article.evidenceType === 'auction_event'
+      ? 'It may provide timing or demand context, but it is not a completed sale for this specific item.'
+      : article.evidenceType === 'official_announcement'
+        ? 'It may affect collector interest or supply context, but it does not establish this item’s value.'
+        : 'It provides industry or specialist context that may help interpret collector interest, not a valuation.';
+  return `Relevant to ${subject} ${topic}. ${implication}`;
 }
 
 export function matchMarketNews(items: MarketNewsItem[], item: { title: string; category: string; itemType?: string; itemDetails?: string }): MarketNewsItem[] {
@@ -114,7 +129,8 @@ export function matchMarketNews(items: MarketNewsItem[], item: { title: string; 
     const matchedTerms = [...new Set([...aliases, ...terms].filter((term) => haystack.includes(term)))].slice(0, 8);
     const score = matchedTerms.length + (haystack.includes(item.title.toLowerCase().trim()) ? 5 : 0);
     const relevance: MarketNewsItem['relevance'] = score >= 3 ? 'high' : 'medium';
-    return { ...news, matchScore: score, matchedTerms, relevance };
+    const matched = { ...news, matchScore: score, matchedTerms, relevance };
+    return { ...matched, significance: buildSignificanceSummary(matched, item) };
   }).filter((news) => news.matchScore >= 2).sort((a, b) => b.matchScore - a.matchScore || String(b.publishedAt).localeCompare(String(a.publishedAt))).slice(0, 8);
 }
 
@@ -134,7 +150,7 @@ export async function fetchMarketNewsForItems(items: Array<{ title: string; cate
   const all = results.flatMap((result) => result.items);
   feedErrors.push(...results.flatMap((result) => result.error ? [result.error] : []));
   const unique = [...new Map(all.map((item) => [`${item.url}|${item.title.toLowerCase()}`, item])).values()];
-  return { feedsChecked: feeds.length, feedErrors, itemA: matchMarketNews(unique, items[0]), itemB: matchMarketNews(unique, items[1]), fetchedAt: new Date().toISOString() };
+  return { feedsChecked: feeds.length, feedErrors, itemA: items[0] ? matchMarketNews(unique, items[0]) : [], itemB: items[1] ? matchMarketNews(unique, items[1]) : [], fetchedAt: new Date().toISOString() };
 }
 
 export function getMarketNewsFeedRegistry() {

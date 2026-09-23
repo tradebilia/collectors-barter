@@ -26,6 +26,7 @@ describe('market news matching', () => {
     evidenceType: 'specialist_context',
     valuationImpact: 'context_only',
     matchedTerms,
+    significance: '',
   });
 
   it('matches category and item identity terms while rejecting unrelated articles', () => {
@@ -37,6 +38,8 @@ describe('market news matching', () => {
     expect(matches[0].title).toContain('Michael Jordan');
     expect(matches[0].valuationImpact).toBe('context_only');
     expect(matches[0].relevance).toBe('high');
+    expect(matches[0].significance).toContain('Michael Jordan 1986 Fleer basketball card');
+    expect(matches[0].significance).toContain('not a valuation');
   });
 
   it('keeps Pokémon matching distinct from generic sports-card news', () => {

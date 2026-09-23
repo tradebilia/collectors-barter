@@ -1367,6 +1367,36 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
   );
 }
 
+function MarketNewsSection({ item }: { item: SelectedItem }) {
+  const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
+    { leftItem: { title: item.title, category: item.category, itemType: item.itemType, itemDetails: item.itemDetails } },
+    { enabled: false, retry: false },
+  );
+  const handleLoad = () => { void marketNewsQuery.refetch(); };
+  const articles = marketNewsQuery.data?.itemA ?? [];
+  return <section className="rounded-lg border border-sky-700/40 bg-sky-950/20 p-3 space-y-3">
+    <div className="flex items-center justify-between gap-3">
+      <div><p className="text-sky-300 text-[10px] font-bold uppercase tracking-wide">Market News Context · Sandbox</p><p className="text-gray-500 text-[10px] mt-0.5">Run for the selected item only; news is context, never valuation.</p></div>
+      <button onClick={handleLoad} disabled={marketNewsQuery.isFetching} className="rounded-lg bg-sky-700 px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">{marketNewsQuery.isFetching ? 'Checking feeds…' : 'Load Market News'}</button>
+    </div>
+    {marketNewsQuery.data && <>
+      <p className="text-gray-500 text-[10px]">{marketNewsQuery.data.feedsChecked} category feeds checked · fetched {new Date(marketNewsQuery.data.fetchedAt).toLocaleString()}</p>
+      <div className="rounded bg-gray-950/50 p-2 space-y-2">
+        <p className="text-cyan-300 text-xs font-semibold">Selected item · {articles.length} relevant article{articles.length === 1 ? '' : 's'}</p>
+        {articles.length === 0 ? <p className="text-gray-500 text-[10px]">No sufficiently matched articles found.</p> : articles.map((article: any) => <a key={article.id} href={article.url} target="_blank" rel="noreferrer" className="block rounded border border-gray-800 bg-gray-900/60 p-2 hover:border-sky-700/60">
+          <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{article.title}</p><span className="shrink-0 rounded bg-sky-900/60 px-1 py-0.5 text-[8px] text-sky-200">{article.relevance}</span></div>
+          <p className="text-gray-500 text-[9px] mt-1">{article.source} · {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : 'date unavailable'} · {article.evidenceType.replace(/_/g, ' ')}</p>
+          {article.significance && <p className="text-violet-200/90 text-[9px] mt-1"><span className="font-semibold">Why it matters:</span> {article.significance}</p>}
+          {article.matchedTerms?.length > 0 && <p className="text-emerald-300/80 text-[9px] mt-1">Matched: {article.matchedTerms.join(', ')}</p>}
+          {article.excerpt && <p className="text-gray-500 text-[9px] mt-1 line-clamp-2">{article.excerpt}</p>}
+        </a>)}
+      </div>
+      {marketNewsQuery.data.feedErrors?.length > 0 && <div className="rounded bg-amber-950/30 p-2 text-[9px] text-amber-200"><span className="font-semibold">Unavailable feeds:</span> {marketNewsQuery.data.feedErrors.join(' · ')}</div>}
+      <p className="text-gray-600 text-[9px]">Significance is an item-matching research summary. It does not change the item’s value or trade verdict; completed sales remain authoritative.</p>
+    </>}
+  </section>;
+}
+
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
 function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
@@ -1461,6 +1491,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   <a key={article.id} href={article.url} target="_blank" rel="noreferrer" className="block rounded border border-gray-800 bg-gray-900/60 p-2 hover:border-sky-700/60">
                     <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{article.title}</p><span className="shrink-0 rounded bg-sky-900/60 px-1 py-0.5 text-[8px] text-sky-200">{article.relevance}</span></div>
                     <p className="text-gray-500 text-[9px] mt-1">{article.source} · {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : 'date unavailable'} · {article.evidenceType.replace(/_/g, ' ')}</p>
+                    {article.significance && <p className="text-violet-200/90 text-[9px] mt-1"><span className="font-semibold">Why it matters:</span> {article.significance}</p>}
                     {article.matchedTerms?.length > 0 && <p className="text-emerald-300/80 text-[9px] mt-1">Matched: {article.matchedTerms.join(', ')}</p>}
                     {article.excerpt && <p className="text-gray-500 text-[9px] mt-1 line-clamp-2">{article.excerpt}</p>}
                   </a>
@@ -2223,6 +2254,7 @@ export default function TestAI() {
         )}
 
         {/* AI Analysis */}
+        {!bothSelected && (leftItem || rightItem) && <MarketNewsSection item={leftItem ?? rightItem!} />}
         {bothSelected && (
           <AIAnalysisSection
             leftItem={leftItem}

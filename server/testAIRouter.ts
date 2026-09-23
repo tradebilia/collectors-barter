@@ -1182,11 +1182,11 @@ export const testAIRouter = router({
   getMarketNews: protectedProcedure
     .input(z.object({
       leftItem: z.object({ title: z.string(), category: z.string(), itemType: z.string().optional(), itemDetails: z.string().optional() }),
-      rightItem: z.object({ title: z.string(), category: z.string(), itemType: z.string().optional(), itemDetails: z.string().optional() }),
+      rightItem: z.object({ title: z.string(), category: z.string(), itemType: z.string().optional(), itemDetails: z.string().optional() }).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      const news = await fetchMarketNewsForItems([input.leftItem, input.rightItem]);
+      const news = await fetchMarketNewsForItems([input.leftItem, ...(input.rightItem ? [input.rightItem] : [])]);
       return { ...news, registry: getMarketNewsFeedRegistry() };
     }),
 
