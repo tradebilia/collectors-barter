@@ -25,6 +25,7 @@ import { parseAnalyzerResponse } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
+import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1408,9 +1409,36 @@ export const testAIRouter = router({
       const rightVisualAugmentation = applyHighConfidenceVisualFields(rightItem, rightFieldCompletion);
       const analysisLeftItem = leftVisualAugmentation.item;
       const analysisRightItem = rightVisualAugmentation.item;
+      const leftVisualComparableQuery = useVisualFieldCompletion
+        ? buildVisualComparableQuery(leftItem, leftVisualAugmentation.appliedFields)
+        : null;
+      const rightVisualComparableQuery = useVisualFieldCompletion
+        ? buildVisualComparableQuery(rightItem, rightVisualAugmentation.appliedFields)
+        : null;
+      const refinedActiveLookup = async (query: VisualComparableQuery | null, item: typeof leftItem) => {
+        if (!query) return { query: null, metrics: null as any, resultCount: 0 };
+        const token = await getEbayAppToken();
+        if (!token) return { query, metrics: null as any, resultCount: 0 };
+        try {
+          const raw = await fetchEbayListings(buildEbayBrowseQuery(query.query, { preserveGrade: true }), token, 40);
+          const targetGrade = item.grade ? Number.parseFloat(item.grade) : null;
+          const gradeFiltered = targetGrade ? filterListingsByGrade(raw, targetGrade) : raw;
+          return { query, metrics: computeMetrics(gradeFiltered), resultCount: gradeFiltered.length };
+        } catch (error) {
+          console.warn('[Test AI] Refined visual comparable lookup unavailable:', error instanceof Error ? error.message : 'unknown error');
+          return { query, metrics: null as any, resultCount: 0 };
+        }
+      };
+      const [leftRefinedActive, rightRefinedActive] = useVisualFieldCompletion
+        ? await Promise.all([
+          refinedActiveLookup(leftVisualComparableQuery, leftItem),
+          refinedActiveLookup(rightVisualComparableQuery, rightItem),
+        ])
+        : [{ query: null, metrics: null, resultCount: 0 }, { query: null, metrics: null, resultCount: 0 }];
       const visualFieldContext = useVisualFieldCompletion
         ? `IMAGE-DERIVED MISSING FIELDS — TEMPORARY ANALYSIS CONTEXT ONLY:\nITEM A: ${leftVisualAugmentation.appliedFields.length ? leftVisualAugmentation.appliedFields.map((field) => `${field.label}=${field.value} [${field.status}; ${field.confidence} confidence; image-derived]`).join('; ') : 'No eligible missing field supplied.'}\nITEM B: ${rightVisualAugmentation.appliedFields.length ? rightVisualAugmentation.appliedFields.map((field) => `${field.label}=${field.value} [${field.status}; ${field.confidence} confidence; image-derived]`).join('; ') : 'No eligible missing field supplied.'}\nUse these fields to improve item identification only. They are not saved listing data, do not prove authenticity, and are not valuation evidence.`
         : 'IMAGE-DERIVED MISSING FIELDS: disabled for this baseline run.';
+      const visualComparableContext = `REFINED VISUAL COMPARABLE SEARCH — ${VISUAL_COMPARABLE_QUERY_NOTE}\n${buildVisualComparableContext('ITEM A', leftRefinedActive.query, leftRefinedActive.metrics)}\n${buildVisualComparableContext('ITEM B', rightRefinedActive.query, rightRefinedActive.metrics)}`;
 
       const formatItemLine = (item: typeof leftItem, ebayMetrics: any, soldMetrics: any) => {
         let line = `- ${item.title}`;
@@ -1507,7 +1535,9 @@ ${rightEvidenceContext}
 
 	      === ${visualEvidenceContext} ===
 
-	=== ${visualFieldContext} ===
+		=== ${visualFieldContext} ===
+
+		=== ${visualComparableContext} ===
 
 === TRADE ANALYZER 2.0 DETERMINISTIC PROFILES ===
 ${marketProfileForPrompt('ITEM A', leftProfile)}
@@ -1598,6 +1628,10 @@ Respond with ONLY this JSON object:
         visualFieldCompletionUsed: useVisualFieldCompletion,
         leftVisualFieldAugmentation: leftVisualAugmentation,
         rightVisualFieldAugmentation: rightVisualAugmentation,
+        leftVisualComparableQuery: leftRefinedActive.query,
+        rightVisualComparableQuery: rightRefinedActive.query,
+        leftVisualComparableMetrics: leftRefinedActive.metrics,
+        rightVisualComparableMetrics: rightRefinedActive.metrics,
         visionDiagnostics,
       };
     }),

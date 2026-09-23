@@ -1708,6 +1708,27 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
               </div>
             </div>
           )}
+          {result.visualFieldCompletionUsed && (result.leftVisualComparableQuery || result.rightVisualComparableQuery) && (
+            <div className="rounded-lg border border-cyan-700/40 bg-cyan-950/15 p-3 space-y-3">
+              <div>
+                <p className="text-cyan-300 text-[10px] font-bold uppercase tracking-wide">Refined Comparable Search</p>
+                <p className="text-gray-500 text-[10px] mt-0.5">High-confidence image fields were appended temporarily to improve identity matching. These are active asking-price results only; completed sales still control valuation.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Item A', query: result.leftVisualComparableQuery, metrics: result.leftVisualComparableMetrics, color: 'cyan' },
+                  { label: 'Item B', query: result.rightVisualComparableQuery, metrics: result.rightVisualComparableMetrics, color: 'amber' },
+                ].map(({ label, query, metrics, color }) => query && (
+                  <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
+                    <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
+                    <p className="text-gray-200 text-[10px] break-words"><span className="text-gray-500">Query:</span> {query.query}</p>
+                    <p className="text-gray-400 text-[10px]">{metrics ? `${metrics.count} active matches · median $${metrics.median.toLocaleString()} · range $${metrics.min.toLocaleString()}–$${metrics.max.toLocaleString()} · ${metrics.confidence} confidence` : 'No refined active matches returned.'}</p>
+                    <p className="text-gray-600 text-[9px]">Temporary identity refinement only; not completed-sale evidence.</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {(result.leftVisualReview || result.rightVisualReview) && (
             <div className="rounded-lg border border-fuchsia-700/40 bg-fuchsia-950/15 p-3 space-y-3">
               <div>
