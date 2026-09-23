@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFieldCompletionPrompt, getFieldTableForItem, normalizeFieldCompletion } from './testAiFieldCompletion';
+import { buildFieldCompletionPrompt, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
 
 describe('Test AI field completion', () => {
   it('uses the category and item type field table', () => {
@@ -28,5 +28,14 @@ describe('Test AI field completion', () => {
     expect(prompt).toContain('Do not guess hidden');
     expect(prompt).toContain('market value');
     expect(prompt).toContain('additional-photo requests');
+  });
+
+  it('accepts fenced JSON with a provider-added trailing comma', () => {
+    expect(parseFieldCompletionJson('```json\n{"fields": [], "missingImageRequests": [],}\n```')).toEqual({ fields: [], missingImageRequests: [] });
+  });
+
+  it('salvages complete field candidates from a truncated response', () => {
+    const result = parseFieldCompletionJson('{"fields":[{"field":"player","value":"Wayne Gretzky","status":"ocr_read","confidence":"high","evidence":"Visible name"},{"field":"sport","value":"Hockey","status":"inferred","confidence":"medium","evidence":"Truncated');
+    expect(result).toMatchObject({ fields: [{ field: 'player', value: 'Wayne Gretzky' }] });
   });
 });

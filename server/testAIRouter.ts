@@ -22,7 +22,7 @@ import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideo
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
-import { buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion } from './testAiFieldCompletion';
+import { buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1228,7 +1228,7 @@ export const testAIRouter = router({
         });
         const content = response.choices[0]?.message?.content;
         if (typeof content !== 'string') throw new Error('The vision model returned no structured content');
-        const parsed = JSON.parse(content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim());
+        const parsed = parseFieldCompletionJson(content);
         return normalizeFieldCompletion(parsed, { title: input.item.title, category: input.item.category, itemType: input.item.itemType });
       } catch (error) {
         console.warn('[Test AI] Field completion unavailable:', error instanceof Error ? error.message : 'unknown error');
