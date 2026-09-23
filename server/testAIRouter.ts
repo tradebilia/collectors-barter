@@ -21,6 +21,7 @@ import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
+import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1178,6 +1179,17 @@ export const testAIRouter = router({
     }),
 
   // Run AI trade analysis between two items
+  getMarketNews: protectedProcedure
+    .input(z.object({
+      leftItem: z.object({ title: z.string(), category: z.string(), itemType: z.string().optional(), itemDetails: z.string().optional() }),
+      rightItem: z.object({ title: z.string(), category: z.string(), itemType: z.string().optional(), itemDetails: z.string().optional() }),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const news = await fetchMarketNewsForItems([input.leftItem, input.rightItem]);
+      return { ...news, registry: getMarketNewsFeedRegistry() };
+    }),
+
   analyzeItems: protectedProcedure
     .input(z.object({
       leftItem: z.object({

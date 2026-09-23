@@ -1383,6 +1383,13 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightEvidenceSummary?: NormalizedEvidenceSummary | null;
 }) {
   const [result, setResult] = useState<any>(null);
+  const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
+    {
+      leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, itemDetails: leftItem.itemDetails },
+      rightItem: { title: rightItem.title, category: rightItem.category, itemType: rightItem.itemType, itemDetails: rightItem.itemDetails },
+    },
+    { enabled: false, retry: false },
+  );
   const analyzeMutation = trpc.testAI.analyzeItems.useMutation({
     onSuccess: (data) => setResult(data),
     onError: (err) => toast.error(err.message),
@@ -1422,11 +1429,49 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
           <p className="text-indigo-300 font-bold text-sm uppercase tracking-wide">🤖 AI Trade Analysis</p>
           <p className="text-gray-500 text-xs mt-0.5">{activeSourcesNote || 'No data sources selected'}</p>
         </div>
-        <button onClick={handleAnalyze} disabled={analyzeMutation.isPending}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
-          {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : 'Run Analysis'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => marketNewsQuery.refetch()} disabled={marketNewsQuery.isFetching}
+            className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
+            {marketNewsQuery.isFetching ? <><Spinner className="w-3 h-3" /> Checking feeds...</> : 'Load Market News'}
+          </button>
+          <button onClick={handleAnalyze} disabled={analyzeMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
+            {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : 'Run Analysis'}
+          </button>
+        </div>
       </div>
+
+      {marketNewsQuery.data && (
+        <div className="rounded-lg border border-sky-700/40 bg-sky-950/20 p-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sky-300 text-[10px] font-bold uppercase tracking-wide">Market News Context · Sandbox</p>
+              <p className="text-gray-500 text-[10px] mt-0.5">{marketNewsQuery.data.feedsChecked} category feeds checked · fetched {new Date(marketNewsQuery.data.fetchedAt).toLocaleString()}</p>
+            </div>
+            <span className="rounded bg-sky-900/50 px-2 py-1 text-[9px] font-semibold text-sky-200">Context only — never valuation</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: 'Item A', items: marketNewsQuery.data.itemA, color: 'cyan' },
+              { label: 'Item B', items: marketNewsQuery.data.itemB, color: 'amber' },
+            ].map(({ label, items, color }) => (
+              <div key={label} className="rounded bg-gray-950/50 p-2 space-y-2">
+                <p className={`text-${color}-300 text-xs font-semibold`}>{label} · {items.length} relevant article{items.length === 1 ? '' : 's'}</p>
+                {items.length === 0 ? <p className="text-gray-500 text-[10px]">No sufficiently matched articles found.</p> : items.map((article: any) => (
+                  <a key={article.id} href={article.url} target="_blank" rel="noreferrer" className="block rounded border border-gray-800 bg-gray-900/60 p-2 hover:border-sky-700/60">
+                    <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{article.title}</p><span className="shrink-0 rounded bg-sky-900/60 px-1 py-0.5 text-[8px] text-sky-200">{article.relevance}</span></div>
+                    <p className="text-gray-500 text-[9px] mt-1">{article.source} · {article.publishedAt ? new Date(article.publishedAt).toLocaleDateString() : 'date unavailable'} · {article.evidenceType.replace(/_/g, ' ')}</p>
+                    {article.matchedTerms?.length > 0 && <p className="text-emerald-300/80 text-[9px] mt-1">Matched: {article.matchedTerms.join(', ')}</p>}
+                    {article.excerpt && <p className="text-gray-500 text-[9px] mt-1 line-clamp-2">{article.excerpt}</p>}
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+          {marketNewsQuery.data.feedErrors?.length > 0 && <div className="rounded bg-amber-950/30 p-2 text-[9px] text-amber-200"><span className="font-semibold">Unavailable feeds:</span> {marketNewsQuery.data.feedErrors.join(' · ')}</div>}
+          <p className="text-gray-600 text-[9px]">Articles are stored only as source-linked context in this phase. Completed sales remain the only authoritative valuation evidence.</p>
+        </div>
+      )}
 
       {result && (
         <div className="space-y-4">
