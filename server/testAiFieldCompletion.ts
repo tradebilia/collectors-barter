@@ -61,11 +61,105 @@ export function normalizeFieldCompletion(raw: unknown, item: { title: string; ca
     if (!value) return [];
     const status: FieldCompletionStatus = ['observed', 'ocr_read', 'inferred', 'conflict', 'unknown'].includes(entry?.status) ? entry.status : 'unknown';
     const confidence: FieldCompletionConfidence = ['high', 'medium', 'low'].includes(entry?.confidence) ? entry.confidence : 'low';
-    return [{ field, label: allowed.get(field)![1], value: value.slice(0, 240), status, confidence, evidence: String(entry?.evidence ?? 'Image evidence is unclear').slice(0, 320), needsVerification: status === 'inferred' || status === 'conflict' || confidence !== 'high' }];
+    return [{ field, label: allowed.get(field)!, value: value.slice(0, 240), status, confidence, evidence: String(entry?.evidence ?? 'Image evidence is unclear').slice(0, 320), needsVerification: status === 'inferred' || status === 'conflict' || confidence !== 'high' }];
   });
   const requests = Array.isArray((raw as any)?.missingImageRequests) ? (raw as any).missingImageRequests.map((x: unknown) => String(x).slice(0, 180)).filter(Boolean).slice(0, 6) : [];
   const conflicts = fields.filter((field) => field.status === 'conflict').map((field) => `${field.label}: ${field.value}`).slice(0, 8);
   return { item, fields, missingImageRequests: requests, conflicts, note: 'AI suggestions are review-only. They do not overwrite listing data, prove authenticity, or establish market value.' };
+}
+
+export type VisualAnalysisItem = {
+  title: string;
+  category: string;
+  itemType?: string;
+  grade?: string;
+  condition?: string;
+  certificationCompany?: string | null;
+  itemDetails?: string;
+};
+
+export type VisualAnalysisAugmentation = {
+  item: VisualAnalysisItem;
+  appliedFields: Array<Pick<FieldCompletionCandidate, 'field' | 'label' | 'value' | 'status' | 'confidence' | 'evidence'>>;
+  skippedExistingFields: string[];
+  conflicts: string[];
+  note: string;
+};
+
+const ANALYSIS_FIELD_ALIASES: Record<string, string[]> = {
+  gradingCompany: ['gradingCompany', 'certificationCompany', 'grader'],
+  certificationCompany: ['certificationCompany', 'gradingCompany', 'grader'],
+  certificationNumber: ['certificationNumber', 'certNumber', 'certificationId'],
+  cardNumber: ['cardNumber', 'number'],
+  issueNumber: ['issueNumber', 'number'],
+  setName: ['setName', 'series', 'set'],
+  releaseTitle: ['releaseTitle', 'albumTitle', 'title'],
+  rookieStatus: ['rookieStatus', 'rookieCard'],
+};
+
+function parsedDetails(details: string | undefined): Record<string, unknown> {
+  if (!details) return {};
+  try {
+    const parsed = JSON.parse(details);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? { ...parsed } : {};
+  } catch {
+    return {};
+  }
+}
+
+function hasMeaningfulValue(value: unknown): boolean {
+  return value !== null && value !== undefined && String(value).trim().length > 0;
+}
+
+function existingValue(item: VisualAnalysisItem, details: Record<string, unknown>, field: string): boolean {
+  if (field === 'grade') return hasMeaningfulValue(item.grade);
+  if (field === 'condition') return hasMeaningfulValue(item.condition);
+  if (field === 'gradingCompany' || field === 'certificationCompany') return hasMeaningfulValue(item.certificationCompany) || ANALYSIS_FIELD_ALIASES[field].some((key) => hasMeaningfulValue(details[key]));
+  const aliases = ANALYSIS_FIELD_ALIASES[field] ?? [field];
+  return aliases.some((key) => hasMeaningfulValue(details[key]));
+}
+
+/**
+ * Builds an ephemeral, analysis-only copy of missing identity data from a
+ * high-confidence field scan. It never replaces saved listing data or an
+ * already-supplied field, and it excludes inferences and conflicts.
+ */
+export function applyHighConfidenceVisualFields(
+  item: VisualAnalysisItem,
+  completion?: FieldCompletionResult | null,
+): VisualAnalysisAugmentation {
+  const details = parsedDetails(item.itemDetails);
+  const enriched: VisualAnalysisItem = { ...item, itemDetails: JSON.stringify(details) };
+  const appliedFields: VisualAnalysisAugmentation['appliedFields'] = [];
+  const skippedExistingFields: string[] = [];
+  const conflicts = completion?.conflicts ?? [];
+
+  for (const candidate of completion?.fields ?? []) {
+    const safeForTemporaryUse = candidate.confidence === 'high'
+      && (candidate.status === 'observed' || candidate.status === 'ocr_read')
+      && !candidate.needsVerification;
+    if (!safeForTemporaryUse) continue;
+    if (existingValue(enriched, details, candidate.field)) {
+      skippedExistingFields.push(candidate.label);
+      continue;
+    }
+    if (candidate.field === 'grade') enriched.grade = candidate.value;
+    else if (candidate.field === 'condition') enriched.condition = candidate.value;
+    else if (candidate.field === 'gradingCompany' || candidate.field === 'certificationCompany') enriched.certificationCompany = candidate.value;
+    else details[candidate.field] = candidate.value;
+    appliedFields.push({ field: candidate.field, label: candidate.label, value: candidate.value, status: candidate.status, confidence: candidate.confidence, evidence: candidate.evidence });
+  }
+
+  enriched.itemDetails = JSON.stringify(details);
+  return {
+    item: enriched,
+    appliedFields,
+    skippedExistingFields: [...new Set(skippedExistingFields)],
+    conflicts,
+    note: appliedFields.length
+      ? 'High-confidence visible or OCR-read fields were used only in this sandbox analysis because the corresponding listing fields were blank. They were not saved to the listing and do not establish authenticity or value.'
+      : 'No high-confidence image field was needed for this analysis. Existing listing fields were not overwritten.',
+  };
 }
 
 export const FIELD_COMPLETION_RESPONSE_FORMAT = {

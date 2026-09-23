@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildFieldCompletionPrompt, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
+import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
 
 describe('Test AI field completion', () => {
   it('uses the category and item type field table', () => {
@@ -37,5 +37,37 @@ describe('Test AI field completion', () => {
   it('salvages complete field candidates from a truncated response', () => {
     const result = parseFieldCompletionJson('{"fields":[{"field":"player","value":"Wayne Gretzky","status":"ocr_read","confidence":"high","evidence":"Visible name"},{"field":"sport","value":"Hockey","status":"inferred","confidence":"medium","evidence":"Truncated');
     expect(result).toMatchObject({ fields: [{ field: 'player', value: 'Wayne Gretzky' }] });
+  });
+
+  it('uses only high-confidence observed missing fields in the temporary analysis copy', () => {
+    const completion = normalizeFieldCompletion({
+      fields: [
+        { field: 'player', value: 'Wayne Gretzky', status: 'ocr_read', confidence: 'high', evidence: 'Name on PSA label' },
+        { field: 'manufacturer', value: 'O-Pee-Chee', status: 'observed', confidence: 'high', evidence: 'Brand on label' },
+        { field: 'grade', value: '9', status: 'ocr_read', confidence: 'high', evidence: 'PSA label' },
+        { field: 'sport', value: 'Hockey', status: 'inferred', confidence: 'medium', evidence: 'Uniform' },
+      ],
+      missingImageRequests: [],
+    }, { title: 'Wayne Gretzky Rookie', category: 'Sports Cards', itemType: 'single_card' });
+    const augmented = applyHighConfidenceVisualFields({
+      title: 'Wayne Gretzky Rookie', category: 'Sports Cards', itemType: 'single_card', grade: '9', itemDetails: JSON.stringify({ manufacturer: 'Other' }),
+    }, completion);
+    expect(augmented.appliedFields.map((field) => field.field)).toEqual(['player']);
+    expect(JSON.parse(augmented.item.itemDetails ?? '{}')).toMatchObject({ manufacturer: 'Other', player: 'Wayne Gretzky' });
+    expect(augmented.skippedExistingFields).toEqual(expect.arrayContaining(['Manufacturer', 'Grade']));
+    expect(augmented.appliedFields.map((field) => field.field)).not.toContain('sport');
+  });
+
+  it('never applies conflicts or low-confidence suggestions to the analysis copy', () => {
+    const completion = normalizeFieldCompletion({
+      fields: [
+        { field: 'sport', value: 'Hockey', status: 'conflict', confidence: 'high', evidence: 'Mismatch' },
+        { field: 'team', value: 'Edmonton Oilers', status: 'observed', confidence: 'low', evidence: 'Logo' },
+      ],
+      missingImageRequests: [],
+    }, { title: 'Wayne Gretzky Rookie', category: 'Sports Cards', itemType: 'single_card' });
+    const augmented = applyHighConfidenceVisualFields({ title: 'Wayne Gretzky Rookie', category: 'Sports Cards', itemType: 'single_card' }, completion);
+    expect(augmented.appliedFields).toHaveLength(0);
+    expect(augmented.conflicts).toEqual(['Sport: Hockey']);
   });
 });

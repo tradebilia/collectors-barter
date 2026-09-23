@@ -31,4 +31,15 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain('Vision provider status:');
     expect(clientSource).toContain('Image-Review Impact Check');
   });
+
+  it('supports a separate A/B toggle for temporary visual missing-field context', () => {
+    expect(routerSource).toContain('useVisualFieldCompletion: z.boolean().optional().default(false)');
+    expect(routerSource).toContain('scanMissingFieldsForAnalysis');
+    expect(routerSource).toContain('applyHighConfidenceVisualFields');
+    expect(routerSource).toContain('IMAGE-DERIVED MISSING FIELDS — TEMPORARY ANALYSIS CONTEXT ONLY');
+    expect(routerSource).toContain('visualFieldCompletionUsed: useVisualFieldCompletion');
+    expect(clientSource).toContain('Fill missing fields from image');
+    expect(clientSource).toContain('Visual Search Fields Used in This Analysis');
+    expect(clientSource).toContain('useVisualFieldCompletion: useImageAnalyzer && useVisualFieldCompletion');
+  });
 });

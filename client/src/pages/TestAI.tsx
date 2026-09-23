@@ -1528,6 +1528,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 }) {
   const [result, setResult] = useState<any>(null);
   const [useImageAnalyzer, setUseImageAnalyzer] = useState(true);
+  const [useVisualFieldCompletion, setUseVisualFieldCompletion] = useState(true);
   const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
     {
       leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, itemDetails: leftItem.itemDetails },
@@ -1549,9 +1550,10 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
   const handleAnalyze = () => {
     analyzeMutation.mutate({
-      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined },
-      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: useImageAnalyzer ? rightItem.primaryPhotoUrl : undefined },
+      leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined },
+      rightItem: { title: rightItem.title, category: rightItem.category, itemType: rightItem.itemType, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: useImageAnalyzer ? rightItem.primaryPhotoUrl : undefined },
       useImageAnalyzer,
+      useVisualFieldCompletion: useImageAnalyzer && useVisualFieldCompletion,
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
@@ -1584,6 +1586,10 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
           <label className="flex items-center gap-2 rounded border border-fuchsia-700/40 bg-fuchsia-950/20 px-2 py-1.5 text-[10px] text-fuchsia-100" title="Run the same trade with or without the listing images sent to the visual identity reviewer">
             <input type="checkbox" checked={useImageAnalyzer} onChange={(event) => { setUseImageAnalyzer(event.target.checked); setResult(null); }} className="accent-fuchsia-500" />
             Use image analyzer
+          </label>
+          <label className="flex items-center gap-2 rounded border border-violet-700/40 bg-violet-950/20 px-2 py-1.5 text-[10px] text-violet-100 disabled:opacity-40" title="Temporarily supply only high-confidence image fields that are blank in the listing; saved listing data is never changed">
+            <input type="checkbox" checked={useVisualFieldCompletion} disabled={!useImageAnalyzer} onChange={(event) => { setUseVisualFieldCompletion(event.target.checked); setResult(null); }} className="accent-violet-500" />
+            Fill missing fields from image
           </label>
           <button onClick={() => marketNewsQuery.refetch()} disabled={marketNewsQuery.isFetching}
             className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
@@ -1672,6 +1678,36 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
             </div>
           )}
           <VisionImpactPanel result={result} />
+          {result.visualFieldCompletionUsed && (
+            <div className="rounded-lg border border-violet-700/40 bg-violet-950/15 p-3 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-violet-300 text-[10px] font-bold uppercase tracking-wide">Visual Search Fields Used in This Analysis</p>
+                  <p className="text-gray-500 text-[10px] mt-0.5">A/B evidence layer: only high-confidence visible or OCR-read fields that were blank in the listing are added temporarily. No listing data is saved or overwritten.</p>
+                </div>
+                <span className="rounded bg-violet-900/50 px-2 py-1 text-[9px] font-semibold text-violet-100">Identity context only</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Item A', augmentation: result.leftVisualFieldAugmentation, color: 'cyan' },
+                  { label: 'Item B', augmentation: result.rightVisualFieldAugmentation, color: 'amber' },
+                ].map(({ label, augmentation, color }) => augmentation && (
+                  <div key={label} className="rounded bg-gray-950/50 p-2 space-y-2">
+                    <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
+                    {augmentation.appliedFields?.length > 0 ? <div className="space-y-1">
+                      {augmentation.appliedFields.map((field: any) => <div key={`${field.field}-${field.value}`} className="rounded border border-violet-800/40 bg-violet-950/20 px-2 py-1.5 text-[10px]">
+                        <p className="text-violet-100"><span className="font-semibold">{field.label}:</span> {field.value}</p>
+                        <p className="mt-0.5 text-gray-500">{field.status} · {field.confidence} confidence · {field.evidence}</p>
+                      </div>)}
+                    </div> : <p className="text-gray-500 text-[10px]">No eligible missing fields were added. Existing listing data stayed unchanged.</p>}
+                    {augmentation.skippedExistingFields?.length > 0 && <p className="text-gray-500 text-[9px]">Kept listing values: {augmentation.skippedExistingFields.join(', ')}</p>}
+                    {augmentation.conflicts?.length > 0 && <p className="text-amber-200 text-[9px]">Manual review: {augmentation.conflicts.join(' · ')}</p>}
+                    <p className="text-violet-200/80 text-[9px]">{augmentation.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {(result.leftVisualReview || result.rightVisualReview) && (
             <div className="rounded-lg border border-fuchsia-700/40 bg-fuchsia-950/15 p-3 space-y-3">
               <div>
