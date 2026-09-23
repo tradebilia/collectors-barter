@@ -21,6 +21,7 @@ import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
+import { parseAnalyzerResponse } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
 import { isPublicMemberEligible } from './publicVisibility';
@@ -1468,27 +1469,40 @@ Respond with ONLY this JSON object:
       if (!content) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI analysis failed' });
 
       const rawContent = typeof content === 'string' ? content : JSON.stringify(content);
-      const cleanContent = rawContent.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-
-      try {
-        const parsed = JSON.parse(cleanContent);
-        // Keep the existing LLM response contract, but make the structured
-        // market layer authoritative for the values and verdict shown in the
-        // experimental sandbox.
-        return {
-          ...parsed,
-          verdict: deterministicComparison.verdict,
-          leftMarketProfile: leftProfile,
-          rightMarketProfile: rightProfile,
-          deterministicComparison,
-          majorAssumptions: [...new Set([...(parsed.majorAssumptions ?? []), ...leftProfile.majorAssumptions, ...rightProfile.majorAssumptions])],
-          missingInformation: [...new Set([...(parsed.missingInformation ?? []), ...leftProfile.missingInformation, ...rightProfile.missingInformation])],
-          valuationWarnings: [...new Set([...(parsed.valuationWarnings ?? []), ...leftProfile.valuationWarnings, ...rightProfile.valuationWarnings])],
-          leftVisualReview: visualReview.itemA ?? null,
-          rightVisualReview: visualReview.itemB ?? null,
-        };
-      } catch {
-        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI returned invalid JSON. Please try again.' });
-      }
+      const parsed = parseAnalyzerResponse(rawContent);
+      const fallback = {
+        verdict: deterministicComparison.verdict,
+        valueSummary: 'The structured market comparison completed, but the narrative AI response was unavailable. Review the deterministic market profiles and evidence below.',
+        itemAInsights: `${leftItem.title}: deterministic evidence is ${leftProfile.evidenceState.replace(/_/g, ' ')}. Narrative market interpretation was unavailable for this run.`,
+        itemBInsights: `${rightItem.title}: deterministic evidence is ${rightProfile.evidenceState.replace(/_/g, ' ')}. Narrative market interpretation was unavailable for this run.`,
+        itemAMarketNews: 'Narrative AI response unavailable; review the loaded RSS context separately.',
+        itemBMarketNews: 'Narrative AI response unavailable; review the loaded RSS context separately.',
+        itemALiquidity: 'Low', itemBLiquidity: 'Low',
+        itemALiquidityNote: 'Liquidity was not rated because the narrative response was unavailable.',
+        itemBLiquidityNote: 'Liquidity was not rated because the narrative response was unavailable.',
+        itemAStrengths: [], itemARisks: ['Narrative AI response unavailable; do not infer additional market claims.'],
+        itemBStrengths: [], itemBRisks: ['Narrative AI response unavailable; do not infer additional market claims.'],
+        tradeFairness: 'Review required',
+        majorAssumptions: [],
+        missingInformation: ['Narrative AI response; rerun when the provider is available.'],
+        valuationWarnings: ['The deterministic comparison is not a substitute for narrative review.'],
+        liquidityWarning: 'Liquidity was not assessed because the narrative response was unavailable.',
+        negotiationTip: 'Review the deterministic evidence and market profiles before negotiating.',
+        dataQuality: 'Low — narrative response unavailable',
+      };
+      const narrative = parsed ?? fallback;
+      if (!parsed) console.warn('[Test AI] Analyzer narrative unavailable: provider returned malformed JSON; using deterministic fallback');
+      return {
+        ...narrative,
+        verdict: deterministicComparison.verdict,
+        leftMarketProfile: leftProfile,
+        rightMarketProfile: rightProfile,
+        deterministicComparison,
+        majorAssumptions: [...new Set([...(Array.isArray(narrative.majorAssumptions) ? narrative.majorAssumptions : []), ...leftProfile.majorAssumptions, ...rightProfile.majorAssumptions])],
+        missingInformation: [...new Set([...(Array.isArray(narrative.missingInformation) ? narrative.missingInformation : []), ...leftProfile.missingInformation, ...rightProfile.missingInformation])],
+        valuationWarnings: [...new Set([...(Array.isArray(narrative.valuationWarnings) ? narrative.valuationWarnings : []), ...leftProfile.valuationWarnings, ...rightProfile.valuationWarnings])],
+        leftVisualReview: visualReview.itemA ?? null,
+        rightVisualReview: visualReview.itemB ?? null,
+      };
     }),
 });
