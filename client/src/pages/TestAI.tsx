@@ -1380,6 +1380,54 @@ function CategoryMarketSummaryPanel({ summaries }: { summaries: Array<{ category
   </div>;
 }
 
+function VisionImpactPanel({ result }: { result: any }) {
+  const impacts = [
+    { label: 'Item A', impact: result.leftVisionImpact, color: 'cyan' },
+    { label: 'Item B', impact: result.rightVisionImpact, color: 'amber' },
+  ].filter(({ impact }) => impact);
+  if (!impacts.length) return null;
+  const statusLabel: Record<string, string> = {
+    not_run: 'Not run',
+    no_new_evidence: 'No new evidence',
+    identity_confirmed: 'Identity confirmation',
+    manual_review_required: 'Manual review required',
+  };
+  const statusStyle: Record<string, string> = {
+    not_run: 'bg-slate-800 text-slate-200',
+    no_new_evidence: 'bg-slate-800 text-slate-200',
+    identity_confirmed: 'bg-emerald-900/60 text-emerald-200',
+    manual_review_required: 'bg-amber-900/60 text-amber-200',
+  };
+  return <section className="rounded-lg border border-fuchsia-700/40 bg-fuchsia-950/15 p-3 space-y-3">
+    <div className="flex flex-wrap items-start justify-between gap-2">
+      <div>
+        <p className="text-fuchsia-300 text-[10px] font-bold uppercase tracking-wide">Image-Review Impact Check</p>
+        <p className="text-gray-500 text-[10px] mt-0.5">This measures added identity evidence versus metadata-only analysis—not a price change, authentication, or trade-verdict change.</p>
+      </div>
+      <span className="rounded bg-fuchsia-900/50 px-2 py-1 text-[9px] font-semibold text-fuchsia-100">{result.imageAnalyzerUsed ? 'Image review enabled' : 'Metadata-only baseline'}</span>
+    </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {impacts.map(({ label, impact, color }) => <div key={label} className="rounded bg-gray-950/50 p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
+          <span className={`rounded px-1.5 py-0.5 text-[9px] ${statusStyle[impact.status] ?? statusStyle.not_run}`}>{statusLabel[impact.status] ?? impact.status}</span>
+        </div>
+        <p className="text-gray-500 text-[10px]"><span className="font-semibold text-gray-400">Baseline:</span> {impact.baseline}</p>
+        <p className="text-gray-300 text-[10px]"><span className="font-semibold text-fuchsia-200">Image result:</span> {impact.imageReview}</p>
+        <div className="grid grid-cols-2 gap-1 text-[9px] text-gray-500">
+          <span>{impact.metadataClaimCount} metadata claims</span><span>{impact.visibleIdentifierCount} visible identifiers</span>
+          <span>{impact.confirmedMatchCount} confirmed matches</span><span>{impact.conflictCount} potential conflicts</span>
+        </div>
+        <p className="text-gray-400 text-[10px]"><span className="font-semibold text-gray-300">Next action:</span> {impact.recommendedAction}</p>
+      </div>)}
+    </div>
+    {result.visionDiagnostics && <div className={`rounded p-2 text-[10px] ${result.visionDiagnostics.structuredResponse ? 'bg-emerald-950/30 text-emerald-100' : 'bg-amber-950/30 text-amber-100'}`}>
+      <span className="font-semibold">Vision provider status:</span> {result.visionDiagnostics.reason} {result.visionDiagnostics.requested ? `Submitted ${result.visionDiagnostics.imagesSubmitted} image${result.visionDiagnostics.imagesSubmitted === 1 ? '' : 's'}; recognized ${result.visionDiagnostics.recognizedItems} item result${result.visionDiagnostics.recognizedItems === 1 ? '' : 's'}.` : ''}
+    </div>}
+    <p className="text-gray-600 text-[9px]">A useful impact is a correct confirmation or a correctly flagged mismatch on pre-labelled item facts. Completed sales remain the only valuation authority.</p>
+  </section>;
+}
+
 function MarketNewsSection({ item }: { item: SelectedItem }) {
   const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
     { leftItem: { title: item.title, category: item.category, itemType: item.itemType, itemDetails: item.itemDetails } },
@@ -1623,6 +1671,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
               )}
             </div>
           )}
+          <VisionImpactPanel result={result} />
           {(result.leftVisualReview || result.rightVisualReview) && (
             <div className="rounded-lg border border-fuchsia-700/40 bg-fuchsia-950/15 p-3 space-y-3">
               <div>

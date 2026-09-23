@@ -24,6 +24,7 @@ import { buildMarketProfile, deterministicTradeComparison, marketProfileForPromp
 import { parseAnalyzerResponse } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
+import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1299,6 +1300,14 @@ export const testAIRouter = router({
       ].filter(({ item }) => useImageAnalyzer && isSafeVisionImageUrl(item.imageUrl));
 
       let visualReview: Record<string, unknown> = {};
+      let visionDiagnostics = {
+        requested: useImageAnalyzer,
+        imagesSubmitted: visualItems.length,
+        structuredResponse: false,
+        recognizedItems: 0,
+        responseKind: 'not_requested',
+        reason: useImageAnalyzer ? 'No safe listing image was supplied.' : 'Image review was disabled for this baseline run.',
+      };
       if (visualItems.length > 0) {
         const visualContent: Array<TextContent | ImageContent> = [
           {
@@ -1312,20 +1321,50 @@ export const testAIRouter = router({
         }
         try {
           const visualResult = await invokeLLM({
-            model: 'gemini-3-flash-preview',
+            model: 'gpt-5-mini',
             messages: [{ role: 'user', content: visualContent }],
-            maxTokens: 1400,
+            maxCompletionTokens: 1000,
+            temperature: 0,
+            response_format: VISUAL_IDENTITY_RESPONSE_FORMAT,
           });
           const visualText = visualResult.choices[0]?.message?.content;
-          if (typeof visualText === 'string') {
-            const cleanVisualText = visualText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-            const parsedVisual = parseAnalyzerResponse(cleanVisualText);
-            for (const entry of Array.isArray(parsedVisual?.items) ? parsedVisual.items : []) {
-              if (entry?.label === 'ITEM A' || entry?.label === 'ITEM B') visualReview[entry.label === 'ITEM A' ? 'itemA' : 'itemB'] = entry;
+          const visualRaw = typeof visualText === 'string'
+            ? visualText
+            : Array.isArray(visualText)
+              ? visualText.filter((part): part is TextContent => part.type === 'text').map((part) => part.text).join('\n')
+              : '';
+          const cleanVisualText = visualRaw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+          const parsedVisual = cleanVisualText ? parseAnalyzerResponse(cleanVisualText) : null;
+          const parsedItems = Array.isArray(parsedVisual?.items) ? parsedVisual.items : [];
+          let recognizedItems = 0;
+          for (const entry of parsedItems) {
+            if (entry?.label === 'ITEM A' || entry?.label === 'ITEM B') {
+              visualReview[entry.label === 'ITEM A' ? 'itemA' : 'itemB'] = entry;
+              recognizedItems += 1;
             }
           }
+          visionDiagnostics = {
+            requested: true,
+            imagesSubmitted: visualItems.length,
+            structuredResponse: Boolean(parsedVisual),
+            recognizedItems,
+            responseKind: Array.isArray(visualText) ? 'content_parts' : typeof visualText,
+            reason: recognizedItems > 0
+              ? 'Structured visual identity output received.'
+              : parsedVisual
+                ? 'Provider returned a structured response without a recognized item label.'
+                : 'Provider did not return a usable structured visual identity response.',
+          };
         } catch (error) {
           console.warn('[Test AI] Visual identity review unavailable:', error instanceof Error ? error.message : 'unknown error');
+          visionDiagnostics = {
+            requested: true,
+            imagesSubmitted: visualItems.length,
+            structuredResponse: false,
+            recognizedItems: 0,
+            responseKind: 'error',
+            reason: 'The visual provider request failed. The analysis remains metadata-only.',
+          };
         }
       }
 
@@ -1378,6 +1417,8 @@ export const testAIRouter = router({
         leftItem.estimatedValue ?? 0,
         rightItem.estimatedValue ?? 0,
       );
+      const leftVisionImpact = evaluateVisionImpact(leftItem, visualReview.itemA as VisionReview | null | undefined);
+      const rightVisionImpact = evaluateVisionImpact(rightItem, visualReview.itemB as VisionReview | null | undefined);
 
       // Prefer sold prices (real transactions) over active listing prices for valuation
       const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
@@ -1504,6 +1545,10 @@ Respond with ONLY this JSON object:
         valuationWarnings: [...new Set([...(Array.isArray(narrative.valuationWarnings) ? narrative.valuationWarnings : []), ...leftProfile.valuationWarnings, ...rightProfile.valuationWarnings])],
         leftVisualReview: visualReview.itemA ?? null,
         rightVisualReview: visualReview.itemB ?? null,
+        leftVisionImpact,
+        rightVisionImpact,
+        imageAnalyzerUsed: useImageAnalyzer,
+        visionDiagnostics,
       };
     }),
 });

@@ -21,4 +21,14 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain('Use image analyzer');
     expect(clientSource).toContain('useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined');
   });
+
+  it('requires structured visual output and surfaces provider availability for evaluation', () => {
+    expect(routerSource).toContain("model: 'gpt-5-mini'");
+    expect(routerSource).toContain('maxCompletionTokens: 1000');
+    expect(routerSource).toContain('response_format: VISUAL_IDENTITY_RESPONSE_FORMAT');
+    expect(routerSource).toContain('visionDiagnostics');
+    expect(routerSource).toContain("responseKind: Array.isArray(visualText) ? 'content_parts' : typeof visualText");
+    expect(clientSource).toContain('Vision provider status:');
+    expect(clientSource).toContain('Image-Review Impact Check');
+  });
 });
