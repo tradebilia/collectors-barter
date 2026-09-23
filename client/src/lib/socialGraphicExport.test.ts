@@ -138,14 +138,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
     expect(exporterSource).toContain("const plaqueHeight = 90 * scale");
-    expect(exporterSource).toContain("const textBlockTop = y + (height - textBlockHeight) / 2");
-    expect(exporterSource).toContain("const opticalVerticalOffset = 0");
-    expect(exporterSource).toContain("const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset");
-    expect(exporterSource).toContain("const verticalTextPadding = 20 * scale");
-    expect(exporterSource).toContain("const maxValueHeight = Math.max(1, height - verticalTextPadding - labelHeight - textGap)");
+    expect(exporterSource).toContain("const labelSlotTop = y + 18 * scale");
+    expect(exporterSource).toContain("const labelBaselineY = labelSlotTop + labelAscent");
+    expect(exporterSource).toContain("const valueBottomPadding = 12 * scale");
+    expect(exporterSource).toContain("const valueBaselineY = y + height - valueBottomPadding - valueDescent");
+    expect(exporterSource).toContain("const maxValueHeight = Math.max(1, valueBaselineY - (labelBaselineY + labelDescent + textGap) + valueDescent)");
     expect(exporterSource).toContain("valueFontSize *= maxValueHeight / valueHeight");
-    expect(exporterSource).toContain("const valueBaselineY = Math.min(");
-    expect(exporterSource).toContain("y + height - cut - 10 * scale - valueDescent");
     expect(exporterSource).toContain("drawCrispText(context, value, plaqueX + plaqueWidth / 2, valueBaselineY)");
     expect(exporterSource).toContain("const footerClearance = (isTall ? 38 : 18) * scale");
     expect(exporterSource).toContain("const plaqueBottomLimit = footerBaselineY - footerClearance");
@@ -394,9 +392,10 @@ describe("native Social graphic exporter", () => {
   });
 
   it("keeps trade-value punctuation inside the plaque outline", () => {
-    expect(exporterSource).toContain('values such as');
-    expect(exporterSource).toContain('y + height - cut - 10 * scale - valueDescent');
-    expect(exporterSource).toContain('const valueBaselineY = Math.min(');
+    expect(exporterSource).toContain('const labelSlotTop = y + 18 * scale');
+    expect(exporterSource).toContain('const valueBottomPadding = 12 * scale');
+    expect(exporterSource).toContain('const valueBaselineY = y + height - valueBottomPadding - valueDescent');
+    expect(exporterSource).toContain('labelBaselineY + labelDescent + textGap');
   });
 
   it("routes every completed-trade platform through the cinematic composition", () => {

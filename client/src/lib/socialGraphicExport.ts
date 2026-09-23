@@ -1630,17 +1630,20 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
   const labelAscent = labelMetrics.actualBoundingBoxAscent || 15 * scale;
   const labelDescent = labelMetrics.actualBoundingBoxDescent || 4 * scale;
   const labelHeight = labelAscent + labelDescent;
-  const textGap = 8 * scale;
+  const textGap = 12 * scale;
   context.font = `900 ${Math.round(valueFontSize)}px ${CANVAS_SANS_FONT}`;
   let valueMetrics = context.measureText(value);
   let valueAscent = valueMetrics.actualBoundingBoxAscent || 44 * scale;
   let valueDescent = valueMetrics.actualBoundingBoxDescent || 10 * scale;
   let valueHeight = valueAscent + valueDescent;
-  // Fit the label, gap, and complete amount as one block before applying any
-  // edge clamp. The previous lower-edge clamp could move a tall amount up
+  // Use explicit vertical slots instead of centering a combined block. The
+  // prior centered block plus lower-edge clamp could move the amount upward
   // into the label, producing the visible overlap seen with "$1,500".
-  const verticalTextPadding = 20 * scale;
-  const maxValueHeight = Math.max(1, height - verticalTextPadding - labelHeight - textGap);
+  const labelSlotTop = y + 18 * scale;
+  const labelBaselineY = labelSlotTop + labelAscent;
+  const valueBottomPadding = 12 * scale;
+  const valueBaselineY = y + height - valueBottomPadding - valueDescent;
+  const maxValueHeight = Math.max(1, valueBaselineY - (labelBaselineY + labelDescent + textGap) + valueDescent);
   if (valueHeight > maxValueHeight) {
     valueFontSize *= maxValueHeight / valueHeight;
     context.font = `900 ${Math.max(1, Math.round(valueFontSize))}px ${CANVAS_SANS_FONT}`;
@@ -1649,18 +1652,6 @@ function drawTradeValuePlaque(context: CanvasRenderingContext2D, value: string, 
     valueDescent = valueMetrics.actualBoundingBoxDescent || valueFontSize * 0.18;
     valueHeight = valueAscent + valueDescent;
   }
-  const textBlockHeight = labelHeight + textGap + valueHeight;
-  const textBlockTop = y + (height - textBlockHeight) / 2;
-  // Keep punctuation descenders (especially the comma in values such as
-  // "$1,500") above the angled lower plaque edge. The font metrics are useful
-  // for the initial placement, but the final baseline is hard-clamped to the
-  // visible interior so rasterized glyphs cannot breach the outline.
-  const opticalVerticalOffset = 0;
-  const labelBaselineY = textBlockTop + labelAscent + opticalVerticalOffset;
-  const valueBaselineY = Math.min(
-    textBlockTop + labelHeight + textGap + valueAscent + opticalVerticalOffset,
-    y + height - cut - 10 * scale - valueDescent,
-  );
   const labelVisualCenterY = labelBaselineY + (labelDescent - labelAscent) / 2;
   context.textAlign = "center";
   context.textBaseline = "alphabetic";
