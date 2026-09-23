@@ -26,6 +26,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
+import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -652,6 +653,7 @@ export const testAIRouter = router({
       certificationCompany: z.string().optional(),
       itemDetails: z.string().optional(),
       itemType: z.string().optional(),
+      imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -804,10 +806,92 @@ export const testAIRouter = router({
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
         const filtered = filterListingsByGrade(bySport, targetGrade);
-        console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
+        console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
-        // Compute metrics from sold prices
-        const soldListings = filtered.map((i: any) => ({
+        let visuallyFiltered = filtered;
+        let visualSoldFilter: any = {
+          status: 'skipped_no_target_image',
+          reviewedCount: 0,
+          removedCount: 0,
+          retainedUnreviewedCount: 0,
+          reviews: [],
+          note: 'No target listing image was supplied; sold comps were not visually filtered.',
+        };
+        const safeTargetImage = (() => {
+          if (!input.imageUrl) return null;
+          try {
+            return new URL(input.imageUrl).protocol === 'https:' ? input.imageUrl : null;
+          } catch {
+            return null;
+          }
+        })();
+        const visualCandidates = filtered
+          .map((item: any, candidateIndex: number) => ({ item, candidateIndex, imageUrl: item.thumbnailUrl }))
+          .filter(({ imageUrl }) => {
+            if (!imageUrl) return false;
+            try {
+              return new URL(imageUrl).protocol === 'https:';
+            } catch {
+              return false;
+            }
+          })
+          .slice(0, 20);
+        if (safeTargetImage && visualCandidates.length > 0) {
+          try {
+            const visualContent: Array<TextContent | ImageContent> = [
+              {
+                type: 'text',
+                text: `You are the final identity-safety filter for sold collectibles comparables. ${VISUAL_SOLD_FILTER_PROMPT_NOTE}\nTarget listing metadata: title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; itemDetails=${input.itemDetails ?? '{}'}\nCompare the target image first, then each numbered sold candidate image. Return JSON only with reviews containing candidateIndex, verdict, confidence, and short rationale.`,
+              },
+              { type: 'text', text: 'TARGET LISTING IMAGE:' },
+              { type: 'image_url', image_url: { url: safeTargetImage, detail: 'auto' } },
+            ];
+            for (const { candidateIndex, item, imageUrl } of visualCandidates) {
+              visualContent.push({ type: 'text', text: `SOLD CANDIDATE ${candidateIndex}: title=${item.title ?? 'unknown'}; condition=${item.condition ?? 'unknown'}` });
+              visualContent.push({ type: 'image_url', image_url: { url: imageUrl, detail: 'auto' } });
+            }
+            const visualResult = await invokeLLM({
+              model: 'gpt-5-mini',
+              messages: [{ role: 'user', content: visualContent }],
+              maxCompletionTokens: 1800,
+              temperature: 0,
+              response_format: VISUAL_SOLD_FILTER_RESPONSE_FORMAT,
+            });
+            const visualText = visualResult.choices[0]?.message?.content;
+            const visualRaw = typeof visualText === 'string'
+              ? visualText
+              : Array.isArray(visualText)
+                ? visualText.filter((part): part is TextContent => part.type === 'text').map((part) => part.text).join('\n')
+                : '';
+            const parsed = normalizeVisualSoldReviews(parseAnalyzerResponse(visualRaw), filtered.length);
+            const applied = applyVisualSoldReviews(filtered, parsed, visualCandidates.length);
+            visuallyFiltered = applied.listings;
+            visualSoldFilter = { ...applied, note: buildVisualSoldFilterNote(applied) };
+            console.log(`[Sold-Comps] Visual filter reviewed ${applied.reviewedCount}, removed ${applied.removedCount}, retained ${applied.listings.length}`);
+          } catch (error) {
+            console.warn('[Sold-Comps] Visual candidate filter unavailable:', error instanceof Error ? error.message : 'unknown error');
+            visualSoldFilter = {
+              status: 'provider_unavailable',
+              reviewedCount: 0,
+              removedCount: 0,
+              retainedUnreviewedCount: visualCandidates.length,
+              reviews: [],
+              note: 'The visual candidate filter was unavailable; all text-filtered sold comps were retained and remain subject to normal evidence review.',
+            };
+          }
+        } else if (safeTargetImage && visualCandidates.length === 0) {
+          visualSoldFilter = {
+            status: 'skipped_no_candidate_images',
+            reviewedCount: 0,
+            removedCount: 0,
+            retainedUnreviewedCount: filtered.length,
+            reviews: [],
+            note: 'No sold-comparable images were available for visual review; all text-filtered sold comps were retained.',
+          };
+        }
+
+        // Compute metrics from the visually retained sold prices
+        const soldListings = visuallyFiltered.map((i: any) => ({
           price: { value: i.soldPrice || '0', currency: i.soldCurrency || 'USD' },
           title: i.title,
           condition: i.condition,
@@ -820,7 +904,7 @@ export const testAIRouter = router({
 
         return {
           query,
-          listings: filtered.slice(0, 20).map((i: any) => ({
+          listings: visuallyFiltered.slice(0, 20).map((i: any) => ({
             title: i.title,
             price: parseFloat(i.soldPrice || '0'),
             currency: i.soldCurrency || 'USD',
@@ -832,6 +916,7 @@ export const testAIRouter = router({
             shippingPrice: i.shippingPrice,
           })),
           metrics,
+          visualFilter: visualSoldFilter,
           error: null,
         };
       } catch (err: any) {

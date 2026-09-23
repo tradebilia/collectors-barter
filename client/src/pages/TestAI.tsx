@@ -454,7 +454,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getSoldCompsData.useQuery(
-    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
 
@@ -466,6 +466,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+      {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
@@ -2379,11 +2380,11 @@ export default function TestAI() {
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
   );
   const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
