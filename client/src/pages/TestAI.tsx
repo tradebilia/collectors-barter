@@ -1367,6 +1367,19 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
   );
 }
 
+function CategoryMarketSummaryPanel({ summaries }: { summaries: Array<{ category: string; articleCount: number; sourceCount: number; positiveSignals: number; negativeSignals: number; signal: string; confidence: string; rationale: string }> }) {
+  if (!summaries?.length) return null;
+  const signalLabel: Record<string, string> = { improving: 'Improving signal', softening: 'Softening signal', mixed: 'Mixed signal', insufficient: 'Insufficient evidence' };
+  return <div className="rounded bg-indigo-950/40 border border-indigo-700/30 p-2 space-y-2">
+    <div><p className="text-indigo-200 text-xs font-semibold">Category Market Context</p><p className="text-gray-500 text-[9px]">A directional comparison of current RSS coverage. This can frame a cross-category trade, but it is not a price or verdict.</p></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">{summaries.map((summary) => <div key={summary.category} className="rounded bg-gray-950/50 p-2">
+      <div className="flex items-center justify-between gap-2"><p className="text-gray-200 text-[10px] font-semibold">{summary.category}</p><span className={`rounded px-1.5 py-0.5 text-[8px] ${summary.signal === 'improving' ? 'bg-emerald-900/60 text-emerald-200' : summary.signal === 'softening' ? 'bg-rose-900/60 text-rose-200' : 'bg-slate-800 text-slate-200'}`}>{signalLabel[summary.signal] ?? summary.signal}</span></div>
+      <p className="text-gray-500 text-[9px] mt-1">{summary.articleCount} article{summary.articleCount === 1 ? '' : 's'} · {summary.sourceCount} source{summary.sourceCount === 1 ? '' : 's'} · {summary.confidence} confidence</p>
+      <p className="text-gray-400 text-[9px] mt-1">{summary.rationale}</p>
+    </div>)}</div>
+  </div>;
+}
+
 function MarketNewsSection({ item }: { item: SelectedItem }) {
   const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
     { leftItem: { title: item.title, category: item.category, itemType: item.itemType, itemDetails: item.itemDetails } },
@@ -1381,6 +1394,7 @@ function MarketNewsSection({ item }: { item: SelectedItem }) {
     </div>
     {marketNewsQuery.data && <>
       <p className="text-gray-500 text-[10px]">{marketNewsQuery.data.feedsChecked} category feeds checked · fetched {new Date(marketNewsQuery.data.fetchedAt).toLocaleString()}</p>
+      <CategoryMarketSummaryPanel summaries={marketNewsQuery.data.categorySummaries} />
       <div className="rounded bg-gray-950/50 p-2 space-y-2">
         <p className="text-cyan-300 text-xs font-semibold">Selected item · {articles.length} relevant article{articles.length === 1 ? '' : 's'}</p>
         {articles.length === 0 ? <p className="text-gray-500 text-[10px]">No sufficiently matched articles found.</p> : articles.map((article: any) => <a key={article.id} href={article.url} target="_blank" rel="noreferrer" className="block rounded border border-gray-800 bg-gray-900/60 p-2 hover:border-sky-700/60">
@@ -1480,6 +1494,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
             </div>
             <span className="rounded bg-sky-900/50 px-2 py-1 text-[9px] font-semibold text-sky-200">Context only — never valuation</span>
           </div>
+          <CategoryMarketSummaryPanel summaries={marketNewsQuery.data.categorySummaries} />
           <div className="grid grid-cols-2 gap-3">
             {[
               { label: 'Item A', items: marketNewsQuery.data.itemA, color: 'cyan' },

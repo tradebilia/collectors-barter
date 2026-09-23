@@ -28,6 +28,17 @@ export type MarketNewsItem = {
   significance: string;
 };
 
+export type CategoryMarketSummary = {
+  category: MarketNewsCategory;
+  articleCount: number;
+  sourceCount: number;
+  positiveSignals: number;
+  negativeSignals: number;
+  signal: 'improving' | 'softening' | 'mixed' | 'insufficient';
+  confidence: 'low' | 'medium' | 'high';
+  rationale: string;
+};
+
 type FeedDefinition = {
   source: string;
   sourceType: 'official' | 'specialist';
@@ -120,6 +131,29 @@ function buildSignificanceSummary(article: MarketNewsItem, item: { title: string
   return `Relevant to ${subject} ${topic}. ${implication}`;
 }
 
+const positiveMarketTerms = ['demand', 'growth', 'record', 'surge', 'rising', 'strong', 'booming', 'hot', 'sellout', 'increased', 'premium'];
+const negativeMarketTerms = ['pullback', 'decline', 'downturn', 'cooling', 'weak', 'slump', 'slow', 'falling', 'oversupply', 'concern', 'caution'];
+
+export function summarizeCategoryMarketNews(items: MarketNewsItem[], categories: MarketNewsCategory[]): CategoryMarketSummary[] {
+  return categories.map((category) => {
+    const categoryItems = items.filter((item) => item.category === category);
+    const corpus = categoryItems.map((item) => `${item.title} ${item.excerpt}`).join(' ').toLowerCase();
+    const positiveSignals = positiveMarketTerms.reduce((count, term) => count + (corpus.includes(term) ? 1 : 0), 0);
+    const negativeSignals = negativeMarketTerms.reduce((count, term) => count + (corpus.includes(term) ? 1 : 0), 0);
+    const signal: CategoryMarketSummary['signal'] = categoryItems.length === 0
+      ? 'insufficient'
+      : positiveSignals >= negativeSignals + 2 ? 'improving'
+        : negativeSignals >= positiveSignals + 2 ? 'softening'
+          : 'mixed';
+    const sourceCount = new Set(categoryItems.map((item) => item.source)).size;
+    const confidence: CategoryMarketSummary['confidence'] = categoryItems.length >= 8 ? 'high' : categoryItems.length >= 3 ? 'medium' : 'low';
+    const rationale = categoryItems.length === 0
+      ? 'No usable articles were returned for this category.'
+      : `${categoryItems.length} article${categoryItems.length === 1 ? '' : 's'} from ${sourceCount} source${sourceCount === 1 ? '' : 's'}; ${positiveSignals} positive and ${negativeSignals} cautionary market-language signals detected.`;
+    return { category, articleCount: categoryItems.length, sourceCount, positiveSignals, negativeSignals, signal, confidence, rationale };
+  });
+}
+
 export function matchMarketNews(items: MarketNewsItem[], item: { title: string; category: string; itemType?: string; itemDetails?: string }): MarketNewsItem[] {
   const category = Object.keys(categoryAliases).find((key) => item.category.toLowerCase().includes(key.toLowerCase().split(' ')[0])) as MarketNewsCategory | undefined;
   const aliases = category ? categoryAliases[category] : [item.category.toLowerCase()];
@@ -134,10 +168,10 @@ export function matchMarketNews(items: MarketNewsItem[], item: { title: string; 
   }).filter((news) => news.matchScore >= 2).sort((a, b) => b.matchScore - a.matchScore || String(b.publishedAt).localeCompare(String(a.publishedAt))).slice(0, 8);
 }
 
-export async function fetchMarketNewsForItems(items: Array<{ title: string; category: string; itemType?: string; itemDetails?: string }>): Promise<{ feedsChecked: number; feedErrors: string[]; itemA: MarketNewsItem[]; itemB: MarketNewsItem[]; fetchedAt: string }> {
+export async function fetchMarketNewsForItems(items: Array<{ title: string; category: string; itemType?: string; itemDetails?: string }>): Promise<{ feedsChecked: number; feedErrors: string[]; itemA: MarketNewsItem[]; itemB: MarketNewsItem[]; categorySummaries: CategoryMarketSummary[]; fetchedAt: string }> {
   const feedErrors: string[] = [];
-  const selectedCategories = new Set(items.map((item) => Object.keys(categoryAliases).find((key) => item.category.toLowerCase().includes(key.toLowerCase().split(' ')[0]))).filter(Boolean));
-  const feeds = MARKET_NEWS_FEEDS.filter((feed) => selectedCategories.has(feed.category));
+  const selectedCategoryKeys = new Set(items.map((item) => Object.keys(categoryAliases).find((key) => item.category.toLowerCase().includes(key.toLowerCase().split(' ')[0]))).filter(Boolean));
+  const feeds = MARKET_NEWS_FEEDS.filter((feed) => selectedCategoryKeys.has(feed.category));
   const results = await Promise.all(feeds.map(async (feed) => {
     try {
       const response = await fetch(feed.url, { headers: { 'User-Agent': 'Tradebilia-TestAI/1.0 (+https://tradebilia.com)' }, signal: AbortSignal.timeout(7000) });
@@ -150,7 +184,8 @@ export async function fetchMarketNewsForItems(items: Array<{ title: string; cate
   const all = results.flatMap((result) => result.items);
   feedErrors.push(...results.flatMap((result) => result.error ? [result.error] : []));
   const unique = [...new Map(all.map((item) => [`${item.url}|${item.title.toLowerCase()}`, item])).values()];
-  return { feedsChecked: feeds.length, feedErrors, itemA: items[0] ? matchMarketNews(unique, items[0]) : [], itemB: items[1] ? matchMarketNews(unique, items[1]) : [], fetchedAt: new Date().toISOString() };
+  const selectedCategories = [...new Set(items.map((item) => Object.keys(categoryAliases).find((key) => item.category.toLowerCase().includes(key.toLowerCase().split(' ')[0])) as MarketNewsCategory | undefined).filter(Boolean) as MarketNewsCategory[])];
+  return { feedsChecked: feeds.length, feedErrors, itemA: items[0] ? matchMarketNews(unique, items[0]) : [], itemB: items[1] ? matchMarketNews(unique, items[1]) : [], categorySummaries: summarizeCategoryMarketNews(unique, selectedCategories), fetchedAt: new Date().toISOString() };
 }
 
 export function getMarketNewsFeedRegistry() {

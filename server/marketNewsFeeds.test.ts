@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getMarketNewsFeedRegistry, matchMarketNews, type MarketNewsItem } from './marketNewsFeeds';
+import { getMarketNewsFeedRegistry, matchMarketNews, summarizeCategoryMarketNews, type MarketNewsItem } from './marketNewsFeeds';
 
 describe('market news feed registry', () => {
   it('contains the initial RSS coverage without valuation sources', () => {
@@ -49,5 +49,36 @@ describe('market news matching', () => {
     ], { title: 'Charizard Pokémon card', category: 'Pokemon', itemType: 'Single Card' });
     expect(matches).toHaveLength(1);
     expect(matches[0].category).toBe('Pokemon / TCG');
+  });
+});
+
+describe('category market context', () => {
+  const article = (title: string, category: MarketNewsItem['category']): MarketNewsItem => ({
+    id: title,
+    title,
+    url: `https://example.com/${encodeURIComponent(title)}`,
+    source: 'Test Feed',
+    sourceType: 'specialist',
+    category,
+    publishedAt: '2026-09-23T00:00:00.000Z',
+    excerpt: title,
+    relevance: 'high',
+    matchScore: 3,
+    evidenceType: 'industry_news',
+    valuationImpact: 'context_only',
+    matchedTerms: [],
+    significance: '',
+  });
+
+  it('compares category direction without treating RSS as valuation evidence', () => {
+    const summaries = summarizeCategoryMarketNews([
+      article('Sports card demand surges with record auction results', 'Sports Cards'),
+      article('Sports card market growth remains strong and premium', 'Sports Cards'),
+      article('Comic market pullback continues as demand cools', 'Comics'),
+      article('Comic prices falling amid weak sales and caution', 'Comics'),
+    ], ['Sports Cards', 'Comics']);
+    expect(summaries[0]).toMatchObject({ category: 'Sports Cards', signal: 'improving', positiveSignals: 4, negativeSignals: 0 });
+    expect(summaries[1]).toMatchObject({ category: 'Comics', signal: 'softening', positiveSignals: 0, negativeSignals: 5 });
+    expect(summaries.every((summary) => summary.rationale.includes('article'))).toBe(true);
   });
 });
