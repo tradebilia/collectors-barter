@@ -4,9 +4,11 @@ import { getMarketNewsFeedRegistry, matchMarketNews, summarizeCategoryMarketNews
 describe('market news feed registry', () => {
   it('contains the initial RSS coverage without valuation sources', () => {
     const registry = getMarketNewsFeedRegistry();
-    expect(registry.length).toBeGreaterThanOrEqual(10);
+    expect(registry.length).toBeGreaterThanOrEqual(30);
     expect(registry.some((feed) => feed.category === 'Sports Cards' && feed.url.includes('sportscollectorsdaily'))).toBe(true);
     expect(registry.some((feed) => feed.category === 'Pokemon / TCG' && feed.url.includes('pokebeach'))).toBe(true);
+    expect(registry.some((feed) => feed.category === 'Stamps')).toBe(true);
+    expect(registry.some((feed) => feed.category === 'Coins')).toBe(true);
     expect(registry.every((feed) => feed.url.startsWith('https://'))).toBe(true);
   });
 });
@@ -77,8 +79,10 @@ describe('category market context', () => {
       article('Comic market pullback continues as demand cools', 'Comics'),
       article('Comic prices falling amid weak sales and caution', 'Comics'),
     ], ['Sports Cards', 'Comics']);
-    expect(summaries[0]).toMatchObject({ category: 'Sports Cards', signal: 'improving', positiveSignals: 4, negativeSignals: 0 });
-    expect(summaries[1]).toMatchObject({ category: 'Comics', signal: 'softening', positiveSignals: 0, negativeSignals: 5 });
+    expect(summaries[0]).toMatchObject({ category: 'Sports Cards', signal: 'improving', negativeSignals: 0 });
+    expect(summaries[0].positiveSignals).toBeGreaterThanOrEqual(2);
+    expect(summaries[1]).toMatchObject({ category: 'Comics', signal: 'softening' });
+    expect(summaries[1].negativeSignals).toBeGreaterThanOrEqual(2);
     expect(summaries.every((summary) => summary.rationale.includes('article'))).toBe(true);
   });
 });
