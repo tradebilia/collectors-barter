@@ -15,4 +15,9 @@ describe('Trade Analyzer response parser', () => {
     expect(parseAnalyzerResponse('not JSON')).toBeNull();
     expect(parseAnalyzerResponse('[]')).toBeNull();
   });
+
+  it('recovers visual-review payloads with trailing commas', () => {
+    const parsed = parseAnalyzerResponse('{"items":[{"label":"ITEM A","identity":"Wayne Gretzky"},],}');
+    expect(parsed?.items).toEqual([{ label: 'ITEM A', identity: 'Wayne Gretzky' }]);
+  });
 });

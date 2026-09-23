@@ -14,4 +14,11 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain('certificationCompany: leftItem.certificationCompany ?? undefined');
     expect(clientSource).toContain('certificationCompany: rightItem.certificationCompany ?? undefined');
   });
+
+  it('exposes an explicit image-review switch for controlled A/B runs', () => {
+    expect(routerSource).toContain('useImageAnalyzer: z.boolean().optional().default(true)');
+    expect(routerSource).toContain('useImageAnalyzer && isSafeVisionImageUrl(item.imageUrl)');
+    expect(clientSource).toContain('Use image analyzer');
+    expect(clientSource).toContain('useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined');
+  });
 });

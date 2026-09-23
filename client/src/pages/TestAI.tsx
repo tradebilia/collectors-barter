@@ -1479,6 +1479,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightEvidenceSummary?: NormalizedEvidenceSummary | null;
 }) {
   const [result, setResult] = useState<any>(null);
+  const [useImageAnalyzer, setUseImageAnalyzer] = useState(true);
   const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
     {
       leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, itemDetails: leftItem.itemDetails },
@@ -1500,8 +1501,9 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
   const handleAnalyze = () => {
     analyzeMutation.mutate({
-      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: leftItem.primaryPhotoUrl },
-      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: rightItem.primaryPhotoUrl },
+      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined },
+      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: useImageAnalyzer ? rightItem.primaryPhotoUrl : undefined },
+      useImageAnalyzer,
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
@@ -1530,14 +1532,18 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
           <p className="text-indigo-300 font-bold text-sm uppercase tracking-wide">🤖 AI Trade Analysis</p>
           <p className="text-gray-500 text-xs mt-0.5">{activeSourcesNote || 'No data sources selected'}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <label className="flex items-center gap-2 rounded border border-fuchsia-700/40 bg-fuchsia-950/20 px-2 py-1.5 text-[10px] text-fuchsia-100" title="Run the same trade with or without the listing images sent to the visual identity reviewer">
+            <input type="checkbox" checked={useImageAnalyzer} onChange={(event) => { setUseImageAnalyzer(event.target.checked); setResult(null); }} className="accent-fuchsia-500" />
+            Use image analyzer
+          </label>
           <button onClick={() => marketNewsQuery.refetch()} disabled={marketNewsQuery.isFetching}
             className="flex items-center gap-2 px-3 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs rounded-lg font-medium transition-colors">
             {marketNewsQuery.isFetching ? <><Spinner className="w-3 h-3" /> Checking feeds...</> : 'Load Market News'}
           </button>
           <button onClick={handleAnalyze} disabled={analyzeMutation.isPending}
             className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white text-sm rounded-lg font-medium transition-colors">
-            {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : 'Run Analysis'}
+            {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : `Run ${useImageAnalyzer ? 'with' : 'without'} Image Review`}
           </button>
         </div>
       </div>

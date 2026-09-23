@@ -1259,6 +1259,7 @@ export const testAIRouter = router({
         itemDetails: z.string().optional(),
         imageUrl: z.string().url().optional(),
       }),
+      useImageAnalyzer: z.boolean().optional().default(true),
       leftEbayMetrics: z.any().optional(),
       rightEbayMetrics: z.any().optional(),
       leftSoldCompsMetrics: z.any().optional(),
@@ -1280,7 +1281,7 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
-      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, marketNews } = input;
+      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, marketNews, useImageAnalyzer } = input;
 
       const isSafeVisionImageUrl = (value?: string) => {
         if (!value) return false;
@@ -1295,7 +1296,7 @@ export const testAIRouter = router({
       const visualItems = [
         { label: 'ITEM A', item: leftItem },
         { label: 'ITEM B', item: rightItem },
-      ].filter(({ item }) => isSafeVisionImageUrl(item.imageUrl));
+      ].filter(({ item }) => useImageAnalyzer && isSafeVisionImageUrl(item.imageUrl));
 
       let visualReview: Record<string, unknown> = {};
       if (visualItems.length > 0) {
@@ -1318,7 +1319,7 @@ export const testAIRouter = router({
           const visualText = visualResult.choices[0]?.message?.content;
           if (typeof visualText === 'string') {
             const cleanVisualText = visualText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-            const parsedVisual = JSON.parse(cleanVisualText);
+            const parsedVisual = parseAnalyzerResponse(cleanVisualText);
             for (const entry of Array.isArray(parsedVisual?.items) ? parsedVisual.items : []) {
               if (entry?.label === 'ITEM A' || entry?.label === 'ITEM B') visualReview[entry.label === 'ITEM A' ? 'itemA' : 'itemB'] = entry;
             }
