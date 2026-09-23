@@ -1397,8 +1397,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
   const handleAnalyze = () => {
     analyzeMutation.mutate({
-      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails },
-      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails },
+      leftItem: { title: leftItem.title, category: leftItem.category, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany, itemDetails: leftItem.itemDetails, imageUrl: leftItem.primaryPhotoUrl },
+      rightItem: { title: rightItem.title, category: rightItem.category, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany, itemDetails: rightItem.itemDetails, imageUrl: rightItem.primaryPhotoUrl },
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
@@ -1467,6 +1467,31 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   <span className="font-bold uppercase">Evidence warnings:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].join(' ')}
                 </div>
               )}
+            </div>
+          )}
+          {(result.leftVisualReview || result.rightVisualReview) && (
+            <div className="rounded-lg border border-fuchsia-700/40 bg-fuchsia-950/15 p-3 space-y-3">
+              <div>
+                <p className="text-fuchsia-300 text-[10px] font-bold uppercase tracking-wide">Image-Assisted Identity Review</p>
+                <p className="text-gray-500 text-[10px] mt-0.5">Vision checks visible identity clues against listing metadata. It is not authentication and does not determine value.</p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { label: 'Item A', review: result.leftVisualReview, color: 'cyan' },
+                  { label: 'Item B', review: result.rightVisualReview, color: 'amber' },
+                ].map(({ label, review, color }) => review && (
+                  <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
+                      <span className="rounded bg-fuchsia-900/40 px-1.5 py-0.5 text-[9px] text-fuchsia-200">{review.confidence ?? 'unknown'} confidence</span>
+                    </div>
+                    {review.visibleIdentifiers?.length > 0 && <p className="text-gray-300 text-[10px]"><span className="text-gray-500">Visible:</span> {review.visibleIdentifiers.join('; ')}</p>}
+                    {review.metadataMatches?.length > 0 && <p className="text-gray-300 text-[10px]"><span className="text-emerald-400">Matches:</span> {review.metadataMatches.join('; ')}</p>}
+                    {review.potentialConflicts?.length > 0 && <p className="text-amber-200 text-[10px]"><span className="text-amber-400">Review:</span> {review.potentialConflicts.join('; ')}</p>}
+                    {review.conditionObservations?.length > 0 && <p className="text-gray-400 text-[10px]"><span className="text-gray-500">Condition clues:</span> {review.conditionObservations.join('; ')}</p>}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
           <div className="grid grid-cols-2 gap-4">

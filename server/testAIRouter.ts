@@ -4,7 +4,7 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { requireDb } from "./db";
 import { listings, listingPhotos, userProfiles } from "../drizzle/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { invokeLLM } from "./_core/llm";
+import { invokeLLM, type ImageContent, type TextContent } from "./_core/llm";
 import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
@@ -1188,6 +1188,7 @@ export const testAIRouter = router({
         estimatedValue: z.number().optional(),
         certificationCompany: z.string().optional(),
         itemDetails: z.string().optional(),
+        imageUrl: z.string().url().optional(),
       }),
       rightItem: z.object({
         title: z.string(),
@@ -1197,6 +1198,7 @@ export const testAIRouter = router({
         estimatedValue: z.number().optional(),
         certificationCompany: z.string().optional(),
         itemDetails: z.string().optional(),
+        imageUrl: z.string().url().optional(),
       }),
       leftEbayMetrics: z.any().optional(),
       rightEbayMetrics: z.any().optional(),
@@ -1215,6 +1217,52 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
       const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary } = input;
+
+      const isSafeVisionImageUrl = (value?: string) => {
+        if (!value) return false;
+        try {
+          const url = new URL(value);
+          return url.protocol === 'https:';
+        } catch {
+          return false;
+        }
+      };
+
+      const visualItems = [
+        { label: 'ITEM A', item: leftItem },
+        { label: 'ITEM B', item: rightItem },
+      ].filter(({ item }) => isSafeVisionImageUrl(item.imageUrl));
+
+      let visualReview: Record<string, unknown> = {};
+      if (visualItems.length > 0) {
+        const visualContent: Array<TextContent | ImageContent> = [
+          {
+            type: 'text',
+            text: `Review the collectible listing images for identity consistency only. Do not appraise or estimate value. For each image, compare visible evidence with the supplied metadata. Report only visible or reasonably legible observations, mark uncertain fields as unknown, and flag conflicts. Return JSON only with this shape: {"items":[{"label":"ITEM A","visibleIdentifiers":[],"metadataMatches":[],"potentialConflicts":[],"conditionObservations":[],"confidence":"high|medium|low"}]}. Supplied metadata follows:\n${visualItems.map(({ label, item }) => `${label}: title=${item.title}; category=${item.category}; grade=${item.grade ?? 'unknown'}; certificationCompany=${item.certificationCompany ?? 'unknown'}; itemDetails=${item.itemDetails ?? '{}'}\n`).join('')}`,
+          },
+        ];
+        for (const { label, item } of visualItems) {
+          visualContent.push({ type: 'text', text: `${label} image:` });
+          visualContent.push({ type: 'image_url', image_url: { url: item.imageUrl!, detail: 'auto' } });
+        }
+        try {
+          const visualResult = await invokeLLM({
+            model: 'gemini-3-flash-preview',
+            messages: [{ role: 'user', content: visualContent }],
+            maxTokens: 1400,
+          });
+          const visualText = visualResult.choices[0]?.message?.content;
+          if (typeof visualText === 'string') {
+            const cleanVisualText = visualText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+            const parsedVisual = JSON.parse(cleanVisualText);
+            for (const entry of Array.isArray(parsedVisual?.items) ? parsedVisual.items : []) {
+              if (entry?.label === 'ITEM A' || entry?.label === 'ITEM B') visualReview[entry.label === 'ITEM A' ? 'itemA' : 'itemB'] = entry;
+            }
+          }
+        } catch (error) {
+          console.warn('[Test AI] Visual identity review unavailable:', error instanceof Error ? error.message : 'unknown error');
+        }
+      }
 
       const formatItemLine = (item: typeof leftItem, ebayMetrics: any, soldMetrics: any) => {
         let line = `- ${item.title}`;
@@ -1243,6 +1291,9 @@ export const testAIRouter = router({
       const rightTrendContext = formatHistoricalTrendContext('ITEM B', rightHistoricalTrendSales);
       const leftEvidenceContext = formatTestAiEvidenceForAnalysis(leftEvidenceSummary, 'ITEM A');
       const rightEvidenceContext = formatTestAiEvidenceForAnalysis(rightEvidenceSummary, 'ITEM B');
+      const visualEvidenceContext = visualReview.itemA || visualReview.itemB
+        ? `IMAGE-ASSISTED IDENTITY REVIEW — NON-VALUATION CONTEXT:\n${JSON.stringify(visualReview)}\nUse this only to flag identity or condition conflicts. Do not treat visual observations as authentication or market value evidence.`
+        : 'IMAGE-ASSISTED IDENTITY REVIEW: unavailable; no safe listing image was supplied.';
 
       // Trade Analyzer 2.0 is intentionally additive and sandbox-only. It
       // scores the individual historical observations before the LLM sees
@@ -1291,7 +1342,9 @@ ${rightTrendContext}
 
 === DETERMINISTIC EVIDENCE REVIEW — SOURCE-ATTRIBUTED CONTEXT ONLY ===
 ${leftEvidenceContext}
-${rightEvidenceContext}
+      ${rightEvidenceContext}
+
+      === ${visualEvidenceContext} ===
 
 === TRADE ANALYZER 2.0 DETERMINISTIC PROFILES ===
 ${marketProfileForPrompt('ITEM A', leftProfile)}
@@ -1356,6 +1409,8 @@ Respond with ONLY this JSON object:
           majorAssumptions: [...new Set([...(parsed.majorAssumptions ?? []), ...leftProfile.majorAssumptions, ...rightProfile.majorAssumptions])],
           missingInformation: [...new Set([...(parsed.missingInformation ?? []), ...leftProfile.missingInformation, ...rightProfile.missingInformation])],
           valuationWarnings: [...new Set([...(parsed.valuationWarnings ?? []), ...leftProfile.valuationWarnings, ...rightProfile.valuationWarnings])],
+          leftVisualReview: visualReview.itemA ?? null,
+          rightVisualReview: visualReview.itemB ?? null,
         };
       } catch {
         throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'AI returned invalid JSON. Please try again.' });
