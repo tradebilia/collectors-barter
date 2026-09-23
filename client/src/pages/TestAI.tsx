@@ -1411,6 +1411,58 @@ function MarketNewsSection({ item }: { item: SelectedItem }) {
   </section>;
 }
 
+function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem | null; rightItem: SelectedItem | null }) {
+  const [results, setResults] = useState<Record<string, any>>({});
+  const scanMutation = trpc.testAI.extractFieldsFromImage.useMutation({
+    onSuccess: (data, variables) => setResults((current) => ({ ...current, [variables.item.title]: data })),
+    onError: (error) => toast.error(error.message),
+  });
+  const scan = (item: SelectedItem) => {
+    if (!item.primaryPhotoUrl) {
+      toast.error('This listing has no primary image to scan.');
+      return;
+    }
+    scanMutation.mutate({ item: { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade, condition: item.condition, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl } });
+  };
+  const cards = [
+    { label: 'Item A', item: leftItem, color: 'cyan' },
+    { label: 'Item B', item: rightItem, color: 'amber' },
+  ].filter(({ item }) => item);
+  if (!cards.length) return null;
+  return <section className="rounded-xl border border-fuchsia-700/40 bg-fuchsia-950/10 p-4 space-y-3">
+    <div className="flex items-start justify-between gap-3">
+      <div>
+        <p className="text-fuchsia-300 font-bold text-sm uppercase tracking-wide">🔎 AI Field Completion · Sandbox</p>
+        <p className="text-gray-500 text-xs mt-1">Scans the listing image against the category/item-type field table. Suggestions are review-only and never overwrite listing data.</p>
+      </div>
+      <span className="rounded bg-fuchsia-900/50 px-2 py-1 text-[9px] text-fuchsia-200">Not authentication · Not valuation</span>
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      {cards.map(({ label, item, color }) => {
+        const result = results[item!.title];
+        return <div key={label} className="rounded-lg bg-gray-950/50 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <div><p className={`text-${color}-300 text-xs font-semibold`}>{label}</p><p className="text-gray-300 text-[10px] line-clamp-1">{item!.title}</p></div>
+            <button onClick={() => scan(item!)} disabled={scanMutation.isPending || !item!.primaryPhotoUrl} className="rounded bg-fuchsia-700/80 hover:bg-fuchsia-600 disabled:opacity-40 px-2 py-1 text-[10px] font-semibold text-white">{scanMutation.isPending ? 'Scanning…' : 'Scan Image'}</button>
+          </div>
+          {!item!.primaryPhotoUrl && <p className="text-amber-300 text-[10px]">No primary image available.</p>}
+          {result && <>
+            <p className="text-gray-500 text-[9px]">{result.fields.length} proposed field{result.fields.length === 1 ? '' : 's'} · review before use</p>
+            <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+              {result.fields.length === 0 ? <p className="text-gray-500 text-[10px]">No safe fields could be extracted from this image.</p> : result.fields.map((field: any) => <div key={`${field.field}-${field.value}`} className="rounded border border-gray-800 bg-gray-900/70 p-2">
+                <div className="flex items-center justify-between gap-2"><span className="text-gray-300 text-[10px] font-semibold">{field.label}</span><span className={`rounded px-1 py-0.5 text-[8px] ${field.status === 'conflict' ? 'bg-amber-900/60 text-amber-200' : field.status === 'inferred' ? 'bg-violet-900/60 text-violet-200' : 'bg-emerald-900/60 text-emerald-200'}`}>{field.status} · {field.confidence}</span></div>
+                <p className="text-white text-[10px] mt-1">{field.value}</p><p className="text-gray-500 text-[9px] mt-1">{field.evidence}{field.needsVerification ? ' · verify before accepting' : ''}</p>
+              </div>)}
+            </div>
+            {result.missingImageRequests?.length > 0 && <p className="text-amber-200 text-[9px]"><span className="font-semibold">Additional photos:</span> {result.missingImageRequests.join(' · ')}</p>}
+            <p className="text-fuchsia-200/80 text-[9px]">{result.note}</p>
+          </>}
+        </div>;
+      })}
+    </div>
+  </section>;
+}
+
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
 function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
@@ -2273,6 +2325,8 @@ export default function TestAI() {
             <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
           </div>
         )}
+
+        <FieldCompletionPanel leftItem={leftItem} rightItem={rightItem} />
 
         {/* AI Analysis */}
         {!bothSelected && (leftItem || rightItem) && <MarketNewsSection item={leftItem ?? rightItem!} />}

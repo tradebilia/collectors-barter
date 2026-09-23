@@ -22,6 +22,7 @@ import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideo
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
+import { buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion } from './testAiFieldCompletion';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1188,6 +1189,51 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const news = await fetchMarketNewsForItems([input.leftItem, ...(input.rightItem ? [input.rightItem] : [])]);
       return { ...news, registry: getMarketNewsFeedRegistry() };
+    }),
+
+  extractFieldsFromImage: protectedProcedure
+    .input(z.object({
+      item: z.object({
+        title: z.string(),
+        category: z.string(),
+        itemType: z.string().optional(),
+        grade: z.string().optional(),
+        condition: z.string().optional(),
+        itemDetails: z.string().optional(),
+        imageUrl: z.string().url(),
+      }),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      let image: URL;
+      try {
+        image = new URL(input.item.imageUrl);
+        if (image.protocol !== 'https:') throw new Error('Only HTTPS image URLs are accepted');
+      } catch {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'A safe HTTPS listing image is required.' });
+      }
+      const fields = getFieldTableForItem(input.item.category, input.item.itemType);
+      try {
+        const response = await invokeLLM({
+          model: 'gemini-3-flash-preview',
+          messages: [
+            { role: 'system', content: FIELD_COMPLETION_SYSTEM },
+            { role: 'user', content: [
+              { type: 'text', text: buildFieldCompletionPrompt(input.item, fields) },
+              { type: 'image_url', image_url: { url: image.toString(), detail: 'high' } },
+            ] },
+          ],
+          response_format: FIELD_COMPLETION_RESPONSE_FORMAT,
+          maxTokens: 1800,
+        });
+        const content = response.choices[0]?.message?.content;
+        if (typeof content !== 'string') throw new Error('The vision model returned no structured content');
+        const parsed = JSON.parse(content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim());
+        return normalizeFieldCompletion(parsed, { title: input.item.title, category: input.item.category, itemType: input.item.itemType });
+      } catch (error) {
+        console.warn('[Test AI] Field completion unavailable:', error instanceof Error ? error.message : 'unknown error');
+        throw new TRPCError({ code: 'BAD_GATEWAY', message: 'The image field scan was unavailable. No listing data was changed.' });
+      }
     }),
 
   analyzeItems: protectedProcedure
