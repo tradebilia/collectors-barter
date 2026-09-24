@@ -27,6 +27,7 @@ import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, FIELD_COMP
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
+import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -445,6 +446,7 @@ export const testAIRouter = router({
       certificationCompany: z.string().optional(),
       itemDetails: z.string().optional(),
       itemType: z.string().optional(),
+      imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -615,7 +617,14 @@ export const testAIRouter = router({
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
           console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
         });
-        const metrics = computeMetrics(filteredSummaries);
+        const visualActiveFilter = await filterVisualSourceCandidates({
+          sourceLabel: 'eBay active listings',
+          targetImageUrl: input.imageUrl,
+          targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}`,
+          listings: filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+        });
+        const visuallyFilteredSummaries = visualActiveFilter.listings;
+        const metrics = computeMetrics(visuallyFilteredSummaries);
         return {
           query,
           debug: {
@@ -625,7 +634,7 @@ export const testAIRouter = router({
             afterGradeFilter: filteredSummaries.length,
             targetGrade,
           },
-          listings: filteredSummaries.slice(0, 20).map((s: any) => ({
+          listings: visuallyFilteredSummaries.slice(0, 20).map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
@@ -636,6 +645,7 @@ export const testAIRouter = router({
             listingType: s.buyingOptions?.[0],
           })),
           metrics,
+          visualFilter: visualActiveFilter,
           error: null,
         };
       } catch (err: any) {
@@ -1086,17 +1096,23 @@ export const testAIRouter = router({
 
   // Parse.bot 130point sold-card search — administrator-only and read-only.
   get130PointData: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .input(z.object({ query: z.string().trim().min(2).max(240), imageUrl: z.string().url().optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookup130PointSales(input.query);
+      const result = await lookup130PointSales(input.query);
+      if (result.status !== 'success' || !result.data) return result;
+      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `query=${input.query}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      return { ...result, data: { ...result.data, items: visualFilter.listings }, visualFilter };
     }),
 
   getPwccSales: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .input(z.object({ query: z.string().trim().min(2).max(240), imageUrl: z.string().url().optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupPwccSales(input.query);
+      const result = await lookupPwccSales(input.query);
+      if (result.status !== 'success' || !result.data) return result;
+      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: 'PWCC / Fanatics Collect sold listings', targetImageUrl: input.imageUrl, targetMetadata: `query=${input.query}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      return { ...result, data: { ...result.data, items: visualFilter.listings }, visualFilter };
     }),
 
   // Wikidata public metadata lookup — administrator-only, read-only, and not a valuation source.

@@ -508,7 +508,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
 function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
-    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined },
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
 
@@ -520,6 +520,7 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · Price metrics</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+      {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
@@ -972,7 +973,7 @@ function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left'
 function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.get130PointData.useQuery(
-    { query: item.title },
+    { query: item.title, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title },
   );
   const items = data?.data?.items ?? [];
@@ -989,6 +990,7 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 130point Sales (via Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
     <p className="text-gray-500 text-[10px]">Read-only completed sales. No current average or valuation is calculated; confirm the exact variant and grade before using a record as a comparable.</p>
+    {data?.status === 'success' && data.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'success' && data.data && <div className="space-y-3">
       <p className="text-[10px] text-gray-500">{data.data.itemsReturned} shown of {data.data.totalFound} matching sales</p>
@@ -1163,7 +1165,7 @@ function SmithsonianSection({ item, side }: { item: SelectedItem; side: 'left' |
 
 function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title }, { enabled: !!item.title });
+  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title, imageUrl: item.primaryPhotoUrl }, { enabled: !!item.title });
   const sales = data?.data?.items ?? [];
   const buckets = [
     ['Recent comparable sales · last 12 months', sales.filter((sale: any) => sale.recency === 'recent'), 'text-emerald-300'],
@@ -1173,6 +1175,7 @@ function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PWCC / Fanatics Collect</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
     <p className="text-gray-500 text-[10px]">Read-only Parse.bot sold listings. No current average or valuation is calculated; verify exact card, grade, and certification before comparing.</p>
+    {data && 'visualFilter' in data && data.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'success' && <div className="space-y-3">{buckets.map(([label, bucket, color]) => bucket.length > 0 && <div key={label}><p className={`mb-1 text-[10px] font-semibold uppercase ${color}`}>{label}</p>{bucket.map((sale: any) => <div key={sale.id || sale.title} className="flex items-center justify-between gap-2 border-b border-gray-700/20 py-1 last:border-0"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-400 hover:underline">{sale.title}</a><p className="text-[9px] text-gray-500">{[sale.marketplace, sale.grade ? `${sale.certificationCompany || ''} ${formatGrade(sale.grade)}`.trim() : null, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><p className="shrink-0 text-[11px] font-semibold text-green-400">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price N/A'}</p></div>)}</div>)}{!sales.length && <p className="text-[10px] text-gray-500">No sold PWCC / Fanatics Collect listings were returned for this query.</p>}</div>}
   </div>;
@@ -2371,11 +2374,11 @@ export default function TestAI() {
   const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('ebay_active') }
   );
 
@@ -2388,11 +2391,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: leftSearchItem?.title || '' },
+    { query: leftSearchItem?.title || '', imageUrl: leftSearchItem?.primaryPhotoUrl },
     { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
   );
   const right130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: rightSearchItem?.title || '' },
+    { query: rightSearchItem?.title || '', imageUrl: rightSearchItem?.primaryPhotoUrl },
     { enabled: !!rightSearchItem && rightSources.has('one_thirty_point') },
   );
 
