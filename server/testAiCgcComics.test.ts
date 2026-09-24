@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeCgcComicsResponse } from './testAIRouter';
 import { getEligibleTestAiSources } from '../shared/testAiSourceApplicability';
+import { normalizeTestAiSelectedItem } from '../shared/testAiSelectedItem';
 
 describe('CGC Comics sandbox integration', () => {
   it('normalizes certificate and population payloads from Parse.bot', () => {
@@ -24,5 +25,11 @@ describe('CGC Comics sandbox integration', () => {
     expect(getEligibleTestAiSources({ category: 'Sports Cards', gradingCompany: 'CGC', hasTitle: true }).some((source) => source.sourceId === 'cgc')).toBe(false);
     expect(getEligibleTestAiSources({ category: 'Comics', gradingCompany: 'PSA', hasTitle: true }).some((source) => source.sourceId === 'cgc')).toBe(false);
   });
-});
 
+  it('recovers certificate ID and grader from structured item details', () => {
+    const item = normalizeTestAiSelectedItem({ title: 'Edge of the Spider-Verse #2', category: 'comics', itemDetails: JSON.stringify({ certificationNumber: '1234567890', customGradingCompany: 'CGC Comics' }) });
+    expect(item.certId).toBe('1234567890');
+    expect(item.certificationCompany).toBe('CGC Comics');
+    expect(item.gradingCompany).toBe('CGC Comics');
+  });
+});

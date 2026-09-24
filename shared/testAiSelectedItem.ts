@@ -9,6 +9,11 @@ function validYear(value: unknown): string {
   return /^(?:18|19|20)\d{2}$/.test(candidate) ? candidate : '';
 }
 
+function firstText(...values: unknown[]): string {
+  const value = values.find((candidate) => typeof candidate === 'string' || typeof candidate === 'number');
+  return value == null ? '' : String(value).trim();
+}
+
 export function extractTestAiTitleYear(title: string): string {
   const match = title.match(/\b(?:18|19|20)\d{2}\b/);
   return match?.[0] ?? '';
@@ -29,10 +34,15 @@ export function normalizeTestAiSelectedItem<T extends TestAiSelectedItemInput>(i
   const storedYear = validYear(details.year) || validYear(details.releaseYear) || validYear(details.manufactureYear);
   const currentYear = titleYear || storedYear;
   if (currentYear) details.year = currentYear;
+  const certId = firstText(item.certId, item.certNumber, item.certificationNumber, item.certificateNumber, details.certId, details.certNumber, details.certificationNumber, details.certificateNumber);
+  const gradingCompany = firstText(item.certificationCompany, item.gradingCompany, details.certificationCompany, details.gradingCompany, details.customGradingCompany);
 
   return {
     ...item,
     year: currentYear || undefined,
+    certId: certId || undefined,
+    certificationCompany: gradingCompany || item.certificationCompany || undefined,
+    gradingCompany: gradingCompany || item.gradingCompany || undefined,
     itemDetails: JSON.stringify(details),
-  } as T & { year?: string; itemDetails: string };
+  } as T & { year?: string; certId?: string; certificationCompany?: string; gradingCompany?: string; itemDetails: string };
 }
