@@ -27,7 +27,9 @@ The live response returned an object with `count`, `type`, `results`, `params`, 
 
 HIPStamp active listings are current asking-price and supply context. They are not completed-sale evidence. They must not directly set the deterministic valuation or verdict.
 
-For Stamps, the query should prioritize catalog number, country, issue year when known, denomination, PSE/certification company, and grade. Candidate admission should preserve the exact listing URL, price, currency, listing type, seller, image, and stamp-specific fields. Only USD records with positive prices should enter the displayed price metrics; non-USD records remain excluded from USD metrics with a transparent diagnostic.
+For Stamps, the query should prioritize catalog number, country, issue year when known, denomination, PSE/certification company, grade, and **physical format**. A single stamp, raw hinged block, raw unhinged block, stamp set, and raw collection lot are separate market objects. Mint hinged (MH), previously hinged, and mint never hinged (MNH) singles are also separated because the condition can materially change value. Candidate admission should preserve the exact listing URL, price, currency, listing type, seller, image, and stamp-specific fields. Only USD records with positive prices should enter the displayed price metrics; non-USD records remain excluded from USD metrics with a transparent diagnostic.
+
+The sandbox classifies the selected target and each candidate listing, adds format terms to the HIPStamp query, excludes known format mismatches, and reports the target format plus the number of excluded mismatches. Unknown format remains conservative: it does not discard a candidate solely because the listing omits format information. This prevents a raw hinged block from inflating a single-stamp comparable set while retaining sparse listings for review.
 
 ## Sold / closed-listing source
 

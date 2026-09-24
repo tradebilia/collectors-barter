@@ -627,6 +627,7 @@ function HipstampSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
         </div>
       )}
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} shown · {data.debug?.totalFetched ?? 0} fetched</p>}
+      {data?.debug?.targetFormat && <p className="text-cyan-200 text-[10px]">Comparable format: <strong>{data.debug.targetFormat.label}</strong>{(data.debug.formatExcluded ?? 0) > 0 ? ` · ${data.debug.formatExcluded} format-mismatched listing${data.debug.formatExcluded === 1 ? '' : 's'} excluded` : ''}</p>}
       {data?.debug && data.debug.nonUsdListings > 0 && <p className="text-gray-500 text-[10px]">{data.debug.nonUsdListings} non-USD listing{data.debug.nonUsdListings === 1 ? '' : 's'} excluded from USD metrics.</p>}
       {data?.listings && data.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -655,7 +656,7 @@ function HipstampSoldSection({ item, side }: { item: SelectedItem; side: 'left' 
   const supported = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'stamps';
   const formatPrice = (value: number) => Number.isInteger(value) ? formatWholeDollar(value) : `$${value.toFixed(2)}`;
   const { data, isLoading } = trpc.testAI.getHipstampSoldData.useQuery(
-    { title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: supported && !!item.title },
   );
 
@@ -685,6 +686,7 @@ function HipstampSoldSection({ item, side }: { item: SelectedItem; side: 'left' 
         </div>
       )}
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} shown · {data.debug?.totalFetched ?? 0} fetched · {data.debug?.storesQueried ?? 0} stores queried</p>}
+      {data?.debug?.targetFormat && <p className="text-cyan-200 text-[10px]">Comparable format: <strong>{data.debug.targetFormat.label}</strong>{(data.debug.formatExcluded ?? 0) > 0 ? ` · ${data.debug.formatExcluded} format-mismatched sold listing${data.debug.formatExcluded === 1 ? '' : 's'} excluded` : ''}</p>}
       {data?.debug && data.debug.nonUsdListings > 0 && <p className="text-gray-500 text-[10px]">{data.debug.nonUsdListings} non-USD sold listing{data.debug.nonUsdListings === 1 ? '' : 's'} excluded from USD metrics.</p>}
       {data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
       {data?.listings?.length ? <div className="space-y-1 max-h-48 overflow-y-auto">{data.listings.map((listing: any) => <div key={listing.id || `${listing.title}-${listing.price}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0"><div className="flex items-center gap-2 min-w-0">{listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}<div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{[listing.country, listing.catalogNumber, listing.condition, listing.storeUsername].filter(Boolean).join(' · ')}</p></div></div><p className="text-green-400 font-semibold text-sm flex-shrink-0">{listing.currency} {formatPrice(listing.price)}</p></div>)}</div> : data && !data.error ? <p className="text-gray-500 text-xs">No store-scoped HIPStamp sold listings matched the selected stamp identity.</p> : null}
@@ -1457,7 +1459,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     const add = (observation: EvidenceSourceObservation) => observations.push(observation);
     if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
     if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
-    if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? 'Store-scoped closed listings marked sold; not marketplace-wide sales evidence.' : null) });
+    if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];

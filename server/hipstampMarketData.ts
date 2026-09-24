@@ -1,3 +1,5 @@
+import { classifyStampFormat, classifyStampListing, stampFormatsCompatible, type StampFormatProfile } from './stampFormat';
+
 export type HipstampLookupInput = {
   title: string;
   category: string;
@@ -5,6 +7,7 @@ export type HipstampLookupInput = {
   condition?: string;
   certificationCompany?: string;
   itemDetails?: string;
+  itemType?: string;
 };
 
 export type HipstampListing = {
@@ -13,6 +16,7 @@ export type HipstampListing = {
   price: number;
   currency: string;
   condition?: string;
+  format?: string;
   seller?: string;
   itemUrl?: string;
   imageUrl?: string;
@@ -38,6 +42,8 @@ export type HipstampSoldDebug = {
   totalFetched: number;
   afterIdentityFilter: number;
   nonUsdListings: number;
+  formatExcluded?: number;
+  targetFormat?: StampFormatProfile;
 };
 
 export type HipstampMetrics = {
@@ -104,7 +110,8 @@ export function buildHipstampQuery(input: HipstampLookupInput): string {
   else if (grade) parts.push(grade);
 
   const fallbackTitle = text(input.title);
-  const query = (parts.length ? parts : [fallbackTitle]).join(' ').replace(/\s+/g, ' ').trim();
+  const formatProfile = classifyStampFormat(input);
+  const query = [...(parts.length ? parts : [fallbackTitle]), ...formatProfile.queryTerms].join(' ').replace(/\s+/g, ' ').trim();
   return query.slice(0, 240);
 }
 
@@ -143,6 +150,7 @@ export function normalizeHipstampListing(raw: any): HipstampListing | null {
     price,
     currency: text(raw?.currency || 'USD').toUpperCase(),
     condition: text(raw?.item_specifics_04_condition) || undefined,
+    format: text(raw?.item_specifics_05_format || raw?.item_specifics_03_stamp_type) || undefined,
     seller: text(raw?.username) || undefined,
     itemUrl: text(raw?.url) || undefined,
     imageUrl: firstImage(raw?.images),
@@ -175,11 +183,12 @@ function numericGrade(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export function filterHipstampListings(listings: HipstampListing[], input: HipstampLookupInput): HipstampListing[] {
+export function filterHipstampListings(listings: HipstampListing[], input: HipstampLookupInput, options: { ignoreFormat?: boolean } = {}): HipstampListing[] {
   const details = parseDetails(input.itemDetails);
   const targetCountry = firstText(details, ['country', 'issuingCountry']);
   const targetCatalog = firstText(details, ['scottNumber', 'catalogNumber', 'catalogNo', 'number']);
   const targetGrade = numericGrade(input.grade);
+  const targetFormat = classifyStampFormat(input);
 
   return listings.filter((listing) => {
     if (targetCountry && listing.country && !equivalent(targetCountry, listing.country)) return false;
@@ -188,6 +197,7 @@ export function filterHipstampListings(listings: HipstampListing[], input: Hipst
       const candidateGrade = numericGrade(listing.certificateGrade);
       if (candidateGrade !== null && Math.round(candidateGrade * 10) !== Math.round(targetGrade * 10)) return false;
     }
+    if (!options.ignoreFormat && !stampFormatsCompatible(targetFormat, classifyStampListing(listing))) return false;
     return true;
   });
 }
@@ -220,7 +230,7 @@ export async function lookupHipstampListings(input: HipstampLookupInput): Promis
   query: string;
   listings: HipstampListing[];
   metrics: HipstampMetrics | null;
-  debug: { totalFetched: number; afterIdentityFilter: number; nonUsdListings: number };
+  debug: { totalFetched: number; afterIdentityFilter: number; nonUsdListings: number; formatExcluded?: number; targetFormat?: StampFormatProfile };
   error: string | null;
 }> {
   const requestedQuery = buildHipstampQuery(input);
@@ -254,14 +264,15 @@ export async function lookupHipstampListings(input: HipstampLookupInput): Promis
       query = candidateQuery;
       if (fetched.length > 0 || candidateQuery === queries[queries.length - 1]) break;
     }
-    const filtered = filterHipstampListings(fetched, input);
+    const identityFiltered = filterHipstampListings(fetched, input, { ignoreFormat: true });
+    const filtered = filterHipstampListings(identityFiltered, input);
     const nonUsdListings = filtered.filter((listing) => listing.currency !== 'USD').length;
     const listings = filtered.slice(0, 20);
     return {
       query,
       listings,
       metrics: computeHipstampMetrics(listings),
-      debug: { totalFetched: fetched.length, afterIdentityFilter: filtered.length, nonUsdListings },
+      debug: { totalFetched: fetched.length, afterIdentityFilter: filtered.length, nonUsdListings, formatExcluded: identityFiltered.length - filtered.length, targetFormat: classifyStampFormat(input) },
       error: null,
     };
   } catch {
@@ -297,14 +308,15 @@ export async function lookupHipstampSoldListings(input: HipstampLookupInput): Pr
       const records = normalizeHipstampResponse(payload).map((listing) => ({ ...listing, storeUsername: username, saleStatus: 'sold' as const }));
       fetched.push(...records);
     }
-    const filtered = filterHipstampListings(fetched, input);
+    const identityFiltered = filterHipstampListings(fetched, input, { ignoreFormat: true });
+    const filtered = filterHipstampListings(identityFiltered, input);
     const nonUsdListings = filtered.filter((listing) => listing.currency !== 'USD').length;
     const listings = filtered.slice(0, 20);
     return {
       query,
       listings,
       metrics: computeHipstampMetrics(listings),
-      debug: { storesDiscovered: stores.length, storesQueried: stores.length, totalFetched: fetched.length, afterIdentityFilter: filtered.length, nonUsdListings },
+      debug: { storesDiscovered: stores.length, storesQueried: stores.length, totalFetched: fetched.length, afterIdentityFilter: filtered.length, nonUsdListings, formatExcluded: identityFiltered.length - filtered.length, targetFormat: classifyStampFormat(input) },
       error: null,
     };
   } catch {

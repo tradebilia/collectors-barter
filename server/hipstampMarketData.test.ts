@@ -64,6 +64,16 @@ describe('HIPStamp market adapter', () => {
     expect(filtered.map((listing) => listing.id)).toEqual(['match', 'unknown']);
   });
 
+  it('does not mix a single stamp with block or hinged-block candidates', () => {
+    const filtered = filterHipstampListings([
+      { id: 'single', title: 'US C1 single stamp MNH', price: 100, currency: 'USD', condition: 'MNH', format: 'single stamp' },
+      { id: 'block', title: 'US C1 block of four', price: 900, currency: 'USD', format: 'block' },
+      { id: 'hinged-block', title: 'US C1 raw hinged block', price: 500, currency: 'USD', format: 'raw hinged block' },
+      { id: 'unknown', title: 'US C1', price: 120, currency: 'USD' },
+    ], { title: 'US C1', category: 'stamps', itemType: 'single_stamp', itemDetails: JSON.stringify({ format: 'single stamp', condition: 'MNH' }) });
+    expect(filtered.map((listing) => listing.id)).toEqual(['single', 'unknown']);
+  });
+
   it('computes asking-price metrics from USD listings and excludes non-USD listings', () => {
     const metrics = computeHipstampMetrics([
       { id: '1', title: 'one', price: 100, currency: 'USD' },
