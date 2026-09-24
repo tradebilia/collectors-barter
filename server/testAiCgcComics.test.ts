@@ -20,6 +20,21 @@ describe('CGC Comics sandbox integration', () => {
     expect(result.population.gradeCounts).toHaveLength(1);
   });
 
+  it('retains higher grades and nested label-category totals', () => {
+    const result = normalizeCgcComicsResponse('9876543210', {}, {
+      data: {
+        label_categories: {
+          Universal: { grades: { '1': 8215, '6': 9083, '9.8': 142 } },
+          'Signature Series': { grades: { '9.6': 17 } },
+        },
+        total_graded: 17457,
+      },
+    });
+    expect(result.population.total).toBe(17457);
+    expect(result.population.gradeCounts.some((entry: any) => entry.grade === '9.8' && entry.count === 142)).toBe(true);
+    expect(result.population.gradeCounts.some((entry: any) => entry.grade === '9.6' && entry.count === 17)).toBe(true);
+  });
+
   it('only exposes CGC source for Comics with a CGC certificate', () => {
     expect(getEligibleTestAiSources({ category: 'Comics', gradingCompany: 'CGC', hasTitle: true }).some((source) => source.sourceId === 'cgc')).toBe(true);
     expect(getEligibleTestAiSources({ category: 'Sports Cards', gradingCompany: 'CGC', hasTitle: true }).some((source) => source.sourceId === 'cgc')).toBe(false);

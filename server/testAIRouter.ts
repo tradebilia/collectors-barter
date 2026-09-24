@@ -104,10 +104,41 @@ function firstDefined(...values: unknown[]): unknown {
   return values.find((value) => value !== undefined && value !== null && value !== '') ?? null;
 }
 
+function normalizeCgcGradeCounts(population: any): Array<{ label: string; grade?: string; count: number }> {
+  const rows: Array<{ label: string; grade?: string; count: number }> = [];
+  const seen = new Set<string>();
+  const add = (label: string, count: unknown, grade?: string) => {
+    const numeric = Number(count);
+    if (!Number.isFinite(numeric)) return;
+    const key = `${label}|${grade ?? ''}|${numeric}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    rows.push({ label, grade, count: numeric });
+  };
+  const visit = (value: any, category?: string): void => {
+    if (Array.isArray(value)) { value.forEach((entry) => visit(entry, category)); return; }
+    if (!value || typeof value !== 'object') return;
+    const explicitGrade = value.grade ?? value.Grade ?? value.grade_value ?? value.gradeValue;
+    const explicitCount = value.count ?? value.total ?? value.population ?? value.copies;
+    if (explicitGrade != null && explicitCount != null) add(category ? `${category} · Grade ${explicitGrade}` : `Grade ${explicitGrade}`, explicitCount, String(explicitGrade));
+    for (const [key, child] of Object.entries(value)) {
+      if (/^(?:grade[_ ]?)?\d+(?:\.\d+)?$/i.test(key)) {
+        add(category ? `${category} · Grade ${key.replace(/^grade[_ ]?/i, '')}` : `Grade ${key.replace(/^grade[_ ]?/i, '')}`, child, key.replace(/^grade[_ ]?/i, ''));
+      } else if (['grades', 'grade_counts', 'gradeCounts', 'label_categories', 'labelCategories', 'population', 'breakdown'].includes(key)) {
+        visit(child, category);
+      } else if (child && typeof child === 'object' && !['total', 'total_graded', 'totalGraded'].includes(key)) {
+        visit(child, category || key.replace(/[_-]/g, ' '));
+      }
+    }
+  };
+  visit(population);
+  return rows;
+}
+
 export function normalizeCgcComicsResponse(certNumber: string, certPayload: any, populationPayload: any) {
   const cert = certPayload?.data ?? certPayload ?? {};
   const population = populationPayload?.data ?? populationPayload ?? {};
-  const gradeCounts = population?.label_categories ?? population?.labelCategories ?? population?.grades ?? [];
+  const gradeCounts = normalizeCgcGradeCounts(population);
   return {
     certNumber,
     title: firstDefined(cert.title, cert.comic_title, cert.name),
