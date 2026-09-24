@@ -1,11 +1,11 @@
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
 export type SourceApplicability = {
   sourceId: TestAiSourceId;
   categories: '*' | string[];
-  requires?: 'title' | 'PSA certificate' | 'BGS certificate' | 'SGC certificate' | 'PCGS certificate';
+  requires?: 'title' | 'CGC certificate' | 'PSA certificate' | 'BGS certificate' | 'SGC certificate' | 'PCGS certificate';
   purpose: string;
   historicalLimit?: string;
 };
@@ -13,6 +13,7 @@ export type SourceApplicability = {
 export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'ebay_active', categories: '*', requires: 'title', purpose: 'Current asking-price research across all Tradebilia categories.' },
   { sourceId: 'sold_comps', categories: '*', requires: 'title', purpose: 'Completed eBay-sale research across all Tradebilia categories.' },
+  { sourceId: 'cgc', categories: ['comics'], requires: 'CGC certificate', purpose: 'CGC Comics certification, grade, label details, and population context.' },
   { sourceId: 'psa', categories: ['sports cards', 'pokemon'], requires: 'PSA certificate', purpose: 'PSA card certification, population, and certification sales.' },
   { sourceId: 'bgs', categories: ['sports cards', 'pokemon'], requires: 'BGS certificate', purpose: 'BGS card certification, subgrades, and population.' },
   { sourceId: 'sgc', categories: ['sports cards', 'pokemon'], requires: 'SGC certificate', purpose: 'SGC card certification data.' },

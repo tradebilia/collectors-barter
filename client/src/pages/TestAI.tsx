@@ -333,6 +333,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
   const [inventoryScope, setInventoryScope] = useState<'mine' | 'all'>('mine');
   const [certId, setCertId] = useState('');
   const [gradingCompany, setGradingCompany] = useState<GradingCompany>('CGC');
+  const [certCategory, setCertCategory] = useState('comics');
   const [selectedInventoryId, setSelectedInventoryId] = useState<number | null>(null);
 
   const borderColor = side === 'left' ? 'border-cyan-700/40' : 'border-amber-700/40';
@@ -354,7 +355,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
     if (!certId.trim()) { toast.error('Enter a certificate ID'); return; }
     onItemChange({
       title: `${gradingCompany} Cert #${certId}`,
-      category: 'unknown',
+      category: certCategory,
       certId: certId.trim(),
       gradingCompany,
       certificationCompany: gradingCompany,
@@ -414,6 +415,10 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
         </div>
       ) : (
         <div className="space-y-2">
+          <select value={certCategory} onChange={e => setCertCategory(e.target.value)} aria-label="Certificate category"
+            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
+            <option value="comics">Comics</option><option value="sports_cards">Sports Cards</option><option value="pokemon">Pokémon</option><option value="coins">Coins</option>
+          </select>
           <select value={gradingCompany} onChange={e => setGradingCompany(e.target.value as GradingCompany)}
             className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
             {GRADING_COMPANIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -559,6 +564,26 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
 }
 
 // ─── PSA Population Report Section ──────────────────────────────────────────
+function CgcComicsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const { data, isLoading } = trpc.testAI.getCgcComicsData.useQuery(
+    { certNumber: item.certId || '' },
+    { enabled: item.category.toLowerCase().replace(/[_-]+/g, ' ') === 'comics' && item.gradingCompany === 'CGC' && !!item.certId },
+  );
+  if (!item.certId) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report</p><p className="text-gray-500 text-[10px] mt-1">Enter a CGC certificate number to fetch comic identity and population data.</p></div>;
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+    <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report (Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-gray-500 text-[10px]">Read-only sandbox evidence: certificate identity, grade, label details, and population context.</p>
+    {data?.status === 'error' && <div className="bg-red-900/20 border border-red-700/30 rounded p-2"><p className="text-red-400 text-[10px]">{data.message}</p></div>}
+    {data?.status === 'success' && data.data && <div className="space-y-2">
+      <div className="bg-gray-900/40 rounded p-2 space-y-1"><p className="text-white text-[12px] font-semibold">{String(data.data.title || 'Title unavailable')}{data.data.issueNumber ? ` #${String(data.data.issueNumber)}` : ''}</p><p className="text-gray-400 text-[10px]">{[data.data.year, data.data.publisher, data.data.variant].filter(Boolean).map(String).join(' · ') || 'Issue metadata unavailable'}</p><div className="grid grid-cols-3 gap-2 text-[10px] mt-2"><div><p className="text-gray-500 text-[9px] uppercase">Grade</p><p className="text-cyan-300 font-bold text-[13px]">{String(data.data.grade || 'N/A')}</p></div><div><p className="text-gray-500 text-[9px] uppercase">Label</p><p className="text-gray-200">{String(data.data.labelCategory || 'N/A')}</p></div><div><p className="text-gray-500 text-[9px] uppercase">Pages</p><p className="text-gray-200">{String(data.data.pageQuality || 'N/A')}</p></div></div></div>
+      <div className="bg-gray-900/40 rounded p-2"><p className="text-gray-400 text-[10px] font-semibold uppercase">Population context</p><p className="text-gray-500 text-[9px] mt-1">Total graded: <span className="text-white">{typeof data.data.population.total === 'number' ? data.data.population.total.toLocaleString() : String(data.data.population.total || 'Unavailable')}</span></p>{data.data.population.gradeCounts.length > 0 && <div className="grid grid-cols-2 gap-1 mt-2">{data.data.population.gradeCounts.slice(0, 12).map((entry: any, index: number) => <div key={index} className="rounded bg-gray-800/60 px-1.5 py-1 text-[9px] text-gray-300">{String(entry.label || entry.grade || entry.name || `Grade ${index + 1}`)}: <span className="text-white">{String(entry.count ?? entry.total ?? '—')}</span></div>)}</div>}</div>
+      {Boolean(data.data.keyComments || data.data.artComments) && <p className="text-[9px] text-violet-200">{[data.data.keyComments, data.data.artComments].filter(Boolean).map(String).join(' · ')}</p>}
+      <p className="text-[9px] text-gray-600">Population is context only; completed sales remain authoritative valuation evidence.</p>
+    </div>}
+  </div>;
+}
+
 function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getPSAData.useQuery(
@@ -1288,6 +1313,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
   const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });
   const sgcQuery = trpc.testAI.getSgcData.useQuery({ certNumber }, { enabled: enabledSources.has('sgc') && !!certNumber });
+  const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && item.gradingCompany === 'CGC' && !!certNumber });
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
   const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
 
@@ -1310,12 +1336,13 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
     if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
     if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataQueryResult.data), fields: factualFields(wikidataQueryResult.data, 'wikidata'), message: wikidataQueryResult.data?.message ?? null });
+    if (enabledSources.has('cgc')) add({ id: 'cgc', label: 'Parse.bot CGC Comics', kind: 'certification', status: evidenceStatus(cgcQuery.data), fields: { title: cgcQuery.data?.data?.title, issueNumber: cgcQuery.data?.data?.issueNumber, year: cgcQuery.data?.data?.year, publisher: cgcQuery.data?.data?.publisher, certificationCompany: 'CGC', grade: cgcQuery.data?.data?.grade, labelCategory: cgcQuery.data?.data?.labelCategory }, message: cgcQuery.data?.message ?? null });
     if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });
     if (enabledSources.has('bgs')) add({ id: 'bgs', label: 'Parse.bot BGS', kind: 'certification', status: evidenceStatus(bgsQuery.data), fields: { title: bgsQuery.data?.data?.playerName, player: bgsQuery.data?.data?.playerName, set: bgsQuery.data?.data?.setName, cardNumber: bgsQuery.data?.data?.cardNumber, year: bgsQuery.data?.data?.year, manufacturer: bgsQuery.data?.data?.manufacturer, certificationCompany: 'BGS', grade: bgsQuery.data?.data?.finalGrade }, message: bgsQuery.data?.message ?? null });
     if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
     if (enabledSources.has('pcgs')) add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -2252,7 +2279,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
             </div>
       )}
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
-      {enabledSources.has('cgc') && <PlaceholderSection sourceId="cgc" side={side} />}
+      {enabledSources.has('cgc') && <CgcComicsSection item={item} side={side} />}
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
       {enabledSources.has('bgs') && <BeckettSection item={item} side={side} />}
       {enabledSources.has('sgc') && <SgcSection item={item} side={side} />}
@@ -2322,13 +2349,21 @@ export default function TestAI() {
     { certNumber: rightItem?.certId || '' },
     { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'BGS' }
   );
+  const leftCgcQuery = trpc.testAI.getCgcComicsData.useQuery(
+    { certNumber: leftItem?.certId || '' },
+    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'CGC' && leftItem?.category === 'comics' }
+  );
+  const rightCgcQuery = trpc.testAI.getCgcComicsData.useQuery(
+    { certNumber: rightItem?.certId || '' },
+    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'CGC' && rightItem?.category === 'comics' }
+  );
 
   // Build an effective item for Sold-Comps/eBay queries:
   // If it's a cert-mode item AND Parse.bot returned card data, synthesize a searchable item.
   // Otherwise fall back to the item as-is (inventory mode).
-  function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any): SelectedItem | null {
+  function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any, cgcData: any): SelectedItem | null {
     if (!item) return null;
-    if (item.category !== 'unknown') return item; // inventory item — already has all fields
+    if (item.category !== 'unknown' && !(item.certId && item.gradingCompany === 'CGC')) return item; // inventory item — already has all fields
 
     // Choose data source based on grading company
     const company = item.gradingCompany;
@@ -2364,14 +2399,22 @@ export default function TestAI() {
       };
     }
 
-    // For other grading companies (CGC, PCGS, NGC, etc.) — no cert data source yet
-    // Return null so Sold-Comps/eBay shows the "Enable grading source first" message
+    if (company === 'CGC' && (item.category === 'comics' || item.category === 'unknown')) {
+      const comic = cgcData?.data?.data;
+      if (!comic) return null;
+      const grade = String(comic.grade ?? '').match(/\d+(\.\d+)?/)?.[0] ?? undefined;
+      const query = [comic.title, comic.issueNumber ? `#${comic.issueNumber}` : '', comic.year, comic.publisher, 'CGC', grade]
+        .filter(Boolean).join(' ');
+      return { ...item, title: query || item.title, category: 'cert_direct', grade, certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: comic.title, issueNumber: comic.issueNumber, publisher: comic.publisher, variant: comic.variant, year: comic.year }) };
+    }
+
+    // For other grading companies (PCGS, NGC, etc.) there is no cert search synthesis yet.
     return null;
 
   }
 
-  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery, leftBeckettQuery);
-  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery);
+  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery, leftBeckettQuery, leftCgcQuery);
+  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery, rightCgcQuery);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },

@@ -100,6 +100,39 @@ export function filterListingsByGrade(summaries: any[], targetGrade: number | nu
   });
 }
 
+function firstDefined(...values: unknown[]): unknown {
+  return values.find((value) => value !== undefined && value !== null && value !== '') ?? null;
+}
+
+export function normalizeCgcComicsResponse(certNumber: string, certPayload: any, populationPayload: any) {
+  const cert = certPayload?.data ?? certPayload ?? {};
+  const population = populationPayload?.data ?? populationPayload ?? {};
+  const gradeCounts = population?.label_categories ?? population?.labelCategories ?? population?.grades ?? [];
+  return {
+    certNumber,
+    title: firstDefined(cert.title, cert.comic_title, cert.name),
+    issueNumber: firstDefined(cert.issue_number, cert.issueNumber),
+    issueDate: firstDefined(cert.issue_date, cert.issueDate),
+    year: firstDefined(cert.year, cert.issue_year),
+    publisher: firstDefined(cert.publisher),
+    variant: firstDefined(cert.variant),
+    grade: firstDefined(cert.grade),
+    pageQuality: firstDefined(cert.page_quality, cert.pageQuality),
+    gradeDate: firstDefined(cert.grade_date, cert.gradeDate),
+    labelCategory: firstDefined(cert.label_category, cert.labelCategory),
+    artComments: firstDefined(cert.art_comments, cert.artComments),
+    keyComments: firstDefined(cert.key_comments, cert.keyComments),
+    masterId: firstDefined(cert.master_id, cert.masterId),
+    collectibleType: firstDefined(cert.collectible_type, cert.collectibleType),
+    details: cert.details && typeof cert.details === 'object' ? cert.details : {},
+    population: {
+      gradeCounts: Array.isArray(gradeCounts) ? gradeCounts : [],
+      total: firstDefined(population.total, population.Total, population.total_graded, population.grade_total),
+      raw: population,
+    },
+  };
+}
+
 // Extract issue number from a listing title (e.g., "Daredevil #168 CGC 9.8" -> "168")
 function extractIssueFromTitle(title: string): string | null {
   // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
@@ -934,7 +967,36 @@ export const testAIRouter = router({
       }
     }),
 
-  // Placeholder: population report lookup by cert ID + grading company
+  // Parse.bot CGC Comics certification + population lookup — sandbox-only, read-only.
+  getCgcComicsData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().min(1).max(32) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const parseApiKey = process.env.PARSE_BOT_API_KEY;
+      if (!parseApiKey) return { certNumber: input.certNumber, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+      const baseUrl = 'https://api.parse.bot/scraper/3a2cb4f8-561b-43c2-92a6-3986d587afd8';
+      try {
+        const headers = { 'X-API-Key': parseApiKey };
+        const certResponse = await fetch(`${baseUrl}/get_cert?cert_number=${encodeURIComponent(input.certNumber)}`, { headers });
+        const certPayload = await certResponse.json() as any;
+        if (!certResponse.ok || certPayload?.status === 'error' || certPayload?.error) {
+          return { certNumber: input.certNumber, status: 'error' as const, message: `Parse.bot CGC Comics API error: ${certPayload?.message || certPayload?.error || 'Certificate not found'}`, data: null };
+        }
+        const cert = certPayload?.data ?? certPayload;
+        let populationPayload: any = {};
+        const masterId = cert?.master_id ?? cert?.masterId;
+        const collectibleType = cert?.collectible_type ?? cert?.collectibleType;
+        const populationQuery = masterId
+          ? `master_id=${encodeURIComponent(String(masterId))}${collectibleType ? `&collectible_type=${encodeURIComponent(String(collectibleType))}` : ''}`
+          : `cert_number=${encodeURIComponent(input.certNumber)}`;
+        const populationResponse = await fetch(`${baseUrl}/get_comic_grades?${populationQuery}`, { headers });
+        if (populationResponse.ok) populationPayload = await populationResponse.json() as any;
+        return { certNumber: input.certNumber, status: 'success' as const, data: normalizeCgcComicsResponse(input.certNumber, certPayload, populationPayload) };
+      } catch (err: any) {
+        return { certNumber: input.certNumber, status: 'error' as const, message: `Failed to fetch CGC Comics data: ${err?.message || 'Unknown provider error'}`, data: null };
+      }
+    }),
+
   // Fetch PSA cert details + population breakdown via Parse.bot API
   getPSAData: protectedProcedure
     .input(z.object({
