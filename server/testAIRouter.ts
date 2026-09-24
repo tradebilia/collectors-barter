@@ -28,6 +28,7 @@ import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMA
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
 import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
+import { computeHipstampMetrics, lookupHipstampListings } from './hipstampMarketData';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -715,6 +716,37 @@ export const testAIRouter = router({
       } catch (err: any) {
         return { query, listings: [], metrics: null, error: err.message };
       }
+    }),
+
+  // Fetch HIPStamp active listings for Stamps only — sandbox-only and read-only.
+  getHipstampData: protectedProcedure
+    .input(z.object({
+      title: z.string(),
+      category: z.string(),
+      grade: z.string().optional(),
+      condition: z.string().optional(),
+      certificationCompany: z.string().optional(),
+      itemDetails: z.string().optional(),
+      itemType: z.string().optional(),
+      imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      if (input.category.trim().toLowerCase().replace(/[_-]+/g, ' ') !== 'stamps') {
+        return { query: input.title, listings: [], metrics: null, debug: { totalFetched: 0, afterIdentityFilter: 0, nonUsdListings: 0 }, visualFilter: null, error: 'HIPStamp is available only for Stamps items' };
+      }
+
+      const result = await lookupHipstampListings(input);
+      if (result.error || result.listings.length === 0) return { ...result, visualFilter: null };
+
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'HIPStamp active listings',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=stamps; grade=${input.grade ?? 'unknown'}; catalog=${input.itemDetails ?? 'unknown'}`,
+        listings: result.listings.map((listing) => ({ ...listing, imageUrl: listing.imageUrl })),
+      });
+      const listings = visualFilter.listings as typeof result.listings;
+      return { ...result, listings, metrics: computeHipstampMetrics(listings), visualFilter };
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API
@@ -1491,6 +1523,8 @@ export const testAIRouter = router({
       useVisualFieldCompletion: z.boolean().optional().default(false),
       leftEbayMetrics: z.any().optional(),
       rightEbayMetrics: z.any().optional(),
+      leftHipstampMetrics: z.any().optional(),
+      rightHipstampMetrics: z.any().optional(),
       leftSoldCompsMetrics: z.any().optional(),
       rightSoldCompsMetrics: z.any().optional(),
       leftHistoricalTrendSales: z.array(z.object({
@@ -1510,7 +1544,7 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
-      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, marketNews, useImageAnalyzer, useVisualFieldCompletion } = input;
+      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftHipstampMetrics, rightHipstampMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, marketNews, useImageAnalyzer, useVisualFieldCompletion } = input;
 
       const isSafeVisionImageUrl = (value?: string) => {
         if (!value) return false;
@@ -1664,7 +1698,7 @@ export const testAIRouter = router({
         : 'IMAGE-DERIVED MISSING FIELDS: disabled for this baseline run.';
       const visualComparableContext = `REFINED VISUAL COMPARABLE SEARCH — ${VISUAL_COMPARABLE_QUERY_NOTE}\n${buildVisualComparableContext('ITEM A', leftRefinedActive.query, leftRefinedActive.metrics)}\n${buildVisualComparableContext('ITEM B', rightRefinedActive.query, rightRefinedActive.metrics)}`;
 
-      const formatItemLine = (item: typeof leftItem, ebayMetrics: any, soldMetrics: any) => {
+      const formatItemLine = (item: typeof leftItem, ebayMetrics: any, hipstampMetrics: any, soldMetrics: any) => {
         let line = `- ${item.title}`;
         if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
         if (item.grade) line += ` | Grade: ${item.grade}`;
@@ -1679,14 +1713,18 @@ export const testAIRouter = router({
           line += ` | eBay Active Listings (${ebayMetrics.count} listings, confidence: ${ebayMetrics.confidence}) [asking prices]:`;
           line += ` Avg=$${ebayMetrics.avg} Median=$${ebayMetrics.median} Range=$${ebayMetrics.min}-$${ebayMetrics.max}`;
         }
-        if (!soldMetrics && !ebayMetrics) {
+        if (hipstampMetrics) {
+          line += ` | HIPStamp Active Listings (${hipstampMetrics.count} listings, confidence: ${hipstampMetrics.confidence}) [asking-price context only; not completed sales]:`;
+          line += ` Avg=$${hipstampMetrics.avg} Median=$${hipstampMetrics.median} Range=$${hipstampMetrics.min}-$${hipstampMetrics.max}`;
+        }
+        if (!soldMetrics && !ebayMetrics && !hipstampMetrics) {
           line += ` | Market Data: UNAVAILABLE`;
         }
         return line;
       };
 
-      const leftLine = formatItemLine(analysisLeftItem, leftEbayMetrics, leftSoldCompsMetrics);
-      const rightLine = formatItemLine(analysisRightItem, rightEbayMetrics, rightSoldCompsMetrics);
+      const leftLine = formatItemLine(analysisLeftItem, leftEbayMetrics, leftHipstampMetrics, leftSoldCompsMetrics);
+      const rightLine = formatItemLine(analysisRightItem, rightEbayMetrics, rightHipstampMetrics, rightSoldCompsMetrics);
       const leftTrendContext = formatHistoricalTrendContext('ITEM A', leftHistoricalTrendSales);
       const rightTrendContext = formatHistoricalTrendContext('ITEM B', rightHistoricalTrendSales);
       const leftEvidenceContext = formatTestAiEvidenceForAnalysis(leftEvidenceSummary, 'ITEM A');
@@ -1717,8 +1755,8 @@ export const testAIRouter = router({
       const rightVisionImpact = evaluateVisionImpact(rightItem, visualReview.itemB as VisionReview | null | undefined);
 
       // Prefer sold prices (real transactions) over active listing prices for valuation
-      const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftItem.estimatedValue ?? 0;
-      const rightVal = rightSoldCompsMetrics?.median ?? rightEbayMetrics?.median ?? rightItem.estimatedValue ?? 0;
+      const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftHipstampMetrics?.median ?? leftItem.estimatedValue ?? 0;
+      const rightVal = rightSoldCompsMetrics?.median ?? rightEbayMetrics?.median ?? rightHipstampMetrics?.median ?? rightItem.estimatedValue ?? 0;
       const diff = rightVal - leftVal;
       const diffStr = diff > 0
         ? `+$${Math.abs(diff).toLocaleString()} — RIGHT ITEM is worth more`

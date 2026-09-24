@@ -1,0 +1,65 @@
+import { describe, expect, it } from 'vitest';
+import {
+  buildHipstampQuery,
+  computeHipstampMetrics,
+  filterHipstampListings,
+  normalizeHipstampResponse,
+} from './hipstampMarketData';
+
+describe('HIPStamp market adapter', () => {
+  it('builds a stamp-specific query from catalog identity and grade', () => {
+    expect(buildHipstampQuery({
+      title: 'PSE graded stamp',
+      category: 'stamps',
+      grade: '95',
+      certificationCompany: 'PSE',
+      itemDetails: JSON.stringify({ country: 'United States', scottNumber: 'C1', denomination: '24c', issueYear: '1918' }),
+    })).toBe('United States C1 24c 1918 PSE 95');
+  });
+
+  it('normalizes live HIPStamp listing fields and response results', () => {
+    const listings = normalizeHipstampResponse({ results: [{
+      id: '123',
+      name: 'US Scott C1 PSE 95',
+      current_price: '125.00',
+      currency: 'USD',
+      username: 'seller',
+      url: 'https://www.hipstamp.com/listing/example/123',
+      images: ['https://img.hipstamp.com/example.jpg'],
+      item_specifics_01_country: 'United States',
+      item_specifics_02_catalog_number: 'C1',
+      item_specifics_10_certificate_grade: '95',
+      item_specifics_04_condition: 'mint-nh-',
+    }] });
+
+    expect(listings).toEqual([expect.objectContaining({
+      id: '123', title: 'US Scott C1 PSE 95', price: 125, currency: 'USD', seller: 'seller',
+      country: 'United States', catalogNumber: 'C1', certificateGrade: '95', imageUrl: 'https://img.hipstamp.com/example.jpg',
+    })]);
+  });
+
+  it('rejects explicit country, catalog-number, and grade conflicts', () => {
+    const listings = [
+      { id: 'match', title: 'match', price: 100, currency: 'USD', country: 'United States', catalogNumber: 'C1', certificateGrade: '95' },
+      { id: 'country', title: 'country mismatch', price: 100, currency: 'USD', country: 'Canada', catalogNumber: 'C1', certificateGrade: '95' },
+      { id: 'catalog', title: 'catalog mismatch', price: 100, currency: 'USD', country: 'United States', catalogNumber: 'C2', certificateGrade: '95' },
+      { id: 'grade', title: 'grade mismatch', price: 100, currency: 'USD', country: 'United States', catalogNumber: 'C1', certificateGrade: '90' },
+      { id: 'unknown', title: 'unknown fields retained', price: 100, currency: 'USD' },
+    ];
+    const filtered = filterHipstampListings(listings, {
+      title: 'stamp', category: 'stamps', grade: '95', itemDetails: JSON.stringify({ country: 'United States', scottNumber: 'C1' }),
+    });
+    expect(filtered.map((listing) => listing.id)).toEqual(['match', 'unknown']);
+  });
+
+  it('computes asking-price metrics from USD listings and excludes non-USD listings', () => {
+    const metrics = computeHipstampMetrics([
+      { id: '1', title: 'one', price: 100, currency: 'USD' },
+      { id: '2', title: 'two', price: 200, currency: 'USD' },
+      { id: '3', title: 'three', price: 300, currency: 'USD' },
+      { id: '4', title: 'four', price: 400, currency: 'USD' },
+      { id: '5', title: 'five', price: 500, currency: 'CAD' },
+    ]);
+    expect(metrics).toEqual(expect.objectContaining({ count: 4, avg: 250, median: 250, min: 100, max: 400 }));
+  });
+});

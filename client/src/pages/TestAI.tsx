@@ -42,6 +42,15 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'Real eBay completed/sold listings via Sold-Comps API',
   },
+  hipstamp: {
+    id: 'hipstamp',
+    label: 'HIPStamp Active Listings',
+    group: 'Marketplace',
+    icon: '✉️',
+    provides: ['current_prices', 'price_metrics'],
+    status: 'live' as const,
+    description: 'Read-only HIPStamp asking-price and supply context for Stamps items — not completed-sale evidence',
+  },
   cgc: {
     id: 'cgc',
     label: 'Parse.bot CGC Comics',
@@ -563,6 +572,70 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
         </div>
       )}
       {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No listings found.</p>}
+    </div>
+  );
+}
+
+// ─── HIPStamp Active Listings Section ────────────────────────────────────────
+function HipstampSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const supported = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'stamps';
+  const formatHipstampPrice = (value: number) => Number.isInteger(value) ? formatWholeDollar(value) : `$${value.toFixed(2)}`;
+  const { data, isLoading } = trpc.testAI.getHipstampData.useQuery(
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
+    { enabled: supported && !!item.title },
+  );
+
+  if (!supported) return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ HIPStamp Active Listings</p>
+      <p className="text-gray-500 text-[10px]">This authorized read-only source is available for Stamps items only.</p>
+    </div>
+  );
+
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ HIPStamp Active Listings</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <p className="text-gray-500 text-[10px]">Authorized read-only current asking prices and supply context · USD metrics only · never completed-sale evidence</p>
+      {data?.error && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.error}</p>}
+      {data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
+      {data?.metrics && (
+        <div className="grid grid-cols-4 gap-2 text-[11px]">
+          {[
+            { label: 'Avg Ask', value: formatHipstampPrice(data.metrics.avg) },
+            { label: 'Median', value: formatHipstampPrice(data.metrics.median) },
+            { label: 'Range', value: `${formatHipstampPrice(data.metrics.min)}–${formatHipstampPrice(data.metrics.max)}` },
+            { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
+          ].map((metric) => (
+            <div key={metric.label} className="bg-gray-900/40 rounded p-1.5 text-center">
+              <p className="text-gray-500 text-[9px] uppercase mb-0.5">{metric.label}</p>
+              <p className={`font-semibold ${metric.label === 'Confidence' ? (data.metrics!.confidence === 'high' ? 'text-green-400' : data.metrics!.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{metric.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} shown · {data.debug?.totalFetched ?? 0} fetched</p>}
+      {data?.debug && data.debug.nonUsdListings > 0 && <p className="text-gray-500 text-[10px]">{data.debug.nonUsdListings} non-USD listing{data.debug.nonUsdListings === 1 ? '' : 's'} excluded from USD metrics.</p>}
+      {data?.listings && data.listings.length > 0 && (
+        <div className="space-y-1 max-h-48 overflow-y-auto">
+          {data.listings.map((listing: any) => (
+            <div key={listing.id || `${listing.title}-${listing.price}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
+              <div className="flex items-center gap-2 min-w-0">
+                {listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
+                <div className="min-w-0">
+                  <a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a>
+                  <p className="text-[10px] text-gray-500">{[listing.country, listing.catalogNumber, listing.condition, listing.seller].filter(Boolean).join(' · ')}</p>
+                </div>
+              </div>
+              <p className="text-green-400 font-semibold text-sm flex-shrink-0">{listing.currency} {formatHipstampPrice(listing.price)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No HIPStamp listings matched the selected stamp identity.</p>}
     </div>
   );
 }
@@ -1262,13 +1335,14 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, oneThirtyPointData, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, oneThirtyPointData, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
   enabledSources: Set<SourceId>;
   ebayData: any;
   soldCompsData: any;
+  hipstampData: any;
   oneThirtyPointData: any;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -1329,6 +1403,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     const observations: EvidenceSourceObservation[] = [];
     const add = (observation: EvidenceSourceObservation) => observations.push(observation);
     if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
+    if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];
@@ -1350,7 +1425,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
     if (enabledSources.has('pcgs')) add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -1551,7 +1626,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -1560,6 +1635,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightSources: Set<SourceId>;
   leftSoldCompsData?: any;
   rightSoldCompsData?: any;
+  leftHipstampData?: any;
+  rightHipstampData?: any;
   leftHistoricalTrendData?: any;
   rightHistoricalTrendData?: any;
   leftEvidenceSummary?: NormalizedEvidenceSummary | null;
@@ -1582,6 +1659,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 
   const leftHasEbay = leftSources.has('ebay_active');
   const rightHasEbay = rightSources.has('ebay_active');
+  const leftHasHipstamp = leftSources.has('hipstamp');
+  const rightHasHipstamp = rightSources.has('hipstamp');
   const leftHasSoldComps = leftSources.has('sold_comps');
   const rightHasSoldComps = rightSources.has('sold_comps');
   const leftHas130Point = leftSources.has('one_thirty_point');
@@ -1595,6 +1674,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       useVisualFieldCompletion: useImageAnalyzer && useVisualFieldCompletion,
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
       rightEbayMetrics: rightHasEbay ? (rightEbayData?.metrics ?? null) : null,
+      leftHipstampMetrics: leftHasHipstamp ? (leftHipstampData?.metrics ?? null) : null,
+      rightHipstampMetrics: rightHasHipstamp ? (rightHipstampData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
       leftHistoricalTrendSales: leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []) : [],
@@ -2285,13 +2366,14 @@ function PayPalComparisonInspector() {
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
   enabledSources: Set<SourceId>;
   ebayData: any;
   soldCompsData: any;
+  hipstampData: any;
   oneThirtyPointData: any;
   onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -2318,7 +2400,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} />
@@ -2327,6 +2409,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
               <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
             </div>
       )}
+      {enabledSources.has('hipstamp') && <HipstampSection item={queryItem} side={side} />}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
           ? <SoldCompsSection item={queryItem} side={side} />
@@ -2482,6 +2565,15 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('ebay_active') }
   );
 
+  const leftHipstampQuery = trpc.testAI.getHipstampData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    { enabled: !!leftSearchItem && leftSources.has('hipstamp') }
+  );
+  const rightHipstampQuery = trpc.testAI.getHipstampData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    { enabled: !!rightSearchItem && rightSources.has('hipstamp') }
+  );
+
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
@@ -2537,8 +2629,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
           </div>
         )}
 
@@ -2556,6 +2648,8 @@ export default function TestAI() {
              rightSources={rightSources}
              leftSoldCompsData={leftSoldCompsQuery.data}
              rightSoldCompsData={rightSoldCompsQuery.data}
+             leftHipstampData={leftHipstampQuery.data}
+             rightHipstampData={rightHipstampQuery.data}
              leftHistoricalTrendData={left130PointQuery.data}
              rightHistoricalTrendData={right130PointQuery.data}
              leftEvidenceSummary={leftEvidenceSummary}
