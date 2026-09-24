@@ -2663,10 +2663,24 @@ export default function TestAI() {
         <PayPalComparisonInspector />
 
         {!leftItem && !rightItem && (
-          <div className="text-center py-16 text-gray-500">
-            <p className="text-4xl mb-4">🧪</p>
-            <p className="text-lg font-medium text-gray-400">Select two items to begin testing</p>
-            <p className="text-sm mt-2">Choose from your inventory or enter a certificate ID, then select which data sources to test</p>
+          <div className="py-10 text-gray-500">
+            <div className="text-center">
+              <p className="text-4xl mb-4">🧪</p>
+              <p className="text-lg font-medium text-gray-400">Select two items to begin testing</p>
+              <p className="text-sm mt-2">Choose from your inventory or enter a certificate ID, then select which data sources to test</p>
+            </div>
+            <div className="mt-8 rounded-xl border border-slate-700/70 bg-slate-900/60 p-4 text-left">
+              <p className="text-xs font-bold uppercase tracking-wider text-cyan-300">Sandbox data sources</p>
+              <p className="mt-1 text-xs text-slate-400">Sources are shown here before selection; category and grading requirements are enforced after an item is loaded.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {Object.values(DATA_SOURCES).map((source) => (
+                  <span key={source.id} className={`rounded-md border px-2 py-1 text-[11px] ${source.status === 'live' ? 'border-emerald-500/50 bg-emerald-950/30 text-emerald-200' : 'border-slate-700 bg-slate-950/40 text-slate-400'}`}>
+                    {source.icon} {source.label}{source.status === 'placeholder' ? ' (soon)' : ''}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence.</p>
+            </div>
           </div>
         )}
       </div>
