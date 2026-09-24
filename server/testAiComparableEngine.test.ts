@@ -19,7 +19,15 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(exact.score).toBeGreaterThan(wrongGrade.score);
     expect(exact.score).toBeGreaterThan(parallel.score);
     expect(exact.accepted).toBe(true);
+    expect(wrongGrade.accepted).toBe(false);
+    expect(wrongGrade.exclusionReason).toBe('known grade differs from target');
     expect(wrongGrade.reasons).toContain('grade differs');
+  });
+
+  it('rejects a known sale from a different grading company even when title identity is strong', () => {
+    const saleFromDifferentCompany = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 BGS 10', 1500, '2026-09-01'));
+    expect(saleFromDifferentCompany.accepted).toBe(false);
+    expect(saleFromDifferentCompany.exclusionReason).toBe('known grading or authentication company differs from target');
   });
 
   it('weights recent exact sales more heavily than older accepted sales', () => {

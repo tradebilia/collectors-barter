@@ -171,11 +171,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const targetCompany = normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
   const saleCompanyMatch = title.match(/\b(psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\b/i)?.[1];
   const saleCompany = normalizeCompany(saleCompanyMatch);
+  let materialGradeConflict = false;
+  let materialCompanyConflict = false;
   if (targetGrade !== null && saleGrade === targetGrade) {
     score += 12;
     reasons.push('grade matches');
   } else if (targetGrade !== null && saleGrade !== null) {
     score -= 18;
+    materialGradeConflict = true;
     reasons.push('grade differs');
   } else if (targetGrade !== null) {
     score -= 10;
@@ -186,11 +189,23 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push('grading or authentication company matches');
   } else if (targetCompany && saleCompany && saleCompany !== targetCompany) {
     score -= 10;
+    materialCompanyConflict = true;
     reasons.push('grading or authentication company differs');
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
-  const accepted = Number.isFinite(price) && price > 0 && boundedScore >= 48 && !materialVariantConflict;
+  const accepted = Number.isFinite(price) && price > 0 && boundedScore >= 48 && !materialVariantConflict && !materialGradeConflict && !materialCompanyConflict;
+  const exclusionReason = accepted
+    ? undefined
+    : materialGradeConflict
+      ? 'known grade differs from target'
+      : materialCompanyConflict
+        ? 'known grading or authentication company differs from target'
+        : materialVariantConflict
+          ? 'sale may be a different variant or release'
+          : boundedScore < 35
+            ? 'identity match below minimum threshold'
+            : 'insufficient comparable evidence';
   return {
     title: title || 'Untitled comparable',
     price: Number.isFinite(price) ? price : 0,
@@ -198,7 +213,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     score: boundedScore,
     accepted,
     reasons,
-    exclusionReason: accepted ? undefined : boundedScore < 35 ? 'identity match below minimum threshold' : 'insufficient comparable evidence',
+    exclusionReason,
     weight: 0,
   };
 }
