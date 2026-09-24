@@ -250,6 +250,10 @@ function getItemManufacturer(item: SelectedItem): string {
   }
 }
 
+function isCgcCompany(company?: string | null): boolean {
+  return (company ?? '').trim().toUpperCase().replace(/\s+(COMICS|CARDS)$/, '') === 'CGC';
+}
+
 // ─── Source Selector ─────────────────────────────────────────────────────────
 function SourceSelector({ enabled, onChange, side, item }: {
   enabled: Set<SourceId>;
@@ -566,14 +570,18 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
 // ─── PSA Population Report Section ──────────────────────────────────────────
 function CgcComicsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const [effectiveCertId, setEffectiveCertId] = useState(item.certId || '');
+  const [ocrReview, setOcrReview] = useState<{ certId: string | null; gradingCompany: string | null; confidence: string; evidence: string; needsReview: boolean } | null>(null);
+  useEffect(() => { setEffectiveCertId(item.certId || ''); setOcrReview(null); }, [item.certId, item.primaryPhotoUrl]);
+  const readCertMutation = trpc.testAI.readCertificationFromImage.useMutation({ onSuccess: (result) => { if (result.status === 'success') { setOcrReview(result.data); if (result.data.certId && result.data.confidence !== 'low') setEffectiveCertId(result.data.certId); } } });
   const { data, isLoading } = trpc.testAI.getCgcComicsData.useQuery(
-    { certNumber: item.certId || '' },
-    { enabled: item.category.toLowerCase().replace(/[_-]+/g, ' ') === 'comics' && item.gradingCompany === 'CGC' && !!item.certId },
+    { certNumber: effectiveCertId },
+    { enabled: item.category.toLowerCase().replace(/[_-]+/g, ' ') === 'comics' && isCgcCompany(item.gradingCompany) && !!effectiveCertId },
   );
-  if (!item.certId) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report</p><p className="text-gray-500 text-[10px] mt-1">Enter a CGC certificate number to fetch comic identity and population data.</p></div>;
+  if (!effectiveCertId) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report</p><p className="text-gray-500 text-[10px]">No certificate ID is stored on this listing. The source cannot query Parse.bot until an ID is available.</p>{item.primaryPhotoUrl && <button type="button" onClick={() => readCertMutation.mutate({ imageUrl: item.primaryPhotoUrl!, category: item.category, expectedCompany: item.gradingCompany })} disabled={readCertMutation.isPending} className="rounded bg-indigo-600 px-2 py-1 text-[10px] text-white disabled:opacity-50">{readCertMutation.isPending ? 'Reading label…' : 'Read certificate ID from image'}</button>}{readCertMutation.data?.status === 'error' && <p className="text-red-400 text-[10px]">{readCertMutation.data.message}</p>}{ocrReview && <p className="text-gray-400 text-[10px]">{ocrReview.evidence} {ocrReview.certId ? `Candidate ID: ${ocrReview.certId} (${ocrReview.confidence} confidence).` : 'No readable ID was found.'}</p>}</div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report (Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
-    <p className="text-gray-500 text-[10px]">Read-only sandbox evidence: certificate identity, grade, label details, and population context.</p>
+    <p className="text-gray-500 text-[10px]">Read-only sandbox evidence for certificate {effectiveCertId}: identity, grade, label details, and population context.</p>
     {data?.status === 'error' && <div className="bg-red-900/20 border border-red-700/30 rounded p-2"><p className="text-red-400 text-[10px]">{data.message}</p></div>}
     {data?.status === 'success' && data.data && <div className="space-y-2">
       <div className="bg-gray-900/40 rounded p-2 space-y-1"><p className="text-white text-[12px] font-semibold">{String(data.data.title || 'Title unavailable')}{data.data.issueNumber ? ` #${String(data.data.issueNumber)}` : ''}</p><p className="text-gray-400 text-[10px]">{[data.data.year, data.data.publisher, data.data.variant].filter(Boolean).map(String).join(' · ') || 'Issue metadata unavailable'}</p><div className="grid grid-cols-3 gap-2 text-[10px] mt-2"><div><p className="text-gray-500 text-[9px] uppercase">Grade</p><p className="text-cyan-300 font-bold text-[13px]">{String(data.data.grade || 'N/A')}</p></div><div><p className="text-gray-500 text-[9px] uppercase">Label</p><p className="text-gray-200">{String(data.data.labelCategory || 'N/A')}</p></div><div><p className="text-gray-500 text-[9px] uppercase">Pages</p><p className="text-gray-200">{String(data.data.pageQuality || 'N/A')}</p></div></div></div>
@@ -1313,7 +1321,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
   const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });
   const sgcQuery = trpc.testAI.getSgcData.useQuery({ certNumber }, { enabled: enabledSources.has('sgc') && !!certNumber });
-  const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && item.gradingCompany === 'CGC' && !!certNumber });
+  const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && isCgcCompany(item.gradingCompany) && !!certNumber });
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
   const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
 
@@ -2399,7 +2407,7 @@ export default function TestAI() {
       };
     }
 
-    if (company === 'CGC' && (item.category === 'comics' || item.category === 'unknown')) {
+    if (isCgcCompany(company) && (item.category === 'comics' || item.category === 'unknown')) {
       const comic = cgcData?.data?.data;
       if (!comic) return null;
       const grade = String(comic.grade ?? '').match(/\d+(\.\d+)?/)?.[0] ?? undefined;

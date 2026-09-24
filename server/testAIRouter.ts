@@ -967,6 +967,36 @@ export const testAIRouter = router({
       }
     }),
 
+  // Review-only certificate-label OCR/vision — it never writes listing data.
+  readCertificationFromImage: protectedProcedure
+    .input(z.object({ imageUrl: z.string().url(), category: z.string().min(1), expectedCompany: z.string().optional() }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      try {
+        const response = await invokeLLM({
+          model: 'gpt-5-mini',
+          messages: [
+            { role: 'system', content: 'You are a conservative certification-label OCR reviewer. Read only text visibly printed on the grading label. Never guess. Return strict JSON with certId, gradingCompany, confidence, evidence, and needsReview. The certificate ID must be an exact visible identifier, not a grade, issue number, barcode fragment, or listing ID.' },
+            { role: 'user', content: [
+              { type: 'text', text: `Category: ${input.category}. Expected grading company: ${input.expectedCompany || 'unknown'}. Extract a visible certification company and certificate ID from this listing image. If either is not clearly readable, return null for it and set needsReview=true.` },
+              { type: 'image_url', image_url: { url: input.imageUrl, detail: 'high' } },
+            ] },
+          ],
+          response_format: { type: 'json_schema', json_schema: { name: 'certification_label_review', strict: true, schema: { type: 'object', properties: { certId: { type: ['string', 'null'] }, gradingCompany: { type: ['string', 'null'] }, confidence: { type: 'string', enum: ['high', 'medium', 'low'] }, evidence: { type: 'string' }, needsReview: { type: 'boolean' } }, required: ['certId', 'gradingCompany', 'confidence', 'evidence', 'needsReview'], additionalProperties: false } } },
+          maxCompletionTokens: 500,
+          temperature: 0,
+        });
+        const content = response.choices[0]?.message?.content;
+        const parsed = typeof content === 'string' ? JSON.parse(content) : null;
+        const certId = typeof parsed?.certId === 'string' && /^[A-Za-z0-9-]{4,32}$/.test(parsed.certId.trim()) ? parsed.certId.trim() : null;
+        const gradingCompany = typeof parsed?.gradingCompany === 'string' ? parsed.gradingCompany.trim() || null : null;
+        return { status: 'success' as const, data: { certId, gradingCompany, confidence: parsed?.confidence ?? 'low', evidence: parsed?.evidence ?? 'No readable certification label evidence.', needsReview: Boolean(parsed?.needsReview) || !certId || !gradingCompany } };
+      } catch (error) {
+        console.warn('[Test AI] Certification image review unavailable:', error instanceof Error ? error.message : 'unknown error');
+        return { status: 'error' as const, message: 'The image review could not read a certification label. Verify the certificate ID manually.', data: null };
+      }
+    }),
+
   // Parse.bot CGC Comics certification + population lookup — sandbox-only, read-only.
   getCgcComicsData: protectedProcedure
     .input(z.object({ certNumber: z.string().trim().min(1).max(32) }))
