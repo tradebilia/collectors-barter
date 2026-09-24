@@ -374,9 +374,9 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
           {(['inventory', 'cert'] as ItemSource[]).map(s => (
             <button key={s} onClick={() => {
               setSource(s);
-              // Clear pre-selected sources when switching to cert mode; reset to ebay_active for inventory
+              // Clear sources when switching modes; sources must be explicitly selected by the tester.
               if (s === 'cert') onSourceChange(new Set());
-              else onSourceChange(new Set(['ebay_active']));
+              else onSourceChange(new Set());
               onItemChange(null);
               setCertId('');
               setSelectedInventoryId(null);
@@ -2316,8 +2316,8 @@ export default function TestAI() {
   const [, navigate] = useLocation();
   const [leftItem, setLeftItem] = useState<SelectedItem | null>(null);
   const [rightItem, setRightItem] = useState<SelectedItem | null>(null);
-  const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set(['ebay_active']));
-  const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set(['ebay_active']));
+  const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set());
+  const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set());
   const [leftEvidenceSummary, setLeftEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
   const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
   const leftSourceKey = useMemo(() => Array.from(leftSources).sort().join('|'), [leftSources]);
