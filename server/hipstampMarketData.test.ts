@@ -38,6 +38,18 @@ describe('HIPStamp market adapter', () => {
     })]);
   });
 
+  it('preserves closed-listing sale fields needed for sold evidence', () => {
+    const listings = normalizeHipstampResponse({ results: [{
+      id: 'sold-1', name: 'US Scott C1 sold', current_price: 175.5, currency: 'USD', username: 'stamp-store', listing_type: 'auction',
+      end_time: '2026-09-20T12:00:00Z', quantity: 1, bid_count: 4, original_price: 200,
+      item_specifics_01_country: 'United States', item_specifics_02_catalog_number: 'C1',
+    }] });
+    expect(listings[0]).toEqual(expect.objectContaining({
+      id: 'sold-1', price: 175.5, storeUsername: 'stamp-store', listingType: 'auction', closedAt: '2026-09-20T12:00:00Z',
+      quantity: 1, bidCount: 4, originalPrice: 200,
+    }));
+  });
+
   it('rejects explicit country, catalog-number, and grade conflicts', () => {
     const listings = [
       { id: 'match', title: 'match', price: 100, currency: 'USD', country: 'United States', catalogNumber: 'C1', certificateGrade: '95' },

@@ -23,7 +23,21 @@ export type HipstampListing = {
   certificateGrade?: string;
   hasCertificate?: string;
   startedAt?: string;
+  closedAt?: string;
+  quantity?: number;
+  bidCount?: number;
+  originalPrice?: number;
+  storeUsername?: string;
+  saleStatus?: 'sold';
   description?: string;
+};
+
+export type HipstampSoldDebug = {
+  storesDiscovered: number;
+  storesQueried: number;
+  totalFetched: number;
+  afterIdentityFilter: number;
+  nonUsdListings: number;
 };
 
 export type HipstampMetrics = {
@@ -139,6 +153,11 @@ export function normalizeHipstampListing(raw: any): HipstampListing | null {
     certificateGrade: text(raw?.item_specifics_10_certificate_grade) || undefined,
     hasCertificate: text(raw?.item_specifics_09_has_a_certificate) || undefined,
     startedAt: text(raw?.start_time || raw?.created_at) || undefined,
+    closedAt: text(raw?.end_time || raw?.closed_at) || undefined,
+    quantity: Number.isFinite(Number(raw?.quantity)) ? Number(raw.quantity) : undefined,
+    bidCount: Number.isFinite(Number(raw?.bid_count)) ? Number(raw.bid_count) : undefined,
+    originalPrice: Number.isFinite(Number(raw?.original_price)) ? Number(raw.original_price) : undefined,
+    storeUsername: text(raw?.username) || undefined,
     description: text(raw?.description) || undefined,
   };
 }
@@ -247,5 +266,48 @@ export async function lookupHipstampListings(input: HipstampLookupInput): Promis
     };
   } catch {
     return { query, listings: [], metrics: null, debug: { totalFetched: 0, afterIdentityFilter: 0, nonUsdListings: 0 }, error: 'HIPStamp API request failed' };
+  }
+}
+
+export async function lookupHipstampSoldListings(input: HipstampLookupInput): Promise<{
+  query: string;
+  listings: HipstampListing[];
+  metrics: HipstampMetrics | null;
+  debug: HipstampSoldDebug;
+  error: string | null;
+}> {
+  const query = buildHipstampQuery(input);
+  const emptyDebug: HipstampSoldDebug = { storesDiscovered: 0, storesQueried: 0, totalFetched: 0, afterIdentityFilter: 0, nonUsdListings: 0 };
+  const apiKey = getHipstampApiKey();
+  if (!apiKey) return { query, listings: [], metrics: null, debug: emptyDebug, error: 'HIPSTAMP_API_KEY is not configured' };
+
+  try {
+    const active = await lookupHipstampListings(input);
+    const stores = [...new Set(active.listings.map((listing) => listing.storeUsername).filter(Boolean) as string[])].slice(0, 5);
+    const fetched: HipstampListing[] = [];
+    for (const username of stores) {
+      const params = new URLSearchParams({ limit: '50', page: '1', sort: 'ending_desc', show: 'sold', keywords: query });
+      const response = await fetch(`https://www.hipstamp.com/api/stores/${encodeURIComponent(username)}/listings/closed?${params.toString()}`, {
+        headers: { Accept: 'application/json', 'X-ApiKey': apiKey },
+      });
+      const responseBody = await response.text();
+      if (!response.ok) return { query, listings: [], metrics: null, debug: { ...emptyDebug, storesDiscovered: stores.length, storesQueried: fetched.length ? stores.indexOf(username) : 0 }, error: `HIPStamp sold API returned HTTP ${response.status}` };
+      let payload: unknown;
+      try { payload = JSON.parse(responseBody); } catch { return { query, listings: [], metrics: null, debug: { ...emptyDebug, storesDiscovered: stores.length }, error: 'HIPStamp sold API returned invalid JSON' }; }
+      const records = normalizeHipstampResponse(payload).map((listing) => ({ ...listing, storeUsername: username, saleStatus: 'sold' as const }));
+      fetched.push(...records);
+    }
+    const filtered = filterHipstampListings(fetched, input);
+    const nonUsdListings = filtered.filter((listing) => listing.currency !== 'USD').length;
+    const listings = filtered.slice(0, 20);
+    return {
+      query,
+      listings,
+      metrics: computeHipstampMetrics(listings),
+      debug: { storesDiscovered: stores.length, storesQueried: stores.length, totalFetched: fetched.length, afterIdentityFilter: filtered.length, nonUsdListings },
+      error: null,
+    };
+  } catch {
+    return { query, listings: [], metrics: null, debug: emptyDebug, error: 'HIPStamp sold API request failed' };
   }
 }

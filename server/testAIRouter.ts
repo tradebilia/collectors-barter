@@ -28,7 +28,7 @@ import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMA
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
 import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
-import { computeHipstampMetrics, lookupHipstampListings } from './hipstampMarketData';
+import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -741,6 +741,35 @@ export const testAIRouter = router({
 
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'HIPStamp active listings',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=stamps; grade=${input.grade ?? 'unknown'}; catalog=${input.itemDetails ?? 'unknown'}`,
+        listings: result.listings.map((listing) => ({ ...listing, imageUrl: listing.imageUrl })),
+      });
+      const listings = visualFilter.listings as typeof result.listings;
+      return { ...result, listings, metrics: computeHipstampMetrics(listings), visualFilter };
+    }),
+
+  // Fetch HIPStamp store-scoped closed listings explicitly marked sold — sandbox-only and read-only.
+  getHipstampSoldData: protectedProcedure
+    .input(z.object({
+      title: z.string(),
+      category: z.string(),
+      grade: z.string().optional(),
+      condition: z.string().optional(),
+      certificationCompany: z.string().optional(),
+      itemDetails: z.string().optional(),
+      itemType: z.string().optional(),
+      imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      if (input.category.trim().toLowerCase().replace(/[_-]+/g, ' ') !== 'stamps') {
+        return { query: input.title, listings: [], metrics: null, debug: { storesDiscovered: 0, storesQueried: 0, totalFetched: 0, afterIdentityFilter: 0, nonUsdListings: 0 }, visualFilter: null, error: 'HIPStamp sold listings are available only for Stamps items' };
+      }
+      const result = await lookupHipstampSoldListings(input);
+      if (result.error || result.listings.length === 0) return { ...result, visualFilter: null };
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'HIPStamp sold / closed listings',
         targetImageUrl: input.imageUrl,
         targetMetadata: `title=${input.title}; category=stamps; grade=${input.grade ?? 'unknown'}; catalog=${input.itemDetails ?? 'unknown'}`,
         listings: result.listings.map((listing) => ({ ...listing, imageUrl: listing.imageUrl })),
