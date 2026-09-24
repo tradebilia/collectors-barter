@@ -127,7 +127,7 @@ export function normalizeCgcComicsResponse(certNumber: string, certPayload: any,
     details: cert.details && typeof cert.details === 'object' ? cert.details : {},
     population: {
       gradeCounts: Array.isArray(gradeCounts) ? gradeCounts : [],
-      total: firstDefined(population.total, population.Total, population.total_graded, population.grade_total),
+      total: firstDefined(population.total, population.Total, population.total_graded, population.grade_total, population.totalGraded),
       raw: population,
     },
   };
