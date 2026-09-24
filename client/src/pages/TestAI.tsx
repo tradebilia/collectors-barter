@@ -44,12 +44,12 @@ const DATA_SOURCES = {
   },
   cgc: {
     id: 'cgc',
-    label: 'CGC',
+    label: 'Parse.bot CGC Comics',
     group: 'Grading',
     icon: '🏅',
     provides: ['item_details', 'cert_info', 'population_report'],
-    status: 'placeholder' as const,
-    description: 'Cert details, grade, label type, page quality, key comments, full pop report',
+    status: 'live' as const,
+    description: 'CGC Comics certificate verification, grade, label details, and population context — sandbox-only',
   },
   psa: {
     id: 'psa',

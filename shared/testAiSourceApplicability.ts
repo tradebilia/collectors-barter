@@ -32,7 +32,8 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
 function normalizeCategory(category: string): string { return category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '); }
 function certificateRequirementMet(requirement: SourceApplicability['requires'], company: string | null | undefined): boolean {
   if (!requirement || requirement === 'title') return true;
-  return requirement.replace(' certificate', '').toUpperCase() === (company ?? '').trim().toUpperCase();
+  const normalizedCompany = (company ?? '').trim().toUpperCase().replace(/\s+(COMICS|CARDS)$/, '');
+  return requirement.replace(' certificate', '').toUpperCase() === normalizedCompany;
 }
 
 export function getEligibleTestAiSources(context: SourceEligibilityContext): SourceApplicability[] {
