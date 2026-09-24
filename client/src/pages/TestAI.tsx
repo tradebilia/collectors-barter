@@ -1714,6 +1714,55 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   <span className="font-bold uppercase">Evidence warnings:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].join(' ')}
                 </div>
               )}
+              <div className="rounded border border-slate-700/60 bg-slate-950/50 p-2 space-y-2">
+                <div>
+                  <p className="text-slate-200 text-[10px] font-bold uppercase tracking-wide">Comparable audit · why each sale counted</p>
+                  <p className="text-gray-500 text-[9px] mt-0.5">Accepted sales influence the deterministic value. Rejected sales remain visible for review and never influence valuation.</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { label: 'Item A', profile: result.leftMarketProfile, color: 'cyan' },
+                    { label: 'Item B', profile: result.rightMarketProfile, color: 'amber' },
+                  ].map(({ label, profile, color }) => {
+                    const accepted = (profile.comparables ?? []).filter((comparable: any) => comparable.accepted);
+                    const rejected = (profile.comparables ?? []).filter((comparable: any) => !comparable.accepted);
+                    const checklist = [
+                      ['Identity', profile.itemIdentificationConfidence !== 'low'],
+                      ['Recent sales', profile.recentSaleCount > 0],
+                      ['Grade/condition', profile.gradeConditionConfidence !== 'low'],
+                      ['Stable range', profile.marketStability !== 'low'],
+                    ];
+                    return (
+                      <div key={label} className="rounded bg-gray-900/70 p-2 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
+                          <span className="text-gray-400 text-[9px]">{accepted.length} used · {rejected.length} excluded</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1">
+                          {checklist.map(([name, passed]) => (
+                            <span key={name as string} className={`rounded px-1.5 py-1 text-[9px] ${passed ? 'bg-emerald-950/50 text-emerald-300' : 'bg-orange-950/50 text-orange-300'}`}>
+                              {passed ? '✓' : '•'} {name as string}
+                            </span>
+                          ))}
+                        </div>
+                        {accepted.slice(0, 3).map((comparable: any) => (
+                          <div key={`accepted-${comparable.title}-${comparable.date}`} className="rounded border border-emerald-900/50 bg-emerald-950/20 px-2 py-1.5 text-[9px]">
+                            <p className="text-gray-200 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
+                            <p className="text-emerald-300/80 mt-0.5">Accepted · score {comparable.score} · {(comparable.reasons ?? []).join(' · ')}</p>
+                          </div>
+                        ))}
+                        {rejected.slice(0, 3).map((comparable: any) => (
+                          <div key={`rejected-${comparable.title}-${comparable.date}`} className="rounded border border-orange-900/50 bg-orange-950/20 px-2 py-1.5 text-[9px]">
+                            <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
+                            <p className="text-orange-300/80 mt-0.5">Excluded · {comparable.exclusionReason ?? 'insufficient comparable evidence'}</p>
+                          </div>
+                        ))}
+                        {!accepted.length && !rejected.length && <p className="text-gray-500 text-[9px]">No individual comparable records were returned.</p>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
           <VisionImpactPanel result={result} />

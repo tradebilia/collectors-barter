@@ -42,4 +42,12 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain('Visual Search Fields Used in This Analysis');
     expect(clientSource).toContain('useVisualFieldCompletion: useImageAnalyzer && useVisualFieldCompletion');
   });
+
+  it('shows comparable acceptance reasons and data-sufficiency checks in the sandbox result', () => {
+    expect(clientSource).toContain('Comparable audit · why each sale counted');
+    expect(clientSource).toContain('Accepted · score');
+    expect(clientSource).toContain('Excluded ·');
+    expect(clientSource).toContain("['Identity', profile.itemIdentificationConfidence !== 'low']");
+    expect(clientSource).toContain("['Recent sales', profile.recentSaleCount > 0]");
+  });
 });
