@@ -44,6 +44,20 @@ The evidence basis is labeled as one of:
 
 Per-item confidence is low by default, medium when there are at least four authoritative observations, and high when there are at least seven authoritative observations with a price spread below 80 percent. The overall confidence is lowered when any item lacks authoritative evidence.
 
+### Test AI sandbox: The Card API
+
+The **Test AI** sandbox has an additional, manually enabled source named **The Card API Sales** for **Sports Cards** and **Pokémon / TCG**. It is intentionally sandbox-only and does not change the production Trade Room analyzer.
+
+The bounded, read-only adapter preserves the provider response for review, including available sale records, price, currency, date, final-status signals, marketplace/platform, listing URL, catalog identity data, pagination and coverage metadata, quota metadata, and plan-gated-response notices. It separately shows whether provider catalog access is unavailable under the current plan rather than treating that limitation as a failed market lookup.
+
+The Card API can contribute a completed-sale observation **only** when all of the following are true:
+
+1. The response identifies an individually dated, confirmed final sale with a usable normalized price and currency.
+2. The record passes the sandbox's category-aware identity and grading checks.
+3. It passes recency, duplicate-sale, and visual-mismatch safeguards already applied to completed-sale evidence.
+
+Catalog data, active/unknown-status records, fast-settle or other provider caveats, incomplete identity matches, duplicate observations, and plan-gated fields remain explicitly labeled context. They cannot manufacture a deterministic value, confidence increase, or trade verdict.
+
 ## Values used in the decision
 
 The analyzer keeps two value views separate:

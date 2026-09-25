@@ -69,6 +69,15 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'Read-only Pokémon catalog, guide-price, history, eBay, Cardmarket, and plan-gated population context — sandbox-only; never changes Tradebilia valuation or verdicts',
   },
+  the_card_api: {
+    id: 'the_card_api',
+    label: 'The Card API Sales',
+    group: 'Marketplace',
+    icon: '📊',
+    provides: ['item_details', 'historic_prices', 'recent_sales'],
+    status: 'live' as const,
+    description: 'Read-only Sports Cards and Pokémon/TCG completed-sales research with plan-gated catalog identity — sandbox-only; confirmed records still pass Tradebilia comparable gates',
+  },
   cgc: {
     id: 'cgc',
     label: 'Parse.bot CGC Comics',
@@ -1222,6 +1231,51 @@ function PokemonPriceTrackerSection({ item, side, data, isLoading }: { item: Sel
   </div>;
 }
 
+function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const supported = item.category === 'sports_cards' || item.category === 'pokemon';
+  const sales = data?.sales ?? [];
+  const confirmedSales = sales.filter((sale: any) => sale.confirmed);
+  const contextOnlySales = sales.filter((sale: any) => !sale.confirmed);
+  const catalog = data?.catalog ?? null;
+  const catalogSelected = catalog?.selected ?? null;
+  const catalogCandidates = catalog?.candidates ?? [];
+  const visualFilter = data?.visualFilter;
+
+  if (!supported) return <div className="rounded-lg border border-dashed border-gray-700/40 bg-gray-800/30 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>📊 The Card API Sales</p><p className="text-[10px] text-gray-500">This read-only sandbox source is available only for Sports Cards and Pokémon/TCG items.</p></div>;
+
+  const SaleRows = ({ rows, contextOnly }: { rows: any[]; contextOnly?: boolean }) => <div className="max-h-56 space-y-1 overflow-y-auto">
+    {rows.map((sale: any) => <div key={sale.saleId || `${sale.title}-${sale.date}-${sale.price}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]">
+      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.marketplace, sale.listing_type, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${sale.confirmed ? 'text-emerald-400' : 'text-amber-300'}`}>{sale.confirmed ? 'Confirmed final price' : 'Fast-settle estimate — context only'}</p></div></div>
+      <p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}${sale.grade_qualifier ? ` ${sale.grade_qualifier}` : ''}` : null, sale.player, sale.manufacturer, sale.card_set, sale.card_number ? `#${sale.card_number}` : null, sale.year, sale.print_run ? `/${sale.print_run}` : null].filter(Boolean).join(' · ') || 'No structured card identity was returned for this sale.'}</p>
+      <p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p>
+      <details className="mt-1"><summary className="cursor-pointer text-[9px] text-sky-200">All returned sale fields</summary><pre className="mt-1 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-900/70 p-1.5 text-[8px] text-gray-400">{JSON.stringify(sale, null, 2)}</pre></details>
+    </div>)}
+  </div>;
+
+  return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3">
+    <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>📊 The Card API Sales</p>{isLoading && <Spinner className="h-3 w-3" />}</div>
+    <p className="text-[10px] text-gray-500">Read-only completed-sale research. Only individually dated, confirmed final prices that also pass the existing exact/near identity, grading, recency, duplicate, and currency gates may support a sandbox value. Provider catalog data, unconfirmed fast-settle prices, and platform price caveats remain context.</p>
+    {data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}
+    {data?.status === 'error' && !data?.messages?.length && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-300">The Card API lookup could not be completed.</p>}
+    {visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/25 p-2 text-[10px] text-cyan-100">{visualFilter.note}</p>}
+    {data?.pagination && <p className="text-[9px] text-gray-500">Returned {sales.length} of {data.pagination.total ?? '?'} matching sales · Coverage {data.metadata?.coverage_date_from || 'unknown'} to {data.metadata?.coverage_date_to || 'unknown'} · Sales allowance {data.audit?.sales?.dailyRemaining ?? 'unknown'} remaining / {data.audit?.sales?.dailyLimit ?? 'unknown'}.</p>}
+    {confirmedSales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Confirmed sale records — subject to comparable gate</p><SaleRows rows={confirmedSales} /></div>}
+    {contextOnlySales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Unconfirmed fast-settle records — context only</p><SaleRows rows={contextOnlySales} contextOnly /></div>}
+    {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">No sales were returned for this bounded provider query.</p>}
+    <div className="rounded border border-violet-700/25 bg-violet-950/15 p-2 space-y-2"><p className="text-[9px] font-semibold uppercase text-violet-200">Plan-gated catalog identity — factual context only</p>
+      {catalog?.status === 'unavailable_for_plan' && <p className="text-[10px] text-amber-200">{catalog.message}</p>}
+      {catalog?.status === 'error' && <p className="text-[10px] text-red-300">{catalog.message}</p>}
+      {catalogSelected && <div className="rounded bg-gray-900/50 p-2"><p className="text-[10px] font-semibold text-emerald-200">Exact catalog identity candidate</p><PokemonProviderFieldGrid fields={[
+        ['UCID', catalogSelected.candidate?.ucid], ['Set ID', catalogSelected.candidate?.set_usid], ['Set', catalogSelected.candidate?.set_name], ['Parent set', catalogSelected.candidate?.parent_set_name], ['Subject', catalogSelected.candidate?.subject], ['Card #', catalogSelected.candidate?.card_number], ['Rookie', catalogSelected.candidate?.is_rookie], ['Auto', catalogSelected.candidate?.is_auto], ['Print run', catalogSelected.candidate?.print_run], ['Match fields', catalogSelected.matched],
+      ]} /></div>}
+      {catalogCandidates.length > 0 && <details><summary className="cursor-pointer text-[10px] font-semibold text-violet-100">Catalog candidates ({catalogCandidates.length}) — identity review</summary><div className="mt-2 space-y-1">{catalogCandidates.map((candidate: any) => <div key={candidate.candidate?.ucid || candidate.candidate?.id} className={`rounded p-1.5 text-[9px] ${candidate.exactIdentity ? 'bg-emerald-950/30 text-emerald-100' : 'bg-gray-900/50 text-gray-300'}`}><p className="font-semibold">{candidate.candidate?.subject || 'Unnamed card'} · {candidate.candidate?.set_name || 'Set unavailable'} · #{candidate.candidate?.card_number || '?'}</p><p className="mt-0.5 text-gray-400">Score {candidate.score} · {candidate.exactIdentity ? 'Exact identity gate passed' : `Matched ${candidate.matched?.join(', ') || 'no identifiers'}`}</p></div>)}</div></details>}
+      {!catalogSelected && catalog?.status === 'available' && <p className="text-[10px] text-gray-400">No catalog candidate passed the strict identity gate; catalog fields were not treated as confirmation.</p>}
+    </div>
+    <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details>
+  </div>;
+}
+
 function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.get130PointData.useQuery(
@@ -1483,7 +1537,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, oneThirtyPointData, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, oneThirtyPointData, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -1493,6 +1547,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   hipstampData: any;
   hipstampSoldData: any;
   pokemonPriceTrackerData: any;
+  theCardApiData: any;
   oneThirtyPointData: any;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -1556,6 +1611,20 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
     if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
     if (enabledSources.has('pokemon_price_tracker')) add({ id: 'pokemon_price_tracker', label: 'Pokémon Price Tracker', kind: 'reference', status: evidenceStatus(pokemonPriceTrackerData), fields: { cardName: pokemonPriceTrackerData?.detail?.name ?? pokemonPriceTrackerData?.selected?.card?.name, set: pokemonPriceTrackerData?.detail?.setName ?? pokemonPriceTrackerData?.selected?.card?.setName, cardNumber: pokemonPriceTrackerData?.detail?.cardNumber ?? pokemonPriceTrackerData?.selected?.card?.cardNumber, variant: pokemonPriceTrackerData?.detail?.prices?.primaryPrinting ?? pokemonPriceTrackerData?.selected?.card?.prices?.primaryPrinting }, message: pokemonPriceTrackerData?.messages?.join(' ') ?? null });
+    if (enabledSources.has('the_card_api')) {
+      const sales = theCardApiData?.sales ?? [];
+      const confirmedRecent = sales.filter((sale: any) => sale.confirmed && sale.recency === 'recent').length;
+      add({
+        id: 'the_card_api',
+        label: 'The Card API Sales',
+        kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical',
+        role: confirmedRecent > 0 ? 'valuation_candidate' : 'historical_context',
+        status: evidenceStatus(theCardApiData),
+        market: { completedSaleCount: confirmedRecent, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
+        fields: { subject: theCardApiData?.catalog?.selected?.candidate?.subject, set: theCardApiData?.catalog?.selected?.candidate?.set_name, cardNumber: theCardApiData?.catalog?.selected?.candidate?.card_number, catalogId: theCardApiData?.catalog?.selected?.candidate?.ucid },
+        message: theCardApiData?.messages?.join(' ') ?? null,
+      });
+    }
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];
@@ -1590,7 +1659,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
     if (enabledSources.has('pcgs')) add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -1803,7 +1872,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -1814,6 +1883,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightSoldCompsData?: any;
   leftHipstampData?: any;
   rightHipstampData?: any;
+  leftTheCardApiData?: any;
+  rightTheCardApiData?: any;
   leftHistoricalTrendData?: any;
   rightHistoricalTrendData?: any;
   leftEvidenceSummary?: NormalizedEvidenceSummary | null;
@@ -1840,6 +1911,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const rightHasHipstamp = rightSources.has('hipstamp');
   const leftHasSoldComps = leftSources.has('sold_comps');
   const rightHasSoldComps = rightSources.has('sold_comps');
+  const leftHasTheCardApi = leftSources.has('the_card_api');
+  const rightHasTheCardApi = rightSources.has('the_card_api');
   const leftHas130Point = leftSources.has('one_thirty_point');
   const rightHas130Point = rightSources.has('one_thirty_point');
 
@@ -1855,8 +1928,14 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHipstampMetrics: rightHasHipstamp ? (rightHipstampData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
-      leftHistoricalTrendSales: leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : [],
-      rightHistoricalTrendSales: rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : [],
+      leftHistoricalTrendSales: [
+        ...(leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : []),
+        ...(leftHasTheCardApi ? (leftTheCardApiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'the_card_api', saleStatus: sale.saleStatus ?? (sale.confirmed ? 'completed' : 'unknown') })) : []),
+      ],
+      rightHistoricalTrendSales: [
+        ...(rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : []),
+        ...(rightHasTheCardApi ? (rightTheCardApiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'the_card_api', saleStatus: sale.saleStatus ?? (sale.confirmed ? 'completed' : 'unknown') })) : []),
+      ],
       leftEvidenceSummary: leftEvidenceSummary ?? undefined,
       rightEvidenceSummary: rightEvidenceSummary ?? undefined,
       marketNews: marketNewsQuery.data ? {
@@ -2550,7 +2629,7 @@ function PayPalComparisonInspector() {
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -2561,6 +2640,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
   hipstampSoldData: any;
   pokemonPriceTrackerData: any;
   pokemonPriceTrackerLoading: boolean;
+  theCardApiData: any;
+  theCardApiLoading: boolean;
   oneThirtyPointData: any;
   onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -2587,7 +2668,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} />
@@ -2599,6 +2680,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
       {enabledSources.has('hipstamp') && <HipstampSection item={queryItem} side={side} />}
       {enabledSources.has('hipstamp_sold') && <HipstampSoldSection item={queryItem} side={side} />}
       {enabledSources.has('pokemon_price_tracker') && <PokemonPriceTrackerSection item={item} side={side} data={pokemonPriceTrackerData} isLoading={pokemonPriceTrackerLoading} />}
+      {enabledSources.has('the_card_api') && <TheCardApiSection item={item} side={side} data={theCardApiData} isLoading={theCardApiLoading} />}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
           ? <SoldCompsSection item={queryItem} side={side} />
@@ -2779,6 +2861,14 @@ export default function TestAI() {
     rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade ?? undefined, condition: rightItem.condition ?? undefined, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails ?? undefined } : { title: '', category: 'unknown' },
     { enabled: !!rightItem && rightSources.has('pokemon_price_tracker') }
   );
+  const leftTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    { enabled: !!leftSearchItem && leftSources.has('the_card_api') }
+  );
+  const rightTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    { enabled: !!rightSearchItem && rightSources.has('the_card_api') }
+  );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
@@ -2835,8 +2925,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
           </div>
         )}
 
@@ -2856,6 +2946,8 @@ export default function TestAI() {
              rightSoldCompsData={rightSoldCompsQuery.data}
              leftHipstampData={leftHipstampQuery.data}
              rightHipstampData={rightHipstampQuery.data}
+             leftTheCardApiData={leftTheCardApiQuery.data}
+             rightTheCardApiData={rightTheCardApiQuery.data}
              leftHistoricalTrendData={left130PointQuery.data}
              rightHistoricalTrendData={right130PointQuery.data}
              leftEvidenceSummary={leftEvidenceSummary}
@@ -2885,7 +2977,7 @@ export default function TestAI() {
                   </span>
                 ))}
               </div>
-              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence. Pokémon Price Tracker is live for Pokémon/TCG items and is manually enabled; its catalog, guide-price, history, eBay, Cardmarket, and plan-gated population fields remain source-attributed context and never change the Tradebilia trade verdict.</p>
+              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence. Pokémon Price Tracker is live for Pokémon/TCG items and is manually enabled; its catalog, guide-price, history, eBay, Cardmarket, and plan-gated population fields remain source-attributed context and never change the Tradebilia trade verdict. The Card API Sales is live for Sports Cards and Pokémon/TCG: only confirmed, dated records that pass Tradebilia’s identity, grading, recency, duplicate, and currency checks can support sandbox valuation.</p>
             </div>
           </div>
         )}

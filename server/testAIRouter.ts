@@ -30,6 +30,7 @@ import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldR
 import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
+import { lookupTheCardApi } from './theCardApi';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -829,6 +830,32 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupPokemonPriceTracker(input);
+    }),
+
+  // The Card API completed sales and plan-gated catalog identity — sandbox-only and read-only.
+  // Returned records must still pass the comparable engine's completed-sale, identity, grade,
+  // recency, duplicate, and currency safeguards before any deterministic valuation use.
+  getTheCardApiData: protectedProcedure
+    .input(z.object({
+      title: z.string(),
+      category: z.string(),
+      grade: z.string().nullish(),
+      condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(),
+      itemDetails: z.string().nullish(),
+      imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const result = await lookupTheCardApi(input);
+      if (!result.sales.length) return result;
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'The Card API completed sales',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        listings: result.sales,
+      });
+      return { ...result, sales: visualFilter.listings, visualFilter };
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API

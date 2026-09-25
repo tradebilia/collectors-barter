@@ -59,4 +59,14 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain("id: 'pokemon_price_tracker', label: 'Pokémon Price Tracker', kind: 'reference'");
     expect(clientSource).toContain('do not alter Tradebilia valuation, confidence, or trade verdicts');
   });
+
+  it('routes The Card API records through the existing completed-sale evidence safeguards', () => {
+    expect(routerSource).toContain('getTheCardApiData: protectedProcedure');
+    expect(routerSource).toContain('return { ...result, sales: visualFilter.listings, visualFilter }');
+    expect(clientSource).toContain("id: 'the_card_api',");
+    expect(clientSource).toContain("label: 'The Card API Sales'");
+    expect(clientSource).toContain("kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical'");
+    expect(clientSource).toContain("sourceId: sale.sourceId ?? 'the_card_api'");
+    expect(clientSource).toContain('Only individually dated, confirmed final prices that also pass the existing exact/near identity, grading, recency, duplicate, and currency gates may support a sandbox value.');
+  });
 });

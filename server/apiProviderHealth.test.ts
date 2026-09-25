@@ -14,7 +14,7 @@ describe("Admin API provider health registry", () => {
     expect(new Set(overview.map((provider) => provider.id)).size).toBe(API_PROVIDER_IDS.length);
     expect(overview.map((provider) => provider.id)).toEqual(expect.arrayContaining([
       "manus_forge", "manus_oauth", "openai_direct_reserved", "psa_direct_reserved", "gocollect_reserved",
-      "ebay", "sold_comps", "parse_bot", "pcgs", "hipstamp", "pokemon_price_tracker",
+      "ebay", "sold_comps", "parse_bot", "pcgs", "hipstamp", "pokemon_price_tracker", "the_card_api",
       "market_news_rss", "rawg", "igdb", "discogs", "smithsonian", "tcgdex", "wikidata",
       "usps", "ups", "fedex", "dhl", "cloudflare_r2_media", "cloudflare_r2_static",
       "facebook_oauth", "linkedin_oauth", "etsy_oauth",
@@ -81,6 +81,17 @@ describe("Admin API provider health registry", () => {
     expect(result).toMatchObject({ status: "working", httpStatus: 200, recordsVerified: 1 });
     expect(result.message).not.toContain("short-lived-test-token");
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("runs a bounded The Card API completed-sales probe without exposing its credential", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: [{ id: "sample-sale" }] }), { status: 200 }));
+    const result = await runApiProviderHealthCheck("the_card_api", {
+      env: { THE_CARD_API_KEY: "configured-without-disclosure" },
+      fetchImpl: fetchImpl as any,
+    });
+    expect(result).toMatchObject({ status: "working", httpStatus: 200, recordsVerified: 1 });
+    expect(result.message).not.toContain("configured-without-disclosure");
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toContain("/api/v1/market/sales?");
   });
 
   it("returns an actionable but credential-safe failure message for rejected and unreachable provider tests", async () => {

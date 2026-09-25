@@ -4,7 +4,7 @@ import { getEligibleTestAiSources } from '../shared/testAiSourceApplicability';
 describe('internal Test AI source-category applicability policy', () => {
   it('limits grading and marketplace sources to valid categories and certificate prerequisites', () => {
     const ids = getEligibleTestAiSources({ category: 'sports_cards', gradingCompany: 'PSA', hasTitle: true }).map((source) => source.sourceId);
-    expect(ids).toEqual(expect.arrayContaining(['ebay_active', 'sold_comps', 'psa', 'one_thirty_point', 'pwcc']));
+    expect(ids).toEqual(expect.arrayContaining(['ebay_active', 'sold_comps', 'psa', 'one_thirty_point', 'pwcc', 'the_card_api']));
     expect(ids).not.toContain('pcgs');
     expect(ids).not.toContain('smithsonian');
   });
@@ -18,7 +18,9 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(videoGameIds).not.toContain('tcgdex');
     const pokemonIds = getEligibleTestAiSources({ category: 'pokemon', hasTitle: true }).map((source) => source.sourceId);
     expect(pokemonIds).toContain('pokemon_price_tracker');
+    expect(pokemonIds).toContain('the_card_api');
     expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).not.toContain('pokemon_price_tracker');
+    expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).not.toContain('the_card_api');
   });
 
   it('enables Discogs only for titled Music items', () => {

@@ -14,6 +14,7 @@ export const API_PROVIDER_IDS = [
   "pcgs",
   "hipstamp",
   "pokemon_price_tracker",
+  "the_card_api",
   "market_news_rss",
   "rawg",
   "igdb",
@@ -216,6 +217,14 @@ async function probePokemonPriceTracker({ env, fetchImpl }: ProbeContext): Promi
   return { message: "Card catalog returned a bounded Pokémon/TCG sample.", httpStatus: response.response.status, recordsVerified: recordCount(response.payload) };
 }
 
+async function probeTheCardApi({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
+  const response = await requestJson(fetchImpl, "https://thecardapi.com/api/v1/market/sales?q=charizard&category=tcg&limit=1", {
+    headers: { Accept: "application/json", "x-market-api-key": env.THE_CARD_API_KEY! },
+  });
+  requireResponse(response.response, "The Card API");
+  return { message: "Completed-sales endpoint returned a bounded read-only card-market response.", httpStatus: response.response.status, recordsVerified: recordCount(response.payload) };
+}
+
 async function probeMarketNews({ fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
   const representatives = [...new Map(getMarketNewsFeedRegistry().map((feed) => [feed.category, feed])).values()];
   const outcomes = await Promise.all(representatives.map(async (feed) => {
@@ -404,6 +413,7 @@ const PROVIDERS: ApiProviderDefinition[] = [
   { id: "pcgs", name: "PCGS CoinFacts", group: "Market data", description: "Coin certification, population, and price-guide context.", testMode: "credential", configured: (env) => configured(env, "PCGS_API_TOKEN"), check: probePcgs },
   { id: "hipstamp", name: "HIPStamp", group: "Market data", description: "Stamp active listings and store-scoped sold/closed reference data.", testMode: "data", configured: (env) => configured(env, "HIPSTAMP_API_KEY"), check: probeHipstamp },
   { id: "pokemon_price_tracker", name: "Pokémon Price Tracker", group: "Market data", description: "Pokémon identity, market, history, and plan-gated population context in Test AI.", testMode: "data", configured: (env) => configured(env, "POKEMON_PRICE_TRACKER_API_KEY"), check: probePokemonPriceTracker },
+  { id: "the_card_api", name: "The Card API", group: "Market data", description: "Sports-card and Pokémon/TCG completed-sale research plus plan-gated catalog identity in Test AI.", testMode: "data", configured: (env) => configured(env, "THE_CARD_API_KEY"), check: probeTheCardApi },
   { id: "market_news_rss", name: "Market news RSS registry", group: "Market data", description: "140 category-specific RSS/Atom feeds used as contextual market news, not valuation evidence.", testMode: "data", configured: () => true, check: probeMarketNews },
   { id: "rawg", name: "RAWG", group: "Catalog reference", description: "Video-game factual catalog metadata.", testMode: "data", configured: (env) => configured(env, "RAWG_API_KEY"), check: probeRawg },
   { id: "igdb", name: "IGDB / Twitch", group: "Catalog reference", description: "Video-game release, platform, publisher, and genre facts.", testMode: "data", configured: (env) => configured(env, "TWITCH_CLIENT_ID", "TWITCH_CLIENT_SECRET"), check: probeIgdb },
