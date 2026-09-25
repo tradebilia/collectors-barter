@@ -70,12 +70,21 @@ export type ApiProviderHealthRow = {
   testMode: ApiProviderTestMode;
   configured: boolean;
   canTest: boolean;
+  canTestInBatch: boolean;
   status: ApiProviderHealthStatus;
   message: string;
   checkedAt: string | null;
   httpStatus: number | null;
   failureClass: ApiFailureClass | null;
   recordsVerified: number | null;
+};
+
+export type ApiProviderBatchHealthResult = {
+  results: ApiProviderHealthRow[];
+  testedProviderIds: ApiProviderId[];
+  skippedAccountConnectionProviderIds: ApiProviderId[];
+  skippedNotConfiguredProviderIds: ApiProviderId[];
+  skippedInactiveProviderIds: ApiProviderId[];
 };
 
 type ProbeContext = { env: ProviderEnv; fetchImpl: FetchLike };
@@ -130,6 +139,22 @@ async function requestJson(fetchImpl: FetchLike, url: string, init: RequestInit 
 
 function requireResponse(response: Response, provider: string) {
   if (!response.ok) throw new ProviderHttpError(response.status, provider);
+}
+
+function safeProbeFailureMessage(status: number | null): string {
+  if (status === 401 || status === 403) {
+    return `Read-only provider test was rejected by the provider (HTTP ${status}). Verify the secured credential configuration. No provider data was changed.`;
+  }
+  if (status === 429) {
+    return "Read-only provider test reached the provider rate limit. Try the individual test again shortly; no provider data was changed.";
+  }
+  if (status && status >= 500) {
+    return `Read-only provider test reached a provider service error (HTTP ${status}). Retry the individual test later; no provider data was changed.`;
+  }
+  if (status) {
+    return `Read-only provider test received HTTP ${status}. Verify the provider configuration and retry the individual test; no provider data was changed.`;
+  }
+  return "Read-only provider test could not reach or complete a response. Verify provider availability and the secured credential configuration, then retry the individual test; no provider data was changed.";
 }
 
 async function probeEbay({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
@@ -414,23 +439,30 @@ function configurationMessage(definition: ApiProviderDefinition, isConfigured: b
 function healthRow(definition: ApiProviderDefinition, env: ProviderEnv): ApiProviderHealthRow {
   const isConfigured = definition.configured(env);
   const cached = healthCache.get(definition.id);
+  const canTestInBatch = isConfigured && definition.testMode !== "not_active" && !definition.requiresAccountConnection && Boolean(definition.check);
   if (!isConfigured) {
-    return { ...definition, configured: false, canTest: false, status: "not_configured", message: configurationMessage(definition, false), checkedAt: null, httpStatus: null, failureClass: "configuration", recordsVerified: null };
+    return { ...definition, configured: false, canTest: false, canTestInBatch: false, status: "not_configured", message: configurationMessage(definition, false), checkedAt: null, httpStatus: null, failureClass: "configuration", recordsVerified: null };
   }
   if (definition.testMode === "not_active") {
-    return { ...definition, configured: true, canTest: false, status: "not_active", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
+    return { ...definition, configured: true, canTest: false, canTestInBatch: false, status: "not_active", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
   }
   if (cached) {
-    return { ...definition, configured: true, canTest: true, status: cached.status, message: cached.message, checkedAt: cached.checkedAt, httpStatus: cached.httpStatus, failureClass: cached.failureClass, recordsVerified: cached.recordsVerified };
+    return { ...definition, configured: true, canTest: true, canTestInBatch, status: cached.status, message: cached.message, checkedAt: cached.checkedAt, httpStatus: cached.httpStatus, failureClass: cached.failureClass, recordsVerified: cached.recordsVerified };
   }
   if (definition.requiresAccountConnection) {
-    return { ...definition, configured: true, canTest: true, status: "requires_account_connection", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
+    return { ...definition, configured: true, canTest: true, canTestInBatch: false, status: "requires_account_connection", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
   }
-  return { ...definition, configured: true, canTest: true, status: "ready_to_test", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
+  return { ...definition, configured: true, canTest: true, canTestInBatch, status: "ready_to_test", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
 }
 
 export function getApiProviderHealthOverview(env: ProviderEnv = process.env): ApiProviderHealthRow[] {
   return PROVIDERS.map((definition) => healthRow(definition, env));
+}
+
+export function getBatchEligibleApiProviderIds(env: ProviderEnv = process.env): ApiProviderId[] {
+  return PROVIDERS
+    .filter((definition) => definition.configured(env) && definition.testMode !== "not_active" && !definition.requiresAccountConnection && Boolean(definition.check))
+    .map((definition) => definition.id);
 }
 
 export async function runApiProviderHealthCheck(providerId: ApiProviderId, options: { env?: ProviderEnv; fetchImpl?: FetchLike } = {}): Promise<ApiProviderHealthRow> {
@@ -467,7 +499,7 @@ export async function runApiProviderHealthCheck(providerId: ApiProviderId, optio
     const message = error instanceof Error ? error.message : "Provider health test did not complete.";
     healthCache.set(providerId, {
       status: "failed",
-      message: status ? `Read-only provider test failed with HTTP ${status}. No provider data was changed.` : "Read-only provider test could not complete. No provider data was changed.",
+      message: safeProbeFailureMessage(status),
       checkedAt,
       httpStatus: status,
       failureClass: classifyApiFailure({ statusCode: status, message }),
@@ -475,4 +507,43 @@ export async function runApiProviderHealthCheck(providerId: ApiProviderId, optio
     });
   }
   return healthRow(definition, env);
+}
+
+/**
+ * Runs every configured, active, non-member-linked provider check. A small pool
+ * avoids turning one admin click into a burst of requests against one provider.
+ */
+export async function runAllEligibleApiProviderHealthChecks(options: { env?: ProviderEnv; fetchImpl?: FetchLike; concurrency?: number } = {}): Promise<ApiProviderBatchHealthResult> {
+  const env = options.env ?? process.env;
+  const eligibleProviderIds = getBatchEligibleApiProviderIds(env);
+  const skippedAccountConnectionProviderIds = PROVIDERS
+    .filter((definition) => definition.configured(env) && definition.requiresAccountConnection)
+    .map((definition) => definition.id);
+  const skippedNotConfiguredProviderIds = PROVIDERS
+    .filter((definition) => !definition.configured(env))
+    .map((definition) => definition.id);
+  const skippedInactiveProviderIds = PROVIDERS
+    .filter((definition) => definition.configured(env) && definition.testMode === "not_active")
+    .map((definition) => definition.id);
+
+  const results: ApiProviderHealthRow[] = new Array(eligibleProviderIds.length);
+  const concurrency = Math.max(1, Math.min(options.concurrency ?? 4, eligibleProviderIds.length || 1));
+  let nextIndex = 0;
+
+  await Promise.all(Array.from({ length: concurrency }, async () => {
+    while (nextIndex < eligibleProviderIds.length) {
+      const index = nextIndex++;
+      const providerId = eligibleProviderIds[index];
+      if (!providerId) continue;
+      results[index] = await runApiProviderHealthCheck(providerId, { env, fetchImpl: options.fetchImpl });
+    }
+  }));
+
+  return {
+    results,
+    testedProviderIds: eligibleProviderIds,
+    skippedAccountConnectionProviderIds,
+    skippedNotConfiguredProviderIds,
+    skippedInactiveProviderIds,
+  };
 }

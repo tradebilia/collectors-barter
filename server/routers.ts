@@ -143,7 +143,7 @@ import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { isLaunchUpdateRequestAllowed, normalizeLaunchUpdateEmail } from "./launchUpdatesRateLimit";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
-import { API_PROVIDER_IDS, getApiProviderHealthOverview, runApiProviderHealthCheck } from "./apiProviderHealth";
+import { API_PROVIDER_IDS, getApiProviderHealthOverview, runAllEligibleApiProviderHealthChecks, runApiProviderHealthCheck } from "./apiProviderHealth";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
@@ -3390,6 +3390,22 @@ export const appRouter = router({
           targetType: 'api_provider',
           targetReference: result.id,
           summary: `Read-only API health test: ${result.name} — ${result.status}`,
+        });
+        return result;
+      }),
+    testAllApiProviders: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const result = await runAllEligibleApiProviderHealthChecks();
+        const db = await requireDb();
+        const workingCount = result.results.filter((provider) => provider.status === 'working').length;
+        const failedCount = result.results.filter((provider) => provider.status === 'failed').length;
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'api_provider_health_tested_all',
+          targetType: 'api_provider',
+          targetReference: `eligible-batch:${result.testedProviderIds.length}`,
+          summary: `Read-only API health batch: ${workingCount} working, ${failedCount} failed, ${result.skippedAccountConnectionProviderIds.length} account-linked skipped`,
         });
         return result;
       }),

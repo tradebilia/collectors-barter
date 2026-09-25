@@ -624,6 +624,16 @@ export default function AdminDashboard() {
     },
     onError: (error) => toast.error(error.message),
   });
+  const testAllApiProvidersMutation = trpc.admin.testAllApiProviders.useMutation({
+    onSuccess: (result) => {
+      apiProviderHealthQuery.refetch();
+      const workingCount = result.results.filter((provider) => provider.status === 'working').length;
+      const failedCount = result.results.filter((provider) => provider.status === 'failed').length;
+      const summary = `Checked ${result.testedProviderIds.length} eligible connection${result.testedProviderIds.length === 1 ? '' : 's'}: ${workingCount} working${failedCount ? `, ${failedCount} failed` : ''}. Skipped ${result.skippedAccountConnectionProviderIds.length} account-linked connection${result.skippedAccountConnectionProviderIds.length === 1 ? '' : 's'}.`;
+      toast[failedCount ? 'error' : 'success'](summary);
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const [selectedApiHealthEventIds, setSelectedApiHealthEventIds] = useState<Set<number>>(new Set());
   const [apiHealthClearConfirmOpen, setApiHealthClearConfirmOpen] = useState(false);
   const clearApiHealthEventsMutation = trpc.admin.clearApiHealthEvents.useMutation({
@@ -1802,13 +1812,17 @@ export default function AdminDashboard() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <CardTitle>Provider Connection Health</CardTitle>
-                    <CardDescription>Every configured and available external provider is listed below. Each test is read-only, credential-safe, and individually triggered; no email, SMS, payment, listing, profile, or shipment data is changed.</CardDescription>
+                    <CardDescription>Every configured and available external provider is listed below. Each test is read-only and credential-safe; no email, SMS, payment, listing, profile, or shipment data is changed.</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => apiProviderHealthQuery.refetch()} disabled={apiProviderHealthQuery.isFetching}>Refresh status</Button>
+                  <div className="flex flex-wrap gap-2">
+                    <Button variant="outline" size="sm" onClick={() => apiProviderHealthQuery.refetch()} disabled={apiProviderHealthQuery.isFetching || testAllApiProvidersMutation.isPending}>Refresh status</Button>
+                    <Button size="sm" onClick={() => testAllApiProvidersMutation.mutate()} disabled={testAllApiProvidersMutation.isPending || testApiProviderMutation.isPending || !((apiProviderHealthQuery.data ?? []).some((provider: any) => provider.canTestInBatch))}>{testAllApiProvidersMutation.isPending ? 'Testing all eligible…' : 'Test all eligible connections'}</Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {apiProviderHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading provider connections…</p> : <div className="space-y-6">
+                  <p className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">The batch test checks configured, active providers with read-only health probes. It skips providers that require a member account connection, as well as inactive or unconfigured integrations. Individual buttons remain available for a targeted retest or setup check.</p>
                   {Object.entries((apiProviderHealthQuery.data ?? []).reduce((groups: Record<string, any[]>, provider: any) => {
                     (groups[provider.group] ??= []).push(provider);
                     return groups;
@@ -1823,7 +1837,7 @@ export default function AdminDashboard() {
                               <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{provider.name}</p><ApiProviderStatusBadge status={provider.status} /></div>
                               <p className="mt-1 text-sm text-muted-foreground">{provider.description}</p>
                             </div>
-                            {provider.canTest ? <Button size="sm" variant="outline" onClick={() => testApiProviderMutation.mutate({ providerId: provider.id })} disabled={thisTestIsRunning}>{thisTestIsRunning ? "Testing…" : provider.testMode === "configuration" ? "Check setup" : "Test connection"}</Button> : <Button size="sm" variant="outline" disabled>{provider.testMode === "not_active" ? "Not active" : "Setup required"}</Button>}
+                            {provider.canTest ? <Button size="sm" variant="outline" onClick={() => testApiProviderMutation.mutate({ providerId: provider.id })} disabled={thisTestIsRunning || testAllApiProvidersMutation.isPending}>{thisTestIsRunning ? "Testing…" : provider.testMode === "configuration" ? "Check setup" : "Test connection"}</Button> : <Button size="sm" variant="outline" disabled>{provider.testMode === "not_active" ? "Not active" : "Setup required"}</Button>}
                           </div>
                           <div className="mt-3 rounded-md bg-muted/50 p-3 text-xs">
                             <p>{provider.message}</p>
