@@ -58,6 +58,16 @@ The Card API can contribute a completed-sale observation **only** when all of th
 
 Catalog data, active/unknown-status records, fast-settle or other provider caveats, incomplete identity matches, duplicate observations, and plan-gated fields remain explicitly labeled context. They cannot manufacture a deterministic value, confidence increase, or trade verdict.
 
+### Test AI sandbox: Cardsight.ai
+
+The **Test AI** sandbox also has a manually enabled, read-only **Cardsight.ai Market Data** source for **Sports Cards** and **Pokémon / TCG**. It is sandbox-only and does not change the production Trade Room analyzer.
+
+The adapter obtains a bounded catalog candidate set first, then requires an exact subject plus the available set/release and card-number identity. If a listing declares a parallel or variant, it must resolve to the exact Cardsight.ai parallel before any pricing, active-market, or population request is made. For graded listings, returned records are limited to the exact grading-company and grade partition; grade data is never blended across graders or grades.
+
+The panel preserves all provider-returned catalog-detail fields, attributes, custom fields, parallel information, dated bid/ask history, active marketplace rows, price/URL/image fields, provider messages, population totals, grade breakdowns, grading-company freshness, and raw response payloads for administrator review.
+
+Only a dated **auction** record is labeled a possible completed-sale observation. It still must pass Tradebilia's exact/near identity, grading, date/recency, duplicate, currency, and conservative visual-mismatch gates before it can contribute to sandbox valuation. Fixed-price records, active listings, catalog fields, population data, unresolved candidates, unresolved parallels, and provider warnings remain source-attributed context and cannot independently increase confidence or create a deterministic trade verdict.
+
 ## Values used in the decision
 
 The analyzer keeps two value views separate:

@@ -31,6 +31,7 @@ import { filterVisualSourceCandidates, visualSourceCandidateImage } from './test
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
+import { lookupCardsightAi } from './cardsightAi';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -851,6 +852,33 @@ export const testAIRouter = router({
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'The Card API completed sales',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        listings: result.sales,
+      });
+      return { ...result, sales: visualFilter.listings, visualFilter };
+    }),
+
+  // Cardsight.ai catalog, population, completed-auction, and active-market context.
+  // This is sandbox-only and read-only. Pricing is requested only after exact card and
+  // declared-parallel matching; fixed listings remain context-only, while auction data
+  // must additionally pass the shared comparable engine before valuation use.
+  getCardsightAiData: protectedProcedure
+    .input(z.object({
+      title: z.string(),
+      category: z.string(),
+      grade: z.string().nullish(),
+      condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(),
+      itemDetails: z.string().nullish(),
+      imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const result = await lookupCardsightAi(input);
+      if (!result.sales.length || !input.imageUrl) return { ...result, visualFilter: null };
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Cardsight.ai auction-price records',
         targetImageUrl: input.imageUrl,
         targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
         listings: result.sales,

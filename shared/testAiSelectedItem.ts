@@ -34,6 +34,21 @@ export function normalizeTestAiSelectedItem<T extends TestAiSelectedItemInput>(i
   const storedYear = validYear(details.year) || validYear(details.releaseYear) || validYear(details.manufactureYear);
   const currentYear = titleYear || storedYear;
   if (currentYear) details.year = currentYear;
+  // Selected listings can carry these as top-level normalized fields while their
+  // historical itemDetails JSON is incomplete. Preserve them as supplemental
+  // search identity only; this never changes the stored inventory record.
+  if (!firstText(details.setName, details.cardSet, details.set)) {
+    const setName = firstText(item.setName, item.cardSet, item.set, item.series, item.releaseName);
+    if (setName) details.setName = setName;
+  }
+  if (!firstText(details.cardNumber, details.cardNo, details.number)) {
+    const cardNumber = firstText(item.cardNumber, item.cardNo, item.number);
+    if (cardNumber) details.cardNumber = cardNumber;
+  }
+  if (!firstText(details.variant, details.parallel, details.printing, details.edition, details.finish)) {
+    const variant = firstText(item.variant, item.parallel, item.printing, item.edition, item.finish);
+    if (variant) details.variant = variant;
+  }
   const certId = firstText(item.certId, item.certNumber, item.certificationNumber, item.certificateNumber, details.certId, details.certNumber, details.certificationNumber, details.certificateNumber);
   const gradingCompany = firstText(item.certificationCompany, item.gradingCompany, details.certificationCompany, details.gradingCompany, details.customGradingCompany);
 

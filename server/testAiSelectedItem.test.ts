@@ -37,4 +37,19 @@ describe('Test AI selected item year normalization', () => {
     expect(normalized.year).toBeUndefined();
     expect(JSON.parse(normalized.itemDetails).year).toBe('0');
   });
+
+  it('preserves top-level card set, number, and variant fields for source identity lookups without changing the listing', () => {
+    const normalized = normalizeTestAiSelectedItem({
+      title: 'Pokemon Charizard',
+      itemDetails: JSON.stringify({ year: '1999' }),
+      setName: 'Shadowless',
+      cardNumber: '4/102',
+      variant: 'Shadowless',
+    });
+    expect(JSON.parse(normalized.itemDetails)).toMatchObject({
+      setName: 'Shadowless',
+      cardNumber: '4/102',
+      variant: 'Shadowless',
+    });
+  });
 });
