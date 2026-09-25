@@ -517,6 +517,19 @@ function AdminListingsTab({ listingsQuery }: { listingsQuery: any }) {
   );
 }
 
+function ApiProviderStatusBadge({ status }: { status: string }) {
+  const label = status.replaceAll('_', ' ');
+  const classes: Record<string, string> = {
+    working: "border-emerald-300 bg-emerald-50 text-emerald-800",
+    ready_to_test: "border-blue-300 bg-blue-50 text-blue-800",
+    not_configured: "border-slate-300 bg-slate-50 text-slate-700",
+    requires_account_connection: "border-amber-300 bg-amber-50 text-amber-900",
+    not_active: "border-slate-300 bg-slate-100 text-slate-600",
+    failed: "border-red-300 bg-red-50 text-red-800",
+  };
+  return <Badge variant="outline" className={`capitalize ${classes[status] ?? "border-slate-300 bg-slate-50 text-slate-700"}`}>{label}</Badge>;
+}
+
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -602,6 +615,15 @@ export default function AdminDashboard() {
   const moderationLogQuery = trpc.admin.getModerationLog.useQuery(undefined, { enabled: user?.role === 'admin' });
   const pendingApprovalsQuery = trpc.admin.getPendingAccountApprovals.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
   const apiHealthQuery = trpc.admin.getApiHealthEvents.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const apiProviderHealthQuery = trpc.admin.getApiProviderHealth.useQuery(undefined, { enabled: user?.role === 'admin', refetchOnWindowFocus: true });
+  const testApiProviderMutation = trpc.admin.testApiProvider.useMutation({
+    onSuccess: (result) => {
+      apiProviderHealthQuery.refetch();
+      const label = result.status === 'working' ? 'working' : result.status.replaceAll('_', ' ');
+      toast[result.status === 'working' ? 'success' : 'error'](`${result.name}: ${label}.`);
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const [selectedApiHealthEventIds, setSelectedApiHealthEventIds] = useState<Set<number>>(new Set());
   const [apiHealthClearConfirmOpen, setApiHealthClearConfirmOpen] = useState(false);
   const clearApiHealthEventsMutation = trpc.admin.clearApiHealthEvents.useMutation({
@@ -1776,9 +1798,54 @@ export default function AdminDashboard() {
 
           <TabsContent value="api-health" className="space-y-4 mt-6">
             <Card>
-              <CardHeader><CardTitle>API Health</CardTitle><CardDescription>Recent sanitized external API failures. Keys, request payloads, and raw provider responses are never displayed.</CardDescription></CardHeader>
+              <CardHeader>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <CardTitle>Provider Connection Health</CardTitle>
+                    <CardDescription>Every configured and available external provider is listed below. Each test is read-only, credential-safe, and individually triggered; no email, SMS, payment, listing, profile, or shipment data is changed.</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => apiProviderHealthQuery.refetch()} disabled={apiProviderHealthQuery.isFetching}>Refresh status</Button>
+                </div>
+              </CardHeader>
               <CardContent>
-                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API health…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><label className="flex items-center gap-2 text-sm"><Checkbox checked={selectedApiHealthEventIds.size === (apiHealthQuery.data?.length ?? 0)} onCheckedChange={(checked) => setSelectedApiHealthEventIds(checked ? new Set((apiHealthQuery.data ?? []).map((event: any) => event.id)) : new Set())} aria-label="Select all API health events" />Select all visible</label><Button variant="destructive" size="sm" disabled={selectedApiHealthEventIds.size === 0 || clearApiHealthEventsMutation.isPending} onClick={() => setApiHealthClearConfirmOpen(true)}>Clear selected ({selectedApiHealthEventIds.size})</Button></div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Select</th><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2"><Checkbox checked={selectedApiHealthEventIds.has(event.id)} onCheckedChange={(checked) => setSelectedApiHealthEventIds((current) => { const next = new Set(current); checked ? next.add(event.id) : next.delete(event.id); return next; })} aria-label={`Select API health event ${event.id}`} /></td><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div></>}
+                {apiProviderHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading provider connections…</p> : <div className="space-y-6">
+                  {Object.entries((apiProviderHealthQuery.data ?? []).reduce((groups: Record<string, any[]>, provider: any) => {
+                    (groups[provider.group] ??= []).push(provider);
+                    return groups;
+                  }, {})).map(([group, providers]) => <section key={group} className="space-y-2">
+                    <h3 className="text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground">{group}</h3>
+                    <div className="grid gap-3 xl:grid-cols-2">
+                      {(providers as any[]).map((provider) => {
+                        const thisTestIsRunning = testApiProviderMutation.isPending && testApiProviderMutation.variables?.providerId === provider.id;
+                        return <div key={provider.id} className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+                          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{provider.name}</p><ApiProviderStatusBadge status={provider.status} /></div>
+                              <p className="mt-1 text-sm text-muted-foreground">{provider.description}</p>
+                            </div>
+                            {provider.canTest ? <Button size="sm" variant="outline" onClick={() => testApiProviderMutation.mutate({ providerId: provider.id })} disabled={thisTestIsRunning}>{thisTestIsRunning ? "Testing…" : provider.testMode === "configuration" ? "Check setup" : "Test connection"}</Button> : <Button size="sm" variant="outline" disabled>{provider.testMode === "not_active" ? "Not active" : "Setup required"}</Button>}
+                          </div>
+                          <div className="mt-3 rounded-md bg-muted/50 p-3 text-xs">
+                            <p>{provider.message}</p>
+                            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                              <span>Configured: {provider.configured ? "Yes" : "No"}</span>
+                              <span>Test: {provider.testMode.replaceAll('_', ' ')}</span>
+                              {provider.httpStatus ? <span>HTTP: {provider.httpStatus}</span> : null}
+                              {typeof provider.recordsVerified === "number" ? <span>Records checked: {provider.recordsVerified}</span> : null}
+                              {provider.checkedAt ? <span>Last test: {new Date(provider.checkedAt).toLocaleString()}</span> : null}
+                            </div>
+                          </div>
+                        </div>;
+                      })}
+                    </div>
+                  </section>)}
+                </div>}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle>Recent Sanitized API Failure Events</CardTitle><CardDescription>Historical failures from ordinary provider operations. Keys, request payloads, and raw provider responses are never displayed.</CardDescription></CardHeader>
+              <CardContent>
+                {apiHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading API failure history…</p> : (apiHealthQuery.data?.length ?? 0) === 0 ? <p className="text-sm text-muted-foreground">No recorded API failures.</p> : <><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><label className="flex items-center gap-2 text-sm"><Checkbox checked={selectedApiHealthEventIds.size === (apiHealthQuery.data?.length ?? 0)} onCheckedChange={(checked) => setSelectedApiHealthEventIds(checked ? new Set((apiHealthQuery.data ?? []).map((event: any) => event.id)) : new Set())} aria-label="Select all API health events" />Select all visible</label><Button variant="destructive" size="sm" disabled={selectedApiHealthEventIds.size === 0 || clearApiHealthEventsMutation.isPending} onClick={() => setApiHealthClearConfirmOpen(true)}>Clear selected ({selectedApiHealthEventIds.size})</Button></div><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">Select</th><th className="p-2">Provider</th><th className="p-2">Operation</th><th className="p-2">Likely cause</th><th className="p-2">Status</th><th className="p-2">When</th></tr></thead><tbody>{apiHealthQuery.data?.map((event: any) => <tr key={event.id} className="border-b"><td className="p-2"><Checkbox checked={selectedApiHealthEventIds.has(event.id)} onCheckedChange={(checked) => setSelectedApiHealthEventIds((current) => { const next = new Set(current); checked ? next.add(event.id) : next.delete(event.id); return next; })} aria-label={`Select API health event ${event.id}`} /></td><td className="p-2 font-medium">{event.provider}</td><td className="p-2">{event.operation}</td><td className="p-2 capitalize">{event.failureClass.replaceAll('_', ' ')}</td><td className="p-2">{event.statusCode ?? '—'}</td><td className="p-2 whitespace-nowrap">{new Date(event.occurredAt).toLocaleString()}</td></tr>)}</tbody></table></div></>}
               </CardContent>
             </Card>
             <Dialog open={apiHealthClearConfirmOpen} onOpenChange={setApiHealthClearConfirmOpen}><DialogContent><DialogHeader><DialogTitle>Clear selected API health events?</DialogTitle><DialogDescription>This permanently removes only the {selectedApiHealthEventIds.size} selected sanitized health record{selectedApiHealthEventIds.size === 1 ? '' : 's'}. The administrator action is retained in the audit log.</DialogDescription></DialogHeader><div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setApiHealthClearConfirmOpen(false)}>Cancel</Button><Button variant="destructive" disabled={clearApiHealthEventsMutation.isPending} onClick={() => clearApiHealthEventsMutation.mutate({ eventIds: [...selectedApiHealthEventIds] })}>Clear selected records</Button></div></DialogContent></Dialog>

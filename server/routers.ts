@@ -143,6 +143,7 @@ import { subscribeToLaunchUpdates } from "./launchUpdates";
 import { isLaunchUpdateRequestAllowed, normalizeLaunchUpdateEmail } from "./launchUpdatesRateLimit";
 import { getPreLaunchRecipients, sendPreLaunchUpdate } from "./preLaunchEmail";
 import { validateFirstTimeSetupRequirements } from "./accountSetupRequirements";
+import { API_PROVIDER_IDS, getApiProviderHealthOverview, runApiProviderHealthCheck } from "./apiProviderHealth";
 import { PASSWORD_RECOVERY_TOKEN_TTL_MS, createOpaqueRecoveryToken, createSixDigitCode, hashRecoveryToken, isRecoveryRequestAllowed, isRecoveryTokenExpired, normalizeRecoveryEmail, timingSafeTextEquals } from "./accountRecovery";
 import { createPendingEmailHistoryApproval, requireMarketplaceApproval } from "./accountApproval";
 import { getIpqsEmailHistory } from "./ipqs";
@@ -3373,6 +3374,25 @@ export const appRouter = router({
       const db = await requireDb();
       return db.select().from(apiHealthEvents).orderBy(desc(apiHealthEvents.occurredAt)).limit(100);
     }),
+    getApiProviderHealth: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return getApiProviderHealthOverview();
+    }),
+    testApiProvider: protectedProcedure
+      .input(z.object({ providerId: z.enum(API_PROVIDER_IDS) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+        const result = await runApiProviderHealthCheck(input.providerId);
+        const db = await requireDb();
+        await db.insert(adminActivityLog).values({
+          adminId: ctx.user.id,
+          action: 'api_provider_health_tested',
+          targetType: 'api_provider',
+          targetReference: result.id,
+          summary: `Read-only API health test: ${result.name} — ${result.status}`,
+        });
+        return result;
+      }),
     clearApiHealthEvents: protectedProcedure
       .input(z.object({ eventIds: z.array(z.number().int().positive()).min(1).max(100) }))
       .mutation(async ({ ctx, input }) => {
