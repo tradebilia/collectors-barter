@@ -52,7 +52,7 @@ const emptySearchFilters: SearchFilters = {
 };
 
 const searchTheme = tradebiliaCategoryThemes.sports_cards;
-const globalSearchHeroCollageUrl = "/manus-storage/tradebilia-warm-archival-hero-04_cdf269c5.png";
+const globalSearchHeroCollageUrl = "/manus-storage/Allcategories_f1a2cbf1.png";
 
 export function SearchResults() {
   const rawSearch = useSearch();
@@ -165,8 +165,8 @@ export function SearchResults() {
   return (
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat" }}>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(24,16,11,0.58)_0%,rgba(24,16,11,0.28)_48%,rgba(24,16,11,0.58)_100%)]" />
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center center", backgroundRepeat: "no-repeat" }}>
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,12,8,0.64)_0%,rgba(18,12,8,0.24)_48%,rgba(18,12,8,0.56)_100%)]" />
         <div className="container relative flex h-[480px] min-h-[480px] flex-col items-center justify-center py-4 text-center sm:py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
