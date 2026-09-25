@@ -1559,7 +1559,20 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];
-      add({ id: 'one_thirty_point', label: '130point', kind: 'market_historical', status: evidenceStatus(oneThirtyPointData), market: { recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: oneThirtyPointData?.message ?? null });
+      const recentCompletedCount = sales.filter((sale: any) => sale.recency === 'recent').length;
+      add({
+        id: 'one_thirty_point',
+        label: '130point',
+        kind: recentCompletedCount > 0 ? 'market_completed' : 'market_historical',
+        role: recentCompletedCount > 0 ? 'valuation_candidate' : 'historical_context',
+        status: evidenceStatus(oneThirtyPointData),
+        market: {
+          completedSaleCount: recentCompletedCount,
+          historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length,
+          undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length,
+        },
+        message: oneThirtyPointData?.message ?? null,
+      });
     }
     if (enabledSources.has('pwcc')) {
       const sales = pwccQuery.data?.data?.items ?? [];

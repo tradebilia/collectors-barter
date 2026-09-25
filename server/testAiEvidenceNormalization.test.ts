@@ -65,13 +65,15 @@ describe('normalizeTestAiEvidence', () => {
     ]));
   });
 
-  it('retains recent, historical, and undated sale counts separately', () => {
+  it('retains completed, historical, and undated 130point records separately', () => {
     const summary = normalizeTestAiEvidence({ title: 'Wayne Gretzky Rookie', category: 'sports_cards' }, [
-      { id: 'one_thirty_point', label: '130point', kind: 'market_historical', status: 'success', market: { recentSaleCount: 2, historicalSaleCount: 3, undatedSaleCount: 1 } },
+      { id: 'one_thirty_point', label: '130point', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 2, historicalSaleCount: 3, undatedSaleCount: 1 } },
     ]);
 
-    expect(summary.marketEvidence).toEqual(['130point: 2 recent sales, 3 historical records, 1 undated record.']);
+    expect(summary.marketEvidence).toEqual(['130point: 2 completed sales, 3 historical records, 1 undated record.']);
     expect(summary.reviewFlags).toHaveLength(0);
+    expect(summary.evidenceSufficiency.status).toBe('limited');
+    expect(summary.sources[0]?.role).toBe('valuation_candidate');
   });
 
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {

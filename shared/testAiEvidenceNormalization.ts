@@ -15,6 +15,8 @@ export type EvidenceSourceObservation = {
   id: string;
   label: string;
   kind: EvidenceSourceKind;
+  /** Used only where a mixed source returns both completed and contextual records. */
+  role?: EvidenceSourceRole;
   status: EvidenceSourceStatus;
   fields?: Record<string, unknown>;
   market?: {
@@ -350,7 +352,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     alignedSources,
     reviewFlags,
     marketEvidence,
-    sources: sources.map(({ id, label, kind, status, message }) => ({ id, label, kind, role: evidenceRoleForSourceKind(kind), status, message })),
+    sources: sources.map(({ id, label, kind, role, status, message }) => ({ id, label, kind, role: role ?? evidenceRoleForSourceKind(kind), status, message })),
   };
 }
 
