@@ -538,11 +538,17 @@ export default function AddInventory() {
                           const colSpan = fieldConfig?.colSpan || 'half';
                           const colSpanClass = getColSpanClass(colSpan, requiredColumns);
                           const fieldValue = formData[field.name as keyof typeof formData];
+                          const isPcgsCoinGrade = field.name === 'grade'
+                            && formData.category === 'coins'
+                            && String(formData.gradingCompany || '').trim().toUpperCase() === 'PCGS';
+                          const renderedField = isPcgsCoinGrade
+                            ? { ...field, inputType: 'text' as const, notes: 'Enter a PCGS label such as MS65 or MS65+' }
+                            : field;
                           
                           return (
                             <div key={field.name} className={`${colSpanClass} w-full`} data-error={!!errors[field.name]}>
                               <FieldWithCustomInput
-                                field={field}
+                                field={renderedField}
                                 value={formData[field.name as keyof typeof formData] || ""}
                                 onChange={(value) => updateField(field.name, value)}
                                 onOtherChange={(value) => updateOtherField(field.name, value)}
