@@ -597,12 +597,12 @@ export default function Home() {
 
 
         }}>
-          <div className="container relative flex h-[400px] items-center justify-center py-0">
-            <div className="flex w-full max-w-6xl -translate-x-[6.5%] items-center justify-center px-4">
+          <div className="container relative flex h-[280px] items-center justify-center py-0 sm:h-[400px]">
+            <div className="flex w-[112%] max-w-[480px] -translate-x-[2%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%]">
               <img
                 src="https://assets.tradebilia.com/tradebilia_final_transparent_8a1981e6.svg"
                 alt="Tradebilia"
-                className="h-auto w-full max-w-6xl object-contain"
+                className="h-auto w-full max-w-none object-contain sm:max-w-6xl"
               />
             </div>
           </div>
