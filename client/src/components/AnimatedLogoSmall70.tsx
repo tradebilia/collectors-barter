@@ -136,10 +136,17 @@ const AnimatedLogoSmall70 = ({
       const textLeft = wordmarkX;
       const textRight = measuredCategoryWordX + categoryWidth;
       const textCenter = (textLeft + textRight) / 2;
-      const targetCenter = activeCenteredViewBoxWidth / 2;
+      // Longer animated labels such as SPORTS CARDS and VIDEO GAMES need
+      // more horizontal SVG space on narrow screens. Keep a small breathing
+      // margin around the measured lockup so the final letters never clip.
+      const measuredMobileViewBoxWidth = Math.ceil(textRight + 96);
+      const fittedViewBoxWidth = isNarrowViewport
+        ? Math.max(activeCenteredViewBoxWidth, measuredMobileViewBoxWidth)
+        : activeCenteredViewBoxWidth;
+      const targetCenter = fittedViewBoxWidth / 2;
       const nextOffset = targetCenter - activeLockupScale * textCenter;
 
-      setDynamicViewBoxWidth(activeCenteredViewBoxWidth);
+      setDynamicViewBoxWidth(fittedViewBoxWidth);
       setPhraseCenterOffsetX(previousOffset => Math.abs(nextOffset - previousOffset) > 0.5 ? nextOffset : previousOffset);
     };
 
@@ -152,7 +159,7 @@ const AnimatedLogoSmall70 = ({
       cancelled = true;
       window.cancelAnimationFrame(frame);
     };
-  }, [activeCenteredViewBoxWidth, activeLockupScale, centerLockup, categoryGap, currentCategory.name, fontSize, wordmarkX, wordmarkTextWidth]);
+  }, [activeCenteredViewBoxWidth, activeLockupScale, centerLockup, categoryGap, currentCategory.name, fontSize, isNarrowViewport, wordmarkX, wordmarkTextWidth]);
 
   return (
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
