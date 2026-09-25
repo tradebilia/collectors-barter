@@ -103,6 +103,17 @@ function numericGrade(value: string | null | undefined): number | null {
   return match ? Number(match[0]) : null;
 }
 
+function normalizePcgsCoinGrade(value: string | null | undefined): string | null {
+  const normalized = String(value ?? '').trim();
+  if (!/^[A-Za-z]{1,8}\s*\d{1,3}(?:\+)?(?:\s*[A-Za-z]{1,12})?$/i.test(normalized)) return null;
+  return normalized.replace(/\s+/g, '').toUpperCase();
+}
+
+function extractPcgsCoinGrade(title: string): string | null {
+  const match = title.match(/\bpcgs\s+(?:graded?\s+)?((?:[A-Za-z]{1,8}\s*)?\d{1,3}(?:\+)?)/i);
+  return match ? normalizePcgsCoinGrade(match[1]) : null;
+}
+
 function normalizeCompany(value: string | null | undefined): string | null {
   const normalized = String(value ?? '').toLowerCase().replace(/[^a-z0-9]/g, '');
   return normalized || null;
@@ -166,14 +177,29 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push('sale may be a different variant or release');
   }
 
-  const targetGrade = numericGrade(target.grade);
-  const saleGrade = numericGrade(title.match(/(?:psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\s*(?:graded?\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
   const targetCompany = normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
   const saleCompanyMatch = title.match(/\b(psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\b/i)?.[1];
   const saleCompany = normalizeCompany(saleCompanyMatch);
+  const isPcgsCoin = target.category === 'coins' && targetCompany === 'pcgs';
+  const targetPcgsGrade = isPcgsCoin ? normalizePcgsCoinGrade(target.grade) : null;
+  const salePcgsGrade = isPcgsCoin && saleCompany === 'pcgs' ? extractPcgsCoinGrade(title) : null;
+  const targetGrade = numericGrade(target.grade);
+  const saleGrade = numericGrade(title.match(/(?:psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\s*(?:graded?\s*)?(?:[A-Za-z]{1,8}\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
   let materialGradeConflict = false;
   let materialCompanyConflict = false;
-  if (targetGrade !== null && saleGrade === targetGrade) {
+  if (isPcgsCoin && targetPcgsGrade) {
+    if (salePcgsGrade === targetPcgsGrade) {
+      score += 12;
+      reasons.push('PCGS coin grade matches');
+    } else if (salePcgsGrade) {
+      score -= 18;
+      materialGradeConflict = true;
+      reasons.push('PCGS coin grade differs');
+    } else {
+      score -= 10;
+      reasons.push('sale PCGS coin grade is not identifiable');
+    }
+  } else if (targetGrade !== null && saleGrade === targetGrade) {
     score += 12;
     reasons.push('grade matches');
   } else if (targetGrade !== null && saleGrade !== null) {

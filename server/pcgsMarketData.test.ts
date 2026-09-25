@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { lookupPcgsCertification } from './pcgsMarketData';
+import { isValidGradeForCompany } from '../shared/gradingCompanyConfig';
 
 const originalFetch = global.fetch;
 
@@ -48,5 +49,11 @@ describe('PCGS certification adapter', () => {
     expect(result.status).toBe('error');
     expect(result.message).toContain('not configured');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('accepts alphanumeric PCGS coin grades such as MS65', () => {
+    expect(isValidGradeForCompany('PCGS', 'MS65')).toBe(true);
+    expect(isValidGradeForCompany('PCGS', 'MS65+')).toBe(true);
+    expect(isValidGradeForCompany('PCGS', 'not-a-grade')).toBe(false);
   });
 });

@@ -83,7 +83,7 @@ The prompt tells the AI to evaluate items using category-appropriate reasoning:
 | Sports cards | Player legacy, rookie status, grade scarcity, population context, sport popularity, Hall of Fame status, and liquidity |
 | Comics | Key issue status, first appearances, origin stories, creator significance, census context, publisher, story importance, and movie/TV potential |
 | Pokémon / TCG | Set rarity, card mechanics, character popularity, grade population, competitive demand, and collector demand |
-| Coins | Mint, year, denomination, grade, surviving population, and historical significance |
+| Coins | Mint, year, denomination, grade, surviving population, and historical significance. For PCGS coins, the grade is preserved as an alphanumeric Sheldon label such as `MS65` or `MS65+`, rather than reduced to the numeric portion. |
 | Vintage toys | Brand, character, era, sealed/opened status, graded population, and nostalgia factor |
 | Video games | Platform, title rarity, grading system, sealed/CIB status, and genre demand |
 | Autographs | Signer significance, authentication company, signed item, and provenance |

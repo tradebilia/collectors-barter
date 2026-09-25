@@ -30,6 +30,25 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(saleFromDifferentCompany.exclusionReason).toBe('known grading or authentication company differs from target');
   });
 
+  it('matches PCGS coin prefixes as part of the grade identity', () => {
+    const coinTarget = {
+      title: '1921 Peace Dollar PCGS MS65',
+      category: 'coins',
+      grade: 'MS65',
+      certificationCompany: 'PCGS',
+      itemDetails: JSON.stringify({ year: '1921', denomination: '$1', mint: 'Philadelphia' }),
+    };
+    const exact = scoreComparable(coinTarget, sale('1921 Peace Dollar PCGS MS65 CAC', 1500, '2026-09-01'));
+    const wrongClass = scoreComparable(coinTarget, sale('1921 Peace Dollar PCGS PR65', 2200, '2026-09-01'));
+    const wrongNumber = scoreComparable(coinTarget, sale('1921 Peace Dollar PCGS MS64', 600, '2026-09-01'));
+
+    expect(exact.accepted).toBe(true);
+    expect(exact.reasons).toContain('PCGS coin grade matches');
+    expect(wrongClass.accepted).toBe(false);
+    expect(wrongClass.exclusionReason).toBe('known grade differs from target');
+    expect(wrongNumber.accepted).toBe(false);
+  });
+
   it('weights recent exact sales more heavily than older accepted sales', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),

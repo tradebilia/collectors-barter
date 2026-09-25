@@ -64,29 +64,48 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
 // This will be implemented in a future phase when the Finding API is set up.
 
 // Extract grade from query/title after a grading company name. eBay titles commonly
-// insert an optional "Grade" or "Graded" word, e.g. "AFA Graded 8.0".
+// insert an optional "Grade" or "Graded" word, e.g. "AFA Graded 8.0". Coin
+// graders can prefix the numeric Sheldon grade, e.g. "PCGS MS65".
 const gradeProviderPattern = "CGC|PSA|BGS|PCGS|NGC|CBCS|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|Rewind";
+type ExtractedGrade = number | string;
 
-export function extractGradeFromQuery(query: string): number | null {
-  const match = query.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?(\\d+\\.?\\d*)`, "i"));
-  return match ? parseFloat(match[2]) : null;
+function normalizeExtractedGrade(prefix: string | undefined, numeric: string, plus = ''): ExtractedGrade {
+  const numberValue = Number(numeric);
+  if (!prefix) return Number.isFinite(numberValue) ? numberValue : numeric;
+  return `${prefix.toUpperCase()}${numeric}${plus}`;
 }
 
-export function extractGradeFromTitle(title: string): number | null {
-  const match = title.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?(\\d+\\.?\\d*)[\\+]?`, "i"));
-  return match ? parseFloat(match[2]) : null;
+function normalizeSearchGrade(value: string | undefined, category: string, certificationCompany: string): string | null {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return null;
+  const isPcgsCoin = category === 'coins' && /^pcgs$/i.test(certificationCompany.trim());
+  if (isPcgsCoin && /^[A-Za-z]{1,8}\s*\d{1,3}(?:\+)?(?:\s*[A-Za-z]{1,12})?$/i.test(normalized)) {
+    return normalized.replace(/\s+/g, '').toUpperCase();
+  }
+  const parsedGrade = parseFloat(normalized);
+  return Number.isFinite(parsedGrade) && parsedGrade > 0 ? String(parsedGrade) : null;
+}
+
+export function extractGradeFromQuery(query: string): ExtractedGrade | null {
+  const match = query.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
+  return match ? normalizeExtractedGrade(match[2], match[3], match[4]) : null;
+}
+
+export function extractGradeFromTitle(title: string): ExtractedGrade | null {
+  const match = title.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
+  return match ? normalizeExtractedGrade(match[2], match[3], match[4]) : null;
 }
 
 export function buildEbayBrowseQuery(query: string, options?: { preserveGrade?: boolean }): string {
   if (options?.preserveGrade) return query.trim();
   return query.replace(
-    new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?[QC]?\\d+\\.?\\d*\\+?`, "gi"),
+    new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:[A-Za-z]{1,8}\\s*)?[QC]?\\d+\\.?\\d*\\+?`, "gi"),
     "$1",
   ).trim();
 }
 
 // Filter listings to match the grade from the search query
-export function filterListingsByGrade(summaries: any[], targetGrade: number | null): any[] {
+export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
 
   return summaries.filter((item: any) => {
@@ -95,6 +114,12 @@ export function filterListingsByGrade(summaries: any[], targetGrade: number | nu
     // 1. A recognized grading company in the title (CGC, PSA, WATA, etc.)
     // 2. A grade that matches the target
     if (!itemGrade) return false;
+
+    if (typeof targetGrade === 'string') {
+      return typeof itemGrade === 'string' && itemGrade.toUpperCase() === targetGrade.toUpperCase();
+    }
+
+    if (typeof itemGrade !== 'number') return false;
 
     // Round to 1 decimal to avoid float precision issues (9.8 === 9.8)
     return Math.round(itemGrade * 10) === Math.round(targetGrade * 10);
@@ -527,8 +552,7 @@ export const testAIRouter = router({
         cert = details.customGradingCompany || cert;
       }
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
-      const parsedGrade = input.grade ? parseFloat(input.grade) : NaN;
-      const grade = Number.isFinite(parsedGrade) && parsedGrade > 0 ? String(parsedGrade) : null;
+      const grade = normalizeSearchGrade(input.grade, input.category, cert);
       
       let query = input.title;
       
@@ -802,8 +826,7 @@ export const testAIRouter = router({
         cert = details.customGradingCompany || cert;
       }
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
-      const parsedGrade = input.grade ? parseFloat(input.grade) : NaN;
-      const grade = Number.isFinite(parsedGrade) && parsedGrade > 0 ? String(parsedGrade) : null;
+      const grade = normalizeSearchGrade(input.grade, input.category, cert);
 
       let query = input.title;
 

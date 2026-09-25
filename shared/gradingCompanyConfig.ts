@@ -686,6 +686,9 @@ export function getGradingCompanyByName(name: string): GradingCompanyConfig | un
 export function isValidGradeForCompany(companyName: string, grade: string): boolean {
   const company = getGradingCompanyByName(companyName);
   if (!company) return false;
+  if (company.name === "PCGS" && /^[A-Za-z]{1,8}\s*\d{1,3}(?:\+)?(?:\s*[A-Za-z]{1,12})?$/i.test(grade.trim())) {
+    return true;
+  }
   return company.validGrades.includes(grade);
 }
 

@@ -20,4 +20,19 @@ describe("Test AI eBay graded-item matching", () => {
 
     expect(filterListingsByGrade(listings, 8).map((item) => item.title)).toHaveLength(2);
   });
+
+  it("preserves PCGS coin grade prefixes instead of reducing MS65 to 65", () => {
+    expect(extractGradeFromQuery("1921 Peace Dollar PCGS MS65")).toBe("MS65");
+    expect(extractGradeFromTitle("1921 Peace Dollar PCGS MS65 CAC")).toBe("MS65");
+
+    const listings = [
+      { title: "1921 Peace Dollar PCGS MS65 CAC" },
+      { title: "1921 Peace Dollar PCGS MS64" },
+      { title: "1921 Peace Dollar PCGS PR65" },
+    ];
+
+    expect(filterListingsByGrade(listings, "MS65").map((item) => item.title)).toEqual([
+      "1921 Peace Dollar PCGS MS65 CAC",
+    ]);
+  });
 });

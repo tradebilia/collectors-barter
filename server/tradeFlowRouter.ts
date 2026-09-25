@@ -2332,15 +2332,26 @@ export const tradeFlowRouter = router({
         } catch (_) {}
       }
 
+      function normalizeAnalyzerGrade(value: unknown, category: string, certificationCompany: string | null): string | null {
+        const normalized = String(value ?? '').trim();
+        if (!normalized) return null;
+        const isPcgsCoin = category === 'coins' && /^pcgs$/i.test(certificationCompany ?? '');
+        if (isPcgsCoin && /^[A-Za-z]{1,8}\s*\d{1,3}(?:\+)?(?:\s*[A-Za-z]{1,12})?$/i.test(normalized)) {
+          return normalized.replace(/\s+/g, '').toUpperCase();
+        }
+        const numeric = Number.parseFloat(normalized);
+        return Number.isFinite(numeric) && numeric > 0 ? String(numeric) : null;
+      }
+
       // Build a category-aware eBay search query for more accurate price results
       function buildEbayQuery(item: any): string {
         const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
-        const rawGrade = parseFloat(item.grade || '0') > 0 ? item.grade : null;
-        // Format grade: remove trailing zeros (9.80 -> 9.8, 10.00 -> 10)
-        const grade = rawGrade ? String(parseFloat(rawGrade)) : null;
         // Clean cert name: strip " Comics", " Cards", etc. for cleaner eBay searches
         const rawCert = details.certificationCompany || details.customGradingCompany || null;
         const cert = rawCert ? rawCert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim() : null;
+        // Numeric grades are normalized, while PCGS coin labels such as MS65
+        // remain intact because the prefix identifies the coin's grade class.
+        const grade = normalizeAnalyzerGrade(item.grade, item.category, cert);
 
         switch (item.category) {
           case 'sports_cards': {
@@ -2553,7 +2564,7 @@ export const tradeFlowRouter = router({
           if (item.category) line += ` (${item.category.replace(/_/g, ' ')})`;
           // Include the precise eBay search query so the AI knows the exact item
           if (ebayQuery && ebayQuery !== item.title) line += ` | Precise Identifier: "${ebayQuery}"`;
-          if (item.grade) line += ` | Grade: ${parseFloat(item.grade)}`;
+          if (item.grade) line += ` | Grade: ${normalizeAnalyzerGrade(item.grade, item.category, certCompany) ?? item.grade}`;
           if (item.condition) line += ` | Condition: ${item.condition}`;
           if (certCompany) line += ` | Grading Company: ${certCompany}`;
           line += ` | Owner Estimated Value: $${estimatedValue.toLocaleString()} [UNVERIFIED]`;
