@@ -1592,6 +1592,18 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       <p><span className="font-semibold text-gray-300">Coverage:</span> no result or service issue; it is not negative proof about the item.</p>
     </div>
     {summary.identity.length > 0 && <div className="flex flex-wrap gap-1.5">{summary.identity.map((field) => <span key={field.key} className="rounded bg-gray-900/60 px-2 py-1 text-[10px] text-gray-300"><span className="text-gray-500">{field.label}:</span> {field.value}</span>)}</div>}
+    <div className="grid gap-2 sm:grid-cols-2">
+      <div className={`rounded border p-2 ${summary.identityReadiness.readiness === 'ready' ? 'border-emerald-700/30 bg-emerald-950/15' : 'border-amber-700/30 bg-amber-950/15'}`}>
+        <p className={`text-[9px] font-semibold uppercase ${summary.identityReadiness.readiness === 'ready' ? 'text-emerald-300' : 'text-amber-300'}`}>P0 identity readiness · {summary.identityReadiness.readiness.replace(/_/g, ' ')}</p>
+        <p className="mt-1 text-[10px] text-gray-300">{summary.identityReadiness.itemType} · {summary.identityReadiness.missingCriticalFields.length ? `Missing critical: ${summary.identityReadiness.missingCriticalFields.join(', ')}` : 'All category-critical identifiers are supplied.'}</p>
+        <p className="mt-1 text-[9px] text-gray-500">Missing identifiers are a request for review—not evidence that the listing is wrong.</p>
+      </div>
+      <div className={`rounded border p-2 ${summary.evidenceSufficiency.status === 'sufficient' ? 'border-sky-700/30 bg-sky-950/15' : 'border-orange-700/30 bg-orange-950/15'}`}>
+        <p className={`text-[9px] font-semibold uppercase ${summary.evidenceSufficiency.status === 'sufficient' ? 'text-sky-300' : 'text-orange-300'}`}>P0 evidence sufficiency · {summary.evidenceSufficiency.status}</p>
+        <p className="mt-1 text-[10px] text-gray-300">{summary.evidenceSufficiency.message}</p>
+        <p className="mt-1 text-[9px] text-gray-500">Completed sales are valuation candidates; asking, reference, certification, population, and news data remain context.</p>
+      </div>
+    </div>
     {sportsUnopenedSearchCriteria.isUnopenedProduct && <div className="rounded border border-amber-700/30 bg-amber-950/15 p-2">
       <p className="text-[9px] font-semibold uppercase text-amber-300">Sports Cards Unopened Product search criteria</p>
       <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
@@ -1614,7 +1626,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
     {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div>}
     {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
-    <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
+    <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${source.role.replace(/_/g, ' ')} · ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
   </section>;
 }
 
@@ -1830,8 +1842,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHipstampMetrics: rightHasHipstamp ? (rightHipstampData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
-      leftHistoricalTrendSales: leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []) : [],
-      rightHistoricalTrendSales: rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []) : [],
+      leftHistoricalTrendSales: leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : [],
+      rightHistoricalTrendSales: rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : [],
       leftEvidenceSummary: leftEvidenceSummary ?? undefined,
       rightEvidenceSummary: rightEvidenceSummary ?? undefined,
       marketNews: marketNewsQuery.data ? {
@@ -1938,7 +1950,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                     <p className="text-gray-300 text-[10px]">Evidence: <span className="text-white">{profile.evidenceState.replace(/_/g, ' ')}</span></p>
                     <p className="text-gray-300 text-[10px]">Value: <span className="text-white">{profile.weightedValue ? `$${profile.weightedValue.toLocaleString()}` : 'Not verified'}</span> · Range: {profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'unsupported'}</p>
                     <p className="text-gray-400 text-[10px]">Confidence: {profile.evidenceQuality} evidence · {profile.itemIdentificationConfidence} identity · {profile.marketStability} stability · {profile.liquidity} liquidity</p>
-                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.comparableCount} accepted · {profile.rejectedComparableCount} rejected</p>
+                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.exactMatchCount} exact + {profile.nearMatchCount} near used · {profile.contextualComparableCount} context only · {profile.duplicateSaleCount} duplicate{profile.duplicateSaleCount === 1 ? '' : 's'} suppressed</p>
                   </div>
                 ))}
               </div>
@@ -1950,7 +1962,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
               <div className="rounded border border-slate-700/60 bg-slate-950/50 p-2 space-y-2">
                 <div>
                   <p className="text-slate-200 text-[10px] font-bold uppercase tracking-wide">Comparable audit · why each sale counted</p>
-                  <p className="text-gray-500 text-[9px] mt-0.5">Accepted sales influence the deterministic value. Rejected sales remain visible for review and never influence valuation.</p>
+                  <p className="text-gray-500 text-[9px] mt-0.5">Only deduplicated completed sales with exact or near identity matches influence the deterministic value. Historical, undated, non-completed, or incomplete-identity records remain context only.</p>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   {[
@@ -1958,9 +1970,10 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                     { label: 'Item B', profile: result.rightMarketProfile, color: 'amber' },
                   ].map(({ label, profile, color }) => {
                     const accepted = (profile.comparables ?? []).filter((comparable: any) => comparable.accepted);
-                    const rejected = (profile.comparables ?? []).filter((comparable: any) => !comparable.accepted);
+                    const contextual = (profile.comparables ?? []).filter((comparable: any) => comparable.classification === 'contextual');
+                    const rejected = (profile.comparables ?? []).filter((comparable: any) => !comparable.accepted && comparable.classification !== 'contextual');
                     const checklist = [
-                      ['Identity', profile.itemIdentificationConfidence !== 'low'],
+                      ['Identity', profile.identityReadiness === 'ready' && profile.itemIdentificationConfidence !== 'low'],
                       ['Recent sales', profile.recentSaleCount > 0],
                       ['Grade/condition', profile.gradeConditionConfidence !== 'low'],
                       ['Stable range', profile.marketStability !== 'low'],
@@ -1969,7 +1982,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                       <div key={label} className="rounded bg-gray-900/70 p-2 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
-                          <span className="text-gray-400 text-[9px]">{accepted.length} used · {rejected.length} excluded</span>
+                          <span className="text-gray-400 text-[9px]">{profile.exactMatchCount} exact · {profile.nearMatchCount} near · {contextual.length} context · {rejected.length} excluded</span>
                         </div>
                         <div className="grid grid-cols-2 gap-1">
                           {checklist.map(([name, passed]) => (
@@ -1981,7 +1994,13 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                         {accepted.slice(0, 3).map((comparable: any) => (
                           <div key={`accepted-${comparable.title}-${comparable.date}`} className="rounded border border-emerald-900/50 bg-emerald-950/20 px-2 py-1.5 text-[9px]">
                             <p className="text-gray-200 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
-                            <p className="text-emerald-300/80 mt-0.5">Accepted · score {comparable.score} · {(comparable.reasons ?? []).join(' · ')}</p>
+                            <p className="text-emerald-300/80 mt-0.5">{comparable.classification} match · score {comparable.score} · {(comparable.reasons ?? []).join(' · ')}</p>
+                          </div>
+                        ))}
+                        {contextual.slice(0, 2).map((comparable: any) => (
+                          <div key={`context-${comparable.title}-${comparable.date}`} className="rounded border border-sky-900/50 bg-sky-950/20 px-2 py-1.5 text-[9px]">
+                            <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
+                            <p className="text-sky-300/80 mt-0.5">Context only · {comparable.exclusionReason ?? 'not eligible for valuation'}</p>
                           </div>
                         ))}
                         {rejected.slice(0, 3).map((comparable: any) => (

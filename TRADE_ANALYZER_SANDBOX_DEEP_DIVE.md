@@ -288,6 +288,20 @@ The following work can proceed in the sandbox immediately:
 9. Keep RSS market context separate while adding explicit source availability, feed freshness, and article coverage diagnostics.
 10. Add a provider and data-rights registry so a source cannot be marked “live” merely because a public page exists.
 
+### P0 implementation status — sandbox-only
+
+The first P0 evidence-quality pass is now implemented in the **Test AI sandbox**. It is deliberately additive and does not change the production Trade Room, database schema, listing records, automated source selection, or source permissions.
+
+| P0 safeguard | Implemented behavior | Boundary retained |
+|---|---|---|
+| Category-aware identity readiness | Builds a normalized identity checklist for every current category and item type using existing listing data. Missing category-critical identifiers make a sale contextual rather than valuation-eligible. | It does not write suggested values back to the listing or authenticate an item. |
+| Comparable classes | Labels every analyzed observation as **exact**, **near**, **contextual**, or **rejected** and displays the reason. | A near match remains a bounded comparison, not proof of equivalence. |
+| Completed-sale gate | Only deduplicated, positive-price, dated observations marked completed and within the one-year evidence window can support the deterministic sandbox value. | Asking prices, certification/population data, catalog/reference records, RSS, historical, undated, active, and closed-but-unconfirmed records remain context. |
+| Transaction deduplication | Suppresses repeated records by source plus stable ID/URL, or source plus normalized title, amount, and date when a stable ID is unavailable. | The current sandbox passes 130point records into this gate; each future completed-sales adapter still needs to preserve its own source ID and sale status. |
+| Evidence sufficiency | Shows whether selected sources contain sufficient, limited, or unavailable completed-sale evidence before analysis. | “Sufficient” means the selected evidence meets a minimum count for review; it is not an appraisal or authenticity conclusion. |
+
+Regression fixtures now cover Pokémon identifier completeness, raw hinged stamp identity, source-role classification, PCGS grade preservation, duplicate suppression, and historical/non-completed exclusion. The remaining work in the numbered list above is still pending unless explicitly described in this table.
+
 ## Data that requires credentials, licensing, or approval
 
 The following should not be implemented as assumed public feeds:

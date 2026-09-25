@@ -45,9 +45,11 @@ describe('Test AI analyzer input compatibility', () => {
 
   it('shows comparable acceptance reasons and data-sufficiency checks in the sandbox result', () => {
     expect(clientSource).toContain('Comparable audit · why each sale counted');
-    expect(clientSource).toContain('Accepted · score');
+    expect(clientSource).toContain('exact or near identity matches');
+    expect(clientSource).toContain('P0 identity readiness');
+    expect(clientSource).toContain('P0 evidence sufficiency');
     expect(clientSource).toContain('Excluded ·');
-    expect(clientSource).toContain("['Identity', profile.itemIdentificationConfidence !== 'low']");
+    expect(clientSource).toContain("['Identity', profile.identityReadiness === 'ready' && profile.itemIdentificationConfidence !== 'low']");
     expect(clientSource).toContain("['Recent sales', profile.recentSaleCount > 0]");
   });
 

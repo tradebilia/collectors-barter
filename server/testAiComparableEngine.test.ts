@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile, deterministicTradeComparison, scoreComparable } from './testAiComparableEngine';
+import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, scoreComparable } from './testAiComparableEngine';
 
 const target = {
   title: '1996 Topps Kobe Bryant #138 PSA 10',
@@ -69,6 +69,38 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.valuationMethod).toContain('no verified valuation');
   });
 
+  it('does not allow incomplete target identity to become a valuation comparable', () => {
+    const incompleteTarget = {
+      title: 'Charizard', category: 'pokemon', itemDetails: JSON.stringify({ cardName: 'Charizard', setName: 'Base Set' }),
+    };
+    const match = scoreComparable(incompleteTarget, sale('Pokemon Base Set Charizard #4 PSA 9', 2500, '2026-09-15'));
+    expect(match.accepted).toBe(false);
+    expect(match.classification).toBe('contextual');
+    expect(match.exclusionReason).toContain('Card #');
+  });
+
+  it('keeps historical or non-completed records as context and suppresses duplicate sales', () => {
+    const recent = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-09-15'), sourceId: '130point', saleStatus: 'completed' as const, saleId: 'abc' };
+    const duplicate = { ...recent, marketplace: 'duplicate mirror' };
+    const historical = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 900, '2024-09-15'), sourceId: '130point', saleStatus: 'completed' as const, recency: 'historical' as const };
+    const active = { ...sale('1996 Topps Kobe Bryant #138 PSA 10', 4000, '2026-09-15'), sourceId: 'active feed', saleStatus: 'active' as const };
+    const profile = buildMarketProfile(target, [recent, duplicate, historical, active], null, new Date('2026-09-22T00:00:00Z'));
+
+    expect(deduplicateMarketSales([recent, duplicate]).duplicates).toHaveLength(1);
+    expect(profile.exactMatchCount).toBe(1);
+    expect(profile.contextualComparableCount).toBe(2);
+    expect(profile.duplicateSaleCount).toBe(1);
+    expect(profile.weightedValue).toBe(1200);
+  });
+
+  it('does not allow an undated sale record to enter the deterministic value', () => {
+    const profile = buildMarketProfile(target, [{
+      title: target.title, price: 1200, currency: 'USD', recency: 'undated', sourceId: '130point', saleStatus: 'completed',
+    }], null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.weightedValue).toBeNull();
+    expect(profile.contextualComparableCount).toBe(1);
+  });
+
   it('exposes sparse, volatile, and low-liquidity evidence instead of hiding it', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 100, '2026-09-20'),
@@ -92,6 +124,12 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     const left = buildMarketProfile(target, []);
     const right = buildMarketProfile(target, []);
     expect(deterministicTradeComparison(left, right, 2000, 200).verdict).toBe('Insufficient Evidence');
+  });
+
+  it('does not issue a deterministic verdict from aggregate market context without accepted completed sales', () => {
+    const left = buildMarketProfile(target, [], { median: 500, count: 20, confidence: 'high' });
+    const right = buildMarketProfile(target, [], { median: 2000, count: 20, confidence: 'high' });
+    expect(deterministicTradeComparison(left, right).verdict).toBe('Insufficient Evidence');
   });
 });
 

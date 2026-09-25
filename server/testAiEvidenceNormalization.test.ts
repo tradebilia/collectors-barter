@@ -17,6 +17,8 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.alignedSources.find((source) => source.id === 'tcgdex')?.fields).toEqual(expect.arrayContaining(['Card name', 'Set', 'Card #', 'Variant']));
     expect(summary.reviewFlags).toHaveLength(0);
     expect(summary.marketEvidence).toHaveLength(0);
+    expect(summary.identityReadiness.readiness).toBe('ready');
+    expect(summary.sources.find((source) => source.id === 'pricecharting')?.role).toBe('asking_price_context');
   });
 
   it('flags a material Pokémon card-number mismatch rather than silently treating records as comparable', () => {
@@ -95,6 +97,8 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.identity.map((field) => field.label)).toEqual(expect.arrayContaining(['Brand', 'Toy name', 'Year']));
     expect(summary.marketEvidence).toEqual(['Sold-Comps: 3 completed sales.']);
     expect(summary.reviewFlags).toHaveLength(0);
+    expect(summary.evidenceSufficiency.status).toBe('sufficient');
+    expect(summary.sources[0]?.role).toBe('valuation_candidate');
   });
 
   it('uses a custom manufacturer or grading company only when the corresponding listing selector is Other', () => {

@@ -277,10 +277,22 @@ export function getSoldCompsApiKey(env: NodeJS.ProcessEnv = process.env): string
 const testAiEvidenceSummarySchema = z.object({
   category: z.string().max(80),
   identity: z.array(z.object({ key: z.string().max(80), label: z.string().max(120), value: z.string().max(240) })).max(20),
+  identityReadiness: z.object({
+    category: z.string().max(80), itemType: z.string().max(120),
+    fields: z.array(z.object({ key: z.string().max(80), label: z.string().max(120), value: z.string().max(240), material: z.boolean() })).max(30),
+    materialFields: z.array(z.string().max(80)).max(30),
+    missingCriticalFields: z.array(z.string().max(120)).max(12),
+    readiness: z.enum(['ready', 'limited', 'missing_critical']),
+  }),
+  evidenceSufficiency: z.object({
+    status: z.enum(['sufficient', 'limited', 'unavailable']),
+    completedSaleCount: z.number().int().nonnegative(), askingListingCount: z.number().int().nonnegative(), historicalRecordCount: z.number().int().nonnegative(), unavailableSourceCount: z.number().int().nonnegative(),
+    message: z.string().max(600),
+  }),
   alignedSources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), fields: z.array(z.string().max(120)).max(20) })).max(20),
   reviewFlags: z.array(z.object({ kind: z.enum(['material', 'context', 'coverage']), sourceId: z.string().max(80).optional(), sourceLabel: z.string().max(120).optional(), field: z.string().max(120).optional(), message: z.string().max(600) })).max(30),
   marketEvidence: z.array(z.string().max(600)).max(20),
-  sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), status: z.enum(['success', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
+  sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
 });
 
 const uspsScreenshotReviewSchema = z.object({
@@ -1597,10 +1609,10 @@ export const testAIRouter = router({
       leftSoldCompsMetrics: z.any().optional(),
       rightSoldCompsMetrics: z.any().optional(),
       leftHistoricalTrendSales: z.array(z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(),
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(),
       })).max(10).optional(),
       rightHistoricalTrendSales: z.array(z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(),
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(),
       })).max(10).optional(),
       leftEvidenceSummary: testAiEvidenceSummarySchema.optional(),
       rightEvidenceSummary: testAiEvidenceSummarySchema.optional(),
@@ -1823,15 +1835,17 @@ export const testAIRouter = router({
       const leftVisionImpact = evaluateVisionImpact(leftItem, visualReview.itemA as VisionReview | null | undefined);
       const rightVisionImpact = evaluateVisionImpact(rightItem, visualReview.itemB as VisionReview | null | undefined);
 
-      // Prefer sold prices (real transactions) over active listing prices for valuation
-      const leftVal = leftSoldCompsMetrics?.median ?? leftEbayMetrics?.median ?? leftHipstampMetrics?.median ?? leftItem.estimatedValue ?? 0;
-      const rightVal = rightSoldCompsMetrics?.median ?? rightEbayMetrics?.median ?? rightHipstampMetrics?.median ?? rightItem.estimatedValue ?? 0;
-      const diff = rightVal - leftVal;
-      const diffStr = diff > 0
-        ? `+$${Math.abs(diff).toLocaleString()} — RIGHT ITEM is worth more`
-        : diff < 0
-        ? `-$${Math.abs(diff).toLocaleString()} — LEFT ITEM is worth more`
-        : `$0 — roughly equal`;
+      // P0 sandbox rule: the deterministic verdict is built only from the
+      // completed-sale profiles above. Asking prices and owner estimates remain
+      // clearly labeled context and cannot create a pre-computed value gap.
+      const diff = deterministicComparison.difference;
+      const diffStr = deterministicComparison.verdict === 'Insufficient Evidence'
+        ? 'Unavailable — completed, identity-matched sale evidence is insufficient for a deterministic trade gap.'
+        : diff > 0
+          ? `+$${Math.abs(diff).toLocaleString()} — RIGHT ITEM is worth more`
+          : diff < 0
+            ? `-$${Math.abs(diff).toLocaleString()} — LEFT ITEM is worth more`
+            : `$0 — roughly equal`;
 
       const prompt = `You are a professional collectibles trade analyst with deep knowledge of the collectibles market. Compare these two items and provide a comprehensive analysis addressing ALL of the following dimensions:
 

@@ -1,3 +1,12 @@
+import {
+  buildP0EvidenceSufficiency,
+  buildTestAiP0Identity,
+  evidenceRoleForSourceKind,
+  type EvidenceSourceRole,
+  type P0EvidenceSufficiency,
+  type TestAiP0Identity,
+} from './testAiP0Evidence';
+
 export type EvidenceSourceStatus = 'success' | 'not_found' | 'error' | 'idle';
 
 export type EvidenceSourceKind = 'market_current' | 'market_completed' | 'market_historical' | 'certification' | 'reference';
@@ -43,10 +52,12 @@ export type EvidenceReviewFlag = {
 export type NormalizedEvidenceSummary = {
   category: string;
   identity: NormalizedIdentityField[];
+  identityReadiness: TestAiP0Identity;
+  evidenceSufficiency: P0EvidenceSufficiency;
   alignedSources: { id: string; label: string; fields: string[] }[];
   reviewFlags: EvidenceReviewFlag[];
   marketEvidence: string[];
-  sources: { id: string; label: string; kind: EvidenceSourceKind; status: EvidenceSourceStatus; message?: string | null }[];
+  sources: { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null }[];
 };
 
 type DetailRecord = Record<string, unknown>;
@@ -283,6 +294,7 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
 export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: EvidenceSourceObservation[]): NormalizedEvidenceSummary {
   const category = normalizeCategory(input.category);
   const listingValues = getListingValues(input);
+  const identityReadiness = buildTestAiP0Identity(input);
   const identity = (CATEGORY_FIELDS[category] ?? ['title', 'certificationCompany', 'grade'])
     .map((key) => ({ key, label: FIELD_LABELS[key] ?? key, value: listingValues[key] ?? '' }))
     .filter((field) => field.value);
@@ -324,13 +336,21 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
   }
 
   const marketEvidence = sources.map(compactMarketSummary).filter((entry): entry is string => Boolean(entry));
+  const evidenceSufficiency = buildP0EvidenceSufficiency({
+    completedSaleCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
+    askingListingCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
+    historicalRecordCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.recentSaleCount ?? 0) + Number(source.market?.historicalSaleCount ?? 0) + Number(source.market?.undatedSaleCount ?? 0) : 0), 0),
+    unavailableSourceCount: sources.filter((source) => source.status === 'error' || source.status === 'not_found').length,
+  });
   return {
     category: displayCategory(category),
     identity,
+    identityReadiness,
+    evidenceSufficiency,
     alignedSources,
     reviewFlags,
     marketEvidence,
-    sources: sources.map(({ id, label, kind, status, message }) => ({ id, label, kind, status, message })),
+    sources: sources.map(({ id, label, kind, status, message }) => ({ id, label, kind, role: evidenceRoleForSourceKind(kind), status, message })),
   };
 }
 
@@ -342,10 +362,16 @@ export function formatTestAiEvidenceForAnalysis(summary: NormalizedEvidenceSumma
     : 'No specialist field alignment established.';
   const market = summary.marketEvidence.length ? summary.marketEvidence.join(' ') : 'No classified market evidence returned.';
   const flags = summary.reviewFlags.length ? summary.reviewFlags.map((flag) => flag.message).join(' ') : 'No material identity discrepancy was detected from the selected source fields.';
+  const readiness = summary.identityReadiness.missingCriticalFields.length
+    ? `Identity readiness: ${summary.identityReadiness.readiness}; missing critical identifiers: ${summary.identityReadiness.missingCriticalFields.join(', ')}.`
+    : `Identity readiness: ${summary.identityReadiness.readiness}; all category-critical identifiers currently supplied.`;
+  const sufficiency = `Evidence sufficiency: ${summary.evidenceSufficiency.status}; ${summary.evidenceSufficiency.message}`;
   return `${itemLabel} deterministic evidence review:
 Listing identity: ${identity}
 Aligned specialist fields: ${aligned}
 Market evidence classification: ${market}
 Review flags: ${flags}
-Rule: This review is source-attributed context only. Do not resolve a discrepancy silently, do not use factual reference metadata as value, and do not use historical or undated records as current-value averages.`;
+${readiness}
+${sufficiency}
+Rule: Source roles are fixed: completed sales are the only valuation candidates; asking prices, certification or population data, reference metadata, and historical or undated records are context only. Do not resolve a discrepancy silently, do not use factual reference metadata as value, and do not use historical or undated records as current-value averages.`;
 }

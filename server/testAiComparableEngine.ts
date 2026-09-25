@@ -1,3 +1,5 @@
+import { buildTestAiP0Identity } from '../shared/testAiP0Evidence';
+
 export type EvidenceState =
   | 'no_market_evidence'
   | 'poor_item_identification'
@@ -24,7 +26,13 @@ export interface MarketSale {
   date?: string | null;
   marketplace?: string | null;
   recency?: 'recent' | 'historical' | 'undated' | null;
+  sourceId?: string | null;
+  saleId?: string | null;
+  url?: string | null;
+  saleStatus?: 'completed' | 'closed' | 'active' | 'unknown' | null;
 }
+
+export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
 
 export interface ComparableMatch {
   title: string;
@@ -35,6 +43,9 @@ export interface ComparableMatch {
   reasons: string[];
   exclusionReason?: string;
   weight: number;
+  classification: ComparableClassification;
+  sourceId?: string | null;
+  duplicateOf?: string;
 }
 
 export interface MarketProfile {
@@ -59,6 +70,10 @@ export interface MarketProfile {
   comparableCount: number;
   rejectedComparableCount: number;
   exactMatchCount: number;
+  nearMatchCount: number;
+  contextualComparableCount: number;
+  duplicateSaleCount: number;
+  identityReadiness: 'ready' | 'limited' | 'missing_critical';
   valuationMethod: string;
   majorAssumptions: string[];
   missingInformation: string[];
@@ -136,10 +151,48 @@ function recencyWeight(ageDays: number | null): number {
   return Math.max(0.25, Math.exp(-ageDays / 180));
 }
 
+function normalizeFingerprintText(value: unknown): string {
+  return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function saleFingerprint(sale: MarketSale): string {
+  const source = normalizeFingerprintText(sale.sourceId || sale.marketplace || 'unknown');
+  const stableId = normalizeFingerprintText(sale.saleId || sale.url || '');
+  if (stableId) return `${source}|id:${stableId}`;
+  const price = Number(sale.price);
+  const amount = Number.isFinite(price) ? price.toFixed(2) : 'unknown';
+  const date = String(sale.date ?? '').slice(0, 10) || 'undated';
+  return `${source}|${normalizeFingerprintText(sale.title)}|${amount}|${date}`;
+}
+
+export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string }> } {
+  const seen = new Map<string, string>();
+  const unique: MarketSale[] = [];
+  const duplicates: Array<{ sale: MarketSale; duplicateOf: string }> = [];
+  for (const sale of sales) {
+    const fingerprint = saleFingerprint(sale);
+    const known = seen.get(fingerprint);
+    if (known) duplicates.push({ sale, duplicateOf: known });
+    else {
+      seen.set(fingerprint, fingerprint);
+      unique.push(sale);
+    }
+  }
+  return { unique, duplicates };
+}
+
+function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
+  if (sale.saleStatus && sale.saleStatus !== 'completed') return false;
+  if (sale.recency === 'historical' || sale.recency === 'undated') return false;
+  const age = daysOld(sale.date, nowMs);
+  return age !== null && age <= 365;
+}
+
 export function scoreComparable(target: ComparableTarget, sale: MarketSale): ComparableMatch {
   const title = String(sale.title ?? '').trim();
   const price = Number(sale.price);
   const details = parseDetails(target);
+  const identity = buildTestAiP0Identity(target);
   const targetTokens = new Set(textTokens(target.title));
   const saleTokens = new Set(textTokens(title));
   const overlap = [...targetTokens].filter((token) => saleTokens.has(token)).length;
@@ -220,16 +273,31 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
-  const accepted = Number.isFinite(price) && price > 0 && boundedScore >= 48 && !materialVariantConflict && !materialGradeConflict && !materialCompanyConflict;
+  const hardIdentityConflict = materialVariantConflict || materialGradeConflict || materialCompanyConflict;
+  const priceIsUsable = Number.isFinite(price) && price > 0;
+  const classification: ComparableClassification = !priceIsUsable || hardIdentityConflict || boundedScore < 48
+    ? 'rejected'
+    : identity.readiness !== 'ready'
+      ? 'contextual'
+      : boundedScore >= 80
+        ? 'exact'
+        : boundedScore >= 60
+          ? 'near'
+          : 'contextual';
+  const accepted = classification === 'exact' || classification === 'near';
   const exclusionReason = accepted
     ? undefined
     : materialGradeConflict
       ? 'known grade differs from target'
-      : materialCompanyConflict
-        ? 'known grading or authentication company differs from target'
-        : materialVariantConflict
-          ? 'sale may be a different variant or release'
-          : boundedScore < 35
+        : materialCompanyConflict
+          ? 'known grading or authentication company differs from target'
+          : materialVariantConflict
+            ? 'sale may be a different variant or release'
+            : identity.readiness !== 'ready'
+              ? `target is missing critical identifiers: ${identity.missingCriticalFields.join(', ')}`
+              : classification === 'contextual'
+                ? 'sale is only a contextual identity match and cannot support valuation'
+            : boundedScore < 35
             ? 'identity match below minimum threshold'
             : 'insufficient comparable evidence';
   return {
@@ -241,6 +309,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons,
     exclusionReason,
     weight: 0,
+    classification,
+    sourceId: sale.sourceId ?? sale.marketplace ?? null,
   };
 }
 
@@ -251,9 +321,29 @@ export function buildMarketProfile(
   now = new Date(),
 ): MarketProfile {
   const nowMs = now.getTime();
-  const comparableMatches = sales
+  const deduplicated = deduplicateMarketSales(sales);
+  const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
+  const contextualSales = deduplicated.unique.filter((sale) => !isCompletedSaleCandidate(sale, nowMs));
+  const valuationMatches = valuationCandidates
     .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
     .map((sale) => scoreComparable(target, sale));
+  const contextualMatches = contextualSales
+    .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
+    .map((sale) => ({
+      ...scoreComparable(target, sale),
+      accepted: false,
+      classification: 'contextual' as const,
+      exclusionReason: 'historical, undated, or non-completed record is context only',
+    }));
+  const duplicateMatches: ComparableMatch[] = deduplicated.duplicates.map(({ sale, duplicateOf }) => ({
+    ...scoreComparable(target, sale),
+    accepted: false,
+    classification: 'rejected',
+    exclusionReason: 'duplicate sale observation',
+    duplicateOf,
+    reasons: ['duplicate sale observation suppressed'],
+  }));
+  const comparableMatches = [...valuationMatches, ...contextualMatches, ...duplicateMatches];
   const accepted = comparableMatches.filter((match) => match.accepted && match.price > 0);
   const acceptedWithAge = accepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
   const recentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 90);
@@ -280,7 +370,10 @@ export function buildMarketProfile(
   };
   const oldestSaleAgeDays = ages.length ? Math.max(...ages) : null;
   const daysSinceLastAuthoritativeSale = ages.length ? Math.min(...ages) : null;
-  const exactMatchCount = accepted.filter((match) => match.score >= 80).length;
+  const exactMatchCount = accepted.filter((match) => match.classification === 'exact').length;
+  const nearMatchCount = accepted.filter((match) => match.classification === 'near').length;
+  const contextualComparableCount = comparableMatches.filter((match) => match.classification === 'contextual').length;
+  const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
   const evidenceQuality: ConfidenceLevel = accepted.length >= 6 && exactMatchCount >= 2 ? 'high' : accepted.length >= 3 ? 'medium' : 'low';
   const marketStability: ConfidenceLevel = spreadPct === null ? 'low' : spreadPct <= 35 ? 'high' : spreadPct <= 75 ? 'medium' : 'low';
@@ -290,11 +383,13 @@ export function buildMarketProfile(
   const details = parseDetails(target);
   if (!target.title.trim()) missingInformation.push('item title');
   if (!target.category.trim()) missingInformation.push('category');
-  if ((target.category.toLowerCase().includes('sports') || target.category.toLowerCase().includes('pokemon')) && !firstString(details, ['year', 'releaseYear', 'cardNumber', 'setName', 'player', 'cardName'])) missingInformation.push('category-specific identifiers');
+  if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
   if (spreadPct !== null && spreadPct > 75) valuationWarnings.push('Authoritative comparable prices are widely dispersed.');
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
+  if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
+  if (deduplicated.duplicates.length > 0) valuationWarnings.push(`${deduplicated.duplicates.length} duplicate sale observation${deduplicated.duplicates.length === 1 ? '' : 's'} was excluded.`);
   const evidenceState: EvidenceState = accepted.length === 0
     ? (comparableMatches.length ? 'poor_item_identification' : 'no_market_evidence')
     : recentCount >= 3 && evidenceQuality === 'high' ? 'strong_recent_market_evidence'
@@ -325,8 +420,12 @@ export function buildMarketProfile(
     comparableCount: accepted.length,
     rejectedComparableCount: comparableMatches.length - accepted.length,
     exactMatchCount,
-    valuationMethod: supported ? 'recency-weighted comparable value using identity match quality and IQR outlier filtering' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because identity-matched sales are insufficient' : 'no verified valuation; insufficient authoritative comparable evidence',
-    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Active asking prices are not treated as realized sales.', 'Grade, condition, variant, and release mismatches reduce comparable weight or exclude the result.'],
+    nearMatchCount,
+    contextualComparableCount,
+    duplicateSaleCount: deduplicated.duplicates.length,
+    identityReadiness,
+    valuationMethod: supported ? 'recency-weighted completed-sale value using exact or near identity matches, duplicate suppression, and IQR outlier filtering' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
+    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation.', 'Active asking prices, historical or undated records, certification, population, reference data, and RSS remain context only.', 'Duplicate observations are excluded; grade, condition, variant, and release mismatches reject the result.'],
     missingInformation,
     valuationWarnings,
     comparables: comparableMatches,
@@ -337,8 +436,8 @@ export function deterministicTradeComparison(left: MarketProfile, right: MarketP
   const leftValue = left.weightedValue ?? left.median ?? leftFallback;
   const rightValue = right.weightedValue ?? right.median ?? rightFallback;
   const difference = rightValue - leftValue;
-  const hasDefensibleLeftValue = left.weightedValue !== null || left.median !== null;
-  const hasDefensibleRightValue = right.weightedValue !== null || right.median !== null;
+  const hasDefensibleLeftValue = left.marketRange.supported && left.authoritativeSaleCount >= 2;
+  const hasDefensibleRightValue = right.marketRange.supported && right.authoritativeSaleCount >= 2;
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
   return {
     leftValue,
@@ -357,6 +456,6 @@ export function marketProfileForPrompt(label: string, profile: MarketProfile): s
     `- Range supported: ${profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}-$${profile.marketRange.high.toLocaleString()}` : 'no defensible range'}`,
     `- Confidence: evidence ${profile.evidenceQuality}, identification ${profile.itemIdentificationConfidence}, stability ${profile.marketStability}, liquidity ${profile.liquidity}, grade/condition ${profile.gradeConditionConfidence}`,
     `- Sales velocity: 7d ${profile.salesVelocity.sevenDay}, 30d ${profile.salesVelocity.thirtyDay}, 90d ${profile.salesVelocity.ninetyDay}; recent sales ${profile.recentSaleCount}; authoritative sales ${profile.authoritativeSaleCount}`,
-    `- Comparables: ${profile.comparableCount} accepted, ${profile.rejectedComparableCount} rejected, ${profile.exactMatchCount} exact-match; warnings: ${profile.valuationWarnings.join(' ') || 'none'}`,
+    `- Comparables: ${profile.comparableCount} accepted (${profile.exactMatchCount} exact, ${profile.nearMatchCount} near), ${profile.contextualComparableCount} contextual, ${profile.rejectedComparableCount} excluded, ${profile.duplicateSaleCount} duplicates suppressed; identity readiness ${profile.identityReadiness}; warnings: ${profile.valuationWarnings.join(' ') || 'none'}`,
   ].join('\n');
 }
