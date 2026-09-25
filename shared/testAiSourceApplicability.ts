@@ -1,4 +1,4 @@
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
@@ -15,6 +15,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'sold_comps', categories: '*', requires: 'title', purpose: 'Completed eBay-sale research across all Tradebilia categories.' },
   { sourceId: 'hipstamp', categories: ['stamps'], requires: 'title', purpose: 'HIPStamp current asking-price and supply context for Stamps items; not completed-sale evidence.' },
   { sourceId: 'hipstamp_sold', categories: ['stamps'], requires: 'title', purpose: 'HIPStamp store-scoped closed listings marked sold; historical context, not marketplace-wide sales evidence.' },
+  { sourceId: 'pokemon_price_tracker', categories: ['pokemon'], requires: 'title', purpose: 'Pokémon Price Tracker catalog, guide-price, history, eBay, Cardmarket, and plan-gated population context. Source-attributed sandbox context only; it never changes Tradebilia valuation or verdicts.' },
   { sourceId: 'cgc', categories: ['comics'], requires: 'CGC certificate', purpose: 'CGC Comics certification, grade, label details, and population context.' },
   { sourceId: 'psa', categories: ['sports cards', 'pokemon'], requires: 'PSA certificate', purpose: 'PSA card certification, population, and certification sales.' },
   { sourceId: 'bgs', categories: ['sports cards', 'pokemon'], requires: 'BGS certificate', purpose: 'BGS card certification, subgrades, and population.' },

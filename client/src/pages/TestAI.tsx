@@ -60,6 +60,15 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'Store-scoped HIPStamp closed listings marked sold — not marketplace-wide sales history',
   },
+  pokemon_price_tracker: {
+    id: 'pokemon_price_tracker',
+    label: 'Pokémon Price Tracker',
+    group: 'Marketplace',
+    icon: '🃏',
+    provides: ['item_details', 'current_prices', 'historic_prices', 'population_report'],
+    status: 'live' as const,
+    description: 'Read-only Pokémon catalog, guide-price, history, eBay, Cardmarket, and plan-gated population context — sandbox-only; never changes Tradebilia valuation or verdicts',
+  },
   cgc: {
     id: 'cgc',
     label: 'Parse.bot CGC Comics',
@@ -1130,6 +1139,89 @@ function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left'
   );
 }
 
+function pokemonProviderValue(value: unknown): string {
+  if (value === null || value === undefined || value === '') return 'Not returned';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (Array.isArray(value)) return value.length ? value.map(pokemonProviderValue).join(', ') : 'Not returned';
+  try { return JSON.stringify(value); } catch { return String(value); }
+}
+
+function pokemonProviderCardNumber(card: any): string {
+  const number = String(card?.cardNumber ?? '').trim();
+  const total = String(card?.totalSetNumber ?? '').trim();
+  if (!number) return '?';
+  return total && !number.includes('/') ? `${number}/${total}` : number;
+}
+
+function PokemonProviderFieldGrid({ fields }: { fields: Array<[string, unknown]> }) {
+  return <div className="grid grid-cols-2 gap-1.5 text-[10px] sm:grid-cols-3">
+    {fields.filter(([, value]) => value !== null && value !== undefined && value !== '').map(([label, value]) => {
+      const formatted = pokemonProviderValue(value);
+      const isNested = typeof value === 'object' && value !== null;
+      const isLong = formatted.length > 180;
+      return <div key={label} className="rounded bg-gray-800/60 p-1.5">
+        <p className="text-[8px] uppercase text-gray-500">{label}</p>
+        {isNested || isLong ? <details className="mt-0.5"><summary className="cursor-pointer font-semibold text-sky-200">View returned data</summary><pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[9px] font-normal text-gray-300">{formatted}</pre></details> : <p className="break-words font-semibold text-white">{formatted}</p>}
+      </div>;
+    })}
+  </div>;
+}
+
+function PokemonPriceTrackerSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const supported = item.category === 'pokemon';
+  const selected = data?.selected;
+  const detail = data?.detail ?? {};
+  const prices = detail.prices ?? selected?.card?.prices ?? {};
+  const priceHistory = detail.priceHistory ?? null;
+  const ebay = detail.ebay ?? null;
+  const cardmarket = detail.cardmarketPrices ?? null;
+  const population = data?.population ?? null;
+  const candidates = data?.candidates ?? [];
+  const metadata = data?.metadata ?? {};
+  const imageUrl = detail.imageCdnUrl400 || detail.imageCdnUrl || detail.imageUrl || selected?.card?.imageCdnUrl400 || selected?.card?.imageCdnUrl || selected?.card?.imageUrl;
+
+  if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🃏 Pokémon Price Tracker</p><p className="text-gray-500 text-[10px]">This read-only sandbox source is available only for Pokémon/TCG items.</p></div>;
+
+  return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+    <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🃏 Pokémon Price Tracker</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-gray-500 text-[10px]">Read-only provider context. Catalog details, guide prices, history, eBay, Cardmarket, and population do not alter Tradebilia valuation, confidence, or trade verdicts.</p>
+    {data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}
+    {data?.status === 'error' && !data?.messages?.length && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">The provider lookup could not be completed.</p>}
+    {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">No catalog candidate was returned for the selected identity.</p>}
+    {data?.status === 'review_required' && <div className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-100"><p className="font-semibold text-amber-200">Manual identity review required</p><p className="mt-1">A provider detail request was not made because no candidate matched the listing on card name, set, and card number.</p></div>}
+    {candidates.length > 0 && <details className="rounded border border-gray-700/30 bg-gray-950/25 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-200">Catalog candidates ({candidates.length}) — identity review</summary><div className="mt-2 space-y-1.5">{candidates.map((candidate: any) => <div key={candidate.card?.tcgPlayerId || candidate.card?.id} className={`rounded p-1.5 text-[10px] ${candidate.exactIdentity ? 'bg-emerald-950/30 text-emerald-100' : 'bg-gray-800/50 text-gray-300'}`}><p className="font-semibold">{candidate.card?.name || 'Unnamed card'} · {candidate.card?.setName || 'Set unavailable'} · #{pokemonProviderCardNumber(candidate.card)}</p><p className="mt-0.5 text-[9px] text-gray-400">Score {candidate.score} · {candidate.exactIdentity ? 'Exact name, set, and number match' : `Matched ${candidate.matched?.join(', ') || 'no required identifiers'}`}</p></div>)}</div></details>}
+    {selected && <div className="space-y-3 rounded bg-gray-900/40 p-2">
+      <div className="flex gap-3"><>{imageUrl && <img src={imageUrl} alt={detail.name || selected.card?.name || 'Pokémon card'} className="h-28 w-20 shrink-0 rounded border border-gray-700/40 object-contain" />}</><div className="min-w-0"><a href={detail.tcgPlayerUrl || selected.card?.tcgPlayerUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{detail.name || selected.card?.name || item.title}</a><p className="mt-0.5 text-[10px] text-emerald-200">Exact identity gate passed: card name, set, and card number.</p><p className="mt-1 text-[10px] text-gray-400">{[detail.setName || selected.card?.setName, detail.cardNumber || selected.card?.cardNumber, detail.totalSetNumber || selected.card?.totalSetNumber ? `of ${detail.totalSetNumber || selected.card?.totalSetNumber}` : ''].filter(Boolean).join(' · ')}</p></div></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-cyan-200">Identity and card fields returned</p><PokemonProviderFieldGrid fields={[
+        ['Provider ID', detail.id || selected.card?.id], ['TCGplayer ID', detail.tcgPlayerId || selected.card?.tcgPlayerId], ['External catalog ID', detail.externalCatalogId || selected.card?.externalCatalogId], ['Set ID', detail.setId || selected.card?.setId], ['Set', detail.setName || selected.card?.setName], ['Card #', detail.cardNumber || selected.card?.cardNumber], ['Total set #', detail.totalSetNumber || selected.card?.totalSetNumber], ['Rarity', detail.rarity || selected.card?.rarity], ['Card type', detail.cardType || selected.card?.cardType], ['Printings available', detail.printingsAvailable || selected.card?.printingsAvailable],
+      ]} /></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-cyan-200">Pokémon characteristics returned</p><PokemonProviderFieldGrid fields={[
+        ['Pokédex #', detail.pokedexNumbers], ['Pokémon type', detail.pokemonType], ['Energy type', detail.energyType], ['HP', detail.hp], ['Stage', detail.stage], ['Artist', detail.artist], ['Retreat cost', detail.retreatCost], ['Weakness', detail.weakness], ['Resistance', detail.resistance], ['Attacks', detail.attacks], ['Flavor text', detail.flavorText],
+      ]} /></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-emerald-200">Current guide and supply context — not Tradebilia valuation</p><PokemonProviderFieldGrid fields={[
+        ['Market', prices.market], ['Low', prices.low], ['Listings', prices.listings], ['Sellers', prices.sellers], ['Recent sales', prices.recentSales], ['Primary printing', prices.primaryPrinting], ['Market price condition', prices.marketPriceCondition], ['Near-mint market', prices.marketNearMint], ['Last updated', prices.lastUpdated], ['Price corrected', prices.priceWasCorrected], ['Per-condition prices', prices.conditions], ['Per-variant prices', prices.variants || detail.variants],
+      ]} /></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-emerald-200">Price history — provider context only</p><PokemonProviderFieldGrid fields={[
+        ['Conditions tracked', priceHistory?.conditions_tracked], ['Variants tracked', priceHistory?.variants_tracked], ['Data points', priceHistory?.totalDataPoints], ['Earliest date', priceHistory?.earliestDate], ['Latest date', priceHistory?.latestDate], ['History updated', priceHistory?.lastUpdated], ['Condition history', priceHistory?.conditions], ['Variant history', priceHistory?.variants],
+      ]} /></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-emerald-200">eBay graded-sale context — provider-sourced and non-authoritative</p><PokemonProviderFieldGrid fields={[
+        ['eBay updated', ebay?.updatedAt], ['Last scraped', ebay?.lastScrapedDate], ['Last eBay check', ebay?.lastEbayCheck], ['Sales by grade', ebay?.salesByGrade], ['Outlier flags', ebay?.smartPriceOutlierByGrade], ['Sales velocity', ebay?.salesVelocity], ['Total sales', ebay?.totalSales], ['Total value', ebay?.totalValue], ['Grades tracked', ebay?.gradesTracked], ['Date range', [ebay?.dateRangeStart, ebay?.dateRangeEnd].filter(Boolean).join(' to ')], ['Individual sold listings', ebay?.soldListings], ['eBay price history', ebay?.priceHistory],
+      ]} /></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-emerald-200">Cardmarket EUR context — provider-sourced and non-authoritative</p><PokemonProviderFieldGrid fields={[
+        ['Market EUR', cardmarket?.marketEur], ['Low EUR', cardmarket?.lowEur], ['Trend EUR', cardmarket?.trendEur], ['7-day average EUR', cardmarket?.avg7Eur], ['30-day average EUR', cardmarket?.avg30Eur], ['Headline variant', cardmarket?.headlineVariant], ['Product ID', cardmarket?.cardmarketProductId], ['Last updated', cardmarket?.lastUpdated], ['Variant detail', cardmarket?.variants],
+      ]} /></div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-violet-200">Population context — not a value estimate</p>{population?.status === 'unavailable_for_plan' ? <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">{population.message}</p> : <PokemonProviderFieldGrid fields={[
+        ['Status', population?.status], ['Total population', population?.data?.totalPopulation], ['Total gems', population?.data?.totalGems], ['Combined gem rate', population?.data?.combinedGemRate], ['Graders tracked', population?.data?.gradersTracked], ['Combined totals', population?.data?.combinedTotals], ['Percent higher', population?.data?.percentHigher], ['Match confidence', population?.data?.matchConfidence], ['Match score', population?.data?.matchScore], ['Last fetched', population?.data?.lastFetchedDate], ['Updated', population?.data?.updatedAt], ['Population by grader', population?.data?.populationByGrader],
+      ]} />}</div>
+      <div><p className="mb-1 text-[9px] font-semibold uppercase text-gray-400">Provider freshness, plan, and credit audit</p><PokemonProviderFieldGrid fields={[
+        ['Needs detailed scrape', detail.needsDetailedScrape], ['Data completeness', detail.dataCompleteness || selected.card?.dataCompleteness], ['Last scraped', detail.lastScrapedAt || selected.card?.lastScrapedAt], ['Created', detail.createdAt || selected.card?.createdAt], ['Updated', detail.updatedAt || selected.card?.updatedAt], ['Response language', metadata?.language], ['Provider count / total', metadata?.count != null ? `${metadata.count}/${metadata.total ?? '?'}` : null], ['History window', metadata?.historyWindow], ['Includes', metadata?.includes], ['Plan restrictions', metadata?.planRestrictions], ['API calls', metadata?.apiCallsConsumed], ['Search credits', data?.audit?.search], ['Detail credits', data?.audit?.detail], ['Population credits', data?.audit?.population],
+      ]} /></div>
+      <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details>
+    </div>}
+  </div>;
+}
+
 function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.get130PointData.useQuery(
@@ -1354,6 +1446,8 @@ function testAiDetails(item: SelectedItem): Record<string, any> {
 function evidenceStatus(data: any): 'success' | 'not_found' | 'error' | 'idle' {
   if (!data) return 'idle';
   if (data.status === 'success') return 'success';
+  if (data.status === 'partial') return 'success';
+  if (data.status === 'review_required') return 'not_found';
   if (data.status === 'not_found') return 'not_found';
   if (data.status === 'error' || data.error) return 'error';
   return 'success';
@@ -1389,7 +1483,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, oneThirtyPointData, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, oneThirtyPointData, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -1398,6 +1492,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   soldCompsData: any;
   hipstampData: any;
   hipstampSoldData: any;
+  pokemonPriceTrackerData: any;
   oneThirtyPointData: any;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -1460,6 +1555,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
     if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
     if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
+    if (enabledSources.has('pokemon_price_tracker')) add({ id: 'pokemon_price_tracker', label: 'Pokémon Price Tracker', kind: 'reference', status: evidenceStatus(pokemonPriceTrackerData), fields: { cardName: pokemonPriceTrackerData?.detail?.name ?? pokemonPriceTrackerData?.selected?.card?.name, set: pokemonPriceTrackerData?.detail?.setName ?? pokemonPriceTrackerData?.selected?.card?.setName, cardNumber: pokemonPriceTrackerData?.detail?.cardNumber ?? pokemonPriceTrackerData?.selected?.card?.cardNumber, variant: pokemonPriceTrackerData?.detail?.prices?.primaryPrinting ?? pokemonPriceTrackerData?.selected?.card?.prices?.primaryPrinting }, message: pokemonPriceTrackerData?.messages?.join(' ') ?? null });
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];
@@ -1481,7 +1577,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
     if (enabledSources.has('pcgs')) add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -2422,7 +2518,7 @@ function PayPalComparisonInspector() {
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -2431,6 +2527,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
   soldCompsData: any;
   hipstampData: any;
   hipstampSoldData: any;
+  pokemonPriceTrackerData: any;
+  pokemonPriceTrackerLoading: boolean;
   oneThirtyPointData: any;
   onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -2457,7 +2555,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} />
@@ -2468,6 +2566,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
       )}
       {enabledSources.has('hipstamp') && <HipstampSection item={queryItem} side={side} />}
       {enabledSources.has('hipstamp_sold') && <HipstampSoldSection item={queryItem} side={side} />}
+      {enabledSources.has('pokemon_price_tracker') && <PokemonPriceTrackerSection item={item} side={side} data={pokemonPriceTrackerData} isLoading={pokemonPriceTrackerLoading} />}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
           ? <SoldCompsSection item={queryItem} side={side} />
@@ -2640,6 +2739,15 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('hipstamp_sold') }
   );
 
+  const leftPokemonPriceTrackerQuery = trpc.testAI.getPokemonPriceTrackerData.useQuery(
+    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade ?? undefined, condition: leftItem.condition ?? undefined, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails ?? undefined } : { title: '', category: 'unknown' },
+    { enabled: !!leftItem && leftSources.has('pokemon_price_tracker') }
+  );
+  const rightPokemonPriceTrackerQuery = trpc.testAI.getPokemonPriceTrackerData.useQuery(
+    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade ?? undefined, condition: rightItem.condition ?? undefined, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails ?? undefined } : { title: '', category: 'unknown' },
+    { enabled: !!rightItem && rightSources.has('pokemon_price_tracker') }
+  );
+
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
@@ -2695,8 +2803,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
           </div>
         )}
 
@@ -2745,7 +2853,7 @@ export default function TestAI() {
                   </span>
                 ))}
               </div>
-              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence.</p>
+              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence. Pokémon Price Tracker is live for Pokémon/TCG items and is manually enabled; its catalog, guide-price, history, eBay, Cardmarket, and plan-gated population fields remain source-attributed context and never change the Tradebilia trade verdict.</p>
             </div>
           </div>
         )}

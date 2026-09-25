@@ -16,6 +16,9 @@ describe('internal Test AI source-category applicability policy', () => {
     const videoGameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
     expect(videoGameIds).toContain('igdb');
     expect(videoGameIds).not.toContain('tcgdex');
+    const pokemonIds = getEligibleTestAiSources({ category: 'pokemon', hasTitle: true }).map((source) => source.sourceId);
+    expect(pokemonIds).toContain('pokemon_price_tracker');
+    expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).not.toContain('pokemon_price_tracker');
   });
 
   it('enables Discogs only for titled Music items', () => {

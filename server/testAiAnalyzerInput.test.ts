@@ -50,4 +50,11 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain("['Identity', profile.itemIdentificationConfidence !== 'low']");
     expect(clientSource).toContain("['Recent sales', profile.recentSaleCount > 0]");
   });
+
+  it('keeps Pokémon Price Tracker as manually enabled source-attributed context', () => {
+    expect(routerSource).toContain('getPokemonPriceTrackerData: protectedProcedure');
+    expect(routerSource).toContain('return lookupPokemonPriceTracker(input)');
+    expect(clientSource).toContain("id: 'pokemon_price_tracker', label: 'Pokémon Price Tracker', kind: 'reference'");
+    expect(clientSource).toContain('do not alter Tradebilia valuation, confidence, or trade verdicts');
+  });
 });

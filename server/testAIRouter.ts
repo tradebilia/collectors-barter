@@ -29,6 +29,7 @@ import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPAR
 import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
 import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
+import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -800,6 +801,22 @@ export const testAIRouter = router({
       });
       const listings = visualFilter.listings as typeof result.listings;
       return { ...result, listings, metrics: computeHipstampMetrics(listings), visualFilter };
+    }),
+
+  // Pokémon Price Tracker catalog and provider context — sandbox-only, manually enabled, and read-only.
+  // Its guide prices, history, eBay data, Cardmarket data, and population never enter Tradebilia valuation.
+  getPokemonPriceTrackerData: protectedProcedure
+    .input(z.object({
+      title: z.string(),
+      category: z.string(),
+      grade: z.string().nullish(),
+      condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(),
+      itemDetails: z.string().nullish(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPokemonPriceTracker(input);
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API
