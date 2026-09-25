@@ -105,6 +105,12 @@ const AnimatedLogoSmall70 = ({
   // The global-search lockup needs a real mobile presence; 0.36 reduced the
   // wordmark to thumbnail size inside the wide centered viewBox.
   const activeLockupScale = centerLockup && isNarrowViewport ? 0.68 : lockupScale;
+  // When the measured viewBox grows for a long category label, grow the SVG's
+  // rendered field by the same ratio. This keeps the font scale constant
+  // instead of shrinking the whole lockup to fit a fixed-width canvas.
+  const renderedCanvasWidthScale = centerLockup && isNarrowViewport
+    ? Math.max(1, dynamicViewBoxWidth / activeCenteredViewBoxWidth) * canvasWidthScale
+    : canvasWidthScale;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
@@ -167,7 +173,7 @@ const AnimatedLogoSmall70 = ({
         xmlns="http://www.w3.org/2000/svg"
         viewBox={`0 0 ${dynamicViewBoxWidth} 216`}
         className="h-auto w-full flex-none drop-shadow-lg"
-        style={{ width: `${canvasWidthScale * 100}%`, maxWidth: canvasWidthScale === 1 ? "100%" : "none", height: "100%" }}
+        style={{ width: `${renderedCanvasWidthScale * 100}%`, maxWidth: renderedCanvasWidthScale === 1 ? "100%" : "none", height: "100%" }}
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
