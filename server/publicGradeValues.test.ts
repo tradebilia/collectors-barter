@@ -13,4 +13,10 @@ describe("public grade formatting", () => {
     expect(formatPublicGradeValue("ungraded")).toBe("");
     expect(formatPublicGradeValue("0.00")).toBe("");
   });
+
+  it("adds a separator to compact PCGS-style labels without changing stored values", () => {
+    expect(formatPublicGradeValue("MS65")).toBe("MS-65");
+    expect(formatPublicGradeValue("MS65+")).toBe("MS-65+");
+    expect(formatPublicGradeValue("MS-65")).toBe("MS-65");
+  });
 });
