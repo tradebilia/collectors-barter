@@ -33,6 +33,20 @@ import { toast } from "sonner";
 import { Link, useRoute } from "wouter";
 import { getGradingCompanyNamesForCategory, getValidGradesForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { recoverPcgsCoinGradeFromTitle } from "@shared/publicGradeValues";
+
+function hasDisplayableGrade(value: string | number | null | undefined): boolean {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized || normalized === "ungraded" || normalized === "raw") return false;
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) ? numeric > 0 : true;
+}
+
+function getDisplayGrade(listing: { grade?: string | number | null; title?: string; category?: string; certificationCompany?: string | null }) {
+  return hasDisplayableGrade(listing.grade)
+    ? listing.grade
+    : recoverPcgsCoinGradeFromTitle(listing.title, listing.category, listing.certificationCompany);
+}
 import {
   autographsMediumOptions,
   countryOptions,
@@ -1497,9 +1511,9 @@ export default function CategoryPage() {
                             </Link>
                             <div className="flex items-center gap-3 text-xs mt-1 flex-nowrap overflow-x-auto">
                               <div>
-                                <span className="font-semibold">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade:" : "Condition:"}</span>{" "}
-                                {listing.grade && parseFloat(String(listing.grade)) > 0
-                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}`
+                                <span className="font-semibold">{getDisplayGrade(listing) ? "Grade:" : "Condition:"}</span>{" "}
+                                {getDisplayGrade(listing)
+                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(getDisplayGrade(listing))}`
                                   : listing.conditionLabel}
                               </div>
                               {listing.estimatedValue && (
@@ -1539,10 +1553,10 @@ export default function CategoryPage() {
                           </div>
                           <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
                             <div>
-                              <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{listing.grade && parseFloat(String(listing.grade)) > 0 ? "Grade" : "Condition"}</p>
+                              <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{getDisplayGrade(listing) ? "Grade" : "Condition"}</p>
                               <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">
-                                {listing.grade && parseFloat(String(listing.grade)) > 0
-                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}`
+                                {getDisplayGrade(listing)
+                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(getDisplayGrade(listing))}`
                                   : listing.conditionLabel}
                               </p>
                             </div>

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatPublicGradeValue } from "../shared/publicGradeValues";
+import {
+  formatPublicGradeValue,
+  normalizePcgsCoinGrade,
+  recoverPcgsCoinGradeFromTitle,
+} from "../shared/publicGradeValues";
 
 describe("public grade formatting", () => {
   it("uses a maximum of one decimal place without changing the stored value", () => {
@@ -18,5 +22,13 @@ describe("public grade formatting", () => {
     expect(formatPublicGradeValue("MS65")).toBe("MS-65");
     expect(formatPublicGradeValue("MS65+")).toBe("MS-65+");
     expect(formatPublicGradeValue("MS-65")).toBe("MS-65");
+  });
+
+  it("preserves valid PCGS coin labels for storage and recovers legacy title labels", () => {
+    expect(normalizePcgsCoinGrade("MS65")).toBe("MS65");
+    expect(normalizePcgsCoinGrade("MS 65+")).toBe("MS65+");
+    expect(normalizePcgsCoinGrade("AFA 85")).toBeNull();
+    expect(recoverPcgsCoinGradeFromTitle("1945-S Walking Liberty PCGS MS65", "coins", "PCGS")).toBe("MS65");
+    expect(recoverPcgsCoinGradeFromTitle("1945-S Walking Liberty PCGS MS65", "coins", "NGC")).toBeNull();
   });
 });

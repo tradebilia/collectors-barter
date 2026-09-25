@@ -41,6 +41,7 @@ import { claimIdentity } from "./identityRegistry";
 import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference";
 import { buildPayPalComparisonProfile, type PayPalComparisonProfile, type PayPalIdentityReference } from "./paypalIdentity";
 import { selectSimilarListings } from "../shared/similarListings";
+import { normalizePcgsCoinGrade, recoverPcgsCoinGradeFromTitle } from "../shared/publicGradeValues";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -54,10 +55,17 @@ export function normalizeListingEstimatedValue(value?: number | null): number | 
  * listings.grade is a numeric DECIMAL column. Collector-facing grade inputs
  * may include a display suffix such as "80+"; persist only the numeric part.
  */
-export function normalizeListingGrade(value?: string | number | null): string {
+export function normalizeListingGrade(
+  value?: string | number | null,
+  category?: string,
+  certificationCompany?: string,
+): string {
   if (value === undefined || value === null) return '0';
   const trimmed = String(value).trim();
   if (!trimmed || trimmed.toLowerCase() === 'ungraded' || trimmed.toLowerCase() === 'raw') return '0';
+  if (category === 'coins' && certificationCompany?.trim().toUpperCase() === 'PCGS') {
+    return normalizePcgsCoinGrade(trimmed) ?? '0';
+  }
   const numericMatch = trimmed.match(/^\d+(?:\.\d+)?/);
   return numericMatch ? numericMatch[0] : '0';
 }
@@ -599,13 +607,17 @@ async function formatListings(
     : [];
   const savedListingIds = new Set(watchlistRows.map(r => r.listingId));
 
-  return visibleListingRows.map(row => ({
+  return visibleListingRows.map(row => {
+    const legacyPcgsGrade = recoverPcgsCoinGradeFromTitle(row.title, row.category, row.certificationCompany);
+    return {
     id: row.id,
     ownerId: row.ownerId,
     title: row.title,
     category: row.category,
     condition: row.condition,
-    grade: row.grade ?? null,
+    grade: row.grade && String(row.grade) !== '0' && String(row.grade).toLowerCase() !== 'ungraded'
+      ? row.grade
+      : legacyPcgsGrade ?? row.grade ?? null,
     certificationCompany: row.certificationCompany ?? null,
     customGradingCompany: getCustomGradingCompany(row.itemDetails),
     estimatedValue: row.estimatedValue ? Number(row.estimatedValue) : null,
@@ -630,7 +642,8 @@ async function formatListings(
     savedToWatchlist: savedListingIds.has(row.id),
     viewCount: row.viewCount ?? 0,
     favoriteCount: row.favoriteCount ?? 0,
-  }));
+    };
+  });
 }
 
 export async function getMarketplaceFeed(
@@ -2855,7 +2868,7 @@ export async function createListing(
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     certificationCompany: input.certificationCompany || undefined,
     certificationNumber: input.certificationNumber || undefined,
-    grade: normalizeListingGrade(input.grade),
+    grade: normalizeListingGrade(input.grade, input.category, input.certificationCompany),
     featured: 0,
   });
   const listingId = getInsertId(insertResult);
@@ -2925,7 +2938,7 @@ export async function updateListing(
       itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
       certificationCompany: input.certificationCompany || null,
       certificationNumber: input.certificationNumber || null,
-      grade: normalizeListingGrade(input.grade),
+      grade: normalizeListingGrade(input.grade, input.category, input.certificationCompany),
     })
     .where(eq(listings.id, input.listingId));
 

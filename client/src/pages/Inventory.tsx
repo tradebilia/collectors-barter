@@ -22,6 +22,7 @@ import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { trpc } from "@/lib/trpc";
 import { getTradebiliaCategoryLabel, formatGrade, formatWholeDollar, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { recoverPcgsCoinGradeFromTitle } from "@shared/publicGradeValues";
 import { Download, Loader2, Menu, MessageSquareText, Pencil, Plus, Search, Share2, Trash2, Eye, EyeOff } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
@@ -701,7 +702,14 @@ Clear Filters
 
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              {filteredListings.map((listing: any) => (
+              {filteredListings.map((listing: any) => {
+                const normalizedGrade = String(listing.grade ?? '').trim().toLowerCase();
+                const numericGrade = Number(normalizedGrade);
+                const hasStoredGrade = Boolean(normalizedGrade && normalizedGrade !== 'ungraded' && normalizedGrade !== 'raw' && (Number.isFinite(numericGrade) ? numericGrade > 0 : true));
+                const displayGrade = hasStoredGrade
+                  ? listing.grade
+                  : recoverPcgsCoinGradeFromTitle(listing.title, listing.category, listing.certificationCompany);
+                return (
                 <Card key={listing.id} className="overflow-hidden rounded-md border-slate-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:rounded-lg sm:hover:shadow-lg">
                   <CardContent className="p-0">
                     <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-1.5 py-1 sm:px-3 sm:py-2">
@@ -791,14 +799,14 @@ Clear Filters
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem] sm:hidden">
-                        <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{listing.grade && listing.grade !== 'ungraded' ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.grade && listing.grade !== 'ungraded' ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(listing.grade)}` : listing.condition.replace(/_/g, ' ').charAt(0).toUpperCase() + listing.condition.replace(/_/g, ' ').slice(1)}</p></div>
+                        <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{displayGrade ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{displayGrade ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(displayGrade)}` : listing.condition.replace(/_/g, ' ').charAt(0).toUpperCase() + listing.condition.replace(/_/g, ' ').slice(1)}</p></div>
                         <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue !== null && listing.estimatedValue !== undefined ? formatItemValue(listing.estimatedValue) : '—'}</p></div>
                         <div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Category</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.categoryLabel}</p></div>
                         <div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Listing status</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{showDrafts ? 'Draft' : listing.status === 'traded' ? 'Traded' : listing.isActive ? 'Active' : 'Not listed'}</p></div>
                       </div>
                       <div className="hidden space-y-2 text-sm sm:block">
                         <div><span className="text-slate-600"><strong>Category:</strong> {listing.categoryLabel}</span></div>
-                        <div><span className="text-slate-600"><strong>Grade:</strong> {listing.grade && listing.grade !== 'ungraded' ? formatGrade(listing.grade) : 'Not graded'}</span></div>
+                        <div><span className="text-slate-600"><strong>Grade:</strong> {displayGrade ? formatGrade(displayGrade) : 'Not graded'}</span></div>
                         {listing.certificationCompany ? (
                           <div><span className="text-slate-600"><strong>Certification:</strong> {getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)}</span></div>
                         ) : (
@@ -827,7 +835,8 @@ Clear Filters
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
 
               {filteredListings.length === 0 ? (
                 <div className="col-span-full rounded-[1.75rem] border border-dashed border-slate-300 bg-white p-10 text-center">

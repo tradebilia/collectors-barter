@@ -23,3 +23,23 @@ export function formatPublicGradeValue(value: string | number | null | undefined
 
   return (Math.round((numericValue + Number.EPSILON) * 10) / 10).toString();
 }
+
+/** Normalize a PCGS coin label for storage and market-search matching. */
+export function normalizePcgsCoinGrade(value: string | number | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim().toUpperCase().replace(/\s+/g, "");
+  return /^(?:MS|PR|SP|AU|XF|EF|VF|F|G|VG|AG|FR|PO|BN|RB|RD)\d{1,3}\+?$/.test(normalized)
+    ? normalized
+    : null;
+}
+
+/** Recover a legacy PCGS coin grade when an older record lost its grade field. */
+export function recoverPcgsCoinGradeFromTitle(
+  title: string | null | undefined,
+  category: string | null | undefined,
+  certificationCompany: string | null | undefined,
+): string | null {
+  if (category !== "coins" || certificationCompany?.trim().toUpperCase() !== "PCGS") return null;
+  const match = String(title ?? "").match(/\b(?:MS|PR|SP|AU|XF|EF|VF|F|G|VG|AG|FR|PO|BN|RB|RD)\s*\d{1,3}\+?\b/i);
+  return normalizePcgsCoinGrade(match?.[0] ?? null);
+}
