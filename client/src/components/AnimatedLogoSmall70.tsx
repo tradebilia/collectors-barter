@@ -100,8 +100,11 @@ const AnimatedLogoSmall70 = ({
       ? LARGE_CATEGORY_WORD_X + contentOffsetX
       : 348 + contentOffsetX;
   const categoryColor = currentCategory.name === "BILIA" ? neutralCategoryColor : categoryColorOverrides[currentCategory.name] ?? currentCategory.color;
-  const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 1100 : centeredViewBoxWidth;
-  const activeLockupScale = centerLockup && isNarrowViewport ? 0.36 : lockupScale;
+  // Keep the mobile lockup from inheriting excessive desktop whitespace.
+  const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 900 : centeredViewBoxWidth;
+  // The global-search lockup needs a real mobile presence; 0.36 reduced the
+  // wordmark to thumbnail size inside the wide centered viewBox.
+  const activeLockupScale = centerLockup && isNarrowViewport ? 0.68 : lockupScale;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
     : `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)`;
