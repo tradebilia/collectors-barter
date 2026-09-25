@@ -1,7 +1,7 @@
 # Collector Blogs and Social Communities Assessment
 
 **Research date:** 2026-09-25  
-**Current RSS registry:** 220 unique feeds
+**Current RSS registry:** 222 unique feeds
 
 ## Decision
 
@@ -34,7 +34,7 @@ They should **not** populate completed-sale evidence, comparable sales, valuatio
 
 **Value:** Cross-category specialist discussion covering coins, sports cards, autographs, memorabilia, grading, counterfeit slabs, authentication-policy changes, unusual variants, and issuer-release leads.
 
-**Recommendation:** Optional human-reviewed alert queue for only the U.S. Coin, Trading Cards & Memorabilia, and Autographs categories. Keep the already-registered Autographs RSS as contextual discovery. Do not bulk-ingest the entire forum.
+**Recommendation:** The sandbox now includes the official U.S. Coin and Trading Cards & Memorabilia RSS feeds, alongside the already-registered Autographs RSS. They remain contextual discovery feeds and should receive human review before any alert is surfaced. Do not bulk-ingest the entire forum.
 
 ### Net54Baseball
 
@@ -86,7 +86,7 @@ Useful for physical-game collecting themes, completeness/CIB questions, preserva
 
 ## Bottom line
 
-The best additions are **Disney Pin Forum**, **Collectors Universe**, and **Net54Baseball**. Disney Pin Forum can remain as tightly filtered official RSS because its two registered feeds are already topic-specific. Collectors Universe and Net54Baseball are more valuable as human-reviewed research queues. Elite Fourum, CoinTalk, and r/gamecollecting are useful, but their existing feeds already cover them and their noise level makes automated ingestion inappropriate.
+The best additions are **Disney Pin Forum**, **Collectors Universe**, and **Net54Baseball**. Disney Pin Forum remains tightly filtered official RSS because its two feeds are topic-specific. The sandbox now also includes the official Collectors Universe U.S. Coin and Trading Cards & Memorabilia feeds; they remain context-only and should be human-reviewed. Net54Baseball is more valuable as a human-reviewed research queue. Elite Fourum, CoinTalk, and r/gamecollecting are useful, but their existing feeds already cover them and their noise level makes automated ingestion inappropriate.
 
 ## References
 

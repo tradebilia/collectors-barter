@@ -16,9 +16,9 @@ describe('market news feed registry', () => {
     const registry = getMarketNewsFeedRegistry();
     const urls = registry.map((feed) => feed.url);
     expect(new Set(urls).size).toBe(urls.length);
-    expect(registry.length).toBeGreaterThanOrEqual(220);
+    expect(registry.length).toBeGreaterThanOrEqual(222);
     expect(registry.filter((feed) => feed.category === 'Comics').length).toBeGreaterThanOrEqual(18);
-    expect(registry.filter((feed) => feed.category === 'Sports Cards').length).toBeGreaterThanOrEqual(21);
+    expect(registry.filter((feed) => feed.category === 'Sports Cards').length).toBeGreaterThanOrEqual(22);
     expect(registry.filter((feed) => feed.category === 'Vintage Toys').length).toBeGreaterThanOrEqual(23);
     expect(registry.filter((feed) => feed.category === 'Video Games').length).toBeGreaterThanOrEqual(22);
     expect(registry.filter((feed) => feed.category === 'Pokemon / TCG').length).toBeGreaterThanOrEqual(19);
@@ -27,7 +27,7 @@ describe('market news feed registry', () => {
     expect(registry.filter((feed) => feed.category === 'Disney Pins').length).toBeGreaterThanOrEqual(17);
     expect(registry.filter((feed) => feed.category === 'Music').length).toBeGreaterThanOrEqual(23);
     expect(registry.filter((feed) => feed.category === 'Stamps').length).toBeGreaterThanOrEqual(23);
-    expect(registry.filter((feed) => feed.category === 'Coins').length).toBeGreaterThanOrEqual(18);
+    expect(registry.filter((feed) => feed.category === 'Coins').length).toBeGreaterThanOrEqual(19);
     expect(registry.some((feed) => feed.url === 'https://pokejungle.net/feed/')).toBe(true);
     expect(registry.some((feed) => feed.url === 'https://lionheartautographs.com/feed/')).toBe(true);
     expect(registry.some((feed) => feed.url === 'https://home.rpsl.org.uk/feed/')).toBe(true);
@@ -36,6 +36,8 @@ describe('market news feed registry', () => {
     expect(registry.some((feed) => feed.url === 'https://blog.playstation.com/feed/')).toBe(true);
     expect(registry.some((feed) => feed.url === 'https://www.blu-ray.com/rss/newreleasesfeed.xml')).toBe(true);
     expect(registry.some((feed) => feed.url === 'https://acefonline.org/feed/')).toBe(true);
+    expect(registry.some((feed) => feed.url === 'https://forums.collectors.com/categories/u-s-coin-forum/feed.rss')).toBe(true);
+    expect(registry.some((feed) => feed.url === 'https://forums.collectors.com/categories/sports-cards-memorabilia-forum/feed.rss')).toBe(true);
   });
 });
 

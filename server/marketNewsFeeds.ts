@@ -207,6 +207,8 @@ export const MARKET_NEWS_FEEDS: FeedDefinition[] = [
   { source: 'D23', sourceType: 'official', category: 'Disney Pins', url: 'https://d23.com/feed/' },
   { source: 'Disneyland Paris News', sourceType: 'official', category: 'Disney Pins', url: 'https://news.disneylandparis.com/en/feed/' },
   // 2026-09-25 deep-dive additions: verified context-only feeds; never valuation evidence.
+  { source: 'Collectors Universe U.S. Coin Forum', sourceType: 'specialist', category: 'Coins', url: 'https://forums.collectors.com/categories/u-s-coin-forum/feed.rss' },
+  { source: 'Collectors Universe Sports Cards & Memorabilia', sourceType: 'specialist', category: 'Sports Cards', url: 'https://forums.collectors.com/categories/sports-cards-memorabilia-forum/feed.rss' },
   { source: 'SKTCHD', sourceType: 'specialist', category: 'Comics', url: 'https://sktchd.com/feed/' },
   { source: 'The Comics Journal', sourceType: 'specialist', category: 'Comics', url: 'https://www.tcj.com/feed/' },
   { source: 'AIPT Comics', sourceType: 'specialist', category: 'Comics', url: 'https://aiptcomics.com/feed/' },
