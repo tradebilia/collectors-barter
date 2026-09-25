@@ -16,6 +16,8 @@ export const API_PROVIDER_IDS = [
   "pokemon_price_tracker",
   "the_card_api",
   "cardsight_ai",
+  "lelands",
+  "pristine_auction",
   "market_news_rss",
   "rawg",
   "igdb",
@@ -233,7 +235,20 @@ async function probeCardsightAi({ env, fetchImpl }: ProbeContext): Promise<Probe
   requireResponse(response.response, "Cardsight.ai");
   return { message: "Bounded card-catalog search returned a read-only card-market response.", httpStatus: response.response.status, recordsVerified: recordCount(response.payload) };
 }
-
+async function probeLelands({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
+  const response = await requestJson(fetchImpl, "https://api.parse.bot/scraper/d219970c-feb5-4d1a-a22e-9146392618be/search_sales?query=Mickey%20Mantle&limit=1&sort=best&offset=0", {
+    headers: { Accept: "application/json", "X-API-Key": env.PARSE_BOT_API_KEY! },
+  });
+  requireResponse(response.response, "Parse.bot Lelands");
+  return { message: "Lelands completed-auction search returned a bounded read-only response.", httpStatus: response.response.status, recordsVerified: recordCount(response.payload) };
+}
+async function probePristineAuction({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
+  const response = await requestJson(fetchImpl, "https://api.parse.bot/scraper/90fb8e63-d89d-4d24-8445-c25ef960c168/search_lots?query=Michael%20Jordan&status=completed&page=1", {
+    headers: { Accept: "application/json", "X-API-Key": env.PARSE_BOT_API_KEY! },
+  });
+  requireResponse(response.response, "Parse.bot Pristine Auction");
+  return { message: "Pristine completed-lot search returned a bounded read-only response.", httpStatus: response.response.status, recordsVerified: recordCount(response.payload) };
+}
 async function probeMarketNews({ fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
   const representatives = [...new Map(getMarketNewsFeedRegistry().map((feed) => [feed.category, feed])).values()];
   const outcomes = await Promise.all(representatives.map(async (feed) => {
@@ -424,6 +439,8 @@ const PROVIDERS: ApiProviderDefinition[] = [
   { id: "pokemon_price_tracker", name: "Pokémon Price Tracker", group: "Market data", description: "Pokémon identity, market, history, and plan-gated population context in Test AI.", testMode: "data", configured: (env) => configured(env, "POKEMON_PRICE_TRACKER_API_KEY"), check: probePokemonPriceTracker },
   { id: "the_card_api", name: "The Card API", group: "Market data", description: "Sports-card and Pokémon/TCG completed-sale research plus plan-gated catalog identity in Test AI.", testMode: "data", configured: (env) => configured(env, "THE_CARD_API_KEY"), check: probeTheCardApi },
   { id: "cardsight_ai", name: "Cardsight.ai", group: "Market data", description: "Sports-card and Pokémon/TCG catalog, exact-parallel pricing, active-market, and population context in Test AI.", testMode: "data", configured: (env) => configured(env, "CARDSIGHT_API_KEY"), check: probeCardsightAi },
+  { id: "lelands", name: "Lelands via Parse.bot", group: "Market data", description: "Read-only completed sports-card, memorabilia, and autograph auction archive in Test AI.", testMode: "data", configured: (env) => configured(env, "PARSE_BOT_API_KEY"), check: probeLelands },
+  { id: "pristine_auction", name: "Pristine Auction via Parse.bot", group: "Market data", description: "Read-only completed sports-card lots with detail-level sold and price fields in Test AI.", testMode: "data", configured: (env) => configured(env, "PARSE_BOT_API_KEY"), check: probePristineAuction },
   { id: "market_news_rss", name: "Market news RSS registry", group: "Market data", description: "140 category-specific RSS/Atom feeds used as contextual market news, not valuation evidence.", testMode: "data", configured: () => true, check: probeMarketNews },
   { id: "rawg", name: "RAWG", group: "Catalog reference", description: "Video-game factual catalog metadata.", testMode: "data", configured: (env) => configured(env, "RAWG_API_KEY"), check: probeRawg },
   { id: "igdb", name: "IGDB / Twitch", group: "Catalog reference", description: "Video-game release, platform, publisher, and genre facts.", testMode: "data", configured: (env) => configured(env, "TWITCH_CLIENT_ID", "TWITCH_CLIENT_SECRET"), check: probeIgdb },

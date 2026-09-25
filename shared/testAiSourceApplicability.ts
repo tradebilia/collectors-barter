@@ -1,4 +1,4 @@
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
@@ -18,6 +18,8 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'pokemon_price_tracker', categories: ['pokemon'], requires: 'title', purpose: 'Pokémon Price Tracker catalog, guide-price, history, eBay, Cardmarket, and plan-gated population context. Source-attributed sandbox context only; it never changes Tradebilia valuation or verdicts.' },
   { sourceId: 'the_card_api', categories: ['sports cards', 'pokemon'], requires: 'title', purpose: 'The Card API completed-sale records and plan-gated catalog identity. Confirmed, dated sales must still pass Tradebilia identity, grading, recency, duplicate, and currency safeguards before valuation.' },
   { sourceId: 'cardsight_ai', categories: ['sports cards', 'pokemon'], requires: 'title', purpose: 'Cardsight.ai catalog, parallel-aware pricing, active marketplace, and population context. Only exact identity-and-parallel matched, dated auction records that also pass Tradebilia evidence gates may support sandbox valuation.' },
+  { sourceId: 'lelands', categories: ['sports cards', 'autographs'], requires: 'title', purpose: 'Lelands past-auction archive for sports cards, memorabilia, and autographs. Only explicit sold records with dated, identity-matched detail may support sandbox valuation; buyer-premium-inclusive prices remain source-attributed.' },
+  { sourceId: 'pristine_auction', categories: ['sports cards'], requires: 'title', purpose: 'Pristine Auction completed sports-card lots. Only get_lot records with sold=true, a dated close, normalized price, and identity/visual checks may support sandbox valuation.' },
   { sourceId: 'cgc', categories: ['comics'], requires: 'CGC certificate', purpose: 'CGC Comics certification, grade, label details, and population context.' },
   { sourceId: 'psa', categories: ['sports cards', 'pokemon'], requires: 'PSA certificate', purpose: 'PSA card certification, population, and certification sales.' },
   { sourceId: 'bgs', categories: ['sports cards', 'pokemon'], requires: 'BGS certificate', purpose: 'BGS card certification, subgrades, and population.' },

@@ -32,6 +32,7 @@ import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListi
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
+import { lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -880,6 +881,42 @@ export const testAIRouter = router({
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Cardsight.ai auction-price records',
         targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        listings: result.sales,
+      });
+      return { ...result, sales: visualFilter.listings, visualFilter };
+    }),
+
+  // Lelands completed-auction archive — sandbox-only and read-only.
+  getLelandsAuctionData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const result = await lookupLelandsAuctions(input);
+      if (!result.sales.length || !input.imageUrl) return result;
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Lelands completed auction records', targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        listings: result.sales,
+      });
+      return { ...result, sales: visualFilter.listings, visualFilter };
+    }),
+
+  // Pristine Auction sports-card archive — sandbox-only and read-only.
+  getPristineAuctionData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const result = await lookupPristineAuctions(input);
+      if (!result.sales.length || !input.imageUrl) return result;
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Pristine Auction completed records', targetImageUrl: input.imageUrl,
         targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
         listings: result.sales,
       });
