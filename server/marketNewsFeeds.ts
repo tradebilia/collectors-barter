@@ -188,6 +188,24 @@ export const MARKET_NEWS_FEEDS: FeedDefinition[] = [
   { source: 'CoinTalk', sourceType: 'specialist', category: 'Coins', url: 'https://www.cointalk.com/forums/-/index.rss' },
   { source: 'Change Checker', sourceType: 'specialist', category: 'Coins', url: 'https://blog.changechecker.org/feed/' },
   { source: 'Coin Publications', sourceType: 'specialist', category: 'Coins', url: 'https://coinpublications.com/feed/' },
+  // Verified RSS expansion: specialist context only; never valuation evidence.
+  { source: 'PokéJungle', sourceType: 'specialist', category: 'Pokemon / TCG', url: 'https://pokejungle.net/feed/' },
+  { source: 'Japan2UK Upcoming Products', sourceType: 'specialist', category: 'Pokemon / TCG', url: 'https://www.japan2uk.com/blogs/upcoming-products.atom' },
+  { source: 'SuperDuperTCG Blog', sourceType: 'specialist', category: 'Pokemon / TCG', url: 'https://www.superdupertcg.com/blog-feed.xml' },
+  { source: 'r/pkmntcgcollections', sourceType: 'specialist', category: 'Pokemon / TCG', url: 'https://www.reddit.com/r/pkmntcgcollections/.rss' },
+  { source: 'eBay Newsroom', sourceType: 'official', category: 'Pokemon / TCG', url: 'https://www.ebayinc.com/stories/news/rss/' },
+  { source: 'Lion Heart Autographs', sourceType: 'specialist', category: 'Autographs', url: 'https://lionheartautographs.com/feed/' },
+  { source: 'Nate D. Sanders Auctions', sourceType: 'specialist', category: 'Autographs', url: 'https://natedsandersauctionblog.com/feed/' },
+  { source: 'Collectors Weekly Articles', sourceType: 'specialist', category: 'Autographs', url: 'https://www.collectorsweekly.com/articles/feed/' },
+  { source: 'Royal Philatelic Society London', sourceType: 'official', category: 'Stamps', url: 'https://home.rpsl.org.uk/feed/' },
+  { source: 'U.S. Philatelic Classics Society', sourceType: 'official', category: 'Stamps', url: 'https://www.uspcs.org/feed/' },
+  { source: 'Postal History Society', sourceType: 'official', category: 'Stamps', url: 'https://www.postalhistory.org.uk/feed/' },
+  { source: 'Military Postal History Society', sourceType: 'official', category: 'Stamps', url: 'https://militaryphs.org/blog/feed/' },
+  { source: 'United States Stamp Society', sourceType: 'official', category: 'Stamps', url: 'https://www.usstamps.org/feed/' },
+  { source: 'Barbados Stamps', sourceType: 'specialist', category: 'Stamps', url: 'https://www.barbadosstamps.co.uk/blog/feed/' },
+  { source: 'ALES STAMPS', sourceType: 'specialist', category: 'Stamps', url: 'https://alesstamps.blogspot.com/feeds/posts/default' },
+  { source: 'D23', sourceType: 'official', category: 'Disney Pins', url: 'https://d23.com/feed/' },
+  { source: 'Disneyland Paris News', sourceType: 'official', category: 'Disney Pins', url: 'https://news.disneylandparis.com/en/feed/' },
 ];
 
 const categoryAliases: Record<string, string[]> = {

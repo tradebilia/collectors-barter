@@ -11,6 +11,20 @@ describe('market news feed registry', () => {
     expect(registry.some((feed) => feed.category === 'Coins')).toBe(true);
     expect(registry.every((feed) => feed.url.startsWith('https://'))).toBe(true);
   });
+
+  it('includes the verified expansion feeds without duplicate URLs', () => {
+    const registry = getMarketNewsFeedRegistry();
+    const urls = registry.map((feed) => feed.url);
+    expect(new Set(urls).size).toBe(urls.length);
+    expect(registry.filter((feed) => feed.category === 'Pokemon / TCG').length).toBeGreaterThanOrEqual(12);
+    expect(registry.filter((feed) => feed.category === 'Autographs').length).toBeGreaterThanOrEqual(12);
+    expect(registry.filter((feed) => feed.category === 'Stamps').length).toBeGreaterThanOrEqual(17);
+    expect(registry.filter((feed) => feed.category === 'Disney Pins').length).toBeGreaterThanOrEqual(13);
+    expect(registry.some((feed) => feed.url === 'https://pokejungle.net/feed/')).toBe(true);
+    expect(registry.some((feed) => feed.url === 'https://lionheartautographs.com/feed/')).toBe(true);
+    expect(registry.some((feed) => feed.url === 'https://home.rpsl.org.uk/feed/')).toBe(true);
+    expect(registry.some((feed) => feed.url === 'https://d23.com/feed/')).toBe(true);
+  });
 });
 
 describe('market news matching', () => {
