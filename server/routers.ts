@@ -5120,7 +5120,7 @@ export const appRouter = router({
         const partnerMethods = partner
           ? getEnabledExternalPaymentMethods(partner).map((method) => ({ method, label: getExternalPaymentMethodLabel(method) }))
           : [];
-        const supportedStatuses = ["negotiating", "accepted", "shipping", "shipped"];
+        const supportedStatuses = ["negotiating", "accepted", "shipping", "shipped", "completed"];
         if (!supportedStatuses.includes(proposal.status)) {
           return { obligations: [], sharedMethods, partnerMethods, partnerDisplayName: memberPaymentDisplayName(partner) };
         }
@@ -5130,7 +5130,7 @@ export const appRouter = router({
           ? await db.select().from(tradePayments).where(and(eq(tradePayments.proposalId, input.proposalId), inArray(tradePayments.payerId, obligations.map((obligation) => obligation.payerId))))
           : [];
         const paymentByPayerId = new Map(paymentRows.map((payment) => [payment.payerId, payment]));
-        const mayRevealDestination = proposal.status === "shipping" || proposal.status === "shipped";
+        const mayRevealDestination = proposal.status === "shipping" || proposal.status === "shipped" || proposal.status === "completed";
 
         return {
           sharedMethods,

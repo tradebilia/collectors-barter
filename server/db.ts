@@ -1373,6 +1373,27 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
       ).length > 0
     : false;
 
+  // A member may have one live discussion for this listing with this owner.
+  // This is deliberately viewer-specific: it neither reveals other collectors'
+  // proposals nor prevents the listing owner from seeing their own item.
+  const viewerActiveTradeRows = viewerId && viewerId !== detailCard[0].ownerId
+    ? await db
+        .select({
+          id: tradeProposals.id,
+          status: tradeProposals.status,
+          tradeReferenceNumber: tradeProposals.tradeReferenceNumber,
+        })
+        .from(tradeProposals)
+        .where(and(
+          eq(tradeProposals.requestedListingId, listingId),
+          eq(tradeProposals.requesterId, viewerId),
+          eq(tradeProposals.recipientId, detailCard[0].ownerId),
+          inArray(tradeProposals.status, ['pending', 'negotiating', 'accepted', 'shipping', 'shipped', 'frozen', 'disputed']),
+        ))
+        .orderBy(desc(tradeProposals.updatedAt))
+        .limit(1)
+    : [];
+
   const ratingMap = await getRatingStatsMap([detailCard[0].ownerId]);
   const ownerRating = ratingMap.get(detailCard[0].ownerId) ?? { averageRating: 0, reviewCount: 0 };
   const ownerEtsyVerification = getPublicEtsyVerification(ownerProfileRows[0]?.connectedAccounts);
@@ -1416,6 +1437,13 @@ export async function getListingDetail(listingId: number, viewerId: number | nul
     primaryPhotoUrl: photoRows.length > 0 ? photoRows[0].imageUrl : null,
     similarListings: await formatListings(similarRowsWithPhotos, viewerId, { publicOnly: true }),
     savedToWatchlist: isSaved,
+    viewerActiveTrade: viewerActiveTradeRows[0]
+      ? {
+          id: viewerActiveTradeRows[0].id,
+          status: viewerActiveTradeRows[0].status,
+          tradeReferenceNumber: viewerActiveTradeRows[0].tradeReferenceNumber,
+        }
+      : null,
   };
 }
 
@@ -1443,6 +1471,24 @@ export async function createTradeProposal(
   }
   if (requestedListing[0].status !== "active") {
     throw new Error("The requested listing is no longer available for trade.");
+  }
+
+  // Keep the older compatibility procedure idempotent too. The primary
+  // Trade Flow router has the same authoritative guard; this protects any
+  // remaining caller from creating a second live proposal from a stale tab.
+  const existingActiveProposal = await db
+    .select({ id: tradeProposals.id, tradeReferenceNumber: tradeProposals.tradeReferenceNumber })
+    .from(tradeProposals)
+    .where(and(
+      eq(tradeProposals.requestedListingId, input.requestedListingId),
+      eq(tradeProposals.requesterId, user.id),
+      eq(tradeProposals.recipientId, requestedListing[0].ownerId),
+      inArray(tradeProposals.status, ['pending', 'negotiating', 'accepted', 'shipping', 'shipped', 'frozen', 'disputed']),
+    ))
+    .orderBy(desc(tradeProposals.updatedAt))
+    .limit(1);
+  if (existingActiveProposal[0]) {
+    throw new Error(`A trade proposal for this item is already in progress${existingActiveProposal[0].tradeReferenceNumber ? ` (TR-${existingActiveProposal[0].tradeReferenceNumber})` : ''}. Continue it from Trade Hub.`);
   }
 
   const proposalInsert = await db.insert(tradeProposals).values({

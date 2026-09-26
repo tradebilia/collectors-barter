@@ -35,4 +35,8 @@ describe("payment verification authorization", () => {
       { payerId: 20, payeeId: 10, amount: 25 },
     ]);
   });
+
+  it("preserves completed-trade cash obligations for participant-only recap details", () => {
+    expect(getPaymentVerificationObligation({ requesterId: 10, recipientId: 20, status: "completed", cashFromRequester: "25", cashFromRecipient: "0" }, 10)).toEqual({ payerId: 10, payeeId: 20, amount: 25 });
+  });
 });

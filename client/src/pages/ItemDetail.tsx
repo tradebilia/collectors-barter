@@ -187,6 +187,8 @@ export default function ItemDetail() {
   const listing = listingDetailQuery.data?.listing;
   const similarListings = listing?.similarListings ?? [];
   const isOwnListing = Boolean(listing && user && listing.ownerId === user.id);
+  const viewerActiveTrade = listing?.viewerActiveTrade ?? null;
+  const hasActiveTradeForListing = Boolean(viewerActiveTrade);
 
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -213,6 +215,10 @@ export default function ItemDetail() {
       toast.error("You cannot message or trade with your own item.");
       return;
     }
+    if (hasActiveTradeForListing) {
+      toast.info('A trade proposal for this item is already in progress. Continue it from Trade Hub.');
+      return;
+    }
     setProposalMessage("");
     setIsProposalDialogOpen(true);
   };
@@ -227,7 +233,7 @@ export default function ItemDetail() {
   };
 
   const submitTradeProposal = () => {
-    if (!listing || isOwnListing || !proposalMessage.trim()) return;
+    if (!listing || isOwnListing || hasActiveTradeForListing || !proposalMessage.trim()) return;
     createProposalMutation.mutate({ listingId: listing.id, message: proposalMessage.trim() });
   };
 
@@ -498,16 +504,16 @@ export default function ItemDetail() {
                 <div className="mt-8 grid gap-4 sm:grid-cols-3">
                   <Button 
                     onClick={startTradeProposal} 
-                    disabled={createProposalMutation.isPending || isOwnListing}
-                    title={isOwnListing ? "You cannot message or trade with your own item" : !isAuthenticated ? "Sign in to propose a trade" : "Start a trade proposal"}
+                    disabled={createProposalMutation.isPending || isOwnListing || hasActiveTradeForListing}
+                    title={isOwnListing ? "You cannot message or trade with your own item" : hasActiveTradeForListing ? "A trade proposal for this item is already in progress. Continue it from Trade Hub." : !isAuthenticated ? "Sign in to propose a trade" : "Start a trade proposal"}
                     className={`h-12 rounded-[1rem] text-sm font-semibold text-white ${
-                      createProposalMutation.isSuccess 
+                      createProposalMutation.isSuccess || hasActiveTradeForListing
                         ? 'bg-yellow-600 hover:bg-yellow-700 cursor-default' 
                         : 'bg-teal-600 hover:bg-teal-700'
                     }`}
                   >
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
-                    {isOwnListing ? 'Your Listing' : !isAuthenticated ? 'Sign in to trade' : createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
+                    {isOwnListing ? 'Your Listing' : !isAuthenticated ? 'Sign in to trade' : hasActiveTradeForListing || createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
                   </Button>
                   <Button onClick={startMessageOwner} disabled={isOwnListing} title={isOwnListing ? "You cannot message your own item" : !isAuthenticated ? "Sign in to message the owner" : "Message owner"} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
@@ -552,7 +558,7 @@ export default function ItemDetail() {
                         autoFocus
                       />
                       <p className="text-right text-xs text-gray-500">{proposalMessage.length}/1000</p>
-                      <Button className="w-full" onClick={submitTradeProposal} disabled={createProposalMutation.isPending || !proposalMessage.trim()}>
+                      <Button className="w-full" onClick={submitTradeProposal} disabled={createProposalMutation.isPending || hasActiveTradeForListing || !proposalMessage.trim()}>
                         {createProposalMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Send Trade Proposal
                       </Button>

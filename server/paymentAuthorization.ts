@@ -21,7 +21,7 @@ export function isAuthorizedPaymentVerification(
 
 /**
  * Derives the only allowed direct-payment obligation from a trade in
- * Negotiation, Review, Shipping, or Confirm Receipt. Caller input must never
+ * Negotiation, Review, Shipping, Confirm Receipt, or completed trade. Caller input must never
  * select the recipient or amount.
  * Caller input must never select the recipient or amount.
  */
@@ -29,7 +29,7 @@ export function getPaymentVerificationObligation(
   proposal: PaymentProposalObligation,
   payerId: number,
 ): { payerId: number; payeeId: number; amount: number } | null {
-  if (!["negotiating", "accepted", "shipping", "shipped"].includes(proposal.status)) return null;
+  if (!["negotiating", "accepted", "shipping", "shipped", "completed"].includes(proposal.status)) return null;
   if (payerId !== proposal.requesterId && payerId !== proposal.recipientId) return null;
 
   const payeeId = payerId === proposal.requesterId ? proposal.recipientId : proposal.requesterId;

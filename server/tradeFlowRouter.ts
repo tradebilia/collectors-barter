@@ -46,6 +46,8 @@ import { getPaymentVerificationObligations } from "./paymentAuthorization";
 import { EXTERNAL_PAYMENT_METHODS, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, type ExternalPaymentMethod } from "./externalPaymentMethods";
 import { hasTrackingForEveryItem, haveAllCashPaymentsBeenReceived, haveAllCashPaymentsBeenSent, haveAllRequiredItemRecipientsConfirmed } from "./tradeFulfillment";
 
+const ACTIVE_PROPOSAL_STATUSES = ['pending', 'negotiating', 'accepted', 'shipping', 'shipped', 'frozen', 'disputed'] as const;
+
 // ============================================================================
 // HELPER: Check notification preference and get user email
 // Returns { email, name } if the user has the given pref enabled, null otherwise
@@ -263,6 +265,27 @@ export const tradeFlowRouter = router({
       }
       if ((recipient as any)?.isSuspended) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'This user\'s account is currently suspended' });
+      }
+
+      // A second click must never create a duplicate negotiation. The item-detail
+      // button is disabled from persisted listing data, and this guard remains the
+      // authoritative protection against stale tabs and concurrent submissions.
+      const existingProposal = await db
+        .select({ id: tradeProposals.id, status: tradeProposals.status, tradeReferenceNumber: tradeProposals.tradeReferenceNumber })
+        .from(tradeProposals)
+        .where(and(
+          eq(tradeProposals.requestedListingId, input.listingId),
+          eq(tradeProposals.requesterId, userId),
+          eq(tradeProposals.recipientId, listing.ownerId),
+          inArray(tradeProposals.status, ACTIVE_PROPOSAL_STATUSES),
+        ))
+        .orderBy(desc(tradeProposals.updatedAt))
+        .limit(1);
+      if (existingProposal[0]) {
+        throw new TRPCError({
+          code: 'CONFLICT',
+          message: `A trade proposal for this item is already in progress${existingProposal[0].tradeReferenceNumber ? ` (TR-${existingProposal[0].tradeReferenceNumber})` : ''}. Continue it from Trade Hub.`,
+        });
       }
 
       // 5. Generate trade reference number
@@ -1424,6 +1447,55 @@ export const tradeFlowRouter = router({
         sql`SELECT COUNT(*) as count FROM tradeAlerts WHERE recipientUserId = ${userId} AND isRead = 0`
       );
       return { count: (result as any)?.[0]?.count || 0 };
+    }),
+
+  /**
+   * Gives the bell and Trade Hub a privacy-safe unread destination. Only the
+   * current member's unread counts are returned; no alert body or counterpart
+   * data is exposed here.
+   */
+  getUnreadTradeAlertFolders: protectedProcedure
+    .query(async ({ ctx }) => {
+      const db = await requireDb();
+      const userId = ctx.user.id;
+      const [rows] = await db.execute(sql`
+        SELECT tp.status, COUNT(*) AS count, MAX(ta.createdAt) AS latestAlertAt
+        FROM tradeAlerts ta
+        JOIN tradeProposals tp ON tp.id = ta.proposalId
+        WHERE ta.recipientUserId = ${userId} AND ta.isRead = 0
+        GROUP BY tp.status
+        ORDER BY latestAlertAt DESC
+      `);
+      const folderForStatus: Record<string, 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed'> = {
+        pending: 'proposal',
+        negotiating: 'negotiating',
+        accepted: 'accepted',
+        shipping: 'accepted',
+        shipped: 'shipped',
+        declined: 'declined',
+        cancelled: 'declined',
+        completed: 'completed',
+        frozen: 'negotiating',
+        disputed: 'negotiating',
+      };
+      const folders = new Map<string, { folder: 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed'; count: number; latestAlertAt: string | null }>();
+      for (const row of (rows as unknown as any[]) || []) {
+        const folder = folderForStatus[String(row.status ?? '')];
+        if (!folder) continue;
+        const current = folders.get(folder);
+        const count = Number(row.count) || 0;
+        if (current) {
+          current.count += count;
+          if (String(row.latestAlertAt ?? '') > String(current.latestAlertAt ?? '')) current.latestAlertAt = row.latestAlertAt ?? null;
+        } else {
+          folders.set(folder, { folder, count, latestAlertAt: row.latestAlertAt ?? null });
+        }
+      }
+      const orderedFolders = [...folders.values()].sort((left, right) => String(right.latestAlertAt ?? '').localeCompare(String(left.latestAlertAt ?? '')));
+      return {
+        folders: orderedFolders,
+        primaryFolder: orderedFolders[0]?.folder ?? null,
+      };
     }),
 
   getTradeDetails: protectedProcedure

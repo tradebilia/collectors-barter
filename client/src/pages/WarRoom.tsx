@@ -508,7 +508,7 @@ export default function WarRoom() {
   const currentStage = trade ? getStageFromStatus(trade.proposal.status, Number((trade as any).reviewCount ?? 0)) : 'proposed';
 
   useEffect(() => {
-    if (currentStage !== 'shipped' || !trade?.trackingNumbers?.length) return;
+    if (!['shipped', 'review', 'completed'].includes(currentStage) || !trade?.trackingNumbers?.length) return;
     const entries = (trade.trackingNumbers as any[])
       .filter((entry) => ['UPS', 'FEDEX', 'DHL'].includes(String(entry.carrier).toUpperCase()) && String(entry.trackingNumber || '').trim())
       .map((entry) => `${Number(entry.listingId)}:${String(entry.carrier)}:${String(entry.trackingNumber).trim()}`)
@@ -522,7 +522,7 @@ export default function WarRoom() {
   const formatShipmentEventLocation = (event: any) => [event.city, event.state, event.country].filter(Boolean).join(', ') || 'Location not provided';
 
   const renderStep5ShipmentStatus = (tracking: any, fallbackId: number) => {
-    if (currentStage !== 'shipped') return null;
+    if (!['shipped', 'review', 'completed'].includes(currentStage)) return null;
     const carrier = String(tracking.carrier ?? '').toUpperCase();
     if (carrier === 'USPS') {
       return <div className="mt-2 basis-full rounded-lg border border-amber-400/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">USPS tracking details are available on USPS.com. Select <a href={buildUspsTrackingUrl(tracking.trackingNumber)} target="_blank" rel="noopener noreferrer" className="font-semibold underline">Track on USPS.com →</a> to view the latest status and delivery scans.</div>;
@@ -536,11 +536,18 @@ export default function WarRoom() {
       const date = new Date(value);
       return Number.isNaN(date.getTime()) ? 'Date not provided' : date.toLocaleString();
     };
-    return <div className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-xs text-slate-300">
-      <div className="flex items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(fallbackId, tracking.carrier, tracking.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>
-      {status?.expectedDeliveryDate && <p className="mt-1 text-slate-400">Expected delivery: {formatTrackingDate(status.expectedDeliveryDate)}</p>}
-      {events.length > 0 && <div className="mt-3 border-t border-slate-700 pt-2"><p className="mb-2 font-semibold text-slate-200">Shipment history</p><ol className="space-y-2 border-l border-slate-600 pl-3">{events.map((event: any, index: number) => <li key={`${event.timestamp ?? 'event'}-${index}`} className={index === events.length - 1 ? 'relative rounded-md border border-blue-400/30 bg-blue-500/10 p-2' : 'relative rounded-md p-2'}><span className="absolute -left-[1.05rem] top-3 h-2 w-2 rounded-full bg-blue-400" /><div className="flex items-start justify-between gap-2"><strong className="text-slate-100">{event.type || 'Carrier update'}</strong>{index === events.length - 1 && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-300">Current</span>}</div><p className="mt-0.5 text-slate-400">{formatEventTime(event.timestamp)} · {formatShipmentEventLocation(event)}</p></li>)}</ol></div>}
-    </div>;
+    const trackingFacts = [
+      { label: 'Carrier service', value: status?.service },
+      { label: 'Status code', value: status?.statusCategory },
+      { label: 'Carrier detail', value: status?.statusSummary && status?.statusSummary !== status?.status ? status.statusSummary : null },
+      { label: 'Recorded scans', value: events.length ? `${events.length} event${events.length === 1 ? '' : 's'}` : null },
+    ].filter((fact): fact is { label: string; value: string } => Boolean(fact.value));
+    return <section data-testid="full-tracking-details" className="mt-2 basis-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-3 text-xs text-slate-300">
+      <div className="flex flex-wrap items-center justify-between gap-2"><span>Shipping status: <strong className="text-white">{status?.status || status?.statusSummary || (trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Not checked')}</strong></span><button type="button" onClick={() => void lookupStep5TrackingStatus(fallbackId, tracking.carrier, tracking.trackingNumber)} disabled={trackingStatusLoadingKey === statusKey} className="rounded-md border border-blue-400/50 bg-blue-500/10 px-2.5 py-1 font-semibold text-blue-200 hover:bg-blue-500/20 disabled:opacity-50">{trackingStatusLoadingKey === statusKey ? 'Refreshing…' : 'Refresh status'}</button></div>
+      {status?.expectedDeliveryDate && <p className="mt-2 text-slate-300">Expected delivery: <span className="font-semibold text-white">{formatTrackingDate(status.expectedDeliveryDate)}</span></p>}
+      {trackingFacts.length > 0 && <dl className="mt-3 grid gap-x-4 gap-y-1 border-t border-slate-700 pt-2 sm:grid-cols-2">{trackingFacts.map((fact) => <div key={fact.label} className="flex items-baseline justify-between gap-3"><dt className="text-slate-500">{fact.label}</dt><dd className="text-right font-medium text-slate-200">{fact.value}</dd></div>)}</dl>}
+      {events.length > 0 ? <div className="mt-3 border-t border-slate-700 pt-3"><p className="mb-2 font-semibold text-slate-100">Complete carrier scan history</p><ol aria-label="Complete carrier scan history" className="space-y-2 border-l border-slate-600 pl-3">{events.map((event: any, index: number) => <li key={`${event.timestamp ?? 'event'}-${index}`} className={index === events.length - 1 ? 'relative rounded-md border border-blue-400/30 bg-blue-500/10 p-2' : 'relative rounded-md p-2'}><span className="absolute -left-[1.05rem] top-3 h-2 w-2 rounded-full bg-blue-400" /><div className="flex items-start justify-between gap-2"><strong className="text-slate-100">{event.type || 'Carrier update'}</strong>{index === events.length - 1 && <span className="shrink-0 text-[10px] font-bold uppercase text-blue-300">Current</span>}</div><p className="mt-0.5 text-slate-400">{formatEventTime(event.timestamp)} · {formatShipmentEventLocation(event)}</p></li>)}</ol></div> : status && <p className="mt-3 border-t border-slate-700 pt-3 text-slate-400">The carrier returned the current status but no individual scan events for this shipment.</p>}
+    </section>;
   };
 
   const visibleStages = currentStage === 'disputed' ? [...stages, { key: 'disputed' as const, label: 'Disputed', sub: 'Under Review' }] : stages;
@@ -1102,6 +1109,7 @@ export default function WarRoom() {
             const myReceiptConfirmed = (trade as any)?.myReceiptConfirmed;
             const theirReceiptConfirmed = (trade as any)?.theirReceiptConfirmed;
             const cashReceiptObligations = ((cashAdjustmentContext?.obligations ?? []) as Array<any>).filter((obligation) => obligation.role === 'payee');
+            const cashPaymentObligations = (cashAdjustmentContext?.obligations ?? []) as Array<any>;
 
             const getTrackingUrl = (carrier: string, number: string) => {
               if (carrier === 'USPS') return buildUspsTrackingUrl(number);
@@ -1116,6 +1124,41 @@ export default function WarRoom() {
             const myReviewHasSingleItem = myItems.length === 1;
             const theirReviewHasSingleItem = theirItems.length === 1;
             const tradeRef = (trade?.proposal as any)?.tradeReferenceNumber || `#TB-${String(proposalId).padStart(5, '0')}`;
+            const reviewPanel = (currentStage === 'review' || currentStage === 'completed') && (
+              <section aria-labelledby="trade-reviews-heading" className="relative z-0 w-full flex-none rounded-xl border border-blue-400/70 bg-[#1a2947] p-6 shadow-2xl ring-1 ring-blue-400/20">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h2 id="trade-reviews-heading" className="mb-1 text-2xl font-bold text-white">Reviews</h2>
+                    <p className="text-lg font-bold text-white">Leave a Review for {theirDisplayName}</p>
+                  </div>
+                  {!myReview && <span className="rounded-full border border-amber-300/50 bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-100">ACTION NEEDED</span>}
+                </div>
+                {myReview ? (
+                  <p className="mt-4 rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2 text-xs text-green-300">✓ Your review has been submitted and is locked for this trade.</p>
+                ) : <>
+                <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
+                    <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-blue-400/50 bg-[#16213e] px-4 py-3">
+                      <p className="text-sm font-semibold text-gray-50 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                      <div className="flex shrink-0 gap-1">
+                        {[1,2,3,4,5].map(star => (
+                          <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
+                            className={`text-xl ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <textarea
+                  placeholder="Write a review (optional)..."
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  className="mt-3 w-full resize-none rounded-lg border border-blue-300 bg-white p-3 text-xl leading-relaxed text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
+                  rows={3}
+                />
+                </>}
+              </section>
+            );
 
             return (
               <div className="flex flex-col gap-4 flex-1">
@@ -1140,6 +1183,9 @@ export default function WarRoom() {
                     </div>
                   </div>
                 </div>
+
+                {/* Step 6 is intentionally first: review is the next required member action. */}
+                {reviewPanel}
 
                 {/* Trade Summary Card — hidden on Shipping stage */}
                 {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-5 shadow-xl">
@@ -1203,8 +1249,9 @@ export default function WarRoom() {
                   </div>
                 </div>}
 
-                {/* Contact Info Card — hidden on Shipping stage */}
-                {currentStage !== 'shipping' && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-7 shadow-xl">
+                {/* Contact Info Card. When cash is part of the agreement it remains
+                    visible in Shipping so the payer can use the authorized payment ID. */}
+                {(currentStage !== 'shipping' || cashDirectionRows.length > 0) && <div className="bg-[#16213e] border border-gray-600 rounded-xl p-7 shadow-xl">
                   <div className="flex items-center gap-3 mb-4">
                     <div className="w-9 h-9 rounded-lg bg-blue-900/30 border border-blue-500/20 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-400">
@@ -1268,6 +1315,34 @@ export default function WarRoom() {
                       </div>
                     ))}
                   </div>
+                  {cashPaymentObligations.length > 0 && (
+                    <section data-testid="shipping-payment-details" className="mt-5 rounded-xl border border-emerald-500/35 bg-emerald-950/20 p-5">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-base font-bold text-white">Cash payment details</h3>
+                          <p className="mt-1 text-xs leading-relaxed text-slate-300">The selected payment method and destination are shown only to the member responsible for sending that cash. Tradebilia does not process or verify the transfer.</p>
+                        </div>
+                        <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-bold text-emerald-200">DIRECT PAYMENT</span>
+                      </div>
+                      <div className="mt-4 grid gap-3 xl:grid-cols-2">
+                        {cashPaymentObligations.map((obligation) => {
+                          const payment = obligation.payment as any;
+                          const isPayer = obligation.role === 'payer';
+                          const paymentMethod = payment?.paymentMethod
+                            ? String(payment.paymentMethod).replace('_', ' ').replace(/\b\w/g, (letter: string) => letter.toUpperCase())
+                            : 'Method pending';
+                          return <div key={`shipping-payment-${obligation.payerId}`} className="rounded-lg border border-slate-600 bg-slate-950/45 p-4">
+                            <p className="text-sm font-bold text-white">{isPayer ? `You send ${formatWholeDollar(Number(obligation.amount ?? 0))}` : `You receive ${formatWholeDollar(Number(obligation.amount ?? 0))}`}</p>
+                            <dl className="mt-3 space-y-2 text-xs">
+                              <div className="flex flex-wrap justify-between gap-2"><dt className="text-slate-400">Payment method</dt><dd className="font-semibold text-slate-100">{paymentMethod}</dd></div>
+                              <div className="flex flex-wrap justify-between gap-2"><dt className="text-slate-400">Payment ID</dt><dd className="max-w-full break-all font-mono font-semibold text-emerald-200">{isPayer ? payment?.paymentIdentifier || 'Available when Shipping & Payment begins.' : 'Visible only to the member sending this cash.'}</dd></div>
+                              <div className="flex flex-wrap justify-between gap-2"><dt className="text-slate-400">Status</dt><dd className="font-semibold capitalize text-slate-100">{String(payment?.status ?? 'pending').replace('_', ' ')}</dd></div>
+                            </dl>
+                          </div>;
+                        })}
+                      </div>
+                    </section>
+                  )}
                 </div>}
 
                 {/* ── SHIPPING STAGE: Focused two-column tracking layout ── */}
@@ -1616,37 +1691,6 @@ export default function WarRoom() {
 
                     </section>
 
-                    {/* Completed — leave review */}
-                    {(currentStage === 'review' || currentStage === 'completed') && (
-                      <section aria-labelledby="trade-reviews-heading" className="relative z-0 mt-4 w-full flex-none rounded-xl border border-blue-400/70 bg-[#1a2947] p-6 shadow-2xl ring-1 ring-blue-400/20">
-                        <h2 id="trade-reviews-heading" className="mb-1 text-2xl font-bold text-white">Reviews</h2>
-                        <p className="mb-4 text-lg font-bold text-white">Leave a Review for {theirDisplayName}</p>
-                        {myReview ? (
-                          <p className="rounded-lg border border-green-500/30 bg-green-900/20 px-3 py-2 text-xs text-green-300">✓ Your review has been submitted and is locked for this trade.</p>
-                        ) : <>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          {(['tradeExperience', 'itemCondition', 'communication', 'shippingSpeed'] as const).map(key => (
-                            <div key={key} className="flex items-center justify-between gap-4 rounded-lg border border-blue-400/50 bg-[#16213e] px-4 py-3">
-                              <p className="text-sm font-semibold text-gray-50 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
-                              <div className="flex shrink-0 gap-1">
-                                {[1,2,3,4,5].map(star => (
-                                  <button key={star} onClick={() => setReviewRatings(r => ({...r, [key]: star}))}
-                                    className={`text-xl ${reviewRatings[key] >= star ? 'text-yellow-400' : 'text-gray-600'}`}>★</button>
-                                ))}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        <textarea
-                          placeholder="Write a review (optional)..."
-                          value={reviewText}
-                          onChange={(e) => setReviewText(e.target.value)}
-                          className="mt-3 w-full resize-none rounded-lg border border-blue-300 bg-white p-3 text-xl leading-relaxed text-slate-900 placeholder:text-slate-500 focus:border-blue-600 focus:outline-none"
-                          rows={3}
-                        />
-                        </>}
-                      </section>
-                    )}
                   </>
                 )}
 

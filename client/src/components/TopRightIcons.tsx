@@ -36,6 +36,11 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
     refetchInterval: 15000,
     staleTime: 10000,
   });
+  const tradeUnreadFoldersQuery = trpc.tradeFlow.getUnreadTradeAlertFolders.useQuery(undefined, {
+    enabled: canLoadAuthenticatedData,
+    refetchInterval: 15000,
+    staleTime: 10000,
+  });
   const dashboardQuery = trpc.market.dashboard.useQuery(undefined, {
     enabled: canLoadAuthenticatedData,
     refetchOnMount: true,
@@ -48,6 +53,11 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
 
   const unreadMessages = typeof unreadQuery.data?.unreadMessages === 'number' ? unreadQuery.data.unreadMessages : 0;
   const unreadTradeAlerts = tradeUnreadQuery.data?.count || 0;
+  const unreadTradeFolder = tradeUnreadFoldersQuery.data?.primaryFolder;
+  const tradeHubHref = unreadTradeFolder ? `/trade-hub?folder=${encodeURIComponent(unreadTradeFolder)}` : "/trade-hub";
+  const tradeHubTitle = unreadTradeFolder
+    ? `Trade Alerts — new activity in ${String(unreadTradeFolder).replace(/^./, (letter: string) => letter.toUpperCase())}`
+    : "Trade Alerts";
   const userAvatarUrl = user?.avatarUrl || dashboardQuery.data?.profile?.avatarUrl || undefined;
 
   return (
@@ -75,8 +85,8 @@ export function TopRightIcons({ className = "flex items-center gap-3 md:gap-4", 
             </Link>
           )}
 
-          {/* Trade Alerts Bell — Links to Trade Hub, flashes yellow when unread */}
-          <Link href="/trade-hub" className="relative transition hover:opacity-80" title="Trade Alerts">
+          {/* Trade Alerts Bell — opens the folder that contains the newest unread alert. */}
+          <Link href={tradeHubHref} className="relative transition hover:opacity-80" title={tradeHubTitle}>
             {unreadTradeAlerts > 0 ? (
               <div className="flex items-center gap-0.5">
                 <Bell className="h-5 w-5 text-yellow-400 fill-yellow-400 mail-icon-flash" />

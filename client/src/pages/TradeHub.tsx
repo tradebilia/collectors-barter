@@ -9,7 +9,7 @@
  * Reference: FINAL_TRADE_FLOW_IMPLEMENTATION_BLUEPRINT.md (Page 1)
  */
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeftRight, Mail } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -22,6 +22,13 @@ const TRADE_HUB_LOGO_URL = "https://assets.tradebilia.com/TradeHub_5b3c2442.svg"
 
 type TradeFolder = 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
 type TradeSort = 'lastActive' | 'newest' | 'oldest' | 'partner' | 'reference';
+
+function tradeFolderFromLocation(location: string): TradeFolder | null {
+  const requestedFolder = new URLSearchParams(location.includes('?') ? location.slice(location.indexOf('?')) : window.location.search).get('folder');
+  return requestedFolder && ['proposal', 'negotiating', 'accepted', 'shipped', 'declined', 'completed'].includes(requestedFolder)
+    ? requestedFolder as TradeFolder
+    : null;
+}
 
 const tradeSortLabels: Record<TradeSort, string> = {
   lastActive: 'Last Active',
@@ -160,11 +167,18 @@ function CompletedExchangePreview({ exchange }: { exchange: { received?: any[]; 
 }
 
 export default function TradeHub() {
-  const [, navigate] = useLocation();
-  const [activeFolder, setActiveFolder] = useState<TradeFolder>('proposal');
+  const [location, navigate] = useLocation();
+  const [activeFolder, setActiveFolder] = useState<TradeFolder>(() => tradeFolderFromLocation(location) ?? 'proposal');
   const [selectedTradeId, setSelectedTradeId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<TradeSort>('lastActive');
+
+  useEffect(() => {
+    const requestedFolder = tradeFolderFromLocation(location);
+    if (!requestedFolder) return;
+    setActiveFolder(requestedFolder);
+    setSelectedTradeId(null);
+  }, [location]);
 
   // tRPC queries
   const tradeAlertsQuery = trpc.tradeFlow.getTradeAlerts.useQuery(
@@ -176,6 +190,14 @@ export default function TradeHub() {
     undefined,
     { refetchInterval: 15000 }
   );
+  const unreadFoldersQuery = trpc.tradeFlow.getUnreadTradeAlertFolders.useQuery(
+    undefined,
+    { refetchInterval: 15000 }
+  );
+  const unreadFolderCounts = useMemo(() => new Map(
+    (unreadFoldersQuery.data?.folders ?? []).map((entry: any) => [entry.folder, Number(entry.count) || 0]),
+  ), [unreadFoldersQuery.data?.folders]);
+  const primaryUnreadFolder = unreadFoldersQuery.data?.primaryFolder as TradeFolder | null | undefined;
 
   // Find the selected trade from the list
   const selectedTrade = tradeAlertsQuery.data?.trades?.find((t: any) => t.id === selectedTradeId);
@@ -253,6 +275,11 @@ export default function TradeHub() {
                   {unreadCountQuery.data.count} unread
                 </span>
               ) : null}
+              {primaryUnreadFolder && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-400/50 bg-amber-500/10 px-2 py-1 text-xs font-semibold text-amber-200">
+                  <span aria-hidden="true">★</span> Check {folderLabels[primaryUnreadFolder]}
+                </span>
+              )}
             </div>
           </div>
 
@@ -262,8 +289,9 @@ export default function TradeHub() {
             {/* Sidebar — Folders */}
             <aside className="space-y-1 lg:col-span-2">
               <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 px-3">Trade Status</h3>
-              {(Object.keys(folderLabels) as TradeFolder[]).map((folder) => (
-                <button
+              {(Object.keys(folderLabels) as TradeFolder[]).map((folder) => {
+                const folderUnreadCount = unreadFolderCounts.get(folder) ?? 0;
+                return <button
                   key={folder}
                   onClick={() => { setActiveFolder(folder); setSelectedTradeId(null); }}
                   className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-2 transition-colors ${
@@ -274,8 +302,9 @@ export default function TradeHub() {
                 >
                   <span>{folderIcons[folder]}</span>
                   <span>{folderLabels[folder]}</span>
-                </button>
-              ))}
+                  {folderUnreadCount > 0 && <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-amber-300/60 bg-amber-400/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-200" aria-label={`${folderUnreadCount} unread trade alert${folderUnreadCount === 1 ? '' : 's'} in ${folderLabels[folder]}`}><span aria-hidden="true">★</span>{folderUnreadCount}</span>}
+                </button>;
+              })}
             </aside>
 
             {/* Center — Inbox Feed */}
@@ -539,15 +568,15 @@ export default function TradeHub() {
                     );
                   })()}
 
-                  {/* Enter Trade Room Button */}
+                  {/* Trade action / completed-trade recap */}
                   <button
                     onClick={() => handleEnterWarRoom(selectedTrade.id)}
                     className="w-full bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-bold py-3 px-6 rounded-lg transition-all shadow-lg hover:shadow-blue-500/25 text-center"
                   >
-                    {activeFolder === 'proposal' ? <><Mail className="mr-2 inline-block h-4 w-4 align-[-2px]" />View Proposal</> : <><ArrowLeftRight className="mr-2 inline-block h-4 w-4 align-[-2px]" />Enter Trade Room</>}
+                    {activeFolder === 'proposal' ? <><Mail className="mr-2 inline-block h-4 w-4 align-[-2px]" />View Proposal</> : activeFolder === 'completed' ? <><ArrowLeftRight className="mr-2 inline-block h-4 w-4 align-[-2px]" />See Trade Recap</> : <><ArrowLeftRight className="mr-2 inline-block h-4 w-4 align-[-2px]" />Enter Trade Room</>}
                   </button>
                   <p className="text-center text-xs text-gray-500">
-                    {activeFolder === 'proposal' ? 'Review and respond to this trade proposal' : 'Secure negotiation space'}
+                    {activeFolder === 'proposal' ? 'Review and respond to this trade proposal' : activeFolder === 'completed' ? 'View the completed exchange, fulfillment record, and feedback' : 'Secure negotiation space'}
                   </p>
                 </div>
               )}
