@@ -10,10 +10,11 @@
 | Final public-contract status | Sources | Meaning |
 |---|---:|---|
 | **Verified on two distinct items** | **16** | Two genuinely different public completed items supplied title, stable identifier/URL, explicit completed state, date, numeric price/currency, and source price-basis wording. |
-| **Partial / inconsistent public contract** | **5** | A real result exists, but a required field is gated, absent, or not consistently available across public item routes. |
+| **Partial / inconsistent public contract** | **3** | A real result exists, but a required field is gated, absent, or not consistently available across public item routes. |
 | **No public individual completed-item contract** | **1** | Public access exposes auction-level information but not a usable completed individual-lot result. |
+| **Deferred by owner** | **2** | GreatCollections and Heritage are intentionally excluded from applicability, activation, and further testing until the owner explicitly reactivates them. |
 
-> **Status:** Every source still remains **permission pending**, disabled in Test AI, remote-lookup-disabled, sandbox-only, and valuation-blocked. Technical validation does not authorize recurring collection or make a source eligible to affect a Tradebilia value.
+> **Status:** The 20 remaining candidates are permission pending, disabled in Test AI, remote-lookup-disabled, sandbox-only, and valuation-blocked. GreatCollections and Heritage are separately marked **deferred by owner**. Technical validation does not authorize recurring collection or make a source eligible to affect a Tradebilia value.
 
 ## Two-pass source matrix
 
@@ -22,7 +23,7 @@
 | **NGC Auction Central** | Coins | 1986 Eagle S$1 MS (UCID 26J4); 1995-W Eagle Anniversary Set S$1 PF (UCID CFWX) | **Verified** | Both NGC *Prices Realized* pages exposed UCID, sale/lot, date, USD price, grade, and the stated hammer-plus-auction-house-commission basis. |
 | **CoinArchives** | Coins | Public archive and auction record routes | **Blocked** | Public archive is auction-level; attempted records redirect to auctioneer sites and individual completed lots/prices are gated to **CoinArchives Pro**. No public item contract exists. |
 | **CNG Past Auctions** | Coins | LOT_ID 207893 / Lot 6005 Denarius; LOT_ID 173558 / Lot 1 Tetradrachm | **Verified** | Both public lot pages supplied distinct IDs, title, explicit *Sold For*, date, USD price, grade/condition, and buyer-fee exclusion. |
-| **GreatCollections Archive** | Coins | 1795 Capped Bust Eagle (GC 1350274); 1894-O Morgan Dollar (GC 1779627) | **Partial** | Archive cards can show a realization, but individual completed-item pages hide the numeric final price behind **Join**. The second item exposed only its $1 starting bid. A universal public per-lot price contract is not proven. |
+| **GreatCollections Archive** | Coins | 1795 Capped Bust Eagle (GC 1350274); 1894-O Morgan Dollar (GC 1779627) | **Deferred by owner** | Prior testing found final price is inconsistently public and item-detail realizations are **Join-gated**. Do not perform further checks or activation unless the owner explicitly reactivates the source. |
 | **Rumsey Auction Results** | Stamps | Sale 127 Lot 1001; Sale 127 Lot 2772, *United States Collection, 1847–2015* | **Verified** | The direct public lot route supplied title, stable sale/lot URL, *Realized* state, date, USD amount, and explicit 18% premium exclusion. |
 | **Cherrystone Realizations** | Stamps | Auction 202503 Lot 1; Auction 202502 Lot 5001 | **Verified** | Both public result detail pages exposed title, stable auction/lot URL, sale date, dollar *Price Realized* amount, and available item details. |
 | **Raritan Past Auctions** | Stamps | Auction 105 Lot 2; Auction 104 Lot 598 | **Verified** | Auction 104 Lot 598 publicly joined title, stable auction/lot key, *Sold for US$3,750*, date, and 15% premium exclusion. This confirmed the earlier missing title/currency was a route-specific problem, not a source-wide blocker. |
@@ -34,7 +35,7 @@
 | **Poster Auctions International** | Movies | *Die Rache im Goldtal* Lot 239; *Godzilla: King of the Monsters* Lot 129 | **Verified** | The official `posterauctions.com` archive—not the older client-rendered host—returned two public film-poster results with title, stable lot route, date, dollar result, and buyer-premium context. |
 | **Bonhams Popular Culture** | Movies | *Forbidden Planet* Robby the Robot Lot 1070; Theda Bara as Cleopatra Lot 78 | **Verified** | Both public lot pages exposed title, stable auction/lot ID, date, *Sold for US$* result, and **inc. premium** wording. |
 | **ComicConnect Sold Archive** | Comics | *Spider-Man: Redemption #3* cover prelim item 1107774; *New Warriors #68* half splash item 1107787 | **Verified** | Both public item pages exposed ID, title, explicit sold time/status, USD *Sold For* amount, grade, and premium wording. |
-| **Heritage Auction Archives** | Comics | *Murder Incorporated #1* auction 7469 lot 92196; *Adventure Comics #78* auction 122132 lot 13020 | **Partial** | Both public pages supplied title, stable identifiers, sold date, grading/certification, and buyer-premium language—but numeric realized prices are consistently **Sign-in/Join-gated**. |
+| **Heritage Auction Archives** | Comics | *Murder Incorporated #1* auction 7469 lot 92196; *Adventure Comics #78* auction 122132 lot 13020 | **Deferred by owner** | Prior testing found title, identifiers, date, and grading context, but numeric realized prices are **Sign-in/Join-gated**. Do not perform further checks or activation unless the owner explicitly reactivates the source. |
 | **University Archives** | Autographs | G.H.W. Bush ALS Lot 6; Abigail Adams cover Lot 2 | **Verified** | Both public lots supplied title, stable URL, explicit *Sold* amount in USD, date, and available authentication/grading context. |
 | **Swann Galleries** | Autographs | Warhol/Rauschenberg invitation Lot 1; Lafayette ALS Lot 18 | **Verified** | Both public lots supplied catalog/lot ID, title, auction-closed/sold state, date, USD amount, and **Sold Price includes Buyer’s Premium** wording. |
 | **RR Auction** | Autographs | Flannery O’Connor document Lot 311; Jacob Grimm note Lot 292 | **Verified** | Both public lot-detail pages supplied title, stable lot ID/URL, closed state, date, USD *Sold For* amount, **Includes Buyers Premium**, and available PSA/DNA context. |
@@ -68,11 +69,14 @@ The following **16 technically validated sources** can move to source-specific, 
 | Source | Required resolution before a price-capable source adapter |
 |---|---|
 | **CoinArchives** | A permitted individual-lot results path, formal Pro/API/export access, or a licensed feed; public archive pages are auction-level only. |
-| **GreatCollections** | A documented endpoint/feed that supplies a realization to a public/authorized detail record consistently; public detail pages gate final price. |
 | **Bertoia** | A rendered public/API/PDF catalog mapping individual titles to realized lot numbers, plus explicit currency treatment. |
 | **Propstore** | A source-sanctioned results feed or allowed authenticated export for ordinary lots; public top-seller data is not a universal contract. |
-| **Heritage** | A licensed prices-realized feed/export or explicitly authorized access that provides the currently sign-in-gated numeric price. |
 | **Hake’s** | A stable public legacy/current completed-lot route that reliably provides end date, canonical URL, price, and complete price-basis wording. |
+
+## Deferred by owner
+
+- **GreatCollections Archive** — no further public, authenticated, CAPTCHA, or activation work is authorized until the owner explicitly reactivates it.
+- **Heritage Auction Archives** — no further public, authenticated, anti-automation, or activation work is authorized until the owner explicitly reactivates it.
 
 ## Evidence-policy outcome
 

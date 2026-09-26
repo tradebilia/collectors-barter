@@ -21,17 +21,17 @@ They cannot be enabled. The category-specific cards are intentionally informativ
 
 | Tradebilia category | Permission-pending sources | Intended record fields after authorization |
 |---|---|---|
-| Coins | NGC Auction Central, CoinArchives, CNG Past Auctions, GreatCollections Archive, Heritage Auction Archives | Lot ID, title, dates, grade/service, price and price basis, auction name, URL, images when licensed |
-| Stamps | Rumsey, Cherrystone, Raritan, Heritage | Lot/catalog number, condition, certificate, date, price and price basis, auction name |
-| Music | Omega Auctions, RR Auction, Heritage | Artist/release, edition/pressing, condition, signed/authentication context, date, price |
-| Vintage Toys | Bertoia, Morphy, Theriault’s, Hake’s, Heritage | Maker/line, scale/model, condition, lot composition, date, price |
-| Movies | Propstore, Poster Auctions International, Bonhams, Heritage | Production/title, prop/costume/poster identity, provenance fields, date, price |
-| Comics | ComicConnect, Heritage | Publisher/title/issue/variant, grader/grade, date, price |
-| Autographs | University Archives, Swann, RR Auction, Alexander Historical, Heritage | Signer, item type, inscription/authentication/provenance, date, price |
-| Video Games | Goldin, Hake’s, Heritage | Platform/edition/sealed status, grader/grade, date, price |
-| Disney Pins | Hake’s, Heritage | Character/event/edition-size, lot composition, date, price |
+| Coins | NGC Auction Central, CoinArchives, CNG Past Auctions | Lot ID, title, dates, grade/service, price and price basis, auction name, URL, images when licensed |
+| Stamps | Rumsey, Cherrystone, Raritan | Lot/catalog number, condition, certificate, date, price and price basis, auction name |
+| Music | Omega Auctions, RR Auction | Artist/release, edition/pressing, condition, signed/authentication context, date, price |
+| Vintage Toys | Bertoia, Morphy, Theriault’s, Hake’s | Maker/line, scale/model, condition, lot composition, date, price |
+| Movies | Propstore, Poster Auctions International, Bonhams | Production/title, prop/costume/poster identity, provenance fields, date, price |
+| Comics | ComicConnect | Publisher/title/issue/variant, grader/grade, date, price |
+| Autographs | University Archives, Swann, RR Auction, Alexander Historical | Signer, item type, inscription/authentication/provenance, date, price |
+| Video Games | Goldin, Hake’s | Platform/edition/sealed status, grader/grade, date, price |
+| Disney Pins | Hake’s | Character/event/edition-size, lot composition, date, price |
 
-The **Heritage** card is intentionally restricted to the categories listed above. It is not presented as applicable to Pokémon or Sports Cards in this pending framework because Tradebilia already has more directly aligned market sources for those categories.
+**Heritage** and **GreatCollections** are now deferred by owner and are excluded from the active source matrix, category applicability, activation path, and all further tests until the owner explicitly reactivates them.
 
 ## What has been proven with fixtures
 
@@ -64,11 +64,12 @@ This is a second safety boundary: no fixture and no pending source can reach a T
 
 After the framework was created, the owner reported authorization to test each source until its public contract was understood and then validate a different completed item. Each check used only a small bounded number of ordinary public page requests, without login, account creation, CAPTCHA/access-control workaround, form submission, record retention, or database write.
 
-- **16 sources** returned the technical minimum on two different public completed items: title, stable URL or lot ID, explicit completed/sold/realized state, date, price/currency, and price-basis wording.
-- **5 sources** returned genuine auction data but have a required field that is gated, absent, or inconsistent across public routes.
+- **16 active candidates** returned the technical minimum on two different public completed items: title, stable URL or lot ID, explicit completed/sold/realized state, date, price/currency, and price-basis wording.
+- **3 active candidates** returned genuine auction data but have a required field that is gated, absent, or inconsistent across public routes.
 - **1 source** did not expose a usable public individual completed lot at all.
+- **2 sources** — GreatCollections and Heritage — are deferred by owner, not activation candidates.
 
-The Test AI source cards now expose the final outcome as **item test passed**, **partial item test**, or **item test blocked**. This is transparency only: all cards remain orange, disabled, sandbox-only, and valuation-blocked.
+The Test AI source cards now expose the final outcome as **item test passed**, **partial item test**, **item test blocked**, or **deferred by owner**. Deferred cards are gray, disabled, and excluded from applicability; all remaining pending cards are orange, disabled, sandbox-only, and valuation-blocked.
 
 The full source-by-source matrix, exact public test item, fields obtained, and the next required request or access contract is in `LIVE_SPECIALIST_SOURCE_VALIDATION_2026-09-26.md`.
 
@@ -86,6 +87,7 @@ A source can move out of **permission pending** only after all conditions below 
 ## Explicit exclusions
 
 - No GreatCollections archive request, account use, CAPTCHA handling, or robot-restricted path is included.
+- No Heritage archive request, account use, CAPTCHA handling, anti-automation workaround, or robot-restricted path is included.
 - No scheduled or background collection is enabled.
 - No results are user-facing outside the sandbox.
 - No database migration, database write, inventory change, production Trade Room change, production publication, notification, or billing change occurred.

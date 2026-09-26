@@ -100,7 +100,7 @@ describe('permission-pending market-source adapters', () => {
   });
 
   it('keeps every registered pending source mapped to each of its researched categories', () => {
-    for (const source of PERMISSION_PENDING_MARKET_SOURCES) {
+    for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'pending_permission')) {
       const sourceId = source.id === 'ngc' ? 'ngc_auction_central' : source.id;
       for (const category of source.categories) {
         const eligibleIds = getEligibleTestAiSources({
@@ -112,6 +112,42 @@ describe('permission-pending market-source adapters', () => {
     }
   });
 
+  it('excludes owner-deferred sources from active Test AI applicability', () => {
+    for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'deferred')) {
+      const sourceId = source.id === 'ngc' ? 'ngc_auction_central' : source.id;
+      for (const category of source.categories) {
+        const eligibleIds = getEligibleTestAiSources({
+          category: category.replace(/_/g, ' '),
+          hasTitle: true,
+        }).map((candidate) => candidate.sourceId);
+        expect(eligibleIds, `${source.label} should be deferred for ${category}`).not.toContain(sourceId);
+      }
+    }
+  });
+
+  it('returns a deferred, non-activatable response for an owner-deferred provider', () => {
+    const status = getPermissionPendingLookupStatus('heritage', {
+      title: 'Adventure Comics #78',
+      category: 'comics',
+    });
+    const sale = normalizePermissionPendingSale('heritage', {
+      title: 'Adventure Comics #78',
+      category: 'comics',
+    }, {
+      title: 'Adventure Comics #78',
+      sold: true,
+      realizedPrice: '$500',
+      currency: 'USD',
+      soldDate: '2021-08-08',
+    });
+
+    expect(status.status).toBe('deferred');
+    expect(status.applicable).toBe(false);
+    expect(status.message).toMatch(/deferred by owner/i);
+    expect(sale.eligibleWhenAuthorized).toBe(false);
+    expect(sale.activationBlock).toMatch(/deferred by owner/i);
+  });
+
   it('records a transparent bounded public-item result for every pending source', () => {
     const statusCounts = PERMISSION_PENDING_MARKET_SOURCES.reduce<Record<string, number>>((counts, source) => {
       expect(source.liveTestSummary.length).toBeGreaterThan(20);
@@ -121,8 +157,9 @@ describe('permission-pending market-source adapters', () => {
 
     expect(statusCounts).toEqual({
       verified: 16,
-      partial: 5,
+      partial: 3,
       no_completed_item: 1,
+      deferred: 2,
     });
   });
 });

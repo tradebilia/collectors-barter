@@ -29,8 +29,8 @@ export type PermissionPendingMarketSource = {
   sourceUrl: string;
   purpose: string;
   priceBasis: 'hammer' | 'including_buyers_premium' | 'unknown';
-  status: 'pending_permission';
-  liveTestStatus: 'verified' | 'partial' | 'no_completed_item';
+  status: 'pending_permission' | 'deferred';
+  liveTestStatus: 'verified' | 'partial' | 'no_completed_item' | 'deferred';
   liveTestSummary: string;
   permissionNote: string;
 };
@@ -85,10 +85,10 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     sourceUrl: 'https://www.greatcollections.com/Auction-Archive/top',
     purpose: 'Certified-coin auction archive research.',
     priceBasis: 'unknown',
-    status: 'pending_permission',
-    liveTestStatus: 'partial',
-    liveTestSummary: 'One archive card exposed a sold amount, but two individual completed item pages hid realization behind Join; a universal public price contract is not verified.',
-    permissionNote: 'No remote lookup is permitted here until written authorization is received; do not use login, CAPTCHA, or access-workaround paths.',
+    status: 'deferred',
+    liveTestStatus: 'deferred',
+    liveTestSummary: 'Deferred by owner: public item pages gate final price behind Join and the sandbox CAPTCHA/browser path is unavailable. Prior findings are retained for future review.',
+    permissionNote: 'Deferred by owner. Do not test, use login, attempt CAPTCHA, or introduce a remote lookup unless the owner reactivates this source.',
   },
   {
     id: 'rumsey',
@@ -229,10 +229,10 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     sourceUrl: 'https://www.ha.com/c/search.zx',
     purpose: 'Specialist auction archive for scarce, graded, high-end, and provenance-rich collectibles.',
     priceBasis: 'including_buyers_premium',
-    status: 'pending_permission',
-    liveTestStatus: 'partial',
-    liveTestSummary: 'Two public completed lots returned identifiers, sold date, grade/certification, and premium wording, but numeric realized prices remain sign-in gated.',
-    permissionNote: 'Awaiting a data-use license; no automated archive collection is enabled.',
+    status: 'deferred',
+    liveTestStatus: 'deferred',
+    liveTestSummary: 'Deferred by owner: numeric realized prices are sign-in gated and the sandbox browser is access-restricted. Prior findings are retained for future review.',
+    permissionNote: 'Deferred by owner. Do not test, use login, attempt an access-control workaround, or introduce a remote lookup unless the owner reactivates this source.',
   },
   {
     id: 'university_archives',
@@ -320,5 +320,6 @@ export function getPermissionPendingMarketSource(sourceId: PermissionPendingMark
 
 export function isPermissionPendingMarketSourceApplicable(sourceId: PermissionPendingMarketSourceId, category: string): boolean {
   const normalizedCategory = normalizePermissionPendingCategory(category);
-  return getPermissionPendingMarketSource(sourceId).categories.includes(normalizedCategory);
+  const source = getPermissionPendingMarketSource(sourceId);
+  return source.status === 'pending_permission' && source.categories.includes(normalizedCategory);
 }

@@ -15,7 +15,7 @@ import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMark
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
-type DataSourceStatus = 'live' | 'placeholder' | 'permission_pending';
+type DataSourceStatus = 'live' | 'placeholder' | 'permission_pending' | 'deferred';
 type DataSourceDefinition = {
   id: string;
   label: string;
@@ -24,7 +24,7 @@ type DataSourceDefinition = {
   provides: string[];
   status: DataSourceStatus;
   description: string;
-  liveTestStatus?: 'verified' | 'partial' | 'no_completed_item';
+  liveTestStatus?: 'verified' | 'partial' | 'no_completed_item' | 'deferred';
   liveTestSummary?: string;
 };
 
@@ -34,13 +34,15 @@ const PERMISSION_PENDING_SOURCE_REGISTRY: Record<string, DataSourceDefinition> =
     return [id, {
       id,
       label: source.label,
-      group: 'Permission pending' as const,
-      icon: '⏳',
+      group: source.status === 'deferred' ? 'Deferred by owner' : 'Permission pending',
+      icon: source.status === 'deferred' ? '⏸️' : '⏳',
       provides: ['historic_prices', 'recent_sales'],
-      status: 'permission_pending' as const,
+      status: source.status as DataSourceStatus,
       liveTestStatus: source.liveTestStatus,
       liveTestSummary: source.liveTestSummary,
-      description: `${source.purpose} One bounded public-item test: ${source.liveTestSummary} Permission pending — remote lookup is disabled until a written authorization and source-specific activation review are recorded.`,
+      description: source.status === 'deferred'
+        ? `${source.purpose} ${source.liveTestSummary} This provider is deferred by owner and excluded from sandbox source applicability.`
+        : `${source.purpose} One bounded public-item test: ${source.liveTestSummary} Permission pending — remote lookup is disabled until a written authorization and source-specific activation review are recorded.`,
     }];
   }),
 );
@@ -311,7 +313,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
 };
 
 type SourceId = string;
-const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace', 'Permission pending', 'Reference'] as const;
+const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace', 'Permission pending', 'Deferred by owner', 'Reference'] as const;
 
 const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'HGA', 'CSG', 'Other'] as const;
 type GradingCompany = typeof GRADING_COMPANIES[number];
@@ -387,15 +389,20 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 const isLive = source.status === 'live';
                 const isApplicable = applicableSourceIds.has(source.id as TestAiSourceId);
                 const isPermissionPending = source.status === 'permission_pending';
-                const isSelectable = !isPermissionPending;
+                const isDeferred = source.status === 'deferred';
+                const isSelectable = !isPermissionPending && !isDeferred;
                 const pendingTestLabel = source.liveTestStatus === 'verified'
                   ? 'item test passed'
                   : source.liveTestStatus === 'partial'
                     ? 'partial item test'
                     : source.liveTestStatus === 'no_completed_item'
                       ? 'item test blocked'
-                      : 'permission pending';
-                const sourceClassName = isPermissionPending
+                      : source.liveTestStatus === 'deferred'
+                        ? 'deferred by owner'
+                        : 'permission pending';
+                const sourceClassName = isDeferred
+                  ? 'cursor-not-allowed border-slate-700 bg-slate-950/50 text-slate-500 opacity-65'
+                  : isPermissionPending
                   ? isApplicable
                     ? 'cursor-not-allowed border-orange-500/70 bg-orange-950/30 text-orange-200 opacity-90'
                     : 'cursor-not-allowed border-orange-900/50 bg-gray-900/40 text-gray-500 opacity-70'
@@ -413,20 +420,20 @@ function SourceSelector({ enabled, onChange, side, item }: {
                     key={source.id}
                     onClick={() => isSelectable && toggle(source.id as SourceId)}
                     disabled={!isSelectable}
-                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}`}
-                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}`}
+                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}${isDeferred ? ' It is not applicable or activatable.' : ''}`}
+                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}${isDeferred ? ' — deferred by owner and disabled' : ''}`}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all disabled:cursor-not-allowed ${sourceClassName}`}
                   >
                     <span>{source.icon}</span>
                     <span>{source.label}</span>
-                    {isPermissionPending ? <span className="text-[9px] opacity-75">({pendingTestLabel})</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
+                    {isPermissionPending || isDeferred ? <span className="text-[9px] opacity-75">({pendingTestLabel})</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
                   </button>
                 );
               })}
           </div>
         </div>
       ))}
-      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder · Orange = permission pending, remote lookup disabled · Pending labels show the last bounded public-item test{item && ' · Yellow border = applicable to loaded item'}</p>
+      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder · Orange = permission pending, remote lookup disabled · Gray = deferred by owner and excluded · Pending labels show the last bounded public-item test{item && ' · Yellow border = applicable to loaded item'}</p>
     </div>
   );
 }

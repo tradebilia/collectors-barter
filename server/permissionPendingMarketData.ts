@@ -150,7 +150,7 @@ export function normalizePermissionPendingSale(
   const price = parseNumber(record.realizedPrice ?? record.price ?? record.hammerPrice);
   const date = text(record.soldDate ?? record.date) || null;
   const groupedLot = record.groupedLot === true;
-  const eligibleWhenAuthorized = Boolean(completed && price && date && identity.matched && !groupedLot);
+  const eligibleWhenAuthorized = source.status === 'pending_permission' && Boolean(completed && price && date && identity.matched && !groupedLot);
 
   return {
     sourceId,
@@ -175,7 +175,9 @@ export function normalizePermissionPendingSale(
     matchedTokens: identity.matchedTokens,
     eligibleWhenAuthorized,
     valuationEligible: false,
-    activationBlock: 'Pending written source permission. This normalized fixture record is not fetched, retained, displayed as market data, or eligible for valuation.',
+    activationBlock: source.status === 'deferred'
+      ? 'Deferred by owner. This normalized fixture record is not fetched, retained, displayed as market data, or eligible for valuation.'
+      : 'Pending written source permission. This normalized fixture record is not fetched, retained, displayed as market data, or eligible for valuation.',
   };
 }
 
@@ -189,11 +191,13 @@ export function getPermissionPendingLookupStatus(sourceId: PermissionPendingMark
   return {
     sourceId,
     label: source.label,
-    status: 'permission_pending' as const,
+    status: source.status === 'deferred' ? 'deferred' as const : 'permission_pending' as const,
     applicable,
     sales: [] as NormalizedPendingSale[],
     context: [] as NormalizedPendingSale[],
-    message: applicable
+    message: source.status === 'deferred'
+      ? `${source.label} is deferred by owner. Remote lookup and activation are disabled until the owner explicitly reactivates this source.`
+      : applicable
       ? `${source.label} is configured as a permission-pending adapter. Remote lookup is disabled until written authorization and a source-specific activation review are recorded.`
       : `${source.label} is not applicable to this item category.`,
     permissionNote: source.permissionNote,
