@@ -181,7 +181,7 @@ export function SearchResults() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
           <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center overflow-visible sm:h-44 lg:h-56">
-            <AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} centerLockup />
+            <AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} wheelOffsetY={-20} dividerOffsetY={-20} centerLockup />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-white sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
           <div className="mt-5 grid w-full max-w-3xl grid-cols-2 gap-3 px-2 sm:flex sm:w-auto sm:max-w-none sm:justify-center sm:gap-5">
