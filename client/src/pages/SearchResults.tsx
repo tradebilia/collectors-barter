@@ -161,20 +161,42 @@ export function SearchResults() {
 
   const hasFilters = submittedFilters.category !== "all" || submittedFilters.condition !== "all" || submittedFilters.valueMin !== "" || submittedFilters.valueMax !== "" || submittedFilters.verifiedMerchantsOnly || submittedFilters.distanceMiles !== undefined;
   const listings = resultsQuery.data?.listings ?? [];
+  const totalMarketValue = listings.reduce((sum, listing) => {
+    const value = Number(listing.estimatedValue ?? 0);
+    return sum + (Number.isFinite(value) ? value : 0);
+  }, 0);
+  const formattedMarketValue = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(totalMarketValue);
 
   return (
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
-      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center center", backgroundRepeat: "no-repeat" }}>
+      <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-white" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center center", backgroundRepeat: "no-repeat" }}>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,12,8,0.64)_0%,rgba(18,12,8,0.24)_48%,rgba(18,12,8,0.56)_100%)]" />
         <div className="container relative flex h-[400px] min-h-[400px] flex-col items-center justify-center py-4 text-center sm:py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
           <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center overflow-visible sm:h-44 lg:h-56">
             <AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} centerLockup />
           </div>
-          <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
-          <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>
+          <p className="mt-4 max-w-2xl text-sm leading-6 text-white sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
+          <div className="mt-5 grid w-full max-w-3xl grid-cols-2 gap-3 px-2 sm:flex sm:w-auto sm:max-w-none sm:justify-center sm:gap-5">
+            {[
+              ["Listings", String(totalResults)],
+              ["Collectors", String(resultsQuery.data?.highlights.activeCollectors ?? 0)],
+              ["Completed Trades", String(resultsQuery.data?.highlights.completedTrades ?? 0)],
+              ["Total Market Value", formattedMarketValue],
+            ].map(([label, value]) => (
+              <div key={label} className="min-w-0 rounded-[1rem] border border-white/20 bg-black/25 px-3 py-2 text-center backdrop-blur-sm sm:min-w-[7.25rem]">
+                <p className="text-[0.62rem] font-semibold uppercase leading-tight tracking-[0.2em] text-white">{label}</p>
+                <p className="mt-1 text-sm font-bold text-white">{value}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
       <CategoryBar />
