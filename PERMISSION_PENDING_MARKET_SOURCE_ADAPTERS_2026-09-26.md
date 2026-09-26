@@ -60,6 +60,18 @@ This is a second safety boundary: no fixture and no pending source can reach a T
 4. A pending source status response returns empty sales/context arrays and a hard remote-lookup-disabled message.
 5. Category-specific sources do not appear as eligible for unrelated categories.
 
+## Authorized one-item live validation — 2026-09-26
+
+After the framework was created, the owner reported authorization to test **one completed item per source**. Each check was limited to at most three ordinary public page requests, without login, account creation, CAPTCHA/access-control workaround, form submission, record retention, or database write.
+
+- **13 sources** returned a public completed record with the technical minimum: title, stable URL or lot ID, explicit completed/sold/realized state, date, price/currency, and price-basis wording.
+- **6 sources** returned real auction data but lacked a required field or had a result gated within that limited test.
+- **3 sources** did not expose an individual completed lot within the capped test.
+
+The Test AI source cards now expose the outcome as **item test passed**, **partial item test**, or **item test blocked**. This is transparency only: all cards remain orange, disabled, sandbox-only, and valuation-blocked.
+
+The full source-by-source matrix, exact public test item, fields obtained, and the next required request or access contract is in `LIVE_SPECIALIST_SOURCE_VALIDATION_2026-09-26.md`.
+
 ## Required activation gate for each source
 
 A source can move out of **permission pending** only after all conditions below are recorded for that source:

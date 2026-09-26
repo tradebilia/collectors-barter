@@ -24,6 +24,8 @@ type DataSourceDefinition = {
   provides: string[];
   status: DataSourceStatus;
   description: string;
+  liveTestStatus?: 'verified' | 'partial' | 'no_completed_item';
+  liveTestSummary?: string;
 };
 
 const PERMISSION_PENDING_SOURCE_REGISTRY: Record<string, DataSourceDefinition> = Object.fromEntries(
@@ -36,7 +38,9 @@ const PERMISSION_PENDING_SOURCE_REGISTRY: Record<string, DataSourceDefinition> =
       icon: '⏳',
       provides: ['historic_prices', 'recent_sales'],
       status: 'permission_pending' as const,
-      description: `${source.purpose} Permission pending — remote lookup is disabled until a written authorization and source-specific activation review are recorded.`,
+      liveTestStatus: source.liveTestStatus,
+      liveTestSummary: source.liveTestSummary,
+      description: `${source.purpose} One bounded public-item test: ${source.liveTestSummary} Permission pending — remote lookup is disabled until a written authorization and source-specific activation review are recorded.`,
     }];
   }),
 );
@@ -384,6 +388,13 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 const isApplicable = applicableSourceIds.has(source.id as TestAiSourceId);
                 const isPermissionPending = source.status === 'permission_pending';
                 const isSelectable = !isPermissionPending;
+                const pendingTestLabel = source.liveTestStatus === 'verified'
+                  ? 'item test passed'
+                  : source.liveTestStatus === 'partial'
+                    ? 'partial item test'
+                    : source.liveTestStatus === 'no_completed_item'
+                      ? 'item test blocked'
+                      : 'permission pending';
                 const sourceClassName = isPermissionPending
                   ? isApplicable
                     ? 'cursor-not-allowed border-orange-500/70 bg-orange-950/30 text-orange-200 opacity-90'
@@ -408,14 +419,14 @@ function SourceSelector({ enabled, onChange, side, item }: {
                   >
                     <span>{source.icon}</span>
                     <span>{source.label}</span>
-                    {isPermissionPending ? <span className="text-[9px] opacity-75">(permission pending)</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
+                    {isPermissionPending ? <span className="text-[9px] opacity-75">({pendingTestLabel})</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
                   </button>
                 );
               })}
           </div>
         </div>
       ))}
-      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder · Orange = permission pending, remote lookup disabled{item && ' · Yellow border = applicable to loaded item'}</p>
+      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder · Orange = permission pending, remote lookup disabled · Pending labels show the last bounded public-item test{item && ' · Yellow border = applicable to loaded item'}</p>
     </div>
   );
 }

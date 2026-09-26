@@ -111,4 +111,18 @@ describe('permission-pending market-source adapters', () => {
       }
     }
   });
+
+  it('records a transparent bounded public-item result for every pending source', () => {
+    const statusCounts = PERMISSION_PENDING_MARKET_SOURCES.reduce<Record<string, number>>((counts, source) => {
+      expect(source.liveTestSummary.length).toBeGreaterThan(20);
+      counts[source.liveTestStatus] = (counts[source.liveTestStatus] ?? 0) + 1;
+      return counts;
+    }, {});
+
+    expect(statusCounts).toEqual({
+      verified: 13,
+      partial: 6,
+      no_completed_item: 3,
+    });
+  });
 });
