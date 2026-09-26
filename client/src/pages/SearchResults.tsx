@@ -170,8 +170,8 @@ export function SearchResults() {
         <div className="container relative flex h-[480px] min-h-[480px] flex-col items-center justify-center py-4 text-center sm:py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
-          <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center sm:h-44 lg:h-56">
-            <AnimatedLogoSmall70 fontSize={135} wheelScale={1.7} dividerScale={1.4} centerLockup />
+          <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center overflow-visible sm:h-44 lg:h-56">
+            <AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} centerLockup />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-[#fff4e0]/90 sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
           <Badge className={`${searchTheme.chipClassName} mt-5 rounded-full px-3 py-1 text-xs`}>{submittedQuery ? "Searching all categories" : "Browsing all active listings"}</Badge>

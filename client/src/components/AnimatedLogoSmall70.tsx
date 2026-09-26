@@ -106,9 +106,10 @@ const AnimatedLogoSmall70 = ({
   // wordmark to thumbnail size inside the wide centered viewBox.
   const activeLockupScale = centerLockup && isNarrowViewport ? 0.68 : lockupScale;
   // When the measured viewBox grows for a long category label, grow the SVG's
-  // rendered field by the same ratio. This keeps the font scale constant
-  // instead of shrinking the whole lockup to fit a fixed-width canvas.
-  const renderedCanvasWidthScale = centerLockup && isNarrowViewport
+  // rendered field by the same ratio on every viewport. This keeps the font
+  // scale constant instead of shrinking the whole lockup to fit a fixed-width
+  // canvas, while preserving the normal field for shorter labels.
+  const renderedCanvasWidthScale = centerLockup
     ? Math.max(1, dynamicViewBoxWidth / activeCenteredViewBoxWidth) * canvasWidthScale
     : canvasWidthScale;
   const wheelTransform = wheelScale === 1
@@ -143,12 +144,10 @@ const AnimatedLogoSmall70 = ({
       const textRight = measuredCategoryWordX + categoryWidth;
       const textCenter = (textLeft + textRight) / 2;
       // Longer animated labels such as SPORTS CARDS and VIDEO GAMES need
-      // more horizontal SVG space on narrow screens. Keep a small breathing
-      // margin around the measured lockup so the final letters never clip.
+      // more horizontal SVG space. Keep a small breathing margin around the
+      // measured lockup so the final letters never clip at any viewport.
       const measuredMobileViewBoxWidth = Math.ceil(textRight + 96);
-      const fittedViewBoxWidth = isNarrowViewport
-        ? Math.max(activeCenteredViewBoxWidth, measuredMobileViewBoxWidth)
-        : activeCenteredViewBoxWidth;
+      const fittedViewBoxWidth = Math.max(activeCenteredViewBoxWidth, measuredMobileViewBoxWidth);
       const targetCenter = fittedViewBoxWidth / 2;
       const nextOffset = targetCenter - activeLockupScale * textCenter;
 
