@@ -33,4 +33,18 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'music', hasTitle: false }).map((source) => source.sourceId)).not.toContain('discogs');
     expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
   });
+
+  it('shows permission-pending sources only for their researched item categories', () => {
+    const coinIds = getEligibleTestAiSources({ category: 'coins', hasTitle: true }).map((source) => source.sourceId);
+    expect(coinIds).toEqual(expect.arrayContaining(['ngc_auction_central', 'coin_archives', 'cng', 'greatcollections', 'heritage']));
+    expect(coinIds).not.toContain('rumsey');
+
+    const stampIds = getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId);
+    expect(stampIds).toEqual(expect.arrayContaining(['rumsey', 'cherrystone', 'raritan', 'heritage']));
+    expect(stampIds).not.toContain('goldin');
+
+    const gameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
+    expect(gameIds).toEqual(expect.arrayContaining(['goldin', 'hakes', 'heritage']));
+    expect(gameIds).not.toContain('swann');
+  });
 });

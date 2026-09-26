@@ -11,10 +11,37 @@ import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
+import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
-const DATA_SOURCES = {
+type DataSourceStatus = 'live' | 'placeholder' | 'permission_pending';
+type DataSourceDefinition = {
+  id: string;
+  label: string;
+  group: string;
+  icon: string;
+  provides: string[];
+  status: DataSourceStatus;
+  description: string;
+};
+
+const PERMISSION_PENDING_SOURCE_REGISTRY: Record<string, DataSourceDefinition> = Object.fromEntries(
+  PERMISSION_PENDING_MARKET_SOURCES.map((source) => {
+    const id = source.id === 'ngc' ? 'ngc_auction_central' : source.id;
+    return [id, {
+      id,
+      label: source.label,
+      group: 'Permission pending' as const,
+      icon: '⏳',
+      provides: ['historic_prices', 'recent_sales'],
+      status: 'permission_pending' as const,
+      description: `${source.purpose} Permission pending — remote lookup is disabled until a written authorization and source-specific activation review are recorded.`,
+    }];
+  }),
+);
+
+const DATA_SOURCES: Record<string, DataSourceDefinition> = {
   ebay_active: {
     id: 'ebay_active',
     label: 'eBay Active Listings',
@@ -276,10 +303,11 @@ const DATA_SOURCES = {
     status: 'live' as const,
     description: 'Read-only Discogs release metadata for Music items; no valuation, authentication, grading, or stored data',
   },
-} as const;
+  ...PERMISSION_PENDING_SOURCE_REGISTRY,
+};
 
-type SourceId = keyof typeof DATA_SOURCES;
-const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace', 'Reference'] as const;
+type SourceId = string;
+const SOURCE_GROUPS = ['eBay', 'Grading', 'Marketplace', 'Permission pending', 'Reference'] as const;
 
 const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'HGA', 'CSG', 'Other'] as const;
 type GradingCompany = typeof GRADING_COMPANIES[number];
@@ -354,7 +382,13 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 const isEnabled = enabled.has(source.id as SourceId);
                 const isLive = source.status === 'live';
                 const isApplicable = applicableSourceIds.has(source.id as TestAiSourceId);
-                const sourceClassName = isApplicable
+                const isPermissionPending = source.status === 'permission_pending';
+                const isSelectable = !isPermissionPending;
+                const sourceClassName = isPermissionPending
+                  ? isApplicable
+                    ? 'cursor-not-allowed border-orange-500/70 bg-orange-950/30 text-orange-200 opacity-90'
+                    : 'cursor-not-allowed border-orange-900/50 bg-gray-900/40 text-gray-500 opacity-70'
+                  : isApplicable
                   ? isEnabled
                     ? 'bg-green-900/40 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/30'
                     : 'bg-yellow-900/20 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/20'
@@ -366,21 +400,22 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 return (
                   <button
                     key={source.id}
-                    onClick={() => toggle(source.id as SourceId)}
-                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}`}
-                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}`}
-                    className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all ${sourceClassName}`}
+                    onClick={() => isSelectable && toggle(source.id as SourceId)}
+                    disabled={!isSelectable}
+                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}`}
+                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}`}
+                    className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all disabled:cursor-not-allowed ${sourceClassName}`}
                   >
                     <span>{source.icon}</span>
                     <span>{source.label}</span>
-                    {!isLive && <span className="text-[9px] opacity-60">(soon)</span>}
+                    {isPermissionPending ? <span className="text-[9px] opacity-75">(permission pending)</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
                   </button>
                 );
               })}
           </div>
         </div>
       ))}
-      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder{item && ' · Yellow border = applicable to loaded item'}</p>
+      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder · Orange = permission pending, remote lookup disabled{item && ' · Yellow border = applicable to loaded item'}</p>
     </div>
   );
 }
