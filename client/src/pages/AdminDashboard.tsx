@@ -525,6 +525,8 @@ function ApiProviderStatusBadge({ status }: { status: string }) {
     not_configured: "border-slate-300 bg-slate-50 text-slate-700",
     requires_account_connection: "border-amber-300 bg-amber-50 text-amber-900",
     not_active: "border-slate-300 bg-slate-100 text-slate-600",
+    permission_pending: "border-violet-300 bg-violet-50 text-violet-900",
+    deferred: "border-slate-300 bg-slate-100 text-slate-700",
     failed: "border-red-300 bg-red-50 text-red-800",
   };
   return <Badge variant="outline" className={`capitalize ${classes[status] ?? "border-slate-300 bg-slate-50 text-slate-700"}`}>{label}</Badge>;
@@ -1812,7 +1814,7 @@ export default function AdminDashboard() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <CardTitle>Provider Connection Health</CardTitle>
-                    <CardDescription>Every configured and available external provider is listed below. Each test is read-only and credential-safe; no email, SMS, payment, listing, profile, or shipment data is changed.</CardDescription>
+                    <CardDescription>Every configured provider and researched specialist source is listed below. Each enabled test is read-only and credential-safe; activation-pending sources are shown for transparency only and cannot make a remote request.</CardDescription>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Button variant="outline" size="sm" onClick={() => apiProviderHealthQuery.refetch()} disabled={apiProviderHealthQuery.isFetching || testAllApiProvidersMutation.isPending}>Refresh status</Button>
@@ -1822,7 +1824,7 @@ export default function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {apiProviderHealthQuery.isLoading ? <p className="text-sm text-muted-foreground">Loading provider connections…</p> : <div className="space-y-6">
-                  <p className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">The batch test checks configured, active providers with read-only health probes. It skips providers that require a member account connection, as well as inactive or unconfigured integrations. Individual buttons remain available for a targeted retest or setup check.</p>
+                  <p className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs leading-5 text-blue-950">The batch test checks configured, active providers with read-only health probes. It skips member-linked, inactive, unconfigured, permission-pending, and owner-deferred sources. Pending sources display their recorded one- or two-item public-contract validation without retaining source records or enabling collection.</p>
                   {Object.entries((apiProviderHealthQuery.data ?? []).reduce((groups: Record<string, any[]>, provider: any) => {
                     (groups[provider.group] ??= []).push(provider);
                     return groups;
@@ -1837,17 +1839,19 @@ export default function AdminDashboard() {
                               <div className="flex flex-wrap items-center gap-2"><p className="font-semibold">{provider.name}</p><ApiProviderStatusBadge status={provider.status} /></div>
                               <p className="mt-1 text-sm text-muted-foreground">{provider.description}</p>
                             </div>
-                            {provider.canTest ? <Button size="sm" variant="outline" onClick={() => testApiProviderMutation.mutate({ providerId: provider.id })} disabled={thisTestIsRunning || testAllApiProvidersMutation.isPending}>{thisTestIsRunning ? "Testing…" : provider.testMode === "configuration" ? "Check setup" : "Test connection"}</Button> : <Button size="sm" variant="outline" disabled>{provider.testMode === "not_active" ? "Not active" : "Setup required"}</Button>}
+                            {provider.canTest ? <Button size="sm" variant="outline" onClick={() => testApiProviderMutation.mutate({ providerId: provider.id })} disabled={thisTestIsRunning || testAllApiProvidersMutation.isPending}>{thisTestIsRunning ? "Testing…" : provider.testMode === "configuration" ? "Check setup" : "Test connection"}</Button> : <Button size="sm" variant="outline" disabled>{provider.testMode === "permission_pending" ? "Permission pending" : provider.testMode === "deferred" ? "Owner deferred" : provider.testMode === "not_active" ? "Not active" : "Setup required"}</Button>}
                           </div>
                           <div className="mt-3 rounded-md bg-muted/50 p-3 text-xs">
                             <p>{provider.message}</p>
                             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
                               <span>Configured: {provider.configured ? "Yes" : "No"}</span>
                               <span>Test: {provider.testMode.replaceAll('_', ' ')}</span>
+                              {provider.categories?.length ? <span>Categories: {provider.categories.map((category: string) => category.replaceAll('_', ' ')).join(', ')}</span> : null}
                               {provider.httpStatus ? <span>HTTP: {provider.httpStatus}</span> : null}
                               {typeof provider.recordsVerified === "number" ? <span>Records checked: {provider.recordsVerified}</span> : null}
                               {provider.checkedAt ? <span>Last test: {new Date(provider.checkedAt).toLocaleString()}</span> : null}
                             </div>
+                            {provider.validationStatus ? <div className="mt-3 border-t border-border/60 pt-3"><p className="font-semibold text-foreground">Public-contract validation: <span className="capitalize">{provider.validationStatus.replaceAll('_', ' ')}</span></p><p className="mt-1 text-muted-foreground">{provider.validationSummary}</p>{provider.permissionNote ? <p className="mt-2 text-muted-foreground">Activation: {provider.permissionNote}</p> : null}{provider.sourceUrl ? <a className="mt-2 inline-flex font-medium text-blue-700 underline underline-offset-2" href={provider.sourceUrl} target="_blank" rel="noreferrer">Source reference →</a> : null}</div> : null}
                           </div>
                         </div>;
                       })}

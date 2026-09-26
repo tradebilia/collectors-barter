@@ -1,6 +1,25 @@
 import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import { classifyApiFailure, type ApiFailureClass } from "./apiHealth";
 import { getMarketNewsFeedRegistry } from "./marketNewsFeeds";
+import { PERMISSION_PENDING_MARKET_SOURCES, type PermissionPendingMarketSource } from "../shared/permissionPendingMarketSources";
+
+const SPECIALIST_PENDING_PROVIDER_IDS = [
+  "specialist_ngc", "specialist_coin_archives", "specialist_cng", "specialist_greatcollections",
+  "specialist_rumsey", "specialist_cherrystone", "specialist_raritan", "specialist_omega_auctions",
+  "specialist_bertoia", "specialist_morphy", "specialist_theriaults", "specialist_propstore",
+  "specialist_poster_auctions", "specialist_bonhams", "specialist_comicconnect", "specialist_heritage",
+  "specialist_university_archives", "specialist_swann", "specialist_rr_auction", "specialist_alexander_historical",
+  "specialist_goldin", "specialist_hakes",
+] as const;
+
+const SPECIALIST_PROVIDER_ID_BY_SOURCE = {
+  ngc: "specialist_ngc", coin_archives: "specialist_coin_archives", cng: "specialist_cng", greatcollections: "specialist_greatcollections",
+  rumsey: "specialist_rumsey", cherrystone: "specialist_cherrystone", raritan: "specialist_raritan", omega_auctions: "specialist_omega_auctions",
+  bertoia: "specialist_bertoia", morphy: "specialist_morphy", theriaults: "specialist_theriaults", propstore: "specialist_propstore",
+  poster_auctions: "specialist_poster_auctions", bonhams: "specialist_bonhams", comicconnect: "specialist_comicconnect", heritage: "specialist_heritage",
+  university_archives: "specialist_university_archives", swann: "specialist_swann", rr_auction: "specialist_rr_auction", alexander_historical: "specialist_alexander_historical",
+  goldin: "specialist_goldin", hakes: "specialist_hakes",
+} as const;
 
 export const API_PROVIDER_IDS = [
   "manus_forge",
@@ -41,6 +60,7 @@ export const API_PROVIDER_IDS = [
   "facebook_oauth",
   "linkedin_oauth",
   "etsy_oauth",
+  ...SPECIALIST_PENDING_PROVIDER_IDS,
 ] as const;
 
 export type ApiProviderId = (typeof API_PROVIDER_IDS)[number];
@@ -50,10 +70,12 @@ export type ApiProviderHealthStatus =
   | "not_configured"
   | "requires_account_connection"
   | "not_active"
+  | "permission_pending"
+  | "deferred"
   | "failed";
-export type ApiProviderTestMode = "data" | "credential" | "configuration" | "not_active";
+export type ApiProviderTestMode = "data" | "credential" | "configuration" | "not_active" | "permission_pending" | "deferred";
 
-type ProviderGroup = "AI & platform" | "Market data" | "Catalog reference" | "Communications & trust" | "Shipping" | "Payments" | "Member connections" | "Storage";
+type ProviderGroup = "AI & platform" | "Market data" | "Specialist market data — activation pending" | "Catalog reference" | "Communications & trust" | "Shipping" | "Payments" | "Member connections" | "Storage";
 type ProviderEnv = NodeJS.ProcessEnv;
 type FetchLike = typeof fetch;
 
@@ -81,6 +103,12 @@ export type ApiProviderHealthRow = {
   httpStatus: number | null;
   failureClass: ApiFailureClass | null;
   recordsVerified: number | null;
+  categories?: string[];
+  sourceUrl?: string;
+  sourceActivationStatus?: "pending_permission" | "deferred";
+  validationStatus?: PermissionPendingMarketSource["liveTestStatus"];
+  validationSummary?: string;
+  permissionNote?: string;
 };
 
 export type ApiProviderBatchHealthResult = {
@@ -102,6 +130,7 @@ type ApiProviderDefinition = {
   configured: (env: ProviderEnv) => boolean;
   check?: (context: ProbeContext) => Promise<ProbeSuccess>;
   requiresAccountConnection?: boolean;
+  specialistSource?: PermissionPendingMarketSource;
 };
 
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -464,32 +493,73 @@ const PROVIDERS: ApiProviderDefinition[] = [
   { id: "facebook_oauth", name: "Facebook OAuth", group: "Member connections", description: "Member profile-linking provider; an individual member authorization is required before profile data can be checked.", testMode: "configuration", configured: (env) => configured(env, "FACEBOOK_APP_ID", "FACEBOOK_APP_SECRET", "FACEBOOK_REDIRECT_URI"), requiresAccountConnection: true },
   { id: "linkedin_oauth", name: "LinkedIn OAuth", group: "Member connections", description: "Member profile-linking provider; an individual member authorization is required before profile data can be checked.", testMode: "configuration", configured: (env) => configured(env, "LINKEDIN_CLIENT_ID", "LINKEDIN_CLIENT_SECRET", "LINKEDIN_REDIRECT_URI"), requiresAccountConnection: true },
   { id: "etsy_oauth", name: "Etsy OAuth", group: "Member connections", description: "Member shop-linking provider; an individual member authorization is required before shop data can be checked.", testMode: "configuration", configured: (env) => configured(env, "ETSY_API_KEYSTRING", "ETSY_SHARED_SECRET", "ETSY_REDIRECT_URI"), requiresAccountConnection: true },
+  ...PERMISSION_PENDING_MARKET_SOURCES.map((source): ApiProviderDefinition => ({
+    id: SPECIALIST_PROVIDER_ID_BY_SOURCE[source.id],
+    name: source.label,
+    group: "Specialist market data — activation pending",
+    description: `${source.purpose} This source is not connected to runtime collection or valuation.`,
+    testMode: source.status === "deferred" ? "deferred" : "permission_pending",
+    configured: () => false,
+    specialistSource: source,
+  })),
 ];
 
 function configurationMessage(definition: ApiProviderDefinition, isConfigured: boolean) {
+  const source = definition.specialistSource;
+  if (source?.status === "deferred") return `${source.label} is deferred by owner. Remote collection, login, CAPTCHA workarounds, and activation remain disabled until the owner explicitly reactivates it.`;
+  if (source?.status === "pending_permission") return `${source.label} has a recorded public-contract validation, but remote collection and health probes remain disabled pending written authorization and source-specific activation review.`;
   if (!isConfigured) return "Required server-side credential or configuration is unavailable. No provider request can be made.";
   if (definition.testMode === "not_active") return "The key is present, but this direct provider path is not used by the current runtime.";
   if (definition.requiresAccountConnection) return "Provider settings are present. A member must complete OAuth before their individual connection can be verified.";
   return "Configured and ready for an administrator-triggered, read-only test.";
 }
 
+function specialistRowFields(definition: ApiProviderDefinition) {
+  const source = definition.specialistSource;
+  if (!source) return {};
+  return {
+    categories: [...source.categories],
+    sourceUrl: source.sourceUrl,
+    sourceActivationStatus: source.status,
+    validationStatus: source.liveTestStatus,
+    validationSummary: source.liveTestSummary,
+    permissionNote: source.permissionNote,
+  };
+}
+
 function healthRow(definition: ApiProviderDefinition, env: ProviderEnv): ApiProviderHealthRow {
   const isConfigured = definition.configured(env);
   const cached = healthCache.get(definition.id);
+  const specialistFields = specialistRowFields(definition);
   const canTestInBatch = isConfigured && definition.testMode !== "not_active" && !definition.requiresAccountConnection && Boolean(definition.check);
+  if (definition.testMode === "permission_pending" || definition.testMode === "deferred") {
+    return {
+      ...definition,
+      ...specialistFields,
+      configured: false,
+      canTest: false,
+      canTestInBatch: false,
+      status: definition.testMode,
+      message: configurationMessage(definition, false),
+      checkedAt: null,
+      httpStatus: null,
+      failureClass: null,
+      recordsVerified: null,
+    };
+  }
   if (!isConfigured) {
-    return { ...definition, configured: false, canTest: false, canTestInBatch: false, status: "not_configured", message: configurationMessage(definition, false), checkedAt: null, httpStatus: null, failureClass: "configuration", recordsVerified: null };
+    return { ...definition, ...specialistFields, configured: false, canTest: false, canTestInBatch: false, status: "not_configured", message: configurationMessage(definition, false), checkedAt: null, httpStatus: null, failureClass: "configuration", recordsVerified: null };
   }
   if (definition.testMode === "not_active") {
-    return { ...definition, configured: true, canTest: false, canTestInBatch: false, status: "not_active", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
+    return { ...definition, ...specialistFields, configured: true, canTest: false, canTestInBatch: false, status: "not_active", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
   }
   if (cached) {
-    return { ...definition, configured: true, canTest: true, canTestInBatch, status: cached.status, message: cached.message, checkedAt: cached.checkedAt, httpStatus: cached.httpStatus, failureClass: cached.failureClass, recordsVerified: cached.recordsVerified };
+    return { ...definition, ...specialistFields, configured: true, canTest: true, canTestInBatch, status: cached.status, message: cached.message, checkedAt: cached.checkedAt, httpStatus: cached.httpStatus, failureClass: cached.failureClass, recordsVerified: cached.recordsVerified };
   }
   if (definition.requiresAccountConnection) {
-    return { ...definition, configured: true, canTest: true, canTestInBatch: false, status: "requires_account_connection", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
+    return { ...definition, ...specialistFields, configured: true, canTest: true, canTestInBatch: false, status: "requires_account_connection", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
   }
-  return { ...definition, configured: true, canTest: true, canTestInBatch, status: "ready_to_test", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
+  return { ...definition, ...specialistFields, configured: true, canTest: true, canTestInBatch, status: "ready_to_test", message: configurationMessage(definition, true), checkedAt: null, httpStatus: null, failureClass: null, recordsVerified: null };
 }
 
 export function getApiProviderHealthOverview(env: ProviderEnv = process.env): ApiProviderHealthRow[] {
@@ -506,7 +576,7 @@ export async function runApiProviderHealthCheck(providerId: ApiProviderId, optio
   const definition = PROVIDERS.find((provider) => provider.id === providerId);
   if (!definition) throw new Error("Unknown API provider health check.");
   const env = options.env ?? process.env;
-  if (!definition.configured(env) || definition.testMode === "not_active") return healthRow(definition, env);
+  if (!definition.configured(env) || ["not_active", "permission_pending", "deferred"].includes(definition.testMode)) return healthRow(definition, env);
 
   const checkedAt = new Date().toISOString();
   if (definition.requiresAccountConnection || !definition.check) {

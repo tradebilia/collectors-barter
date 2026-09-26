@@ -6,6 +6,7 @@ import {
   runAllEligibleApiProviderHealthChecks,
   runApiProviderHealthCheck,
 } from "./apiProviderHealth";
+import { PERMISSION_PENDING_MARKET_SOURCES } from "../shared/permissionPendingMarketSources";
 
 describe("Admin API provider health registry", () => {
   it("lists every registered provider exactly once, including market data, catalog data, shipping, storage, and member connections", () => {
@@ -25,6 +26,34 @@ describe("Admin API provider health registry", () => {
     const provider = getApiProviderHealthOverview({}).find((entry) => entry.id === "hipstamp");
     expect(provider).toMatchObject({ configured: false, canTest: false, status: "not_configured" });
     expect(provider?.message).not.toMatch(/api[_ -]?key|secret|token\s*=/i);
+  });
+
+  it("lists every researched specialist source with its validation state while keeping remote probes disabled", async () => {
+    const overview = getApiProviderHealthOverview({});
+    const specialistRows = overview.filter((provider) => provider.group === "Specialist market data — activation pending");
+    expect(specialistRows).toHaveLength(PERMISSION_PENDING_MARKET_SOURCES.length);
+
+    for (const source of PERMISSION_PENDING_MARKET_SOURCES) {
+      const provider = specialistRows.find((entry) => entry.name === source.label);
+      const apiHealthStatus = source.status === "pending_permission" ? "permission_pending" : "deferred";
+      expect(provider, source.label).toMatchObject({
+        configured: false,
+        canTest: false,
+        canTestInBatch: false,
+        status: apiHealthStatus,
+        testMode: apiHealthStatus,
+        categories: [...source.categories],
+        sourceActivationStatus: source.status,
+        validationStatus: source.liveTestStatus,
+        validationSummary: source.liveTestSummary,
+      });
+    }
+
+    const fetchImpl = vi.fn();
+    const result = await runApiProviderHealthCheck("specialist_cng", { env: {}, fetchImpl: fetchImpl as any });
+    expect(result).toMatchObject({ status: "permission_pending", canTest: false, canTestInBatch: false, validationStatus: "verified" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(getBatchEligibleApiProviderIds({})).not.toContain("specialist_cng");
   });
 
   it("recognizes the legacy Sold-Comps secret alias used by the current adapter", () => {
