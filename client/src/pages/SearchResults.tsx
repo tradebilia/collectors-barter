@@ -167,7 +167,7 @@ export function SearchResults() {
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-[#fff4e0]" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center center", backgroundRepeat: "no-repeat" }}>
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,12,8,0.64)_0%,rgba(18,12,8,0.24)_48%,rgba(18,12,8,0.56)_100%)]" />
-        <div className="container relative flex h-[480px] min-h-[480px] flex-col items-center justify-center py-4 text-center sm:py-4">
+        <div className="container relative flex h-[400px] min-h-[400px] flex-col items-center justify-center py-4 text-center sm:py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#fff4e0]/80">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
           <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center overflow-visible sm:h-44 lg:h-56">
