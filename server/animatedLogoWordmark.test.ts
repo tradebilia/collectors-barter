@@ -11,6 +11,7 @@ const logoSource = fs.readFileSync(
 describe("Animated Tradebilia wordmark", () => {
   it("uses the requested 125-unit font while preserving the required SVG contract", () => {
     expect(logoSource).toContain("const LARGE_WORDMARK_FONT_SIZE = 125;");
+    expect(logoSource).toContain('{ name: "MUSIC", color: "#E5B45A", duration: 3000 }');
     expect(logoSource).toContain("fontSize?: number;");
     expect(logoSource).toContain("wordmarkColor?: string;");
     expect(logoSource).toContain("neutralCategoryColor?: string;");

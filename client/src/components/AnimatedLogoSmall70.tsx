@@ -10,6 +10,7 @@ const categories = [
   { name: "VIDEO GAMES", color: "#F6A5B6", duration: 3000 },
   { name: "AUTOGRAPHS", color: "#29A8FF", duration: 3000 },
   { name: "TOYS", color: "#FF69B4", duration: 3000 },
+  { name: "MUSIC", color: "#E5B45A", duration: 3000 },
 ];
 
 const DEFAULT_WORDMARK_FONT_SIZE = 60;
