@@ -60,15 +60,15 @@ This is a second safety boundary: no fixture and no pending source can reach a T
 4. A pending source status response returns empty sales/context arrays and a hard remote-lookup-disabled message.
 5. Category-specific sources do not appear as eligible for unrelated categories.
 
-## Authorized one-item live validation — 2026-09-26
+## Authorized two-item live validation — 2026-09-26
 
-After the framework was created, the owner reported authorization to test **one completed item per source**. Each check was limited to at most three ordinary public page requests, without login, account creation, CAPTCHA/access-control workaround, form submission, record retention, or database write.
+After the framework was created, the owner reported authorization to test each source until its public contract was understood and then validate a different completed item. Each check used only a small bounded number of ordinary public page requests, without login, account creation, CAPTCHA/access-control workaround, form submission, record retention, or database write.
 
-- **13 sources** returned a public completed record with the technical minimum: title, stable URL or lot ID, explicit completed/sold/realized state, date, price/currency, and price-basis wording.
-- **6 sources** returned real auction data but lacked a required field or had a result gated within that limited test.
-- **3 sources** did not expose an individual completed lot within the capped test.
+- **16 sources** returned the technical minimum on two different public completed items: title, stable URL or lot ID, explicit completed/sold/realized state, date, price/currency, and price-basis wording.
+- **5 sources** returned genuine auction data but have a required field that is gated, absent, or inconsistent across public routes.
+- **1 source** did not expose a usable public individual completed lot at all.
 
-The Test AI source cards now expose the outcome as **item test passed**, **partial item test**, or **item test blocked**. This is transparency only: all cards remain orange, disabled, sandbox-only, and valuation-blocked.
+The Test AI source cards now expose the final outcome as **item test passed**, **partial item test**, or **item test blocked**. This is transparency only: all cards remain orange, disabled, sandbox-only, and valuation-blocked.
 
 The full source-by-source matrix, exact public test item, fields obtained, and the next required request or access contract is in `LIVE_SPECIALIST_SOURCE_VALIDATION_2026-09-26.md`.
 

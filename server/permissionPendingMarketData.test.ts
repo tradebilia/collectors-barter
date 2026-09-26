@@ -120,9 +120,9 @@ describe('permission-pending market-source adapters', () => {
     }, {});
 
     expect(statusCounts).toEqual({
-      verified: 13,
-      partial: 6,
-      no_completed_item: 3,
+      verified: 16,
+      partial: 5,
+      no_completed_item: 1,
     });
   });
 });

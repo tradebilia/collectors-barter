@@ -1,68 +1,79 @@
-# Live Specialist Source Validation
+# Live Specialist Source Validation — Two-Pass Matrix
 
-**Date:** 2026-09-26  
-**Scope:** One authorized, bounded, read-only public completed-item check per source.  
-**Limits:** Maximum three ordinary public page requests per source; no login, account creation, form submission, CAPTCHA bypass, robots/access-control workaround, retry loop, data retention, or database write.
+**Date:** 2026-09-26
+**Scope:** Trade Analyzer 2.0 isolated Test AI sandbox only.
+**Authorization used:** The owner reported authorization to test each source until its public completed-item contract was understood, then run a different-item check.
+**Boundaries observed:** Ordinary public page requests only; no login, account creation, form submission, purchase, CAPTCHA/access-control workaround, aggressive retry, automated collection, raw-page retention, database write, scheduler, or production change.
 
-## Result summary
+## Final result
 
-| Result | Count | Meaning |
+| Final public-contract status | Sources | Meaning |
 |---|---:|---|
-| **Technically verified** | 13 | A public completed record exposed title, stable URL/lot ID, explicit closed/sold/realized status, date, price/currency, and usable price-basis wording. The source remains **permission pending** and disabled in Test AI. |
-| **Partially validated** | 6 | A real result was reachable, but a required item field was gated or missing within the three-request cap. |
-| **No usable completed item in the capped test** | 3 | The public route did not yield an individual completed lot with the required evidence fields within the cap. |
+| **Verified on two distinct items** | **16** | Two genuinely different public completed items supplied title, stable identifier/URL, explicit completed state, date, numeric price/currency, and source price-basis wording. |
+| **Partial / inconsistent public contract** | **5** | A real result exists, but a required field is gated, absent, or not consistently available across public item routes. |
+| **No public individual completed-item contract** | **1** | Public access exposes auction-level information but not a usable completed individual-lot result. |
 
-> **Important:** A “technically verified” result proves a public page can expose the minimum data for one item. It does **not** activate recurring collection or allow any result to influence valuation. Every source remains disabled until full written permission and the source-specific activation gate are recorded.
+> **Status:** Every source still remains **permission pending**, disabled in Test AI, remote-lookup-disabled, sandbox-only, and valuation-blocked. Technical validation does not authorize recurring collection or make a source eligible to affect a Tradebilia value.
 
-## Source-by-source results
+## Two-pass source matrix
 
-| Source | Category | Tested completed item | Outcome | What the public test returned | Roadblock / activation note |
-|---|---|---|---|---|---|
-| **NGC Auction Central** | Coins | [1986 Eagle S$1 MS, NGC UCID 26J4](https://www.ngccoin.com/auction-central/us/silver-eagles-1986-date-pscid-203/auctions/1986-eagle-s1-ms-ucid-26J4) | **Technically verified** | NGC historical *Prices Realized* row: Heritage sale 132330 / lot 27848; 2023-07-19; $1,320; MS69; price wording says hammer plus auction-house commission. | Build around UCID history and preserve the exact NGC price-basis wording. |
-| **CoinArchives** | Coins | Public record route `r.php?a=664` | **No usable item** | FAQ confirms archived prices realized are hammer prices excluding buyer fee. | Tested record redirected to a future third-party schedule rather than a stable completed lot. Validate a direct individual historical lot in a new authorized test. |
-| **CNG Past Auctions** | Coins | [Anonymous 179–170 BC AR Denarius, lot 6005](https://www.cngcoins.com/Lot.aspx?LOT_ID=207893&BACK_URL=%2fPastAuction.aspx%3fAUCTION_ID%3d238%26BACK_URL%3d%252F) | **Technically verified** | LOT_ID 207893; explicit *Sold For $800*; 2026-09-24 close; VF; buyer fee explicitly excluded. | Public PastAuction/Lot contract is suitable for a bounded adapter. |
-| **GreatCollections Archive** | Coins | [1795 Capped Bust Gold Eagle, GC 1350274](https://www.greatcollections.com/Coin/1350274/1795-Capped-Bust-Gold-Eagle-9-Leaves-PCGS-MS-63-CAC-Green-Ex-Pogue-Simpson-Collections) | **Technically verified** | Public archive card gave *Sold for $2,711,250*; item page gave GC ID, PCGS MS-63+ CAC, cert number, ended time, and fee wording. | Detail page hides amount behind Join; use archive-card realization field only after explicit authorization and preserve basis as not conclusively known. |
-| **Rumsey** | Stamps | [Sale 127, Lot 1001](https://www.rumseyauctions.com/pr/sale/127) | **Partially validated** | *Prices Realized*, Dec. 9–11 2025; lot 1001; $350; prices exclude 18% premium. | Sale result lacks individual title, grade/certificate, and stable lot URL. Validate the linked chapter/lot view under a renewed test limit. |
-| **Cherrystone** | Stamps | [Auction 202503, Lot 1](https://www.cherrystoneauctions.com/_auction/results.asp?auction=202503&lotnum=1) | **Technically verified** | U.S. 1847 5c red brown; 2025-03-18/19; *Price Realized $300*; fresh/v.f.; 1983 Alcuri certificate. | Build around `auction` + `lotnum`; keep the source’s `Price Realized` phrase and currency mapping provenance. |
-| **Raritan** | Stamps | [Auction 105, Lot 2](https://www.raritanstamps.com/PastAuc/PR105.php) | **Partially validated** | Nov. 13–14 2025; lot 2; 110.00; prices exclude 15% premium. | Results page has no title or currency; pair with an authorized archived catalogue/lot detail. |
-| **Omega Auctions** | Music | [Fully Signed Beatles Autograph Book, Lot 302](https://www.omegaauctions.co.uk/news-media/news/lindsay-brown-time-has-told-me-50-years-of-music-auction-results/) | **Partially validated** | News result says *Sold for £6,600*, estimate £3,000–5,000, authenticated by Roger Epperson. | Article lacks a canonical completed-lot URL and actual sale date; validate its linked auction catalogue and lot page. |
-| **Bertoia** | Vintage Toys | [Spring Signature Auction 2025, Lot 43 PDF](https://www.bertoiaauctions.com/pdf/prices-realized/signature-spring-auction-march-2025-prices-realized.pdf) | **Partially validated** | Lot 43, March 15 2025, $96,000; stated 20% buyer premium included. | Public rendered catalogue returned client template rather than lot title/URL. Require an approved lot-detail/API contract. |
-| **Morphy** | Vintage Toys | [Hansel & Gretel Cast Iron Still Bank](https://auctions.morphyauctions.com/HANSEL___GRETEL_CAST_IRON_STILL_BANK-LOT663867.aspx) | **Technically verified** | Lot 1001, catalog 695; bidding and auction close dates; $270 USD; final prices include buyer premium; condition Very Good Plus. | Individual completed-lot contract is ready for a conservative adapter. |
-| **Theriault’s** | Vintage Toys | [Schoenhut Arabian Camel, listing 87064](https://www.theriaults.com/events/listing/87064/8-american-wooden-arabian-camel-by-schoenhut) | **Technically verified** | Lot 151; *Ended* and *Sold*; Sep. 11/12 2026; $275; condition; stable listing ID. | Preserve `Highest Bidder`/`Sold` wording; price basis not explicitly hammer/all-in. |
-| **Propstore** | Movies | [Cast Away Wilson, Stock 139035](https://propstore.com/product/cast-away/chuck-nolands-tom-hanks-hero-screen-matched-wilson/) | **Partially validated** | Sold Jan. 11 2023; catalog 299 / lot 80269; title, provenance, estimate, COA, *Incl. Buyer’s Premium*. | Public page gates numeric sold price behind login. Requires a permitted authenticated or licensed result feed. |
-| **Poster Auctions International** | Movies | Titans of Terror 2026 results route | **No usable item** | Public price-guide terms explain buyer-premium-included results and status conventions. | Results page exposed *Past Items (0)*, with no individual movie-lot record. Obtain a direct historical lot/result URL. |
-| **Bonhams** | Movies | [Robby the Robot suit and Jeep](https://www.bonhams.com/auction/24465/lot/1070/the-iconic-original-robby-the-robot-suit-and-jeep-from-forbidden-planet/) | **Technically verified** | Auction 24465 / Lot 1070 W; Nov. 21 2017; *Sold for US$5,375,000 inc. premium*. | Public completed-lot pattern supports a low-rate adapter. |
-| **ComicConnect** | Comics | [Spider-Man: Redemption #3 cover prelim, item 1107774](https://www.comicconnect.com/item/1107774) | **Technically verified** | Sold on Sep. 17 2026; *Sold For $212.75*; VF 8.0; Marvel; stable item ID; premium wording. | Preserve displayed `Sold For` rather than infer hammer price. |
-| **Heritage (Comics)** | Comics | [Murder Incorporated #1, auction 7469 / lot 92196](https://comics.ha.com/itm/golden-age-1938-1955-/crime/murder-incorporated-1-fox-features-syndicate-1948-cgc-fn-65-cream-to-off-white-pages/a/7469-92196.s) | **Partially validated** | Title, lot/auction IDs, sold date, CGC FN+ 6.5/cert, premium wording. | Numeric sold price is sign-in gated. Public contract is metadata-only unless a licensed price feed is authorized. |
-| **University Archives** | Autographs | [G.H.W. Bush ALS, Lot 6](https://www.universityarchives.com/auction-lot/g-h-w-bush-als-as-vice-president-psa-gem-mint-10_ed84a299c5) | **Technically verified** | Sold $220; Feb. 21 2024; PSA Gem Mint 10 / PSA-DNA and Reznikoff provenance; stable lot URL. | Keep `Sold` price-basis as unspecified. |
-| **Swann** | Autographs | [Warhol/Rauschenberg signed invitation, catalog 2735 Lot 1](https://www.swanngalleries.com/auction-lot/artists-andy-warhol-and-robert-rauschenberg-exhib_441db79027) | **Technically verified** | Auction closed; sold $889; Apr. 9 2026; *Sold Price includes Buyer’s Premium*. | Public detail page is technically sufficient; leave condition/authentication null unless explicit. |
-| **RR Auction** | Autographs | [Flannery O’Connor signed document, Lot 311](https://www.rrauction.com/auctions/lot-detail/351366807490311-flannery-oconnor-document-signed-for-o-henry-award-winning-story-greenleaf/?cat=0) | **Technically verified** | Auction 749; closed Sep. 16 2026; sold $1,669; includes buyer premium; PSA/DNA pre-certified. | Public lot-detail contract is sufficient. |
-| **Alexander Historical** | Autographs | [Adolf Hitler, Lot 1](https://www.alexautographs.com/auction-lot/adolf-hitler_11041dea23) | **Technically verified** | Auction closed Dec. 4 2024; sold $4,500; detailed condition; source terms separately state 25% buyer premium. | Preserve `Sold` basis; do not infer hammer versus all-in. |
-| **Goldin** | Video Games | [1978 Atari Space Invaders Wata 9.4/A++](https://goldin.co/item/1978-2600-atari-usa-space-invaders-sealed-video-game-wata-9-4-aq9ac1) | **Technically verified** | Lot 120; *Lot Sold*; Dec. 9 2021 timestamp; displayed $1,080 plus explicit $900 *Winning Bid*; Wata grades. | Keep displayed total and winning bid as separate fields; price basis for displayed total is not explicit. |
-| **Hake’s** | Disney Pins | Results application / Past Auctions route | **No usable item** | Legacy selector referenced Disney Online Only auction; current route said *No Auction Available*. | Obtain one known completed Disney-pin lot URL or approved public query contract before adapter work. |
+| Source | Category | Distinct item checks | Final status | Public contract / exact limitation |
+|---|---|---|---|---|
+| **NGC Auction Central** | Coins | 1986 Eagle S$1 MS (UCID 26J4); 1995-W Eagle Anniversary Set S$1 PF (UCID CFWX) | **Verified** | Both NGC *Prices Realized* pages exposed UCID, sale/lot, date, USD price, grade, and the stated hammer-plus-auction-house-commission basis. |
+| **CoinArchives** | Coins | Public archive and auction record routes | **Blocked** | Public archive is auction-level; attempted records redirect to auctioneer sites and individual completed lots/prices are gated to **CoinArchives Pro**. No public item contract exists. |
+| **CNG Past Auctions** | Coins | LOT_ID 207893 / Lot 6005 Denarius; LOT_ID 173558 / Lot 1 Tetradrachm | **Verified** | Both public lot pages supplied distinct IDs, title, explicit *Sold For*, date, USD price, grade/condition, and buyer-fee exclusion. |
+| **GreatCollections Archive** | Coins | 1795 Capped Bust Eagle (GC 1350274); 1894-O Morgan Dollar (GC 1779627) | **Partial** | Archive cards can show a realization, but individual completed-item pages hide the numeric final price behind **Join**. The second item exposed only its $1 starting bid. A universal public per-lot price contract is not proven. |
+| **Rumsey Auction Results** | Stamps | Sale 127 Lot 1001; Sale 127 Lot 2772, *United States Collection, 1847–2015* | **Verified** | The direct public lot route supplied title, stable sale/lot URL, *Realized* state, date, USD amount, and explicit 18% premium exclusion. |
+| **Cherrystone Realizations** | Stamps | Auction 202503 Lot 1; Auction 202502 Lot 5001 | **Verified** | Both public result detail pages exposed title, stable auction/lot URL, sale date, dollar *Price Realized* amount, and available item details. |
+| **Raritan Past Auctions** | Stamps | Auction 105 Lot 2; Auction 104 Lot 598 | **Verified** | Auction 104 Lot 598 publicly joined title, stable auction/lot key, *Sold for US$3,750*, date, and 15% premium exclusion. This confirmed the earlier missing title/currency was a route-specific problem, not a source-wide blocker. |
+| **Omega Auctions** | Music | Beatles Autograph Book Lot 302; Sex Pistols *Never Mind the Bollocks* Lot 793 | **Verified** | A direct public completed-lot page exposed stable lot ID/URL, title, *Sold*, auction date, £1,100, and **Hammer Price** wording. |
+| **Bertoia Auctions** | Vintage Toys | Spring Signature 2025 Lot 43; Holiday Exclusive 2024 Lot 24 | **Partial** | Official PDFs expose lot, date, dollar amount, and 20% premium-included wording; public catalog routes render unhydrated template placeholders rather than a reliable title-to-lot join or canonical completed-lot page. |
+| **Morphy Auctions** | Vintage Toys | Hansel & Gretel Cast Iron Bank Lot 1001; Japanese Smoking Robot Lot 2414 | **Verified** | Both public closed-lot pages exposed title, stable ID, completed date, USD final price, **Final prices include buyers premium**, and condition. |
+| **Theriault’s Archive** | Vintage Toys | Schoenhut Arabian Camel listing 87064; Iki-ningyo Peddler listing 706 | **Verified** | Both public archived records exposed title, stable listing/lot ID, sold state, event date, dollar amount, and available condition context. |
+| **Propstore** | Movies | *Cast Away* Wilson Stock 139035; *Jurassic Park* Mosquito in Amber Lot 208869 | **Partial** | A public top-seller/results route exposes title, stable ID, *SOLD FOR*, date, and $403,200; ordinary completed lot pages gate the winning price behind login. The public price field is therefore inconsistent. |
+| **Poster Auctions International** | Movies | *Die Rache im Goldtal* Lot 239; *Godzilla: King of the Monsters* Lot 129 | **Verified** | The official `posterauctions.com` archive—not the older client-rendered host—returned two public film-poster results with title, stable lot route, date, dollar result, and buyer-premium context. |
+| **Bonhams Popular Culture** | Movies | *Forbidden Planet* Robby the Robot Lot 1070; Theda Bara as Cleopatra Lot 78 | **Verified** | Both public lot pages exposed title, stable auction/lot ID, date, *Sold for US$* result, and **inc. premium** wording. |
+| **ComicConnect Sold Archive** | Comics | *Spider-Man: Redemption #3* cover prelim item 1107774; *New Warriors #68* half splash item 1107787 | **Verified** | Both public item pages exposed ID, title, explicit sold time/status, USD *Sold For* amount, grade, and premium wording. |
+| **Heritage Auction Archives** | Comics | *Murder Incorporated #1* auction 7469 lot 92196; *Adventure Comics #78* auction 122132 lot 13020 | **Partial** | Both public pages supplied title, stable identifiers, sold date, grading/certification, and buyer-premium language—but numeric realized prices are consistently **Sign-in/Join-gated**. |
+| **University Archives** | Autographs | G.H.W. Bush ALS Lot 6; Abigail Adams cover Lot 2 | **Verified** | Both public lots supplied title, stable URL, explicit *Sold* amount in USD, date, and available authentication/grading context. |
+| **Swann Galleries** | Autographs | Warhol/Rauschenberg invitation Lot 1; Lafayette ALS Lot 18 | **Verified** | Both public lots supplied catalog/lot ID, title, auction-closed/sold state, date, USD amount, and **Sold Price includes Buyer’s Premium** wording. |
+| **RR Auction** | Autographs | Flannery O’Connor document Lot 311; Jacob Grimm note Lot 292 | **Verified** | Both public lot-detail pages supplied title, stable lot ID/URL, closed state, date, USD *Sold For* amount, **Includes Buyers Premium**, and available PSA/DNA context. |
+| **Alexander Historical Auctions** | Autographs | Adolf Hitler Lot 1; *Memphis Belle* Lot 9 | **Verified** | Both public historical lots supplied title, lot ID, closed auction date, USD *Sold* price, and condition/buyer-premium context. |
+| **Goldin Video Game Auctions** | Video Games | Atari *Space Invaders* Lot 120; Atari *Pac-Man* Lot 121 | **Verified** | Both public lots exposed title, lot ID/URL, *Lot Sold* status, timestamp, dollar price/winning-bid fields, and Wata grade. The displayed total and explicit Winning Bid remain distinct fields. |
+| **Hake’s Auction Results** | Disney Pins | Rapunzel Pin inventory 89764 / Lot 1886; Mickey Silver Pin route 282853 | **Partial** | The legacy Rapunzel LotDetail page supplied a full completed record. A different later public pin route supplied title, closed state, and price but not a retrievable end date or stable canonical page. The public contract is inconsistent. |
 
-## Technical readiness count
+## What can be built after formal activation approval
 
-**Technically ready for a source-specific, read-only adapter after written permission:**
+The following **16 technically validated sources** can move to source-specific, rate-limited, read-only sandbox adapter work once the required written authorization and request contract are recorded:
 
-- NGC Auction Central
-- CNG Past Auctions
-- GreatCollections Archive (archive-card result only; amount partly gated on detail)
-- Cherrystone
-- Morphy
-- Theriault’s
-- Bonhams
-- ComicConnect
-- University Archives
-- Swann
-- RR Auction
-- Alexander Historical
-- Goldin
+1. NGC Auction Central
+2. CNG Past Auctions
+3. Rumsey Auction Results
+4. Cherrystone Realizations
+5. Raritan Past Auctions
+6. Omega Auctions
+7. Morphy Auctions
+8. Theriault’s Archive
+9. Poster Auctions International
+10. Bonhams
+11. ComicConnect
+12. University Archives
+13. Swann Galleries
+14. RR Auction
+15. Alexander Historical Auctions
+16. Goldin Video Game Auctions
 
-**Needs a second authorized public-record test or licensed access before adapter implementation:**
+## Remaining technical/access blockers
 
-- CoinArchives, Rumsey, Raritan, Omega Auctions, Bertoia, Propstore, Poster Auctions International, Heritage, Hake’s
+| Source | Required resolution before a price-capable source adapter |
+|---|---|
+| **CoinArchives** | A permitted individual-lot results path, formal Pro/API/export access, or a licensed feed; public archive pages are auction-level only. |
+| **GreatCollections** | A documented endpoint/feed that supplies a realization to a public/authorized detail record consistently; public detail pages gate final price. |
+| **Bertoia** | A rendered public/API/PDF catalog mapping individual titles to realized lot numbers, plus explicit currency treatment. |
+| **Propstore** | A source-sanctioned results feed or allowed authenticated export for ordinary lots; public top-seller data is not a universal contract. |
+| **Heritage** | A licensed prices-realized feed/export or explicitly authorized access that provides the currently sign-in-gated numeric price. |
+| **Hake’s** | A stable public legacy/current completed-lot route that reliably provides end date, canonical URL, price, and complete price-basis wording. |
 
 ## Evidence-policy outcome
 
-Every source remains sandbox-only and **disabled**. The test did not add any public record to Tradebilia, run a recurring/background job, create a database record, modify a user listing, or influence a trade valuation. If activated later, only individual dated, explicit completed sales that pass full item identity, grade, date, currency, duplicate, visual, format, and source-price-basis gates may become valuation candidates.
+No live source data was retained in Tradebilia, sent to users, stored in the database, scheduled, or allowed to influence a valuation. On activation, each source still must pass source-specific identity rules and Tradebilia’s existing completed-sale, date, currency, duplicate, visual, grade/company, format, and price-basis gates before an individual observation can become a valuation candidate.
