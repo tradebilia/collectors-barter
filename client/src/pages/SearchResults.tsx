@@ -180,7 +180,7 @@ export function SearchResults() {
         <div className="container relative flex h-[400px] min-h-[400px] flex-col items-center justify-center py-4 text-center sm:py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
-          <div className="relative mt-3 flex h-36 w-[calc(100vw+8rem)] items-center justify-center overflow-visible sm:h-44 sm:w-[calc(100vw+16rem)] lg:h-56 lg:w-[calc(100vw+20rem)] lg:max-w-[120rem]" style={{ marginLeft: "calc(50% - 50vw)" }}>
+          <div className="relative mt-3 ml-[calc(50%-50vw-4rem)] flex h-36 w-[calc(100vw+8rem)] self-start items-center justify-center overflow-visible sm:ml-[calc(50%-50vw-8rem)] sm:h-44 sm:w-[calc(100vw+16rem)] lg:ml-[calc(50%-50vw-10rem)] lg:h-56 lg:w-[calc(100vw+20rem)] lg:max-w-[120rem] 2xl:ml-[calc(50%-60rem)]">
             <AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} wheelOffsetY={-20} dividerOffsetY={-20} centerLockup />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-white sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>
