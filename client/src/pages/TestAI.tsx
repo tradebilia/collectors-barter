@@ -211,7 +211,7 @@ const DATA_SOURCES = {
     icon: '🧩',
     provides: ['item_details', 'current_prices', 'historic_prices'],
     status: 'live' as const,
-    description: 'Pokémon card market prices by grade, powered by Parse.bot PriceCharting API',
+    description: 'Read-only Pokémon/compatible TCG, US coin, video-game UPC, and cross-category market-mover context via Parse.bot PriceCharting',
   },
   one_thirty_point: {
     id: 'one_thirty_point',
@@ -1151,35 +1151,45 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
   );
 }
 
-function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+function PriceChartingSection({ item, side, cardData, coinData, videoGameData, slugData, moversData }: { item: SelectedItem; side: 'left' | 'right'; cardData?: any; coinData?: any; videoGameData?: any; slugData?: any; moversData?: any }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const supported = item.category === 'pokemon';
-  const { data, isLoading } = trpc.testAI.getPriceChartingData.useQuery(
-    { query: item.title },
-    { enabled: supported && !!item.title },
-  );
-
-  if (!supported) return (
-    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 Parse.bot (PriceCharting)</p>
-      <p className="text-gray-500 text-[10px]">This Test AI integration currently supports Pokémon card pricing. Select a Pokémon item to run a read-only lookup.</p>
-    </div>
-  );
-
+  const details = testAiDetails(item);
+  const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ');
+  const isVideoGame = normalizedCategory === 'video games';
+  const isCoin = normalizedCategory === 'coins';
+  const isPokemonOrTcg = normalizedCategory === 'pokemon';
+  const coinQuery = trpc.testAI.getPriceChartingCoinData.useQuery({ query: item.title }, { enabled: isCoin && !!item.title });
+  const rawUpc = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
+  const upc = String(rawUpc).replace(/\D/g, '');
+  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery({ upc: /^\d{8,14}$/.test(upc) ? upc : '00000000' }, { enabled: isVideoGame && /^\d{8,14}$/.test(upc) });
+  const setSlug = String(details.setSlug ?? details.cardSetSlug ?? details.priceChartingSetSlug ?? 'unavailable').trim();
+  const cardSlug = String(details.cardSlug ?? details.priceChartingCardSlug ?? 'unavailable').trim();
+  const slugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery({ setSlug, cardSlug }, { enabled: isPokemonOrTcg && setSlug !== 'unavailable' && cardSlug !== 'unavailable' });
+  const moversQuery = trpc.testAI.getPriceChartingBigMovers.useQuery(undefined, { enabled: !!item.title });
+  const effectiveCardData = cardData;
+  const effectiveCoinData = coinData ?? coinQuery.data;
+  const effectiveVideoGameData = videoGameData ?? videoGameQuery.data;
+  const effectiveSlugData = slugData ?? slugQuery.data;
+  const effectiveMoversData = moversData ?? moversQuery.data;
+  const data = isCoin ? effectiveCoinData : isVideoGame ? effectiveVideoGameData : (setSlug !== 'unavailable' && cardSlug !== 'unavailable') ? effectiveSlugData : effectiveCardData;
+  const isLoading = data === undefined;
   const prices = data?.data?.prices ?? {};
+  const movers = effectiveMoversData?.data?.movers ?? [];
+  const lookupMode = isCoin ? 'US coin price-guide context' : isVideoGame ? 'video-game UPC lookup' : isPokemonOrTcg ? 'Pokémon / compatible TCG price-guide context' : 'available only for compatible PriceCharting records';
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PriceCharting (via Parse.bot)</p>
-        {isLoading && <Spinner className="w-3 h-3" />}
+        {(isLoading || effectiveMoversData === undefined) && <Spinner className="w-3 h-3" />}
       </div>
-      <p className="text-gray-500 text-[10px]">Read-only Pokémon card market prices by grade</p>
+      <p className="text-gray-500 text-[10px]">Read-only {lookupMode}. Price-guide and mover data remain context-only and cannot create completed-sale evidence.</p>
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">{data.message}</p>}
       {data?.status === 'success' && data.data && (
         <div className="space-y-2 rounded bg-gray-900/40 p-2">
-          <p className="text-[12px] font-semibold text-white">{data.data.name || item.title}</p>
-          <p className="text-[10px] text-gray-400">{[data.data.set, data.data.cardNumber].filter(Boolean).join(' · ')}</p>
+          <p className="text-[12px] font-semibold text-white">{data.data.name || data.data.title || item.title}</p>
+          <p className="text-[10px] text-gray-400">{[data.data.set, data.data.cardNumber, data.data.platform, data.data.mint, data.data.mintage].filter(Boolean).join(' · ')}</p>
+          {data.data.associatedUpcs?.length > 0 && <p className="text-[9px] text-gray-500">Associated UPCs: {data.data.associatedUpcs.join(', ')}</p>}
           <div className="grid grid-cols-3 gap-2 text-[10px]">
             {Object.entries(prices).slice(0, 6).map(([grade, value]) => (
               <div key={grade} className="rounded bg-gray-800/60 p-1.5 text-center">
@@ -1190,6 +1200,10 @@ function PriceChartingSection({ item, side }: { item: SelectedItem; side: 'left'
           </div>
         </div>
       )}
+      {isVideoGame && !videoGameData && <p className="text-[10px] text-gray-500">Add an 8–14 digit UPC/barcode to the item details to run the PriceCharting game lookup.</p>}
+      {isPokemonOrTcg && !cardData && !slugData && <p className="text-[10px] text-gray-500">For a compatible non-Pokémon TCG, add PriceCharting setSlug and cardSlug fields to item details.</p>}
+      {effectiveMoversData?.status === 'success' && movers.length > 0 && <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[9px] text-gray-300">Cross-category market movers ({movers.length})</summary><div className="mt-2 space-y-1">{movers.slice(0, 5).map((mover: any, index: number) => <div key={`${mover.name}-${index}`} className="flex items-center justify-between gap-2 text-[9px]"><span className="min-w-0 truncate text-gray-400">{mover.name || 'Unnamed mover'}{mover.category ? ` · ${mover.category}` : ''}</span><span className="shrink-0 text-emerald-300">{mover.change != null ? formatWholeDollar(mover.change) : 'Change N/A'}</span></div>)}</div></details>}
+      {effectiveMoversData?.status === 'error' && <p className="text-[9px] text-gray-500">Market-mover context unavailable: {effectiveMoversData.message}</p>}
     </div>
   );
 }
@@ -1681,6 +1695,16 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       platform: details.platform || details.console || details.system || undefined,
     };
   }, [details, item.title]);
+  const priceChartingCoinQueryInput = useMemo(() => ({ query: item.title }), [item.title]);
+  const priceChartingVideoGameInput = useMemo(() => {
+    const raw = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
+    const upc = String(raw).replace(/\D/g, '');
+    return { upc: /^\d{8,14}$/.test(upc) ? upc : '00000000' };
+  }, [details]);
+  const priceChartingSlugInput = useMemo(() => ({
+    setSlug: String(details.setSlug ?? details.cardSetSlug ?? details.priceChartingSetSlug ?? 'unavailable').trim(),
+    cardSlug: String(details.cardSlug ?? details.priceChartingCardSlug ?? 'unavailable').trim(),
+  }), [details]);
   const sportsUnopenedSearchCriteria = useMemo(() => {
     const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
     const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || details.productName || details.productFormat);
@@ -1710,6 +1734,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const rawgQuery = trpc.testAI.getRawgGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('rawg') && item.category === 'video_games' && gameInput.title.length >= 2 });
   const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && gameInput.title.length >= 2 });
   const priceChartingQuery = trpc.testAI.getPriceChartingData.useQuery({ query: item.title }, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && !!item.title });
+  const priceChartingCoinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(priceChartingCoinQueryInput, { enabled: enabledSources.has('pricecharting') && item.category === 'coins' && !!item.title });
+  const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameInput, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && priceChartingVideoGameInput.upc !== '00000000' });
+  const priceChartingSlugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery(priceChartingSlugInput, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && priceChartingSlugInput.setSlug !== 'unavailable' && priceChartingSlugInput.cardSlug !== 'unavailable' });
+  const priceChartingMoversQuery = trpc.testAI.getPriceChartingBigMovers.useQuery(undefined, { enabled: enabledSources.has('pricecharting') });
   const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
   const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
@@ -1791,7 +1819,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: pwccQuery.data?.message ?? null });
     }
     if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
-    if (enabledSources.has('pricecharting')) add({ id: 'pricecharting', label: 'PriceCharting', kind: 'market_current', status: evidenceStatus(priceChartingQuery.data), fields: { cardName: priceChartingQuery.data?.data?.name, set: priceChartingQuery.data?.data?.set, cardNumber: priceChartingQuery.data?.data?.cardNumber }, message: priceChartingQuery.data?.message ?? null });
+    if (enabledSources.has('pricecharting')) {
+      const priceData = priceChartingQuery.data ?? priceChartingCoinQuery.data ?? priceChartingVideoGameQuery.data ?? priceChartingSlugQuery.data;
+      const marketMoverCount = priceChartingMoversQuery.data?.data?.movers?.length ?? 0;
+      const priceFields = (priceData?.data ?? {}) as Record<string, any>;
+      add({ id: 'pricecharting', label: 'PriceCharting', kind: 'market_current', role: 'asking_price_context', status: evidenceStatus(priceData), fields: { cardName: priceFields.name, title: priceFields.title, set: priceFields.set, cardNumber: priceFields.cardNumber, platform: priceFields.platform, marketMoverCount }, message: priceData?.message ?? priceChartingMoversQuery.data?.message ?? null });
+    }
     if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
     if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
     if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
@@ -1807,7 +1840,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, historicalSaleCount: auctions.length - dated.length, undatedSaleCount: auctions.filter((auction: any) => !auction.date).length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -3200,7 +3233,7 @@ export default function TestAI() {
                   </span>
                 ))}
               </div>
-              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence. Pokémon Price Tracker is live for Pokémon/TCG items and is manually enabled; its catalog, guide-price, history, eBay, Cardmarket, and plan-gated population fields remain source-attributed context and never change the Tradebilia trade verdict. The Card API Sales is live for Sports Cards and Pokémon/TCG: only confirmed, dated records that pass Tradebilia’s identity, grading, recency, duplicate, and currency checks can support sandbox valuation. Parse.bot Lelands is available for Sports Cards and Autographs, while Parse.bot Pristine Auction is available for Sports Cards; both require detail-level sold status, date, identity, and visual/evidence gates.</p>
+              <p className="mt-3 text-[11px] text-slate-500">HIPStamp Active Listings is live for Stamps items and supplies current asking-price context only, not completed-sale evidence. Pokémon Price Tracker is live for Pokémon/TCG items and is manually enabled; its catalog, guide-price, history, eBay, Cardmarket, and plan-gated population fields remain source-attributed context and never change the Tradebilia trade verdict. The Card API Sales is live for Sports Cards and Pokémon/TCG: only confirmed, dated records that pass Tradebilia’s identity, grading, recency, duplicate, and currency checks can support sandbox valuation. Parse.bot Lelands is available for Sports Cards and Autographs, while Parse.bot Pristine Auction is available for Sports Cards; both require detail-level sold status, date, identity, and visual/evidence gates. PriceCharting now supports Pokémon/compatible TCG context, US coins, video games when a UPC/barcode is present, and bounded cross-category market movers; all PriceCharting results remain guide/asking context only.</p>
             </div>
           </div>
         )}

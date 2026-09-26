@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
+import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -49,12 +49,55 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/28d873f5-47d5-4c01-a275-e80c6b3fc610/search_sold_items?sort=BestMatch&limit=10&query=Michael%20Jordan%20rookie&marketplace=all');
   });
 
+  it('searches PriceCharting coins and follows the returned slugs to detail pricing', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { coins: [{ name: '1909-S VDB Lincoln Cent', set_slug: 'lincoln-cents', coin_slug: '1909-s-vdb' }] } }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { name: '1909-S VDB Lincoln Cent', mint: 'San Francisco', prices: { ungraded: 900, ms65: 12000 } } }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPriceChartingCoin('1909 S VDB', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('success');
+    expect(result.data?.prices.ms65).toBe(12000);
+    expect(fetchMock.mock.calls[0][0]).toContain('/search_coins?query=1909%20S%20VDB');
+    expect(fetchMock.mock.calls[1][0]).toContain('/get_coin_detail?set_slug=lincoln-cents&coin_slug=1909-s-vdb');
+  });
+
+  it('uses the bounded PriceCharting UPC endpoint for video games', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { title: 'The Legend of Zelda', platform: 'NES', upcs: ['045496630025'], prices: { cib: 80 } } }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPriceChartingVideoGame('045496630025', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('success');
+    expect(result.data?.platform).toBe('NES');
+    expect(fetchMock.mock.calls[0][0]).toContain('/lookup_video_game_by_upc?upc=045496630025');
+  });
+
+  it('supports compatible TCG detail lookups when item metadata provides exact slugs', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { name: 'Blue-Eyes White Dragon', set: 'Legend of Blue Eyes', card_number: 'LOB-001', prices: { ungraded: 40 } } }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPriceChartingCardBySlugs('legend-of-blue-eyes', 'blue-eyes-white-dragon', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('success');
+    expect(result.data?.cardNumber).toBe('LOB-001');
+    expect(fetchMock.mock.calls[0][0]).toContain('/get_card_detail?set_slug=legend-of-blue-eyes&card_slug=blue-eyes-white-dragon');
+  });
+
+  it('limits market movers to a context-only bounded list', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { movers: Array.from({ length: 30 }, (_, index) => ({ name: `Item ${index}`, change: index })) } }) });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPriceChartingBigMovers({ PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('success');
+    expect(result.data?.movers).toHaveLength(25);
+    expect(fetchMock.mock.calls[0][0]).toContain('/get_big_movers');
+  });
+
   it('does not call either provider when the Parse key is unavailable', async () => {
     const fetchMock = vi.fn();
     global.fetch = fetchMock as typeof fetch;
 
     expect((await lookupSgcCertification('0453727', {})).status).toBe('error');
     expect((await lookupPriceCharting('charizard', {})).status).toBe('error');
+    expect((await lookupPriceChartingCoin('1909', {})).status).toBe('error');
+    expect((await lookupPriceChartingVideoGame('045496630025', {})).status).toBe('error');
+    expect((await lookupPriceChartingCardBySlugs('set', 'card', {})).status).toBe('error');
+    expect((await lookupPriceChartingBigMovers({})).status).toBe('error');
     expect((await lookup130PointSales('Michael Jordan', {})).status).toBe('error');
     expect(fetchMock).not.toHaveBeenCalled();
   });

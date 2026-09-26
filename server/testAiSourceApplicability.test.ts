@@ -13,8 +13,10 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).toEqual(expect.arrayContaining(['ebay_active', 'sold_comps', 'smithsonian']));
     expect(getEligibleTestAiSources({ category: 'movies', hasTitle: true }).map((source) => source.sourceId)).toContain('wikidata');
     expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'PCGS', hasTitle: true }).map((source) => source.sourceId)).toContain('pcgs');
+    expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'PCGS', hasTitle: true }).map((source) => source.sourceId)).toContain('pricecharting');
     const videoGameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
     expect(videoGameIds).toContain('igdb');
+    expect(videoGameIds).toContain('pricecharting');
     expect(videoGameIds).not.toContain('tcgdex');
     const pokemonIds = getEligibleTestAiSources({ category: 'pokemon', hasTitle: true }).map((source) => source.sourceId);
     expect(pokemonIds).toContain('pokemon_price_tracker');

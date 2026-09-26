@@ -116,6 +116,77 @@ export async function lookupPriceCharting(query: string, env: ParseEnv = process
   }
 }
 
+export async function lookupPriceChartingCoin(query: string, env: ParseEnv = process.env) {
+  const normalizedQuery = query.trim();
+  const apiKey = env.PARSE_BOT_API_KEY;
+  if (!apiKey) return { query: normalizedQuery, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+  if (!normalizedQuery) return { query: normalizedQuery, status: 'error' as const, message: 'Enter a coin title, year, mint, or type before requesting PriceCharting data.', data: null };
+  try {
+    const response = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/search_coins?query=${encodeURIComponent(normalizedQuery)}`, { headers: { 'X-API-Key': apiKey } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) { await recordParseFailure('PriceCharting coin search', response.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse PriceCharting'), data: null }; }
+    const result = asObject(asObject(payload).data ?? payload);
+    const coins = Array.isArray(result.coins) ? result.coins : Array.isArray(result.items) ? result.items : [];
+    const firstCoin = asObject(coins[0]);
+    if (!firstCoin.set_slug || !firstCoin.coin_slug) return { query: normalizedQuery, status: 'not_found' as const, message: 'No matching US coin was found in PriceCharting.', data: null };
+    const detailResponse = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_coin_detail?set_slug=${encodeURIComponent(String(firstCoin.set_slug))}&coin_slug=${encodeURIComponent(String(firstCoin.coin_slug))}`, { headers: { 'X-API-Key': apiKey } });
+    const detailPayload = await detailResponse.json().catch(() => null);
+    if (!detailResponse.ok) { await recordParseFailure('PriceCharting coin detail', detailResponse.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(detailResponse.status, 'Parse PriceCharting'), data: null }; }
+    const coin = asObject(asObject(detailPayload).data ?? detailPayload);
+    return { query: normalizedQuery, status: 'success' as const, data: { name: coin.name ?? firstCoin.name ?? null, set: coin.set ?? firstCoin.set ?? null, year: coin.year ?? coin.release_date ?? null, mint: coin.mint ?? null, mintage: coin.mintage ?? coin.metadata?.mintage ?? null, url: coin.url ?? firstCoin.url ?? null, prices: asObject(coin.prices ?? firstCoin.prices), source: 'US coin price-guide context' } };
+  } catch {
+    return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
+export async function lookupPriceChartingVideoGame(upc: string, env: ParseEnv = process.env) {
+  const normalizedUpc = upc.trim();
+  const apiKey = env.PARSE_BOT_API_KEY;
+  if (!apiKey) return { upc: normalizedUpc, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+  if (!/^\d{8,14}$/.test(normalizedUpc)) return { upc: normalizedUpc, status: 'error' as const, message: 'Enter an 8- to 14-digit video-game UPC/barcode for PriceCharting lookup.', data: null };
+  try {
+    const response = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/lookup_video_game_by_upc?upc=${encodeURIComponent(normalizedUpc)}`, { headers: { 'X-API-Key': apiKey } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) { await recordParseFailure('PriceCharting video-game UPC lookup', response.status); return { upc: normalizedUpc, status: 'not_found' as const, message: 'No matching video game was found for this UPC in PriceCharting.', data: null }; }
+    const game = asObject(asObject(payload).data ?? payload);
+    return { upc: normalizedUpc, status: 'success' as const, data: { title: game.title ?? game.name ?? null, platform: game.platform ?? game.console ?? null, platformSlug: game.platform_slug ?? null, gameSlug: game.game_slug ?? null, priceChartingId: game.pricecharting_id ?? game.id ?? null, associatedUpcs: Array.isArray(game.upcs) ? game.upcs : [], url: game.url ?? null, prices: asObject(game.prices) } };
+  } catch {
+    return { upc: normalizedUpc, status: 'error' as const, message: 'Parse PriceCharting video-game lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
+export async function lookupPriceChartingCardBySlugs(setSlug: string, cardSlug: string, env: ParseEnv = process.env) {
+  const normalizedSetSlug = setSlug.trim();
+  const normalizedCardSlug = cardSlug.trim();
+  const apiKey = env.PARSE_BOT_API_KEY;
+  if (!apiKey) return { setSlug: normalizedSetSlug, cardSlug: normalizedCardSlug, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+  if (!normalizedSetSlug || !normalizedCardSlug) return { setSlug: normalizedSetSlug, cardSlug: normalizedCardSlug, status: 'error' as const, message: 'Enter both PriceCharting set and card slugs for this TCG lookup.', data: null };
+  try {
+    const response = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_card_detail?set_slug=${encodeURIComponent(normalizedSetSlug)}&card_slug=${encodeURIComponent(normalizedCardSlug)}`, { headers: { 'X-API-Key': apiKey } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) { await recordParseFailure('PriceCharting TCG detail', response.status); return { setSlug: normalizedSetSlug, cardSlug: normalizedCardSlug, status: 'not_found' as const, message: 'No matching card was found for these PriceCharting slugs.', data: null }; }
+    const card = asObject(asObject(payload).data ?? payload);
+    return { setSlug: normalizedSetSlug, cardSlug: normalizedCardSlug, status: 'success' as const, data: { name: card.name ?? null, set: card.set ?? null, cardNumber: card.card_number ?? card.number ?? null, releaseDate: card.release_date ?? null, publisher: card.publisher ?? null, url: card.url ?? null, imageUrl: card.image_url ?? card.image ?? null, prices: asObject(card.prices), source: 'PriceCharting TCG detail context' } };
+  } catch {
+    return { setSlug: normalizedSetSlug, cardSlug: normalizedCardSlug, status: 'error' as const, message: 'Parse PriceCharting TCG lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
+export async function lookupPriceChartingBigMovers(env: ParseEnv = process.env) {
+  const apiKey = env.PARSE_BOT_API_KEY;
+  if (!apiKey) return { status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+  try {
+    const response = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_big_movers`, { headers: { 'X-API-Key': apiKey } });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) { await recordParseFailure('PriceCharting market movers', response.status); return { status: 'error' as const, message: parseErrorMessage(response.status, 'Parse PriceCharting'), data: null }; }
+    const result = asObject(asObject(payload).data ?? payload);
+    const movers = Array.isArray(result.movers) ? result.movers : Array.isArray(result.items) ? result.items : [];
+    return { status: 'success' as const, data: { movers: movers.slice(0, 25).map((entry: unknown) => { const mover = asObject(entry); return { name: mover.name ?? null, url: mover.url ?? null, category: mover.category ?? mover.console ?? null, price: mover.price ?? mover.current_price ?? null, change: mover.change ?? mover.dollar_change ?? null, percentChange: mover.percent_change ?? null }; }), source: 'Cross-category games, cards, and coins market-mover context' } };
+  } catch {
+    return { status: 'error' as const, message: 'Parse PriceCharting market-movers lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
 export async function lookup130PointSales(query: string, env: ParseEnv = process.env) {
   const normalizedQuery = query.trim();
   const apiKey = env.PARSE_BOT_API_KEY;

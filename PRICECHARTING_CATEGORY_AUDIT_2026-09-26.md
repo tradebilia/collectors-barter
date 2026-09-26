@@ -9,7 +9,7 @@ The current Tradebilia sandbox is correctly limited to Pokémon card lookups. `s
 - `search_pokemon_cards`
 - `get_card_detail`
 
-The current UI, applicability rules, and query enablement all restrict this source to `pokemon`.
+The original UI, applicability rules, and query enablement restricted this source to `pokemon`. The sandbox now exposes the verified coin, video-game UPC, exact TCG-slug, and market-mover endpoints described below.
 
 ## Additional capability exposed by the current Parse.bot PriceCharting API
 
@@ -31,6 +31,14 @@ PriceCharting’s public website also shows video games, comics, Funko Pops, LEG
 - **Second:** video games by UPC, but it needs a UPC field or a visual/barcode extraction step. The endpoint does not support a normal title-only query.
 - **Conditional:** other TCG sets, only after verifying slug discovery and exact set/card identity. Do not broaden the source to all card categories based only on the website’s navigation.
 - **Context only:** big movers and trending data. These can inform market conditions but should not create item-level valuation evidence.
+
+## Implemented sandbox scope
+
+- Coins: title/year/mint search followed by exact returned set/coin slug detail lookup.
+- Video games: exact 8–14 digit UPC lookup; no title-only fallback is invented.
+- Other TCG: exact set/card slug detail lookup only when the item already carries both slugs.
+- Market movers: bounded to 25 records and displayed as cross-category context only.
+- All PriceCharting output remains asking-price/guide context; it cannot enter the completed-sale valuation gate.
 
 ## Sources
 

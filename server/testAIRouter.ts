@@ -9,7 +9,7 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
-import { lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
+import { lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
@@ -1427,6 +1427,29 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupPriceCharting(input.query);
+    }),
+  getPriceChartingCoinData: protectedProcedure
+    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPriceChartingCoin(input.query);
+    }),
+  getPriceChartingVideoGameData: protectedProcedure
+    .input(z.object({ upc: z.string().trim().regex(/^\d{8,14}$/, 'Enter an 8- to 14-digit video-game UPC/barcode.') }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPriceChartingVideoGame(input.upc);
+    }),
+  getPriceChartingCardDetail: protectedProcedure
+    .input(z.object({ setSlug: z.string().trim().min(1).max(180), cardSlug: z.string().trim().min(1).max(240) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPriceChartingCardBySlugs(input.setSlug, input.cardSlug);
+    }),
+  getPriceChartingBigMovers: protectedProcedure
+    .query(async ({ ctx }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPriceChartingBigMovers();
     }),
 
   // Parse.bot 130point sold-card search — administrator-only and read-only.
