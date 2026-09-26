@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { normalizeListingGrade } from "./db";
+import { normalizeListingGrade, normalizeListingGradeForStorage } from "./db";
 
 describe("Video Games Console listing compatibility", () => {
   it("normalizes display-only grade suffixes before decimal persistence", () => {
@@ -9,6 +9,12 @@ describe("Video Games Console listing compatibility", () => {
     expect(normalizeListingGrade("ungraded")).toBe("0");
     expect(normalizeListingGrade("raw")).toBe("0");
     expect(normalizeListingGrade("Gem Mint")).toBe("0");
+  });
+
+  it("stores the numeric portion of an alphanumeric PCGS coin grade", () => {
+    expect(normalizeListingGradeForStorage("MS65", "coins", "PCGS")).toBe("65");
+    expect(normalizeListingGradeForStorage("MS65+", "coins", "PCGS")).toBe("65");
+    expect(normalizeListingGradeForStorage("85", "coins", "NGC")).toBe("85");
   });
 
   it("uses the requested Console controllers label without changing its stored key", () => {
@@ -20,7 +26,8 @@ describe("Video Games Console listing compatibility", () => {
 
   it("rejects display-only grade suffixes before submission with clear guidance", () => {
     const source = readFileSync(new URL("../client/src/hooks/useAddInventoryForm.ts", import.meta.url), "utf8");
-    expect(source).toContain("!/^\\d+(?:\\.\\d+)?$/.test(String(value).trim())");
+    expect(source).toContain("const validGrade = allowsPcgsCoinGrade");
+    expect(source).toContain("isPcgsAlphanumericGrade(normalizedGrade)");
     expect(source).toContain("do not include + or other symbols");
   });
 

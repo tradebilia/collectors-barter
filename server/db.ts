@@ -70,6 +70,23 @@ export function normalizeListingGrade(
   return numericMatch ? numericMatch[0] : '0';
 }
 
+/**
+ * listings.grade is a DECIMAL column. PCGS coin labels such as MS65 are kept
+ * in the title/display recovery path, while only their numeric grade is
+ * written to the legacy numeric column.
+ */
+export function normalizeListingGradeForStorage(
+  value?: string | number | null,
+  category?: string,
+  certificationCompany?: string,
+): string {
+  const normalized = normalizeListingGrade(value, category, certificationCompany);
+  if (category === 'coins' && certificationCompany?.trim().toUpperCase() === 'PCGS') {
+    return normalized.match(/\d+(?:\.\d+)?/)?.[0] ?? '0';
+  }
+  return normalized;
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbLastError: Error | null = null;
 let _dbErrorCount = 0;
@@ -2868,7 +2885,7 @@ export async function createListing(
     itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
     certificationCompany: input.certificationCompany || undefined,
     certificationNumber: input.certificationNumber || undefined,
-    grade: normalizeListingGrade(input.grade, input.category, input.certificationCompany),
+    grade: normalizeListingGradeForStorage(input.grade, input.category, input.certificationCompany),
     featured: 0,
   });
   const listingId = getInsertId(insertResult);
@@ -2938,7 +2955,7 @@ export async function updateListing(
       itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
       certificationCompany: input.certificationCompany || null,
       certificationNumber: input.certificationNumber || null,
-      grade: normalizeListingGrade(input.grade, input.category, input.certificationCompany),
+      grade: normalizeListingGradeForStorage(input.grade, input.category, input.certificationCompany),
     })
     .where(eq(listings.id, input.listingId));
 
