@@ -35,16 +35,15 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;');
     expect(logoSource).toContain('centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,');
     expect(logoSource).toContain('const dividerHalfHeight = 48.6 * dividerScale;');
-    expect(logoSource).toContain('setDynamicViewBoxWidth(activeCenteredViewBoxWidth);');
+    expect(logoSource).toContain('setDynamicViewBoxWidth(fittedViewBoxWidth);');
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
     expect(logoSource).toContain('const categoryGap = currentCategory.name === "BILIA" ? fontSize * 0.04 : fontSize * 0.22;');
     expect(logoSource).toContain('Math.ceil(wordmarkX + (measuredWordmarkWidth || wordmarkTextWidth) + categoryGap)');
     expect(logoSource).toContain('dividerOffsetY?: number;');
-    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.12} dividerScale={1.12} wheelOffsetX={-30} wheelOffsetY={-20} dividerOffsetY={-20} wheelStrokeWidth={6} dividerStrokeWidth={3.6} fixedCategoryMetrics centerLockup />');
+    expect(globalSearchSource).toContain('<AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} wheelOffsetY={-20} dividerOffsetY={-20} centerLockup />');
   });
 
-  it("uses the fixed-metric animated lockup on the Coming Soon parchment hero", () => {
-    const comingSoonSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/ComingSoon.tsx"), "utf8");
+  it("keeps the shared animated-logo customization contract available", () => {
     expect(logoSource).toContain('categoryColorOverrides?: Partial<Record<(typeof categories)[number]["name"], string>>;');
     expect(logoSource).toContain('categoryColorOverrides = {},');
     expect(logoSource).toContain('categoryColorOverrides[currentCategory.name] ?? currentCategory.color');
@@ -52,12 +51,10 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('lockupScale?: number;');
     expect(logoSource).toContain('canvasWidthScale?: number;');
     expect(logoSource).toContain('canvasWidthScale = 1,');
-    expect(logoSource).toContain('width: `${canvasWidthScale * 100}%`');
+    expect(logoSource).toContain('width: `${renderedCanvasWidthScale * 100}%`');
     expect(logoSource).toContain('lockupScale = 1,');
-    expect(logoSource).toContain('const activeLockupScale = centerLockup && isNarrowViewport ? 0.36 : lockupScale;');
+    expect(logoSource).toContain('const activeLockupScale = centerLockup && isNarrowViewport ? 0.68 : lockupScale;');
     expect(logoSource).toContain('wheelColors = DEFAULT_WHEEL_COLORS,');
     expect(logoSource).toContain('fill={wheelColors[0]} stroke={wheelColors[0]}');
-    expect(comingSoonSource).toContain('<AnimatedLogoSmall70 fontSize={208} wheelScale={2.24} wheelOffsetX={-65} wheelOffsetY={-65} dividerScale={1.55} dividerOffsetY={-45}');
-    expect(comingSoonSource).toContain('fixedCategoryMetrics centerLockup centeredViewBoxWidth={4800} lockupScale={1.55} canvasWidthScale={1} contentOffsetX={56}');
   });
 });

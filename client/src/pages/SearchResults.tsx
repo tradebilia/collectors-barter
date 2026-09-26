@@ -176,11 +176,11 @@ export function SearchResults() {
     <div className={`min-h-screen ${searchTheme.pageClassName}`}>
       <TopBar searchPlaceholder="Search the full Tradebilia exchange..." />
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden border-b border-[#0f5563]/70 text-white" style={{ backgroundImage: `url(${globalSearchHeroCollageUrl})`, backgroundSize: "cover", backgroundPosition: "center center", backgroundRepeat: "no-repeat" }}>
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,12,8,0.64)_0%,rgba(18,12,8,0.24)_48%,rgba(18,12,8,0.56)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(18,12,8,0.76)_0%,rgba(18,12,8,0.46)_48%,rgba(18,12,8,0.70)_100%)]" />
         <div className="container relative flex h-[400px] min-h-[400px] flex-col items-center justify-center py-4 text-center sm:py-4">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-white">All categories · one exchange</p>
           <h1 className="sr-only">Search the Exchange</h1>
-          <div className="mt-3 flex h-36 w-[calc(100vw-2rem)] max-w-[100rem] items-center justify-center overflow-visible sm:h-44 lg:h-56">
+          <div className="relative left-1/2 mt-3 flex h-36 w-[calc(100vw+8rem)] -translate-x-1/2 items-center justify-center overflow-visible sm:h-44 sm:w-[calc(100vw+16rem)] lg:h-56 lg:w-[calc(100vw+20rem)] lg:max-w-[120rem]">
             <AnimatedLogoSmall70 fontSize={135} wheelScale={1.45} dividerScale={1.4} wheelOffsetX={-16} wheelOffsetY={-20} dividerOffsetY={-20} centerLockup />
           </div>
           <p className="mt-4 max-w-2xl text-sm leading-6 text-white sm:text-base">Search the Exchange to find active collectible listings across every Tradebilia category, then narrow the marketplace with broad, truthful filters.</p>

@@ -20,15 +20,15 @@ describe("animated logo geometry", () => {
 
   it("uses a contained narrow-viewport mode for the Coming Soon title", () => {
     expect(source).toContain('window.matchMedia("(max-width: 639px)")');
-    expect(source).toContain("const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 1100 : centeredViewBoxWidth;");
-    expect(source).toContain("const activeLockupScale = centerLockup && isNarrowViewport ? 0.36 : lockupScale;");
+    expect(source).toContain("const activeCenteredViewBoxWidth = centerLockup && isNarrowViewport ? 900 : centeredViewBoxWidth;");
+    expect(source).toContain("const activeLockupScale = centerLockup && isNarrowViewport ? 0.68 : lockupScale;");
   });
 
   it("centers only the complete rendered text phrase and moves the attached lockup proportionally", () => {
     expect(source).toContain("const textLeft = wordmarkX;");
     expect(source).toContain("const textRight = measuredCategoryWordX + categoryWidth;");
     expect(source).toContain("const textCenter = (textLeft + textRight) / 2;");
-    expect(source).toContain("const targetCenter = activeCenteredViewBoxWidth / 2;");
+    expect(source).toContain("const targetCenter = fittedViewBoxWidth / 2;");
     expect(source).toContain("const nextOffset = targetCenter - activeLockupScale * textCenter;");
     expect(source).toContain("translate(${phraseCenterOffsetX + lockupCenterBiasX}");
     expect(source).not.toContain("categoryReserveWidth");
