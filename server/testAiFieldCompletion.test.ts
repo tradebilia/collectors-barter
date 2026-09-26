@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
+import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson } from './testAiFieldCompletion';
 
 describe('Test AI field completion', () => {
   it('uses the category and item type field table', () => {
@@ -32,6 +32,16 @@ describe('Test AI field completion', () => {
 
   it('accepts fenced JSON with a provider-added trailing comma', () => {
     expect(parseFieldCompletionJson('```json\n{"fields": [], "missingImageRequests": [],}\n```')).toEqual({ fields: [], missingImageRequests: [] });
+  });
+
+  it('extracts text from string and multipart provider content', () => {
+    expect(extractFieldCompletionText('{"fields":[]}')).toBe('{"fields":[]}');
+    expect(extractFieldCompletionText([
+      { type: 'text', text: '{"fields":[' },
+      { type: 'image_url', image_url: { url: 'ignored' } },
+      { type: 'text', text: '],"missingImageRequests":[]}' },
+    ])).toBe('{"fields":[\n],"missingImageRequests":[]}');
+    expect(extractFieldCompletionText(undefined)).toBe('');
   });
 
   it('salvages complete field candidates from a truncated response', () => {

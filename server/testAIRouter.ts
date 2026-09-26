@@ -23,7 +23,7 @@ import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormali
 import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { parseAnalyzerResponse } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
-import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
+import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
@@ -1688,8 +1688,8 @@ export const testAIRouter = router({
           response_format: FIELD_COMPLETION_RESPONSE_FORMAT,
           maxCompletionTokens: 1800,
         });
-        const content = response.choices[0]?.message?.content;
-        if (typeof content !== 'string') throw new Error('The vision model returned no structured content');
+        const content = extractFieldCompletionText(response.choices[0]?.message?.content);
+        if (!content) throw new Error('The vision model returned no structured content');
         const parsed = parseFieldCompletionJson(content);
         return normalizeFieldCompletion(parsed, { title: input.item.title, category: input.item.category, itemType: input.item.itemType });
       } catch (error) {
@@ -1850,8 +1850,8 @@ export const testAIRouter = router({
             maxCompletionTokens: 1800,
             temperature: 0,
           });
-          const content = response.choices[0]?.message?.content;
-          if (typeof content !== 'string') return null;
+          const content = extractFieldCompletionText(response.choices[0]?.message?.content);
+          if (!content) return null;
           return normalizeFieldCompletion(
             parseFieldCompletionJson(content),
             { title: item.title, category: item.category, itemType: item.itemType },
