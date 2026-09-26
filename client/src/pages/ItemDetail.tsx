@@ -32,6 +32,7 @@ import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade, fo
 import { getCategoryHeroTreatment } from "@/lib/categoryHeroTreatment";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { formatPublicFieldValue } from "@shared/publicFieldValues";
+import { recoverPcgsCoinGradeFromTitle } from "@shared/publicGradeValues";
 
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, use the content portion of the category page gradient
@@ -261,6 +262,12 @@ export default function ItemDetail() {
     );
   }
 
+  const storedGrade = String(listing.grade ?? '').trim();
+  const displayGrade = storedGrade && storedGrade !== 'ungraded' && Number.isFinite(Number(storedGrade)) && Number(storedGrade) > 0
+    ? storedGrade
+    : recoverPcgsCoinGradeFromTitle(listing.title, listing.category, listing.certificationCompany);
+  const isGradedListing = Boolean(displayGrade);
+
   const categoryTheme = listing ? getTradebiliaCategoryTheme(listing.category) : null;
   const heroTreatment = listing ? getCategoryHeroTreatment(listing.category) : getCategoryHeroTreatment();
   const pageBackgroundClass = listing ? getItemDetailPageClassName(listing.category) : "bg-[radial-gradient(circle_at_top,#1c2468_0%,#0b0a22_65%)] text-white";
@@ -395,10 +402,10 @@ export default function ItemDetail() {
                       <p className="mt-2 text-sm font-medium text-gray-500">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
                     </div>
                   )}
-                  {listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0 ? (
+                  {displayGrade ? (
                     <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Numerical Grade</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{formatGrade(listing.grade)}</p>
+                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">{String(displayGrade).match(/^[A-Z]{1,8}-?\d/) ? 'Grade' : 'Numerical Grade'}</p>
+                      <p className="mt-2 text-sm font-medium text-gray-500">{formatGrade(displayGrade)}</p>
                     </div>
                   ) : listing.condition ? (
                     <div>
@@ -647,11 +654,11 @@ export default function ItemDetail() {
                 'description',                                                     // shown in its own section
               ]);
                             const allFields: { label: string; value: string }[] = [];
-              const isGradedListing = Boolean(listing.grade && listing.grade !== 'ungraded' && parseFloat(listing.grade) > 0);
               // Core fields first
               allFields.push({ label: 'Category', value: getTradebiliaCategoryLabel(listing.category) });
               if (!isGradedListing && listing.condition) allFields.push({ label: 'Condition', value: formatPublicFieldValue(listing.condition) });
               if (listing.certificationCompany) allFields.push({ label: 'Grading Company', value: getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany) });
+              if (displayGrade) allFields.push({ label: String(displayGrade).match(/^[A-Z]{1,8}-?\d/) ? 'Grade' : 'Numerical Grade', value: formatGrade(displayGrade) });
               if (listing.estimatedValue) allFields.push({ label: 'Estimated Value', value: formatItemValue(listing.estimatedValue) });
               if (listing.itemType) allFields.push({ label: 'Item Type', value: listing.itemType.replace(/_/g, ' ').split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') });
               if (listing.signatures && listing.signatures.length > 0) allFields.push({ label: 'Signatures', value: listing.signatures.join(', ') });
