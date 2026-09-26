@@ -34,6 +34,36 @@ function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
 }
 
+function normalizedCoinText(value: unknown): string {
+  return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function firstCoinYear(value: unknown): string | null {
+  return normalizedCoinText(value).match(/\b(?:17|18|19|20)\d{2}\b/)?.[0] ?? null;
+}
+
+const COIN_MATERIALS = ['silver', 'gold', 'copper', 'bronze', 'platinum', 'palladium', 'nickel', 'aluminum', 'aluminium', 'steel', 'zinc'];
+const COIN_DENOMINATIONS = ['half dollar', 'quarter', 'dime', 'nickel', 'cent', 'penny', 'dollar', 'eagle', 'three cent', 'two cent', 'five dollar', 'ten dollar', 'twenty dollar'];
+
+/** Reject fuzzy PriceCharting coin matches that materially conflict with the selected coin. */
+export function isPriceChartingCoinIdentityCompatible(query: string, candidate: string, candidateYear?: unknown): boolean {
+  const queryText = normalizedCoinText(query);
+  const candidateText = normalizedCoinText(candidate);
+  const queryYear = firstCoinYear(queryText);
+  const resultYear = firstCoinYear(candidateYear) ?? firstCoinYear(candidateText);
+  if (queryYear && resultYear && queryYear !== resultYear) return false;
+
+  const queryMaterial = COIN_MATERIALS.find(material => queryText.includes(material));
+  const resultMaterial = COIN_MATERIALS.find(material => candidateText.includes(material));
+  if (queryMaterial && resultMaterial && queryMaterial !== resultMaterial) return false;
+  if (queryMaterial && !resultMaterial && (queryText.includes('silver') || queryText.includes('gold'))) return false;
+
+  const queryDenomination = COIN_DENOMINATIONS.find(denomination => queryText.includes(denomination));
+  const resultDenomination = COIN_DENOMINATIONS.find(denomination => candidateText.includes(denomination));
+  if (queryDenomination && resultDenomination && queryDenomination !== resultDenomination) return false;
+  return true;
+}
+
 export async function lookupSgcCertification(certCode: string, env: ParseEnv = process.env) {
   const normalizedCertCode = certCode.trim();
   const apiKey = env.PARSE_BOT_API_KEY;
@@ -127,12 +157,23 @@ export async function lookupPriceChartingCoin(query: string, env: ParseEnv = pro
     if (!response.ok) { await recordParseFailure('PriceCharting coin search', response.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse PriceCharting'), data: null }; }
     const result = asObject(asObject(payload).data ?? payload);
     const coins = Array.isArray(result.coins) ? result.coins : Array.isArray(result.items) ? result.items : [];
-    const firstCoin = asObject(coins[0]);
-    if (!firstCoin.set_slug || !firstCoin.coin_slug) return { query: normalizedQuery, status: 'not_found' as const, message: 'No matching US coin was found in PriceCharting.', data: null };
+    const firstCoin = coins
+      .map(asObject)
+      .find(coin => isPriceChartingCoinIdentityCompatible(normalizedQuery, `${coin.name ?? ''} ${coin.set ?? ''}`, coin.year ?? coin.release_date));
+    if (!firstCoin?.set_slug || !firstCoin?.coin_slug) {
+      const message = coins.length > 0
+        ? 'PriceCharting returned only coins with conflicting year, material, or denomination; no value was accepted.'
+        : 'No matching US coin was found in PriceCharting.';
+      return { query: normalizedQuery, status: 'not_found' as const, message, data: null };
+    }
     const detailResponse = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_coin_detail?set_slug=${encodeURIComponent(String(firstCoin.set_slug))}&coin_slug=${encodeURIComponent(String(firstCoin.coin_slug))}`, { headers: { 'X-API-Key': apiKey } });
     const detailPayload = await detailResponse.json().catch(() => null);
     if (!detailResponse.ok) { await recordParseFailure('PriceCharting coin detail', detailResponse.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(detailResponse.status, 'Parse PriceCharting'), data: null }; }
     const coin = asObject(asObject(detailPayload).data ?? detailPayload);
+    const resultName = `${coin.name ?? firstCoin.name ?? ''} ${coin.set ?? firstCoin.set ?? ''}`;
+    if (!isPriceChartingCoinIdentityCompatible(normalizedQuery, resultName, coin.year ?? coin.release_date ?? firstCoin.year ?? firstCoin.release_date)) {
+      return { query: normalizedQuery, status: 'not_found' as const, message: 'PriceCharting returned a coin with conflicting year, material, or denomination; no value was accepted.', data: null };
+    }
     return { query: normalizedQuery, status: 'success' as const, data: { name: coin.name ?? firstCoin.name ?? null, set: coin.set ?? firstCoin.set ?? null, year: coin.year ?? coin.release_date ?? null, mint: coin.mint ?? null, mintage: coin.mintage ?? coin.metadata?.mintage ?? null, url: coin.url ?? firstCoin.url ?? null, prices: asObject(coin.prices ?? firstCoin.prices), source: 'US coin price-guide context' } };
   } catch {
     return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup could not be reached. Try again shortly.', data: null };

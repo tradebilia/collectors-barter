@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { classifySaleRecency, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
+import { classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -59,6 +59,20 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(result.data?.prices.ms65).toBe(12000);
     expect(fetchMock.mock.calls[0][0]).toContain('/search_coins?query=1909%20S%20VDB');
     expect(fetchMock.mock.calls[1][0]).toContain('/get_coin_detail?set_slug=lincoln-cents&coin_slug=1909-s-vdb');
+  });
+
+  it('rejects a different year or material instead of accepting a fuzzy coin match', async () => {
+    expect(isPriceChartingCoinIdentityCompatible('1945 Walking Liberty Silver Half Dollar', '2016 W [GOLD] Walking Liberty Half Dollar')).toBe(false);
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ data: { coins: [{ name: '2016 W [GOLD] Walking Liberty Half Dollar', set_slug: 'walking-liberty', coin_slug: '2016-w-gold' }] } }),
+    });
+    global.fetch = fetchMock as typeof fetch;
+    const result = await lookupPriceChartingCoin('1945 Walking Liberty Silver Half Dollar', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('not_found');
+    expect(result.message).toContain('conflicting year, material, or denomination');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('uses the bounded PriceCharting UPC endpoint for video games', async () => {
