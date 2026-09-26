@@ -19,7 +19,7 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain("wheelStrokeWidth?: number;");
     expect(logoSource).toContain("dividerStrokeWidth?: number;");
     expect(logoSource).toContain('scale(0.441) translate(104, 110) scale(${wheelScale}) translate(-104, -110)');
-    expect(logoSource).toContain('viewBox={`0 0 ${dynamicViewBoxWidth} 216`}');
+    expect(logoSource).toContain('viewBox={`${centerLockup ? -CENTERED_LOCKUP_LEFT_PADDING : 0} 0 ${dynamicViewBoxWidth + (centerLockup ? CENTERED_LOCKUP_LEFT_PADDING : 0)} 216`}');
     expect(logoSource).toContain('preserveAspectRatio="xMidYMid meet"');
   });
 
@@ -33,9 +33,11 @@ describe("Animated Tradebilia wordmark", () => {
     expect(logoSource).toContain('centerLockup?: boolean;');
     expect(logoSource).toContain('centeredViewBoxWidth?: number;');
     expect(logoSource).toContain('const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;');
+    expect(logoSource).toContain('const CENTERED_LOCKUP_LEFT_PADDING = 120;');
     expect(logoSource).toContain('centeredViewBoxWidth = CENTERED_LOCKUP_VIEWBOX_WIDTH,');
     expect(logoSource).toContain('const dividerHalfHeight = 48.6 * dividerScale;');
     expect(logoSource).toContain('setDynamicViewBoxWidth(fittedViewBoxWidth);');
+    expect(logoSource).toContain('(dynamicViewBoxWidth + CENTERED_LOCKUP_LEFT_PADDING) / activeCenteredViewBoxWidth');
     expect(logoSource).toContain('const wordmarkTextRef = useRef<SVGTextElement>(null);');
     expect(logoSource).toContain('const categoryGap = currentCategory.name === "BILIA" ? fontSize * 0.04 : fontSize * 0.22;');
     expect(logoSource).toContain('Math.ceil(wordmarkX + (measuredWordmarkWidth || wordmarkTextWidth) + categoryGap)');

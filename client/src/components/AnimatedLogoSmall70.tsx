@@ -17,6 +17,7 @@ const LARGE_WORDMARK_FONT_SIZE = 125;
 const LARGE_CATEGORY_WORD_X = 580;
 const GLOBAL_SEARCH_CATEGORY_WORD_X = 480;
 const CENTERED_LOCKUP_VIEWBOX_WIDTH = 1800;
+const CENTERED_LOCKUP_LEFT_PADDING = 120;
 type WheelColors = readonly [string, string, string, string, string, string];
 const DEFAULT_WHEEL_COLORS: WheelColors = ["#A97AD7", "#FF3B30", "#FF9800", "#18B57A", "#F6A5B6", "#29A8FF"];
 
@@ -110,7 +111,7 @@ const AnimatedLogoSmall70 = ({
   // scale constant instead of shrinking the whole lockup to fit a fixed-width
   // canvas, while preserving the normal field for shorter labels.
   const renderedCanvasWidthScale = centerLockup
-    ? Math.max(1, dynamicViewBoxWidth / activeCenteredViewBoxWidth) * canvasWidthScale
+    ? Math.max(1, (dynamicViewBoxWidth + CENTERED_LOCKUP_LEFT_PADDING) / activeCenteredViewBoxWidth) * canvasWidthScale
     : canvasWidthScale;
   const wheelTransform = wheelScale === 1
     ? `translate(${6 + wheelOffsetX}, ${82.5 + wheelOffsetY}) scale(0.441)`
@@ -170,7 +171,7 @@ const AnimatedLogoSmall70 = ({
     <div className="flex h-full items-center justify-center font-sans py-0" aria-label={`Trade ${currentCategory.name}`}>
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        viewBox={`0 0 ${dynamicViewBoxWidth} 216`}
+        viewBox={`${centerLockup ? -CENTERED_LOCKUP_LEFT_PADDING : 0} 0 ${dynamicViewBoxWidth + (centerLockup ? CENTERED_LOCKUP_LEFT_PADDING : 0)} 216`}
         className="h-auto w-full flex-none drop-shadow-lg"
         style={{ width: `${renderedCanvasWidthScale * 100}%`, maxWidth: renderedCanvasWidthScale === 1 ? "100%" : "none", height: "100%" }}
         preserveAspectRatio="xMidYMid meet"
