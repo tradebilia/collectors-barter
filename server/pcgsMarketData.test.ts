@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { lookupPcgsCertification } from './pcgsMarketData';
+import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { isValidGradeForCompany } from '../shared/gradingCompanyConfig';
 
 const originalFetch = global.fetch;
@@ -49,6 +49,31 @@ describe('PCGS certification adapter', () => {
     expect(result.status).toBe('error');
     expect(result.message).toContain('not configured');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses the documented Auction Prices Realized-by-cert endpoint and maps auction fields', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        IsValidRequest: true,
+        ServerMessage: 'Request successful',
+        PCGSNo: '98836',
+        CertNo: '25651776',
+        Name: '1921 Peace Dollar',
+        Grade: 'MS65',
+        Auctions: [{ Service: 'Heritage', Date: '2024-02-01', Auctioneer: 'Heritage Auctions', LotNo: 1234, SaleName: 'Long Beach', Price: 1800, IsCAC: true, AuctionLotUrl: 'https://example.com/lot/1234' }],
+      }),
+    });
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsAuctionResults('25651776', { PCGS_API_TOKEN: 'configured-token' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.auctions[0]).toMatchObject({ auctioneer: 'Heritage Auctions', price: 1800, isCAC: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/coindetail/GetAPRByCertNo/25651776'),
+      expect.objectContaining({ headers: { Authorization: 'bearer configured-token' } }),
+    );
   });
 
   it('accepts alphanumeric PCGS coin grades such as MS65', () => {

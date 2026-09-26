@@ -24,7 +24,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'psa', categories: ['sports cards', 'pokemon'], requires: 'PSA certificate', purpose: 'PSA card certification, population, and certification sales.' },
   { sourceId: 'bgs', categories: ['sports cards', 'pokemon'], requires: 'BGS certificate', purpose: 'BGS card certification, subgrades, and population.' },
   { sourceId: 'sgc', categories: ['sports cards', 'pokemon'], requires: 'SGC certificate', purpose: 'SGC card certification data.' },
-  { sourceId: 'pcgs', categories: ['coins'], requires: 'PCGS certificate', purpose: 'Official PCGS CoinFacts certification and reference data.' },
+  { sourceId: 'pcgs', categories: ['coins'], requires: 'PCGS certificate', purpose: 'Official PCGS CoinFacts certification, population/reference data, and certification-matched Auction Prices Realized. Dated auction records remain subject to the comparable evidence gates.' },
   { sourceId: 'pricecharting', categories: ['pokemon'], requires: 'title', purpose: 'Pokémon card price-guide reference.' },
   { sourceId: 'one_thirty_point', categories: ['sports cards', 'pokemon'], requires: 'title', purpose: 'Multi-marketplace completed-sale trend research.', historicalLimit: 'Use individually dated records as trend context; do not treat older results as current-value comparables.' },
   { sourceId: 'pwcc', categories: ['sports cards', 'pokemon'], requires: 'title', purpose: 'PWCC / Fanatics Collect sold graded-card research.', historicalLimit: 'Use only Sold listings and retain date context; do not calculate an unqualified current average.' },

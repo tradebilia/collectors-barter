@@ -105,6 +105,18 @@ describe("Admin API provider health registry", () => {
     expect(String(fetchImpl.mock.calls[0]?.[0])).toContain("api.cardsight.ai/v1/catalog/cards");
   });
 
+  it("runs the dedicated PCGS Auction Prices Realized probe without exposing its credential", async () => {
+    const fetchImpl = vi.fn().mockResolvedValue(new Response(JSON.stringify({ Auctions: [] }), { status: 200 }));
+    const result = await runApiProviderHealthCheck("pcgs", {
+      env: { PCGS_API_TOKEN: "configured-without-disclosure" },
+      fetchImpl: fetchImpl as any,
+    });
+    expect(result).toMatchObject({ status: "working", httpStatus: 200, recordsVerified: 0 });
+    expect(result.message).toContain("Auction Prices Realized");
+    expect(result.message).not.toContain("configured-without-disclosure");
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toContain("/coindetail/GetAPRByCertNo/00000000");
+  });
+
   it("returns an actionable but credential-safe failure message for rejected and unreachable provider tests", async () => {
     const rejected = await runApiProviderHealthCheck("resend", {
       env: { RESEND_API_KEY: "configured-without-disclosure" },

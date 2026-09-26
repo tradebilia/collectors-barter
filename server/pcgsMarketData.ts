@@ -1,11 +1,30 @@
 type PcgsEnv = Record<string, string | undefined>;
 
+export type PcgsAuctionRecord = {
+  service: string | null;
+  date: string | null;
+  auctioneer: string | null;
+  lotNo: number | null;
+  lotNumV2: string | null;
+  saleName: string | null;
+  certNo: string | null;
+  price: number | null;
+  isCAC: boolean | null;
+  auctionLotUrl: string | null;
+};
+
 import { classifyApiFailure, recordApiFailure } from './apiHealth';
 
 const PCGS_REQUEST_TIMEOUT_MS = 15_000;
 
 function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
+}
+
+function numberOrNull(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function pcgsErrorMessage(status: number): string {
@@ -93,5 +112,75 @@ export async function lookupPcgsCertification(certNumber: string, env: PcgsEnv =
       safeMessage: 'PCGS certification lookup is temporarily unavailable.',
     });
     return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
+export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv = process.env) {
+  const normalizedCertNumber = certNumber.trim();
+  const token = env.PCGS_API_TOKEN;
+  if (!token) return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS API token not configured', data: null };
+
+  try {
+    const url = `https://api.pcgs.com/publicapi/coindetail/GetAPRByCertNo/${encodeURIComponent(normalizedCertNumber)}`;
+    const response = await fetch(url, {
+      headers: { Authorization: `bearer ${token}` },
+      signal: AbortSignal.timeout(PCGS_REQUEST_TIMEOUT_MS),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok) {
+      await recordApiFailure({
+        provider: 'PCGS',
+        operation: 'auction_prices_realized_lookup',
+        failureClass: classifyApiFailure({ statusCode: response.status }),
+        statusCode: response.status,
+        safeMessage: 'PCGS auction prices realized lookup was rejected by the provider.',
+      });
+      return { certNumber: normalizedCertNumber, status: 'error' as const, message: pcgsErrorMessage(response.status), data: null };
+    }
+
+    const record = asObject(payload);
+    const serverMessage = String(record.ServerMessage ?? '').toLowerCase();
+    if (record.IsValidRequest === false) return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS rejected that certification number format.', data: null };
+    if (serverMessage.includes('no data')) return { certNumber: normalizedCertNumber, status: 'not_found' as const, message: 'No PCGS auction results were found for that certification number.', data: null };
+
+    const auctions = (Array.isArray(record.Auctions) ? record.Auctions : []).map((auction: unknown): PcgsAuctionRecord => {
+      const entry = asObject(auction);
+      return {
+        service: entry.Service ?? null,
+        date: entry.Date ?? null,
+        auctioneer: entry.Auctioneer ?? null,
+        lotNo: numberOrNull(entry.LotNo),
+        lotNumV2: entry.LotNumV2 ?? null,
+        saleName: entry.SaleName ?? null,
+        certNo: entry.CertNo ?? null,
+        price: numberOrNull(entry.Price),
+        isCAC: entry.IsCAC == null ? null : Boolean(entry.IsCAC),
+        auctionLotUrl: entry.AuctionLotUrl ?? null,
+      };
+    });
+
+    return {
+      certNumber: normalizedCertNumber,
+      status: 'success' as const,
+      message: auctions.length ? `PCGS returned ${auctions.length} auction result${auctions.length === 1 ? '' : 's'}.` : 'PCGS returned no auction results for this certification.',
+      data: {
+        pcgsNo: record.PCGSNo ?? null,
+        certNo: record.CertNo ?? normalizedCertNumber,
+        name: record.Name ?? null,
+        grade: record.Grade ?? null,
+        year: record.Year ?? null,
+        denomination: record.Denomination ?? null,
+        auctions,
+      },
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'PCGS auction request failed';
+    await recordApiFailure({
+      provider: 'PCGS',
+      operation: 'auction_prices_realized_lookup',
+      failureClass: classifyApiFailure({ message }),
+      safeMessage: 'PCGS auction prices realized lookup is temporarily unavailable.',
+    });
+    return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS auction results could not be reached. Try again shortly.', data: null };
   }
 }

@@ -68,6 +68,12 @@ The panel preserves all provider-returned catalog-detail fields, attributes, cus
 
 Only a dated **auction** record is labeled a possible completed-sale observation. It still must pass Tradebilia's exact/near identity, grading, date/recency, duplicate, currency, and conservative visual-mismatch gates before it can contribute to sandbox valuation. Fixed-price records, active listings, catalog fields, population data, unresolved candidates, unresolved parallels, and provider warnings remain source-attributed context and cannot independently increase confidence or create a deterministic trade verdict.
 
+### Test AI sandbox: PCGS Auction Prices Realized
+
+For **Coins** with a PCGS certification number, the existing PCGS source now makes a second bounded, read-only request to `GetAPRByCertNo`. The panel preserves the returned certification identity and auction fields: auctioneer, sale name, date, lot number, realized price, CAC flag, service, and lot URL. CoinFacts certification, population, price-guide, and image fields remain context; they are not auction records.
+
+Each APR row is marked as a completed-sale candidate only when it has a usable date and price. Because PCGS matches the historical record to the exact certification number, those rows have strong identity evidence, but they still pass the sandbox's date, currency, duplicate, comparable, and conservative evidence gates before influencing deterministic valuation. The dedicated APR endpoint is also covered by the Admin API Health read-only probe.
+
 ## Values used in the decision
 
 The analyzer keeps two value views separate:

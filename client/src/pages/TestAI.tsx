@@ -148,7 +148,7 @@ const DATA_SOURCES = {
     icon: '🪙',
     provides: ['item_details', 'cert_info', 'population_report', 'current_prices'],
     status: 'live' as const,
-    description: 'Official PCGS CoinFacts certification, grade, population, price-guide, and image data',
+    description: 'Official PCGS certification, population, price-guide context, images, and certification-matched Auction Prices Realized',
   },
   ngc: {
     id: 'ngc',
@@ -1082,7 +1082,7 @@ function SgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
   );
 }
 
-function PcgsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+function PcgsSection({ item, side, auctionData, auctionLoading }: { item: SelectedItem; side: 'left' | 'right'; auctionData?: any; auctionLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getPcgsData.useQuery(
     { certNumber: item.certId || '' },
@@ -1100,7 +1100,7 @@ function PcgsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 PCGS CoinFacts</p>
-        {isLoading && <Spinner className="w-3 h-3" />}
+        {(isLoading || auctionLoading) && <Spinner className="w-3 h-3" />}
       </div>
       <p className="text-gray-500 text-[10px]">Official read-only certification, population, and price-guide data</p>
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
@@ -1128,6 +1128,25 @@ function PcgsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
           )}
         </div>
       )}
+      <div className="space-y-2 rounded bg-gray-900/40 p-2">
+        <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — completed sales</p>
+        <p className="text-[9px] text-gray-500">Certification-matched PCGS auction history. Records are valuation candidates only after Tradebilia date, price, duplicate, currency, and evidence gates.</p>
+        {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
+        {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
+        {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">No auction results were returned for this certification.</p>}
+        {auctionData?.data?.auctions?.map((auction: any, index: number) => (
+          <div key={`${auction.date}-${auction.lotNumV2 || auction.lotNo || index}`} className="border-b border-gray-700/30 pb-2 last:border-0 last:pb-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                {auction.auctionLotUrl ? <a href={auction.auctionLotUrl} target="_blank" rel="noreferrer" className="block truncate text-[10px] font-semibold text-blue-300 hover:underline">{auction.saleName || auction.auctioneer || 'PCGS auction lot'}</a> : <p className="truncate text-[10px] font-semibold text-white">{auction.saleName || auction.auctioneer || 'PCGS auction lot'}</p>}
+                <p className="text-[9px] text-gray-500">{[auction.date, auction.auctioneer, auction.lotNumV2 || (auction.lotNo != null ? `Lot ${auction.lotNo}` : null), auction.isCAC ? 'CAC' : null].filter(Boolean).join(' · ')}</p>
+              </div>
+              <p className="shrink-0 text-[11px] font-semibold text-emerald-300">{auction.price != null ? formatWholeDollar(auction.price) : 'Price N/A'}</p>
+            </div>
+          </div>
+        ))}
+        {auctionData?.status === 'success' && <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[9px] text-gray-300">All returned auction fields</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[8px] text-gray-400">{JSON.stringify(auctionData.data, null, 2)}</pre></details>}
+      </div>
     </div>
   );
 }
@@ -1629,7 +1648,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, oneThirtyPointData, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -1643,6 +1662,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   cardsightAiData: any;
   lelandsData: any;
   pristineAuctionData: any;
+  pcgsAuctionData: any;
   oneThirtyPointData: any;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -1780,9 +1800,14 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });
     if (enabledSources.has('bgs')) add({ id: 'bgs', label: 'Parse.bot BGS', kind: 'certification', status: evidenceStatus(bgsQuery.data), fields: { title: bgsQuery.data?.data?.playerName, player: bgsQuery.data?.data?.playerName, set: bgsQuery.data?.data?.setName, cardNumber: bgsQuery.data?.data?.cardNumber, year: bgsQuery.data?.data?.year, manufacturer: bgsQuery.data?.data?.manufacturer, certificationCompany: 'BGS', grade: bgsQuery.data?.data?.finalGrade }, message: bgsQuery.data?.message ?? null });
     if (enabledSources.has('sgc')) add({ id: 'sgc', label: 'Parse.bot SGC', kind: 'certification', status: evidenceStatus(sgcQuery.data), fields: { title: sgcQuery.data?.data?.subject, player: sgcQuery.data?.data?.subject, set: sgcQuery.data?.data?.cardSet, cardNumber: sgcQuery.data?.data?.cardNumber, certificationCompany: 'SGC', grade: sgcQuery.data?.data?.grade }, message: sgcQuery.data?.message ?? null });
-    if (enabledSources.has('pcgs')) add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
+    if (enabledSources.has('pcgs')) {
+      add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
+      const auctions = pcgsAuctionData?.data?.auctions ?? [];
+      const dated = auctions.filter((auction: any) => Number.isFinite(Date.parse(String(auction.date ?? ''))) && auction.price != null);
+      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, historicalSaleCount: auctions.length - dated.length, undatedSaleCount: auctions.filter((auction: any) => !auction.date).length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
+    }
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -1995,7 +2020,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -2014,6 +2039,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightLelandsData?: any;
   leftPristineAuctionData?: any;
   rightPristineAuctionData?: any;
+  leftPcgsAuctionData?: any;
+  rightPcgsAuctionData?: any;
   leftHistoricalTrendData?: any;
   rightHistoricalTrendData?: any;
   leftEvidenceSummary?: NormalizedEvidenceSummary | null;
@@ -2048,6 +2075,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const rightHasLelands = rightSources.has('lelands');
   const leftHasPristineAuction = leftSources.has('pristine_auction');
   const rightHasPristineAuction = rightSources.has('pristine_auction');
+  const leftHasPcgsAuction = leftSources.has('pcgs');
+  const rightHasPcgsAuction = rightSources.has('pcgs');
   const leftHas130Point = leftSources.has('one_thirty_point');
   const rightHas130Point = rightSources.has('one_thirty_point');
 
@@ -2069,6 +2098,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
         ...(leftHasCardsightAi ? (leftCardsightAiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'cardsight_ai', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
         ...(leftHasLelands ? (leftLelandsData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'lelands', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
         ...(leftHasPristineAuction ? (leftPristineAuctionData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'pristine_auction', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
+        ...(leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => ({ title: leftPcgsAuctionData?.data?.name ?? leftItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), sourceId: 'pcgs_auction_results', saleId: `${sale.certNo || leftPcgsAuctionData?.data?.certNo || leftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl, saleStatus: 'completed' })) : []),
       ],
       rightHistoricalTrendSales: [
         ...(rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : []),
@@ -2076,6 +2106,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
         ...(rightHasCardsightAi ? (rightCardsightAiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'cardsight_ai', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
         ...(rightHasLelands ? (rightLelandsData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'lelands', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
         ...(rightHasPristineAuction ? (rightPristineAuctionData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'pristine_auction', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
+        ...(rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => ({ title: rightPcgsAuctionData?.data?.name ?? rightItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), sourceId: 'pcgs_auction_results', saleId: `${sale.certNo || rightPcgsAuctionData?.data?.certNo || rightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl, saleStatus: 'completed' })) : []),
       ],
       leftEvidenceSummary: leftEvidenceSummary ?? undefined,
       rightEvidenceSummary: rightEvidenceSummary ?? undefined,
@@ -2770,7 +2801,7 @@ function PayPalComparisonInspector() {
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -2789,6 +2820,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
   lelandsLoading: boolean;
   pristineAuctionData: any;
   pristineAuctionLoading: boolean;
+  pcgsAuctionData: any;
+  pcgsAuctionLoading: boolean;
   oneThirtyPointData: any;
   onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
 }) {
@@ -2815,7 +2848,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} />
@@ -2844,7 +2877,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
       {enabledSources.has('bgs') && <BeckettSection item={item} side={side} />}
       {enabledSources.has('sgc') && <SgcSection item={item} side={side} />}
-      {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} />}
+      {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} auctionData={pcgsAuctionData} auctionLoading={pcgsAuctionLoading} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('tcgdex') && <TcgDexSection item={item} side={side} />}
@@ -3043,6 +3076,14 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('pristine_auction') }
   );
+  const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
+    { certNumber: leftItem?.certId || '' },
+    { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || '') },
+  );
+  const rightPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
+    { certNumber: rightItem?.certId || '' },
+    { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || '') },
+  );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
@@ -3099,8 +3140,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className="grid grid-cols-2 gap-4">
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />
           </div>
         )}
 
@@ -3128,6 +3169,8 @@ export default function TestAI() {
              rightLelandsData={rightLelandsQuery.data}
              leftPristineAuctionData={leftPristineAuctionQuery.data}
              rightPristineAuctionData={rightPristineAuctionQuery.data}
+             leftPcgsAuctionData={leftPcgsAuctionQuery.data}
+             rightPcgsAuctionData={rightPcgsAuctionQuery.data}
              leftHistoricalTrendData={left130PointQuery.data}
              rightHistoricalTrendData={right130PointQuery.data}
              leftEvidenceSummary={leftEvidenceSummary}

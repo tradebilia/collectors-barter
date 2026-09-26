@@ -10,7 +10,7 @@ import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
 import { lookup130PointSales, lookupPriceCharting, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
-import { lookupPcgsCertification } from './pcgsMarketData';
+import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { lookupTcgDexCatalog } from './tcgdexMetadata';
@@ -1412,6 +1412,13 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupPcgsCertification(input.certNumber);
+    }),
+  // Official PCGS Auction Prices Realized lookup — administrator-only and read-only.
+  getPcgsAuctionData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.') }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupPcgsAuctionResults(input.certNumber);
     }),
 
   // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.

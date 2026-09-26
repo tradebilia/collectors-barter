@@ -196,12 +196,12 @@ async function probeSoldComps({ env, fetchImpl }: ProbeContext): Promise<ProbeSu
 }
 
 async function probePcgs({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
-  const response = await requestJson(fetchImpl, "https://api.pcgs.com/publicapi/coindetail/GetCoinFactsByCertNo/00000000?retrieveAllData=true", {
+  const response = await requestJson(fetchImpl, "https://api.pcgs.com/publicapi/coindetail/GetAPRByCertNo/00000000", {
     headers: { Authorization: `bearer ${env.PCGS_API_TOKEN}` },
   });
   if ([401, 403].includes(response.response.status)) throw new ProviderHttpError(response.response.status, "PCGS");
   if (response.response.status >= 500) throw new ProviderHttpError(response.response.status, "PCGS");
-  return { message: "PCGS accepted the credentialed certificate request. The probe uses a deliberately non-listing certificate number.", httpStatus: response.response.status, recordsVerified: 0 };
+  return { message: "PCGS accepted the credentialed Auction Prices Realized request. The probe uses a deliberately non-listing certificate number.", httpStatus: response.response.status, recordsVerified: 0 };
 }
 
 async function probeHipstamp({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
@@ -434,7 +434,7 @@ const PROVIDERS: ApiProviderDefinition[] = [
   { id: "ebay", name: "eBay Browse", group: "Market data", description: "Active-listing context and account-linking support.", testMode: "data", configured: (env) => configured(env, "EBAY_PROD_CLIENT_ID", "EBAY_PROD_CLIENT_SECRET"), check: probeEbay },
   { id: "sold_comps", name: "Sold-Comps", group: "Market data", description: "Completed-sale lookup used only when its separate credential is configured.", testMode: "data", configured: (env) => Boolean(env.SOLD_COMPS_API_KEY?.trim() || env.SOLID_COMPS_API_KEY?.trim()), check: probeSoldComps },
   { id: "parse_bot", name: "Parse.bot", group: "Market data", description: "PSA, SGC, BGS, CGC Comics, PriceCharting, 130point, and PWCC/Fanatics read-only data.", testMode: "data", configured: (env) => configured(env, "PARSE_BOT_API_KEY"), check: probeParseBot },
-  { id: "pcgs", name: "PCGS CoinFacts", group: "Market data", description: "Coin certification, population, and price-guide context.", testMode: "credential", configured: (env) => configured(env, "PCGS_API_TOKEN"), check: probePcgs },
+  { id: "pcgs", name: "PCGS CoinFacts + APR", group: "Market data", description: "Coin certification, population, price-guide context, and certification-matched Auction Prices Realized.", testMode: "credential", configured: (env) => configured(env, "PCGS_API_TOKEN"), check: probePcgs },
   { id: "hipstamp", name: "HIPStamp", group: "Market data", description: "Stamp active listings and store-scoped sold/closed reference data.", testMode: "data", configured: (env) => configured(env, "HIPSTAMP_API_KEY"), check: probeHipstamp },
   { id: "pokemon_price_tracker", name: "Pokémon Price Tracker", group: "Market data", description: "Pokémon identity, market, history, and plan-gated population context in Test AI.", testMode: "data", configured: (env) => configured(env, "POKEMON_PRICE_TRACKER_API_KEY"), check: probePokemonPriceTracker },
   { id: "the_card_api", name: "The Card API", group: "Market data", description: "Sports-card and Pokémon/TCG completed-sale research plus plan-gated catalog identity in Test AI.", testMode: "data", configured: (env) => configured(env, "THE_CARD_API_KEY"), check: probeTheCardApi },

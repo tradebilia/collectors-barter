@@ -24,4 +24,26 @@ describe("PCGS live credential", () => {
     },
     20_000,
   );
+
+  it(
+    "accepts the configured token for a bounded read-only APR request",
+    async () => {
+      const token = process.env.PCGS_API_TOKEN;
+      if (!token) return;
+
+      const response = await fetch(
+        "https://api.pcgs.com/publicapi/coindetail/GetAPRByCertNo/00000000",
+        {
+          headers: {
+            Accept: "application/json",
+            Authorization: `bearer ${token}`,
+          },
+          signal: AbortSignal.timeout(15_000),
+        },
+      );
+
+      expect([401, 403, 500]).not.toContain(response.status);
+    },
+    20_000,
+  );
 });
