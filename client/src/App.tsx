@@ -55,6 +55,7 @@ const TradeHub = lazy(() => import("./pages/TradeHub"));
 const WarRoom = lazy(() => import("./pages/WarRoom"));
 const TradePrintView = lazy(() => import("./pages/TradePrintView"));
 const TestAI = lazy(() => import("./pages/TestAI"));
+const CarrierPayPalSandbox = lazy(() => import("./pages/CarrierPayPalSandbox"));
 const TradeRoomGuideCapture = lazy(() => import("./pages/TradeRoomGuideCapture"));
 
 function RouteLoadingFallback() {
@@ -161,6 +162,11 @@ function Router() {
       <Route path="/test-ai">
         <ProtectedRoute>
           <TestAI />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/carrier-paypal-sandbox">
+        <ProtectedRoute>
+          <CarrierPayPalSandbox />
         </ProtectedRoute>
       </Route>
       <Route path="/contact" component={Contact} />

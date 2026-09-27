@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 describe("Test AI carrier tracking controls", () => {
-  const source = readFileSync(join(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
+  const source = readFileSync(join(process.cwd(), "client/src/pages/CarrierPayPalSandbox.tsx"), "utf8");
 
   it("offers an authenticated read-only USPS API test alongside UPS, FedEx, and DHL", () => {
     expect(source).toContain("Carrier Tracking Test");

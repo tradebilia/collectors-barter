@@ -141,7 +141,7 @@ describe("PayPal private consistency outcomes", () => {
   });
 
   it("keeps the Test AI inspector as an explicit authorization link with visible failure feedback", () => {
-    const source = readFileSync(resolve(process.cwd(), "client/src/pages/TestAI.tsx"), "utf8");
+    const source = readFileSync(resolve(process.cwd(), "client/src/pages/CarrierPayPalSandbox.tsx"), "utf8");
     const dbSource = readFileSync(resolve(process.cwd(), "server/db.ts"), "utf8");
     const comparisonProfileQuery = dbSource.slice(
       dbSource.indexOf("export async function getUserPayPalComparisonProfile"),
