@@ -18,6 +18,8 @@ import {
   SOCIAL_GRAPHIC_CANVAS_SIZES,
   TRADE_ALERT_BRUSH_IMAGE_URL,
   TRADED_EXCHANGE_LOGO_URL,
+  SOLD_EXCHANGE_LOGO_URL,
+  CASH_ONLY_VISUAL_URL,
   TRADE_ALERT_STAGE_IMAGE_URLS,
   TRADE_ALERT_THEME_IMAGE_URLS,
 } from "@/lib/socialGraphicExport";
@@ -149,7 +151,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawCompactCashOnlyTradeAlert");
     expect(exporterSource).toContain("if (cashOnlySale) {");
     expect(exporterSource).toContain("drawCompactCashOnlyTradeAlert(context, draft, platform");
-    expect(exporterSource).toContain('drawCashOnlyVisual(context, "left", width, laneY, laneHeight, scale, true)');
+    expect(exporterSource).toContain('drawCashOnlyVisual(context, "left", width, laneY, laneHeight, scale, true, cashImage)');
     expect(exporterSource).toContain("const itemCenterX = width * 0.79");
     expect(exporterSource).toContain("scale * (isTall ? 0.74 : 0.62), false, true");
     expect(exporterSource).toContain("SOLD");
@@ -341,6 +343,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const bannerHeight = bannerWidth * (brushImage.naturalHeight / brushImage.naturalWidth)");
     expect(exporterSource).toContain("const imageY = isTall ? 290 * scale : 296 * scale");
     expect(TRADED_EXCHANGE_LOGO_URL).toContain("traded-mockup-1_4a1f25d2.png");
+    expect(SOLD_EXCHANGE_LOGO_URL).toContain("Sold_66bbcd9f.png");
+    expect(CASH_ONLY_VISUAL_URL).toContain("Cash_68c3c570.webp");
     expect(exporterSource).toContain("+ CASH INCLUDED");
     expect(exporterSource).toContain("drawCinematicFooterPhrase");
     expect(exporterSource).toContain("function drawCinematicTradeHeader");

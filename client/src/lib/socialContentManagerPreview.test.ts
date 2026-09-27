@@ -69,11 +69,11 @@ describe("Social Content Manager post preview", () => {
 
   it("offers a completed-trade breaking-news video studio with real lip-sync and official-logo guardrails", () => {
     expect(componentSource).toContain("Breaking-news trade video");
-    expect(componentSource).toContain("Open Video Studio");
+    expect(componentSource).toContain("Configure Video");
     expect(componentSource).toContain("buildCompletedTradeVideoPlan");
     expect(componentSource).toContain("lip-sync");
     expect(componentSource).toContain("official Tradebilia logo");
     expect(componentSource).toContain("final-video-attached");
-    expect(componentSource).toContain("Create Video Brief");
+    expect(componentSource).toContain("Save Production Brief");
   });
 });
