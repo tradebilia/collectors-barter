@@ -1698,6 +1698,54 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
 
   if (isTall) {
     const isInstagram = platform === "Instagram";
+    if (isInstagram) {
+      // Instagram is a square canvas, so a desktop-style side-by-side layout
+      // makes both the real item and its facts too small. Give the item a
+      // centered focal row, then place the title, facts, and value plaque in
+      // a readable stack beneath it. Facebook/X continue using their proven
+      // landscape composition below.
+      const instagramPadding = 64 * scale;
+      const instagramImageY = 248 * scale;
+      const instagramImageWidth = 520 * scale;
+      const instagramImageHeight = 380 * scale;
+      const instagramImageX = (width - instagramImageWidth) / 2;
+      const instagramDetailWidth = width - instagramPadding * 2;
+      const instagramDetailX = instagramPadding;
+      const instagramTitleY = instagramImageY + instagramImageHeight + 28 * scale;
+      const instagramTitleLayout = getCompleteFittedTitleLayout(context, itemTitle, instagramDetailWidth, 36 * scale, 24 * scale, 3);
+      const instagramFactsY = instagramTitleY + instagramTitleLayout.height + 18 * scale;
+      const instagramPlaqueBottomLimit = footerBaselineY - footerClearance;
+      context.textAlign = "left";
+      const instagramFactsHeight = drawFacts(context, promotion?.facts ?? [], instagramDetailX, instagramFactsY, instagramDetailWidth, scale, 40);
+      const instagramPlaqueHeight = 92 * scale;
+      const instagramPlaqueY = Math.min(
+        instagramFactsY + instagramFactsHeight + 24 * scale,
+        instagramPlaqueBottomLimit - instagramPlaqueHeight,
+      );
+
+      if (showOriginalItem) {
+        drawMediaFrame(
+          context,
+          itemImage,
+          instagramImageX,
+          instagramImageY,
+          instagramImageWidth,
+          instagramImageHeight,
+          isVideoMediaUrl(draft.mediaUrl) ? "ORIGINAL VIDEO ATTACHED" : "ORIGINAL ITEM MEDIA",
+        );
+      }
+      context.fillStyle = "#ffffff";
+      context.textAlign = "center";
+      drawCompleteFittedTitle(context, itemTitle, width / 2, instagramTitleY, instagramDetailWidth, 36 * scale, 24 * scale, 3);
+      if (value) {
+        drawTradeValuePlaque(context, value, instagramDetailX, instagramPlaqueY, instagramDetailWidth, instagramPlaqueHeight, scale);
+      }
+      context.fillStyle = "rgba(255,244,205,0.96)";
+      context.font = `800 ${Math.round(17 * scale)}px ${CANVAS_SANS_FONT}`;
+      drawCrispText(context, getSocialFooterPhrase(draft.id, platform).toUpperCase(), width / 2, footerBaselineY);
+      context.textAlign = "left";
+      return;
+    }
     const padding = (isInstagram ? 32 : 38) * scale;
     // Instagram has enough square-canvas height to give the collectible a
     // stronger focal presence. Start the lower composition closer to the

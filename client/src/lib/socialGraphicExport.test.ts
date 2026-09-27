@@ -134,6 +134,16 @@ describe("native Social graphic exporter", () => {
     expect(highValueRenderer).toContain("ORIGINAL ITEM MEDIA");
   });
 
+  it("uses a centered stacked composition for Instagram instead of shrinking the item into a side column", () => {
+    expect(exporterSource).toContain('if (isInstagram) {');
+    expect(exporterSource).toContain("const instagramImageWidth = 520 * scale");
+    expect(exporterSource).toContain("const instagramImageHeight = 380 * scale");
+    expect(exporterSource).toContain("const instagramImageX = (width - instagramImageWidth) / 2");
+    expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, width / 2, instagramTitleY");
+    expect(exporterSource).toContain("const instagramFactsHeight = drawFacts");
+    expect(exporterSource).toContain("const instagramPlaqueBottomLimit = footerBaselineY - footerClearance");
+  });
+
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
     expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
