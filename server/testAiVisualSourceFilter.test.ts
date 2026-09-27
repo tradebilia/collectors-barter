@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   applyVisualSourceReviews,
   buildDeclaredIdentityReviews,
@@ -57,5 +59,19 @@ describe("visual source filter", () => {
     expect(reviews.map((review) => review.candidateIndex)).toEqual([0, 2]);
     expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
     expect(reviews[0].rationale).toContain("Declared identity conflict");
+  });
+
+  it("limits declared conflicts to the visible visual-review window", () => {
+    const reviews = buildDeclaredIdentityReviews(
+      Array.from({ length: 20 }, (_, index) => ({ title: `Comic #2 Fifth Printing ${index}` })),
+      "title=Comic #2 CGC 9.8",
+    );
+    expect(reviews).toHaveLength(20);
+  });
+
+  it("preserves eBay visual status fields in the response consumed by the image-check panel", () => {
+    const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
+    expect(routerSource).toContain("visualReviewStatus: s.visualReviewStatus ?? null");
+    expect(routerSource).toContain("visualReviewRationale: s.visualReviewRationale ?? null");
   });
 });

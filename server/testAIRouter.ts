@@ -884,6 +884,12 @@ export const testAIRouter = router({
             itemUrl: s.itemWebUrl,
             imageUrl: s.image?.imageUrl,
             listingType: s.buyingOptions?.[0],
+            // Preserve the visual filter result in the transport object used by
+            // MarketplaceVisualReview; dropping these made the button appear to
+            // do nothing even when the server had flagged a listing.
+            visualReviewStatus: s.visualReviewStatus ?? null,
+            visualReviewRationale: s.visualReviewRationale ?? null,
+            evidenceDisposition: s.evidenceDisposition ?? null,
           })),
           metrics,
           visualFilter: visualActiveFilter,

@@ -215,26 +215,33 @@ export async function filterVisualSourceCandidates<
         },
       },
     } as const;
-    const reviews: VisualSourceReview[] = buildDeclaredIdentityReviews(args.listings, args.targetMetadata);
+    // The visual-review window is intentionally capped at 20 images. Only seed
+    // title-declared identity conflicts for candidates that are actually shown
+    // and reviewed; otherwise the displayed count can exceed the UI result set.
+    const reviews: VisualSourceReview[] = buildDeclaredIdentityReviews(
+      candidates.map((candidate) => candidate.item),
+      args.targetMetadata,
+    );
     let completedBatches = 0;
     let lastError: unknown;
-    // Review one candidate at a time so the model must inspect that cover and cannot
-    // omit a difficult candidate while answering for a batch.
-    for (let offset = 0; offset < candidates.length; offset += 1) {
-      const batch = candidates.slice(offset, offset + 1);
+    // Keep each comparison one-to-one, but run a bounded group concurrently.
+    // Twenty sequential vision calls can outlive a browser query and cause a
+    // correct review result never to reach the sandbox UI.
+    for (let offset = 0; offset < candidates.length; offset += 4) {
+      const batch = candidates.slice(offset, offset + 4);
+      const batchResults = await Promise.all(batch.map(async (candidate) => {
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. Compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected. Return exactly one JSON review for candidate ${batch[0].candidateIndex}: {"reviews":[{"candidateIndex":${batch[0].candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
+          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. Compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected. Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "auto" } },
       ];
-      for (const candidate of batch) {
-        content.push({ type: "text", text: `CANDIDATE ${candidate.candidateIndex}: title=${candidate.item.title ?? "unknown"}` });
-        content.push({ type: "image_url", image_url: { url: candidate.imageUrl, detail: "auto" } });
-      }
+      content.push({ type: "text", text: `CANDIDATE ${candidate.candidateIndex}: title=${candidate.item.title ?? "unknown"}` });
+      content.push({ type: "image_url", image_url: { url: candidate.imageUrl, detail: "auto" } });
       let text = "";
+      let candidateError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
           const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
@@ -243,13 +250,17 @@ export async function filterVisualSourceCandidates<
           if (text.trim()) break;
           throw new Error("The vision model returned no structured content");
         } catch (error) {
-          lastError = error;
+          candidateError = error;
         }
       }
-      if (!text.trim()) continue;
-      const batchReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(text), args.listings.length);
-      reviews.push(...batchReviews);
-      completedBatches += 1;
+      if (!text.trim()) return { reviews: [] as VisualSourceReview[], error: candidateError };
+      return { reviews: normalizeVisualSourceReviews(parseAnalyzerResponse(text), args.listings.length), error: null };
+      }));
+      for (const result of batchResults) {
+        reviews.push(...result.reviews);
+        if (result.reviews.length) completedBatches += 1;
+        if (result.error) lastError = result.error;
+      }
     }
     if (!completedBatches) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     const uniqueReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
