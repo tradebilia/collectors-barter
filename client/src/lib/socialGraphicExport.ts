@@ -2168,7 +2168,7 @@ function drawCompactCashOnlyTradeAlert(
   // The supplied SOLD artwork has transparent breathing room; use a larger
   // rendered box so the visible badge reads at export size without touching
   // the item frame on the right.
-  drawCinematicExchangeMark(context, exchangeLogo, width * 0.50, laneY + laneHeight * 0.50, scale * (isTall ? 1.35 : 1.5625), false, true, soldLogoImage);
+  drawCinematicExchangeMark(context, exchangeLogo, width * 0.50, laneY + laneHeight * 0.50, scale * (isTall ? 1.215 : 1.40625), false, true, soldLogoImage);
   drawCinematicFooterPhrase(context, getSocialFooterPhrase(draft.id || draft.title || "trade-alert", platform), width, footerY, scale);
 }
 

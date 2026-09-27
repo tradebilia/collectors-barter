@@ -154,7 +154,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain('drawCashOnlyVisual(context, "left", width, laneY, laneHeight, scale, true, cashImage)');
     expect(exporterSource).toContain("const itemCenterX = width * 0.79");
     expect(exporterSource).toContain("const captionY = laneY + itemHeight + (isTall ? 28 : 34) * scale");
-    expect(exporterSource).toContain("scale * (isTall ? 1.35 : 1.5625), false, true");
+    expect(exporterSource).toContain("scale * (isTall ? 1.215 : 1.40625), false, true");
     expect(exporterSource).toContain("SOLD");
   });
 
