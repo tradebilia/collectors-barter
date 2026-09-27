@@ -66,23 +66,41 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain("id: 'the_card_api',");
     expect(clientSource).toContain("label: 'The Card API Sales'");
     expect(clientSource).toContain("kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical'");
-    expect(clientSource).toContain("sourceId: sale.sourceId ?? 'the_card_api'");
+    expect(clientSource).toContain("sourceId: 'the_card_api'");
     expect(clientSource).toContain('Only individually dated, confirmed final prices that also pass the existing exact/near identity, grading, recency, duplicate, and currency gates may support a sandbox value.');
   });
 
   it('feeds normalized Sold-Comps completed sales into the bounded deterministic sales array', () => {
     expect(routerSource).toContain('leftHistoricalTrendSales: z.array');
-    expect(routerSource).toContain(')).max(30).optional()');
+    expect(routerSource).toContain(')).max(120).optional()');
     expect(clientSource).toContain("sourceId: 'sold_comps'");
-    expect(clientSource).toContain("marketplace: 'eBay Sold-Comps'");
-    expect(clientSource).toContain("saleStatus: 'completed'");
+    expect(clientSource).toContain("sourceLabel: 'eBay Sold-Comps'");
+    expect(clientSource).toContain("priceBasis: 'sold'");
+    expect(clientSource).toContain('balanceSaleGroups');
   });
 
   it('passes material evidence conflicts as a deterministic identity gate', () => {
     expect(routerSource).toContain('leftIdentityGate: z.object');
     expect(routerSource).toContain('leftIdentityGate as ComparableIdentityGate');
-    expect(routerSource).toContain('buildMarketProfile(analysisLeftItem as ComparableTarget');
+    expect(routerSource).toContain('buildAnalysisSnapshot({');
+    expect(routerSource).toContain('identityGate: leftIdentityGate as ComparableIdentityGate');
     expect(clientSource).toContain('leftIdentityGate: leftEvidenceSummary');
     expect(clientSource).toContain('sourceAlignmentStatus: leftEvidenceSummary.reviewFlags.some');
+  });
+
+  it('keeps cash terms deterministic and exposes source-balanced intake diagnostics', () => {
+    expect(routerSource).toContain("cashAdjustment: z.object({ amount: z.number().finite().positive().max(1_000_000), paidBy: z.enum(['item_a', 'item_b']) })");
+    expect(routerSource).toContain('buildCashAwareTradeTerms(leftProfile, rightProfile, cashAdjustment)');
+    expect(routerSource).toContain('buildAnalysisSnapshot({');
+    expect(clientSource).toContain('Recorded cash adjustment · optional');
+    expect(clientSource).toContain('balanceSaleGroups');
+    expect(clientSource).toContain('Versioned analysis snapshot');
+  });
+
+  it('requires an explicit multi-candidate Discogs selection before Music metadata is aligned', () => {
+    expect(clientSource).toContain('Confirm exact release / pressing');
+    expect(clientSource).toContain('no metadata alignment until selected');
+    expect(clientSource).toContain('selectedDiscogsReleaseId');
+    expect(clientSource).toContain('Discogs is reference metadata, not valuation or authentication evidence.');
   });
 });

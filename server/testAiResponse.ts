@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export function parseAnalyzerResponse(content: string): Record<string, unknown> | null {
   const cleaned = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
   for (const candidate of [cleaned, cleaned.replace(/,\s*([}\]])/g, '$1')]) {
@@ -9,4 +11,79 @@ export function parseAnalyzerResponse(content: string): Record<string, unknown> 
     }
   }
   return null;
+}
+
+const narrativeText = z.string().trim().min(1).max(1_000);
+const insightList = z.array(z.string().trim().min(1).max(360)).min(1).max(5);
+
+/**
+ * The model explains deterministic records; it does not emit values, verdicts,
+ * investment forecasts, or cash amounts. Those are computed server-side.
+ */
+export const analyzerNarrativeSchema = z.object({
+  valueSummary: narrativeText,
+  itemAInsights: narrativeText,
+  itemBInsights: narrativeText,
+  itemAMarketNews: narrativeText,
+  itemBMarketNews: narrativeText,
+  itemAStrengths: insightList,
+  itemARisks: insightList,
+  itemBStrengths: insightList,
+  itemBRisks: insightList,
+  sourceReferences: z.object({
+    itemA: z.array(z.string().trim().min(1).max(120)).max(12),
+    itemB: z.array(z.string().trim().min(1).max(120)).max(12),
+  }),
+});
+
+export type AnalyzerNarrative = z.infer<typeof analyzerNarrativeSchema>;
+
+export const ANALYZER_NARRATIVE_RESPONSE_FORMAT = {
+  type: 'json_schema' as const,
+  json_schema: {
+    name: 'test_ai_evidence_bound_narrative',
+    strict: true,
+    schema: {
+      type: 'object',
+      properties: {
+        valueSummary: { type: 'string', minLength: 1, maxLength: 1000 },
+        itemAInsights: { type: 'string', minLength: 1, maxLength: 1000 },
+        itemBInsights: { type: 'string', minLength: 1, maxLength: 1000 },
+        itemAMarketNews: { type: 'string', minLength: 1, maxLength: 1000 },
+        itemBMarketNews: { type: 'string', minLength: 1, maxLength: 1000 },
+        itemAStrengths: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string', minLength: 1, maxLength: 360 } },
+        itemARisks: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string', minLength: 1, maxLength: 360 } },
+        itemBStrengths: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string', minLength: 1, maxLength: 360 } },
+        itemBRisks: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string', minLength: 1, maxLength: 360 } },
+        sourceReferences: {
+          type: 'object',
+          properties: {
+            itemA: { type: 'array', maxItems: 12, items: { type: 'string', minLength: 1, maxLength: 120 } },
+            itemB: { type: 'array', maxItems: 12, items: { type: 'string', minLength: 1, maxLength: 120 } },
+          },
+          required: ['itemA', 'itemB'],
+          additionalProperties: false,
+        },
+      },
+      required: ['valueSummary', 'itemAInsights', 'itemBInsights', 'itemAMarketNews', 'itemBMarketNews', 'itemAStrengths', 'itemARisks', 'itemBStrengths', 'itemBRisks', 'sourceReferences'],
+      additionalProperties: false,
+    },
+  },
+};
+
+export function parseEvidenceBoundNarrative(content: string, allowedSourceReferences: string[]): AnalyzerNarrative | null {
+  const parsed = parseAnalyzerResponse(content);
+  const validated = analyzerNarrativeSchema.safeParse(parsed);
+  if (!validated.success) return null;
+  const allowed = new Map(allowedSourceReferences.map((source) => [source.trim().toLowerCase(), source.trim()]));
+  const filterReferences = (references: string[]) => references
+    .map((reference) => allowed.get(reference.trim().toLowerCase()))
+    .filter((reference): reference is string => Boolean(reference));
+  return {
+    ...validated.data,
+    sourceReferences: {
+      itemA: filterReferences(validated.data.sourceReferences.itemA),
+      itemB: filterReferences(validated.data.sourceReferences.itemB),
+    },
+  };
 }

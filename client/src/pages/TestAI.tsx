@@ -1791,6 +1791,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameInput, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && priceChartingVideoGameInput.upc !== '00000000' });
   const priceChartingSlugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery(priceChartingSlugInput, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && priceChartingSlugInput.setSlug !== 'unavailable' && priceChartingSlugInput.cardSlug !== 'unavailable' });
   const priceChartingMoversQuery = trpc.testAI.getPriceChartingBigMovers.useQuery(undefined, { enabled: enabledSources.has('pricecharting') });
+  const [selectedDiscogsReleaseId, setSelectedDiscogsReleaseId] = useState<number | null>(null);
+  const discogsQuery = trpc.testAI.getDiscogsReleases.useQuery({
+    releaseTitle: discogsSearchCriteria.releaseTitle || 'unavailable',
+    category: item.category,
+    itemDetails: item.itemDetails ?? undefined,
+  }, { enabled: enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsSearchCriteria.releaseTitle.length >= 2 });
   const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
   const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
@@ -1799,6 +1805,14 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && isCgcCompany(item.gradingCompany) && !!certNumber });
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
   const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
+  const discogsCandidates = useMemo(() => discogsQuery.data?.data?.results ?? [], [discogsQuery.data]);
+
+  useEffect(() => {
+    setSelectedDiscogsReleaseId((current) => {
+      if (current && discogsCandidates.some((release) => release.id === current)) return current;
+      return discogsCandidates.length === 1 ? discogsCandidates[0].id : null;
+    });
+  }, [item.id, item.title, discogsCandidates]);
 
   const summary = useMemo(() => {
     const observations: EvidenceSourceObservation[] = [];
@@ -1878,6 +1892,29 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const priceFields = (priceData?.data ?? {}) as Record<string, any>;
       add({ id: 'pricecharting', label: 'PriceCharting', kind: 'market_current', role: 'asking_price_context', status: evidenceStatus(priceData), fields: { cardName: priceFields.name, title: priceFields.title, set: priceFields.set, cardNumber: priceFields.cardNumber, platform: priceFields.platform, marketMoverCount }, message: priceData?.message ?? priceChartingMoversQuery.data?.message ?? null });
     }
+    if (enabledSources.has('discogs') && discogsSearchCriteria.isMusic) {
+      const release = discogsCandidates.find((candidate) => candidate.id === selectedDiscogsReleaseId) ?? null;
+      add({
+        id: 'discogs',
+        label: 'Discogs Music Catalog',
+        kind: 'reference',
+        status: evidenceStatus(discogsQuery.data),
+        // Multiple Discogs candidates are intentionally not treated as a match.
+        // A release/pressing must be selected or otherwise confirmed before it
+        // can align a listing's material Music fields.
+        fields: release ? {
+          artist: release.artist,
+          releaseTitle: release.releaseTitle,
+          catalogNumber: release.catalogNumber.join(', '),
+          recordLabel: release.label.join(', '),
+          country: release.country,
+          releaseYear: release.year,
+          format: release.format.join(', '),
+        } : undefined,
+        message: discogsQuery.data?.message
+          ?? (discogsCandidates.length > 1 ? `${discogsCandidates.length} Discogs release candidates were returned; select the exact release/pressing before treating catalog fields as aligned.` : null),
+      });
+    }
     if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
     if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
     if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
@@ -1893,7 +1930,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, historicalSaleCount: auctions.length - dated.length, undatedSaleCount: auctions.filter((auction: any) => !auction.date).length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -1938,6 +1975,15 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         <p><span className="text-gray-500">Release Year:</span> {discogsSearchCriteria.releaseYear || 'Not supplied'}</p>
       </div>
       <p className="mt-1 text-[9px] text-gray-500">Primary request uses Album / Release Title and Artist / Performer{discogsSearchCriteria.releaseYear ? `, narrowed first by ${discogsSearchCriteria.releaseYear}` : ''}. If the year returns no candidate, Discogs retries without it. Listing title, format, label, catalog number, and country are not used as filters.</p>
+      {discogsCandidates.length > 1 && <div className="mt-2 border-t border-emerald-800/30 pt-2">
+        <label className="block text-[9px] font-semibold uppercase text-emerald-200">Confirm exact release / pressing</label>
+        <select value={selectedDiscogsReleaseId ?? ''} onChange={(event) => setSelectedDiscogsReleaseId(event.target.value ? Number(event.target.value) : null)} className="mt-1 w-full rounded border border-emerald-800/40 bg-gray-950/70 px-2 py-1 text-[10px] text-gray-200 outline-none">
+          <option value="">Select a matching Discogs release — no metadata alignment until selected</option>
+          {discogsCandidates.map((release) => <option key={release.id} value={release.id}>{[release.artist, release.releaseTitle, release.year, release.country, release.format.join(', '), release.catalogNumber.join(', ')].filter(Boolean).join(' · ')}</option>)}
+        </select>
+        <p className="mt-1 text-[9px] text-emerald-100/70">Selection applies only to this sandbox run. Discogs is reference metadata, not valuation or authentication evidence.</p>
+      </div>}
+      {discogsCandidates.length === 1 && <p className="mt-2 text-[9px] text-emerald-100/70">One Discogs candidate returned and is included as reference metadata for this sandbox run.</p>}
     </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
     {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div>}
@@ -2135,6 +2181,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const [result, setResult] = useState<any>(null);
   const [useImageAnalyzer, setUseImageAnalyzer] = useState(true);
   const [useVisualFieldCompletion, setUseVisualFieldCompletion] = useState(true);
+  const [cashAmount, setCashAmount] = useState('');
+  const [cashPaidBy, setCashPaidBy] = useState<'item_a' | 'item_b'>('item_a');
   const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
     {
       leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, itemDetails: leftItem.itemDetails },
@@ -2166,7 +2214,62 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const leftHas130Point = leftSources.has('one_thirty_point');
   const rightHas130Point = rightSources.has('one_thirty_point');
 
+  const normalizeComparableSale = (sale: any, defaults: { sourceId: string; sourceLabel: string; marketplace?: string; saleStatus?: 'completed' | 'unknown'; priceBasis?: 'realized' | 'sold' | 'closed' | 'unknown' }) => ({
+    ...sale,
+    title: sale?.title ?? '',
+    price: sale?.price ?? null,
+    currency: sale?.currency ?? 'USD',
+    marketplace: sale?.marketplace ?? defaults.marketplace ?? defaults.sourceLabel,
+    sourceId: sale?.sourceId ?? defaults.sourceId,
+    sourceLabel: sale?.sourceLabel ?? defaults.sourceLabel,
+    saleId: sale?.saleId ?? sale?.itemId ?? sale?.lotId ?? sale?.url ?? sale?.itemUrl ?? null,
+    url: sale?.url ?? sale?.itemUrl ?? sale?.itemWebUrl ?? null,
+    saleStatus: sale?.saleStatus ?? (sale?.completed === false || sale?.confirmed === false ? 'unknown' : defaults.saleStatus ?? 'completed'),
+    completedStatusBasis: sale?.completedStatusBasis ?? sale?.status ?? (sale?.completed ? 'provider completed flag' : sale?.confirmed ? 'provider confirmed flag' : 'provider completed-sale endpoint'),
+    priceBasis: sale?.priceBasis ?? defaults.priceBasis ?? 'unknown',
+    visualReviewStatus: sale?.visualReviewStatus ?? sale?.visualReview?.verdict ?? 'not_reviewed',
+    visualReviewRationale: sale?.visualReviewRationale ?? sale?.visualReview?.rationale ?? null,
+  });
+
+  // Round-robin source groups before the explicit 120-record transport ceiling.
+  // This avoids the previous first-source-wins slice from silently dropping later
+  // auction or Sold-Comps evidence before the server can score it.
+  const balanceSaleGroups = (groups: any[][]) => {
+    const balanced: any[] = [];
+    for (let index = 0; balanced.length < 120; index += 1) {
+      let added = false;
+      for (const group of groups) {
+        const candidate = group[index];
+        if (candidate && balanced.length < 120) {
+          balanced.push(candidate);
+          added = true;
+        }
+      }
+      if (!added) break;
+    }
+    return balanced;
+  };
+
   const handleAnalyze = () => {
+    const leftSales = balanceSaleGroups([
+      leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: '130point', sourceLabel: '130point', marketplace: '130point', priceBasis: 'sold' })) : [],
+      leftHasTheCardApi ? (leftTheCardApiData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'the_card_api', sourceLabel: 'The Card API Sales', marketplace: 'The Card API', priceBasis: 'sold' })) : [],
+      leftHasCardsightAi ? (leftCardsightAiData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'cardsight_ai', sourceLabel: 'Cardsight.ai Market Data', marketplace: 'Cardsight.ai', priceBasis: 'sold' })) : [],
+      leftHasLelands ? (leftLelandsData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'lelands', sourceLabel: 'Lelands Auctions', marketplace: 'Lelands Auctions', priceBasis: 'realized' })) : [],
+      leftHasPristineAuction ? (leftPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
+      leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: leftPcgsAuctionData?.data?.name ?? leftItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleId: `${sale.certNo || leftPcgsAuctionData?.data?.certNo || leftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
+      leftHasSoldComps ? (leftSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
+    ]);
+    const rightSales = balanceSaleGroups([
+      rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: '130point', sourceLabel: '130point', marketplace: '130point', priceBasis: 'sold' })) : [],
+      rightHasTheCardApi ? (rightTheCardApiData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'the_card_api', sourceLabel: 'The Card API Sales', marketplace: 'The Card API', priceBasis: 'sold' })) : [],
+      rightHasCardsightAi ? (rightCardsightAiData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'cardsight_ai', sourceLabel: 'Cardsight.ai Market Data', marketplace: 'Cardsight.ai', priceBasis: 'sold' })) : [],
+      rightHasLelands ? (rightLelandsData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'lelands', sourceLabel: 'Lelands Auctions', marketplace: 'Lelands Auctions', priceBasis: 'realized' })) : [],
+      rightHasPristineAuction ? (rightPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
+      rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: rightPcgsAuctionData?.data?.name ?? rightItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleId: `${sale.certNo || rightPcgsAuctionData?.data?.certNo || rightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
+      rightHasSoldComps ? (rightSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
+    ]);
+    const parsedCashAmount = Number(cashAmount);
     analyzeMutation.mutate({
       leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined },
       rightItem: { title: rightItem.title, category: rightItem.category, itemType: rightItem.itemType, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: useImageAnalyzer ? rightItem.primaryPhotoUrl : undefined },
@@ -2178,28 +2281,13 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHipstampMetrics: rightHasHipstamp ? (rightHipstampData?.metrics ?? null) : null,
       leftSoldCompsMetrics: leftHasSoldComps ? (leftSoldCompsData?.metrics ?? null) : null,
       rightSoldCompsMetrics: rightHasSoldComps ? (rightSoldCompsData?.metrics ?? null) : null,
-      leftHistoricalTrendSales: [
-        ...(leftHas130Point ? (leftHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : []),
-        ...(leftHasTheCardApi ? (leftTheCardApiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'the_card_api', saleStatus: sale.saleStatus ?? (sale.confirmed ? 'completed' : 'unknown') })) : []),
-        ...(leftHasCardsightAi ? (leftCardsightAiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'cardsight_ai', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
-        ...(leftHasLelands ? (leftLelandsData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'lelands', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
-        ...(leftHasPristineAuction ? (leftPristineAuctionData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'pristine_auction', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
-        ...(leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => ({ title: leftPcgsAuctionData?.data?.name ?? leftItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), sourceId: 'pcgs_auction_results', saleId: `${sale.certNo || leftPcgsAuctionData?.data?.certNo || leftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl, saleStatus: 'completed' })) : []),
-        ...(leftHasSoldComps ? (leftSoldCompsData?.listings ?? []).map((sale: any) => ({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', sourceId: 'sold_comps', saleId: sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed' })) : []),
-      ].slice(0, 30),
-      rightHistoricalTrendSales: [
-        ...(rightHas130Point ? (rightHistoricalTrendData?.data?.items ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? '130point', saleStatus: sale.saleStatus ?? 'completed' })) : []),
-        ...(rightHasTheCardApi ? (rightTheCardApiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'the_card_api', saleStatus: sale.saleStatus ?? (sale.confirmed ? 'completed' : 'unknown') })) : []),
-        ...(rightHasCardsightAi ? (rightCardsightAiData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'cardsight_ai', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
-        ...(rightHasLelands ? (rightLelandsData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'lelands', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
-        ...(rightHasPristineAuction ? (rightPristineAuctionData?.sales ?? []).map((sale: any) => ({ ...sale, sourceId: sale.sourceId ?? 'pristine_auction', saleStatus: sale.saleStatus ?? (sale.completed ? 'completed' : 'unknown') })) : []),
-        ...(rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => ({ title: rightPcgsAuctionData?.data?.name ?? rightItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), sourceId: 'pcgs_auction_results', saleId: `${sale.certNo || rightPcgsAuctionData?.data?.certNo || rightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl, saleStatus: 'completed' })) : []),
-        ...(rightHasSoldComps ? (rightSoldCompsData?.listings ?? []).map((sale: any) => ({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', sourceId: 'sold_comps', saleId: sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed' })) : []),
-      ].slice(0, 30),
+      leftHistoricalTrendSales: leftSales,
+      rightHistoricalTrendSales: rightSales,
       leftEvidenceSummary: leftEvidenceSummary ?? undefined,
       rightEvidenceSummary: rightEvidenceSummary ?? undefined,
       leftIdentityGate: leftEvidenceSummary ? { materialReviewRequired: leftEvidenceSummary.reviewFlags.some((flag) => flag.kind === 'material'), materialFlags: leftEvidenceSummary.reviewFlags.filter((flag) => flag.kind === 'material').map((flag) => flag.message).slice(0, 20), sourceAlignmentStatus: leftEvidenceSummary.reviewFlags.some((flag) => flag.kind === 'material') ? 'conflicted' : leftEvidenceSummary.alignedSources.length ? 'aligned' : 'unavailable' } : undefined,
       rightIdentityGate: rightEvidenceSummary ? { materialReviewRequired: rightEvidenceSummary.reviewFlags.some((flag) => flag.kind === 'material'), materialFlags: rightEvidenceSummary.reviewFlags.filter((flag) => flag.kind === 'material').map((flag) => flag.message).slice(0, 20), sourceAlignmentStatus: rightEvidenceSummary.reviewFlags.some((flag) => flag.kind === 'material') ? 'conflicted' : rightEvidenceSummary.alignedSources.length ? 'aligned' : 'unavailable' } : undefined,
+      cashAdjustment: Number.isFinite(parsedCashAmount) && parsedCashAmount > 0 ? { amount: parsedCashAmount, paidBy: cashPaidBy } : null,
       marketNews: marketNewsQuery.data ? {
         itemA: marketNewsQuery.data.itemA,
         itemB: marketNewsQuery.data.itemB,
@@ -2238,6 +2326,20 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
             {analyzeMutation.isPending ? <><Spinner className="w-4 h-4" /> Analyzing...</> : `Run ${useImageAnalyzer ? 'with' : 'without'} Image Review`}
           </button>
         </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-800/40 bg-emerald-950/15 px-3 py-2">
+        <div className="min-w-[190px]">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-200">Recorded cash adjustment · optional</p>
+          <p className="text-[9px] text-gray-500">Models the actual proposed terms only; it never creates a required payment amount.</p>
+        </div>
+        <label className="flex items-center gap-1 rounded bg-gray-950/60 px-2 py-1 text-[10px] text-gray-300">
+          $<input type="number" min="0" step="1" value={cashAmount} onChange={(event) => { setCashAmount(event.target.value); setResult(null); }} className="w-24 bg-transparent text-white outline-none" placeholder="0" aria-label="Cash adjustment amount" />
+        </label>
+        <select value={cashPaidBy} onChange={(event) => { setCashPaidBy(event.target.value as 'item_a' | 'item_b'); setResult(null); }} className="rounded bg-gray-950/60 px-2 py-1 text-[10px] text-gray-200 outline-none">
+          <option value="item_a">Item A contributes cash</option>
+          <option value="item_b">Item B contributes cash</option>
+        </select>
       </div>
 
       {marketNewsQuery.data && (
@@ -2285,6 +2387,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
             {result.tradeFairness && <div className="text-xs font-normal opacity-80 mt-1">{result.tradeFairness}</div>}
           </div>
           {result.valueSummary && <p className="text-gray-300 text-sm leading-relaxed">{result.valueSummary}</p>}
+          {result.sourceReferences && (result.sourceReferences.itemA?.length > 0 || result.sourceReferences.itemB?.length > 0) && <p className="text-gray-500 text-[10px]">Narrative sources: Item A — {result.sourceReferences.itemA?.join(', ') || 'none'} · Item B — {result.sourceReferences.itemB?.join(', ') || 'none'}</p>}
           {result.leftMarketProfile && result.rightMarketProfile && result.deterministicComparison && (
             <div className="rounded-lg border border-indigo-700/40 bg-indigo-950/20 p-3 space-y-3">
               <div className="flex items-center justify-between">
@@ -2308,9 +2411,45 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   </div>
                 ))}
               </div>
+              {result.tradeTerms && (
+                <div className="rounded border border-emerald-700/40 bg-emerald-950/20 p-2 space-y-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-emerald-200 text-[10px] font-bold uppercase tracking-wide">Trade terms · evidence-range check</p>
+                    <span className="rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] text-emerald-100">{result.tradeTerms.evidenceStrength} evidence · {result.tradeTerms.termsStatus.replace(/_/g, ' ')}</span>
+                  </div>
+                  <p className="text-gray-300 text-[10px]">{result.tradeTerms.summary}</p>
+                  {result.tradeTerms.cashAdjustment && <p className="text-gray-500 text-[9px]">Recorded: Item {result.tradeTerms.cashAdjustment.paidBy === 'item_a' ? 'A' : 'B'} contributes ${Number(result.tradeTerms.cashAdjustment.amount).toLocaleString()}.</p>}
+                  {!result.tradeTerms.cashAdjustment && result.tradeTerms.suggestedCashRange && <p className="text-gray-500 text-[9px]">Range reference only: Item {result.tradeTerms.suggestedCashRange.payer === 'item_a' ? 'A' : 'B'} could be short by roughly ${Number(result.tradeTerms.suggestedCashRange.low).toLocaleString()}–${Number(result.tradeTerms.suggestedCashRange.high).toLocaleString()} based on the selected evidence ranges.</p>}
+                </div>
+              )}
               {(result.valuationWarnings?.length > 0 || result.missingInformation?.length > 0) && (
                 <div className="rounded bg-orange-950/30 p-2 text-[10px] text-orange-200">
                   <span className="font-bold uppercase">Evidence warnings:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].join(' ')}
+                </div>
+              )}
+              {result.leftAnalysisSnapshot && result.rightAnalysisSnapshot && (
+                <div className="rounded border border-slate-700/60 bg-slate-950/50 p-2 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-slate-200 text-[10px] font-bold uppercase tracking-wide">Versioned analysis snapshot · {result.leftAnalysisSnapshot.version}</p>
+                    <p className="text-slate-500 text-[9px]">This snapshot feeds the profile, comparable audit, cash terms, and AI explanation.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: 'Item A', snapshot: result.leftAnalysisSnapshot, color: 'cyan' },
+                      { label: 'Item B', snapshot: result.rightAnalysisSnapshot, color: 'amber' },
+                    ].map(({ label, snapshot, color }) => {
+                      const diagnostics = snapshot.profile.selectionDiagnostics;
+                      const visual = snapshot.evidence.visualReview;
+                      return <div key={label} className="rounded bg-gray-900/70 p-2 space-y-1">
+                        <p className={`text-${color}-300 text-xs font-semibold`}>{label} intake</p>
+                        <p className="text-gray-400 text-[9px]">Sales: {diagnostics.received} received · {diagnostics.deduplicated} unique · {diagnostics.eligibleCompleted} dated completed · {diagnostics.acceptedIdentity} identity accepted · {diagnostics.selectedForValuation} used</p>
+                        {diagnostics.omittedByCap > 0 && <p className="text-amber-200 text-[9px]">{diagnostics.omittedByCap} matched record{diagnostics.omittedByCap === 1 ? '' : 's'} retained in audit but omitted by the source-balanced cap.</p>}
+                        <p className="text-gray-500 text-[9px]">Visual comp reviews: {visual.match} match · {visual.roughMatch} rough · {visual.mismatch} mismatch · {visual.unreadable} unreadable · {visual.notReviewed} not reviewed</p>
+                        <div className="flex flex-wrap gap-1 pt-1">{snapshot.evidence.sourceStatuses.map((source: any) => <span key={source.id} title={source.message || undefined} className={`rounded px-1 py-0.5 text-[8px] ${source.status === 'success' ? 'bg-emerald-950/60 text-emerald-200' : source.status === 'error' ? 'bg-rose-950/60 text-rose-200' : 'bg-slate-800 text-slate-300'}`}>{source.label}: {source.status.replace('_', ' ')}</span>)}</div>
+                        {snapshot.evidence.reviewFlags.length > 0 && <p className="text-amber-200 text-[9px]">Review: {snapshot.evidence.reviewFlags[0]}</p>}
+                      </div>;
+                    })}
+                  </div>
                 </div>
               )}
               <div className="rounded border border-slate-700/60 bg-slate-950/50 p-2 space-y-2">
@@ -2349,18 +2488,21 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                           <div key={`accepted-${comparable.title}-${comparable.date}`} className="rounded border border-emerald-900/50 bg-emerald-950/20 px-2 py-1.5 text-[9px]">
                             <p className="text-gray-200 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
                             <p className="text-emerald-300/80 mt-0.5">{comparable.classification} match · score {comparable.score} · {(comparable.reasons ?? []).join(' · ')}</p>
+                            <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · {comparable.priceBasis ?? 'price basis unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
                         {contextual.slice(0, 2).map((comparable: any) => (
                           <div key={`context-${comparable.title}-${comparable.date}`} className="rounded border border-sky-900/50 bg-sky-950/20 px-2 py-1.5 text-[9px]">
                             <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
                             <p className="text-sky-300/80 mt-0.5">Context only · {comparable.exclusionReason ?? 'not eligible for valuation'}</p>
+                            <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
                         {rejected.slice(0, 3).map((comparable: any) => (
                           <div key={`rejected-${comparable.title}-${comparable.date}`} className="rounded border border-orange-900/50 bg-orange-950/20 px-2 py-1.5 text-[9px]">
                             <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
                             <p className="text-orange-300/80 mt-0.5">Excluded · {comparable.exclusionReason ?? 'insufficient comparable evidence'}</p>
+                            <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}
                         {!accepted.length && !rejected.length && <p className="text-gray-500 text-[9px]">No individual comparable records were returned.</p>}

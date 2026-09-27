@@ -101,6 +101,14 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.contextualComparableCount).toBe(1);
   });
 
+  it('does not allow an explicitly unknown price basis to enter the deterministic value', () => {
+    const profile = buildMarketProfile(target, [{
+      ...sale(target.title, 1200, '2026-09-15'), sourceId: 'ambiguous-provider', saleStatus: 'completed', priceBasis: 'unknown' as const,
+    }], null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.weightedValue).toBeNull();
+    expect(profile.contextualComparableCount).toBe(1);
+  });
+
   it('exposes sparse, volatile, and low-liquidity evidence instead of hiding it', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 100, '2026-09-20'),

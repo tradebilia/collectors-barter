@@ -101,6 +101,10 @@ const FIELD_LABELS: Record<string, string> = {
   version: 'Version',
   catalogNumber: 'Catalog #',
   issueYear: 'Issue year',
+  artist: 'Artist',
+  releaseTitle: 'Release title',
+  recordLabel: 'Label',
+  pressing: 'Edition / pressing',
 };
 
 const CATEGORY_FIELDS: Record<string, string[]> = {
@@ -114,6 +118,7 @@ const CATEGORY_FIELDS: Record<string, string[]> = {
   autographs: ['signer', 'signedItemType', 'authenticationCompany', 'certificate'],
   disney_pins: ['character', 'pinName', 'series', 'editionSize', 'pinNumber'],
   vintage_toys: ['brand', 'line', 'toyName', 'year', 'version', 'grade'],
+  music: ['artist', 'releaseTitle', 'catalogNumber', 'recordLabel', 'country', 'releaseYear', 'format', 'pressing', 'certificationCompany', 'grade'],
 };
 
 const MATERIAL_FIELDS: Record<string, string[]> = {
@@ -127,6 +132,7 @@ const MATERIAL_FIELDS: Record<string, string[]> = {
   autographs: ['signer', 'signedItemType', 'authenticationCompany', 'certificate'],
   disney_pins: ['character', 'pinName', 'series', 'editionSize', 'pinNumber'],
   vintage_toys: ['brand', 'toyName', 'year', 'version', 'grade'],
+  music: ['artist', 'releaseTitle', 'catalogNumber', 'recordLabel', 'country', 'format', 'pressing', 'grade'],
 };
 
 function normalizeCategory(category: string): string {
@@ -244,6 +250,10 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
     version: ['version', 'variant'],
     catalogNumber: ['scottNumber', 'catalogNumber'],
     issueYear: ['year', 'issueYear'],
+    artist: ['artist', 'performer'],
+    releaseTitle: ['releaseTitle', 'albumTitle', 'album', 'title'],
+    recordLabel: ['recordLabel', 'label'],
+    pressing: ['pressing', 'pressingDetails', 'edition', 'version'],
   };
 
   for (const [key, candidates] of Object.entries(mappings)) {
@@ -278,6 +288,7 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
 
   if (category === 'pokemon' && !base.cardName) base.cardName = base.title;
   if (category === 'video_games' && !base.title) base.title = firstText(details, ['gameTitle', 'videoGameTitle', 'title']);
+  if (category === 'music' && !base.releaseTitle) base.releaseTitle = base.title;
   return base;
 }
 

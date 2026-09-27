@@ -25,11 +25,19 @@ export interface MarketSale {
   currency?: string | null;
   date?: string | null;
   marketplace?: string | null;
+  sourceLabel?: string | null;
   recency?: 'recent' | 'historical' | 'undated' | null;
   sourceId?: string | null;
   saleId?: string | null;
   url?: string | null;
   saleStatus?: 'completed' | 'closed' | 'active' | 'unknown' | null;
+  /** Provider wording such as realized, sold, or finalized closed. */
+  completedStatusBasis?: string | null;
+  /** Provider price semantics. Asking prices never enter this completed-sale contract. */
+  priceBasis?: 'realized' | 'sold' | 'closed' | 'unknown' | null;
+  /** Visual candidate review is a matching aid only, never authentication. */
+  visualReviewStatus?: 'match' | 'rough_match' | 'mismatch' | 'unreadable' | 'not_reviewed' | null;
+  visualReviewRationale?: string | null;
 }
 
 export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
@@ -38,6 +46,7 @@ export interface ComparableMatch {
   title: string;
   price: number;
   date: string | null;
+  currency: string;
   score: number;
   accepted: boolean;
   reasons: string[];
@@ -45,8 +54,39 @@ export interface ComparableMatch {
   weight: number;
   classification: ComparableClassification;
   sourceId?: string | null;
+  sourceLabel?: string | null;
+  marketplace?: string | null;
+  saleId?: string | null;
+  url?: string | null;
+  saleStatus?: string | null;
+  completedStatusBasis?: string | null;
+  priceBasis?: string | null;
+  visualReviewStatus?: string | null;
+  visualReviewRationale?: string | null;
   duplicateOf?: string;
 }
+
+export type ComparableSourceDiagnostic = {
+  sourceId: string;
+  sourceLabel: string;
+  received: number;
+  duplicate: number;
+  eligibleCompleted: number;
+  acceptedIdentity: number;
+  selectedForValuation: number;
+  omittedByCap: number;
+};
+
+export type ComparableSelectionDiagnostics = {
+  cap: number;
+  received: number;
+  deduplicated: number;
+  eligibleCompleted: number;
+  acceptedIdentity: number;
+  selectedForValuation: number;
+  omittedByCap: number;
+  sources: ComparableSourceDiagnostic[];
+};
 
 export interface MarketProfile {
   marketRange: { low: number; mid: number; high: number; supported: boolean };
@@ -79,6 +119,7 @@ export interface MarketProfile {
   missingInformation: string[];
   valuationWarnings: string[];
   comparables: ComparableMatch[];
+  selectionDiagnostics: ComparableSelectionDiagnostics;
 }
 
 export interface ComparableIdentityGate {
@@ -187,11 +228,133 @@ export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSal
   return { unique, duplicates };
 }
 
-function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
+export const MAX_VALUATION_COMPARABLES = 48;
+
+function sourceKey(sale: MarketSale): string {
+  return String(sale.sourceId || sale.marketplace || 'unattributed').trim().toLowerCase() || 'unattributed';
+}
+
+function sourceLabel(sale: MarketSale): string {
+  return String(sale.sourceLabel || sale.marketplace || sale.sourceId || 'Unattributed source').trim() || 'Unattributed source';
+}
+
+export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
   if (sale.saleStatus && sale.saleStatus !== 'completed') return false;
+  if (sale.priceBasis === 'unknown') return false;
   if (sale.recency === 'historical' || sale.recency === 'undated') return false;
   const age = daysOld(sale.date, nowMs);
   return age !== null && age <= 365;
+}
+
+function compareValuationPriority(
+  left: { match: ComparableMatch; ageDays: number | null },
+  right: { match: ComparableMatch; ageDays: number | null },
+): number {
+  if (right.match.score !== left.match.score) return right.match.score - left.match.score;
+  const leftAge = left.ageDays ?? Number.MAX_SAFE_INTEGER;
+  const rightAge = right.ageDays ?? Number.MAX_SAFE_INTEGER;
+  if (leftAge !== rightAge) return leftAge - rightAge;
+  return right.match.price - left.match.price;
+}
+
+function buildSelectionDiagnostics(
+  sales: MarketSale[],
+  deduplicated: ReturnType<typeof deduplicateMarketSales>,
+  valuationCandidates: MarketSale[],
+  valuationMatches: Array<{ sale: MarketSale; match: ComparableMatch; ageDays: number | null }>,
+  selected: Set<ComparableMatch>,
+  cap: number,
+): ComparableSelectionDiagnostics {
+  const bySource = new Map<string, ComparableSourceDiagnostic>();
+  const ensure = (sale: MarketSale) => {
+    const key = sourceKey(sale);
+    const current = bySource.get(key);
+    if (current) return current;
+    const created: ComparableSourceDiagnostic = {
+      sourceId: key,
+      sourceLabel: sourceLabel(sale),
+      received: 0,
+      duplicate: 0,
+      eligibleCompleted: 0,
+      acceptedIdentity: 0,
+      selectedForValuation: 0,
+      omittedByCap: 0,
+    };
+    bySource.set(key, created);
+    return created;
+  };
+  sales.forEach((sale) => { ensure(sale).received += 1; });
+  deduplicated.duplicates.forEach(({ sale }) => { ensure(sale).duplicate += 1; });
+  valuationCandidates.forEach((sale) => { ensure(sale).eligibleCompleted += 1; });
+  valuationMatches.forEach(({ sale, match }) => {
+    if (match.accepted) {
+      const diagnostic = ensure(sale);
+      diagnostic.acceptedIdentity += 1;
+      if (selected.has(match)) diagnostic.selectedForValuation += 1;
+      else diagnostic.omittedByCap += 1;
+    }
+  });
+  const acceptedIdentity = valuationMatches.filter(({ match }) => match.accepted).length;
+  const selectedForValuation = [...selected].length;
+  return {
+    cap,
+    received: sales.length,
+    deduplicated: deduplicated.unique.length,
+    eligibleCompleted: valuationCandidates.length,
+    acceptedIdentity,
+    selectedForValuation,
+    omittedByCap: Math.max(0, acceptedIdentity - selectedForValuation),
+    sources: [...bySource.values()].sort((a, b) => a.sourceLabel.localeCompare(b.sourceLabel)),
+  };
+}
+
+/**
+ * Scores every eligible record, reserves one strongest match per source when
+ * possible, then fills the remaining bounded set by match quality and recency.
+ * This prevents first-arriving records or one prolific source from silently
+ * displacing the rest of the evidence ledger.
+ */
+export function selectBalancedComparableSales(
+  target: ComparableTarget,
+  sales: MarketSale[],
+  now = new Date(),
+  cap = MAX_VALUATION_COMPARABLES,
+) {
+  const nowMs = now.getTime();
+  const deduplicated = deduplicateMarketSales(sales);
+  const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
+  const valuationMatches = valuationCandidates
+    .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
+    .map((sale) => ({ sale, match: scoreComparable(target, sale), ageDays: daysOld(sale.date, nowMs) }));
+  const accepted = valuationMatches.filter(({ match }) => match.accepted);
+  const perSource = new Map<string, typeof accepted>();
+  for (const candidate of accepted) {
+    const key = sourceKey(candidate.sale);
+    const bucket = perSource.get(key) ?? [];
+    bucket.push(candidate);
+    perSource.set(key, bucket);
+  }
+  const selected: typeof accepted = [];
+  for (const bucket of [...perSource.values()].sort((left, right) => compareValuationPriority(left[0]!, right[0]!))) {
+    bucket.sort(compareValuationPriority);
+    if (selected.length < cap) selected.push(bucket[0]!);
+  }
+  const selectedMatches = new Set(selected.map(({ match }) => match));
+  for (const candidate of accepted.sort(compareValuationPriority)) {
+    if (selected.length >= cap) break;
+    if (!selectedMatches.has(candidate.match)) {
+      selected.push(candidate);
+      selectedMatches.add(candidate.match);
+    }
+  }
+  return {
+    deduplicated,
+    valuationCandidates,
+    valuationMatches,
+    selected,
+    selectedMatches,
+    diagnostics: buildSelectionDiagnostics(sales, deduplicated, valuationCandidates, valuationMatches, selectedMatches, cap),
+  };
 }
 
 export function scoreComparable(target: ComparableTarget, sale: MarketSale): ComparableMatch {
@@ -234,6 +397,11 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     score -= 18;
     materialVariantConflict = true;
     reasons.push('sale may be a different variant or release');
+  }
+  const visualMismatch = sale.visualReviewStatus === 'mismatch';
+  if (visualMismatch) {
+    score -= 100;
+    reasons.push('visual comparison identified a mismatch');
   }
 
   const targetCompany = normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
@@ -279,7 +447,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
-  const hardIdentityConflict = materialVariantConflict || materialGradeConflict || materialCompanyConflict;
+  const hardIdentityConflict = materialVariantConflict || materialGradeConflict || materialCompanyConflict || visualMismatch;
   const priceIsUsable = Number.isFinite(price) && price > 0;
   const classification: ComparableClassification = !priceIsUsable || hardIdentityConflict || boundedScore < 48
     ? 'rejected'
@@ -299,6 +467,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
           ? 'known grading or authentication company differs from target'
           : materialVariantConflict
             ? 'sale may be a different variant or release'
+            : visualMismatch
+              ? 'visual comparison identified a mismatch'
             : identity.readiness !== 'ready'
               ? `target is missing critical identifiers: ${identity.missingCriticalFields.join(', ')}`
               : classification === 'contextual'
@@ -310,6 +480,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     title: title || 'Untitled comparable',
     price: Number.isFinite(price) ? price : 0,
     date: sale.date ?? null,
+    currency: String(sale.currency ?? 'USD').toUpperCase(),
     score: boundedScore,
     accepted,
     reasons,
@@ -317,6 +488,15 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     weight: 0,
     classification,
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
+    sourceLabel: sale.sourceLabel ?? sale.marketplace ?? sale.sourceId ?? null,
+    marketplace: sale.marketplace ?? null,
+    saleId: sale.saleId ?? null,
+    url: sale.url ?? null,
+    saleStatus: sale.saleStatus ?? null,
+    completedStatusBasis: sale.completedStatusBasis ?? null,
+    priceBasis: sale.priceBasis ?? null,
+    visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed',
+    visualReviewRationale: sale.visualReviewRationale ?? null,
   };
 }
 
@@ -328,12 +508,20 @@ export function buildMarketProfile(
   identityGate?: ComparableIdentityGate | null,
 ): MarketProfile {
   const nowMs = now.getTime();
-  const deduplicated = deduplicateMarketSales(sales);
-  const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
+  const selection = selectBalancedComparableSales(target, sales, now, MAX_VALUATION_COMPARABLES);
+  const { deduplicated, valuationCandidates, valuationMatches, selected, selectedMatches } = selection;
   const contextualSales = deduplicated.unique.filter((sale) => !isCompletedSaleCandidate(sale, nowMs));
-  const valuationMatches = valuationCandidates
-    .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
-    .map((sale) => scoreComparable(target, sale));
+  const valuationMatchRecords = valuationMatches.map(({ sale, match }) => {
+    if (selectedMatches.has(match)) return match;
+    if (match.accepted) {
+      return {
+        ...match,
+        accepted: false,
+        exclusionReason: 'omitted from the bounded valuation set after source-balanced selection',
+      };
+    }
+    return match;
+  });
   const contextualMatches = contextualSales
     .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
     .map((sale) => ({
@@ -350,8 +538,8 @@ export function buildMarketProfile(
     duplicateOf,
     reasons: ['duplicate sale observation suppressed'],
   }));
-  const comparableMatches = [...valuationMatches, ...contextualMatches, ...duplicateMatches];
-  const accepted = comparableMatches.filter((match) => match.accepted && match.price > 0);
+  const comparableMatches = [...valuationMatchRecords, ...contextualMatches, ...duplicateMatches];
+  const accepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
   const acceptedWithAge = accepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
   const recentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 90);
   const ages = acceptedWithAge.map(({ ageDays }) => ageDays).filter((age): age is number => age !== null);
@@ -397,6 +585,7 @@ export function buildMarketProfile(
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
   if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
   if (deduplicated.duplicates.length > 0) valuationWarnings.push(`${deduplicated.duplicates.length} duplicate sale observation${deduplicated.duplicates.length === 1 ? '' : 's'} was excluded.`);
+  if (selection.diagnostics.omittedByCap > 0) valuationWarnings.push(`${selection.diagnostics.omittedByCap} otherwise matched sale observation${selection.diagnostics.omittedByCap === 1 ? '' : 's'} was retained in the audit but omitted from the bounded valuation set after source-balanced selection.`);
   const evidenceState: EvidenceState = accepted.length === 0
     ? (comparableMatches.length ? 'poor_item_identification' : 'no_market_evidence')
     : recentCount >= 3 && evidenceQuality === 'high' ? 'strong_recent_market_evidence'
@@ -441,6 +630,7 @@ export function buildMarketProfile(
     missingInformation,
     valuationWarnings,
     comparables: comparableMatches,
+    selectionDiagnostics: selection.diagnostics,
   };
 }
 
