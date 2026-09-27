@@ -42,6 +42,21 @@ export type SocialPromotionDetails = {
   isNew: boolean;
 };
 
+/** A completed exchange is a sale only when one side has collectibles and the other has none. */
+type CashTradePromotion = Pick<SocialPromotionDetails, "cashIncluded" | "tradeItems">;
+
+export function isCashOnlyCompletedTrade(promotion: CashTradePromotion | null | undefined) {
+  if (!promotion?.cashIncluded) return false;
+  const items = promotion.tradeItems ?? [];
+  const hasOfferedItems = items.some((item) => item.direction === "offered");
+  const hasRequestedItems = items.some((item) => item.direction !== "offered");
+  return hasOfferedItems !== hasRequestedItems;
+}
+
+export function getCompletedTradePostLabel(promotion: CashTradePromotion | null | undefined) {
+  return isCashOnlyCompletedTrade(promotion) ? "SOLD" : "TRADE ALERT";
+}
+
 export type SocialDraft = {
   id: string;
   source: SocialDraftSource;

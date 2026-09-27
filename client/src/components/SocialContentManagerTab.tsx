@@ -60,7 +60,9 @@ import {
   TRADEBILIA_PUBLIC_ORIGIN,
   buildListingSocialCopy,
   formatSocialCategory,
+  getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
+  isCashOnlyCompletedTrade,
   reconcileSocialDraftVisualHints,
   toggleSocialPlatform,
   type DraftStatus,
@@ -475,11 +477,14 @@ export function SocialContentManagerTab() {
     const destinationUrl = TRADEBILIA_PUBLIC_ORIGIN;
     const tradeItems = Array.isArray(trade.tradeItems) ? trade.tradeItems.filter((item: any) => item?.title).slice(0, 4) : [];
     const cashIncluded = Boolean(trade.cashIncluded);
+    const postLabel = getCompletedTradePostLabel({ ...trade, tradeItems, cashIncluded });
+    const isCashOnlySale = isCashOnlyCompletedTrade({ ...trade, tradeItems, cashIncluded });
+    const tradeDescription = tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title;
     const draft = createPromotionSocialDraft(`draft-${Date.now()}`, {
       source: "Completed Trade",
       sourceSummary: `Completed public exchange · ${formatOpportunityDate(trade.completedAt)}`,
-      title: `Recent completed trade: ${trade.title}`,
-      copy: `TRADE ALERT\n\n${tradeItems.map((item: any) => item.title).join(" ↔ ") || trade.title}${cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nSee more trades on Tradebilia.\n${destinationUrl}`,
+      title: `${postLabel}: ${trade.title}`,
+      copy: `${postLabel}\n\n${tradeDescription}${isCashOnlySale ? "\nSold for cash only." : cashIncluded ? "\nCash was included as part of the deal." : ""}\n\nSee more trades on Tradebilia.\n${destinationUrl}`,
       mediaUrl: trade.imageUrl,
       destinationUrl,
       promotion: {

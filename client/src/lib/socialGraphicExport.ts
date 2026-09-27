@@ -1,4 +1,4 @@
-import { formatSocialCategory, formatSocialItemType, formatSocialValue, getSocialFooterPhrase, getSocialPromotionItemTitle, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
+import { formatSocialCategory, formatSocialItemType, formatSocialValue, getSocialFooterPhrase, getSocialPromotionItemTitle, isCashOnlyCompletedTrade, type SocialDraft, type SocialPlatform } from "@/lib/socialContentManager";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { formatPublicGradeValue } from "@shared/publicGradeValues";
 import { resolveTradeAlertTheme, type TradeAlertTheme, type TradeAlertThemeAssetKey } from "@shared/tradeAlertThemes";
@@ -1306,14 +1306,14 @@ function drawTradeSide(context: CanvasRenderingContext2D, entries: TradeGraphicE
   });
 }
 
-function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
+function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, centerY: number, scale: number, cashIncluded: boolean, cashOnlySale = false) {
   context.save();
   context.textAlign = "center";
   context.fillStyle = "#ffd45a";
   context.shadowColor = "rgba(255, 188, 54, 0.40)";
   context.shadowBlur = 0;
   context.font = `400 ${Math.round(50 * scale)}px ${CANVAS_TRADE_DISPLAY_FONT}`;
-  drawTrackedText(context, "TRADED", centerX, centerY - 20 * scale, 0.24 * scale);
+  drawTrackedText(context, cashOnlySale ? "SOLD" : "TRADED", centerX, centerY - 20 * scale, 0.24 * scale);
   context.shadowBlur = 0;
 
   const arrowWidth = 72 * scale;
@@ -1360,7 +1360,7 @@ function drawTradeDirection(context: CanvasRenderingContext2D, centerX: number, 
   };
   drawArrow(centerY + 5 * scale, true);
   drawArrow(centerY + 31 * scale, false);
-  if (cashIncluded) {
+  if (cashIncluded && !cashOnlySale) {
     context.fillStyle = "#fff0b5";
     context.font = `700 ${Math.round(14 * scale)}px ${CANVAS_SANS_FONT}`;
     drawCrispText(context, "CASH INCLUDED", centerX, centerY + 59 * scale);
@@ -1765,12 +1765,12 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   context.textAlign = "left";
 }
 
-function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage: CanvasImage | null, centerX: number, centerY: number, scale: number, cashIncluded: boolean) {
-  if (logoImage) {
+function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage: CanvasImage | null, centerX: number, centerY: number, scale: number, cashIncluded: boolean, cashOnlySale = false) {
+  if (logoImage && !cashOnlySale) {
     const logoWidth = 300 * scale;
     const logoHeight = 228 * scale;
     drawContainedImage(context, logoImage, centerX - logoWidth / 2, centerY - logoHeight / 2 - 2 * scale, logoWidth, logoHeight);
-    if (cashIncluded) {
+    if (cashIncluded && !cashOnlySale) {
       context.save();
       context.fillStyle = "#f7d76d";
       context.font = `800 ${Math.max(12, Math.round(16 * scale))}px ${CANVAS_SANS_FONT}`;
@@ -1811,7 +1811,7 @@ function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage:
   triangle(centerX + radius * 0.83, centerY - radius * 0.17, -Math.PI * 0.20);
 
   context.font = `400 ${Math.round(29 * scale)}px ${CANVAS_TRADE_DISPLAY_FONT}`;
-  const label = "TRADED";
+  const label = cashOnlySale ? "SOLD" : "TRADED";
   const labelWidth = context.measureText(label).width + 24 * scale;
   const labelHeight = 34 * scale;
   drawRoundedRect(context, centerX - labelWidth / 2, centerY - labelHeight / 2 - 3 * scale, labelWidth, labelHeight, 7 * scale, "rgba(6, 12, 21, 0.94)", "rgba(246, 202, 91, 0.92)");
@@ -1819,7 +1819,7 @@ function drawCinematicExchangeMark(context: CanvasRenderingContext2D, logoImage:
   context.textAlign = "center";
   context.textBaseline = "middle";
   drawCrispText(context, label, centerX, centerY - 2 * scale);
-  if (cashIncluded) {
+  if (cashIncluded && !cashOnlySale) {
     context.fillStyle = "#f7d76d";
     context.font = `800 ${Math.max(12, Math.round(16 * scale))}px ${CANVAS_SANS_FONT}`;
     drawCrispText(context, "+ CASH INCLUDED", centerX, centerY + radius + 48 * scale);
@@ -1997,6 +1997,37 @@ function drawCinematicTradeGroup(
   });
 }
 
+function drawCashOnlyVisual(context: CanvasRenderingContext2D, side: "left" | "right", width: number, imageY: number, imageHeight: number, scale: number) {
+  const groupLeft = side === "left" ? width * 0.055 : width * 0.615;
+  const groupWidth = width * 0.36;
+  const cardWidth = groupWidth * 0.88;
+  const cardHeight = Math.min(imageHeight * 0.72, 270 * scale);
+  const x = groupLeft + (groupWidth - cardWidth) / 2;
+  const y = imageY + Math.max(16 * scale, (imageHeight - cardHeight) / 2);
+  context.save();
+  context.shadowColor = "rgba(0, 0, 0, 0.48)";
+  context.shadowBlur = 22 * scale;
+  context.shadowOffsetY = 10 * scale;
+  drawRoundedRect(context, x, y, cardWidth, cardHeight, 18 * scale, "#173d2d", "rgba(244, 211, 94, 0.88)");
+  context.shadowBlur = 0;
+  context.shadowOffsetY = 0;
+  context.strokeStyle = "rgba(255, 244, 190, 0.46)";
+  context.lineWidth = 2 * scale;
+  context.strokeRect(x + 16 * scale, y + 16 * scale, cardWidth - 32 * scale, cardHeight - 32 * scale);
+  context.fillStyle = "#f6d76a";
+  context.font = `900 ${Math.round(76 * scale)}px ${CANVAS_TRADE_DISPLAY_FONT}`;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  drawCrispText(context, "$", x + cardWidth / 2, y + cardHeight * 0.42);
+  context.fillStyle = "#fff5c7";
+  context.font = `800 ${Math.max(14, Math.round(18 * scale))}px ${CANVAS_SANS_FONT}`;
+  drawCrispText(context, "CASH ONLY", x + cardWidth / 2, y + cardHeight * 0.74);
+  context.fillStyle = "rgba(255, 245, 199, 0.78)";
+  context.font = `600 ${Math.max(10, Math.round(11 * scale))}px ${CANVAS_SANS_FONT}`;
+  drawCrispText(context, "PAYMENT", x + cardWidth / 2, y + cardHeight * 0.86);
+  context.restore();
+}
+
 function drawCompletedTradeCinematic(
   context: CanvasRenderingContext2D,
   draft: SocialDraft,
@@ -2012,6 +2043,7 @@ function drawCompletedTradeCinematic(
 ) {
   const scale = width / 1200;
   const { offered, requested } = getTradeSides(draft);
+  const cashOnlySale = isCashOnlyCompletedTrade(draft.promotion);
   const leftEntry = offered[0];
   const rightEntry = requested[0];
   const leftTheme = getTradeItemTheme(leftEntry?.item ?? { title: "Collectible" });
@@ -2056,7 +2088,8 @@ function drawCompletedTradeCinematic(
   drawCinematicTradeHeader(context, brandLogo, brushImage, width, scale);
   drawCinematicTradeGroup(context, offered, images, "left", width, imageY, imageHeight, scale, isTall);
   drawCinematicTradeGroup(context, requested, images, "right", width, imageY, imageHeight, scale, isTall);
-  drawCinematicExchangeMark(context, exchangeLogo, width / 2, exchangeY, scale * (isTall ? 1.16 : 1), Boolean(draft.promotion?.cashIncluded));
+  if (cashOnlySale) drawCashOnlyVisual(context, offered.length ? "right" : "left", width, imageY, imageHeight, scale);
+  drawCinematicExchangeMark(context, exchangeLogo, width / 2, exchangeY, scale * (isTall ? 1.16 : 1), Boolean(draft.promotion?.cashIncluded) && !cashOnlySale, cashOnlySale);
   const footerY = isPinterest ? height * 0.965 : isTall ? height - 52 * scale : height - 30 * scale;
   drawCinematicFooterPhrase(context, footerPhrase, width, footerY, scale);
 }
@@ -2092,7 +2125,8 @@ function drawCompletedTradeSideBySide(
   drawTradeAlertHeader(context, width, 104 * scale, scale);
   drawTradeSide(context, offered, images, themeImages, padding, frameY, frameWidth, frameHeight, scale);
   drawTradeSide(context, requested, images, themeImages, width - padding - frameWidth, frameY, frameWidth, frameHeight, scale);
-  drawTradeDirection(context, width / 2, frameY + frameHeight / 2, scale, Boolean(draft.promotion?.cashIncluded));
+  const cashOnlySale = isCashOnlyCompletedTrade(draft.promotion);
+  drawTradeDirection(context, width / 2, frameY + frameHeight / 2, scale, Boolean(draft.promotion?.cashIncluded) && !cashOnlySale, cashOnlySale);
   drawTradeBrandFooter(context, brandLogo, width, height, padding, scale, footerDividerOffset);
 }
 

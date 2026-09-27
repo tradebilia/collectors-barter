@@ -6,7 +6,9 @@ import {
   createPromotionSocialDraft,
   createSocialDraft,
   filterSocialDrafts,
+  getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
+  isCashOnlyCompletedTrade,
   reconcileSocialDraftVisualHints,
   requestSocialReview,
   toggleSocialPlatform,
@@ -79,6 +81,15 @@ describe("social content manager draft workflow", () => {
   it("uses the true item title rather than the saved promotion heading", () => {
     expect(getSocialPromotionItemTitle("New high-value listing: 1986 Fleer Michael Jordan Rookie PSA 10")).toBe("1986 Fleer Michael Jordan Rookie PSA 10");
     expect(getSocialPromotionItemTitle("Recent completed trade: Example collectible")).toBe("Example collectible");
+  });
+
+  it("classifies an item-for-cash exchange as a sale, but keeps item-for-item cash trades as trades", () => {
+    const itemForCash = { cashIncluded: true, tradeItems: [{ title: "Card", direction: "offered" as const }] };
+    const itemForItemPlusCash = { cashIncluded: true, tradeItems: [{ title: "Card", direction: "offered" as const }, { title: "Comic", direction: "requested" as const }] };
+    expect(isCashOnlyCompletedTrade(itemForCash)).toBe(true);
+    expect(getCompletedTradePostLabel(itemForCash)).toBe("SOLD");
+    expect(isCashOnlyCompletedTrade(itemForItemPlusCash)).toBe(false);
+    expect(getCompletedTradePostLabel(itemForItemPlusCash)).toBe("TRADE ALERT");
   });
 
   it("refreshes only visual hints on stale high-value drafts when the current listing has a specific sport", () => {

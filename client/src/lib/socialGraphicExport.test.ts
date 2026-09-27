@@ -325,9 +325,12 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("function drawCinematicTradeHeader");
     expect(exporterSource).toContain("if (!brushImage)");
     expect(exporterSource).toContain("function drawCinematicExchangeMark");
+    expect(exporterSource).toContain("function drawCashOnlyVisual");
+    expect(exporterSource).toContain("const cashOnlySale = isCashOnlyCompletedTrade(draft.promotion)");
+    expect(exporterSource).toContain('cashOnlySale ? "SOLD" : "TRADED"');
     expect(exporterSource).toContain("drawContainedImage(context, logoImage");
     expect(exporterSource).not.toContain("REAL COLLECTIBLES • REAL TRADES • REAL PEOPLE");
-    expect(exporterSource).toContain('const label = "TRADED"');
+    expect(exporterSource).toContain('const label = cashOnlySale ? "SOLD" : "TRADED"');
     expect(exporterSource).toContain("context.arc(centerX, centerY - 3 * scale, radius");
   });
 
