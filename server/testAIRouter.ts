@@ -1876,22 +1876,36 @@ export const testAIRouter = router({
       }
       const fields = getFieldTableForItem(input.item.category, input.item.itemType);
       try {
-        const response = await invokeLLM({
-          model: 'gpt-5-mini',
-          messages: [
-            { role: 'system', content: FIELD_COMPLETION_SYSTEM },
-            { role: 'user', content: [
-              { type: 'text', text: buildFieldCompletionPrompt(input.item, fields) },
-              { type: 'image_url', image_url: { url: image.toString(), detail: 'high' } },
-            ] },
-          ],
-          response_format: FIELD_COMPLETION_RESPONSE_FORMAT,
-          maxCompletionTokens: 1800,
-        });
-        const content = extractFieldCompletionText(response.choices[0]?.message?.content);
-        if (!content) throw new Error('The vision model returned no structured content');
-        const parsed = parseFieldCompletionJson(content);
-        return normalizeFieldCompletion(parsed, { title: input.item.title, category: input.item.category, itemType: input.item.itemType });
+        const messages = [
+          { role: 'system' as const, content: FIELD_COMPLETION_SYSTEM },
+          { role: 'user' as const, content: [
+            { type: 'text' as const, text: buildFieldCompletionPrompt(input.item, fields) },
+            { type: 'image_url' as const, image_url: { url: image.toString(), detail: 'high' as const } },
+          ] },
+        ];
+        let lastError: unknown;
+        // Some vision-provider responses occasionally contain no content or
+        // malformed JSON when strict json_schema is combined with an image.
+        // Retry once with the provider's broadly supported JSON-object mode;
+        // this remains read-only and the same normalizer/allowlist applies.
+        for (const responseFormat of [FIELD_COMPLETION_RESPONSE_FORMAT, { type: 'json_object' as const }]) {
+          try {
+            const response = await invokeLLM({
+              model: 'gpt-5-mini',
+              messages,
+              response_format: responseFormat,
+              maxCompletionTokens: 1800,
+            });
+            const content = extractFieldCompletionText(response.choices[0]?.message?.content);
+            if (!content) throw new Error('The vision model returned no structured content');
+            const parsed = parseFieldCompletionJson(content);
+            return normalizeFieldCompletion(parsed, { title: input.item.title, category: input.item.category, itemType: input.item.itemType });
+          } catch (error) {
+            lastError = error;
+            if (responseFormat.type === 'json_schema') console.warn('[Test AI] Strict field-completion response unavailable; retrying JSON-object mode.');
+          }
+        }
+        throw lastError instanceof Error ? lastError : new Error('The vision model returned no usable field data');
       } catch (error) {
         console.warn('[Test AI] Field completion unavailable:', error instanceof Error ? error.message : 'unknown error');
         throw new TRPCError({ code: 'BAD_GATEWAY', message: 'The image field scan was unavailable. No listing data was changed.' });
