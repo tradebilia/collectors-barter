@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEbayBrowseQuery, getSoldCompsApiKey } from './testAIRouter';
+import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, getSoldCompsApiKey } from './testAIRouter';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -18,5 +18,23 @@ describe('Sold-Comps API key validation', () => {
     const query = '1989 Upper Deck Ken Griffey Jr 1 PSA 10';
 
     expect(buildEbayBrowseQuery(query, { preserveGrade: true })).toBe(query);
+  });
+
+  it('creates bounded targeted and broader fallback queries', () => {
+    expect(buildSoldCompsQueryCandidates('Edge of the Spider-Verse #2 CGC 9.8')).toEqual([
+      'Edge of the Spider-Verse #2 CGC',
+      'Edge of the Spider-Verse #2',
+      'Edge of the Spider-Verse #2 CGC 9.8',
+    ]);
+  });
+
+  it('does not count another grading company at the same numeric grade', () => {
+    const listings = [
+      { title: 'Edge of the Spider-Verse #2 CGC 9.8' },
+      { title: 'Edge of the Spider-Verse #2 CBCS 9.8' },
+      { title: 'Edge of the Spider-Verse #2 9.8' },
+    ];
+
+    expect(filterListingsByCertificationCompany(listings, 'CGC')).toEqual([listings[0]]);
   });
 });

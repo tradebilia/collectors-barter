@@ -109,6 +109,41 @@ export function buildEbayBrowseQuery(query: string, options?: { preserveGrade?: 
   ).trim();
 }
 
+const certificationProviderPattern = /\b(CGC|CBCS|PSA|BGS|PCGS|NGC|SGC|HGA|CSG|ISA|GMA|WATA|VGA|IGS|AFA|CAS|UKG|PSE|ASG|PSAG|VHSDNA|REWIND)\b/i;
+
+function normalizeCertificationCompany(value: string | undefined): string {
+  return String(value ?? '')
+    .replace(/\s*(Comics|Cards|Grading)$/i, '')
+    .trim()
+    .toUpperCase();
+}
+
+export function filterListingsByCertificationCompany(summaries: any[], certificationCompany: string | null | undefined): any[] {
+  const target = normalizeCertificationCompany(certificationCompany ?? undefined);
+  if (!target) return summaries;
+  return summaries.filter((item: any) => {
+    const match = String(item.title ?? '').match(certificationProviderPattern);
+    // A graded target must carry an explicit provider in the sold title. This
+    // prevents a CBCS 9.8 from being counted for a CGC 9.8 target.
+    return Boolean(match && match[1].toUpperCase() === target);
+  });
+}
+
+export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean }): string[] {
+  const precise = query.trim();
+  const withoutGrade = buildEbayBrowseQuery(precise, { preserveGrade: false });
+  const withoutProviderOrGrade = withoutGrade
+    .replace(new RegExp(`\\b(${gradeProviderPattern})\\b`, 'gi'), '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  const candidates = [
+    options?.preserveGrade ? precise : withoutGrade,
+    withoutProviderOrGrade,
+    precise,
+  ].filter(Boolean);
+  return [...new Set(candidates)];
+}
+
 // Filter listings to match the grade from the search query
 export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
@@ -1054,26 +1089,42 @@ export const testAIRouter = router({
       }
 
       try {
-        // Use broad query (strip grade number) to get more results, then filter
+        // Use a small, bounded query set: one targeted query plus broader
+        // identity queries. The provider can return only one result for an
+        // overly specific title, so do not treat that first page as complete.
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = buildEbayBrowseQuery(query, {
-          // Sold-Comps supports precise completed-sale queries. Keeping the
-          // sports-card grade prevents the provider's newest 100 broad results
-          // from excluding the target PSA 10 population before validation.
+        const queryCandidates = buildSoldCompsQueryCandidates(query, {
+          // Keep grade in the first sports-card query, then use the broader
+          // fallbacks. The final grade/provider filters remain authoritative.
           preserveGrade: input.category === 'sports_cards',
         });
-        const fetchQuery = broadQuery !== query ? broadQuery : query;
-
-        const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
-        const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
-        if (!res.ok) {
-          const errText = await res.text();
-          return { query, listings: [], metrics: null, error: `Sold-Comps API error ${res.status}: ${errText}` };
+        const rawItems: any[] = [];
+        const seenSoldKeys = new Set<string>();
+        for (const fetchQuery of queryCandidates) {
+          const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
+          const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
+          if (!res.ok) {
+            const errText = await res.text();
+            if (rawItems.length === 0) {
+              return { query, listings: [], metrics: null, error: `Sold-Comps API error ${res.status}: ${errText}` };
+            }
+            console.warn(`[Sold-Comps] Fallback query failed (${res.status}): ${fetchQuery}`);
+            continue;
+          }
+          const data = await res.json() as any;
+          for (const item of (data.items ?? [])) {
+            const key = String(item.saleId ?? item.id ?? item.url ?? `${item.title}|${item.soldPrice}|${item.endedAt}`).trim().toLowerCase();
+            if (!seenSoldKeys.has(key)) {
+              seenSoldKeys.add(key);
+              rawItems.push(item);
+            }
+          }
+          // Once a broad query has produced a healthy page, the remaining
+          // fallbacks add little value and would create unnecessary provider load.
+          if (rawItems.length >= 100) break;
         }
-        const data = await res.json() as any;
-        const rawItems: any[] = data.items ?? [];
 
-        console.log(`[Sold-Comps] Fetch Query: "${fetchQuery}", Filter Grade: ${targetGrade}, Total Results: ${rawItems.length}`);
+        console.log(`[Sold-Comps] Fetch Queries: ${queryCandidates.join(' | ')}, Filter: ${cert || 'any provider'} ${targetGrade ?? ''}, Total Results: ${rawItems.length}`);
 
         // Apply same grade filtering as eBay active
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
@@ -1085,7 +1136,8 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const filtered = filterListingsByGrade(bySport, targetGrade);
+        const byCertification = filterListingsByCertificationCompany(bySport, cert || null);
+        const filtered = filterListingsByGrade(byCertification, targetGrade);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
         let visuallyFiltered = filtered;
