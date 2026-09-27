@@ -2062,9 +2062,9 @@ function drawCashOnlyVisual(context: CanvasRenderingContext2D, side: "left" | "r
   const groupLeft = compact
     ? (side === "left" ? width * 0.07 : width * 0.68)
     : (side === "left" ? width * 0.055 : width * 0.615);
-  const groupWidth = compact ? width * 0.25 : width * 0.36;
-  const cardWidth = groupWidth * (compact ? 0.78 : 0.88);
-  const cardHeight = Math.min(imageHeight * (compact ? 0.62 : 0.72), (compact ? 170 : 270) * scale);
+  const groupWidth = compact ? width * 0.30 : width * 0.36;
+  const cardWidth = groupWidth * (compact ? 0.90 : 0.88);
+  const cardHeight = Math.min(imageHeight * (compact ? 0.82 : 0.72), (compact ? 260 : 270) * scale);
   const x = groupLeft + (groupWidth - cardWidth) / 2;
   const y = imageY + Math.max(16 * scale, (imageHeight - cardHeight) / 2);
   if (cashImage) {
@@ -2098,7 +2098,7 @@ function drawCashOnlyVisual(context: CanvasRenderingContext2D, side: "left" | "r
 /**
  * Cash-only sales use the approved compact Trade Alert treatment: a small
  * cash-only panel on the empty side, the real item on the opposite side, and
- * a restrained SOLD exchange mark in the center. This intentionally avoids
+ * a prominent cash visual and SOLD exchange mark in the center. This intentionally avoids
  * the enlarged cinematic completed-trade scene used for item-for-item deals.
  */
 function drawCompactCashOnlyTradeAlert(
@@ -2163,7 +2163,7 @@ function drawCompactCashOnlyTradeAlert(
     scale,
     isTall,
   );
-  drawCinematicExchangeMark(context, exchangeLogo, width * 0.50, laneY + laneHeight * 0.50, scale * (isTall ? 0.74 : 0.62), false, true, soldLogoImage);
+  drawCinematicExchangeMark(context, exchangeLogo, width * 0.50, laneY + laneHeight * 0.50, scale * (isTall ? 0.96 : 0.88), false, true, soldLogoImage);
   drawCinematicFooterPhrase(context, getSocialFooterPhrase(draft.id || draft.title || "trade-alert", platform), width, footerY, scale);
 }
 
