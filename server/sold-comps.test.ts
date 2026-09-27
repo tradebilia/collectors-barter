@@ -25,7 +25,19 @@ describe('Sold-Comps API key validation', () => {
       'Edge of the Spider-Verse #2 CGC',
       'Edge of the Spider-Verse #2',
       'Edge of the Spider-Verse #2 CGC 9.8',
+      'Edge of Spider-Verse #2 CGC',
+      'Edge of Spider-Verse #2',
+      'Edge of Spider-Verse #2 CGC 9.8',
     ]);
+  });
+
+  it('adds an article-omission alias for marketplace titles that omit words such as the', () => {
+    const queries = buildSoldCompsQueryCandidates('Edge of the Spider-Verse #2 CGC 9.8');
+
+    expect(queries).toContain('Edge of Spider-Verse #2 CGC');
+    expect(queries).toContain('Edge of Spider-Verse #2');
+    expect(new Set(queries).size).toBe(queries.length);
+    expect(queries.length).toBeLessThanOrEqual(6);
   });
 
   it('rejects an explicit wrong grading company while retaining an unstated provider for review', () => {

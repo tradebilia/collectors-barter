@@ -137,12 +137,24 @@ export function buildSoldCompsQueryCandidates(query: string, options?: { preserv
     .replace(new RegExp(`\\b(${gradeProviderPattern})\\b`, 'gi'), '')
     .replace(/\s{2,}/g, ' ')
     .trim();
-  const candidates = [
+  // Marketplace titles commonly omit optional articles (for example, eBay
+  // uses both “Edge of the Spider-Verse” and “Edge of Spider-Verse”). Add a
+  // small alias tier rather than forcing every source title to match the
+  // user's stored wording. Keep this bounded and leave identity gates as the
+  // authority after retrieval.
+  const removeOptionalArticles = (value: string): string => value
+    .replace(/\b(?:the|a|an)\b/gi, ' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  const baseCandidates = [
     options?.preserveGrade ? precise : withoutGrade,
     withoutProviderOrGrade,
     precise,
   ].filter(Boolean);
-  return [...new Set(candidates)];
+  const articleAliases = baseCandidates
+    .map(removeOptionalArticles)
+    .filter((candidate) => candidate && !baseCandidates.includes(candidate));
+  return [...new Set([...baseCandidates, ...articleAliases])];
 }
 
 // Filter listings to match the grade from the search query
