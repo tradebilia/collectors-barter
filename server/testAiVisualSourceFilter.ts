@@ -97,6 +97,44 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
   };
 }
 
+const DECLARED_VARIANT_PATTERNS = [
+  /\bmexican\b/i,
+  /\bcanadian\b/i,
+  /\b(?:foil|holofoil|chrome)\b/i,
+  /\b(?:reprint|facsimile)\b/i,
+  /\b(?:\d+(?:st|nd|rd|th)|second|third|fourth|fifth|sixth)\s+printing\b/i,
+  /\b(?:variant|incentive|exclusive|virgin|blank cover|sketch cover|edition)\b/i,
+  /\b(?:signed|autographed|signature)\b/i,
+];
+
+function extractTargetTitle(metadata: string): string {
+  return metadata.match(/(?:^|;)\s*title=([^;]*)/i)?.[1]?.trim() ?? "";
+}
+
+/**
+ * Marketplace titles sometimes declare a different printing or regional edition
+ * more clearly than the thumbnail. These are transparent identity warnings, not
+ * silent deletions and not a replacement for the AI image comparison.
+ */
+export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
+  listings: T[],
+  targetMetadata: string,
+): VisualSourceReview[] {
+  const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
+  return listings.flatMap((listing, candidateIndex) => {
+    const title = String(listing.title ?? "");
+    const conflict = DECLARED_VARIANT_PATTERNS.find((pattern) => pattern.test(title) && !pattern.test(targetTitle));
+    if (!conflict) return [];
+    const phrase = title.match(conflict)?.[0] ?? "declared variant";
+    return [{
+      candidateIndex,
+      verdict: "mismatch" as const,
+      confidence: "high" as const,
+      rationale: `Declared identity conflict in marketplace title: ${phrase}. Candidate retained for manual review.`,
+    }];
+  });
+}
+
 export function buildVisualSourceFilterNote(
   sourceLabel: string,
   result: {
@@ -177,16 +215,17 @@ export async function filterVisualSourceCandidates<
         },
       },
     } as const;
-    const reviews: VisualSourceReview[] = [];
+    const reviews: VisualSourceReview[] = buildDeclaredIdentityReviews(args.listings, args.targetMetadata);
     let completedBatches = 0;
     let lastError: unknown;
-    // Keep each request very small so the model can inspect cover art and return a rationale for every image.
-    for (let offset = 0; offset < candidates.length; offset += 2) {
-      const batch = candidates.slice(offset, offset + 2);
+    // Review one candidate at a time so the model must inspect that cover and cannot
+    // omit a difficult candidate while answering for a batch.
+    for (let offset = 0; offset < candidates.length; offset += 1) {
+      const batch = candidates.slice(offset, offset + 1);
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are the strict visual identity reviewer for ${args.sourceLabel}. Compare the target image with every numbered candidate and return exactly one review for every candidate in this batch. This is not a broad category check: for comics/cards/collectibles compare the visible cover or front design, title, issue/card number, language, edition/printing/variant, and grader/grade when visible. A candidate is a mismatch when it visibly represents a different cover, issue, language, edition, printing, variant, or object—even if it is the same general series or character. Candidate title text is evidence: terms such as Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, or a different issue must be treated as conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Only use rough_match when the identity is visually compatible but the image is incomplete; use unreadable only when the image cannot be inspected. Return JSON only: {"reviews":[{"candidateIndex":0,"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
+          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. Compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected. Return exactly one JSON review for candidate ${batch[0].candidateIndex}: {"reviews":[{"candidateIndex":${batch[0].candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "auto" } },
@@ -214,6 +253,21 @@ export async function filterVisualSourceCandidates<
     }
     if (!completedBatches) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     const uniqueReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
+    const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
+    // Never leave an image appearing implicitly accepted because a provider omitted
+    // its row. An absent response is explicitly unreadable/needs manual review.
+    for (const candidate of candidates) {
+      if (!reviewByIndex.has(candidate.candidateIndex)) {
+        const fallback: VisualSourceReview = {
+          candidateIndex: candidate.candidateIndex,
+          verdict: "unreadable",
+          confidence: "low",
+          rationale: "The visual model returned no usable decision for this candidate; manual image review is required.",
+        };
+        uniqueReviews.push(fallback);
+        reviewByIndex.set(candidate.candidateIndex, fallback);
+      }
+    }
     const applied = applyVisualSourceReviews(args.listings, uniqueReviews, candidates.length);
     return {
       ...applied,

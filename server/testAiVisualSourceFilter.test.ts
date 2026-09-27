@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyVisualSourceReviews,
+  buildDeclaredIdentityReviews,
   normalizeVisualSourceReviews,
 } from "./testAiVisualSourceFilter";
 
@@ -42,5 +43,19 @@ describe("visual source filter", () => {
       evidenceDisposition: "warning_review",
     });
     expect(result.removedCount).toBe(0);
+  });
+
+  it("flags declared regional, printing, and variant conflicts before AI uncertainty can hide them", () => {
+    const reviews = buildDeclaredIdentityReviews(
+      [
+        { title: "Edge of Spider-Verse #2 Mexican Foil Reprint" },
+        { title: "Edge of Spider-Verse #2 CGC 9.8" },
+        { title: "Edge of Spider-Verse #2 Fifth Printing Variant" },
+      ],
+      "title=Edge of Spider-Verse #2 CGC 9.8; category=comics; grade=9.8",
+    );
+    expect(reviews.map((review) => review.candidateIndex)).toEqual([0, 2]);
+    expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(reviews[0].rationale).toContain("Declared identity conflict");
   });
 });
