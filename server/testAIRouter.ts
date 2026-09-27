@@ -832,18 +832,18 @@ export const testAIRouter = router({
       }
 
       try {
-        // Build a broader query for eBay fetch (without grade) to get more results,
-        // then filter by grade internally for accuracy
+        // Build bounded complementary eBay query tiers. Direct eBay search can
+        // rank abbreviated titles, exact-grade phrases, and provider-less forms
+        // differently, so one broad query can miss valid fixed-price listings.
+        // Union every tier first, then apply deterministic identity filters.
         const targetGrade = extractGradeFromQuery(query);
-        const broadQuery = buildEbayBrowseQuery(query);
-        const fetchQuery = broadQuery !== query ? broadQuery : query;
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
-          : [fetchQuery];
+          : buildSoldCompsQueryCandidates(query);
         const fetchedByQuery = new Map<string, any>();
         for (const candidate of searchQueries) {
           const candidateQuery = buildEbayBrowseQuery(candidate, {
-            preserveGrade: input.category === 'sports_cards',
+            preserveGrade: true,
           });
           const candidateResults = await fetchEbayListings(candidateQuery || candidate, token, 100);
           candidateResults.forEach((item: any) => {
