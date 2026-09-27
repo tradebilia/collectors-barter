@@ -578,11 +578,14 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
 function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const [showVisualReview, setShowVisualReview] = useState(false);
   const { data, isLoading } = trpc.testAI.getSoldCompsData.useQuery(
     { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
   const auditLedger = data?.audit?.ledger ?? [];
+  const visualReviewRows = (data?.listings ?? []).map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
+  const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -593,6 +596,14 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
+      {data?.visualFilter && <div className="flex items-center justify-between gap-2 rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
+        <div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review: {visualReviewRows.length} candidate image{visualReviewRows.length === 1 ? '' : 's'} reviewed</p><p className="text-[9px] text-cyan-200/80">{visualMismatchRows.length} visual mismatch flag{visualMismatchRows.length === 1 ? '' : 's'} · flags are retained for review, not silently deleted</p></div>
+        <button type="button" onClick={() => setShowVisualReview((visible) => !visible)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{showVisualReview ? 'Hide image checks' : 'View image checks'}</button>
+      </div>}
+      {showVisualReview && data?.visualFilter && <div className="rounded border border-cyan-700/30 bg-gray-950/50 p-2 space-y-2">
+        <p className="text-[9px] text-gray-400">The AI compares the target image with sold thumbnails. A mismatch is an advisory flag; the sold record remains visible and cannot affect valuation until identity review is resolved.</p>
+        {visualReviewRows.length === 0 ? <p className="text-[10px] text-gray-500">No candidate images received a decisive visual result. Missing or unreadable images are retained.</p> : <div className="max-h-64 space-y-1 overflow-y-auto">{visualReviewRows.map(({ listing, index }: { listing: any; index: number }) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start gap-2 rounded bg-gray-900/70 p-1.5"><div className="flex shrink-0 gap-1">{item.primaryPhotoUrl && <img src={item.primaryPhotoUrl} alt="Target item" className="h-10 w-10 rounded object-cover" />} {listing.imageUrl && <img src={listing.imageUrl} alt="Sold candidate" className="h-10 w-10 rounded object-cover" />}</div><div className="min-w-0"><p className={`text-[9px] font-semibold ${listing.visualReviewStatus === 'mismatch' ? 'text-red-300' : listing.visualReviewStatus === 'match' ? 'text-emerald-300' : 'text-amber-300'}`}>{String(listing.visualReviewStatus).replace(/_/g, ' ')}{listing.visualReviewRationale ? ` · ${listing.visualReviewRationale}` : ''}</p><p className="truncate text-[9px] text-gray-300">{listing.title}</p><p className="text-[8px] text-gray-500">{listing.visualReviewStatus === 'mismatch' ? 'Flagged for manual review — retained in evidence ledger' : 'Retained candidate'}</p></div></div>)}</div>}
+      </div>}
       {data?.audit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[10px] text-violet-100">
         <p className="font-semibold">Evidence coverage — {data.audit.rawReceived} unique candidates across {data.audit.retrievalCoverage?.length ?? 0} query tier{data.audit.retrievalCoverage?.length === 1 ? '' : 's'}</p>
         <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} not visually reviewed</p>
