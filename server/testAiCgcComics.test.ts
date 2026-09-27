@@ -33,6 +33,27 @@ describe('CGC Comics sandbox integration', () => {
     expect(result.population.total).toBe(17457);
     expect(result.population.gradeCounts.some((entry: any) => entry.grade === '9.8' && entry.count === 142)).toBe(true);
     expect(result.population.gradeCounts.some((entry: any) => entry.grade === '9.6' && entry.count === 17)).toBe(true);
+    expect(result.population.gradeCounts.some((entry: any) => entry.label === 'Universal · Grade 9.8' && entry.count === 142)).toBe(true);
+    expect(result.population.gradeCounts.some((entry: any) => entry.label === 'Signature Series · Grade 9.6' && entry.count === 17)).toBe(true);
+  });
+
+  it('keeps Parse.bot label categories distinct and derives the total when needed', () => {
+    const result = normalizeCgcComicsResponse('3726099001', {}, {
+      data: {
+        label_categories: [
+          { label_category: 'Universal', total_graded: 8220, grades: { '9.8': 4015 } },
+          { label_category: 'Signature Series', total_graded: 789, grades: { '9.8': 421 } },
+          { label_category: 'CGCxJSA', total_graded: 48, grades: { '9.8': 14 } },
+        ],
+      },
+    });
+
+    expect(result.population.total).toBe(9057);
+    expect(result.population.gradeCounts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Universal · Grade 9.8', grade: '9.8', count: 4015 }),
+      expect.objectContaining({ label: 'Signature Series · Grade 9.8', grade: '9.8', count: 421 }),
+      expect.objectContaining({ label: 'CGCxJSA · Grade 9.8', grade: '9.8', count: 14 }),
+    ]));
   });
 
   it('only exposes CGC source for Comics with a CGC certificate', () => {

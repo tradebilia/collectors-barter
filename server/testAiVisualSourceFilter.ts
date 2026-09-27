@@ -167,12 +167,7 @@ export async function filterVisualSourceCandidates<
         image_url: { url: candidate.imageUrl, detail: "auto" },
       });
     }
-    const response = await invokeLLM({
-      model: "gpt-5-mini",
-      messages: [{ role: "user", content }],
-      maxCompletionTokens: 1800,
-      temperature: 0,
-      response_format: {
+    const strictResponseFormat = {
         type: "json_schema",
         json_schema: {
           name: "visual_source_filter",
@@ -210,18 +205,21 @@ export async function filterVisualSourceCandidates<
             additionalProperties: false,
           },
         },
-      },
-    });
-    const raw = response.choices[0]?.message?.content;
-    const text =
-      typeof raw === "string"
-        ? raw
-        : Array.isArray(raw)
-          ? raw
-              .filter((part): part is TextContent => part.type === "text")
-              .map(part => part.text)
-              .join("\n")
-          : "";
+      } as const;
+    let text = "";
+    let lastError: unknown;
+    for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+      try {
+        const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
+        const raw = response.choices[0]?.message?.content;
+        text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+        if (text.trim()) break;
+        throw new Error("The vision model returned no structured content");
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    if (!text.trim()) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     const reviews = normalizeVisualSourceReviews(
       parseAnalyzerResponse(text),
       args.listings.length

@@ -197,16 +197,23 @@ function normalizeCgcGradeCounts(population: any): Array<{ label: string; grade?
   const visit = (value: any, category?: string): void => {
     if (Array.isArray(value)) { value.forEach((entry) => visit(entry, category)); return; }
     if (!value || typeof value !== 'object') return;
+    const localCategory = (category ?? String(value.label_category ?? value.labelCategory ?? value.label ?? '').trim()) || undefined;
     const explicitGrade = value.grade ?? value.Grade ?? value.grade_value ?? value.gradeValue;
     const explicitCount = value.count ?? value.total ?? value.population ?? value.copies;
-    if (explicitGrade != null && explicitCount != null) add(category ? `${category} · Grade ${explicitGrade}` : `Grade ${explicitGrade}`, explicitCount, String(explicitGrade));
+    if (explicitGrade != null && explicitCount != null) add(localCategory ? `${localCategory} · Grade ${explicitGrade}` : `Grade ${explicitGrade}`, explicitCount, String(explicitGrade));
     for (const [key, child] of Object.entries(value)) {
       if (/^(?:grade[_ ]?)?\d+(?:\.\d+)?$/i.test(key)) {
-        add(category ? `${category} · Grade ${key.replace(/^grade[_ ]?/i, '')}` : `Grade ${key.replace(/^grade[_ ]?/i, '')}`, child, key.replace(/^grade[_ ]?/i, ''));
+        add(localCategory ? `${localCategory} · Grade ${key.replace(/^grade[_ ]?/i, '')}` : `Grade ${key.replace(/^grade[_ ]?/i, '')}`, child, key.replace(/^grade[_ ]?/i, ''));
       } else if (['grades', 'grade_counts', 'gradeCounts', 'label_categories', 'labelCategories', 'population', 'breakdown'].includes(key)) {
-        visit(child, category);
+        if (key === 'label_categories' || key === 'labelCategories') {
+          if (Array.isArray(child)) child.forEach((entry) => visit(entry, String(entry?.label_category ?? entry?.labelCategory ?? entry?.label ?? '').trim() || localCategory));
+          else if (child && typeof child === 'object') Object.entries(child).forEach(([label, entry]) => visit(entry, label));
+          else visit(child, localCategory);
+        } else {
+          visit(child, localCategory);
+        }
       } else if (child && typeof child === 'object' && !['total', 'total_graded', 'totalGraded'].includes(key)) {
-        visit(child, category || key.replace(/[_-]/g, ' '));
+        visit(child, localCategory || key.replace(/[_-]/g, ' '));
       }
     }
   };
@@ -218,6 +225,17 @@ export function normalizeCgcComicsResponse(certNumber: string, certPayload: any,
   const cert = certPayload?.data ?? certPayload ?? {};
   const population = populationPayload?.data ?? populationPayload ?? {};
   const gradeCounts = normalizeCgcGradeCounts(population);
+  const labelCategories = population.label_categories ?? population.labelCategories;
+  const categoryTotals = Array.isArray(labelCategories)
+    ? labelCategories.map((entry: any) => entry?.total_graded ?? entry?.total ?? entry?.count)
+    : labelCategories && typeof labelCategories === 'object'
+      ? Object.values(labelCategories).map((entry: any) => entry?.total_graded ?? entry?.total ?? entry?.count)
+      : [];
+  const derivedTotal = categoryTotals.reduce((sum: number, value: unknown) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? sum + numeric : sum;
+  }, 0);
+  const explicitTotal = firstDefined(population.total, population.Total, population.total_graded, population.grade_total, population.totalGraded);
   return {
     certNumber,
     title: firstDefined(cert.title, cert.comic_title, cert.name),
@@ -237,7 +255,7 @@ export function normalizeCgcComicsResponse(certNumber: string, certPayload: any,
     details: cert.details && typeof cert.details === 'object' ? cert.details : {},
     population: {
       gradeCounts: Array.isArray(gradeCounts) ? gradeCounts : [],
-      total: firstDefined(population.total, population.Total, population.total_graded, population.grade_total, population.totalGraded),
+      total: explicitTotal ?? (derivedTotal > 0 ? derivedTotal : null),
       raw: population,
     },
   };
