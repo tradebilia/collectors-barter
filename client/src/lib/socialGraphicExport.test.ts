@@ -153,6 +153,7 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("drawCompactCashOnlyTradeAlert(context, draft, platform");
     expect(exporterSource).toContain('drawCashOnlyVisual(context, "left", width, laneY, laneHeight, scale, true, cashImage)');
     expect(exporterSource).toContain("const itemCenterX = width * 0.79");
+    expect(exporterSource).toContain("const captionY = laneY + itemHeight + (isTall ? 28 : 34) * scale");
     expect(exporterSource).toContain("scale * (isTall ? 1.08 : 1.25), false, true");
     expect(exporterSource).toContain("SOLD");
   });

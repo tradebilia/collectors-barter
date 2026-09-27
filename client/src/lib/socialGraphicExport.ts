@@ -2128,7 +2128,9 @@ function drawCompactCashOnlyTradeAlert(
   const itemWidth = (isTall ? 0.27 : 0.23) * width;
   const itemHeight = laneHeight * (isTall ? 0.72 : 0.82);
   const itemCenterX = width * 0.79;
-  const captionY = laneY + itemHeight + 16 * scale;
+  // Keep the listing title visibly separated from the item frame; the extra
+  // lead-in is especially important when the slab reaches the caption zone.
+  const captionY = laneY + itemHeight + (isTall ? 28 : 34) * scale;
   const footerY = isTall ? height - 52 * scale : height - 30 * scale;
 
   drawCinematicTradeScene(
