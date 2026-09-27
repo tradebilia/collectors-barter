@@ -1540,7 +1540,7 @@ export const tradeFlowRouter = router({
       // Get other user info
       const otherUserId = proposal.requesterId === viewerUserId ? proposal.recipientId : proposal.requesterId;
       const [otherUserResult] = await db.execute(
-		  sql`SELECT u.id, u.username, u.name, u.paypalVerified, up.displayName, up.avatarUrl, up.bio,
+		  sql`SELECT u.id, u.username, u.name, u.email, u.paypalVerified, up.displayName, up.avatarUrl, up.bio,
           (SELECT AVG(rating) FROM tradeReviews WHERE revieweeId = u.id) as avgRating,
           (SELECT COUNT(*) FROM tradeReviews WHERE revieweeId = u.id) as reviewCount
         FROM users u
@@ -1550,7 +1550,7 @@ export const tradeFlowRouter = router({
       let requesterUser: any = null;
       if (isAdminReadOnly) {
         const [requesterResult] = await db.execute(
-          sql`SELECT u.id, u.username, u.name, up.displayName, up.avatarUrl
+          sql`SELECT u.id, u.username, u.name, u.email, u.paypalVerified, up.displayName, up.avatarUrl
               FROM users u LEFT JOIN userProfiles up ON up.userId = u.id
               WHERE u.id = ${proposal.requesterId}`
         );
@@ -1596,6 +1596,16 @@ export const tradeFlowRouter = router({
             ORDER BY ttn.submittedAt ASC`
         );
         trackingNumbers = (trackingResult as any) || [];
+      }
+
+      let cashPayments: any[] = [];
+      if (isAdminReadOnly) {
+        const [cashPaymentRows] = await db.execute(
+          sql`SELECT id, payerUserId AS payerId, payeeUserId AS payeeId, amount, paymentMethod, status,
+            paymentMethodSelectedAt, sentAt, receivedAt, createdAt
+          FROM tradePayments WHERE proposalId = ${input.proposalId} ORDER BY createdAt ASC, id ASC`
+        );
+        cashPayments = (cashPaymentRows as unknown as any[]) || [];
       }
 
       let trackingValidations: any[] = [];
@@ -1658,6 +1668,7 @@ export const tradeFlowRouter = router({
         myContactInfo,
         theirContactInfo,
         trackingNumbers,
+        cashPayments,
         trackingValidations,
         receiptConfirmations,
         myReceiptConfirmed,

@@ -42,4 +42,17 @@ describe("Admin Trades read-only Trade Room inspection", () => {
     expect(routerSource).toContain("if (proposal.recipientId !== userId && proposal.requesterId !== userId)");
     expect(tradeRoomSource).toContain("enabled: proposalId > 0 && !adminViewRequested");
   });
+
+  it("makes the final exchange and cash direction explicit for administrators", async () => {
+    const [dashboardSource, tradeRoomSource, routerSource] = await readSources();
+    expect(tradeRoomSource).toContain("What changed hands");
+    expect(tradeRoomSource).toContain("Cash-only settlement");
+    expect(tradeRoomSource).toContain("Cash payment status");
+    expect(tradeRoomSource).toContain("Gives in this trade");
+    expect(tradeRoomSource).toContain("Trade record & audit context");
+    expect(tradeRoomSource).toContain("Email:");
+    expect(routerSource).toContain("cashPayments");
+    expect(routerSource).toContain("paymentMethodSelectedAt, sentAt, receivedAt");
+    expect(dashboardSource).toContain("Cash adjustment");
+  });
 });
