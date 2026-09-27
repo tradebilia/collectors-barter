@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, getSoldCompsApiKey } from './testAIRouter';
+import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByNumber, getSoldCompsApiKey } from './testAIRouter';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -36,5 +36,11 @@ describe('Sold-Comps API key validation', () => {
     ];
 
     expect(filterListingsByCertificationCompany(listings, 'CGC')).toEqual([listings[0]]);
+  });
+
+  it('accepts a comic title that writes the issue as a bare number before CGC', () => {
+    const listing = { title: 'Edge Of The Spider-verse 2 Cgc 9.8 1st spider-Gwen white pages' };
+
+    expect(filterListingsByNumber([listing], '2')).toEqual([listing]);
   });
 });

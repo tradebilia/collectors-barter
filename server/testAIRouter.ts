@@ -234,7 +234,15 @@ export function normalizeCgcComicsResponse(certNumber: string, certPayload: any,
 function extractIssueFromTitle(title: string): string | null {
   // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
   const match = title.match(/#(\d+)/);
-  return match ? match[1] : null;
+  if (match) return match[1];
+  // eBay frequently writes comics as “Spider-Verse 2 CGC 9.8” rather than
+  // “Spider-Verse #2 CGC 9.8”. Only accept a standalone number immediately
+  // before the grading company (or an explicit issue/no./number label) so a
+  // year or the decimal grade is not mistaken for the issue.
+  const labeled = title.match(/\b(?:issue|no\.?|number)\s*#?\s*(\d+)\b/i);
+  if (labeled) return labeled[1];
+  const beforeGrader = title.match(/\b(\d{1,4})\b\s+(?=(?:CGC|CBCS|PSA|BGS|PCGS|SGC)\b)/i);
+  return beforeGrader ? beforeGrader[1] : null;
 }
 
 // Filter listings to match the expected issue number (comics) or card number (sports cards)
