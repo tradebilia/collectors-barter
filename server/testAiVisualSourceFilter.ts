@@ -149,90 +149,76 @@ export async function filterVisualSourceCandidates<
       note: `No ${args.sourceLabel.toLowerCase()} candidate images were available; all candidates were retained.`,
     };
   try {
-    const content: Array<TextContent | ImageContent> = [
-      {
-        type: "text",
-        text: `You are the final visual identity filter for ${args.sourceLabel} market candidates. Compare the target listing image to each numbered candidate. Judge broad identity and object type, not exact photography, and never reject only because of condition, crop, or background. Return JSON only: {"reviews":[{"candidateIndex":0,"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. A mismatch should be high-confidence only when the candidate is clearly a different object or item type. Target metadata: ${args.targetMetadata}`,
-      },
-      { type: "text", text: "TARGET LISTING IMAGE:" },
-      { type: "image_url", image_url: { url: target, detail: "auto" } },
-    ];
-    for (const candidate of candidates) {
-      content.push({
-        type: "text",
-        text: `CANDIDATE ${candidate.candidateIndex}: title=${candidate.item.title ?? "unknown"}`,
-      });
-      content.push({
-        type: "image_url",
-        image_url: { url: candidate.imageUrl, detail: "auto" },
-      });
-    }
     const strictResponseFormat = {
-        type: "json_schema",
-        json_schema: {
-          name: "visual_source_filter",
-          strict: true,
-          schema: {
-            type: "object",
-            properties: {
-              reviews: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    candidateIndex: { type: "integer" },
-                    verdict: {
-                      type: "string",
-                      enum: ["match", "rough_match", "mismatch", "unreadable"],
-                    },
-                    confidence: {
-                      type: "string",
-                      enum: ["high", "medium", "low"],
-                    },
-                    rationale: { type: "string" },
-                  },
-                  required: [
-                    "candidateIndex",
-                    "verdict",
-                    "confidence",
-                    "rationale",
-                  ],
-                  additionalProperties: false,
+      type: "json_schema",
+      json_schema: {
+        name: "visual_source_filter",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            reviews: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  candidateIndex: { type: "integer" },
+                  verdict: { type: "string", enum: ["match", "rough_match", "mismatch", "unreadable"] },
+                  confidence: { type: "string", enum: ["high", "medium", "low"] },
+                  rationale: { type: "string" },
                 },
+                required: ["candidateIndex", "verdict", "confidence", "rationale"],
+                additionalProperties: false,
               },
             },
-            required: ["reviews"],
-            additionalProperties: false,
           },
+          required: ["reviews"],
+          additionalProperties: false,
         },
-      } as const;
-    let text = "";
+      },
+    } as const;
+    const reviews: VisualSourceReview[] = [];
+    let completedBatches = 0;
     let lastError: unknown;
-    for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
-      try {
-        const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
-        const raw = response.choices[0]?.message?.content;
-        text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
-        if (text.trim()) break;
-        throw new Error("The vision model returned no structured content");
-      } catch (error) {
-        lastError = error;
+    // Keep each request small enough for the model to return a rationale for every image.
+    for (let offset = 0; offset < candidates.length; offset += 5) {
+      const batch = candidates.slice(offset, offset + 5);
+      const content: Array<TextContent | ImageContent> = [
+        {
+          type: "text",
+          text: `You are the final visual identity filter for ${args.sourceLabel} market candidates. Compare the target listing image to each numbered candidate. Judge broad identity and object type, not exact photography, and never reject only because of condition, crop, or background. Return JSON only: {"reviews":[{"candidateIndex":0,"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Return exactly one review for every candidate in this batch. A mismatch should be high-confidence only when the candidate is clearly a different object or item type. Target metadata: ${args.targetMetadata}`,
+        },
+        { type: "text", text: "TARGET LISTING IMAGE:" },
+        { type: "image_url", image_url: { url: target, detail: "auto" } },
+      ];
+      for (const candidate of batch) {
+        content.push({ type: "text", text: `CANDIDATE ${candidate.candidateIndex}: title=${candidate.item.title ?? "unknown"}` });
+        content.push({ type: "image_url", image_url: { url: candidate.imageUrl, detail: "auto" } });
       }
+      let text = "";
+      for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+        try {
+          const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
+          const raw = response.choices[0]?.message?.content;
+          text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          if (text.trim()) break;
+          throw new Error("The vision model returned no structured content");
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      if (!text.trim()) continue;
+      const batchReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(text), args.listings.length);
+      reviews.push(...batchReviews);
+      completedBatches += 1;
     }
-    if (!text.trim()) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
-    const reviews = normalizeVisualSourceReviews(
-      parseAnalyzerResponse(text),
-      args.listings.length
-    );
-    const applied = applyVisualSourceReviews(
-      args.listings,
-      reviews,
-      candidates.length
-    );
+    if (!completedBatches) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
+    const uniqueReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
+    const applied = applyVisualSourceReviews(args.listings, uniqueReviews, candidates.length);
     return {
       ...applied,
       status: "applied",
-      reviews,
+      reviews: uniqueReviews,
       note: buildVisualSourceFilterNote(args.sourceLabel, applied),
     };
   } catch {
