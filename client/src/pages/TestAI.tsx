@@ -647,14 +647,19 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
   );
 }
 
-function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel }: { data: any; targetImageUrl?: string | null; sourceLabel: string }) {
-  const [open, setOpen] = useState(false);
+function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: controlledOpen, onOpenChange }: { data: any; targetImageUrl?: string | null; sourceLabel: string; open?: boolean; onOpenChange?: (open: boolean) => void }) {
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = (nextOpen: boolean) => {
+    if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
   const candidates = data?.listings ?? data?.sales ?? data?.data?.items ?? [];
   const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus);
   const mismatches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
   if (!data?.visualFilter) return null;
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2 space-y-2">
-    <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review — {sourceLabel}</p><p className="text-[9px] text-cyan-200/80">{data.visualFilter.reviewedCount ?? reviewed.length} reviewed · {mismatches.length} mismatch flag{mismatches.length === 1 ? '' : 's'} · retained for review</p></div><button type="button" onClick={() => setOpen((value) => !value)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{open ? 'Hide image checks' : 'View image checks'}</button></div>
+    <div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review — {sourceLabel}</p><p className="text-[9px] text-cyan-200/80">{data.visualFilter.reviewedCount ?? reviewed.length} reviewed · {mismatches.length} mismatch flag{mismatches.length === 1 ? '' : 's'} · retained for review</p></div><button type="button" onClick={() => setOpen(!open)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">{open ? 'Hide image checks' : 'View image checks'}</button></div>
     {data.visualFilter.note && <p className="text-[9px] text-cyan-200/80">{data.visualFilter.note}</p>}
     {open && <div className="space-y-1.5">{reviewed.length === 0 ? <p className="text-[10px] text-gray-500">No decisive image result was returned. Candidates remain retained.</p> : <div className="max-h-56 space-y-1 overflow-y-auto">{reviewed.map(({ listing, index }: { listing: any; index: number }) => { const accepted = listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match'; const mismatch = listing.visualReviewStatus === 'mismatch'; return <div key={`${listing.id || listing.saleId || listing.url || listing.title}-${index}`} className="flex items-start gap-2 rounded bg-gray-900/70 p-1.5"><div className="flex shrink-0 gap-1">{targetImageUrl && <img src={targetImageUrl} alt="Target item" className="h-9 w-9 rounded object-cover" />} {(listing.imageUrl || listing.thumbnailUrl) && <img src={listing.imageUrl || listing.thumbnailUrl} alt="Marketplace candidate" className="h-9 w-9 rounded object-cover" />}</div><div className="min-w-0"><p className={`flex items-center gap-1 text-[9px] font-semibold ${mismatch ? 'text-red-300' : accepted ? 'text-emerald-300' : 'text-amber-300'}`}><span aria-label={mismatch ? 'Not accepted due to image mismatch' : accepted ? 'Accepted visual match' : 'Needs image review'} className="text-sm leading-none">{mismatch ? '✕' : accepted ? '✓' : '?'}</span><span>{String(listing.visualReviewStatus).replace(/_/g, ' ')}{listing.visualReviewRationale ? ` · ${listing.visualReviewRationale}` : ''}</span></p><p className="truncate text-[9px] text-gray-300">{listing.title || 'Untitled marketplace candidate'}</p><p className="text-[8px] text-gray-500">{mismatch ? 'Not accepted for valuation — retained for manual review' : accepted ? 'Accepted visual match' : 'Unresolved — retained candidate'}</p></div></div>; })}</div>}</div>}
   </div>;
@@ -663,10 +668,15 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel }: { data: 
 // ─── eBay Active Listings Section ────────────────────────────────────────────
 function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const [showVisualMatchMetrics, setShowVisualMatchMetrics] = useState(false);
   const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
     { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
+  useEffect(() => setShowVisualMatchMetrics(false), [item.id, item.title]);
+  const visibleMetrics = showVisualMatchMetrics && data?.visualMatchMetrics ? data.visualMatchMetrics : data?.metrics;
+  const showingVisualMatchMetrics = showVisualMatchMetrics && !!data?.visualMatchMetrics;
+  const visualMatchCount = data?.visualMatchMetrics?.count ?? 0;
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -674,25 +684,27 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛒 eBay Active Listings</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
-      <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · Price metrics</p>
+      <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · {showingVisualMatchMetrics ? 'Visual-match-only asking-price metrics' : 'Full-market asking-price context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
-      {data?.metrics && (
+      {showVisualMatchMetrics && !data?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
+      {visibleMetrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
-            { label: 'Avg', value: formatWholeDollar(data.metrics.avg) },
-            { label: 'Median', value: formatWholeDollar(data.metrics.median) },
-            { label: 'Range', value: `${formatWholeDollar(data.metrics.min)}–${formatWholeDollar(data.metrics.max)}` },
-            { label: 'Confidence', value: data.metrics.confidence.toUpperCase() },
+            { label: showingVisualMatchMetrics ? 'Avg Match' : 'Avg', value: formatWholeDollar(visibleMetrics.avg) },
+            { label: showingVisualMatchMetrics ? 'Median Match' : 'Median', value: formatWholeDollar(visibleMetrics.median) },
+            { label: showingVisualMatchMetrics ? 'Match Range' : 'Range', value: `${formatWholeDollar(visibleMetrics.min)}–${formatWholeDollar(visibleMetrics.max)}` },
+            { label: 'Confidence', value: visibleMetrics.confidence.toUpperCase() },
           ].map(m => (
             <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
               <p className="text-gray-500 text-[9px] uppercase mb-0.5">{m.label}</p>
-              <p className={`font-semibold ${m.label === 'Confidence' ? (data.metrics!.confidence === 'high' ? 'text-green-400' : data.metrics!.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
+              <p className={`font-semibold ${m.label === 'Confidence' ? (visibleMetrics.confidence === 'high' ? 'text-green-400' : visibleMetrics.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
             </div>
           ))}
         </div>
       )}
-      <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" />
+      {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
+      <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />
       {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} results</p>}
       {data?.listings && data.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">

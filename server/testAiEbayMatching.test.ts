@@ -3,6 +3,7 @@ import {
   extractGradeFromQuery,
   extractGradeFromTitle,
   filterListingsByGrade,
+  computeVisualMatchMetrics,
 } from "./testAIRouter";
 
 describe("Test AI eBay graded-item matching", () => {
@@ -34,5 +35,15 @@ describe("Test AI eBay graded-item matching", () => {
     expect(filterListingsByGrade(listings, "MS65").map((item) => item.title)).toEqual([
       "1921 Peace Dollar PCGS MS65 CAC",
     ]);
+  });
+
+  it("calculates visual-match-only metrics from accepted image reviews", () => {
+    const metrics = computeVisualMatchMetrics([
+      { price: { value: '100' }, visualReviewStatus: 'match' },
+      { price: { value: '120' }, visualReviewStatus: 'rough_match' },
+      { price: { value: '780' }, visualReviewStatus: 'mismatch' },
+      { price: { value: '350' }, visualReviewStatus: 'unreadable' },
+    ]);
+    expect(metrics).toMatchObject({ count: 2, avg: 110, median: 110, min: 100, max: 120 });
   });
 });

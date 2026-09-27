@@ -407,6 +407,17 @@ export function computeMetrics(summaries: any[]) {
   return { avg, median, min, max, spreadPct, count, confidence };
 }
 
+/**
+ * A transparent secondary view for active-market context: it uses only records
+ * whose individual image comparison accepted the target identity. The full
+ * market metrics remain separately available for review and are never mutated.
+ */
+export function computeVisualMatchMetrics(summaries: any[]) {
+  return computeMetrics(summaries.filter((item: any) =>
+    item.visualReviewStatus === 'match' || item.visualReviewStatus === 'rough_match',
+  ));
+}
+
 export function getSoldCompsApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
   return env.SOLD_COMPS_API_KEY || env.SOLID_COMPS_API_KEY || null;
 }
@@ -866,6 +877,7 @@ export const testAIRouter = router({
         });
         const visuallyFilteredSummaries = visualActiveFilter.listings;
         const metrics = computeMetrics(visuallyFilteredSummaries);
+        const visualMatchMetrics = computeVisualMatchMetrics(visuallyFilteredSummaries);
         return {
           query,
           debug: {
@@ -892,6 +904,7 @@ export const testAIRouter = router({
             evidenceDisposition: s.evidenceDisposition ?? null,
           })),
           metrics,
+          visualMatchMetrics,
           visualFilter: visualActiveFilter,
           error: null,
         };
