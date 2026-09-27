@@ -2050,11 +2050,13 @@ function drawCinematicTradeGroup(
   });
 }
 
-function drawCashOnlyVisual(context: CanvasRenderingContext2D, side: "left" | "right", width: number, imageY: number, imageHeight: number, scale: number) {
-  const groupLeft = side === "left" ? width * 0.055 : width * 0.615;
-  const groupWidth = width * 0.36;
-  const cardWidth = groupWidth * 0.88;
-  const cardHeight = Math.min(imageHeight * 0.72, 270 * scale);
+function drawCashOnlyVisual(context: CanvasRenderingContext2D, side: "left" | "right", width: number, imageY: number, imageHeight: number, scale: number, compact = false) {
+  const groupLeft = compact
+    ? (side === "left" ? width * 0.07 : width * 0.68)
+    : (side === "left" ? width * 0.055 : width * 0.615);
+  const groupWidth = compact ? width * 0.25 : width * 0.36;
+  const cardWidth = groupWidth * (compact ? 0.78 : 0.88);
+  const cardHeight = Math.min(imageHeight * (compact ? 0.62 : 0.72), (compact ? 170 : 270) * scale);
   const x = groupLeft + (groupWidth - cardWidth) / 2;
   const y = imageY + Math.max(16 * scale, (imageHeight - cardHeight) / 2);
   context.save();
@@ -2081,6 +2083,76 @@ function drawCashOnlyVisual(context: CanvasRenderingContext2D, side: "left" | "r
   context.restore();
 }
 
+/**
+ * Cash-only sales use the approved compact Trade Alert treatment: a small
+ * cash-only panel on the empty side, the real item on the opposite side, and
+ * a restrained SOLD exchange mark in the center. This intentionally avoids
+ * the enlarged cinematic completed-trade scene used for item-for-item deals.
+ */
+function drawCompactCashOnlyTradeAlert(
+  context: CanvasRenderingContext2D,
+  draft: SocialDraft,
+  platform: SocialPlatform,
+  width: number,
+  height: number,
+  images: Array<CanvasImage | null>,
+  themeImages: TradeThemeImages,
+  stageImages: TradeStageImages,
+  brandLogo: CanvasImage | null,
+  brushImage: CanvasImage | null,
+  exchangeLogo: CanvasImage | null,
+) {
+  const scale = width / 1200;
+  const { offered, requested } = getTradeSides(draft);
+  const itemEntry = offered[0] ?? requested[0];
+  if (!itemEntry) return;
+  const itemTheme = getTradeItemTheme(itemEntry.item);
+  const itemStageKey = getTradeAlertStageKey([itemEntry.item]);
+  const isTall = platform === "Instagram" || platform === "Pinterest";
+  const laneY = isTall ? 300 * scale : 250 * scale;
+  const laneHeight = isTall ? Math.min(height * 0.42, 500 * scale) : Math.min(height * 0.42, 270 * scale);
+  const itemWidth = (isTall ? 0.27 : 0.23) * width;
+  const itemHeight = laneHeight * (isTall ? 0.72 : 0.82);
+  const itemCenterX = width * 0.79;
+  const captionY = laneY + itemHeight + 16 * scale;
+  const footerY = isTall ? height - 52 * scale : height - 30 * scale;
+
+  drawCinematicTradeScene(
+    context,
+    width,
+    height,
+    itemTheme,
+    itemTheme,
+    themeImages[itemTheme.assetKey] ?? null,
+    themeImages[itemTheme.assetKey] ?? null,
+    itemStageKey ? stageImages[itemStageKey] ?? null : null,
+    itemStageKey ? stageImages[itemStageKey] ?? null : null,
+    itemStageKey ? stageImages[itemStageKey] ?? null : null,
+    false,
+    getTradeSceneSeed([itemEntry]),
+    getTradeSceneSeed([itemEntry]),
+  );
+  drawCinematicTradeHeader(context, brandLogo, brushImage, width, scale);
+  drawCashOnlyVisual(context, "left", width, laneY, laneHeight, scale, true);
+  drawCinematicTradeItem(
+    context,
+    itemEntry,
+    images[itemEntry.index] ?? null,
+    itemCenterX,
+    laneY,
+    itemWidth,
+    itemHeight,
+    captionY,
+    itemWidth * 1.32,
+    itemCenterX,
+    "center",
+    scale,
+    isTall,
+  );
+  drawCinematicExchangeMark(context, exchangeLogo, width * 0.50, laneY + laneHeight * 0.50, scale * (isTall ? 0.74 : 0.62), false, true);
+  drawCinematicFooterPhrase(context, getSocialFooterPhrase(draft.id || draft.title || "trade-alert", platform), width, footerY, scale);
+}
+
 function drawCompletedTradeCinematic(
   context: CanvasRenderingContext2D,
   draft: SocialDraft,
@@ -2097,6 +2169,10 @@ function drawCompletedTradeCinematic(
   const scale = width / 1200;
   const { offered, requested } = getTradeSides(draft);
   const cashOnlySale = isCashOnlyCompletedTrade(draft.promotion);
+  if (cashOnlySale) {
+    drawCompactCashOnlyTradeAlert(context, draft, platform, width, height, images, themeImages, stageImages, brandLogo, brushImage, exchangeLogo);
+    return;
+  }
   const leftEntry = offered[0];
   const rightEntry = requested[0];
   const leftTheme = getTradeItemTheme(leftEntry?.item ?? { title: "Collectible" });
@@ -2141,7 +2217,6 @@ function drawCompletedTradeCinematic(
   drawCinematicTradeHeader(context, brandLogo, brushImage, width, scale);
   drawCinematicTradeGroup(context, offered, images, "left", width, imageY, imageHeight, scale, isTall);
   drawCinematicTradeGroup(context, requested, images, "right", width, imageY, imageHeight, scale, isTall);
-  if (cashOnlySale) drawCashOnlyVisual(context, offered.length ? "right" : "left", width, imageY, imageHeight, scale);
   drawCinematicExchangeMark(context, exchangeLogo, width / 2, exchangeY, scale * (isTall ? 1.16 : 1), Boolean(draft.promotion?.cashIncluded) && !cashOnlySale, cashOnlySale);
   const footerY = isPinterest ? height * 0.965 : isTall ? height - 52 * scale : height - 30 * scale;
   drawCinematicFooterPhrase(context, footerPhrase, width, footerY, scale);

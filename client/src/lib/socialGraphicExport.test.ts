@@ -145,6 +145,16 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const instagramPlaqueBottomLimit = footerBaselineY - footerClearance");
   });
 
+  it("uses the approved compact item-for-cash Trade Alert composition", () => {
+    expect(exporterSource).toContain("function drawCompactCashOnlyTradeAlert");
+    expect(exporterSource).toContain("if (cashOnlySale) {");
+    expect(exporterSource).toContain("drawCompactCashOnlyTradeAlert(context, draft, platform");
+    expect(exporterSource).toContain('drawCashOnlyVisual(context, "left", width, laneY, laneHeight, scale, true)');
+    expect(exporterSource).toContain("const itemCenterX = width * 0.79");
+    expect(exporterSource).toContain("scale * (isTall ? 0.74 : 0.62), false, true");
+    expect(exporterSource).toContain("SOLD");
+  });
+
   it("centers a compact Trade Value plaque around the label and value instead of the full detail column", () => {
     expect(exporterSource).toContain("const plaqueWidth = Math.min(width, Math.max(valueWidth + horizontalPadding * 2, labelWidth + horizontalPadding * 3.15))");
     expect(exporterSource).toContain("const plaqueX = x + (width - plaqueWidth) / 2");
