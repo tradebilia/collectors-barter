@@ -29,9 +29,9 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('className="min-w-0 bg-[#f4f1ea] py-3 md:col-start-2 md:row-start-1"');
     expect(homeSource).toContain('text-center font-serif text-[2.45rem]');
     expect(carouselSource).toContain('text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-black sm:text-[2.8rem]');
-    expect(homeSource).toContain('className="container relative flex h-[400px] items-center justify-center py-0"');
-    expect(homeSource).toContain('className="flex w-full max-w-6xl -translate-x-[6.5%] items-center justify-center px-4"');
-    expect(homeSource).toContain('className="h-auto w-full max-w-6xl object-contain"');
+    expect(homeSource).toContain('className="container relative flex h-[280px] items-center justify-center py-0 sm:h-[400px]"');
+    expect(homeSource).toContain('className="flex w-[112%] max-w-[480px] -translate-x-[2%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%]"');
+    expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain sm:max-w-6xl"');
     expect(homeSource).toContain("<CategoryBar />");
     expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');
     expect(homeSource).toContain('className="h-8 w-8"');
@@ -98,7 +98,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("Item moves toward the right member");
     expect(carouselSource).toContain("Item moves toward the left member");
     expect(carouselSource).toContain('/manus-storage/trade-quality-seal-transparent_fdff2d58.png');
-    expect(carouselSource).toContain('alt="Trade Quality seal"');
+    expect(carouselSource).toContain('alt="Gold Trade Quality seal"');
+    expect(carouselSource).toContain('invert(73%) sepia(72%) saturate(560%)');
     expect(carouselSource).toContain('className="h-44 w-48 object-contain');
     expect(carouselSource).not.toContain('<svg viewBox="0 0 240 220"');
     expect(carouselSource).not.toContain("textPath");
