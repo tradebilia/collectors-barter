@@ -689,18 +689,21 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
       {showVisualMatchMetrics && !data?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
-        <div className="grid grid-cols-4 gap-2 text-[11px]">
-          {[
-            { label: showingVisualMatchMetrics ? 'Avg Match' : 'Avg', value: formatWholeDollar(visibleMetrics.avg) },
-            { label: showingVisualMatchMetrics ? 'Median Match' : 'Median', value: formatWholeDollar(visibleMetrics.median) },
-            { label: showingVisualMatchMetrics ? 'Match Range' : 'Range', value: `${formatWholeDollar(visibleMetrics.min)}–${formatWholeDollar(visibleMetrics.max)}` },
-            { label: 'Confidence', value: visibleMetrics.confidence.toUpperCase() },
-          ].map(m => (
-            <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
-              <p className="text-gray-500 text-[9px] uppercase mb-0.5">{m.label}</p>
-              <p className={`font-semibold ${m.label === 'Confidence' ? (visibleMetrics.confidence === 'high' ? 'text-green-400' : visibleMetrics.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
-            </div>
-          ))}
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-4 gap-2 text-[11px]">
+            {[
+              { label: showingVisualMatchMetrics ? 'Avg Match' : 'Avg', value: formatWholeDollar(visibleMetrics.avg) },
+              { label: showingVisualMatchMetrics ? 'Median Match' : 'Median', value: formatWholeDollar(visibleMetrics.median) },
+              { label: showingVisualMatchMetrics ? 'Match Range' : 'Range', value: `${formatWholeDollar(visibleMetrics.min)}–${formatWholeDollar(visibleMetrics.max)}` },
+              { label: 'Confidence', value: visibleMetrics.confidence.toUpperCase() },
+            ].map(m => (
+              <div key={m.label} className="bg-gray-900/40 rounded p-1.5 text-center">
+                <p className="text-gray-500 text-[9px] uppercase mb-0.5">{m.label}</p>
+                <p className={`font-semibold ${m.label === 'Confidence' ? (visibleMetrics.confidence === 'high' ? 'text-green-400' : visibleMetrics.confidence === 'medium' ? 'text-yellow-400' : 'text-red-400') : 'text-white'}`}>{m.value}</p>
+              </div>
+            ))}
+          </div>
+          {visibleMetrics.confidenceReason && <p className="rounded border border-slate-700/50 bg-slate-950/35 px-2 py-1.5 text-[9px] leading-snug text-slate-300"><strong className="text-slate-100">Confidence reason:</strong> {visibleMetrics.confidenceReason}</p>}
         </div>
       )}
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}

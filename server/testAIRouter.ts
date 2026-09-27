@@ -404,7 +404,18 @@ export function computeMetrics(summaries: any[]) {
   const max = Math.round(final[count - 1]);
   const spreadPct = avg > 0 ? Math.round(((max - min) / avg) * 100) : 0;
   const confidence: 'high' | 'medium' | 'low' = count >= 7 && spreadPct < 80 ? 'high' : count >= 4 ? 'medium' : 'low';
-  return { avg, median, min, max, spreadPct, count, confidence };
+  const outliersExcluded = Math.max(0, prices.length - final.length);
+  const confidenceReason = confidence === 'high'
+    ? `${count} priced listing${count === 1 ? '' : 's'} remained after the outlier check, and the ${spreadPct}% price spread is below the 80% high-confidence threshold.`
+    : confidence === 'medium' && count >= 7
+      ? `${count} priced listing${count === 1 ? '' : 's'} remained after the outlier check, but the ${spreadPct}% price spread is at or above the 80% high-confidence threshold.`
+      : confidence === 'medium'
+        ? `${count} priced listing${count === 1 ? '' : 's'} remained after the outlier check. At least 7 are required for high confidence.`
+        : `Only ${count} priced listing${count === 1 ? '' : 's'} remained after the outlier check. At least 4 are required for medium confidence.`;
+  const outlierNote = outliersExcluded
+    ? ` ${outliersExcluded} extreme price${outliersExcluded === 1 ? ' was' : 's were'} excluded by the IQR outlier rule.`
+    : '';
+  return { avg, median, min, max, spreadPct, count, confidence, confidenceReason: `${confidenceReason}${outlierNote}`, rawPriceCount: prices.length, outliersExcluded };
 }
 
 /**

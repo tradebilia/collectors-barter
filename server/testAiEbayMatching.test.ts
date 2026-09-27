@@ -3,6 +3,7 @@ import {
   extractGradeFromQuery,
   extractGradeFromTitle,
   filterListingsByGrade,
+  computeMetrics,
   computeVisualMatchMetrics,
 } from "./testAIRouter";
 
@@ -45,5 +46,12 @@ describe("Test AI eBay graded-item matching", () => {
       { price: { value: '350' }, visualReviewStatus: 'unreadable' },
     ]);
     expect(metrics).toMatchObject({ count: 2, avg: 110, median: 110, min: 100, max: 120 });
+  });
+
+  it("explains the deterministic confidence threshold behind each metric tier", () => {
+    const prices = (values: number[]) => values.map((value) => ({ price: { value: String(value) } }));
+    expect(computeMetrics(prices([100, 105, 110]))?.confidenceReason).toContain('At least 4 are required for medium confidence');
+    expect(computeMetrics(prices([100, 102, 104, 106]))?.confidenceReason).toContain('At least 7 are required for high confidence');
+    expect(computeMetrics(prices([100, 101, 102, 103, 104, 105, 106]))?.confidenceReason).toContain('below the 80% high-confidence threshold');
   });
 });
