@@ -97,12 +97,10 @@ export function buildVideoGameTestAiCriteria(itemDetails: unknown, fallbackTitle
 
 export function filterTestAiListingsByYear<T extends { title?: string }>(listings: T[], targetYear: string): T[] {
   if (!targetYear) return listings;
-
-  return listings.filter((listing) => {
-    const title = listing.title || '';
-    const years: string[] = title.match(/\b(?:18|19|20)\d{2}\b/g) ?? [];
-    return years.length === 0 || years.includes(targetYear);
-  });
+  // Release, manufacture, regional, and reissue dates are too variable to
+  // erase a candidate at retrieval time. The comparable engine can record a
+  // stated difference as context/review where the category makes it material.
+  return listings;
 }
 
 function normalizeSport(value: string): string {

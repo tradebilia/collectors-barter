@@ -73,17 +73,23 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
   reviews: VisualSourceReview[],
   reviewedCandidateCount: number
 ) {
-  const removals = new Set(
-    reviews
-      .filter(
-        review => review.verdict === "mismatch" && review.confidence === "high"
-      )
-      .map(review => review.candidateIndex)
-  );
+  const reviewsByIndex = new Map(reviews.map(review => [review.candidateIndex, review]));
   return {
-    listings: listings.filter((_, index) => !removals.has(index)),
+    // Visual review is deliberately non-destructive. A model flag provides
+    // review provenance; only a separately established objective identity
+    // conflict may exclude the candidate from deterministic valuation.
+    listings: listings.map((listing, index) => {
+      const review = reviewsByIndex.get(index);
+      if (!review) return listing;
+      return {
+        ...listing,
+        visualReviewStatus: review.verdict,
+        visualReviewRationale: review.rationale,
+        ...(review.verdict === "mismatch" ? { evidenceDisposition: "warning_review" } : {}),
+      } as T;
+    }),
     reviewedCount: reviews.length,
-    removedCount: removals.size,
+    removedCount: 0,
     retainedUnreviewedCount: Math.max(
       0,
       reviewedCandidateCount - reviews.length
@@ -99,9 +105,7 @@ export function buildVisualSourceFilterNote(
     retainedUnreviewedCount: number;
   }
 ): string {
-  if (result.removedCount > 0)
-    return `${sourceLabel}: visually removed ${result.removedCount} high-confidence mismatch${result.removedCount === 1 ? "" : "es"}; retained ${result.reviewedCount - result.removedCount} reviewed match/rough-match result${result.reviewedCount - result.removedCount === 1 ? "" : "s"}${result.retainedUnreviewedCount ? ` plus ${result.retainedUnreviewedCount} unreviewed candidate${result.retainedUnreviewedCount === 1 ? "" : "s"}` : ""}.`;
-  return `${sourceLabel}: no high-confidence visual mismatches were removed; uncertain or unreviewed candidates were retained conservatively.`;
+  return `${sourceLabel}: ${result.reviewedCount} candidate image${result.reviewedCount === 1 ? "" : "s"} reviewed; high-confidence visual flags are retained as manual-review provenance, never removed by vision alone${result.retainedUnreviewedCount ? `; ${result.retainedUnreviewedCount} reviewed-window candidate${result.retainedUnreviewedCount === 1 ? "" : "s"} received no decisive visual result` : ""}.`;
 }
 
 export async function filterVisualSourceCandidates<

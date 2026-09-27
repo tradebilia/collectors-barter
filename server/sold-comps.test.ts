@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByNumber, getSoldCompsApiKey } from './testAIRouter';
+import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey } from './testAIRouter';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -28,19 +28,38 @@ describe('Sold-Comps API key validation', () => {
     ]);
   });
 
-  it('does not count another grading company at the same numeric grade', () => {
+  it('rejects an explicit wrong grading company while retaining an unstated provider for review', () => {
     const listings = [
       { title: 'Edge of the Spider-Verse #2 CGC 9.8' },
       { title: 'Edge of the Spider-Verse #2 CBCS 9.8' },
       { title: 'Edge of the Spider-Verse #2 9.8' },
     ];
 
-    expect(filterListingsByCertificationCompany(listings, 'CGC')).toEqual([listings[0]]);
+    expect(filterListingsByCertificationCompany(listings, 'CGC')).toEqual([listings[0], listings[2]]);
   });
 
   it('accepts a comic title that writes the issue as a bare number before CGC', () => {
     const listing = { title: 'Edge Of The Spider-verse 2 Cgc 9.8 1st spider-Gwen white pages' };
 
     expect(filterListingsByNumber([listing], '2')).toEqual([listing]);
+  });
+
+  it('retains missing structured evidence but removes an explicit card-number contradiction', () => {
+    const listings = [
+      { title: '1989 Upper Deck Ken Griffey Jr Rookie PSA 10' },
+      { title: '1989 Upper Deck Ken Griffey Jr #2 PSA 10' },
+    ];
+
+    expect(filterListingsByNumber(listings, '1', { allowMissingNumber: true })).toEqual([listings[0]]);
+  });
+
+  it('retains a missing marketplace grade for review while removing a stated wrong grade', () => {
+    const listings = [
+      { title: 'Edge of the Spider-Verse #2 CGC' },
+      { title: 'Edge of the Spider-Verse #2 CGC 9.6' },
+      { title: 'Edge of the Spider-Verse #2 CGC 9.8' },
+    ];
+
+    expect(filterListingsByGrade(listings, 9.8)).toEqual([listings[0], listings[2]]);
   });
 });

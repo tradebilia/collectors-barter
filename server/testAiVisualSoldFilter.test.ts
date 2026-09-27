@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { applyVisualSoldReviews, isSafeVisualSoldRemoval, normalizeVisualSoldReviews } from './testAiVisualSoldFilter';
 
 describe('visual sold-comparable filter', () => {
-  it('removes only a high-confidence mismatch', () => {
+  it('retains a high-confidence visual mismatch as an auditable review flag', () => {
     const listings = [{ title: 'NES System VGA 80' }, { title: 'Excitebike cartridge' }, { title: 'NES system bundle' }];
     const reviews = normalizeVisualSoldReviews({ reviews: [
       { candidateIndex: 0, verdict: 'match', confidence: 'high', rationale: 'Console form factor matches.' },
@@ -10,8 +10,9 @@ describe('visual sold-comparable filter', () => {
       { candidateIndex: 2, verdict: 'rough_match', confidence: 'medium', rationale: 'Console bundle appears plausible.' },
     ] }, listings.length);
     const result = applyVisualSoldReviews(listings, reviews, 3);
-    expect(result.listings.map((item) => item.title)).toEqual(['NES System VGA 80', 'NES system bundle']);
-    expect(result.removedCount).toBe(1);
+    expect(result.listings.map((item) => item.title)).toEqual(['NES System VGA 80', 'Excitebike cartridge', 'NES system bundle']);
+    expect(result.removedCount).toBe(0);
+    expect(result.note).toContain('warning/review evidence');
     expect(isSafeVisualSoldRemoval(reviews[1])).toBe(true);
   });
 

@@ -27,7 +27,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT } from './testAiVisualSoldFilter';
+import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT, type VisualSoldCandidateReview } from './testAiVisualSoldFilter';
 import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -123,9 +123,10 @@ export function filterListingsByCertificationCompany(summaries: any[], certifica
   if (!target) return summaries;
   return summaries.filter((item: any) => {
     const match = String(item.title ?? '').match(certificationProviderPattern);
-    // A graded target must carry an explicit provider in the sold title. This
-    // prevents a CBCS 9.8 from being counted for a CGC 9.8 target.
-    return Boolean(match && match[1].toUpperCase() === target);
+    // Absence is uncertainty, not a contradiction. Keep sparse titles in the
+    // evidence ledger as review-only candidates; reject only an explicit,
+    // recognized provider that conflicts with the target provider.
+    return !match || match[1].toUpperCase() === target;
   });
 }
 
@@ -150,10 +151,10 @@ export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGr
 
   return summaries.filter((item: any) => {
     const itemGrade = extractGradeFromTitle(item.title);
-    // When searching for a specific grade, MUST have both:
-    // 1. A recognized grading company in the title (CGC, PSA, WATA, etc.)
-    // 2. A grade that matches the target
-    if (!itemGrade) return false;
+    // An unparsed/omitted grade is evidence uncertainty, not proof of a wrong
+    // grade. The Sold-Comps pipeline marks it warning/review so it cannot
+    // affect valuation until a source supplies compatible grade evidence.
+    if (!itemGrade) return true;
 
     if (typeof targetGrade === 'string') {
       return typeof itemGrade === 'string' && itemGrade.toUpperCase() === targetGrade.toUpperCase();
@@ -253,7 +254,7 @@ export function filterListingsByNumber(summaries: any[], targetNumber: string | 
     // Sports-card listings often omit the card number even when the title,
     // player, certification, and grade identify the correct card. Do not
     // discard those listings; only reject an explicit conflicting number.
-    if (!itemNumber) return options?.allowMissingNumber === true;
+    if (!itemNumber) return options?.allowMissingNumber !== false;
     return itemNumber === targetNumber;
   });
 }
@@ -271,10 +272,69 @@ function filterListingsByPlayer(summaries: any[], player: string | null): any[] 
     lastName = parts[parts.length - 2];
   }
   if (!lastName || lastName.length < 3) return summaries; // too short to filter reliably
-  const lowerLast = lastName.toLowerCase();
-  return summaries.filter((item: any) => {
-    return item.title?.toLowerCase().includes(lowerLast);
-  });
+  // Marketplace title formatting is too inconsistent to make surname presence
+  // a deletion rule. Candidate identity scoring and the audit ledger retain
+  // explicit conflict evidence separately from an omitted/abbreviated name.
+  return summaries;
+}
+
+type SoldComparableDisposition = 'valuation_eligible' | 'warning_review' | 'rejected_objective_conflict';
+
+function soldComparableKey(item: any): string {
+  return String(item?.saleId ?? item?.id ?? item?.url ?? `${item?.title}|${item?.soldPrice}|${item?.endedAt}`)
+    .trim()
+    .toLowerCase();
+}
+
+function playerSurname(value: string | null | undefined): string | null {
+  const parts = String(value ?? '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return null;
+  const suffixes = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'jr.', 'sr.']);
+  const last = parts[parts.length - 1]!;
+  return suffixes.has(last.toLowerCase()) && parts.length > 1 ? parts[parts.length - 2]! : last;
+}
+
+/**
+ * Candidate metadata is intentionally lossless: absent provider/title identity
+ * becomes warning/review, while the earlier deterministic filters record only
+ * explicit, category-relevant contradictions as hard exclusions.
+ */
+function annotateSoldComparableCandidate(
+  item: any,
+  context: {
+    category: string;
+    certificationCompany: string;
+    targetGrade: ExtractedGrade | null;
+    targetNumber: string | null;
+    targetPlayer: string | null;
+    visualReview?: VisualSoldCandidateReview;
+  },
+) {
+  const title = String(item?.title ?? '');
+  const reasons: string[] = [];
+  const targetProvider = normalizeCertificationCompany(context.certificationCompany);
+  const observedProvider = title.match(certificationProviderPattern)?.[1] ?? null;
+  const observedGrade = extractGradeFromTitle(title);
+
+  if (targetProvider && !observedProvider) reasons.push('grading or authentication company is not stated in the marketplace title');
+  if (context.targetGrade && !observedGrade) reasons.push('grade is not stated or cannot be normalized from the marketplace title');
+  if (context.targetNumber && !extractIssueFromTitle(title)) reasons.push('catalog, card, or issue number is not stated in the marketplace title');
+  const surname = playerSurname(context.targetPlayer);
+  if (context.category === 'sports_cards' && surname && !new RegExp(`\\b${surname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(title)) {
+    reasons.push('player surname is not stated in the marketplace title');
+  }
+  if (context.visualReview?.verdict === 'mismatch') {
+    reasons.push(`visual comparison flag: ${context.visualReview.rationale || 'manual identity review required'}`);
+  }
+
+  const evidenceDisposition: SoldComparableDisposition = reasons.length ? 'warning_review' : 'valuation_eligible';
+  return {
+    ...item,
+    evidenceDisposition,
+    evidenceReasons: reasons,
+    visualReviewStatus: context.visualReview?.verdict ?? 'not_reviewed',
+    visualReviewRationale: context.visualReview?.rationale ?? null,
+  };
 }
 
 export function normalizeValuationEvidence(summaries: any[]) {
@@ -738,7 +798,9 @@ export const testAIRouter = router({
             const key = String(item.itemId ?? item.itemWebUrl ?? item.title ?? fetchedByQuery.size);
             fetchedByQuery.set(key, item);
           });
-          if (candidateResults.length > 0 && input.category === 'sports_cards') break;
+          // Query tiers are complementary: a non-empty precise page does not
+          // establish retrieval completeness. Union every bounded tier before
+          // objective identity filtering and label the resulting coverage.
         }
         const summaries = [...fetchedByQuery.values()];
         console.log(`[eBay Search] Fetch Query: "${searchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
@@ -1108,6 +1170,7 @@ export const testAIRouter = router({
         });
         const rawItems: any[] = [];
         const seenSoldKeys = new Set<string>();
+        const retrievalCoverage: Array<{ query: string; received: number; status: 'success' | 'error' }> = [];
         for (const fetchQuery of queryCandidates) {
           const url = `https://api.sold-comps.com/v1/scrape?keyword=${encodeURIComponent(fetchQuery)}&count=100&sortOrder=endedRecently&ebaySite=ebay.com`;
           const res = await fetch(url, { headers: { Authorization: `Bearer ${apiKey}` } });
@@ -1116,20 +1179,22 @@ export const testAIRouter = router({
             if (rawItems.length === 0) {
               return { query, listings: [], metrics: null, error: `Sold-Comps API error ${res.status}: ${errText}` };
             }
+            retrievalCoverage.push({ query: fetchQuery, received: 0, status: 'error' });
             console.warn(`[Sold-Comps] Fallback query failed (${res.status}): ${fetchQuery}`);
             continue;
           }
           const data = await res.json() as any;
+          const received = Array.isArray(data.items) ? data.items.length : 0;
+          retrievalCoverage.push({ query: fetchQuery, received, status: 'success' });
           for (const item of (data.items ?? [])) {
             const key = String(item.saleId ?? item.id ?? item.url ?? `${item.title}|${item.soldPrice}|${item.endedAt}`).trim().toLowerCase();
             if (!seenSoldKeys.has(key)) {
               seenSoldKeys.add(key);
-              rawItems.push(item);
+              rawItems.push({ ...item, sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', retrievalQuery: fetchQuery });
             }
           }
-          // Once a broad query has produced a healthy page, the remaining
-          // fallbacks add little value and would create unnecessary provider load.
-          if (rawItems.length >= 100) break;
+          // All bounded query tiers run. A non-empty first page is coverage,
+          // not proof that later query forms contain no valid comparison.
         }
 
         console.log(`[Sold-Comps] Fetch Queries: ${queryCandidates.join(' | ')}, Filter: ${cert || 'any provider'} ${targetGrade ?? ''}, Total Results: ${rawItems.length}`);
@@ -1138,7 +1203,11 @@ export const testAIRouter = router({
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
         const byYear = filterTestAiListingsByYear(rawItems.map((i: any) => ({ title: i.title, ...i })), targetYear);
         const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        const byNumber = filterListingsByNumber(byYear, issueNumber);
+        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
+        const targetNumber = issueNumber || cardNumber;
+        const byNumber = filterListingsByNumber(byYear, targetNumber, {
+          allowMissingNumber: input.category === 'sports_cards',
+        });
         // For sports cards: also filter by player name
         const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
@@ -1147,6 +1216,34 @@ export const testAIRouter = router({
         const byCertification = filterListingsByCertificationCompany(bySport, cert || null);
         const filtered = filterListingsByGrade(byCertification, targetGrade);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
+
+        const stageRows = [
+          { rows: byYear, reason: targetYear ? `explicit stated year conflicts with target year ${targetYear}` : 'objective category field conflict' },
+          { rows: byNumber, reason: targetNumber ? `explicit stated issue or catalog number conflicts with target ${targetNumber}` : 'objective category field conflict' },
+          { rows: bySport, reason: targetSport ? `explicit stated sport conflicts with target sport ${targetSport}` : 'objective category field conflict' },
+          { rows: byCertification, reason: cert ? `explicit stated certification company conflicts with target ${cert}` : 'objective category field conflict' },
+          { rows: filtered, reason: targetGrade !== null ? `explicit stated grade conflicts with target ${targetGrade}` : 'objective category field conflict' },
+        ];
+        const rawAuditLedger = rawItems.map((item) => {
+          const key = soldComparableKey(item);
+          const failedAt = stageRows.find((stage) => !stage.rows.some((candidate: any) => soldComparableKey(candidate) === key));
+          return failedAt
+            ? {
+                title: item.title,
+                itemUrl: item.url,
+                saleId: item.saleId ?? item.id ?? null,
+                sourceId: item.sourceId ?? 'sold_comps',
+                sourceLabel: item.sourceLabel ?? 'eBay Sold-Comps',
+                retrievalQuery: item.retrievalQuery ?? null,
+                price: Number(item.soldPrice ?? 0),
+                currency: item.soldCurrency ?? 'USD',
+                endedAt: item.endedAt ?? null,
+                evidenceDisposition: 'rejected_objective_conflict' as const,
+                evidenceReasons: [failedAt.reason],
+                visualReviewStatus: 'not_reviewed' as const,
+              }
+            : null;
+        }).filter(Boolean);
 
         let visuallyFiltered = filtered;
         let visualSoldFilter: any = {
@@ -1204,13 +1301,7 @@ export const testAIRouter = router({
                 ? visualText.filter((part): part is TextContent => part.type === 'text').map((part) => part.text).join('\n')
                 : '';
             const parsed = normalizeVisualSoldReviews(parseAnalyzerResponse(visualRaw), filtered.length);
-            const applied = applyVisualSoldReviews(filtered, parsed, visualCandidates.length, {
-              // CGC comic slabs can use different photography, labels, and
-              // crops even when the text identity is exact. Keep those rows
-              // for evidence review rather than letting vision alone discard
-              // a valid issue/grade/provider match.
-              preserveHighConfidenceMismatches: input.category === 'comics',
-            });
+            const applied = applyVisualSoldReviews(filtered, parsed, visualCandidates.length);
             visuallyFiltered = applied.listings;
             visualSoldFilter = { ...applied, note: buildVisualSoldFilterNote(applied) };
             console.log(`[Sold-Comps] Visual filter reviewed ${applied.reviewedCount}, removed ${applied.removedCount}, retained ${applied.listings.length}`);
@@ -1236,8 +1327,21 @@ export const testAIRouter = router({
           };
         }
 
-        // Compute metrics from the visually retained sold prices
-        const soldListings = visuallyFiltered.map((i: any) => ({
+        const reviewByIndex = new Map<number, VisualSoldCandidateReview>((visualSoldFilter.reviews as VisualSoldCandidateReview[]).map((review) => [review.candidateIndex, review]));
+        const annotatedListings = visuallyFiltered.map((item: any, index: number) => annotateSoldComparableCandidate(item, {
+          category: input.category,
+          certificationCompany: cert,
+          targetGrade,
+          targetNumber,
+          targetPlayer: playerName,
+          visualReview: reviewByIndex.get(index),
+        }));
+        const valuationEligibleListings = annotatedListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible');
+
+        // Metrics intentionally use only explicit completed-sale records whose
+        // material identifiers are sufficiently aligned. Review/context rows
+        // remain returned below and can never silently inflate value.
+        const soldListings = valuationEligibleListings.map((i: any) => ({
           price: { value: i.soldPrice || '0', currency: i.soldCurrency || 'USD' },
           title: i.title,
           condition: i.condition,
@@ -1250,7 +1354,7 @@ export const testAIRouter = router({
 
         return {
           query,
-          listings: visuallyFiltered.slice(0, 20).map((i: any) => ({
+          listings: annotatedListings.map((i: any) => ({
             title: i.title,
             price: parseFloat(i.soldPrice || '0'),
             currency: i.soldCurrency || 'USD',
@@ -1260,9 +1364,26 @@ export const testAIRouter = router({
             imageUrl: i.thumbnailUrl,
             endedAt: i.endedAt,
             shippingPrice: i.shippingPrice,
+            saleId: i.saleId ?? i.id ?? null,
+            sourceId: i.sourceId ?? 'sold_comps',
+            sourceLabel: i.sourceLabel ?? 'eBay Sold-Comps',
+            retrievalQuery: i.retrievalQuery ?? null,
+            evidenceDisposition: i.evidenceDisposition,
+            evidenceReasons: i.evidenceReasons,
+            visualReviewStatus: i.visualReviewStatus,
+            visualReviewRationale: i.visualReviewRationale,
           })),
           metrics,
           visualFilter: visualSoldFilter,
+          audit: {
+            retrievalCoverage,
+            rawReceived: rawItems.length,
+            objectiveConflicts: rawAuditLedger.length,
+            warningReview: annotatedListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
+            valuationEligible: valuationEligibleListings.length,
+            notVisuallyReviewed: annotatedListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length,
+            ledger: [...annotatedListings, ...rawAuditLedger],
+          },
           error: null,
         };
       } catch (err: any) {

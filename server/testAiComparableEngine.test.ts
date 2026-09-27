@@ -167,6 +167,31 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.valuationMethod).toContain('material identity evidence conflict');
     expect(profile.valuationWarnings).toContain('Identity review: Source reports a different card number.');
   });
+
+  it('rejects an explicitly different card number but retains a missing number as review context', () => {
+    const wrongNumber = scoreComparable(target, sale('1996 Topps Kobe Bryant #139 PSA 10', 900, '2026-09-15'));
+    const missingNumber = scoreComparable(target, {
+      ...sale('1996 Topps Kobe Bryant PSA 10', 900, '2026-09-15'),
+      evidenceDisposition: 'warning_review',
+    });
+
+    expect(wrongNumber.accepted).toBe(false);
+    expect(wrongNumber.exclusionReason).toBe('explicit catalog or issue number differs from target');
+    expect(missingNumber.classification).toBe('contextual');
+    expect(missingNumber.exclusionReason).toContain('contextual');
+  });
+
+  it('does not reject a legitimate limited edition when the target does not declare a conflicting variant', () => {
+    const pinTarget = {
+      title: 'Disney Pin Mickey Mouse 2020',
+      category: 'disney_pins',
+      itemDetails: JSON.stringify({ character: 'Mickey Mouse', year: '2020' }),
+    };
+    const limitedEdition = scoreComparable(pinTarget, sale('Disney Pin Mickey Mouse 2020 Limited Edition 500', 85, '2026-09-15'));
+
+    expect(limitedEdition.classification).not.toBe('rejected');
+    expect(limitedEdition.reasons).not.toContain('explicit sale variant or release detail differs from the target');
+  });
 });
 
 export {};

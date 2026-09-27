@@ -582,6 +582,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
     { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
+  const auditLedger = data?.audit?.ledger ?? [];
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -592,6 +593,10 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
+      {data?.audit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[10px] text-violet-100">
+        <p className="font-semibold">Evidence coverage — {data.audit.rawReceived} unique candidates across {data.audit.retrievalCoverage?.length ?? 0} query tier{data.audit.retrievalCoverage?.length === 1 ? '' : 's'}</p>
+        <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} not visually reviewed</p>
+      </div>}
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">
           {[
@@ -607,7 +612,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
           ))}
         </div>
       )}
-      {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} results</p>}
+      {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} retained candidates</p>}
       {data?.listings && data.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {data.listings.map((l: any, i: number) => (
@@ -617,6 +622,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
                 <div className="min-w-0">
                   <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
                   <p className="text-[10px] text-gray-500">{l.condition} · {l.endedAt ? `Sold ${l.endedAt}` : ''}</p>
+                  <p className={`text-[9px] ${l.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : 'text-amber-300'}`}>{l.evidenceDisposition === 'valuation_eligible' ? 'Completed-sale candidate — valuation eligible' : `Retained for review — ${(l.evidenceReasons ?? ['identity evidence incomplete']).join('; ')}`}</p>
                 </div>
               </div>
               <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatWholeDollar(l.price)}</p>
@@ -624,6 +630,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
           ))}
         </div>
       )}
+      {auditLedger.length > 0 && <details className="rounded border border-gray-700/30 bg-gray-950/35 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Evidence ledger ({auditLedger.length}) — retained, review, and objective-conflict records</summary><div className="mt-2 max-h-64 space-y-1 overflow-y-auto">{auditLedger.map((row: any, index: number) => <div key={`${row.saleId || row.itemUrl || row.title}-${index}`} className="rounded bg-gray-900/60 p-1.5 text-[9px]"><p className="truncate font-semibold text-gray-200">{row.title || 'Untitled record'}</p><p className={row.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : row.evidenceDisposition === 'rejected_objective_conflict' ? 'text-red-300' : 'text-amber-300'}>{String(row.evidenceDisposition || 'warning_review').replace(/_/g, ' ')}</p><p className="mt-0.5 text-gray-500">{(row.evidenceReasons ?? []).join('; ') || 'No additional warning supplied.'}</p></div>)}</div></details>}
       {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No sold listings found.</p>}
     </div>
   );

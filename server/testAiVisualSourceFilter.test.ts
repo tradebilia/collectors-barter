@@ -5,7 +5,7 @@ import {
 } from "./testAiVisualSourceFilter";
 
 describe("visual source filter", () => {
-  it("removes only high-confidence mismatches and retains uncertainty", () => {
+  it("retains high-confidence visual mismatches as review evidence", () => {
     const rows = normalizeVisualSourceReviews(
       {
         reviews: [
@@ -36,7 +36,11 @@ describe("visual source filter", () => {
       rows,
       3
     );
-    expect(result.listings.map(item => item.title)).toEqual(["a", "c"]);
-    expect(result.removedCount).toBe(1);
+    expect(result.listings.map(item => item.title)).toEqual(["a", "b", "c"]);
+    expect(result.listings[1]).toMatchObject({
+      visualReviewStatus: "mismatch",
+      evidenceDisposition: "warning_review",
+    });
+    expect(result.removedCount).toBe(0);
   });
 });

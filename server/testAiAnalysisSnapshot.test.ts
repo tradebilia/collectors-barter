@@ -69,14 +69,14 @@ describe('Analyzer 2.1 unified analysis snapshot', () => {
     expect(profile.comparables.some((record) => record.exclusionReason?.includes('grade differs'))).toBe(true);
   });
 
-  it('rejects a visually mismatched record even when the title otherwise appears exact', () => {
+  it('retains a visually mismatched record as manual-review context rather than valuing it', () => {
     const profile = buildMarketProfile(griffey, [
       sale({ saleId: 'good', price: 100 }),
       sale({ saleId: 'visual-mismatch', price: 1_000, visualReviewStatus: 'mismatch' }),
       sale({ saleId: 'good-two', price: 105 }),
     ], null, now);
     expect(profile.authoritativeSaleCount).toBe(2);
-    expect(profile.comparables.find((record) => record.saleId === 'visual-mismatch')?.exclusionReason).toBe('visual comparison identified a mismatch');
+    expect(profile.comparables.find((record) => record.saleId === 'visual-mismatch')?.exclusionReason).toBe('visual comparison flagged the record for manual review');
   });
 
   it('suppresses duplicate sales across providers without discarding the original audit record', () => {

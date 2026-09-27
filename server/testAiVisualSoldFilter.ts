@@ -74,7 +74,10 @@ export function applyVisualSoldReviews(
 ): VisualSoldFilterResult {
   const highConfidenceMismatchCount = reviews.filter(isSafeVisualSoldRemoval).length;
   const removable = new Set(
-    options?.preserveHighConfidenceMismatches
+    // Vision is advisory: a high-confidence visual flag may route a row to
+    // warning/review but cannot erase it. Objective category-field conflicts
+    // are handled separately by deterministic comparable gates.
+    options?.preserveHighConfidenceMismatches !== false
       ? []
       : reviews.filter(isSafeVisualSoldRemoval).map((review) => review.candidateIndex),
   );
@@ -87,8 +90,8 @@ export function applyVisualSoldReviews(
     retainedUnreviewedCount,
     reviews,
     status: 'applied',
-    note: options?.preserveHighConfidenceMismatches && highConfidenceMismatchCount
-      ? `Preserved ${highConfidenceMismatchCount} high-confidence visual flag${highConfidenceMismatchCount === 1 ? '' : 's'} because exact text identity passed; manual review remains required.`
+    note: options?.preserveHighConfidenceMismatches !== false && highConfidenceMismatchCount
+      ? `Preserved ${highConfidenceMismatchCount} high-confidence visual flag${highConfidenceMismatchCount === 1 ? '' : 's'} as warning/review evidence; visual review alone never removes a candidate.`
       : removable.size
       ? `Removed ${removable.size} high-confidence visual mismatch${removable.size === 1 ? '' : 'es'}; rough, unreadable, and unreviewed candidates were retained.`
       : 'No high-confidence visual mismatches were removed; rough, unreadable, and unreviewed candidates were retained.',
@@ -96,7 +99,7 @@ export function applyVisualSoldReviews(
 }
 
 export function buildVisualSoldFilterNote(result: VisualSoldFilterResult): string {
-  return `Final visual sold-comparable filter: ${result.reviewedCount} candidate image${result.reviewedCount === 1 ? '' : 's'} reviewed, ${result.removedCount} removed, ${result.retainedUnreviewedCount} reviewed-window candidate${result.retainedUnreviewedCount === 1 ? '' : 's'} retained without a decisive visual result. Only high-confidence mismatches are removed. ${result.note}`;
+  return `Final visual sold-comparable review: ${result.reviewedCount} candidate image${result.reviewedCount === 1 ? '' : 's'} reviewed, ${result.removedCount} removed for an objective conflict, ${result.retainedUnreviewedCount} reviewed-window candidate${result.retainedUnreviewedCount === 1 ? '' : 's'} retained without a decisive visual result. ${result.note}`;
 }
 
 export const VISUAL_SOLD_FILTER_PROMPT_NOTE = 'Compare the target listing image with each sold candidate image as the same physical collectible type, not as identical photography. A console/system must not match a game cartridge; a card must not match a different object. Use rough_match when the same object type and identity are plausible but the photo is different. Use mismatch only when the object type or visible identity clearly conflicts. Use unreadable when the candidate image is too small, missing, or ambiguous. Never judge value, authenticity, or condition as the reason for a mismatch.';

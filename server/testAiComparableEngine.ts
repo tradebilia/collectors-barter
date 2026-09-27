@@ -38,6 +38,9 @@ export interface MarketSale {
   /** Visual candidate review is a matching aid only, never authentication. */
   visualReviewStatus?: 'match' | 'rough_match' | 'mismatch' | 'unreadable' | 'not_reviewed' | null;
   visualReviewRationale?: string | null;
+  /** Source-level disposition preserves uncertainty without admitting it to value. */
+  evidenceDisposition?: 'valuation_eligible' | 'warning_review' | 'context_only' | 'rejected_objective_conflict' | 'omitted_by_cap' | 'not_visually_reviewed_window' | null;
+  evidenceReasons?: string[] | null;
 }
 
 export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
@@ -63,6 +66,8 @@ export interface ComparableMatch {
   priceBasis?: string | null;
   visualReviewStatus?: string | null;
   visualReviewRationale?: string | null;
+  evidenceDisposition?: string | null;
+  evidenceReasons?: string[] | null;
   duplicateOf?: string;
 }
 
@@ -181,6 +186,18 @@ function normalizeCompany(value: string | null | undefined): string | null {
   return normalized || null;
 }
 
+function extractComparableNumber(title: string): string | null {
+  const labeled = title.match(/\b(?:issue|no\.?|number|card)\s*#?\s*(\d{1,6})\b/i);
+  if (labeled) return labeled[1];
+  const hash = title.match(/#\s*(\d{1,6})\b/);
+  return hash ? hash[1] : null;
+}
+
+function normalizeComparableNumber(value: string | null | undefined): string | null {
+  const match = String(value ?? '').match(/\d{1,6}/);
+  return match ? String(Number(match[0])) : null;
+}
+
 function daysOld(date: string | null | undefined, nowMs: number): number | null {
   if (!date) return null;
   const timestamp = Date.parse(date);
@@ -239,6 +256,7 @@ function sourceLabel(sale: MarketSale): string {
 }
 
 export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
+  if (sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible') return false;
   if (sale.saleStatus && sale.saleStatus !== 'completed') return false;
   if (sale.priceBasis === 'unknown') return false;
   if (sale.recency === 'historical' || sale.recency === 'undated') return false;
@@ -383,25 +401,39 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const targetNumber = firstString(details, ['cardNumber', 'issueNumber', 'catalogNumber', 'serialNumber']);
-  if (targetNumber && title.toLowerCase().includes(String(targetNumber).toLowerCase())) {
+  const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
+  const observedNumber = extractComparableNumber(title);
+  let materialNumberConflict = false;
+  if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
     score += 12;
     reasons.push('catalog or issue number matches');
+  } else if (normalizedTargetNumber && observedNumber && observedNumber !== normalizedTargetNumber) {
+    score -= 24;
+    materialNumberConflict = true;
+    reasons.push('explicit catalog or issue number differs');
+  } else if (normalizedTargetNumber) {
+    reasons.push('catalog or issue number is not stated in the comparable title');
   }
 
   const targetVariant = firstString(details, ['variant', 'parallel', 'edition', 'pressing', 'releaseType', 'language']);
   let materialVariantConflict = false;
+  let materialVariantReview = false;
   if (targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
     score += 10;
     reasons.push('variant or release detail matches');
-  } else if (['parallel', 'refractor', 'variant', 'pressing', 'first pressing', 'limited'].some((term) => title.toLowerCase().includes(term))) {
+  } else if (targetVariant && ['parallel', 'refractor', 'variant', 'pressing', 'first pressing', 'limited edition', 'open edition'].some((term) => title.toLowerCase().includes(term))) {
     score -= 18;
     materialVariantConflict = true;
-    reasons.push('sale may be a different variant or release');
+    reasons.push('explicit sale variant or release detail differs from the target');
+  } else if (!targetVariant && ['parallel', 'refractor', 'variant', 'pressing', 'first pressing', 'limited edition', 'open edition'].some((term) => title.toLowerCase().includes(term))) {
+    score -= 6;
+    materialVariantReview = true;
+    reasons.push('sale declares a variant or release detail that the target does not state');
   }
   const visualMismatch = sale.visualReviewStatus === 'mismatch';
   if (visualMismatch) {
-    score -= 100;
-    reasons.push('visual comparison identified a mismatch');
+    score -= 18;
+    reasons.push('visual comparison flagged a mismatch; manual review required');
   }
 
   const targetCompany = normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
@@ -447,10 +479,12 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
-  const hardIdentityConflict = materialVariantConflict || materialGradeConflict || materialCompanyConflict || visualMismatch;
+  const hardIdentityConflict = materialNumberConflict || materialVariantConflict || materialGradeConflict || materialCompanyConflict;
   const priceIsUsable = Number.isFinite(price) && price > 0;
-  const classification: ComparableClassification = !priceIsUsable || hardIdentityConflict || boundedScore < 48
+  const classification: ComparableClassification = !priceIsUsable || hardIdentityConflict
     ? 'rejected'
+    : visualMismatch || materialVariantReview || sale.evidenceDisposition === 'warning_review' || boundedScore < 48
+      ? 'contextual'
     : identity.readiness !== 'ready'
       ? 'contextual'
       : boundedScore >= 80
@@ -466,15 +500,19 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
         : materialCompanyConflict
           ? 'known grading or authentication company differs from target'
           : materialVariantConflict
-            ? 'sale may be a different variant or release'
+            ? 'explicit sale variant or release detail differs from target'
+            : materialNumberConflict
+              ? 'explicit catalog or issue number differs from target'
+              : materialVariantReview
+                ? 'sale declares a variant or release detail that requires review'
             : visualMismatch
-              ? 'visual comparison identified a mismatch'
+              ? 'visual comparison flagged the record for manual review'
             : identity.readiness !== 'ready'
               ? `target is missing critical identifiers: ${identity.missingCriticalFields.join(', ')}`
               : classification === 'contextual'
                 ? 'sale is only a contextual identity match and cannot support valuation'
-            : boundedScore < 35
-            ? 'identity match below minimum threshold'
+            : boundedScore < 48
+            ? 'identity evidence is incomplete and requires review'
             : 'insufficient comparable evidence';
   return {
     title: title || 'Untitled comparable',
@@ -497,6 +535,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     priceBasis: sale.priceBasis ?? null,
     visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed',
     visualReviewRationale: sale.visualReviewRationale ?? null,
+    evidenceDisposition: sale.evidenceDisposition ?? 'valuation_eligible',
+    evidenceReasons: sale.evidenceReasons ?? null,
   };
 }
 
