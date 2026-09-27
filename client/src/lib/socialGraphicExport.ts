@@ -1755,7 +1755,11 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
     const plaqueBottomLimit = footerBaselineY - footerClearance;
     const plaqueY = plaqueBottomLimit - plaqueHeight;
     const imageWidth = Math.min(width * (isInstagram ? 0.43 : 0.38), (isInstagram ? 460 : 410) * scale);
-    const detailX = padding + imageWidth + (isInstagram ? 24 : 28) * scale;
+    // Keep the listing title/facts panel visibly separated from the item
+    // frame. This protects Pinterest's tall side-by-side layout from title
+    // drift as titles or image proportions change.
+    const detailGap = 52 * scale;
+    const detailX = padding + imageWidth + detailGap;
     const detailWidth = Math.max(220 * scale, width - detailX - padding);
     const titleLayout = getCompleteFittedTitleLayout(context, itemTitle, detailWidth, 34 * scale, 22 * scale, platform === "Pinterest" ? 4 : 3);
     const imageHeight = Math.max(260 * scale, Math.min(platform === "Pinterest" ? height * 0.42 : height * 0.48, plaqueY - imageY - 28 * scale));
@@ -1785,10 +1789,11 @@ function drawHighValueListingCinematic(context: CanvasRenderingContext2D, draft:
   const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale);
   const imageWidth = 532 * scale;
   const imageHeight = height - imageY - 38 * scale;
-  // The visible right-aligned item ends at approximately 624px on the 1200px
-  // baseline. Use a deliberate 80px separation so the item and detail panel
-  // read as one composition without appearing crowded.
-  const detailX = 684 * scale;
+  // The visible right-aligned item ends at approximately 612px on the 1200px
+  // baseline. Keep a deliberate 92px separation so long listing titles can
+  // never touch or overlap the real item image.
+  const detailGap = 92 * scale;
+  const detailX = imageX + imageWidth + detailGap;
   const detailWidth = width - detailX - 48 * scale;
   let detailY = 258 * scale;
   if (showOriginalItem) {

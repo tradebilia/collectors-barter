@@ -103,11 +103,11 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const panelWidth = isTall ? width * 0.56 : width * 0.43");
     expect(exporterSource).not.toContain("rgba(3, 12, 30, 0.97)");
     expect(exporterSource).toContain("const imageWidth = Math.min(width * (isInstagram ? 0.43 : 0.38), (isInstagram ? 460 : 410) * scale)");
-    expect(exporterSource).toContain("const detailX = padding + imageWidth + (isInstagram ? 24 : 28) * scale");
+    expect(exporterSource).toContain("const detailGap = 52 * scale");
+    expect(exporterSource).toContain("const detailX = padding + imageWidth + detailGap");
     expect(exporterSource).toContain("const isInstagram = platform === \"Instagram\"");
     expect(exporterSource).toContain("const imageY = (isInstagram ? 315 : 330) * scale");
     expect(exporterSource).toContain("(isInstagram ? 460 : 410) * scale");
-    expect(exporterSource).toContain("(isInstagram ? 24 : 28) * scale");
     expect(exporterSource).toContain("drawCompleteFittedTitle(context, itemTitle, detailX, detailY, detailWidth");
     expect(exporterSource).toContain("drawTradeValuePlaque(context, value, detailX, plaqueY, detailWidth");
     expect(exporterSource).toContain("const imageX = 80 * scale");
@@ -115,7 +115,8 @@ describe("native Social graphic exporter", () => {
     expect(exporterSource).toContain("const imageY = Math.max(232 * scale, listingBannerBottom + 14 * scale)");
     expect(exporterSource).toContain("const imageWidth = 532 * scale");
     expect(exporterSource).toContain("const detailWidth = width - detailX - 48 * scale");
-    expect(exporterSource).toContain("const detailX = 684 * scale");
+    expect(exporterSource).toContain("const detailGap = 92 * scale");
+    expect(exporterSource).toContain("const detailX = imageX + imageWidth + detailGap");
     expect(exporterSource).toContain("const height = rows * rowStep * scale + 5 * scale");
     expect(exporterSource).toContain('context.imageSmoothingQuality = "high"');
     expect(exporterSource).toContain("factsHeight + 24 * scale");
