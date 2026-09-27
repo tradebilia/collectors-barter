@@ -16,6 +16,9 @@ describe("Traders Showcase ownership-transfer layout", () => {
     expect(showcaseSource).toContain('<TradeItemList items={exchange.right.items} cashPaid={exchange.right.cashPaid} />');
     expect(showcaseSource).toContain('<DirectionMarker side="right" />');
     expect(showcaseSource).toContain('<TradeMember member={exchange.right.member} />');
+    expect(showcaseSource).toContain('/manus-storage/pasted_file_JPazU8_image_ab1ca4d7.png');
+    expect(showcaseSource).toContain('alt="Trade completed"');
+    expect(showcaseSource).not.toContain('trade-quality-seal-transparent_fdff2d58.png');
     expect(showcaseSource).toContain('ticket-card w-full overflow-hidden border-4 border-[#3974bb]');
     expect(showcaseSource).toContain('lg:grid-cols-[minmax(9rem,0.9fr)_1px_minmax(12rem,1.25fr)_auto_1px_minmax(8rem,0.75fr)_1px_auto_minmax(12rem,1.25fr)_1px_minmax(9rem,0.9fr)]');
     expect(showcaseSource).toContain('w-full px-4 pb-16 sm:px-6 lg:px-8');

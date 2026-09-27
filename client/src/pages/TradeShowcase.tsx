@@ -125,7 +125,7 @@ function TradeCard({ trade }: { trade: any }) {
           <DirectionMarker side="left" />
           <TicketDivider wide />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <img src="/manus-storage/trade-quality-seal-transparent_fdff2d58.png" alt="Trade Quality seal" className="h-36 w-40 object-contain sm:h-44 sm:w-48 lg:h-48 lg:w-52" loading="lazy" />
+            <img src="/manus-storage/pasted_file_JPazU8_image_ab1ca4d7.png" alt="Trade completed" className="h-36 w-40 object-contain sm:h-44 sm:w-48 lg:h-48 lg:w-52" loading="lazy" />
           </div>
           <TicketDivider wide />
           <DirectionMarker side="right" />
