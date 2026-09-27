@@ -78,4 +78,11 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("visualReviewStatus: s.visualReviewStatus ?? null");
     expect(routerSource).toContain("visualReviewRationale: s.visualReviewRationale ?? null");
   });
+
+  it("requires the visual reviewer to gate graded versus raw packaging first", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("graded/slabbed or raw/ungraded");
+    expect(source).toContain("Graded-versus-raw status is a mandatory identity gate");
+    expect(source).toContain("target is graded and the candidate is visibly raw");
+  });
 });
