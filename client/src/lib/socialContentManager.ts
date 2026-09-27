@@ -42,6 +42,22 @@ export type SocialPromotionDetails = {
   isNew: boolean;
 };
 
+export type SocialVideoPlan = {
+  format: "16:9";
+  durationSeconds: 20 | 25 | 30;
+  hostStyle: "breaking-news-anchor";
+  voiceProfile: "american-female-news-anchor";
+  requesterName: string;
+  recipientName: string;
+  exchangeLine: string;
+  commentary: string;
+  script: string;
+  officialLogoUrl: string;
+  lipSyncRequired: true;
+  status: "brief-ready" | "final-video-attached";
+  createdAt: string;
+};
+
 /** A completed exchange is a sale only when one side has collectibles and the other has none. */
 type CashTradePromotion = Pick<SocialPromotionDetails, "cashIncluded" | "tradeItems">;
 
@@ -70,6 +86,7 @@ export type SocialDraft = {
   plannedDate: string;
   status: DraftStatus;
   updatedAt: string;
+  videoPlan?: SocialVideoPlan | null;
 };
 
 /** Public opportunity metadata used to refresh only visual environment hints in saved drafts. */
@@ -236,6 +253,48 @@ export function createSocialDraft(id: string, now = new Date().toISOString()): S
     plannedDate: "",
     status: "Draft",
     updatedAt: now,
+    videoPlan: null,
+  };
+}
+
+export function buildCompletedTradeVideoPlan({
+  requesterName,
+  recipientName,
+  itemTitle,
+  cashOnly,
+  commentary,
+  officialLogoUrl,
+  now = new Date().toISOString(),
+}: {
+  requesterName: string;
+  recipientName: string;
+  itemTitle: string;
+  cashOnly: boolean;
+  commentary: string;
+  officialLogoUrl: string;
+  now?: string;
+}): SocialVideoPlan {
+  const cleanRequester = requesterName.trim() || "Collector One";
+  const cleanRecipient = recipientName.trim() || "Collector Two";
+  const cleanItemTitle = itemTitle.trim() || "the collectible";
+  const exchangeLine = cashOnly
+    ? `${cleanRequester} is selling ${cleanItemTitle} to ${cleanRecipient} for cash.`
+    : `${cleanRequester} is trading ${cleanItemTitle} to ${cleanRecipient}.`;
+  const cleanCommentary = commentary.trim() || "A notable collector-to-collector exchange for the Tradebilia community.";
+  return {
+    format: "16:9",
+    durationSeconds: 25,
+    hostStyle: "breaking-news-anchor",
+    voiceProfile: "american-female-news-anchor",
+    requesterName: cleanRequester,
+    recipientName: cleanRecipient,
+    exchangeLine,
+    commentary: cleanCommentary,
+    script: `BREAKING NEWS. ${exchangeLine} ${cleanCommentary} This is Tradebilia, where collectors connect.`,
+    officialLogoUrl,
+    lipSyncRequired: true,
+    status: "brief-ready",
+    createdAt: now,
   };
 }
 

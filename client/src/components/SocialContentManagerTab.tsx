@@ -59,6 +59,7 @@ import {
   SOCIAL_PLATFORMS,
   TRADEBILIA_PUBLIC_ORIGIN,
   buildListingSocialCopy,
+  buildCompletedTradeVideoPlan,
   formatSocialCategory,
   getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
@@ -71,6 +72,7 @@ import {
   type SocialDraftSource,
   type SocialPlatform,
   type SocialPromotionFact,
+  type SocialVideoPlan,
 } from "@/lib/socialContentManager";
 import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
 
@@ -225,6 +227,10 @@ export function SocialContentManagerTab() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
   const [isExportingGraphic, setIsExportingGraphic] = useState(false);
+  const [isVideoStudioOpen, setIsVideoStudioOpen] = useState(false);
+  const [videoRequesterName, setVideoRequesterName] = useState("");
+  const [videoRecipientName, setVideoRecipientName] = useState("");
+  const [videoCommentary, setVideoCommentary] = useState("");
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
   // Keep these positions aligned to promotion.tradeItems. Filtering a missing
   // photo would otherwise assign a later item's photo to the wrong caption.
@@ -508,6 +514,30 @@ export function SocialContentManagerTab() {
     toast.success("Completed trade draft added to the Content Library");
   }
 
+  function openCompletedTradeVideoStudio() {
+    if (!selectedDraft || selectedDraft.source !== "Completed Trade") return;
+    const existing = selectedDraft.videoPlan;
+    setVideoRequesterName(existing?.requesterName ?? "");
+    setVideoRecipientName(existing?.recipientName ?? "");
+    setVideoCommentary(existing?.commentary ?? "");
+    setIsVideoStudioOpen(true);
+  }
+
+  function createCompletedTradeVideoPlan() {
+    if (!selectedDraft || selectedDraft.source !== "Completed Trade") return;
+    const plan = buildCompletedTradeVideoPlan({
+      requesterName: videoRequesterName,
+      recipientName: videoRecipientName,
+      itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
+      cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
+      commentary: videoCommentary,
+      officialLogoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
+    });
+    updateDraft({ videoPlan: plan });
+    setIsVideoStudioOpen(false);
+    toast.success("Breaking-news video brief saved for review");
+  }
+
   function createVerifiedMerchantDraft(merchant: any) {
     const destinationUrl = TRADEBILIA_PUBLIC_ORIGIN;
     const displayName = merchant.title || "Verified Tradebilia Merchant";
@@ -634,7 +664,12 @@ export function SocialContentManagerTab() {
     try {
       const base64Data = await readFileAsBase64(file);
       const upload = await uploadSocialMedia.mutateAsync({ fileName: file.name, contentType: file.type as typeof SOCIAL_MEDIA_CONTENT_TYPES[number], base64Data });
-      setDrafts((current) => current.map((draft) => draft.id === draftId ? { ...draft, mediaUrl: upload.url, updatedAt: new Date().toISOString() } : draft));
+      setDrafts((current) => current.map((draft) => draft.id === draftId ? {
+        ...draft,
+        mediaUrl: upload.url,
+        videoPlan: draft.videoPlan && file.type.startsWith("video/") ? { ...draft.videoPlan, status: "final-video-attached" } : draft.videoPlan,
+        updatedAt: new Date().toISOString(),
+      } : draft));
       toast.success("Original media attached to this draft");
     } catch {
       toast.error("The original media could not be uploaded. Please try again.");
@@ -781,8 +816,9 @@ export function SocialContentManagerTab() {
               <div className="grid gap-4 sm:grid-cols-2"><label className="space-y-2 text-sm font-semibold text-slate-700 sm:col-span-2">Internal post title<Input value={selectedDraft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="Example: Welcome to Tradebilia" className="mt-1.5" /></label><label className="space-y-2 text-sm font-semibold text-slate-700 sm:col-span-2">Post copy<Textarea value={selectedDraft.copy} onChange={(event) => updateDraft({ copy: event.target.value })} placeholder="Write the message your audience should see..." className="mt-1.5 min-h-32 resize-y" /><span className="block text-right text-xs font-normal text-slate-400">{selectedDraft.copy.length} characters</span></label></div>
               <div className="space-y-2"><p className="text-sm font-semibold text-slate-700">Target platforms</p><div className="grid gap-2 sm:grid-cols-2">{platforms.map((platform) => <button key={platform} type="button" onClick={() => togglePlatform(platform)} className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${selectedDraft.platforms.includes(platform) ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className="flex items-center gap-2">{platformIcon(platform)}{platform}</span>{selectedDraft.platforms.includes(platform) ? <CheckCircle2 className="h-4 w-4" /> : <span className="h-4 w-4 rounded-full border border-current" />}</button>)}</div></div>
               <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 text-sm font-semibold text-slate-700"><p>Original media</p><div className="mt-1.5 flex flex-wrap items-center gap-2"><label className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-100 ${uploadSocialMedia.isPending ? "cursor-wait opacity-70" : ""}`}><Upload className="h-4 w-4" />{uploadSocialMedia.isPending ? "Uploading…" : "Upload image or video"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" className="sr-only" disabled={uploadSocialMedia.isPending} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadOriginalMedia(file); event.currentTarget.value = ""; }} /></label>{selectedDraft.mediaUrl ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />Media attached</span> : null}</div><div className="relative mt-2"><ImageIcon className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input value={selectedDraft.mediaUrl} onChange={(event) => updateDraft({ mediaUrl: event.target.value })} placeholder="Optional existing image or video URL" className="pl-9" /></div><span className="block text-xs font-normal text-slate-500">JPG, PNG, WEBP, GIF, MP4, WEBM, or MOV up to 6 MB. Uploads attach to this browser-local draft.</span></div><label className="space-y-2 text-sm font-semibold text-slate-700">Planned date<input type="date" value={selectedDraft.plannedDate} onChange={(event) => updateDraft({ plannedDate: event.target.value, status: event.target.value ? "Scheduled" : selectedDraft.status })} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /><span className="block text-xs font-normal text-slate-500">Planning only; no automated post will be sent.</span></label></div>
+              {selectedDraft.source === "Completed Trade" ? <section className="rounded-xl border border-violet-200 bg-violet-50/70 p-4" aria-label="Breaking-news trade video studio"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-700 text-white"><Youtube className="h-4 w-4" /></span><div><p className="text-sm font-bold text-violet-950">Breaking-news trade video</p><p className="mt-1 text-xs leading-5 text-violet-900/80">Create a 16:9, 25-second anchor brief from this completed trade. The final generation must use true dialogue lip-sync and the official Tradebilia logo as a composited overlay—not a model-generated substitute.</p></div></div><Button type="button" size="sm" onClick={openCompletedTradeVideoStudio} className="shrink-0 bg-violet-700 text-white hover:bg-violet-800"><Megaphone className="mr-1.5 h-4 w-4" />Open Video Studio</Button></div>{selectedDraft.videoPlan ? <div className="mt-3 rounded-lg border border-violet-200 bg-white p-3 text-xs text-violet-950"><div className="flex flex-wrap items-center justify-between gap-2"><span className="font-bold">{selectedDraft.videoPlan.status === "final-video-attached" ? "Final video attached" : "Brief ready for synchronized generation"}</span><Badge className="border border-violet-200 bg-violet-50 text-violet-800">16:9 · 25 sec</Badge></div><p className="mt-2 leading-5"><strong>{selectedDraft.videoPlan.requesterName}</strong> → <strong>{selectedDraft.videoPlan.recipientName}</strong>: {selectedDraft.videoPlan.exchangeLine}</p><p className="mt-1 text-violet-900/70">Official logo overlay required: {selectedDraft.videoPlan.officialLogoUrl}</p></div> : null}</section> : null}
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4"><div className="flex items-start gap-3"><Link2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" /><div><p className="text-sm font-bold text-indigo-950">Manual publishing safeguard</p><p className="mt-1 text-xs leading-5 text-indigo-900/80">Approved means the copy is ready for a person to publish on the selected sites. It does not connect an account, send a post, or grant an external platform permission.</p></div></div></div>
-              <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs text-slate-500">Last edited {formatUpdatedAt(selectedDraft.updatedAt)}</span><div className="flex flex-wrap gap-2"><Button variant="outline" onClick={openPreview}><Eye className="mr-2 h-4 w-4" />Preview Post</Button><Button variant="outline" onClick={() => updateDraft({ status: "Draft" })}><Save className="mr-2 h-4 w-4" />Save Draft</Button>{selectedDraft.status === "Needs Review" ? <Button onClick={approveDraft} className="bg-emerald-600 text-white hover:bg-emerald-700"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button> : <Button onClick={requestReview} className="bg-indigo-600 text-white hover:bg-indigo-700"><Send className="mr-2 h-4 w-4" />Request Review</Button>}</div></div>
+              <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs text-slate-500">Last edited {formatUpdatedAt(selectedDraft.updatedAt)}</span><div className="flex flex-wrap gap-2">{selectedDraft.source === "Completed Trade" ? <Button variant="outline" onClick={openCompletedTradeVideoStudio}><Youtube className="mr-2 h-4 w-4" />Video Studio</Button> : null}<Button variant="outline" onClick={openPreview}><Eye className="mr-2 h-4 w-4" />Preview Post</Button><Button variant="outline" onClick={() => updateDraft({ status: "Draft" })}><Save className="mr-2 h-4 w-4" />Save Draft</Button>{selectedDraft.status === "Needs Review" ? <Button onClick={approveDraft} className="bg-emerald-600 text-white hover:bg-emerald-700"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button> : <Button onClick={requestReview} className="bg-indigo-600 text-white hover:bg-indigo-700"><Send className="mr-2 h-4 w-4" />Request Review</Button>}</div></div>
             </CardContent>
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
               <DialogContent className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
@@ -818,6 +854,24 @@ export function SocialContentManagerTab() {
                   <p className="text-xs leading-5 text-slate-500">Platform layouts can vary after manual publishing. Review this graphic and caption, then use the existing approval workflow before posting outside Tradebilia.</p>
                 </div>
                 <DialogFooter className="border-t border-slate-100 px-5 pb-5 sm:px-6 sm:pb-6"><Button variant="outline" onClick={() => setIsPreviewOpen(false)}>Close Preview</Button></DialogFooter>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isVideoStudioOpen} onOpenChange={setIsVideoStudioOpen}>
+              <DialogContent className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto" aria-describedby="trade-video-studio-description">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2"><Youtube className="h-5 w-5 text-violet-700" />Breaking-News Trade Video Studio</DialogTitle>
+                  <DialogDescription id="trade-video-studio-description">Build a reviewable 16:9 anchor script from this completed trade. Names are entered by the admin; they are not inferred from private trade records.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-2">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller / requester name<Input value={videoRequesterName} onChange={(event) => setVideoRequesterName(event.target.value)} placeholder="Example: Alex" className="mt-1" /></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer / recipient name<Input value={videoRecipientName} onChange={(event) => setVideoRecipientName(event.target.value)} placeholder="Example: Jordan" className="mt-1" /></label>
+                  </div>
+                  <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor commentary<Textarea value={videoCommentary} onChange={(event) => setVideoCommentary(event.target.value)} placeholder="Example: The exchange gives the buyer a strong addition while the seller converts a collectible into cash." className="mt-1 min-h-24" /></label>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950"><strong>Generation quality guardrail:</strong> the brief requires an American female news-anchor voice with dialogue generated in the same video pass for true mouth synchronization. The official logo must be composited afterward from the managed Tradebilia asset; the video model must not redraw or replace it.</div>
+                  {selectedDraft?.videoPlan ? <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current script</p><p className="mt-2 text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p><p className="mt-2 text-xs text-slate-500">Logo asset: {selectedDraft.videoPlan.officialLogoUrl}</p></div> : null}
+                </div>
+                <DialogFooter><Button variant="outline" onClick={() => setIsVideoStudioOpen(false)}>Cancel</Button><Button onClick={createCompletedTradeVideoPlan} className="bg-violet-700 text-white hover:bg-violet-800"><Sparkles className="mr-2 h-4 w-4" />Create Video Brief</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           </>}

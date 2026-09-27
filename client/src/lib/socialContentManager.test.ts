@@ -3,6 +3,7 @@ import {
   TRADEBILIA_PUBLIC_ORIGIN,
   approveSocialDraft,
   buildListingSocialCopy,
+  buildCompletedTradeVideoPlan,
   createPromotionSocialDraft,
   createSocialDraft,
   filterSocialDrafts,
@@ -98,6 +99,21 @@ describe("social content manager draft workflow", () => {
     expect(getCompletedTradePostLabel(itemForCash)).toBe("SOLD");
     expect(isCashOnlyCompletedTrade(itemForItemPlusCash)).toBe(false);
     expect(getCompletedTradePostLabel(itemForItemPlusCash)).toBe("TRADE ALERT");
+  });
+
+  it("builds a synchronized breaking-news video brief with the official logo asset", () => {
+    const plan = buildCompletedTradeVideoPlan({
+      requesterName: "Alex",
+      recipientName: "Jordan",
+      itemTitle: "1985 Topps Traded Set",
+      cashOnly: true,
+      commentary: "A clean cash-only move for both collectors.",
+      officialLogoUrl: "/manus-storage/official-tradebilia-logo.png",
+      now: "2026-09-26T20:00:00.000Z",
+    });
+    expect(plan).toMatchObject({ format: "16:9", durationSeconds: 25, voiceProfile: "american-female-news-anchor", lipSyncRequired: true, officialLogoUrl: "/manus-storage/official-tradebilia-logo.png", status: "brief-ready" });
+    expect(plan.exchangeLine).toContain("selling 1985 Topps Traded Set to Jordan for cash");
+    expect(plan.script).toContain("BREAKING NEWS");
   });
 
   it("refreshes only visual hints on stale high-value drafts when the current listing has a specific sport", () => {
