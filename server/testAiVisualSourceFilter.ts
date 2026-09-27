@@ -180,13 +180,13 @@ export async function filterVisualSourceCandidates<
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let lastError: unknown;
-    // Keep each request small enough for the model to return a rationale for every image.
-    for (let offset = 0; offset < candidates.length; offset += 5) {
-      const batch = candidates.slice(offset, offset + 5);
+    // Keep each request very small so the model can inspect cover art and return a rationale for every image.
+    for (let offset = 0; offset < candidates.length; offset += 2) {
+      const batch = candidates.slice(offset, offset + 2);
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are the final visual identity filter for ${args.sourceLabel} market candidates. Compare the target listing image to each numbered candidate. Judge broad identity and object type, not exact photography, and never reject only because of condition, crop, or background. Return JSON only: {"reviews":[{"candidateIndex":0,"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Return exactly one review for every candidate in this batch. A mismatch should be high-confidence only when the candidate is clearly a different object or item type. Target metadata: ${args.targetMetadata}`,
+          text: `You are the strict visual identity reviewer for ${args.sourceLabel}. Compare the target image with every numbered candidate and return exactly one review for every candidate in this batch. This is not a broad category check: for comics/cards/collectibles compare the visible cover or front design, title, issue/card number, language, edition/printing/variant, and grader/grade when visible. A candidate is a mismatch when it visibly represents a different cover, issue, language, edition, printing, variant, or object—even if it is the same general series or character. Candidate title text is evidence: terms such as Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, or a different issue must be treated as conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Only use rough_match when the identity is visually compatible but the image is incomplete; use unreadable only when the image cannot be inspected. Return JSON only: {"reviews":[{"candidateIndex":0,"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "auto" } },

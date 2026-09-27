@@ -861,7 +861,7 @@ export const testAIRouter = router({
         const visualActiveFilter = await filterVisualSourceCandidates({
           sourceLabel: 'eBay active listings',
           targetImageUrl: input.imageUrl,
-          targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}`,
+          targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`,
           listings: filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
         });
         const visuallyFilteredSummaries = visualActiveFilter.listings;
