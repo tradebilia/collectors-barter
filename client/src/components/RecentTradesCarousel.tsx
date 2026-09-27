@@ -221,7 +221,11 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
 
   return (
     <section aria-labelledby="recent-trades-heading" className="mx-2 mb-6 py-3 sm:mx-0 lg:mx-3">
-      <h2 id="recent-trades-heading" className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-black sm:text-[2.8rem]">Recent Trades</h2>
+      <div className="flex items-center justify-center gap-3 px-4 sm:gap-4" aria-label="Recent Trades section">
+        <span className="h-px w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44" aria-hidden="true" />
+        <h2 id="recent-trades-heading" className="whitespace-nowrap text-center font-serif text-[1.9rem] font-medium tracking-[-0.035em] text-black sm:text-[2.8rem]">Recent Trades</h2>
+        <span className="h-px w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44" aria-hidden="true" />
+      </div>
 
       {isLoading ? <div className="mt-4 h-40 animate-pulse rounded-2xl bg-white/80" aria-label="Loading recent trades" /> : !trade || !exchange ? <div className="mt-4 h-[60rem] rounded-2xl border border-dashed border-violet-200 bg-white/80 p-8 text-center text-sm text-slate-600 md:h-[20rem] lg:h-[21rem]">Completed exchanges will appear here as collectors confirm their trades.</div> : <div className="relative mt-4 h-[60rem] overflow-hidden px-0 sm:px-2 md:h-[20rem] lg:h-[21rem] lg:px-3">
         <article key={trade.id} className={`ticket-card mx-auto flex h-full w-full max-w-none flex-col overflow-hidden border-4 border-[#3974bb] bg-[#f8fafc] shadow-sm transition-opacity duration-300 motion-reduce:transition-none ${isFading ? "opacity-0" : "opacity-100"}`} aria-live="off">

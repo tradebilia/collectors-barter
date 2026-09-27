@@ -729,7 +729,11 @@ export default function Home() {
                 </aside>
 
                 <div className="min-w-0 bg-[#f4f1ea] py-3 md:col-start-2 md:row-start-1">
-                  <h2 className="text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
+                  <div className="flex items-center justify-center gap-3 px-4 sm:gap-4" aria-label="Recently Added section">
+                    <span className="h-px w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44" aria-hidden="true" />
+                    <h2 className="whitespace-nowrap text-center font-serif text-[1.9rem] font-medium tracking-[-0.035em] text-[#2d241e] sm:text-[2.8rem]">Recently Added</h2>
+                    <span className="h-px w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44" aria-hidden="true" />
+                  </div>
                   <RecentlyAddedCarousel
                     items={recentShelfItems}
                     onBeginProposal={beginProposal}

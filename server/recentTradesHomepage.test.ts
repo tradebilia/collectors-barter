@@ -27,8 +27,10 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('md:row-span-3');
     expect(homeSource).toContain('from-[#080c28] via-[#21104d] to-[#3b1d78]');
     expect(homeSource).toContain('className="min-w-0 bg-[#f4f1ea] py-3 md:col-start-2 md:row-start-1"');
-    expect(homeSource).toContain('text-center font-serif text-[2.45rem]');
-    expect(carouselSource).toContain('text-center font-serif text-[2.45rem] font-medium tracking-[-0.035em] text-black sm:text-[2.8rem]');
+    expect(homeSource).toContain('aria-label="Recently Added section"');
+    expect(homeSource).toContain('w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44');
+    expect(carouselSource).toContain('aria-label="Recent Trades section"');
+    expect(carouselSource).toContain('w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44');
     expect(homeSource).toContain('className="container relative flex h-[280px] items-center justify-center py-0 sm:h-[400px]"');
     expect(homeSource).toContain('className="flex w-[112%] max-w-[480px] -translate-x-[2%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%]"');
     expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain sm:max-w-6xl"');
@@ -84,7 +86,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("item.customGradingCompany");
     expect(carouselSource).toContain("inline-flex items-center rounded-md px-1.5 py-0.5");
     expect(carouselSource).toContain("Condition: ${condition.replaceAll");
-    expect(carouselSource).toContain("text-[2.45rem]");
+    expect(carouselSource).toContain("text-[1.9rem]");
     expect(carouselSource).toContain('<TradeMember member={exchange.left.member} />');
     expect(carouselSource).toContain("<TradeMember member={exchange.right.member} />");
     expect(carouselSource).toContain("flex w-full min-w-0 flex-col items-center text-left");
