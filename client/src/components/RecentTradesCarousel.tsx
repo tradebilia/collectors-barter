@@ -232,7 +232,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <DirectionMarker side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <img src="/manus-storage/trade-quality-seal-transparent_fdff2d58.png" alt="Gold Trade Quality seal" className="h-44 w-48 object-contain sm:h-48 sm:w-52" style={{ filter: "brightness(0) saturate(100%) invert(73%) sepia(72%) saturate(560%) hue-rotate(3deg) brightness(96%) contrast(89%)" }} loading="eager" />
+            <img src="/manus-storage/pasted_file_JPazU8_image_ab1ca4d7.png" alt="Trade completed" className="h-44 w-48 object-contain sm:h-48 sm:w-52" loading="eager" />
           </div>
           <TicketDivider />
           <DirectionMarker side="right" />
