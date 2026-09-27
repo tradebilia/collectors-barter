@@ -703,6 +703,7 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
                 <div className="min-w-0">
                   <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
                   <p className="text-[10px] text-gray-500">{l.condition} · {l.seller}</p>
+                  {l.visualReviewStatus === 'mismatch' && <p className="mt-0.5 flex items-start gap-1 text-[9px] leading-snug text-red-300"><span className="shrink-0 font-bold" aria-label="Image mismatch">✕</span><span><strong>Image mismatch:</strong> {l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</span></p>}
                 </div>
               </div>
               <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatWholeDollar(l.price)}</p>
