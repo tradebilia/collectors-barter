@@ -63,6 +63,7 @@ import {
   getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
   isCashOnlyCompletedTrade,
+  normalizeSocialDraftPlatforms,
   reconcileSocialDraftVisualHints,
   toggleSocialPlatform,
   type DraftStatus,
@@ -140,6 +141,7 @@ function normalizeDraft(draft: Partial<SocialDraft> & { id: string }): SocialDra
     ...draft,
     source: draft.source ?? "Original",
     sourceSummary: draft.sourceSummary ?? "Original Tradebilia-created content",
+    platforms: normalizeSocialDraftPlatforms(draft.platforms),
     destinationUrl: draft.destinationUrl || fallback.destinationUrl,
     promotion: draft.promotion ?? fallback.promotion,
   };

@@ -137,8 +137,13 @@ export function reconcileSocialDraftVisualHints(
   return hasChanges ? reconciled : drafts as SocialDraft[];
 }
 
-export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "Pinterest", "LinkedIn", "YouTube"];
+/** Platforms currently available for new Social Content Manager posts. */
+export const SOCIAL_PLATFORMS: SocialPlatform[] = ["Facebook", "Instagram", "X", "YouTube"];
 export const SOCIAL_DRAFT_STATUSES: DraftStatus[] = ["Draft", "Needs Review", "Approved", "Scheduled", "Published"];
+
+export function normalizeSocialDraftPlatforms(platforms: readonly SocialPlatform[] | null | undefined) {
+  return (platforms ?? ["Facebook"]).filter((platform) => SOCIAL_PLATFORMS.includes(platform));
+}
 
 export const TRADEBILIA_FOOTER_PHRASES = [
   "Trade what you love.",
@@ -258,7 +263,7 @@ export function createPromotionSocialDraft(
     mediaUrl: input.mediaUrl ?? "",
     destinationUrl: input.destinationUrl || TRADEBILIA_PUBLIC_ORIGIN,
     promotion: input.promotion ?? null,
-    platforms: ["Facebook", "Instagram", "X", "Pinterest"],
+    platforms: ["Facebook", "Instagram", "X", "YouTube"],
   };
 }
 

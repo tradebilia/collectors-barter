@@ -9,6 +9,7 @@ import {
   getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
   isCashOnlyCompletedTrade,
+  normalizeSocialDraftPlatforms,
   reconcileSocialDraftVisualHints,
   requestSocialReview,
   toggleSocialPlatform,
@@ -44,7 +45,7 @@ describe("social content manager draft workflow", () => {
     expect(draft).toMatchObject({
       source: "High-Value Listing",
       status: "Draft",
-      platforms: ["Facebook", "Instagram", "X", "Pinterest"],
+      platforms: ["Facebook", "Instagram", "X", "YouTube"],
       mediaUrl: "https://images.example/item.jpg",
       destinationUrl: "https://tradebilia.manus.space/listings/42",
       promotion: { isNew: true },
@@ -74,8 +75,15 @@ describe("social content manager draft workflow", () => {
     expect(copy).not.toContain("guaranteed");
   });
 
-  it("includes Pinterest as a selectable platform", () => {
-    expect(SOCIAL_PLATFORMS).toContain("Pinterest");
+  it("exposes only Facebook, Instagram, X, and YouTube for new posts", () => {
+    expect(SOCIAL_PLATFORMS).toEqual(["Facebook", "Instagram", "X", "YouTube"]);
+    expect(SOCIAL_PLATFORMS).not.toContain("Pinterest");
+    expect(SOCIAL_PLATFORMS).not.toContain("LinkedIn");
+  });
+
+  it("removes unsupported platforms from previously saved drafts", () => {
+    expect(normalizeSocialDraftPlatforms(["Facebook", "Pinterest", "YouTube"])).toEqual(["Facebook", "YouTube"]);
+    expect(normalizeSocialDraftPlatforms([])).toEqual([]);
   });
 
   it("uses the true item title rather than the saved promotion heading", () => {
@@ -128,9 +136,9 @@ describe("social content manager draft workflow", () => {
 
   it("toggles additional platforms without mutating the original draft", () => {
     const draft = createSocialDraft("draft-2", "2026-09-04T12:00:00.000Z");
-    const updated = toggleSocialPlatform(draft, "Pinterest", "2026-09-04T12:01:00.000Z");
+    const updated = toggleSocialPlatform(draft, "YouTube", "2026-09-04T12:01:00.000Z");
     expect(draft.platforms).toEqual(["Facebook"]);
-    expect(updated.platforms).toEqual(["Facebook", "Pinterest"]);
+    expect(updated.platforms).toEqual(["Facebook", "YouTube"]);
     expect(updated.updatedAt).toBe("2026-09-04T12:01:00.000Z");
   });
 
