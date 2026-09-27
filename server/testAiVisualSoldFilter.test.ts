@@ -36,4 +36,15 @@ describe('visual sold-comparable filter', () => {
     expect(reviews).toHaveLength(1);
     expect(reviews[0].candidateIndex).toBe(1);
   });
+
+  it('can preserve high-confidence visual flags when text identity is authoritative', () => {
+    const listings = [{ title: 'Edge Of Spider-Verse #2 CGC 9.8' }];
+    const reviews = normalizeVisualSoldReviews({ reviews: [
+      { candidateIndex: 0, verdict: 'mismatch', confidence: 'high', rationale: 'Different slab crop.' },
+    ] }, listings.length);
+    const result = applyVisualSoldReviews(listings, reviews, 1, { preserveHighConfidenceMismatches: true });
+    expect(result.listings).toEqual(listings);
+    expect(result.removedCount).toBe(0);
+    expect(result.note).toContain('Preserved 1 high-confidence visual flag');
+  });
 });

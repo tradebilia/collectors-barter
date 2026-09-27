@@ -1204,7 +1204,13 @@ export const testAIRouter = router({
                 ? visualText.filter((part): part is TextContent => part.type === 'text').map((part) => part.text).join('\n')
                 : '';
             const parsed = normalizeVisualSoldReviews(parseAnalyzerResponse(visualRaw), filtered.length);
-            const applied = applyVisualSoldReviews(filtered, parsed, visualCandidates.length);
+            const applied = applyVisualSoldReviews(filtered, parsed, visualCandidates.length, {
+              // CGC comic slabs can use different photography, labels, and
+              // crops even when the text identity is exact. Keep those rows
+              // for evidence review rather than letting vision alone discard
+              // a valid issue/grade/provider match.
+              preserveHighConfidenceMismatches: input.category === 'comics',
+            });
             visuallyFiltered = applied.listings;
             visualSoldFilter = { ...applied, note: buildVisualSoldFilterNote(applied) };
             console.log(`[Sold-Comps] Visual filter reviewed ${applied.reviewedCount}, removed ${applied.removedCount}, retained ${applied.listings.length}`);

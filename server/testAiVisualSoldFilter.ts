@@ -70,8 +70,14 @@ export function applyVisualSoldReviews(
   listings: any[],
   reviews: VisualSoldCandidateReview[],
   reviewedLimit: number,
+  options?: { preserveHighConfidenceMismatches?: boolean },
 ): VisualSoldFilterResult {
-  const removable = new Set(reviews.filter(isSafeVisualSoldRemoval).map((review) => review.candidateIndex));
+  const highConfidenceMismatchCount = reviews.filter(isSafeVisualSoldRemoval).length;
+  const removable = new Set(
+    options?.preserveHighConfidenceMismatches
+      ? []
+      : reviews.filter(isSafeVisualSoldRemoval).map((review) => review.candidateIndex),
+  );
   const kept = listings.filter((_, index) => !removable.has(index));
   const retainedUnreviewedCount = listings.slice(0, reviewedLimit).filter((_, index) => !reviews.some((review) => review.candidateIndex === index)).length;
   return {
@@ -81,7 +87,9 @@ export function applyVisualSoldReviews(
     retainedUnreviewedCount,
     reviews,
     status: 'applied',
-    note: removable.size
+    note: options?.preserveHighConfidenceMismatches && highConfidenceMismatchCount
+      ? `Preserved ${highConfidenceMismatchCount} high-confidence visual flag${highConfidenceMismatchCount === 1 ? '' : 's'} because exact text identity passed; manual review remains required.`
+      : removable.size
       ? `Removed ${removable.size} high-confidence visual mismatch${removable.size === 1 ? '' : 'es'}; rough, unreadable, and unreviewed candidates were retained.`
       : 'No high-confidence visual mismatches were removed; rough, unreadable, and unreviewed candidates were retained.',
   };
