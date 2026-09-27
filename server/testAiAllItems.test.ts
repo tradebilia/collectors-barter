@@ -28,4 +28,10 @@ describe('Test AI all-public-items selector', () => {
     expect(pageSource).toContain('ownerDisplayName');
     expect(pageSource).toContain('active listings from members who allow public profile visibility');
   });
+
+  it('does not render an empty Item B data or source column until Item B is selected', () => {
+    expect(pageSource).toContain("${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}");
+    expect(pageSource).toContain('{rightItem && <DataColumn item={rightItem}');
+    expect(pageSource).not.toContain("{rightItem ? <SourceSelector enabled={rightSources}");
+  });
 });
