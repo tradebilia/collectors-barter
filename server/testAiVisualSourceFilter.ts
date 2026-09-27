@@ -26,6 +26,9 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   note: string;
 };
 
+export const VISUAL_REVIEW_BATCH_SIZE = 20;
+export const VISUAL_REVIEW_TARGET_MATCHES = 7;
+
 const VERDICTS = new Set(["match", "rough_match", "mismatch", "unreadable"]);
 const CONFIDENCES = new Set(["high", "medium", "low"]);
 
@@ -175,7 +178,7 @@ export async function filterVisualSourceCandidates<
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string } =>
         !!entry.imageUrl
     )
-    .slice(0, 20);
+    .slice(0, 100);
   if (!candidates.length)
     return {
       listings: args.listings,
@@ -215,20 +218,23 @@ export async function filterVisualSourceCandidates<
         },
       },
     } as const;
-    // The visual-review window is intentionally capped at 20 images. Only seed
-    // title-declared identity conflicts for candidates that are actually shown
-    // and reviewed; otherwise the displayed count can exceed the UI result set.
-    const reviews: VisualSourceReview[] = buildDeclaredIdentityReviews(
-      candidates.map((candidate) => candidate.item),
-      args.targetMetadata,
-    );
+    // Review in adaptive groups of 20. Twenty is the first request window, not
+    // the total ceiling: continue while the accepted-match sample is too small
+    // to support a useful confidence estimate, up to the bounded candidate set.
+    const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
+    let reviewedCandidateCount = 0;
     let lastError: unknown;
-    // Keep each comparison one-to-one, but run a bounded group concurrently.
-    // Twenty sequential vision calls can outlive a browser query and cause a
-    // correct review result never to reach the sandbox UI.
-    for (let offset = 0; offset < candidates.length; offset += 4) {
-      const batch = candidates.slice(offset, offset + 4);
+    // Keep each comparison one-to-one, run four at a time, and only move to
+    // the next 20-candidate window when the accepted sample is still small.
+    for (let windowOffset = 0; windowOffset < candidates.length; windowOffset += VISUAL_REVIEW_BATCH_SIZE) {
+      const window = candidates.slice(windowOffset, windowOffset + VISUAL_REVIEW_BATCH_SIZE);
+      reviews.push(...buildDeclaredIdentityReviews(
+        window.map((candidate) => candidate.item),
+        args.targetMetadata,
+      ).map((review) => ({ ...review, candidateIndex: review.candidateIndex + windowOffset })));
+      for (let offset = 0; offset < window.length; offset += 4) {
+      const batch = window.slice(offset, offset + 4);
       const batchResults = await Promise.all(batch.map(async (candidate) => {
       const content: Array<TextContent | ImageContent> = [
         {
@@ -261,13 +267,17 @@ export async function filterVisualSourceCandidates<
         if (result.reviews.length) completedBatches += 1;
         if (result.error) lastError = result.error;
       }
+      }
+      reviewedCandidateCount += window.length;
+      const acceptedMatches = reviews.filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
+      if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
     }
     if (!completedBatches) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     const uniqueReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
     // Never leave an image appearing implicitly accepted because a provider omitted
     // its row. An absent response is explicitly unreadable/needs manual review.
-    for (const candidate of candidates) {
+    for (const candidate of candidates.slice(0, reviewedCandidateCount)) {
       if (!reviewByIndex.has(candidate.candidateIndex)) {
         const fallback: VisualSourceReview = {
           candidateIndex: candidate.candidateIndex,
@@ -279,12 +289,12 @@ export async function filterVisualSourceCandidates<
         reviewByIndex.set(candidate.candidateIndex, fallback);
       }
     }
-    const applied = applyVisualSourceReviews(args.listings, uniqueReviews, candidates.length);
+    const applied = applyVisualSourceReviews(args.listings, uniqueReviews, reviewedCandidateCount);
     return {
       ...applied,
       status: "applied",
       reviews: uniqueReviews,
-      note: buildVisualSourceFilterNote(args.sourceLabel, applied),
+      note: `${buildVisualSourceFilterNote(args.sourceLabel, applied)} Adaptive review covered ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates and stopped ${reviewedCandidateCount < candidates.length ? `after reaching ${VISUAL_REVIEW_TARGET_MATCHES} accepted matches` : 'after exhausting the bounded candidate set'}.`,
     };
   } catch {
     return {

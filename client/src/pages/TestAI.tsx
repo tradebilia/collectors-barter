@@ -654,7 +654,7 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
     if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
     onOpenChange?.(nextOpen);
   };
-  const candidates = data?.listings ?? data?.sales ?? data?.data?.items ?? [];
+  const candidates = data?.visualReviewListings ?? data?.listings ?? data?.sales ?? data?.data?.items ?? [];
   const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus);
   const mismatches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
   if (!data?.visualFilter) return null;

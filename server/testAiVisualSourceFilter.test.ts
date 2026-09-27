@@ -5,6 +5,8 @@ import {
   applyVisualSourceReviews,
   buildDeclaredIdentityReviews,
   normalizeVisualSourceReviews,
+  VISUAL_REVIEW_BATCH_SIZE,
+  VISUAL_REVIEW_TARGET_MATCHES,
 } from "./testAiVisualSourceFilter";
 
 describe("visual source filter", () => {
@@ -61,12 +63,14 @@ describe("visual source filter", () => {
     expect(reviews[0].rationale).toContain("Declared identity conflict");
   });
 
-  it("limits declared conflicts to the visible visual-review window", () => {
+  it("uses adaptive review windows instead of treating 20 as the total review ceiling", () => {
+    expect(VISUAL_REVIEW_BATCH_SIZE).toBe(20);
+    expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(7);
     const reviews = buildDeclaredIdentityReviews(
-      Array.from({ length: 20 }, (_, index) => ({ title: `Comic #2 Fifth Printing ${index}` })),
+      Array.from({ length: 40 }, (_, index) => ({ title: `Comic #2 Fifth Printing ${index}` })),
       "title=Comic #2 CGC 9.8",
     );
-    expect(reviews).toHaveLength(20);
+    expect(reviews).toHaveLength(40);
   });
 
   it("preserves eBay visual status fields in the response consumed by the image-check panel", () => {

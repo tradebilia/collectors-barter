@@ -898,7 +898,7 @@ export const testAIRouter = router({
             afterGradeFilter: filteredSummaries.length,
             targetGrade,
           },
-          listings: visuallyFilteredSummaries.slice(0, 20).map((s: any) => ({
+          visualReviewListings: visuallyFilteredSummaries.map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
@@ -910,6 +910,19 @@ export const testAIRouter = router({
             // Preserve the visual filter result in the transport object used by
             // MarketplaceVisualReview; dropping these made the button appear to
             // do nothing even when the server had flagged a listing.
+            visualReviewStatus: s.visualReviewStatus ?? null,
+            visualReviewRationale: s.visualReviewRationale ?? null,
+            evidenceDisposition: s.evidenceDisposition ?? null,
+          })),
+          listings: visuallyFilteredSummaries.slice(0, 20).map((s: any) => ({
+            title: s.title,
+            price: parseFloat(s.price?.value || '0'),
+            currency: s.price?.currency || 'USD',
+            condition: s.condition,
+            seller: s.seller?.username,
+            itemUrl: s.itemWebUrl,
+            imageUrl: s.image?.imageUrl,
+            listingType: s.buyingOptions?.[0],
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
