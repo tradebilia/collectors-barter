@@ -81,6 +81,12 @@ export interface MarketProfile {
   comparables: ComparableMatch[];
 }
 
+export interface ComparableIdentityGate {
+  materialReviewRequired?: boolean;
+  materialFlags?: string[];
+  sourceAlignmentStatus?: 'aligned' | 'conflicted' | 'unavailable';
+}
+
 const STOP_WORDS = new Set([
   'the', 'and', 'with', 'for', 'from', 'this', 'that', 'item', 'card', 'graded', 'grade',
   'authentic', 'authenticated', 'original', 'new', 'used', 'near', 'mint', 'rookie',
@@ -319,6 +325,7 @@ export function buildMarketProfile(
   sales: MarketSale[] = [],
   aggregateMetrics?: { median?: number; min?: number; max?: number; count?: number; confidence?: ConfidenceLevel } | null,
   now = new Date(),
+  identityGate?: ComparableIdentityGate | null,
 ): MarketProfile {
   const nowMs = now.getTime();
   const deduplicated = deduplicateMarketSales(sales);
@@ -397,7 +404,12 @@ export function buildMarketProfile(
     : accepted.length < 3 ? 'sparse_market_evidence'
     : spreadPct !== null && spreadPct > 100 ? 'conflicting_market_evidence'
     : 'strong_recent_market_evidence';
-  const supported = Boolean(weightedValue !== null && accepted.length >= 2);
+  const materialReviewRequired = Boolean(identityGate?.materialReviewRequired || identityGate?.sourceAlignmentStatus === 'conflicted');
+  if (materialReviewRequired) {
+    valuationWarnings.push('Material identity evidence conflict requires review; completed-sale records are withheld from deterministic valuation.');
+    if (identityGate?.materialFlags?.length) valuationWarnings.push(...identityGate.materialFlags.map((flag) => `Identity review: ${flag}`));
+  }
+  const supported = Boolean(!materialReviewRequired && weightedValue !== null && accepted.length >= 2);
   return {
     marketRange: supported ? { low: minimum!, mid: weightedValue!, high: maximum!, supported: true } : { low: 0, mid: weightedValue ?? aggregateMetrics?.median ?? 0, high: 0, supported: false },
     weightedValue,
@@ -424,7 +436,7 @@ export function buildMarketProfile(
     contextualComparableCount,
     duplicateSaleCount: deduplicated.duplicates.length,
     identityReadiness,
-    valuationMethod: supported ? 'recency-weighted completed-sale value using exact or near identity matches, duplicate suppression, and IQR outlier filtering' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
+    valuationMethod: supported ? 'recency-weighted completed-sale value using exact or near identity matches, duplicate suppression, and IQR outlier filtering' : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
     majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation.', 'Active asking prices, historical or undated records, certification, population, reference data, and RSS remain context only.', 'Duplicate observations are excluded; grade, condition, variant, and release mismatches reject the result.'],
     missingInformation,
     valuationWarnings,

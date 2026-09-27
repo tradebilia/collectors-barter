@@ -131,6 +131,34 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     const right = buildMarketProfile(target, [], { median: 2000, count: 20, confidence: 'high' });
     expect(deterministicTradeComparison(left, right).verdict).toBe('Insufficient Evidence');
   });
+
+  it('lets normalized completed Sold-Comps records affect the deterministic profile', () => {
+    const withoutSoldComps = buildMarketProfile(target, [
+      { ...sale(target.title, 1000, '2026-09-15'), sourceId: '130point', saleStatus: 'completed' },
+      { ...sale(target.title, 1100, '2026-09-10'), sourceId: '130point', saleStatus: 'completed' },
+    ]);
+    const withSoldComps = buildMarketProfile(target, [
+      { ...sale(target.title, 1000, '2026-09-15'), sourceId: '130point', saleStatus: 'completed' },
+      { ...sale(target.title, 1100, '2026-09-10'), sourceId: '130point', saleStatus: 'completed' },
+      { ...sale(target.title, 1800, '2026-09-12'), sourceId: 'sold_comps', saleId: 'ebay-1', saleStatus: 'completed' },
+    ]);
+    expect(withSoldComps.authoritativeSaleCount).toBe(3);
+    expect(withSoldComps.weightedValue).toBeGreaterThan(withoutSoldComps.weightedValue!);
+  });
+
+  it('withholds deterministic valuation when normalized evidence reports a material conflict', () => {
+    const profile = buildMarketProfile(target, [
+      { ...sale(target.title, 1000, '2026-09-15'), sourceId: 'sold_comps', saleStatus: 'completed' },
+      { ...sale(target.title, 1100, '2026-09-10'), sourceId: 'sold_comps', saleStatus: 'completed' },
+    ], null, new Date('2026-09-22T00:00:00Z'), {
+      materialReviewRequired: true,
+      sourceAlignmentStatus: 'conflicted',
+      materialFlags: ['Source reports a different card number.'],
+    });
+    expect(profile.marketRange.supported).toBe(false);
+    expect(profile.valuationMethod).toContain('material identity evidence conflict');
+    expect(profile.valuationWarnings).toContain('Identity review: Source reports a different card number.');
+  });
 });
 
 export {};

@@ -20,7 +20,7 @@ import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
-import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
+import { buildMarketProfile, deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { parseAnalyzerResponse } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
@@ -1732,10 +1732,12 @@ export const testAIRouter = router({
       rightSoldCompsMetrics: z.any().optional(),
       leftHistoricalTrendSales: z.array(z.object({
         title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(),
-      })).max(10).optional(),
+      })).max(30).optional(),
       rightHistoricalTrendSales: z.array(z.object({
         title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(),
-      })).max(10).optional(),
+      })).max(30).optional(),
+      leftIdentityGate: z.object({ materialReviewRequired: z.boolean().optional(), materialFlags: z.array(z.string()).max(20).optional(), sourceAlignmentStatus: z.enum(['aligned', 'conflicted', 'unavailable']).optional() }).optional(),
+      rightIdentityGate: z.object({ materialReviewRequired: z.boolean().optional(), materialFlags: z.array(z.string()).max(20).optional(), sourceAlignmentStatus: z.enum(['aligned', 'conflicted', 'unavailable']).optional() }).optional(),
       leftEvidenceSummary: testAiEvidenceSummarySchema.optional(),
       rightEvidenceSummary: testAiEvidenceSummarySchema.optional(),
       marketNews: z.object({
@@ -1747,7 +1749,7 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
 
-      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftHipstampMetrics, rightHipstampMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, marketNews, useImageAnalyzer, useVisualFieldCompletion } = input;
+      const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftHipstampMetrics, rightHipstampMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, leftIdentityGate, rightIdentityGate, marketNews, useImageAnalyzer, useVisualFieldCompletion } = input;
 
       const isSafeVisionImageUrl = (value?: string) => {
         if (!value) return false;
@@ -1946,8 +1948,8 @@ export const testAIRouter = router({
       // Trade Analyzer 2.0 is intentionally additive and sandbox-only. It
       // scores the individual historical observations before the LLM sees
       // them; the LLM explains these profiles but never performs valuation math.
-      const leftProfile = buildMarketProfile(analysisLeftItem as ComparableTarget, (leftHistoricalTrendSales ?? []) as MarketSale[], leftSoldCompsMetrics);
-      const rightProfile = buildMarketProfile(analysisRightItem as ComparableTarget, (rightHistoricalTrendSales ?? []) as MarketSale[], rightSoldCompsMetrics);
+      const leftProfile = buildMarketProfile(analysisLeftItem as ComparableTarget, (leftHistoricalTrendSales ?? []) as MarketSale[], leftSoldCompsMetrics, new Date(), leftIdentityGate as ComparableIdentityGate | undefined);
+      const rightProfile = buildMarketProfile(analysisRightItem as ComparableTarget, (rightHistoricalTrendSales ?? []) as MarketSale[], rightSoldCompsMetrics, new Date(), rightIdentityGate as ComparableIdentityGate | undefined);
       const deterministicComparison = deterministicTradeComparison(
         leftProfile,
         rightProfile,

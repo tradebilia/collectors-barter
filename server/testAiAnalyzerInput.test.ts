@@ -69,4 +69,20 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain("sourceId: sale.sourceId ?? 'the_card_api'");
     expect(clientSource).toContain('Only individually dated, confirmed final prices that also pass the existing exact/near identity, grading, recency, duplicate, and currency gates may support a sandbox value.');
   });
+
+  it('feeds normalized Sold-Comps completed sales into the bounded deterministic sales array', () => {
+    expect(routerSource).toContain('leftHistoricalTrendSales: z.array');
+    expect(routerSource).toContain(')).max(30).optional()');
+    expect(clientSource).toContain("sourceId: 'sold_comps'");
+    expect(clientSource).toContain("marketplace: 'eBay Sold-Comps'");
+    expect(clientSource).toContain("saleStatus: 'completed'");
+  });
+
+  it('passes material evidence conflicts as a deterministic identity gate', () => {
+    expect(routerSource).toContain('leftIdentityGate: z.object');
+    expect(routerSource).toContain('leftIdentityGate as ComparableIdentityGate');
+    expect(routerSource).toContain('buildMarketProfile(analysisLeftItem as ComparableTarget');
+    expect(clientSource).toContain('leftIdentityGate: leftEvidenceSummary');
+    expect(clientSource).toContain('sourceAlignmentStatus: leftEvidenceSummary.reviewFlags.some');
+  });
 });
