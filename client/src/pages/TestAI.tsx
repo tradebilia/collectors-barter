@@ -2452,7 +2452,37 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
           {result.valueSummary && <p className="text-gray-300 text-sm leading-relaxed">{result.valueSummary}</p>}
           {result.sourceReferences && (result.sourceReferences.itemA?.length > 0 || result.sourceReferences.itemB?.length > 0) && <p className="text-gray-500 text-[10px]">Narrative sources: Item A — {result.sourceReferences.itemA?.join(', ') || 'none'} · Item B — {result.sourceReferences.itemB?.join(', ') || 'none'}</p>}
           {result.leftMarketProfile && result.rightMarketProfile && result.deterministicComparison && (
-            <div className="rounded-lg border border-indigo-700/40 bg-indigo-950/20 p-3 space-y-3">
+            <>
+              <div className="rounded-lg border border-emerald-600/50 bg-emerald-950/20 p-4 space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-emerald-200 text-xs font-bold uppercase tracking-wide">Recommended Trade Summary · User View</p>
+                    <p className="text-gray-400 text-[10px] mt-1">This is the plain-language result intended for a collector. The technical evidence audit appears below.</p>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-900/40 px-2 py-1 text-[9px] font-semibold text-emerald-100">Evidence-based</span>
+                </div>
+                <div className="rounded border border-emerald-500/30 bg-gray-950/40 px-3 py-2">
+                  <p className="text-white text-sm font-semibold">{result.deterministicComparison.verdict}</p>
+                  <p className="text-gray-300 text-[10px] mt-1">{result.tradeTerms?.summary || result.deterministicComparison.decisionBasis}</p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { label: 'Item A', item: leftItem, profile: result.leftMarketProfile },
+                    { label: 'Item B', item: rightItem, profile: result.rightMarketProfile },
+                  ].map(({ label, item, profile }) => (
+                    <div key={label} className="rounded border border-slate-700/60 bg-slate-950/50 p-3 space-y-1">
+                      <p className="text-gray-200 text-xs font-semibold">{label}{item?.title ? ` · ${item.title}` : ''}</p>
+                      <p className="text-gray-300 text-[10px]">Supported market range: <span className="text-white font-semibold">{profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'Not verified'}</span></p>
+                      <p className="text-gray-400 text-[10px]">Typical evidence value: <span className="text-white">{profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'Not verified'}</span></p>
+                      <p className="text-gray-400 text-[10px]">Confidence: <span className="text-emerald-200 capitalize">{profile.evidenceQuality}</span> — {profile.directComparableCount} direct completed sale{profile.directComparableCount === 1 ? '' : 's'} used.</p>
+                    </div>
+                  ))}
+                </div>
+                {result.deterministicComparison.overlapBand && <p className="text-sky-200 text-[10px]">The supported ranges overlap from ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()} to ${Number(result.deterministicComparison.overlapBand.high).toLocaleString()}, so the available evidence does not prove a clear winner.</p>}
+                {result.tradeTerms?.cashAdjustment && <p className="text-emerald-200 text-[10px]">Recorded cash adjustment: Item {result.tradeTerms.cashAdjustment.paidBy === 'item_a' ? 'A' : 'B'} contributes ${Number(result.tradeTerms.cashAdjustment.amount).toLocaleString()}.</p>}
+                {(result.valuationWarnings?.length > 0 || result.missingInformation?.length > 0) && <div className="rounded bg-orange-950/30 px-2 py-1.5 text-[10px] text-orange-200"><span className="font-semibold">Important limitation:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].slice(0, 2).join(' ')}</div>}
+              </div>
+              <div className="rounded-lg border border-indigo-700/40 bg-indigo-950/20 p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-wide">Trade Analyzer 2.0 · Deterministic Evidence Layer</p>
@@ -2622,6 +2652,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                 </div>
               </div>
             </div>
+            </>
           )}
           <VisionImpactPanel result={result} />
           {result.visualFieldCompletionUsed && (
