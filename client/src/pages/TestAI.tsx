@@ -2470,7 +2470,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                     <p className="text-gray-300 text-[10px]">Evidence: <span className="text-white">{profile.evidenceState.replace(/_/g, ' ')}</span></p>
                     <p className="text-gray-300 text-[10px]">Value: <span className="text-white">{profile.weightedValue ? `$${profile.weightedValue.toLocaleString()}` : 'Not verified'}</span> · Range: {profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'unsupported'}</p>
                     <p className="text-gray-400 text-[10px]">Confidence: {profile.evidenceQuality} evidence · {profile.itemIdentificationConfidence} identity · {profile.marketStability} stability · {profile.liquidity} liquidity</p>
-                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.exactMatchCount} exact + {profile.nearMatchCount} near used · {profile.contextualComparableCount} context only · {profile.duplicateSaleCount} duplicate{profile.duplicateSaleCount === 1 ? '' : 's'} suppressed</p>
+                    <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.directComparableCount} direct used ({profile.exactMatchCount} exact + {profile.nearMatchCount} near) · {profile.gradeAdjacentComparableCount} grade/certification-adjacent secondary · {profile.contextualComparableCount} context only · {profile.duplicateSaleCount} duplicate{profile.duplicateSaleCount === 1 ? '' : 's'} suppressed</p>
                   </div>
                 ))}
               </div>
@@ -2538,7 +2538,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                       <div key={label} className="rounded bg-gray-900/70 p-2 space-y-2">
                         <div className="flex items-center justify-between gap-2">
                           <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
-                          <span className="text-gray-400 text-[9px]">{profile.exactMatchCount} exact · {profile.nearMatchCount} near · {contextual.length} context · {rejected.length} excluded</span>
+                          <span className="text-gray-400 text-[9px]">{profile.directComparableCount} direct · {profile.gradeAdjacentComparableCount} adjacent · {contextual.length} context · {rejected.length} excluded</span>
                         </div>
                         <div className="grid grid-cols-2 gap-1">
                           {checklist.map(([name, passed]) => (
@@ -2557,7 +2557,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                         {contextual.slice(0, 2).map((comparable: any) => (
                           <div key={`context-${comparable.title}-${comparable.date}`} className="rounded border border-sky-900/50 bg-sky-950/20 px-2 py-1.5 text-[9px]">
                             <p className="text-gray-300 truncate">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
-                            <p className="text-sky-300/80 mt-0.5">Context only · {comparable.exclusionReason ?? 'not eligible for valuation'}</p>
+                            <p className="text-sky-300/80 mt-0.5">{comparable.valuationRelationship === 'grade_adjacent_comparable' ? 'Secondary evidence · ' : 'Context only · '}{comparable.exclusionReason ?? 'not eligible for valuation'}</p>
                             <p className="text-gray-500 mt-0.5">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
                           </div>
                         ))}

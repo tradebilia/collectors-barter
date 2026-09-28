@@ -44,7 +44,20 @@ export interface MarketSale {
 }
 
 export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
-
+export type IdentityRelationship =
+  | 'exact_identity'
+  | 'same_object_different_state'
+  | 'related_variant'
+  | 'related_object'
+  | 'insufficient_identity'
+  | 'conflict';
+export type ValuationRelationship =
+  | 'direct_comparable'
+  | 'grade_adjacent_comparable'
+  | 'condition_adjacent'
+  | 'variant_comparable'
+  | 'reference_only'
+  | 'not_usable';
 export interface ComparableMatch {
   title: string;
   price: number;
@@ -56,6 +69,8 @@ export interface ComparableMatch {
   exclusionReason?: string;
   weight: number;
   classification: ComparableClassification;
+  identityRelationship: IdentityRelationship;
+  valuationRelationship: ValuationRelationship;
   sourceId?: string | null;
   sourceLabel?: string | null;
   marketplace?: string | null;
@@ -116,6 +131,8 @@ export interface MarketProfile {
   rejectedComparableCount: number;
   exactMatchCount: number;
   nearMatchCount: number;
+  directComparableCount: number;
+  gradeAdjacentComparableCount: number;
   contextualComparableCount: number;
   duplicateSaleCount: number;
   identityReadiness: 'ready' | 'limited' | 'missing_critical';
@@ -385,6 +402,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const overlap = [...targetTokens].filter((token) => saleTokens.has(token)).length;
   const tokenScore = targetTokens.size ? overlap / targetTokens.size : 0;
   const reasons: string[] = [];
+  let identityRelationship: IdentityRelationship = 'insufficient_identity';
+  let valuationRelationship: ValuationRelationship = 'reference_only';
   let score = Math.round(tokenScore * 55);
 
   if (tokenScore >= 0.8) reasons.push('strong title identity overlap');
@@ -446,6 +465,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const saleGrade = numericGrade(title.match(/(?:psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\s*(?:graded?\s*)?(?:[A-Za-z]{1,8}\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
   let materialGradeConflict = false;
   let materialCompanyConflict = false;
+  const hasKnownGradeState = targetGrade !== null || Boolean(target.grade) || Boolean(targetCompany);
+  const hasObservedGradeState = saleGrade !== null || Boolean(saleCompany);
   if (isPcgsCoin && targetPcgsGrade) {
     if (salePcgsGrade === targetPcgsGrade) {
       score += 12;
@@ -475,14 +496,41 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   } else if (targetCompany && saleCompany && saleCompany !== targetCompany) {
     score -= 10;
     materialCompanyConflict = true;
-    reasons.push('grading or authentication company differs');
+    reasons.push('grading or authentication company differs; retained as certification-adjacent evidence');
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
   const hardIdentityConflict = materialNumberConflict || materialVariantConflict || materialGradeConflict || materialCompanyConflict;
   const priceIsUsable = Number.isFinite(price) && price > 0;
-  const classification: ComparableClassification = !priceIsUsable || hardIdentityConflict
+  if (materialNumberConflict) {
+    identityRelationship = 'conflict';
+    valuationRelationship = 'not_usable';
+  } else if (materialVariantConflict) {
+    identityRelationship = 'related_variant';
+    valuationRelationship = 'variant_comparable';
+  } else if (materialGradeConflict || materialCompanyConflict) {
+    identityRelationship = 'same_object_different_state';
+    valuationRelationship = 'grade_adjacent_comparable';
+  } else if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
+    identityRelationship = 'exact_identity';
+    valuationRelationship = 'direct_comparable';
+  } else if (targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
+    identityRelationship = 'exact_identity';
+    valuationRelationship = 'direct_comparable';
+  } else if (hasKnownGradeState && hasObservedGradeState && (!targetGrade || saleGrade === targetGrade) && (!targetCompany || saleCompany === targetCompany)) {
+    identityRelationship = 'exact_identity';
+    valuationRelationship = 'direct_comparable';
+  } else if (tokenScore >= 0.8) {
+    identityRelationship = 'related_object';
+    valuationRelationship = 'reference_only';
+  }
+  const adjacentState = materialGradeConflict || materialCompanyConflict;
+  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict
     ? 'rejected'
+    : materialVariantConflict
+      ? 'contextual'
+      : adjacentState
+        ? 'contextual'
     : visualMismatch || materialVariantReview || sale.evidenceDisposition === 'warning_review' || boundedScore < 48
       ? 'contextual'
     : identity.readiness !== 'ready'
@@ -496,9 +544,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const exclusionReason = accepted
     ? undefined
     : materialGradeConflict
-      ? 'known grade differs from target'
-        : materialCompanyConflict
-          ? 'known grading or authentication company differs from target'
+      ? 'same underlying object is grade-adjacent; retained for secondary evidence, excluded from direct valuation'
+      : materialCompanyConflict
+          ? 'same underlying object is certification-adjacent; retained for secondary evidence, excluded from direct valuation'
           : materialVariantConflict
             ? 'explicit sale variant or release detail differs from target'
             : materialNumberConflict
@@ -525,6 +573,8 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     exclusionReason,
     weight: 0,
     classification,
+    identityRelationship,
+    valuationRelationship,
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
     sourceLabel: sale.sourceLabel ?? sale.marketplace ?? sale.sourceId ?? null,
     marketplace: sale.marketplace ?? null,
@@ -607,6 +657,8 @@ export function buildMarketProfile(
   const daysSinceLastAuthoritativeSale = ages.length ? Math.min(...ages) : null;
   const exactMatchCount = accepted.filter((match) => match.classification === 'exact').length;
   const nearMatchCount = accepted.filter((match) => match.classification === 'near').length;
+  const directComparableCount = comparableMatches.filter((match) => match.valuationRelationship === 'direct_comparable' && match.accepted).length;
+  const gradeAdjacentComparableCount = comparableMatches.filter((match) => match.valuationRelationship === 'grade_adjacent_comparable').length;
   const contextualComparableCount = comparableMatches.filter((match) => match.classification === 'contextual').length;
   const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
@@ -624,6 +676,7 @@ export function buildMarketProfile(
   if (spreadPct !== null && spreadPct > 75) valuationWarnings.push('Authoritative comparable prices are widely dispersed.');
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
   if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
+  if (gradeAdjacentComparableCount > 0) valuationWarnings.push(`${gradeAdjacentComparableCount} grade/certification-adjacent record${gradeAdjacentComparableCount === 1 ? '' : 's'} was retained as secondary evidence but excluded from direct valuation.`);
   if (deduplicated.duplicates.length > 0) valuationWarnings.push(`${deduplicated.duplicates.length} duplicate sale observation${deduplicated.duplicates.length === 1 ? '' : 's'} was excluded.`);
   if (selection.diagnostics.omittedByCap > 0) valuationWarnings.push(`${selection.diagnostics.omittedByCap} otherwise matched sale observation${selection.diagnostics.omittedByCap === 1 ? '' : 's'} was retained in the audit but omitted from the bounded valuation set after source-balanced selection.`);
   const evidenceState: EvidenceState = accepted.length === 0
@@ -662,6 +715,8 @@ export function buildMarketProfile(
     rejectedComparableCount: comparableMatches.length - accepted.length,
     exactMatchCount,
     nearMatchCount,
+    directComparableCount,
+    gradeAdjacentComparableCount,
     contextualComparableCount,
     duplicateSaleCount: deduplicated.duplicates.length,
     identityReadiness,
@@ -698,6 +753,6 @@ export function marketProfileForPrompt(label: string, profile: MarketProfile): s
     `- Range supported: ${profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}-$${profile.marketRange.high.toLocaleString()}` : 'no defensible range'}`,
     `- Confidence: evidence ${profile.evidenceQuality}, identification ${profile.itemIdentificationConfidence}, stability ${profile.marketStability}, liquidity ${profile.liquidity}, grade/condition ${profile.gradeConditionConfidence}`,
     `- Sales velocity: 7d ${profile.salesVelocity.sevenDay}, 30d ${profile.salesVelocity.thirtyDay}, 90d ${profile.salesVelocity.ninetyDay}; recent sales ${profile.recentSaleCount}; authoritative sales ${profile.authoritativeSaleCount}`,
-    `- Comparables: ${profile.comparableCount} accepted (${profile.exactMatchCount} exact, ${profile.nearMatchCount} near), ${profile.contextualComparableCount} contextual, ${profile.rejectedComparableCount} excluded, ${profile.duplicateSaleCount} duplicates suppressed; identity readiness ${profile.identityReadiness}; warnings: ${profile.valuationWarnings.join(' ') || 'none'}`,
+    `- Comparables: ${profile.comparableCount} accepted (${profile.directComparableCount} direct; ${profile.exactMatchCount} exact, ${profile.nearMatchCount} near), ${profile.gradeAdjacentComparableCount} grade/certification-adjacent secondary, ${profile.contextualComparableCount} contextual, ${profile.rejectedComparableCount} excluded, ${profile.duplicateSaleCount} duplicates suppressed; identity readiness ${profile.identityReadiness}; warnings: ${profile.valuationWarnings.join(' ') || 'none'}`,
   ].join('\n');
 }

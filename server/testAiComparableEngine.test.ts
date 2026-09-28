@@ -20,14 +20,20 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(exact.score).toBeGreaterThan(parallel.score);
     expect(exact.accepted).toBe(true);
     expect(wrongGrade.accepted).toBe(false);
-    expect(wrongGrade.exclusionReason).toBe('known grade differs from target');
+    expect(wrongGrade.classification).toBe('contextual');
+    expect(wrongGrade.identityRelationship).toBe('same_object_different_state');
+    expect(wrongGrade.valuationRelationship).toBe('grade_adjacent_comparable');
+    expect(wrongGrade.exclusionReason).toContain('secondary evidence');
     expect(wrongGrade.reasons).toContain('grade differs');
   });
 
   it('rejects a known sale from a different grading company even when title identity is strong', () => {
     const saleFromDifferentCompany = scoreComparable(target, sale('1996 Topps Kobe Bryant #138 BGS 10', 1500, '2026-09-01'));
     expect(saleFromDifferentCompany.accepted).toBe(false);
-    expect(saleFromDifferentCompany.exclusionReason).toBe('known grading or authentication company differs from target');
+    expect(saleFromDifferentCompany.classification).toBe('contextual');
+    expect(saleFromDifferentCompany.identityRelationship).toBe('same_object_different_state');
+    expect(saleFromDifferentCompany.valuationRelationship).toBe('grade_adjacent_comparable');
+    expect(saleFromDifferentCompany.exclusionReason).toContain('certification-adjacent');
   });
 
   it('matches PCGS coin prefixes as part of the grade identity', () => {
@@ -45,7 +51,7 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(exact.accepted).toBe(true);
     expect(exact.reasons).toContain('PCGS coin grade matches');
     expect(wrongClass.accepted).toBe(false);
-    expect(wrongClass.exclusionReason).toBe('known grade differs from target');
+    expect(wrongClass.valuationRelationship).toBe('grade_adjacent_comparable');
     expect(wrongNumber.accepted).toBe(false);
   });
 

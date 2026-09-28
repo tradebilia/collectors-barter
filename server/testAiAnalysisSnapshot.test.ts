@@ -66,7 +66,7 @@ describe('Analyzer 2.1 unified analysis snapshot', () => {
     const target = { ...griffey, grade: '10', certificationCompany: 'PSA' };
     const profile = buildMarketProfile(target, records, null, now);
     expect(profile.authoritativeSaleCount).toBe(0);
-    expect(profile.comparables.some((record) => record.exclusionReason?.includes('grade differs'))).toBe(true);
+    expect(profile.comparables.some((record) => record.reasons.includes('grade differs') && record.exclusionReason?.includes('secondary evidence'))).toBe(true);
   });
 
   it('retains a visually mismatched record as manual-review context rather than valuing it', () => {
