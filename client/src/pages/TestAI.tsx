@@ -2292,6 +2292,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
     priceBasis: sale?.priceBasis ?? defaults.priceBasis ?? 'unknown',
     visualReviewStatus: sale?.visualReviewStatus ?? sale?.visualReview?.verdict ?? 'not_reviewed',
     visualReviewRationale: sale?.visualReviewRationale ?? sale?.visualReview?.rationale ?? null,
+    evidenceDisposition: sale?.evidenceDisposition ?? sale?.evidence?.disposition ?? null,
+    evidenceReasons: Array.isArray(sale?.evidenceReasons) ? sale.evidenceReasons.slice(0, 20) : Array.isArray(sale?.evidence?.reasons) ? sale.evidence.reasons.slice(0, 20) : null,
   });
 
   // Round-robin source groups before the explicit 120-record transport ceiling.

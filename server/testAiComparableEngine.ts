@@ -1,5 +1,6 @@
 import { buildTestAiP0Identity } from '../shared/testAiP0Evidence';
 import { classifyStampFormat, stampFormatsCompatible } from './stampFormat';
+import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
 
 export type EvidenceState =
   | 'no_market_evidence'
@@ -1383,6 +1384,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const title = String(sale.title ?? '').trim();
   const price = Number(sale.price);
   const details = parseDetails(target);
+  const targetIdentityState = extractIdentityState(target);
+  const saleIdentityState = extractIdentityState({ title, grade: null, certificationCompany: null, itemDetails: null });
+  const universalIdentityConflicts = identityStateConflicts(targetIdentityState, saleIdentityState);
   const identity = buildTestAiP0Identity(target);
   const targetTokens = new Set(textTokens(target.title));
   const saleTokens = new Set(textTokens(title));
@@ -1495,9 +1499,16 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const boundedScore = Math.max(0, Math.min(100, score));
   const priceIsUsable = Number.isFinite(price) && price > 0;
   const categoryHardConflict = categoryIdentity.status === 'objective_conflict';
+  if (universalIdentityConflicts.length) {
+    reasons.push(...universalIdentityConflicts.map((reason) => `identity state conflict: ${reason}`));
+  }
+  const universalHardConflict = universalIdentityConflicts.some((reason) =>
+    /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph/.test(reason),
+  );
+  const universalNeedsReview = universalIdentityConflicts.some((reason) => reason.includes('not stated'));
   const categoryNeedsReview = categoryIdentity.status === 'needs_review';
   const categoryDirectConfirmed = categoryIdentity.status === 'direct_confirmed' || categoryIdentity.status === 'not_applicable';
-  if (materialNumberConflict || categoryHardConflict) {
+  if (materialNumberConflict || categoryHardConflict || universalHardConflict) {
     identityRelationship = 'conflict';
     valuationRelationship = 'not_usable';
   } else if (materialVariantConflict) {
@@ -1523,13 +1534,13 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     valuationRelationship = 'reference_only';
   }
   const adjacentState = materialGradeConflict || materialCompanyConflict;
-  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict || categoryHardConflict
+  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict || categoryHardConflict || universalHardConflict
     ? 'rejected'
     : materialVariantConflict
       ? 'contextual'
       : adjacentState
         ? 'contextual'
-    : categoryNeedsReview
+    : categoryNeedsReview || universalNeedsReview
       ? 'contextual'
     : visualMismatch || materialVariantReview || sale.evidenceDisposition === 'warning_review' || boundedScore < 48
       ? 'contextual'
@@ -1547,7 +1558,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
       ? 'same underlying object is grade-adjacent; retained for secondary evidence, excluded from direct valuation'
       : materialCompanyConflict
           ? 'same underlying object is certification-adjacent; retained for secondary evidence, excluded from direct valuation'
-          : categoryHardConflict
+            : universalHardConflict
+              ? `universal identity conflict: ${universalIdentityConflicts.join('; ')}`
+            : categoryHardConflict
             ? `category-specific identity conflict: ${categoryIdentity.conflicts.join('; ')}`
             : categoryNeedsReview
               ? `category-specific identity needs review: ${categoryIdentity.unconfirmedFields.join(', ')}`
@@ -1679,6 +1692,7 @@ export function buildMarketProfile(
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
   if (spreadPct !== null && spreadPct > 75) valuationWarnings.push('Authoritative comparable prices are widely dispersed.');
+  if (accepted.length < 5) valuationWarnings.push('Fewer than five accepted completed sales are available; treat the range as preliminary review evidence.');
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
   if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
   if (gradeAdjacentComparableCount > 0) valuationWarnings.push(`${gradeAdjacentComparableCount} grade/certification-adjacent record${gradeAdjacentComparableCount === 1 ? '' : 's'} was retained as secondary evidence but excluded from direct valuation.`);
@@ -1696,7 +1710,7 @@ export function buildMarketProfile(
     valuationWarnings.push('Material identity evidence conflict requires review; completed-sale records are withheld from deterministic valuation.');
     if (identityGate?.materialFlags?.length) valuationWarnings.push(...identityGate.materialFlags.map((flag) => `Identity review: ${flag}`));
   }
-  const supported = Boolean(!materialReviewRequired && weightedValue !== null && accepted.length >= 2);
+  const supported = Boolean(!materialReviewRequired && weightedValue !== null && accepted.length >= 2 && (spreadPct === null || spreadPct <= 100));
   return {
     marketRange: supported ? { low: minimum!, mid: weightedValue!, high: maximum!, supported: true } : { low: 0, mid: weightedValue ?? aggregateMetrics?.median ?? 0, high: 0, supported: false },
     weightedValue,
@@ -1743,8 +1757,8 @@ export function deterministicTradeComparison(
   const leftValue = left.weightedValue ?? left.median ?? leftFallback;
   const rightValue = right.weightedValue ?? right.median ?? rightFallback;
   const difference = rightValue - leftValue;
-  const hasDefensibleLeftValue = left.marketRange.supported && left.authoritativeSaleCount >= 2;
-  const hasDefensibleRightValue = right.marketRange.supported && right.authoritativeSaleCount >= 2;
+  const hasDefensibleLeftValue = left.marketRange.supported && left.authoritativeSaleCount >= 5 && left.evidenceQuality !== 'low' && (left.spreadPct === null || left.spreadPct <= 75);
+  const hasDefensibleRightValue = right.marketRange.supported && right.authoritativeSaleCount >= 5 && right.evidenceQuality !== 'low' && (right.spreadPct === null || right.spreadPct <= 75);
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
   if (!hasSufficientEvidence) {
     return {

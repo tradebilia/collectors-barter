@@ -123,17 +123,17 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketStability).toBe('low');
     expect(profile.liquidity).toBe('low');
     expect(profile.evidenceState).toBe('sparse_market_evidence');
-    expect(profile.marketRange.supported).toBe(true);
+    expect(profile.marketRange.supported).toBe(false);
   });
 
   it('uses deterministic profile values for the trade verdict', () => {
     const left = buildMarketProfile(target, [sale(target.title, 1000, '2026-09-15'), sale(target.title, 1100, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
     const right = buildMarketProfile(target, [sale(target.title, 1600, '2026-09-15'), sale(target.title, 1700, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
     const comparison = deterministicTradeComparison(left, right);
-    expect(comparison.verdict).toBe('Item B Worth More');
+    expect(comparison.verdict).toBe('Insufficient Evidence');
     expect(comparison.difference).toBeGreaterThan(0);
-    expect(comparison.rangeRelationship).toBe('item_b_higher_band');
-    expect(comparison.rangeGap).toBe(500);
+    expect(comparison.rangeRelationship).toBe('unsupported');
+    expect(comparison.rangeGap).toBeNull();
   });
 
   it('withholds a winner when defensible completed-sale ranges overlap despite different midpoints', () => {
@@ -147,10 +147,10 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     ], null, new Date('2026-09-22T00:00:00Z'));
     const comparison = deterministicTradeComparison(left, right);
     expect(comparison.difference).toBeGreaterThan(0);
-    expect(comparison.verdict).toBe('Ranges Overlap — Evidence is Indeterminate');
-    expect(comparison.rangeRelationship).toBe('overlap');
-    expect(comparison.overlapBand).toEqual({ low: 180, high: 220 });
-    expect(comparison.decisionBasis).toContain('midpoint difference is not treated as proof');
+    expect(comparison.verdict).toBe('Insufficient Evidence');
+    expect(comparison.rangeRelationship).toBe('unsupported');
+    expect(comparison.overlapBand).toBeNull();
+    expect(comparison.decisionBasis).toContain('lack a defensible');
   });
 
   it('does not issue a definitive verdict from owner estimates alone', () => {
