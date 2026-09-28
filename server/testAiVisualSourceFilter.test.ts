@@ -85,4 +85,11 @@ describe("visual source filter", () => {
     expect(source).toContain("Graded-versus-raw status is a mandatory identity gate");
     expect(source).toContain("target is graded and the candidate is visibly raw");
   });
+
+  it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
+    const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+    expect(pageSource).toContain("formatVisualReviewPrice");
+    expect(pageSource).toContain("listing?.price ?? listing?.soldPrice");
+    expect(pageSource).toContain("{formatVisualReviewPrice(listing)}");
+  });
 });
