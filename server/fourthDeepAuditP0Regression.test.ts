@@ -42,7 +42,8 @@ describe("fourth deep-audit P0 regression contract", () => {
     expect(counterproposal).toContain("SELECT * FROM tradeProposals WHERE id = ${input.proposalId} FOR UPDATE");
     expect(counterproposal).toContain("const offeredItemsChanged");
     expect(counterproposal).toContain("const cashTermsChanged");
-    expect(counterproposal).toContain("const termsChanged = offeredItemsChanged || cashTermsChanged");
+    expect(counterproposal).toContain("let termsChanged = offeredItemsChanged || cashTermsChanged");
+    expect(counterproposal).toContain("termsChanged = termsChanged || cashPaymentMethodChanged");
     expect(counterproposal).toContain("if (termsChanged)");
     expect(counterproposal).toContain("DELETE FROM tradeReceiptConfirmation WHERE proposalId = ${input.proposalId} AND confirmationType = 'accepted'");
     expect(counterproposal).toContain("'proposal_sent', 'Trade terms changed; both members must accept the updated terms.'");
@@ -53,7 +54,8 @@ describe("fourth deep-audit P0 regression contract", () => {
   it("does not reset acceptance merely because a counterproposal sends a message without changed terms", () => {
     const counterproposal = between(tradeRouter, "sendTradeProposal: protectedProcedure", "acceptTradeProposal: protectedProcedure");
 
-    expect(counterproposal).toContain("const termsChanged = offeredItemsChanged || cashTermsChanged");
+    expect(counterproposal).toContain("let termsChanged = offeredItemsChanged || cashTermsChanged");
+    expect(counterproposal).toContain("termsChanged = termsChanged || cashPaymentMethodChanged");
     expect(counterproposal).toContain("if (termsChanged) {");
     expect(counterproposal).toContain("if (input.message)");
   });

@@ -31,6 +31,33 @@ describe('Test AI P0 evidence contract', () => {
     ]));
   });
 
+  it('accepts titled movie memorabilia without a media format and retains supplied poster provenance', () => {
+    const identity = buildTestAiP0Identity({
+      title: 'Star Wars 1977 Original One Sheet Poster', category: 'movies', itemType: 'Poster',
+      itemDetails: JSON.stringify({ title: 'Star Wars', collectibleType: 'Poster', posterFormat: 'One Sheet', posterSize: '27 x 40' }),
+    });
+
+    expect(identity.readiness).toBe('ready');
+    expect(identity.fields).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Poster format', value: 'One Sheet' }),
+      expect.objectContaining({ label: 'Poster size', value: '27 x 40' }),
+    ]));
+  });
+
+  it('recognizes toy character aliases and subtype fields as P0 identity evidence', () => {
+    const identity = buildTestAiP0Identity({
+      title: '1984 Kenner Star Wars Luke Skywalker First Release Action Figure', category: 'vintage_toys', itemType: 'Action Figure',
+      itemDetails: JSON.stringify({ toyNameCharacter: 'Luke Skywalker', brand: 'Kenner', objectType: 'Action Figure', releaseType: 'First Release' }),
+    });
+
+    expect(identity.readiness).toBe('ready');
+    expect(identity.fields).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'Toy name', value: 'Luke Skywalker' }),
+      expect.objectContaining({ label: 'Toy form', value: 'Action Figure' }),
+      expect.objectContaining({ label: 'Variant / release', value: 'First Release' }),
+    ]));
+  });
+
   it('separates valuation candidates from all contextual evidence roles', () => {
     expect(evidenceRoleForSourceKind('market_completed')).toBe('valuation_candidate');
     expect(evidenceRoleForSourceKind('market_current')).toBe('asking_price_context');

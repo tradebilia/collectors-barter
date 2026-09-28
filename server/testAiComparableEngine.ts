@@ -749,6 +749,43 @@ function toyCompletenessState(value: string | null | undefined): ToyCompleteness
   return 'unknown';
 }
 
+type VintageToyForm = 'action_figure' | 'vehicle' | 'playset' | 'plush' | 'building_set' | 'model_kit' | 'board_game' | 'electronic_toy' | 'unknown';
+
+function vintageToyForm(value: string | null | undefined): VintageToyForm {
+  const normalized = normalizedIdentityText(value);
+  if (/action figure|figure|doll/.test(normalized)) return 'action_figure';
+  if (/vehicle|car|truck|ship|plane|train|bike/.test(normalized)) return 'vehicle';
+  if (/playset|play set/.test(normalized)) return 'playset';
+  if (/plush|stuffed|soft toy/.test(normalized)) return 'plush';
+  if (/lego|building set|construction set/.test(normalized)) return 'building_set';
+  if (/model kit|model\b/.test(normalized)) return 'model_kit';
+  if (/board game|puzzle/.test(normalized)) return 'board_game';
+  if (/electronic toy|electronic game|handheld game/.test(normalized)) return 'electronic_toy';
+  return 'unknown';
+}
+
+function toyVariantKey(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  if (/first release|first issue|original release/.test(normalized)) return 'first_release';
+  if (/second release|second issue/.test(normalized)) return 'second_release';
+  if (/reissue|re release/.test(normalized)) return 'reissue';
+  const colorVariant = normalized.match(/\b(red|blue|green|yellow|black|white|silver|gold)\s+(card|variant|version|edition)\b/);
+  if (colorVariant) return `${colorVariant[1]}_${colorVariant[2]}`;
+  const numberedVariant = normalized.match(/\b(?:variant|version|edition)\s*#?\s*(\d{1,4})\b/);
+  if (numberedVariant) return `version_${numberedVariant[1]}`;
+  return normalized.replace(/[^a-z0-9]/g, '') || null;
+}
+
+function toyVariantsInTitle(title: string): string[] {
+  const matches = [
+    ...title.matchAll(/\b(?:first|second)\s+(?:release|issue)|\boriginal release\b|\bre[-\s]?issue\b/gi),
+    ...title.matchAll(/\b(?:red|blue|green|yellow|black|white|silver|gold)\s+(?:card|variant|version|edition)\b/gi),
+    ...title.matchAll(/\b(?:variant|version|edition)\s*#?\s*\d{1,4}\b/gi),
+  ].map((match) => toyVariantKey(match[0])).filter((value): value is string => Boolean(value));
+  return [...new Set(matches)];
+}
+
 const TOY_BRANDS = ['hasbro', 'mattel', 'kenner', 'lego', 'mega bloks', 'fisher price', 'playmates', 'bandai', 'takara', 'mattel', 'mego', 'ideal', 'tonka'];
 
 type AutographItemForm = 'jersey' | 'baseball' | 'football' | 'basketball' | 'hockey_puck' | 'helmet' | 'bat' | 'glove' | 'photo' | 'card' | 'guitar' | 'book' | 'poster' | 'unknown';
@@ -803,6 +840,20 @@ function declaredAutographSigner(title: string): string | null {
   return match?.[1]?.trim() ?? null;
 }
 
+type AutographInscription = { state: 'present' | 'absent' | 'unknown'; key: string | null };
+
+function autographInscription(value: string | null | undefined): AutographInscription {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return { state: 'unknown', key: null };
+  if (/no inscription|without inscription|not inscribed|^no$/.test(normalized)) return { state: 'absent', key: null };
+  const hof = normalized.match(/\bhof\s*['’]?\s*(\d{2,4})\b/);
+  if (hof) return { state: 'present', key: `hof_${hof[1]}` };
+  const personalized = normalized.match(/\bto\s+([a-z][a-z .'-]{1,48})\b/);
+  if (personalized && /inscrib|personalized|signed/.test(normalized)) return { state: 'present', key: `to_${personalized[1].trim().replace(/[^a-z0-9]+/g, '_')}` };
+  if (/inscrib|personalized|rookie|mvp|champion|goat|^yes$/.test(normalized)) return { state: 'present', key: null };
+  return { state: 'unknown', key: null };
+}
+
 type MovieFormat = 'blu_ray' | '4k' | 'dvd' | 'vhs' | 'laserdisc' | 'digital' | 'unknown';
 type MovieEdition = 'steelbook' | 'criterion' | 'directors_cut' | 'extended_cut' | 'collectors_edition' | '3d' | 'standard' | 'unknown';
 
@@ -833,6 +884,53 @@ function moviePackageState(value: string | null | undefined): 'sealed' | 'opened
   const normalized = normalizedIdentityText(value);
   if (/sealed|unopened|new in shrink/.test(normalized)) return 'sealed';
   if (/opened|pre owned|used/.test(normalized)) return 'opened';
+  return 'unknown';
+}
+
+type MovieCollectibleForm = 'media' | 'poster' | 'prop' | 'lobby_card' | 'unknown';
+type MoviePosterFormat = 'one_sheet' | 'quad' | 'insert' | 'half_sheet' | 'lobby_card' | 'unknown';
+type MoviePropType = 'costume' | 'script' | 'helmet' | 'weapon' | 'model' | 'mask' | 'prop' | 'unknown';
+
+function movieCollectibleForm(value: string | null | undefined): MovieCollectibleForm {
+  const normalized = normalizedIdentityText(value);
+  if (/lobby card/.test(normalized)) return 'lobby_card';
+  if (/poster|one sheet|quad|half sheet|insert/.test(normalized)) return 'poster';
+  if (/screen used|screen worn|prop|costume|wardrobe|script|helmet|weapon|mask/.test(normalized)) return 'prop';
+  if (movieFormat(normalized) !== 'unknown') return 'media';
+  return 'unknown';
+}
+
+function moviePosterFormat(value: string | null | undefined): MoviePosterFormat {
+  const normalized = normalizedIdentityText(value);
+  if (/lobby card/.test(normalized)) return 'lobby_card';
+  if (/one sheet|1 sheet|27\s*(?:x|by)\s*40/.test(normalized)) return 'one_sheet';
+  if (/quad|30\s*(?:x|by)\s*40/.test(normalized)) return 'quad';
+  if (/insert|14\s*(?:x|by)\s*36/.test(normalized)) return 'insert';
+  if (/half sheet|22\s*(?:x|by)\s*28/.test(normalized)) return 'half_sheet';
+  return 'unknown';
+}
+
+function moviePosterSize(value: string | null | undefined): string | null {
+  const match = String(value ?? '').match(/\b(\d{1,3})\s*(?:x|×|by)\s*(\d{1,3})\b/i);
+  return match ? `${match[1]}x${match[2]}` : null;
+}
+
+function moviePropType(value: string | null | undefined): MoviePropType {
+  const normalized = normalizedIdentityText(value);
+  if (/costume|wardrobe|screen worn/.test(normalized)) return 'costume';
+  if (/script|screenplay/.test(normalized)) return 'script';
+  if (/helmet/.test(normalized)) return 'helmet';
+  if (/weapon|sword|blaster|gun/.test(normalized)) return 'weapon';
+  if (/model|miniature/.test(normalized)) return 'model';
+  if (/mask/.test(normalized)) return 'mask';
+  if (/prop|screen used/.test(normalized)) return 'prop';
+  return 'unknown';
+}
+
+function movieScreenUseState(value: string | null | undefined): 'screen_used' | 'replica' | 'unknown' {
+  const normalized = normalizedIdentityText(value);
+  if (/replica|reproduction|display replica/.test(normalized)) return 'replica';
+  if (/^yes$|screen used|screen worn|production used|hero prop/.test(normalized)) return 'screen_used';
   return 'unknown';
 }
 
@@ -1118,12 +1216,14 @@ export function assessComparableCategoryIdentity(
       record('Pin form', targetForm, candidateForm === targetForm, formConflict);
     }
   } else if (category === 'vintage_toys') {
-    const toyName = firstString(details, ['toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'name']) || target.title;
+    const toyName = firstString(details, ['toyName', 'toyNameCharacter', 'characterName', 'vehicleName', 'playsetName', 'gamePuzzleName', 'name']) || target.title;
     const brand = firstString(details, ['brand', 'manufacturer', 'publisherBrand']);
     const franchise = firstString(details, ['franchise', 'line', 'toyLine', 'theme']);
     const setNumber = firstString(details, ['setNumber', 'modelNumber', 'catalogNumber', 'productCode']);
     const packaging = firstString(details, ['packagingType', 'packageType']) || target.condition;
     const complete = firstString(details, ['complete', 'isComplete']);
+    const objectType = firstString(details, ['objectType', 'productType', 'toyType']);
+    const variant = firstString(details, ['variant', 'version', 'releaseVersion', 'releaseType', 'colorway', 'cardVariant']);
     const year = yearStatus();
     const brandConflict = knownBrandConflict(title, brand, TOY_BRANDS);
     const modelMatch = catalogStatus(title, setNumber);
@@ -1131,6 +1231,10 @@ export function assessComparableCategoryIdentity(
     const candidatePackaging = toyPackagingState(title);
     const targetCompleteness = toyCompletenessState(complete);
     const candidateCompleteness = toyCompletenessState(title);
+    const targetForm = vintageToyForm(objectType);
+    const candidateForm = vintageToyForm(title);
+    const targetVariant = toyVariantKey(variant);
+    const candidateVariants = toyVariantsInTitle(title);
 
     record('Toy name', toyName, titleContainsExpectedPhrase(title, toyName));
     record('Brand', brand, titleContainsExpectedPhrase(title, brand), brandConflict);
@@ -1146,6 +1250,14 @@ export function assessComparableCategoryIdentity(
       const completenessConflict = candidateCompleteness !== 'unknown' && candidateCompleteness !== targetCompleteness ? candidateCompleteness : null;
       record('Completeness', targetCompleteness, candidateCompleteness === targetCompleteness, completenessConflict);
     }
+    if (targetForm !== 'unknown') {
+      const formConflict = candidateForm !== 'unknown' && candidateForm !== targetForm ? candidateForm : null;
+      record('Toy form', targetForm, candidateForm === targetForm, formConflict);
+    }
+    if (targetVariant) {
+      const variantConflict = candidateVariants.length && !candidateVariants.includes(targetVariant) ? candidateVariants.join(', ') : null;
+      record('Variant / release', variant, candidateVariants.includes(targetVariant), variantConflict);
+    }
   } else if (category === 'autographs') {
     const signer = firstString(details, ['signer', 'athlete', 'celebrity', 'subject']) || target.title;
     const signedItem = firstString(details, ['signedItemType', 'itemType', 'autographItemType']) || target.itemType || target.title;
@@ -1159,6 +1271,8 @@ export function assessComparableCategoryIdentity(
     const candidateCertificate = autographCertificateInTitle(title);
     const declaredSigner = declaredAutographSigner(title);
     const signerConflict = declaredSigner && signer && !titleContainsExpectedPhrase(declaredSigner, signer) ? declaredSigner : null;
+    const targetInscription = autographInscription(firstString(details, ['inscription', 'inscriptionText', 'inscriptionPresent', 'personalization']));
+    const candidateInscription = autographInscription(title);
 
     record('Signer', signer, titleContainsExpectedPhrase(title, signer), signerConflict);
     if (targetForm !== 'unknown') {
@@ -1172,6 +1286,16 @@ export function assessComparableCategoryIdentity(
     if (targetCertificate && candidateCertificate) {
       const certificateConflict = candidateCertificate !== targetCertificate ? candidateCertificate : null;
       record('Certificate', certificateNumber, candidateCertificate === targetCertificate, certificateConflict);
+    }
+    if (targetInscription.state !== 'unknown') {
+      const inscriptionConflict = candidateInscription.state !== 'unknown' && targetInscription.state !== candidateInscription.state
+        ? candidateInscription.state
+        : candidateInscription.state !== 'unknown' && targetInscription.key && candidateInscription.key && targetInscription.key !== candidateInscription.key
+          ? candidateInscription.key
+          : null;
+      const inscriptionMatches = targetInscription.state === candidateInscription.state
+        && (!targetInscription.key || candidateInscription.key === targetInscription.key);
+      record('Inscription', targetInscription.key || targetInscription.state, inscriptionMatches, inscriptionConflict);
     }
   } else if (category === 'movies') {
     const movieTitle = firstString(details, ['title', 'movieTitle', 'filmTitle']) || target.title;
@@ -1188,6 +1312,20 @@ export function assessComparableCategoryIdentity(
     const candidateRegion = regionInTitle(title);
     const targetPackaging = moviePackageState(packaging);
     const candidatePackaging = moviePackageState(title);
+    const collectibleType = firstString(details, ['collectibleType', 'objectType', 'movieItemType', 'itemType']) || target.itemType || '';
+    const targetForm = movieCollectibleForm(`${collectibleType} ${format ?? ''}`);
+    const candidateForm = movieCollectibleForm(title);
+    const posterFormat = firstString(details, ['posterFormat', 'format', 'posterType']);
+    const targetPosterFormat = targetForm === 'poster' ? moviePosterFormat(posterFormat) : 'unknown';
+    const candidatePosterFormat = moviePosterFormat(title);
+    const posterSize = firstString(details, ['posterSize', 'dimensions', 'size']);
+    const targetPosterSize = targetForm === 'poster' ? moviePosterSize(posterSize) : null;
+    const candidatePosterSize = moviePosterSize(title);
+    const propType = firstString(details, ['propType', 'memorabiliaType', 'collectibleType', 'objectType']);
+    const targetPropType = targetForm === 'prop' ? moviePropType(propType || collectibleType) : 'unknown';
+    const candidatePropType = moviePropType(title);
+    const targetScreenUse = movieScreenUseState(firstString(details, ['screenUsed', 'screenWorn', 'provenance', 'propProvenance']));
+    const candidateScreenUse = movieScreenUseState(title);
 
     record('Movie title', movieTitle, titleContainsExpectedPhrase(title, movieTitle));
     if (targetFormat !== 'unknown') {
@@ -1205,6 +1343,26 @@ export function assessComparableCategoryIdentity(
     if (targetPackaging !== 'unknown') {
       const packagingConflict = candidatePackaging !== 'unknown' && candidatePackaging !== targetPackaging ? candidatePackaging : null;
       record('Package state', targetPackaging, candidatePackaging === targetPackaging, packagingConflict);
+    }
+    if (targetForm !== 'unknown') {
+      const formConflict = candidateForm !== 'unknown' && candidateForm !== targetForm ? candidateForm : null;
+      record('Movie collectible form', targetForm, candidateForm === targetForm, formConflict);
+    }
+    if (targetPosterFormat !== 'unknown') {
+      const posterFormatConflict = candidatePosterFormat !== 'unknown' && candidatePosterFormat !== targetPosterFormat ? candidatePosterFormat : null;
+      record('Poster format', targetPosterFormat, candidatePosterFormat === targetPosterFormat, posterFormatConflict);
+    }
+    if (targetPosterSize) {
+      const posterSizeConflict = candidatePosterSize && candidatePosterSize !== targetPosterSize ? candidatePosterSize : null;
+      record('Poster size', targetPosterSize, candidatePosterSize === targetPosterSize, posterSizeConflict);
+    }
+    if (targetPropType !== 'unknown') {
+      const propTypeConflict = candidatePropType !== 'unknown' && candidatePropType !== targetPropType ? candidatePropType : null;
+      record('Prop type', targetPropType, candidatePropType === targetPropType, propTypeConflict);
+    }
+    if (targetScreenUse !== 'unknown') {
+      const screenUseConflict = candidateScreenUse !== 'unknown' && candidateScreenUse !== targetScreenUse ? candidateScreenUse : null;
+      record('Screen-use state', targetScreenUse, candidateScreenUse === targetScreenUse, screenUseConflict);
     }
     record('Release year', targetYear, year.matches);
     if (year.conflict) unconfirmedFields.push(`Release year stated as ${year.conflict}`);

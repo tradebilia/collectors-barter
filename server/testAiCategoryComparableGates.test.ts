@@ -309,4 +309,113 @@ describe('category-specific comparable identity gates', () => {
     expect(wrongCountry.accepted).toBe(false);
     expect(wrongCountry.categoryIdentity.conflicts).toContain('Country differs (canada)');
   });
+
+  it('requires stated toy form and release variant while retaining sparse titles for review', () => {
+    const target: ComparableTarget = {
+      title: '1984 Kenner Star Wars Luke Skywalker First Release Action Figure',
+      category: 'vintage_toys',
+      itemType: 'action_figure',
+      itemDetails: JSON.stringify({
+        toyNameCharacter: 'Luke Skywalker',
+        brand: 'Kenner',
+        franchise: 'Star Wars',
+        year: '1984',
+        objectType: 'Action Figure',
+        releaseType: 'First Release',
+      }),
+    };
+    const exact = scoreComparable(target, completed('1984 Kenner Star Wars Luke Skywalker First Release Action Figure'));
+    const wrongForm = scoreComparable(target, completed('1984 Kenner Star Wars Luke Skywalker First Release Vehicle'));
+    const wrongVariant = scoreComparable(target, completed('1984 Kenner Star Wars Luke Skywalker Second Release Action Figure'));
+    const sparse = scoreComparable(target, completed('1984 Kenner Star Wars Luke Skywalker Action Figure'));
+
+    expect(exact.accepted).toBe(true);
+    expect(exact.categoryIdentity.status).toBe('direct_confirmed');
+    expect(wrongForm.accepted).toBe(false);
+    expect(wrongForm.categoryIdentity.conflicts).toContain('Toy form differs (vehicle)');
+    expect(wrongVariant.accepted).toBe(false);
+    expect(wrongVariant.categoryIdentity.conflicts).toContain('Variant / release differs (second_release)');
+    expect(sparse.accepted).toBe(false);
+    expect(sparse.classification).toBe('contextual');
+    expect(sparse.categoryIdentity.unconfirmedFields).toContain('Variant / release');
+  });
+
+  it('requires a stated autograph inscription when supplied and blocks a conflicting inscription', () => {
+    const target: ComparableTarget = {
+      title: 'Wayne Gretzky Signed Hockey Puck HOF 99 JSA',
+      category: 'autographs',
+      itemType: 'signed_item',
+      itemDetails: JSON.stringify({
+        signer: 'Wayne Gretzky',
+        signedItemType: 'Hockey Puck',
+        authenticationCompany: 'JSA',
+        inscription: 'HOF 99',
+      }),
+    };
+    const exact = scoreComparable(target, completed('Wayne Gretzky Signed Hockey Puck HOF 99 JSA'));
+    const wrongInscription = scoreComparable(target, completed('Wayne Gretzky Signed Hockey Puck HOF 98 JSA'));
+    const noInscription = scoreComparable(target, completed('Wayne Gretzky Signed Hockey Puck JSA'));
+
+    expect(exact.accepted).toBe(true);
+    expect(exact.categoryIdentity.status).toBe('direct_confirmed');
+    expect(wrongInscription.accepted).toBe(false);
+    expect(wrongInscription.categoryIdentity.conflicts).toContain('Inscription differs (hof_98)');
+    expect(noInscription.accepted).toBe(false);
+    expect(noInscription.classification).toBe('contextual');
+    expect(noInscription.categoryIdentity.unconfirmedFields).toContain('Inscription');
+  });
+
+  it('requires a supplied poster format and dimensions, while preserving an unspecified poster as review evidence', () => {
+    const target: ComparableTarget = {
+      title: 'Star Wars 1977 Original One Sheet Poster 27x40',
+      category: 'movies',
+      itemType: 'poster',
+      itemDetails: JSON.stringify({
+        title: 'Star Wars',
+        collectibleType: 'Poster',
+        posterFormat: 'One Sheet',
+        posterSize: '27 x 40',
+        releaseYear: '1977',
+      }),
+    };
+    const exact = scoreComparable(target, completed('Star Wars 1977 Original One Sheet Poster 27x40'));
+    const wrongFormat = scoreComparable(target, completed('Star Wars 1977 Original Quad Poster 30x40'));
+    const wrongSize = scoreComparable(target, completed('Star Wars 1977 Original One Sheet Poster 24x36'));
+    const sparse = scoreComparable(target, completed('Star Wars 1977 Original Poster'));
+
+    expect(exact.accepted).toBe(true);
+    expect(exact.categoryIdentity.status).toBe('direct_confirmed');
+    expect(wrongFormat.accepted).toBe(false);
+    expect(wrongFormat.categoryIdentity.conflicts).toContain('Poster format differs (quad)');
+    expect(wrongSize.accepted).toBe(false);
+    expect(wrongSize.categoryIdentity.conflicts).toContain('Poster size differs (24x36)');
+    expect(sparse.accepted).toBe(false);
+    expect(sparse.classification).toBe('contextual');
+    expect(sparse.categoryIdentity.unconfirmedFields).toEqual(expect.arrayContaining(['Poster format', 'Poster size']));
+  });
+
+  it('requires prop type and screen-used state for movie memorabilia', () => {
+    const target: ComparableTarget = {
+      title: 'Darth Vader 1977 Screen Used Helmet Prop',
+      category: 'movies',
+      itemType: 'prop',
+      itemDetails: JSON.stringify({
+        title: 'Darth Vader',
+        collectibleType: 'Screen Used Prop',
+        propType: 'Helmet',
+        screenUsed: 'Yes',
+        releaseYear: '1977',
+      }),
+    };
+    const exact = scoreComparable(target, completed('Darth Vader 1977 Screen Used Helmet Prop'));
+    const wrongProp = scoreComparable(target, completed('Darth Vader 1977 Screen Used Mask Prop'));
+    const replica = scoreComparable(target, completed('Darth Vader 1977 Replica Helmet Prop'));
+
+    expect(exact.accepted).toBe(true);
+    expect(exact.categoryIdentity.status).toBe('direct_confirmed');
+    expect(wrongProp.accepted).toBe(false);
+    expect(wrongProp.categoryIdentity.conflicts).toContain('Prop type differs (mask)');
+    expect(replica.accepted).toBe(false);
+    expect(replica.categoryIdentity.conflicts).toContain('Screen-use state differs (replica)');
+  });
 });
