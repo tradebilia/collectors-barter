@@ -1,4 +1,5 @@
 import { buildTestAiP0Identity } from '../shared/testAiP0Evidence';
+import { classifyStampFormat, stampFormatsCompatible } from './stampFormat';
 
 export type EvidenceState =
   | 'no_market_evidence'
@@ -13,6 +14,7 @@ export type ConfidenceLevel = 'high' | 'medium' | 'low';
 export interface ComparableTarget {
   title: string;
   category: string;
+  itemType?: string;
   grade?: string;
   condition?: string;
   certificationCompany?: string;
@@ -226,7 +228,7 @@ function normalizeCompany(value: string | null | undefined): string | null {
 }
 
 function extractComparableNumber(title: string): string | null {
-  const labeled = title.match(/\b(?:issue|no\.?|number|card)\s*#?\s*(\d{1,6})\b/i);
+  const labeled = title.match(/\b(?:issue|no\.?|number|card|pin)\s*#?\s*(\d{1,6})\b/i);
   if (labeled) return labeled[1];
   const hash = title.match(/#\s*(\d{1,6})\b/);
   return hash ? hash[1] : null;
@@ -456,6 +458,279 @@ function coinDenominationMatches(title: string, denomination: string | null): bo
   return (aliases[normalizedDenomination] ?? []).some((alias) => normalizedTitle.includes(alias));
 }
 
+const COUNTRY_ALIASES: Record<string, string[]> = {
+  us: ['us', 'usa', 'united states', 'united states of america'],
+  canada: ['canada'],
+  uk: ['uk', 'united kingdom', 'great britain', 'england'],
+  france: ['france'],
+  germany: ['germany', 'deutschland'],
+  japan: ['japan'],
+  australia: ['australia'],
+  italy: ['italy'],
+  spain: ['spain'],
+  mexico: ['mexico'],
+};
+
+function canonicalCountry(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  return Object.entries(COUNTRY_ALIASES).find(([, aliases]) => aliases.includes(normalized))?.[0] ?? normalized;
+}
+
+function countryInTitle(title: string): string | null {
+  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  const known = Object.entries(COUNTRY_ALIASES)
+    .flatMap(([key, aliases]) => aliases.map((alias) => ({ key, alias })))
+    .sort((left, right) => right.alias.length - left.alias.length)
+    .find(({ alias }) => normalizedTitle.includes(` ${alias} `));
+  return known?.key ?? null;
+}
+
+function countryStatus(title: string, expected: string | null): { matches: boolean; conflict: string | null } {
+  const expectedCountry = canonicalCountry(expected);
+  if (!expectedCountry) return { matches: false, conflict: null };
+  const observedCountry = countryInTitle(title);
+  if (observedCountry && observedCountry !== expectedCountry) return { matches: false, conflict: observedCountry };
+  return { matches: observedCountry === expectedCountry || titleContainsExpectedPhrase(title, expected), conflict: null };
+}
+
+function normalizedCatalogCode(value: string | null | undefined): string | null {
+  const normalized = String(value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return normalized || null;
+}
+
+function titleContainsCatalogCode(title: string, expected: string | null): boolean {
+  const target = normalizedCatalogCode(expected);
+  if (!target) return false;
+  const pattern = target.split('').map((character) => character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('[\\s.-]*');
+  return new RegExp(`(?:^|[^A-Z0-9])${pattern}(?:$|[^A-Z0-9])`, 'i').test(title);
+}
+
+function catalogCodesInTitle(title: string): string[] {
+  const labeled = [...title.matchAll(/\b(?:scott|sc\.?|catalog(?:\s*(?:no\.?|number|#))?|upc|barcode|model(?:\s*(?:no\.?|number|#))?|product\s*code)\s*#?\s*([A-Za-z]{0,6}\s*-?\s*\d{1,14}[A-Za-z]?)/gi)]
+    .map((match) => normalizedCatalogCode(match[1]));
+  const compact = [...title.matchAll(/\b([A-Za-z]{1,5}\s*-?\s*\d{2,8}[A-Za-z]?)\b/g)]
+    .map((match) => normalizedCatalogCode(match[1]));
+  return [...new Set([...labeled, ...compact].filter((value): value is string => Boolean(value)))];
+}
+
+function catalogStatus(title: string, expected: string | null): { matches: boolean; conflict: string | null } {
+  const target = normalizedCatalogCode(expected);
+  if (!target) return { matches: false, conflict: null };
+  if (titleContainsCatalogCode(title, target)) return { matches: true, conflict: null };
+  const observed = catalogCodesInTitle(title).find((code) => code !== target);
+  return { matches: false, conflict: observed ?? null };
+}
+
+function normalizedStampDenomination(value: string | null | undefined): string | null {
+  const raw = String(value ?? '').trim().toLowerCase().replace(/\s+/g, '');
+  if (!raw) return null;
+  const cents = raw.match(/^(\d+(?:\.\d+)?)(?:c|¢|cent|cents)$/);
+  if (cents) return `${cents[1]}c`;
+  const dollars = raw.match(/^\$?(\d+(?:\.\d+)?)(?:dollar|dollars)$/) || raw.match(/^\$(\d+(?:\.\d+)?)$/);
+  if (dollars) return `$${dollars[1]}`;
+  return raw;
+}
+
+function stampDenominationsInTitle(title: string): string[] {
+  const matches = [...title.matchAll(/(?:\$\s*\d+(?:\.\d+)?|\b\d+(?:\.\d+)?\s*(?:c|¢|cents?|dollars?)\b)/gi)];
+  return [...new Set(matches.map((match) => normalizedStampDenomination(match[0])).filter((value): value is string => Boolean(value)))];
+}
+
+function stampDenominationStatus(title: string, expected: string | null): { matches: boolean; conflict: string | null } {
+  const target = normalizedStampDenomination(expected);
+  if (!target) return { matches: false, conflict: null };
+  const observed = stampDenominationsInTitle(title);
+  if (observed.includes(target)) return { matches: true, conflict: null };
+  return { matches: false, conflict: observed[0] ?? null };
+}
+
+type StampHingeState = 'hinged' | 'unhinged' | 'unknown';
+type StampUseState = 'mint' | 'used' | 'cto' | 'unknown';
+
+function stampHingeState(value: string | null | undefined): StampHingeState {
+  const normalized = normalizedIdentityText(value);
+  if (/\bmnh\b|never hinged|unhinged/.test(normalized)) return 'unhinged';
+  if (/\bmh\b|hinged|previously hinged|^yes$/.test(normalized)) return 'hinged';
+  if (/^no$/.test(normalized)) return 'unhinged';
+  return 'unknown';
+}
+
+function stampUseState(value: string | null | undefined): StampUseState {
+  const normalized = normalizedIdentityText(value);
+  if (/\bcto\b|cancelled to order/.test(normalized)) return 'cto';
+  if (/\bused\b|postally used/.test(normalized)) return 'used';
+  if (/\bmint\b|\bmnh\b|\bmh\b|never hinged/.test(normalized)) return 'mint';
+  return 'unknown';
+}
+
+type VideoGameObjectForm = 'game' | 'console' | 'accessory' | 'unknown';
+
+function videoGameObjectForm(value: string | null | undefined): VideoGameObjectForm {
+  const normalized = normalizedIdentityText(value);
+  if (/\bconsole\b|system unit|hardware bundle/.test(normalized)) return 'console';
+  if (/\baccessor(?:y|ies)\b|controller|memory card|manual only|case only|box only/.test(normalized)) return 'accessory';
+  if (/\bgame\b|cartridge|disc|software|video game/.test(normalized)) return 'game';
+  return 'unknown';
+}
+
+const PLATFORM_LABELS: Record<string, string[]> = {
+  nes: ['nes', 'nintendo entertainment system'],
+  snes: ['snes', 'super nintendo', 'super nintendo entertainment system'],
+  n64: ['n64', 'nintendo 64'],
+  gamecube: ['gamecube', 'game cube'],
+  wii_u: ['wii u'],
+  wii: ['wii'],
+  switch: ['nintendo switch', 'switch'],
+  gb: ['game boy', 'gb'],
+  gba: ['game boy advance', 'gba'],
+  ds: ['nintendo ds', 'ds'],
+  '3ds': ['nintendo 3ds', '3ds'],
+  ps1: ['ps1', 'ps one', 'playstation 1'],
+  ps2: ['ps2', 'playstation 2'],
+  ps3: ['ps3', 'playstation 3'],
+  ps4: ['ps4', 'playstation 4'],
+  ps5: ['ps5', 'playstation 5'],
+  xbox_360: ['xbox 360'],
+  xbox_one: ['xbox one'],
+  xbox_series: ['xbox series'],
+  xbox: ['xbox'],
+  genesis: ['sega genesis', 'mega drive'],
+  saturn: ['sega saturn', 'saturn'],
+  dreamcast: ['dreamcast'],
+  game_gear: ['game gear'],
+  atari_2600: ['atari 2600'],
+};
+
+function platformKey(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  return Object.entries(PLATFORM_LABELS).find(([, aliases]) => aliases.includes(normalized))?.[0] ?? normalized;
+}
+
+function platformsInTitle(title: string): string[] {
+  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  const matches = Object.entries(PLATFORM_LABELS)
+    .filter(([key, aliases]) => {
+      if (key === 'wii' && normalizedTitle.includes(' wii u ')) return false;
+      if (key === 'xbox' && / xbox (?:360|one|series) /.test(normalizedTitle)) return false;
+      return aliases.some((alias) => normalizedTitle.includes(` ${alias} `));
+    })
+    .map(([key]) => key);
+  if (!matches.some((key) => key.startsWith('ps')) && normalizedTitle.includes(' playstation ') && !/ playstation [2-5] /.test(normalizedTitle)) matches.push('ps1');
+  return [...new Set(matches)];
+}
+
+function videoGamePackageState(value: string | null | undefined): 'sealed' | 'cib' | 'loose' | 'unknown' {
+  const normalized = normalizedIdentityText(value);
+  if (/factory sealed|brand new sealed|\bsealed\b/.test(normalized)) return 'sealed';
+  if (/complete in box|\bcib\b/.test(normalized)) return 'cib';
+  if (/\bloose\b|cartridge only|disc only|game only/.test(normalized)) return 'loose';
+  return 'unknown';
+}
+
+function videoGameEdition(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  if (/greatest hits/.test(normalized)) return 'greatest_hits';
+  if (/platinum hits/.test(normalized)) return 'platinum_hits';
+  if (/collector s edition|collectors edition/.test(normalized)) return 'collectors_edition';
+  if (/deluxe edition/.test(normalized)) return 'deluxe_edition';
+  if (/reissue|re release/.test(normalized)) return 'reissue';
+  if (/original release|first release|launch edition/.test(normalized)) return 'original_release';
+  return normalized;
+}
+
+const REGION_LABELS: Record<string, string[]> = {
+  us: ['us', 'usa', 'united states', 'north america', 'ntsc u', 'ntsc'],
+  japan: ['japan', 'japanese', 'ntsc j'],
+  europe: ['europe', 'eu', 'pal', 'uk'],
+  australia: ['australia', 'aus'],
+  world: ['worldwide', 'global', 'world'],
+};
+
+function regionKey(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  return Object.entries(REGION_LABELS).find(([, aliases]) => aliases.includes(normalized))?.[0] ?? normalized;
+}
+
+function regionInTitle(title: string): string | null {
+  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  return Object.entries(REGION_LABELS)
+    .flatMap(([key, aliases]) => aliases.map((alias) => ({ key, alias })))
+    .sort((left, right) => right.alias.length - left.alias.length)
+    .find(({ alias }) => normalizedTitle.includes(` ${alias} `))?.key ?? null;
+}
+
+function musicFormat(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  if (/\bvinyl\b|\blp\b|\brecord\b/.test(normalized)) return 'vinyl';
+  if (/\bcd\b|compact disc/.test(normalized)) return 'cd';
+  if (/cassette|\btape\b/.test(normalized)) return 'cassette';
+  if (/8 track|eight track/.test(normalized)) return '8_track';
+  if (/reel to reel/.test(normalized)) return 'reel_to_reel';
+  return normalized;
+}
+
+const RECORD_LABELS = ['columbia', 'blue note', 'capitol', 'emi', 'decca', 'atlantic', 'warner', 'rca', 'motown', 'verve', 'prestige', 'mercury', 'parlophone', 'island', 'virgin', 'def jam', 'a m'];
+
+function recordLabelInTitle(title: string): string | null {
+  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  return RECORD_LABELS.find((label) => normalizedTitle.includes(` ${label} `)) ?? null;
+}
+
+function musicPressing(value: string | null | undefined): string | null {
+  const normalized = normalizedIdentityText(value);
+  if (!normalized) return null;
+  if (/first pressing|original pressing/.test(normalized)) return 'first_pressing';
+  if (/second pressing/.test(normalized)) return 'second_pressing';
+  if (/reissue|re release/.test(normalized)) return 'reissue';
+  if (/remaster/.test(normalized)) return 'remaster';
+  if (/\bmono\b/.test(normalized)) return 'mono';
+  if (/\bstereo\b/.test(normalized)) return 'stereo';
+  return normalized;
+}
+
+function musicArtistAndReleaseFromTitle(title: string): { artist: string; release: string } | null {
+  const separator = title.match(/^(.{2,100}?)\s+-\s+(.{2,160})$/);
+  if (!separator) return null;
+  return { artist: separator[1]!.trim(), release: separator[2]!.trim() };
+}
+
+type PinEdition = { kind: 'open' | 'limited'; size: string | null };
+
+function pinEdition(value: string | null | undefined, size?: string | null): PinEdition | null {
+  const normalized = normalizedIdentityText(value);
+  const explicitSize = String(size ?? '').match(/\d{1,6}/)?.[0] ?? null;
+  if (/open edition|\boe\b/.test(normalized)) return { kind: 'open', size: null };
+  const embeddedSize = normalized.match(/(?:limited edition|\ble\b)\s*#?\s*(\d{1,6})/)?.[1] ?? normalized.match(/^\d{1,6}$/)?.[0] ?? null;
+  if (/limited edition|\ble\b|^\d{1,6}$/.test(normalized) || explicitSize) return { kind: 'limited', size: explicitSize ?? embeddedSize };
+  return null;
+}
+
+function pinEditionInTitle(title: string): PinEdition | null {
+  return pinEdition(title);
+}
+
+type PinForm = 'single' | 'lot' | 'set' | 'unknown';
+
+function pinForm(value: string | null | undefined): PinForm {
+  const normalized = normalizedIdentityText(value);
+  if (/\blot\b|\bbundle\b|\bcollection\b|additional disney pins|\d+\s+pins/.test(normalized)) return 'lot';
+  if (/\bset\b/.test(normalized)) return 'set';
+  if (/single pin|single|\bpin\b/.test(normalized)) return 'single';
+  return 'unknown';
+}
+
+const DISNEY_CONTEXT_TERMS = ['d23', 'epcot', 'disneyland', 'disney world', 'walt disney world', 'disneyland paris', 'disney cruise line', 'disney store', 'disney auction', 'pin trading night', 'mickey s of glendale', 'cast member', 'wdi'];
+
+function disneyContextInTitle(title: string): string | null {
+  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  return DISNEY_CONTEXT_TERMS.find((term) => normalizedTitle.includes(` ${term} `)) ?? null;
+}
+
 /**
  * Category gates can only withhold a sale from direct valuation. They never
  * delete a returned record, so sparse marketplace wording remains visible in
@@ -536,6 +811,149 @@ export function assessComparableCategoryIdentity(
     record('Year', targetYear, year.matches, null);
     if (country && !isUnitedStates) record('Country', country, titleContainsExpectedPhrase(title, country));
     if (year.conflict) unconfirmedFields.push(`Year stated as ${year.conflict}`);
+  } else if (category === 'stamps') {
+    const country = firstString(details, ['country', 'issuingCountry']);
+    const catalogNumber = firstString(details, ['scottNumber', 'catalogNumber', 'catalogNo', 'number']);
+    const denomination = firstString(details, ['denomination', 'faceValue']);
+    const targetFormat = classifyStampFormat({ title: target.title, itemType: target.itemType, itemDetails: target.itemDetails, condition: target.condition });
+    const candidateFormat = classifyStampFormat({ title });
+    const targetHinge = stampHingeState(firstString(details, ['hinged', 'hingeStatus', 'gumCondition']) || target.condition);
+    const candidateHinge = stampHingeState(title);
+    const targetUse = stampUseState(firstString(details, ['mintOrUsed', 'condition', 'stampCondition']) || target.condition);
+    const candidateUse = stampUseState(title);
+    const countryMatch = countryStatus(title, country);
+    const catalogMatch = catalogStatus(title, catalogNumber);
+    const denominationMatch = stampDenominationStatus(title, denomination);
+
+    record('Country', country, countryMatch.matches, countryMatch.conflict);
+    record('Scott / catalog #', catalogNumber, catalogMatch.matches, catalogMatch.conflict);
+    record('Denomination', denomination, denominationMatch.matches, denominationMatch.conflict);
+    if (targetFormat.key !== 'unknown') {
+      const formatConflict = candidateFormat.key !== 'unknown' && !stampFormatsCompatible(targetFormat, candidateFormat)
+        ? candidateFormat.label
+        : null;
+      record('Stamp form', targetFormat.label, candidateFormat.key !== 'unknown' && stampFormatsCompatible(targetFormat, candidateFormat), formatConflict);
+    }
+    if (targetHinge !== 'unknown') record('Hinge state', targetHinge, candidateHinge === targetHinge);
+    if (targetUse !== 'unknown') record('Mint / used state', targetUse, candidateUse === targetUse);
+  } else if (category === 'video_games') {
+    const gameTitle = firstString(details, ['gameTitle', 'videoGameTitle', 'title']) || target.title;
+    const platform = firstString(details, ['platform', 'console', 'system']);
+    const modelOrUpc = firstString(details, ['modelNumber', 'productCode', 'catalogNumber', 'upc', 'UPC', 'barcode', 'barCode']);
+    const region = firstString(details, ['region']);
+    const edition = firstString(details, ['edition', 'releaseType', 'version']);
+    const objectType = firstString(details, ['objectType', 'productType', 'itemType']) || target.itemType || target.title;
+    const targetForm = videoGameObjectForm(objectType);
+    const candidateForm = videoGameObjectForm(title);
+    const targetPlatform = platformKey(platform);
+    const observedPlatforms = platformsInTitle(title);
+    const targetRegion = regionKey(region);
+    const observedRegion = regionInTitle(title);
+    const targetEdition = videoGameEdition(edition);
+    const observedEdition = videoGameEdition(title);
+    const targetPackage = (firstString(details, ['sealed', 'factorySealed']) ?? '').toLowerCase() === 'yes'
+      ? 'sealed'
+      : (firstString(details, ['completeInBox']) ?? '').toLowerCase() === 'yes'
+        ? 'cib'
+        : videoGamePackageState(firstString(details, ['condition', 'packageCondition']) || target.condition);
+    const candidatePackage = videoGamePackageState(title);
+    const modelMatch = catalogStatus(title, modelOrUpc);
+
+    record('Game / console', gameTitle, titleContainsExpectedPhrase(title, gameTitle));
+    if (targetPlatform) {
+      const platformConflict = observedPlatforms.length && !observedPlatforms.includes(targetPlatform) ? observedPlatforms.join(', ') : null;
+      record('Platform', platform, observedPlatforms.includes(targetPlatform), platformConflict);
+    }
+    record('Model / UPC', modelOrUpc, modelMatch.matches, modelMatch.conflict);
+    if (targetForm !== 'unknown') {
+      const objectConflict = candidateForm !== 'unknown' && candidateForm !== targetForm ? candidateForm : null;
+      record('Object form', targetForm, candidateForm === targetForm, objectConflict);
+    }
+    if (targetRegion) {
+      const regionConflict = observedRegion && observedRegion !== targetRegion ? observedRegion : null;
+      record('Region', region, observedRegion === targetRegion, regionConflict);
+    }
+    if (targetEdition) {
+      const editionConflict = observedEdition && observedEdition !== targetEdition ? observedEdition : null;
+      record('Edition', edition, observedEdition === targetEdition, editionConflict);
+    }
+    if (targetPackage !== 'unknown') {
+      const packageConflict = candidatePackage !== 'unknown' && candidatePackage !== targetPackage ? candidatePackage : null;
+      record('Package state', targetPackage, candidatePackage === targetPackage, packageConflict);
+    }
+  } else if (category === 'music') {
+    const artist = firstString(details, ['artist', 'performer']);
+    const releaseTitle = firstString(details, ['releaseTitle', 'albumTitle', 'album', 'title']) || target.title;
+    const catalogNumber = firstString(details, ['catalogNumber', 'catno', 'catalogNo']);
+    const label = firstString(details, ['recordLabel', 'label']);
+    const country = firstString(details, ['country']);
+    const format = firstString(details, ['format', 'mediaFormat']);
+    const pressing = firstString(details, ['pressing', 'pressingDetails', 'edition', 'version']);
+    const catalogMatch = catalogStatus(title, catalogNumber);
+    const countryMatch = countryStatus(title, country);
+    const targetFormat = musicFormat(format);
+    const observedFormat = musicFormat(title);
+    const targetPressing = musicPressing(pressing);
+    const observedPressing = musicPressing(title);
+    const observedLabel = recordLabelInTitle(title);
+    const labelConflict = observedLabel && normalizedIdentityText(observedLabel) !== normalizedIdentityText(label) ? observedLabel : null;
+    const parsedTitle = musicArtistAndReleaseFromTitle(title);
+    const artistConflict = parsedTitle && artist && !titleContainsExpectedPhrase(parsedTitle.artist, artist) ? parsedTitle.artist : null;
+    const releaseConflict = parsedTitle && releaseTitle && !titleContainsExpectedPhrase(parsedTitle.release, releaseTitle) ? parsedTitle.release : null;
+
+    record('Artist', artist, titleContainsExpectedPhrase(title, artist), artistConflict);
+    record('Release title', releaseTitle, titleContainsExpectedPhrase(title, releaseTitle), releaseConflict);
+    record('Catalog #', catalogNumber, catalogMatch.matches, catalogMatch.conflict);
+    record('Label', label, titleContainsExpectedPhrase(title, label), labelConflict);
+    record('Country', country, countryMatch.matches, countryMatch.conflict);
+    if (targetFormat) {
+      const formatConflict = observedFormat && observedFormat !== targetFormat ? observedFormat : null;
+      record('Format', format, observedFormat === targetFormat, formatConflict);
+    }
+    if (targetPressing) {
+      const pressingConflict = observedPressing && observedPressing !== targetPressing ? observedPressing : null;
+      record('Pressing / edition', pressing, observedPressing === targetPressing, pressingConflict);
+    }
+  } else if (category === 'disney_pins') {
+    const pinName = firstString(details, ['pinName', 'name']) || target.title;
+    const character = firstString(details, ['character']);
+    const pinNumber = firstString(details, ['pinNumber', 'catalogNumber', 'number']);
+    const series = firstString(details, ['series']);
+    const event = firstString(details, ['pinTradingEvent', 'event']);
+    const limitedEdition = firstString(details, ['limitedEdition', 'edition']);
+    const editionSize = firstString(details, ['editionSize']);
+    const number = normalizeComparableNumber(pinNumber);
+    const observedPinNumber = extractComparableNumber(title);
+    const targetEdition = pinEdition(limitedEdition, editionSize);
+    const observedEdition = pinEditionInTitle(title);
+    const expectedEvent = event || series || '';
+    const targetEvent = disneyContextInTitle(expectedEvent);
+    const observedEvent = disneyContextInTitle(title);
+    const targetForm = pinForm(firstString(details, ['itemForm', 'format', 'pinFormat']) || target.itemType || target.title);
+    const candidateForm = pinForm(title);
+
+    record('Pin name', pinName, titleContainsExpectedPhrase(title, pinName));
+    record('Character', character, titleContainsExpectedPhrase(title, character));
+    if (number) {
+      const pinConflict = observedPinNumber && observedPinNumber !== number ? observedPinNumber : null;
+      record('Pin #', pinNumber, observedPinNumber === number, pinConflict);
+    }
+    record('Series', series, titleContainsExpectedPhrase(title, series));
+    if (targetEvent) {
+      const eventConflict = observedEvent && observedEvent !== targetEvent ? observedEvent : null;
+      record('Event', expectedEvent, observedEvent === targetEvent || titleContainsExpectedPhrase(title, expectedEvent), eventConflict);
+    }
+    if (targetEdition) {
+      const editionConflict = observedEdition && (observedEdition.kind !== targetEdition.kind || (targetEdition.size && observedEdition.size && observedEdition.size !== targetEdition.size))
+        ? `${observedEdition.kind}${observedEdition.size ? ` ${observedEdition.size}` : ''}`
+        : null;
+      const editionMatches = Boolean(observedEdition && observedEdition.kind === targetEdition.kind && (!targetEdition.size || observedEdition.size === targetEdition.size));
+      record('Edition', limitedEdition || editionSize, editionMatches, editionConflict);
+    }
+    if (targetForm !== 'unknown') {
+      const formConflict = candidateForm !== 'unknown' && candidateForm !== targetForm ? candidateForm : null;
+      record('Pin form', targetForm, candidateForm === targetForm, formConflict);
+    }
   } else {
     return { category, status: 'not_applicable', confirmedFields, unconfirmedFields, conflicts };
   }
@@ -657,6 +1075,11 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push('grading or authentication company differs; retained as certification-adjacent evidence');
   }
 
+  if (['stamps', 'video_games', 'music', 'disney_pins'].includes(categoryIdentity.category) && categoryIdentity.status === 'direct_confirmed' && categoryIdentity.confirmedFields.length > 0) {
+    score += Math.min(20, categoryIdentity.confirmedFields.length * 4);
+    reasons.push(`${categoryIdentity.confirmedFields.length} category-critical identifiers match`);
+  }
+
   const boundedScore = Math.max(0, Math.min(100, score));
   const priceIsUsable = Number.isFinite(price) && price > 0;
   const categoryHardConflict = categoryIdentity.status === 'objective_conflict';
@@ -675,6 +1098,9 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
   } else if (categoryDirectConfirmed && targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
+    identityRelationship = 'exact_identity';
+    valuationRelationship = 'direct_comparable';
+  } else if (categoryDirectConfirmed && categoryIdentity.confirmedFields.length > 0) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
   } else if (categoryDirectConfirmed && hasKnownGradeState && hasObservedGradeState && (!targetGrade || saleGrade === targetGrade) && (!targetCompany || saleCompany === targetCompany)) {
