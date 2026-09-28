@@ -2474,6 +2474,17 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   </div>
                 ))}
               </div>
+              <div className={`rounded border px-2 py-1.5 text-[10px] ${
+                result.deterministicComparison.rangeRelationship === 'overlap'
+                  ? 'border-sky-700/40 bg-sky-950/20 text-sky-100'
+                  : result.deterministicComparison.rangeRelationship === 'unsupported'
+                    ? 'border-orange-700/40 bg-orange-950/20 text-orange-100'
+                    : 'border-emerald-700/40 bg-emerald-950/20 text-emerald-100'
+              }`}>
+                <span className="font-semibold uppercase tracking-wide">Range-first decision:</span> {result.deterministicComparison.decisionBasis}
+                {result.deterministicComparison.overlapBand && <span className="text-gray-300"> Shared band: ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()}–${Number(result.deterministicComparison.overlapBand.high).toLocaleString()}.</span>}
+                {result.deterministicComparison.rangeGap !== null && result.deterministicComparison.rangeGap > 0 && <span className="text-gray-300"> Range gap: ${Number(result.deterministicComparison.rangeGap).toLocaleString()}.</span>}
+              </div>
               {result.tradeTerms && (
                 <div className="rounded border border-emerald-700/40 bg-emerald-950/20 p-2 space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -2569,6 +2580,42 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                           </div>
                         ))}
                         {!accepted.length && !rejected.length && <p className="text-gray-500 text-[9px]">No individual comparable records were returned.</p>}
+                        {(profile.comparables ?? []).length > 0 && (
+                          <details className="rounded border border-slate-700/60 bg-slate-950/70 px-2 py-1.5">
+                            <summary className="cursor-pointer select-none text-[9px] font-semibold text-slate-200">Full valuation-use ledger · {(profile.comparables ?? []).length} returned records</summary>
+                            <p className="mt-1 text-[8px] text-gray-500">Every returned record is retained here. “Used” means it met completed-sale, identity, and source-balanced selection rules; all other labels state the exact reason it did not enter the direct value.</p>
+                            <div className="mt-2 max-h-72 space-y-1 overflow-y-auto pr-1">
+                              {(profile.comparables ?? []).map((comparable: any, index: number) => {
+                                const used = Boolean(comparable.accepted);
+                                const secondary = comparable.valuationRelationship === 'grade_adjacent_comparable';
+                                const useLabel = used
+                                  ? 'Used in direct valuation'
+                                  : secondary
+                                    ? 'Secondary evidence only'
+                                    : comparable.exclusionReason === 'omitted from the bounded valuation set after source-balanced selection'
+                                      ? 'Matched but omitted by source-balanced cap'
+                                      : comparable.classification === 'rejected'
+                                        ? 'Excluded from direct valuation'
+                                        : 'Context / review only';
+                                const useTone = used
+                                  ? 'text-emerald-300'
+                                  : secondary
+                                    ? 'text-violet-300'
+                                    : comparable.classification === 'rejected'
+                                      ? 'text-orange-300'
+                                      : 'text-sky-300';
+                                const gate = comparable.categoryIdentity;
+                                return <div key={`ledger-${comparable.saleId ?? comparable.url ?? comparable.title}-${index}`} className="rounded border border-slate-800 bg-slate-900/60 px-1.5 py-1 text-[8px]">
+                                  <p className="truncate text-gray-200">${Number(comparable.price || 0).toLocaleString()} · {comparable.title}</p>
+                                  <p className={`mt-0.5 font-semibold ${useTone}`}>{useLabel}</p>
+                                  <p className="mt-0.5 text-gray-400">Reason: {used ? `Completed sale selected with ${comparable.classification} identity match (score ${comparable.score}).` : comparable.exclusionReason ?? 'No direct valuation eligibility was established.'}</p>
+                                  {gate && <p className="mt-0.5 text-gray-500">Category gate: {String(gate.status).replace(/_/g, ' ')}{gate.confirmedFields?.length ? ` · confirmed ${gate.confirmedFields.join(', ')}` : ''}{gate.unconfirmedFields?.length ? ` · review ${gate.unconfirmedFields.join(', ')}` : ''}{gate.conflicts?.length ? ` · conflict ${gate.conflicts.join(', ')}` : ''}</p>}
+                                  <p className="mt-0.5 text-gray-600">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · {comparable.saleStatus ?? 'status unavailable'} · {comparable.priceBasis ?? 'price basis unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
+                                </div>;
+                              })}
+                            </div>
+                          </details>
+                        )}
                       </div>
                     );
                   })}

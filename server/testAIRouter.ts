@@ -2296,6 +2296,9 @@ ${rightEvidenceContext}
 ${marketProfileForPrompt('ITEM A', leftProfile)}
 ${marketProfileForPrompt('ITEM B', rightProfile)}
 
+=== SERVER-COMPUTED RANGE DECISION — DO NOT RECALCULATE ===
+${deterministicComparison.decisionBasis}
+
 === SERVER-COMPUTED TRADE TERMS — DO NOT RECALCULATE ===
 ${tradeTerms.summary}
 

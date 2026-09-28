@@ -132,6 +132,25 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     const comparison = deterministicTradeComparison(left, right);
     expect(comparison.verdict).toBe('Item B Worth More');
     expect(comparison.difference).toBeGreaterThan(0);
+    expect(comparison.rangeRelationship).toBe('item_b_higher_band');
+    expect(comparison.rangeGap).toBe(500);
+  });
+
+  it('withholds a winner when defensible completed-sale ranges overlap despite different midpoints', () => {
+    const left = buildMarketProfile(target, [
+      sale(target.title, 100, '2026-09-15'),
+      sale(target.title, 220, '2026-09-10'),
+    ], null, new Date('2026-09-22T00:00:00Z'));
+    const right = buildMarketProfile(target, [
+      sale(target.title, 180, '2026-09-15'),
+      sale(target.title, 300, '2026-09-10'),
+    ], null, new Date('2026-09-22T00:00:00Z'));
+    const comparison = deterministicTradeComparison(left, right);
+    expect(comparison.difference).toBeGreaterThan(0);
+    expect(comparison.verdict).toBe('Ranges Overlap — Evidence is Indeterminate');
+    expect(comparison.rangeRelationship).toBe('overlap');
+    expect(comparison.overlapBand).toEqual({ low: 180, high: 220 });
+    expect(comparison.decisionBasis).toContain('midpoint difference is not treated as proof');
   });
 
   it('does not issue a definitive verdict from owner estimates alone', () => {
@@ -182,9 +201,11 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     });
 
     expect(wrongNumber.accepted).toBe(false);
-    expect(wrongNumber.exclusionReason).toBe('explicit catalog or issue number differs from target');
+    expect(wrongNumber.categoryIdentity.status).toBe('objective_conflict');
+    expect(wrongNumber.exclusionReason).toContain('Card # differs (139)');
     expect(missingNumber.classification).toBe('contextual');
-    expect(missingNumber.exclusionReason).toContain('contextual');
+    expect(missingNumber.categoryIdentity.status).toBe('needs_review');
+    expect(missingNumber.exclusionReason).toContain('category-specific identity needs review');
   });
 
   it('does not reject a legitimate limited edition when the target does not declare a conflicting variant', () => {

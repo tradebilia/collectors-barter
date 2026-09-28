@@ -58,6 +58,14 @@ export type ValuationRelationship =
   | 'variant_comparable'
   | 'reference_only'
   | 'not_usable';
+export type ComparableCategoryGateStatus = 'direct_confirmed' | 'needs_review' | 'objective_conflict' | 'not_applicable';
+export interface ComparableCategoryIdentity {
+  category: string;
+  status: ComparableCategoryGateStatus;
+  confirmedFields: string[];
+  unconfirmedFields: string[];
+  conflicts: string[];
+}
 export interface ComparableMatch {
   title: string;
   price: number;
@@ -71,6 +79,7 @@ export interface ComparableMatch {
   classification: ComparableClassification;
   identityRelationship: IdentityRelationship;
   valuationRelationship: ValuationRelationship;
+  categoryIdentity: ComparableCategoryIdentity;
   sourceId?: string | null;
   sourceLabel?: string | null;
   marketplace?: string | null;
@@ -148,6 +157,19 @@ export interface ComparableIdentityGate {
   materialReviewRequired?: boolean;
   materialFlags?: string[];
   sourceAlignmentStatus?: 'aligned' | 'conflicted' | 'unavailable';
+}
+
+export type RangeRelationship = 'overlap' | 'item_a_higher_band' | 'item_b_higher_band' | 'unsupported';
+export interface DeterministicTradeComparison {
+  leftValue: number;
+  rightValue: number;
+  difference: number;
+  differencePercentage: number;
+  verdict: 'Insufficient Evidence' | 'Ranges Overlap — Evidence is Indeterminate' | 'Item A Worth More' | 'Item B Worth More';
+  rangeRelationship: RangeRelationship;
+  overlapBand: { low: number; high: number } | null;
+  rangeGap: number | null;
+  decisionBasis: string;
 }
 
 const STOP_WORDS = new Set([
@@ -392,6 +414,141 @@ export function selectBalancedComparableSales(
   };
 }
 
+function normalizedIdentityText(value: unknown): string {
+  return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function titleContainsExpectedPhrase(title: string, expected: string | null): boolean {
+  const expectedTokens = textTokens(expected);
+  if (!expectedTokens.length) return false;
+  const titleTokens = new Set(textTokens(title));
+  return expectedTokens.every((token) => titleTokens.has(token));
+}
+
+function titleYears(title: string): string[] {
+  return [...new Set(title.match(/\b(?:18|19|20)\d{2}\b/g) ?? [])];
+}
+
+function knownBrandConflict(title: string, expected: string | null, brands: string[]): string | null {
+  const normalizedTitle = ` ${normalizedIdentityText(title)} `;
+  const normalizedExpected = normalizedIdentityText(expected);
+  const observed = brands.find((brand) => normalizedTitle.includes(` ${brand} `));
+  return observed && observed !== normalizedExpected ? observed : null;
+}
+
+function coinDenominationMatches(title: string, denomination: string | null): boolean {
+  const normalizedTitle = normalizedIdentityText(title);
+  const normalizedDenomination = normalizedIdentityText(denomination);
+  if (!normalizedDenomination) return false;
+  const numericFaceValue = /^\$?\d+(?:c|¢)?$/i.test(String(denomination ?? '').trim());
+  if (!numericFaceValue && normalizedTitle.includes(normalizedDenomination)) return true;
+  const aliases: Record<string, string[]> = {
+    '1': ['dollar', 'one dollar'],
+    '50c': ['half dollar'],
+    '50': ['half dollar'],
+    '25c': ['quarter'],
+    '25': ['quarter'],
+    '10c': ['dime'],
+    '10': ['dime'],
+    '5c': ['nickel'],
+    '5': ['nickel'],
+  };
+  return (aliases[normalizedDenomination] ?? []).some((alias) => normalizedTitle.includes(alias));
+}
+
+/**
+ * Category gates can only withhold a sale from direct valuation. They never
+ * delete a returned record, so sparse marketplace wording remains visible in
+ * the evidence ledger for administrator review.
+ */
+export function assessComparableCategoryIdentity(
+  target: ComparableTarget,
+  details: Record<string, unknown>,
+  title: string,
+  observedNumber: string | null,
+): ComparableCategoryIdentity {
+  const category = String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const confirmedFields: string[] = [];
+  const unconfirmedFields: string[] = [];
+  const conflicts: string[] = [];
+  const targetYear = firstString(details, ['year', 'releaseYear', 'publicationYear', 'originalReleaseYear']);
+  const targetNumber = firstString(details, ['cardNumber', 'issueNumber', 'catalogNumber', 'serialNumber']);
+  const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
+  const record = (label: string, value: string | null, matches: boolean, explicitConflict?: string | null) => {
+    if (!value) return;
+    if (explicitConflict) conflicts.push(`${label} differs (${explicitConflict})`);
+    else if (matches) confirmedFields.push(label);
+    else unconfirmedFields.push(label);
+  };
+  const yearStatus = () => {
+    if (!targetYear) return { matches: false, conflict: null as string | null };
+    const years = titleYears(title);
+    return { matches: years.includes(targetYear), conflict: years.length && !years.includes(targetYear) ? years.join(', ') : null };
+  };
+  const numberStatus = () => ({
+    matches: Boolean(normalizedTargetNumber && observedNumber === normalizedTargetNumber),
+    conflict: normalizedTargetNumber && observedNumber && observedNumber !== normalizedTargetNumber ? observedNumber : null,
+  });
+
+  if (category === 'sports_cards') {
+    const player = firstString(details, ['player', 'athlete', 'subject']);
+    const manufacturer = firstString(details, ['customManufacturer', 'manufacturer', 'brand']);
+    const year = yearStatus();
+    const brandConflict = knownBrandConflict(title, manufacturer, ['topps', 'panini', 'upper deck', 'bowman', 'donruss', 'fleer', 'score', 'leaf']);
+    record('Player', player, titleContainsExpectedPhrase(title, player));
+    // A different stated year may be a reissue, regional release, or listing
+    // shorthand. Preserve it as review context rather than a hard rejection.
+    record('Year', targetYear, year.matches);
+    if (year.conflict) unconfirmedFields.push(`Year stated as ${year.conflict}`);
+    record('Manufacturer', manufacturer, titleContainsExpectedPhrase(title, manufacturer), brandConflict);
+    const number = numberStatus();
+    record('Card #', targetNumber, number.matches, number.conflict);
+  } else if (category === 'pokemon') {
+    const cardName = firstString(details, ['cardName', 'pokemonName', 'name']);
+    const setName = firstString(details, ['setName', 'set', 'cardSet']);
+    const edition = firstString(details, ['editionEra', 'edition', 'era']);
+    const finish = firstString(details, ['finishVariant', 'variant', 'variation']);
+    record('Card name', cardName, titleContainsExpectedPhrase(title, cardName));
+    record('Set', setName, titleContainsExpectedPhrase(title, setName));
+    const number = numberStatus();
+    record('Card #', targetNumber, number.matches, number.conflict);
+    record('Edition / era', edition, titleContainsExpectedPhrase(title, edition));
+    record('Finish / variant', finish, titleContainsExpectedPhrase(title, finish));
+  } else if (category === 'comics') {
+    const series = firstString(details, ['comicTitle', 'series', 'title']) || target.title;
+    const publisher = firstString(details, ['publisher']);
+    const year = yearStatus();
+    const publisherConflict = knownBrandConflict(title, publisher, ['marvel', 'dc', 'image', 'dark horse', 'idw', 'dynamite', 'boom']);
+    record('Series', series, titleContainsExpectedPhrase(title, series));
+    const number = numberStatus();
+    record('Issue #', targetNumber, number.matches, number.conflict);
+    record('Publisher', publisher, titleContainsExpectedPhrase(title, publisher), publisherConflict);
+    // Publication year differences are informative but commonly reflect
+    // reprints, regional editions, or listing shorthand, so they stay review-only.
+    if (targetYear && !year.matches && !year.conflict) unconfirmedFields.push('Publication year');
+    if (targetYear && year.conflict) unconfirmedFields.push(`Publication year stated as ${year.conflict}`);
+  } else if (category === 'coins') {
+    const country = firstString(details, ['country', 'issuingCountry']);
+    const denomination = firstString(details, ['denomination', 'faceValue']);
+    const year = yearStatus();
+    const isUnitedStates = normalizedIdentityText(country) === 'united states' || normalizedIdentityText(country) === 'usa' || normalizedIdentityText(country) === 'us';
+    record('Denomination', denomination, coinDenominationMatches(title, denomination));
+    record('Year', targetYear, year.matches, null);
+    if (country && !isUnitedStates) record('Country', country, titleContainsExpectedPhrase(title, country));
+    if (year.conflict) unconfirmedFields.push(`Year stated as ${year.conflict}`);
+  } else {
+    return { category, status: 'not_applicable', confirmedFields, unconfirmedFields, conflicts };
+  }
+
+  return {
+    category,
+    status: conflicts.length ? 'objective_conflict' : unconfirmedFields.length ? 'needs_review' : 'direct_confirmed',
+    confirmedFields,
+    unconfirmedFields,
+    conflicts,
+  };
+}
+
 export function scoreComparable(target: ComparableTarget, sale: MarketSale): ComparableMatch {
   const title = String(sale.title ?? '').trim();
   const price = Number(sale.price);
@@ -422,6 +579,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const targetNumber = firstString(details, ['cardNumber', 'issueNumber', 'catalogNumber', 'serialNumber']);
   const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
   const observedNumber = extractComparableNumber(title);
+  const categoryIdentity = assessComparableCategoryIdentity(target, details, title, observedNumber);
   let materialNumberConflict = false;
   if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
     score += 12;
@@ -500,9 +658,11 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   }
 
   const boundedScore = Math.max(0, Math.min(100, score));
-  const hardIdentityConflict = materialNumberConflict || materialVariantConflict || materialGradeConflict || materialCompanyConflict;
   const priceIsUsable = Number.isFinite(price) && price > 0;
-  if (materialNumberConflict) {
+  const categoryHardConflict = categoryIdentity.status === 'objective_conflict';
+  const categoryNeedsReview = categoryIdentity.status === 'needs_review';
+  const categoryDirectConfirmed = categoryIdentity.status === 'direct_confirmed' || categoryIdentity.status === 'not_applicable';
+  if (materialNumberConflict || categoryHardConflict) {
     identityRelationship = 'conflict';
     valuationRelationship = 'not_usable';
   } else if (materialVariantConflict) {
@@ -511,13 +671,13 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   } else if (materialGradeConflict || materialCompanyConflict) {
     identityRelationship = 'same_object_different_state';
     valuationRelationship = 'grade_adjacent_comparable';
-  } else if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
+  } else if (categoryDirectConfirmed && normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
-  } else if (targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
+  } else if (categoryDirectConfirmed && targetVariant && title.toLowerCase().includes(targetVariant.toLowerCase())) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
-  } else if (hasKnownGradeState && hasObservedGradeState && (!targetGrade || saleGrade === targetGrade) && (!targetCompany || saleCompany === targetCompany)) {
+  } else if (categoryDirectConfirmed && hasKnownGradeState && hasObservedGradeState && (!targetGrade || saleGrade === targetGrade) && (!targetCompany || saleCompany === targetCompany)) {
     identityRelationship = 'exact_identity';
     valuationRelationship = 'direct_comparable';
   } else if (tokenScore >= 0.8) {
@@ -525,12 +685,14 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     valuationRelationship = 'reference_only';
   }
   const adjacentState = materialGradeConflict || materialCompanyConflict;
-  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict
+  const classification: ComparableClassification = !priceIsUsable || materialNumberConflict || categoryHardConflict
     ? 'rejected'
     : materialVariantConflict
       ? 'contextual'
       : adjacentState
         ? 'contextual'
+    : categoryNeedsReview
+      ? 'contextual'
     : visualMismatch || materialVariantReview || sale.evidenceDisposition === 'warning_review' || boundedScore < 48
       ? 'contextual'
     : identity.readiness !== 'ready'
@@ -547,6 +709,10 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
       ? 'same underlying object is grade-adjacent; retained for secondary evidence, excluded from direct valuation'
       : materialCompanyConflict
           ? 'same underlying object is certification-adjacent; retained for secondary evidence, excluded from direct valuation'
+          : categoryHardConflict
+            ? `category-specific identity conflict: ${categoryIdentity.conflicts.join('; ')}`
+            : categoryNeedsReview
+              ? `category-specific identity needs review: ${categoryIdentity.unconfirmedFields.join(', ')}`
           : materialVariantConflict
             ? 'explicit sale variant or release detail differs from target'
             : materialNumberConflict
@@ -575,6 +741,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     classification,
     identityRelationship,
     valuationRelationship,
+    categoryIdentity,
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
     sourceLabel: sale.sourceLabel ?? sale.marketplace ?? sale.sourceId ?? null,
     marketplace: sale.marketplace ?? null,
@@ -729,20 +896,65 @@ export function buildMarketProfile(
   };
 }
 
-export function deterministicTradeComparison(left: MarketProfile, right: MarketProfile, leftFallback = 0, rightFallback = 0) {
+export function deterministicTradeComparison(
+  left: MarketProfile,
+  right: MarketProfile,
+  leftFallback = 0,
+  rightFallback = 0,
+): DeterministicTradeComparison {
   const leftValue = left.weightedValue ?? left.median ?? leftFallback;
   const rightValue = right.weightedValue ?? right.median ?? rightFallback;
   const difference = rightValue - leftValue;
   const hasDefensibleLeftValue = left.marketRange.supported && left.authoritativeSaleCount >= 2;
   const hasDefensibleRightValue = right.marketRange.supported && right.authoritativeSaleCount >= 2;
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
+  if (!hasSufficientEvidence) {
+    return {
+      leftValue,
+      rightValue,
+      difference,
+      differencePercentage: leftValue > 0 ? Math.round((difference / leftValue) * 1000) / 10 : 0,
+      verdict: 'Insufficient Evidence',
+      rangeRelationship: 'unsupported',
+      overlapBand: null,
+      rangeGap: null,
+      decisionBasis: 'One or both sides lack a defensible completed-sale range, so the analyzer cannot make a range-based trade conclusion.',
+    };
+  }
+  const overlapLow = Math.max(left.marketRange.low, right.marketRange.low);
+  const overlapHigh = Math.min(left.marketRange.high, right.marketRange.high);
+  const rangesOverlap = overlapLow <= overlapHigh;
+  const itemBHigherBand = left.marketRange.high < right.marketRange.low;
+  const rangeGap = rangesOverlap
+    ? 0
+    : itemBHigherBand
+      ? right.marketRange.low - left.marketRange.high
+      : left.marketRange.low - right.marketRange.high;
+  const rangeRelationship: RangeRelationship = rangesOverlap
+    ? 'overlap'
+    : itemBHigherBand
+      ? 'item_b_higher_band'
+      : 'item_a_higher_band';
+  const verdict: DeterministicTradeComparison['verdict'] = rangesOverlap
+    ? 'Ranges Overlap — Evidence is Indeterminate'
+    : itemBHigherBand
+      ? 'Item B Worth More'
+      : 'Item A Worth More';
   return {
     leftValue,
     rightValue,
     difference,
     differencePercentage: leftValue > 0 ? Math.round((difference / leftValue) * 1000) / 10 : 0,
-    verdict: !hasSufficientEvidence ? 'Insufficient Evidence' : Math.abs(difference) < Math.max(1, leftValue * 0.05) ? 'Roughly Equal' : difference > 0 ? 'Item B Worth More' : 'Item A Worth More',
-  } as const;
+    verdict,
+    rangeRelationship,
+    overlapBand: rangesOverlap ? { low: overlapLow, high: overlapHigh } : null,
+    rangeGap,
+    decisionBasis: rangesOverlap
+      ? `The completed-sale ranges overlap from $${overlapLow.toLocaleString()} to $${overlapHigh.toLocaleString()}, so the midpoint difference is not treated as proof that either side is worth more.`
+      : itemBHigherBand
+        ? `Item B's completed-sale range begins $${rangeGap.toLocaleString()} above Item A's range, so the evidence bands do not overlap.`
+        : `Item A's completed-sale range begins $${rangeGap.toLocaleString()} above Item B's range, so the evidence bands do not overlap.`,
+  };
 }
 
 export function marketProfileForPrompt(label: string, profile: MarketProfile): string {
