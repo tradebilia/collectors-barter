@@ -1820,12 +1820,12 @@ export const testAIRouter = router({
 
   // Parse.bot 130point sold-card search — administrator-only and read-only.
   get130PointData: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240), imageUrl: z.string().url().optional() }))
+    .input(z.object({ query: z.string().trim().min(2).max(240), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookup130PointSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
-      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `query=${input.query}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `title=${input.query}; category=unknown; itemDetails=${input.itemDetails ?? 'unknown'}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
       return {
         ...result,
         data: {
@@ -1843,12 +1843,12 @@ export const testAIRouter = router({
     }),
 
   getPwccSales: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240), imageUrl: z.string().url().optional() }))
+    .input(z.object({ query: z.string().trim().min(2).max(240), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupPwccSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
-      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: 'PWCC / Fanatics Collect sold listings', targetImageUrl: input.imageUrl, targetMetadata: `query=${input.query}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: 'PWCC / Fanatics Collect sold listings', targetImageUrl: input.imageUrl, targetMetadata: `title=${input.query}; category=unknown; itemDetails=${input.itemDetails ?? 'unknown'}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
       return { ...result, data: { ...result.data, items: visualFilter.listings }, visualFilter };
     }),
 

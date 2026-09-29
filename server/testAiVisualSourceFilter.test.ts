@@ -102,6 +102,22 @@ describe("visual source filter", () => {
     expect(queue.map((candidate) => candidate.candidateIndex)).toEqual([1]);
   });
 
+  it("does not guess a distribution type when a marketplace title is silent", () => {
+    const reviews = buildDeclaredIdentityReviews(
+      [{ title: "Edge of Spider-Verse #2 CGC 9.8" }],
+      `title=Edge of Spider-Verse #2 CGC 9.8; itemDetails=${JSON.stringify({ distributionType: "Direct" })}`,
+    );
+    expect(reviews).toEqual([]);
+  });
+
+  it("keeps the identity gate source-neutral for every shared marketplace caller", () => {
+    const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
+    expect(routerSource).toContain("sourceLabel: 'eBay active listings'");
+    expect(routerSource).toContain("sourceLabel: '130point sold listings'");
+    expect(routerSource).toContain("sourceLabel: 'PWCC / Fanatics Collect sold listings'");
+    expect(routerSource).toContain("itemDetails=${input.itemDetails ?? 'unknown'}");
+  });
+
   it("uses adaptive review windows instead of treating 20 as the total review ceiling", () => {
     expect(VISUAL_REVIEW_BATCH_SIZE).toBe(20);
     expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(7);

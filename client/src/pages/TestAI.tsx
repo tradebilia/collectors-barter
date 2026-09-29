@@ -1529,7 +1529,7 @@ function CardsightAiSection({ item, side, data, isLoading }: { item: SelectedIte
 function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.get130PointData.useQuery(
-    { query: item.title, imageUrl: item.primaryPhotoUrl },
+    { query: item.title, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title },
   );
   const items = data?.data?.items ?? [];
@@ -1722,7 +1722,7 @@ function SmithsonianSection({ item, side }: { item: SelectedItem; side: 'left' |
 
 function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title, imageUrl: item.primaryPhotoUrl }, { enabled: !!item.title });
+  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl }, { enabled: !!item.title });
   const sales = data?.data?.items ?? [];
   const buckets = [
     ['Recent comparable sales · last 12 months', sales.filter((sale: any) => sale.recency === 'recent'), 'text-emerald-300'],
@@ -1878,7 +1878,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const sgcQuery = trpc.testAI.getSgcData.useQuery({ certNumber }, { enabled: enabledSources.has('sgc') && !!certNumber });
   const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && isCgcCompany(item.gradingCompany) && !!certNumber });
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
-  const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
+  const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title, itemDetails: marketItem.itemDetails }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
   const discogsCandidates = useMemo(() => discogsQuery.data?.data?.results ?? [], [discogsQuery.data]);
 
   useEffect(() => {
@@ -3121,11 +3121,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: leftSearchItem?.title || '', imageUrl: leftSearchItem?.primaryPhotoUrl },
+    { query: leftSearchItem?.title || '', itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl },
     { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
   );
   const right130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: rightSearchItem?.title || '', imageUrl: rightSearchItem?.primaryPhotoUrl },
+    { query: rightSearchItem?.title || '', itemDetails: rightSearchItem?.itemDetails, imageUrl: rightSearchItem?.primaryPhotoUrl },
     { enabled: !!rightSearchItem && rightSources.has('one_thirty_point') },
   );
 
