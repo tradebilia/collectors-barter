@@ -3027,12 +3027,29 @@ export const appRouter = router({
         try {
           const originalImage = parseAutomaticSceneReferenceImage(input.listingImageDataUrl);
           const imageVisualReferences = await extractListingImageVisualReferences(input.listingImageDataUrl);
-          const { url } = await generateImage({
-            prompt: buildAutomaticHighValueScenePrompt({ ...input, imageVisualReferences }),
-            originalImages: [originalImage],
-            model: "MODEL_GPT_IMAGE_2",
-            quality: "medium",
-          });
+          const prompt = buildAutomaticHighValueScenePrompt({ ...input, imageVisualReferences });
+          let generated: { url?: string };
+          try {
+            generated = await generateImage({
+              prompt,
+              originalImages: [originalImage],
+              model: "MODEL_GPT_IMAGE_2",
+              quality: "medium",
+            });
+          } catch (referenceError) {
+            // A valid listing photo can still be rejected by the image model
+            // because of format, moderation, or transient provider limits.
+            // Retry once from the same bounded public metadata so one bad
+            // reference image does not force the whole social preview to fall
+            // back to a generic category scene.
+            console.warn("[admin.generateHighValueListingScene] image-conditioned generation failed; retrying from public metadata", referenceError instanceof Error ? referenceError.message : "unknown error");
+            generated = await generateImage({
+              prompt,
+              model: "MODEL_GPT_IMAGE_2",
+              quality: "medium",
+            });
+          }
+          const { url } = generated;
           if (!url?.startsWith("/manus-storage/")) throw new Error("Generated scene did not return managed storage.");
           return { url };
         } catch (error) {
