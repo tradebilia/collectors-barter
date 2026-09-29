@@ -57,6 +57,14 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
+
+  it("updates the primary asking-price cards from accepted visual matches automatically", () => {
+    expect(pageSource).toContain("const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics");
+    expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics");
+    expect(pageSource).toContain("Full-market asking context before image filtering");
+    expect(pageSource).toContain("accepted visual matches update this asking-price context");
+    expect(pageSource).toContain("No accepted visual matches have usable prices");
+  });
   it("keeps the first visual pass bounded and preserves the remaining candidates", () => {
     expect(visualSource).toContain("VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT");
     expect(visualSource).toContain("prioritizeVisualSourceCandidates");

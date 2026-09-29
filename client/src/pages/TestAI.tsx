@@ -691,8 +691,10 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
   const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
-  const visibleMetrics = showVisualMatchMetrics && visualReviewData?.visualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics;
-  const showingVisualMatchMetrics = showVisualMatchMetrics && !!visualReviewData?.visualMatchMetrics;
+  // Image review changes the displayed asking-price summary as soon as its
+  // response arrives. Opening the detail drawer is no longer required.
+  const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics;
+  const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics;
   const visualMatchCount = visualReviewData?.visualMatchMetrics?.count ?? 0;
 
   return (
@@ -705,7 +707,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
       {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
-      {showVisualMatchMetrics && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
+      {visualReviewData?.visualFilter && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
         <div className="space-y-1.5">
           <div className="grid grid-cols-4 gap-2 text-[11px]">
@@ -725,7 +727,8 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
         </div>
       )}
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
-      {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Image review is a separate, bounded check and never changes valuation evidence.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
+      {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
+      {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Image review is a separate, bounded check; accepted visual matches update this asking-price context, not completed-sale valuation evidence.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
       {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running separately. Current asking-price listings remain available below.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{displayData.query}"</span> · {displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>}
