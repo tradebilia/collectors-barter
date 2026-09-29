@@ -28,6 +28,7 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
 
 export const VISUAL_REVIEW_BATCH_SIZE = 20;
 export const VISUAL_REVIEW_TARGET_MATCHES = 7;
+export const VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT = 20;
 
 const VERDICTS = new Set(["match", "rough_match", "mismatch", "unreadable"]);
 const CONFIDENCES = new Set(["high", "medium", "low"]);
@@ -138,6 +139,30 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
   });
 }
 
+function visualPriorityScore<T extends VisualSourceCandidate>(item: T, targetMetadata: string): number {
+  const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
+  const title = String(item.title ?? "").toLowerCase();
+  const targetTokens = new Set(targetTitle.split(/[^a-z0-9]+/).filter(token => token.length >= 2));
+  const titleTokens = new Set(title.split(/[^a-z0-9]+/).filter(token => token.length >= 2));
+  const overlap = [...targetTokens].filter(token => titleTokens.has(token)).length;
+  const targetGrade = targetMetadata.match(/(?:^|;)\s*grade=([^;]+)/i)?.[1]?.trim().toLowerCase();
+  const gradeMatch = targetGrade && title.includes(targetGrade) ? 10 : 0;
+  const issueMatch = /(?:#|issue\s*)\d+[a-z]?/i.test(targetTitle) && /(?:#|issue\s*)\d+[a-z]?/i.test(title) ? 20 : 0;
+  return overlap + gradeMatch + issueMatch;
+}
+
+export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate>(
+  candidates: Array<{ item: T; candidateIndex: number; imageUrl: string }>,
+  targetMetadata: string,
+  declaredReviews: VisualSourceReview[],
+) {
+  const declaredConflicts = new Set(declaredReviews.filter(review => review.verdict === "mismatch").map(review => review.candidateIndex));
+  return candidates
+    .filter(candidate => !declaredConflicts.has(candidate.candidateIndex))
+    .sort((a, b) => visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || a.candidateIndex - b.candidateIndex)
+    .slice(0, VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT);
+}
+
 export function buildVisualSourceFilterNote(
   sourceLabel: string,
   result: {
@@ -218,21 +243,22 @@ export async function filterVisualSourceCandidates<
         },
       },
     } as const;
-    // Review in adaptive groups of 20. Twenty is the first request window, not
-    // the total ceiling: continue while the accepted-match sample is too small
-    // to support a useful confidence estimate, up to the bounded candidate set.
+    // Preserve every candidate, but only send the strongest non-conflicting
+    // candidates to vision in the first pass. This bounds latency without
+    // turning an omitted image review into an implicit acceptance.
+    const declaredReviews = buildDeclaredIdentityReviews(
+      candidates.map(candidate => candidate.item),
+      args.targetMetadata,
+    );
+    const reviewQueue = prioritizeVisualSourceCandidates(candidates, args.targetMetadata, declaredReviews);
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let reviewedCandidateCount = 0;
     let lastError: unknown;
-    // Keep each comparison one-to-one, run four at a time, and only move to
-    // the next 20-candidate window when the accepted sample is still small.
-    for (let windowOffset = 0; windowOffset < candidates.length; windowOffset += VISUAL_REVIEW_BATCH_SIZE) {
-      const window = candidates.slice(windowOffset, windowOffset + VISUAL_REVIEW_BATCH_SIZE);
-      reviews.push(...buildDeclaredIdentityReviews(
-        window.map((candidate) => candidate.item),
-        args.targetMetadata,
-      ).map((review) => ({ ...review, candidateIndex: review.candidateIndex + windowOffset })));
+    // Keep each comparison one-to-one and run four at a time. A later explicit
+    // review-more action can expand beyond this initial queue.
+    for (let windowOffset = 0; windowOffset < reviewQueue.length; windowOffset += VISUAL_REVIEW_BATCH_SIZE) {
+      const window = reviewQueue.slice(windowOffset, windowOffset + VISUAL_REVIEW_BATCH_SIZE);
       for (let offset = 0; offset < window.length; offset += 4) {
       const batch = window.slice(offset, offset + 4);
       const batchResults = await Promise.all(batch.map(async (candidate) => {
@@ -272,30 +298,46 @@ export async function filterVisualSourceCandidates<
       const acceptedMatches = reviews.filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
     }
-    if (!completedBatches) throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
+    if (!completedBatches && reviewQueue.length) {
+      throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
+    }
     const uniqueReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
+    const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
     // Never leave an image appearing implicitly accepted because a provider omitted
     // its row. An absent response is explicitly unreadable/needs manual review.
-    for (const candidate of candidates.slice(0, reviewedCandidateCount)) {
+    const reviewedQueueIndexes = new Set(reviewQueue.slice(0, reviewedCandidateCount).map(candidate => candidate.candidateIndex));
+    for (const candidate of reviewQueue.slice(0, reviewedCandidateCount)) {
       if (!reviewByIndex.has(candidate.candidateIndex)) {
         const fallback: VisualSourceReview = {
           candidateIndex: candidate.candidateIndex,
           verdict: "unreadable",
           confidence: "low",
-          rationale: "The visual model returned no usable decision for this candidate; manual image review is required.",
+          rationale: reviewedQueueIndexes.has(candidate.candidateIndex)
+            ? "The visual model returned no usable decision for this candidate; manual image review is required."
+            : "Candidate was retained outside the initial prioritized vision-review queue; expanded manual or AI review is required.",
         };
         uniqueReviews.push(fallback);
         reviewByIndex.set(candidate.candidateIndex, fallback);
       }
     }
     const imageBearingIndexes = new Set(candidates.map((candidate) => candidate.candidateIndex));
-    const reviewedIndexes = new Set(uniqueReviews.map((review) => review.candidateIndex));
+    const reviewedIndexes = new Set([...uniqueReviews, ...declaredReviews].map((review) => review.candidateIndex));
     // A candidate with a usable target and candidate image must either receive a
     // visual verdict or remain explicit review-only. Do not let a later client
     // treat a missing model row as an implicit pass.
     const requirementAnnotatedListings = args.listings.map((listing, index) => {
       if (!imageBearingIndexes.has(index)) return listing;
+      const declaredReview = declaredReviewByIndex.get(index);
+      if (declaredReview) {
+        return {
+          ...listing,
+          visualRequirement: "required",
+          visualReviewStatus: declaredReview.verdict,
+          visualReviewRationale: declaredReview.rationale,
+          evidenceDisposition: "warning_review",
+        } as T;
+      }
       if (reviewedIndexes.has(index)) return { ...listing, visualRequirement: "required" } as T;
       return {
         ...listing,
@@ -310,7 +352,7 @@ export async function filterVisualSourceCandidates<
       ...applied,
       status: "applied",
       reviews: uniqueReviews,
-      note: `${buildVisualSourceFilterNote(args.sourceLabel, applied)} Adaptive review covered ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates and stopped ${reviewedCandidateCount < candidates.length ? `after reaching ${VISUAL_REVIEW_TARGET_MATCHES} accepted matches` : 'after exhausting the bounded candidate set'}.`,
+      note: `${buildVisualSourceFilterNote(args.sourceLabel, applied)} Initial deterministic prioritization sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates to vision; explicit title conflicts and remaining candidates were preserved for review rather than discarded.`,
     };
   } catch {
     return {

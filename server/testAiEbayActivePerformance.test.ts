@@ -8,6 +8,7 @@ import {
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+const visualSource = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
 
 function procedureSource(name: string, nextMarker: string): string {
   const start = routerSource.indexOf(name);
@@ -54,5 +55,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("AI image checks are running separately.");
     expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
+  });
+  it("keeps the first visual pass bounded and preserves the remaining candidates", () => {
+    expect(visualSource).toContain("VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT");
+    expect(visualSource).toContain("prioritizeVisualSourceCandidates");
+    expect(visualSource).toContain("outside the initial prioritized vision-review queue");
   });
 });
