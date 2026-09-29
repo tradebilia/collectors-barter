@@ -47,16 +47,17 @@ function parseDetails(itemDetails?: string | null): JsonRecord {
 
 function buildSearchQuery(input: ComicConnectLookupInput): string {
   const details = parseDetails(input.itemDetails);
-  const values = [
-    details.comicTitle,
-    input.title,
-    details.issueNumber ? `#${details.issueNumber}` : '',
-    details.year,
-    details.publisher,
-    input.certificationCompany,
-    input.grade,
-  ].map(text).filter(Boolean);
-  return Array.from(new Set(values)).join(' ').slice(0, 180).trim() || input.title.trim();
+  const comicTitle = text(details.comicTitle);
+  const issueNumber = text(details.issueNumber);
+  if (comicTitle) return `${comicTitle}${issueNumber ? ` #${issueNumber.replace(/^#/, '')}` : ''}`.slice(0, 120).trim();
+
+  // When structured CGC/issue details are unavailable, remove grading metadata
+  // rather than sending the full analyzer title to ComicConnect's broad search.
+  const stripped = text(input.title)
+    .replace(/\s+(?:CGC|CBCS|PSA|BGS|SGC)\b.*$/i, '')
+    .replace(/\s+\d+(?:\.\d+)?\s*$/i, '')
+    .trim();
+  return (stripped || input.title.trim()).slice(0, 120).trim();
 }
 
 export function buildComicConnectSearchUrl(input: ComicConnectLookupInput): { query: string; url: string } {

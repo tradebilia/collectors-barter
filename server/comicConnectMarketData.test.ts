@@ -14,7 +14,9 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(request.url).toContain('filtertype=Sold');
     expect(request.url).toContain('show_sold_search=1');
     expect(request.url).toContain(`perpage=${COMICCONNECT_MAX_RESULTS}`);
-    expect(request.query).toContain('Edge of the Spider-Verse');
+    expect(request.query).toBe('Edge of the Spider-Verse #2');
+    expect(request.query).not.toContain('CGC');
+    expect(request.query).not.toContain('9.8');
   });
 
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
