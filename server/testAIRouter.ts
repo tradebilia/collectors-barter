@@ -140,6 +140,13 @@ export function extractGradeFromTitle(title: string): ExtractedGrade | null {
   return match ? normalizeExtractedGrade(match[2], match[3], match[4]) : null;
 }
 
+function extractExplicitComicDecimalGrade(title: string): number | null {
+  const match = String(title ?? '').match(/\b(?:10|[0-9])\.[0-9]\b/);
+  if (!match) return null;
+  const value = Number(match[0]);
+  return value >= 0 && value <= 10 ? value : null;
+}
+
 export function buildEbayBrowseQuery(query: string, options?: { preserveGrade?: boolean }): string {
   if (options?.preserveGrade) return query.trim();
   return query.replace(
@@ -197,7 +204,7 @@ export function buildSoldCompsQueryCandidates(query: string, options?: { preserv
 }
 
 // Filter listings to match the grade from the search query
-export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null): any[] {
+export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null, category?: string): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
 
   return summaries.filter((item: any) => {
@@ -205,7 +212,18 @@ export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGr
     // An unparsed/omitted grade is evidence uncertainty, not proof of a wrong
     // grade. The Sold-Comps pipeline marks it warning/review so it cannot
     // affect valuation until a source supplies compatible grade evidence.
-    if (!itemGrade) return true;
+    if (!itemGrade) {
+      // Comic marketplace titles sometimes omit the grader name but still
+      // state an explicit decimal slab grade (for example, "9.4"). Treat that
+      // as grade evidence rather than silently retaining a known mismatch.
+      if (category === 'comics' && typeof targetGrade === 'number') {
+        const explicitComicGrade = extractExplicitComicDecimalGrade(item.title);
+        if (explicitComicGrade !== null) {
+          return Math.round(explicitComicGrade * 10) === Math.round(targetGrade * 10);
+        }
+      }
+      return true;
+    }
 
     if (typeof targetGrade === 'string') {
       return typeof itemGrade === 'string' && itemGrade.toUpperCase() === targetGrade.toUpperCase();
@@ -947,7 +965,7 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const filteredSummaries = filterListingsByGrade(bySport, targetGrade);
+        const filteredSummaries = filterListingsByGrade(bySport, targetGrade, input.category);
         console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
@@ -1421,7 +1439,7 @@ export const testAIRouter = router({
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
         const byCertification = filterListingsByCertificationCompany(bySport, cert || null);
-        const filtered = filterListingsByGrade(byCertification, targetGrade);
+        const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
         const stageRows = [

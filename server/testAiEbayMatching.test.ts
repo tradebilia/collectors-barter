@@ -23,6 +23,18 @@ describe("Test AI eBay graded-item matching", () => {
     expect(filterListingsByGrade(listings, 8).map((item) => item.title)).toHaveLength(2);
   });
 
+  it("excludes an explicitly stated unqualified comic 9.4 when the target is 9.8", () => {
+    const listings = [
+      { title: "Edge of Spider-Verse #2 9.4" },
+      { title: "Edge of Spider-Verse #2 9.8" },
+      { title: "Edge of Spider-Verse #2" },
+    ];
+    expect(filterListingsByGrade(listings, 9.8, "comics").map((item) => item.title)).toEqual([
+      "Edge of Spider-Verse #2 9.8",
+      "Edge of Spider-Verse #2",
+    ]);
+  });
+
   it("preserves PCGS coin grade prefixes instead of reducing MS65 to 65", () => {
     expect(extractGradeFromQuery("1921 Peace Dollar PCGS MS65")).toBe("MS65");
     expect(extractGradeFromTitle("1921 Peace Dollar PCGS MS65 CAC")).toBe("MS65");
