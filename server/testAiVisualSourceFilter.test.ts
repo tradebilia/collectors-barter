@@ -73,6 +73,21 @@ describe("visual source filter", () => {
     expect(reviews).toHaveLength(40);
   });
 
+  it("marks image-bearing candidates outside the bounded review window as review-only", () => {
+    const result = applyVisualSourceReviews(
+      [{ title: "reviewed" }, { title: "unreviewed" }],
+      [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "same item" }],
+      1,
+    );
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match" });
+    // The integration function adds the explicit required/not-reviewed state
+    // after adaptive window accounting; retain a source contract assertion so
+    // it cannot regress to an implicit acceptance path.
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain('evidenceDisposition: "not_visually_reviewed_window"');
+    expect(source).toContain('visualRequirement: "required"');
+  });
+
   it("preserves eBay visual status fields in the response consumed by the image-check panel", () => {
     const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
     expect(routerSource).toContain("visualReviewStatus: s.visualReviewStatus ?? null");

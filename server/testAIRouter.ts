@@ -23,12 +23,13 @@ import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormali
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
 import { normalizeAnalysisMarketSales } from './testAiMarketEvidence';
+import { attachCanonicalProvenance } from './testAiCanonicalObservation';
 import { ANALYZER_NARRATIVE_RESPONSE_FORMAT, buildDeterministicNarrativeFallback, parseAnalyzerResponse, parseEvidenceBoundNarrative } from './testAiResponse';
 import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNewsFeeds';
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyVisualSoldReviews, buildVisualSoldFilterNote, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE, VISUAL_SOLD_FILTER_RESPONSE_FORMAT, type VisualSoldCandidateReview } from './testAiVisualSoldFilter';
+import type { VisualSoldCandidateReview } from './testAiVisualSoldFilter';
 import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -309,7 +310,7 @@ function filterListingsByPlayer(summaries: any[], player: string | null): any[] 
   return summaries;
 }
 
-type SoldComparableDisposition = 'valuation_eligible' | 'warning_review' | 'rejected_objective_conflict';
+type SoldComparableDisposition = 'valuation_eligible' | 'warning_review' | 'context_only' | 'rejected_objective_conflict' | 'not_visually_reviewed_window';
 
 function soldComparableKey(item: any): string {
   return String(item?.saleId ?? item?.id ?? item?.url ?? `${item?.title}|${item?.soldPrice}|${item?.endedAt}`)
@@ -357,21 +358,29 @@ function annotateSoldComparableCandidate(
   if (context.visualReview?.verdict === 'mismatch') {
     reasons.push(`visual comparison flag: ${context.visualReview.rationale || 'manual identity review required'}`);
   }
+  const carriedVisualStatus = context.visualReview?.verdict ?? item?.visualReviewStatus ?? 'not_reviewed';
+  const carriedVisualRationale = context.visualReview?.rationale ?? item?.visualReviewRationale ?? null;
+  const carriedDisposition = item?.evidenceDisposition as SoldComparableDisposition | undefined;
+  if (carriedDisposition && carriedDisposition !== 'valuation_eligible') {
+    reasons.push(`source visual/evidence disposition retained: ${carriedDisposition}`);
+  }
 
-  const evidenceDisposition: SoldComparableDisposition = reasons.length ? 'warning_review' : 'valuation_eligible';
+  const evidenceDisposition: SoldComparableDisposition = carriedDisposition && carriedDisposition !== 'valuation_eligible'
+    ? carriedDisposition
+    : reasons.length ? 'warning_review' : 'valuation_eligible';
   return {
     ...item,
     evidenceDisposition,
     evidenceReasons: reasons,
-    visualReviewStatus: context.visualReview?.verdict ?? 'not_reviewed',
-    visualReviewRationale: context.visualReview?.rationale ?? null,
+    visualReviewStatus: carriedVisualStatus,
+    visualReviewRationale: carriedVisualRationale,
   };
 }
 
 export function normalizeValuationEvidence(summaries: any[]) {
   const seen = new Set<string>();
   return summaries.filter((item: any) => {
-    const currency = String(item.price?.currency ?? "USD").toUpperCase();
+    const currency = String(item.price?.currency ?? "UNKNOWN").toUpperCase();
     if (currency !== "USD") return false;
     const price = Number(item.price?.value);
     if (!Number.isFinite(price) || price <= 0) return false;
@@ -386,7 +395,21 @@ export function normalizeValuationEvidence(summaries: any[]) {
 }
 
 export function computeMetrics(summaries: any[]) {
-  const prices = normalizeValuationEvidence(summaries)
+  // This summary is used only for active-market asking-price context. It must
+  // not reuse the completed-sale admission gate that controls valuation.
+  const seen = new Set<string>();
+  const uniquePricedRows = summaries.filter((item: any) => {
+    const price = Number(item?.price?.value);
+    if (!Number.isFinite(price) || price <= 0) return false;
+    const key = String(
+      item.saleId ?? item.id ?? item.url ?? item.link ??
+      `${item.marketplace ?? item.source ?? 'unknown'}|${item.title ?? ''}|${price}|${item.date ?? item.soldDate ?? ''}`,
+    ).trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const prices = uniquePricedRows
     .map((i: any) => parseFloat(i.price?.value || '0'))
     .filter((p: number) => p > 0)
     .sort((a: number, b: number) => a - b);
@@ -1037,7 +1060,16 @@ export const testAIRouter = router({
         targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
         listings: result.sales,
       });
-      return { ...result, sales: visualFilter.listings, visualFilter };
+      return {
+        ...result,
+        sales: attachCanonicalProvenance('the_card_api', visualFilter.listings.map((sale: any) => ({
+          ...sale,
+          saleStatus: sale.confirmed ? 'completed' : sale.saleStatus,
+          completedStatusBasis: sale.confirmed ? 'The Card API provider-confirmed final sale' : null,
+          priceBasis: 'sold',
+        })), { query: input.title }),
+        visualFilter,
+      };
     }),
 
   // Cardsight.ai catalog, population, completed-auction, and active-market context.
@@ -1057,14 +1089,24 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupCardsightAi(input);
-      if (!result.sales.length || !input.imageUrl) return { ...result, visualFilter: null };
+      if (!result.sales.length) return { ...result, visualFilter: null };
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Cardsight.ai auction-price records',
         targetImageUrl: input.imageUrl,
         targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
         listings: result.sales,
       });
-      return { ...result, sales: visualFilter.listings, visualFilter };
+      return {
+        ...result,
+        sales: attachCanonicalProvenance('cardsight_ai', visualFilter.listings.map((sale: any) => ({
+          ...sale,
+          saleId: sale.saleId ?? sale.url ?? null,
+          saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+          completedStatusBasis: sale.completed ? 'Cardsight.ai completed auction record' : null,
+          priceBasis: 'sold',
+        })), { query: input.title }),
+        visualFilter,
+      };
     }),
 
   // Lelands completed-auction archive — sandbox-only and read-only.
@@ -1076,13 +1118,24 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupLelandsAuctions(input);
-      if (!result.sales.length || !input.imageUrl) return result;
+      if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Lelands completed auction records', targetImageUrl: input.imageUrl,
         targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
         listings: result.sales,
       });
-      return { ...result, sales: visualFilter.listings, visualFilter };
+      return {
+        ...result,
+        sales: attachCanonicalProvenance('lelands', visualFilter.listings.map((sale: any) => ({
+          ...sale,
+          saleId: sale.lotId ?? sale.url ?? null,
+          saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+          completedStatusBasis: sale.completed ? 'Lelands realized-auction archive' : null,
+          priceBasis: 'realized',
+          buyerPremium: sale.buyersPremiumIncluded === true ? 'included' : sale.buyersPremiumIncluded === false ? 'excluded' : 'unknown',
+        })), { query: input.title }),
+        visualFilter,
+      };
     }),
 
   // Pristine Auction sports-card archive — sandbox-only and read-only.
@@ -1094,13 +1147,24 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupPristineAuctions(input);
-      if (!result.sales.length || !input.imageUrl) return result;
+      if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Pristine Auction completed records', targetImageUrl: input.imageUrl,
         targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
         listings: result.sales,
       });
-      return { ...result, sales: visualFilter.listings, visualFilter };
+      return {
+        ...result,
+        sales: attachCanonicalProvenance('pristine_auction', visualFilter.listings.map((sale: any) => ({
+          ...sale,
+          saleId: sale.lotId ?? sale.url ?? null,
+          saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+          completedStatusBasis: sale.completed ? 'Pristine Auction realized-auction archive' : null,
+          priceBasis: 'realized',
+          buyerPremium: sale.totalPrice != null ? 'included' : 'unknown',
+        })), { query: input.title }),
+        visualFilter,
+      };
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API
@@ -1310,7 +1374,7 @@ export const testAIRouter = router({
                 sourceLabel: item.sourceLabel ?? 'eBay Sold-Comps',
                 retrievalQuery: item.retrievalQuery ?? null,
                 price: Number(item.soldPrice ?? 0),
-                currency: item.soldCurrency ?? 'USD',
+                currency: item.soldCurrency ?? null,
                 endedAt: item.endedAt ?? null,
                 evidenceDisposition: 'rejected_objective_conflict' as const,
                 evidenceReasons: [failedAt.reason],
@@ -1336,68 +1400,22 @@ export const testAIRouter = router({
             return null;
           }
         })();
-        const visualCandidates = filtered
-          .map((item: any, candidateIndex: number) => ({ item, candidateIndex, imageUrl: item.thumbnailUrl }))
-          .filter(({ imageUrl }) => {
-            if (!imageUrl) return false;
-            try {
-              return new URL(imageUrl).protocol === 'https:';
-            } catch {
-              return false;
-            }
-          })
-          .slice(0, 20);
-        if (safeTargetImage && visualCandidates.length > 0) {
-          try {
-            const visualContent: Array<TextContent | ImageContent> = [
-              {
-                type: 'text',
-                text: `You are the final identity-safety filter for sold collectibles comparables. ${VISUAL_SOLD_FILTER_PROMPT_NOTE}\nTarget listing metadata: title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; itemDetails=${input.itemDetails ?? '{}'}\nCompare the target image first, then each numbered sold candidate image. Return JSON only with reviews containing candidateIndex, verdict, confidence, and short rationale.`,
-              },
-              { type: 'text', text: 'TARGET LISTING IMAGE:' },
-              { type: 'image_url', image_url: { url: safeTargetImage, detail: 'auto' } },
-            ];
-            for (const { candidateIndex, item, imageUrl } of visualCandidates) {
-              visualContent.push({ type: 'text', text: `SOLD CANDIDATE ${candidateIndex}: title=${item.title ?? 'unknown'}; condition=${item.condition ?? 'unknown'}` });
-              visualContent.push({ type: 'image_url', image_url: { url: imageUrl, detail: 'auto' } });
-            }
-            const visualResult = await invokeLLM({
-              model: 'gpt-5-mini',
-              messages: [{ role: 'user', content: visualContent }],
-              maxCompletionTokens: 1800,
-              temperature: 0,
-              response_format: VISUAL_SOLD_FILTER_RESPONSE_FORMAT,
-            });
-            const visualText = visualResult.choices[0]?.message?.content;
-            const visualRaw = typeof visualText === 'string'
-              ? visualText
-              : Array.isArray(visualText)
-                ? visualText.filter((part): part is TextContent => part.type === 'text').map((part) => part.text).join('\n')
-                : '';
-            const parsed = normalizeVisualSoldReviews(parseAnalyzerResponse(visualRaw), filtered.length);
-            const applied = applyVisualSoldReviews(filtered, parsed, visualCandidates.length);
-            visuallyFiltered = applied.listings;
-            visualSoldFilter = { ...applied, note: buildVisualSoldFilterNote(applied) };
-            console.log(`[Sold-Comps] Visual filter reviewed ${applied.reviewedCount}, removed ${applied.removedCount}, retained ${applied.listings.length}`);
-          } catch (error) {
-            console.warn('[Sold-Comps] Visual candidate filter unavailable:', error instanceof Error ? error.message : 'unknown error');
-            visualSoldFilter = {
-              status: 'provider_unavailable',
-              reviewedCount: 0,
-              removedCount: 0,
-              retainedUnreviewedCount: visualCandidates.length,
-              reviews: [],
-              note: 'The visual candidate filter was unavailable; all text-filtered sold comps were retained and remain subject to normal evidence review.',
-            };
-          }
-        } else if (safeTargetImage && visualCandidates.length === 0) {
+        // Use the same adaptive, per-candidate visual comparer as every other
+        // marketplace. The first 20 images are only the initial window; it
+        // continues through bounded windows until it finds a useful matched
+        // sample or exhausts the available candidate images. Vision remains
+        // non-destructive: every mismatch is retained as warning evidence.
+        if (safeTargetImage) {
+          const sharedVisualFilter = await filterVisualSourceCandidates({
+            sourceLabel: 'eBay Sold-Comps',
+            targetImageUrl: safeTargetImage,
+            targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; itemDetails=${input.itemDetails ?? '{}'}`,
+            listings: filtered.map((item: any) => ({ ...item, imageUrl: item.thumbnailUrl ?? item.imageUrl ?? null })),
+          });
+          visuallyFiltered = sharedVisualFilter.listings;
           visualSoldFilter = {
-            status: 'skipped_no_candidate_images',
-            reviewedCount: 0,
-            removedCount: 0,
-            retainedUnreviewedCount: filtered.length,
-            reviews: [],
-            note: 'No sold-comparable images were available for visual review; all text-filtered sold comps were retained.',
+            ...sharedVisualFilter,
+            note: `Sold-Comps visual review: ${sharedVisualFilter.note}`,
           };
         }
 
@@ -1410,13 +1428,24 @@ export const testAIRouter = router({
           targetPlayer: playerName,
           visualReview: reviewByIndex.get(index),
         }));
-        const valuationEligibleListings = annotatedListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible');
+        const canonicalListings = attachCanonicalProvenance('sold_comps', annotatedListings.map((item: any) => ({
+          ...item,
+          price: Number(item.soldPrice),
+          currency: item.soldCurrency ?? null,
+          date: item.endedAt ?? null,
+          saleId: item.saleId ?? item.id ?? item.url ?? null,
+          url: item.url ?? null,
+          saleStatus: 'completed',
+          completedStatusBasis: 'Sold-Comps completed-sale endpoint',
+          priceBasis: 'sold',
+        })), { query });
+        const valuationEligibleListings = canonicalListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible');
 
         // Metrics intentionally use only explicit completed-sale records whose
         // material identifiers are sufficiently aligned. Review/context rows
         // remain returned below and can never silently inflate value.
         const soldListings = valuationEligibleListings.map((i: any) => ({
-          price: { value: i.soldPrice || '0', currency: i.soldCurrency || 'USD' },
+            price: { value: i.soldPrice || '0', currency: i.soldCurrency || 'UNKNOWN' },
           title: i.title,
           condition: i.condition,
           itemWebUrl: i.url,
@@ -1428,10 +1457,10 @@ export const testAIRouter = router({
 
         return {
           query,
-          listings: annotatedListings.map((i: any) => ({
+          listings: canonicalListings.map((i: any) => ({
             title: i.title,
-            price: parseFloat(i.soldPrice || '0'),
-            currency: i.soldCurrency || 'USD',
+            price: Number(i.price ?? i.soldPrice ?? 0),
+            currency: i.currency ?? i.soldCurrency ?? null,
             condition: i.condition,
             seller: i.sellerUsername,
             itemUrl: i.url,
@@ -1446,6 +1475,9 @@ export const testAIRouter = router({
             evidenceReasons: i.evidenceReasons,
             visualReviewStatus: i.visualReviewStatus,
             visualReviewRationale: i.visualReviewRationale,
+            provenanceToken: i.provenanceToken,
+            provenance: i.provenance,
+            validationErrors: i.validationErrors,
           })),
           metrics,
           visualFilter: visualSoldFilter,
@@ -1453,10 +1485,10 @@ export const testAIRouter = router({
             retrievalCoverage,
             rawReceived: rawItems.length,
             objectiveConflicts: rawAuditLedger.length,
-            warningReview: annotatedListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
+            warningReview: canonicalListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
             valuationEligible: valuationEligibleListings.length,
-            notVisuallyReviewed: annotatedListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length,
-            ledger: [...annotatedListings, ...rawAuditLedger],
+            notVisuallyReviewed: canonicalListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length,
+            ledger: [...canonicalListings, ...rawAuditLedger],
           },
           error: null,
         };
@@ -1680,7 +1712,25 @@ export const testAIRouter = router({
     .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.') }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupPcgsAuctionResults(input.certNumber);
+      const result = await lookupPcgsAuctionResults(input.certNumber);
+      if (!result.data) return result;
+      const auctions = result.data.auctions.map((auction) => ({
+        ...auction,
+        title: result.data?.name ?? 'PCGS auction result',
+        saleId: `${auction.certNo ?? result.data?.certNo ?? input.certNumber}-${auction.lotNumV2 ?? auction.lotNo ?? auction.date ?? 'unknown'}`,
+        url: auction.auctionLotUrl ?? null,
+        currency: (auction as any).currency ?? null,
+        saleStatus: auction.price != null ? 'completed' as const : 'unknown' as const,
+        completedStatusBasis: auction.price != null ? 'PCGS auction-prices-realized endpoint' : null,
+        priceBasis: 'realized' as const,
+      }));
+      return {
+        ...result,
+        data: {
+          ...result.data,
+          auctions: attachCanonicalProvenance('pcgs_auction_results', auctions, { query: input.certNumber }),
+        },
+      };
     }),
 
   // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.
@@ -1722,7 +1772,20 @@ export const testAIRouter = router({
       const result = await lookup130PointSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `query=${input.query}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
-      return { ...result, data: { ...result.data, items: visualFilter.listings }, visualFilter };
+      return {
+        ...result,
+        data: {
+          ...result.data,
+          items: attachCanonicalProvenance('130point', visualFilter.listings.map((sale: any) => ({
+            ...sale,
+            saleId: sale.id ?? sale.url ?? null,
+            saleStatus: 'completed',
+            completedStatusBasis: '130point completed-sale search result',
+            priceBasis: 'sold',
+          })), { query: input.query }),
+        },
+        visualFilter,
+      };
     }),
 
   getPwccSales: protectedProcedure
@@ -2007,10 +2070,10 @@ export const testAIRouter = router({
       leftSoldCompsMetrics: z.any().optional(),
       rightSoldCompsMetrics: z.any().optional(),
       leftHistoricalTrendSales: z.array(z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(),
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
       })).max(120).optional(),
       rightHistoricalTrendSales: z.array(z.object({
-        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), recency: z.enum(['recent', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(),
+        title: z.string().nullable().optional(), price: z.union([z.number(), z.string()]).nullable().optional(), currency: z.string().nullable().optional(), date: z.string().nullable().optional(), marketplace: z.string().nullable().optional(), originMarketplace: z.string().nullable().optional(), sourceLabel: z.string().nullable().optional(), sourceAdapter: z.string().nullable().optional(), recency: z.enum(['recent', 'extended', 'historical', 'undated']).nullable().optional(), sourceId: z.string().nullable().optional(), saleId: z.string().nullable().optional(), url: z.string().nullable().optional(), saleStatus: z.enum(['completed', 'closed', 'active', 'unknown']).nullable().optional(), completedStatusBasis: z.string().nullable().optional(), priceBasis: z.enum(['realized', 'sold', 'closed', 'unknown']).nullable().optional(), visualRequirement: z.enum(['not_required', 'required']).nullable().optional(), visualReviewStatus: z.enum(['match', 'rough_match', 'mismatch', 'unreadable', 'not_reviewed']).nullable().optional(), visualReviewRationale: z.string().nullable().optional(), evidenceDisposition: z.enum(['valuation_eligible', 'warning_review', 'context_only', 'rejected_objective_conflict', 'omitted_by_cap', 'not_visually_reviewed_window']).nullable().optional(), evidenceReasons: z.array(z.string()).max(20).nullable().optional(), buyerPremium: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), shipping: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), tax: z.enum(['included', 'excluded', 'unknown']).nullable().optional(), saleForm: z.string().nullable().optional(), lotQuantity: z.number().int().positive().nullable().optional(), provenanceToken: z.string().max(16_000).nullable().optional(),
       })).max(120).optional(),
       leftIdentityGate: z.object({ materialReviewRequired: z.boolean().optional(), materialFlags: z.array(z.string()).max(20).optional(), sourceAlignmentStatus: z.enum(['aligned', 'conflicted', 'unavailable']).optional() }).optional(),
       rightIdentityGate: z.object({ materialReviewRequired: z.boolean().optional(), materialFlags: z.array(z.string()).max(20).optional(), sourceAlignmentStatus: z.enum(['aligned', 'conflicted', 'unavailable']).optional() }).optional(),
@@ -2229,8 +2292,8 @@ export const testAIRouter = router({
       // The client only transports marketplace observations. The server owns
       // the final status, date, currency, price-basis, visual, and disposition
       // decision before any record can reach deterministic valuation.
-      const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow);
-      const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow);
+      const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisLeftItem.category });
+      const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisRightItem.category });
       const leftAnalysisSnapshot = buildAnalysisSnapshot({
         target: analysisLeftItem as ComparableTarget,
         sales: normalizedLeftSales,

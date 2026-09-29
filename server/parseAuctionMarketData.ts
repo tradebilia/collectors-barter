@@ -128,7 +128,7 @@ function normalizePristineSale(detail: JsonRecord, target: ParseAuctionLookupInp
     lotId: text(detail.lot_id || summary?.lot_id) || null, subtitle: detail.subtitle ?? summary?.subtitle ?? null,
     imageUrl: text(detail.image_url || summary?.image_url) || null, status, sold, completed: sold,
     price, winningBid: detail.winning_bid ?? null, buyerPremium: detail.buyer_premium ?? null, totalPrice: detail.total_price ?? null,
-    currency: text(detail.currency) || 'USD', priceBasis: text(detail.price_basis) || (detail.total_price != null ? 'hammer_plus_premium' : 'unknown'),
+    currency: text(detail.currency) || null, priceBasis: text(detail.price_basis) || (detail.total_price != null ? 'hammer_plus_premium' : 'unknown'),
     date: text(detail.completed_at || detail.end_time || summary?.end_time) || null, datePrecision: detail.completed_at ? 'completed_at' : 'auction_end',
     bidCount: detail.bid_count ?? null, grader: detail.grader ?? null, grade: detail.grade ?? null,
     identityMatched: identity.matched && gradeMatches(target, detail), identityScore: identity.score, matchedTokens: identity.matchedTokens,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, normalizeCanonicalSaleUrl, scoreComparable } from './testAiComparableEngine';
+import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales } from './testAiComparableEngine';
 
 const target = {
   title: '1996 Topps Kobe Bryant #138 PSA 10',
@@ -116,6 +116,27 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(result.duplicates).toHaveLength(1);
   });
 
+  it('retains possible duplicates for review while suppressing only exact or probable transactions', () => {
+    const first = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'sold_comps', originMarketplace: 'ebay', saleId: 'ebay-one' };
+    const possible = { ...sale(target.title, 1250, '2026-09-15'), sourceId: 'mirror_feed', originMarketplace: 'ebay', saleId: 'mirror-two' };
+    const result = deduplicateMarketSales([first, possible]);
+    expect(result.unique).toHaveLength(2);
+    expect(result.duplicates).toHaveLength(0);
+    expect(result.possibleDuplicates).toHaveLength(1);
+    expect(result.unique[1]?.duplicateStatus).toBe('possible_duplicate');
+  });
+
+  it('keeps bounded comparable selection invariant when only sale prices change', () => {
+    const base = [
+      { ...sale(target.title, 100, '2026-09-15'), sourceId: 'adapter_a', originMarketplace: 'ebay', saleId: 'a' },
+      { ...sale(target.title, 200, '2026-09-15'), sourceId: 'adapter_b', originMarketplace: 'goldin', saleId: 'b' },
+      { ...sale(target.title, 300, '2026-09-15'), sourceId: 'adapter_c', originMarketplace: 'heritage', saleId: 'c' },
+    ];
+    const original = selectBalancedComparableSales(target, base, new Date('2026-09-22T00:00:00Z'), 2);
+    const repriced = selectBalancedComparableSales(target, base.map((record, index) => ({ ...record, price: [9999, 1, 500][index] })), new Date('2026-09-22T00:00:00Z'), 2);
+    expect(original.selected.map(({ sale }) => sale.saleId)).toEqual(repriced.selected.map(({ sale }) => sale.saleId));
+  });
+
   it('does not allow an undated sale record to enter the deterministic value', () => {
     const profile = buildMarketProfile(target, [{
       title: target.title, price: 1200, currency: 'USD', recency: 'undated', sourceId: '130point', saleStatus: 'completed',
@@ -132,6 +153,20 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.contextualComparableCount).toBe(1);
   });
 
+  it('does not apply IQR exclusion to fewer than five selected completed sales', () => {
+    const profile = buildMarketProfile(target, [1000, 1050, 5000].map((price, index) => ({
+      ...sale(target.title, price, `2026-09-${String(10 + index).padStart(2, '0')}`),
+      saleId: `small-sample-${index}`,
+      sourceId: `fixture-${index}`,
+      saleStatus: 'completed' as const,
+      priceBasis: 'sold' as const,
+    })), null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.outlierPolicy).toBe('not_applied_insufficient_sample');
+    expect(profile.outlierExcludedCount).toBe(0);
+    expect(profile.authoritativeSaleCount).toBe(3);
+    expect(profile.valuationWarnings.join(' ')).toContain('fewer than five selected completed sales');
+  });
+
   it('exposes sparse, volatile, and low-liquidity evidence instead of hiding it', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 100, '2026-09-20'),
@@ -143,7 +178,7 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketRange.supported).toBe(false);
   });
 
-  it('removes an IQR outlier from deterministic value while preserving it in the audit ledger', () => {
+  it('flags a small-sample IQR outlier for review without deleting it from the valuation population', () => {
     const profile = buildMarketProfile(target, [100, 102, 105, 110, 10_000].map((price, index) => ({
       ...sale(target.title, price, `2026-09-${String(10 + index).padStart(2, '0')}`),
       saleId: `iqr-${index}`,
@@ -151,11 +186,28 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       saleStatus: 'completed' as const,
       priceBasis: 'sold' as const,
     })), null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.outlierExcludedCount).toBe(0);
+    expect(profile.outlierFlaggedCount).toBe(1);
+    expect(profile.outlierPolicy).toBe('flagged_small_sample');
+    expect(profile.authoritativeSaleCount).toBe(5);
+    expect(profile.comparables.find((record) => record.price === 10_000)?.accepted).toBe(true);
+    expect(profile.confidenceReasons.join(' ')).toContain('suspicious price tail');
+  });
+
+  it('applies documented IQR exclusion only at a robust ten-sale sample', () => {
+    const prices = [100, 102, 103, 105, 106, 108, 109, 110, 112, 10_000];
+    const profile = buildMarketProfile(target, prices.map((price, index) => ({
+      ...sale(target.title, price, `2026-09-${String(10 + index).padStart(2, '0')}`),
+      saleId: `robust-iqr-${index}`,
+      sourceId: `fixture-${index}`,
+      originMarketplace: `market-${index}`,
+      saleStatus: 'completed' as const,
+      priceBasis: 'sold' as const,
+    })), null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.outlierPolicy).toBe('iqr_applied');
     expect(profile.outlierExcludedCount).toBe(1);
-    expect(profile.authoritativeSaleCount).toBe(4);
-    expect(profile.weightedValue).toBeLessThan(200);
+    expect(profile.authoritativeSaleCount).toBe(9);
     expect(profile.comparables.find((record) => record.price === 10_000)?.exclusionReason).toContain('IQR outlier rule');
-    expect(profile.confidenceReasons.join(' ')).toContain('outlier');
   });
 
   it('uses deterministic profile values for the trade verdict', () => {

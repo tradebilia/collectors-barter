@@ -28,9 +28,13 @@ export interface MarketSale {
   currency?: string | null;
   date?: string | null;
   marketplace?: string | null;
+  /** The venue where the transaction occurred, distinct from the data adapter. */
+  originMarketplace?: string | null;
   sourceLabel?: string | null;
-  recency?: 'recent' | 'historical' | 'undated' | null;
+  recency?: 'recent' | 'extended' | 'historical' | 'undated' | null;
   sourceId?: string | null;
+  /** Server-known adapter ID; browser input may not establish this fact. */
+  sourceAdapter?: string | null;
   saleId?: string | null;
   url?: string | null;
   saleStatus?: 'completed' | 'closed' | 'active' | 'unknown' | null;
@@ -44,6 +48,20 @@ export interface MarketSale {
   /** Source-level disposition preserves uncertainty without admitting it to value. */
   evidenceDisposition?: 'valuation_eligible' | 'warning_review' | 'context_only' | 'rejected_objective_conflict' | 'omitted_by_cap' | 'not_visually_reviewed_window' | null;
   evidenceReasons?: string[] | null;
+  /** Whether a visual check is necessary for this record's direct use. */
+  visualRequirement?: 'not_required' | 'required' | null;
+  /** Specific price-economics facts prevent incomparable hammer and all-in prices from mixing. */
+  buyerPremium?: 'included' | 'excluded' | 'unknown' | null;
+  shipping?: 'included' | 'excluded' | 'unknown' | null;
+  tax?: 'included' | 'excluded' | 'unknown' | null;
+  saleForm?: string | null;
+  lotQuantity?: number | null;
+  /** Server-issued reference required before a browser-carried record can affect value. */
+  provenanceToken?: string | null;
+  provenance?: unknown;
+  observationId?: string | null;
+  canonicalTransactionId?: string | null;
+  duplicateStatus?: 'unique' | 'exact_duplicate' | 'probable_duplicate' | 'possible_duplicate' | null;
 }
 
 export type ComparableClassification = 'exact' | 'near' | 'contextual' | 'rejected';
@@ -86,11 +104,22 @@ export interface ComparableMatch {
   sourceId?: string | null;
   sourceLabel?: string | null;
   marketplace?: string | null;
+  originMarketplace?: string | null;
+  sourceAdapter?: string | null;
   saleId?: string | null;
   url?: string | null;
   saleStatus?: string | null;
   completedStatusBasis?: string | null;
   priceBasis?: string | null;
+  buyerPremium?: string | null;
+  shipping?: string | null;
+  tax?: string | null;
+  saleForm?: string | null;
+  lotQuantity?: number | null;
+  observationId?: string | null;
+  canonicalTransactionId?: string | null;
+  duplicateStatus?: MarketSale['duplicateStatus'];
+  provenance?: unknown;
   visualReviewStatus?: string | null;
   visualReviewRationale?: string | null;
   evidenceDisposition?: string | null;
@@ -121,7 +150,13 @@ export type ComparableSelectionDiagnostics = {
 };
 
 export interface MarketProfile {
-  marketRange: { low: number; mid: number; high: number; supported: boolean };
+  /** Only populated when a preliminary completed-sale range is defensible. */
+  marketRange: { low: number | null; mid: number | null; high: number | null; supported: boolean };
+  /** Middle 50% of the accepted sale population; supplementary to the observed range. */
+  typicalBand: { low: number | null; high: number | null; supported: boolean };
+  /** Robust primary center: median of the accepted, post-policy sale population. */
+  primaryValue: number | null;
+  /** Kept as a recency-sensitive diagnostic; never the primary valuation center. */
   weightedValue: number | null;
   median: number | null;
   minimum: number | null;
@@ -147,7 +182,15 @@ export interface MarketProfile {
   gradeAdjacentComparableCount: number;
   contextualComparableCount: number;
   duplicateSaleCount: number;
+  possibleDuplicateCount: number;
   outlierExcludedCount: number;
+  outlierFlaggedCount: number;
+  outlierPolicy: 'iqr_applied' | 'flagged_small_sample' | 'not_applied_insufficient_sample' | 'not_applied_no_candidates';
+  outlierEligibleSampleCount: number;
+  independentMarketplaceCount: number;
+  unknownMarketplaceCount: number;
+  largestMarketplaceShare: number | null;
+  marketplaceConcentration: 'diversified' | 'concentrated' | 'single_marketplace' | 'unavailable';
   confidenceReasons: string[];
   identityReadiness: 'ready' | 'limited' | 'missing_critical';
   valuationMethod: string;
@@ -173,6 +216,10 @@ export interface DeterministicTradeComparison {
   verdict: 'Insufficient Evidence' | 'Ranges Overlap — Evidence is Indeterminate' | 'Item A Worth More' | 'Item B Worth More';
   rangeRelationship: RangeRelationship;
   overlapBand: { low: number; high: number } | null;
+  overlapAmount: number | null;
+  overlapRatio: number | null;
+  midpointDifference: number | null;
+  typicalBandOverlap: { low: number; high: number } | null;
   rangeGap: number | null;
   decisionBasis: string;
 }
@@ -296,6 +343,7 @@ export function normalizeCanonicalSaleUrl(value: unknown): string | null {
 }
 
 function canonicalMarketplaceItemKey(sale: MarketSale): string | null {
+  if (sale.canonicalTransactionId) return sale.canonicalTransactionId;
   const url = normalizeCanonicalSaleUrl(sale.url);
   if (url) return `url:${url}`;
   const stableId = String(sale.saleId ?? '').trim();
@@ -303,30 +351,47 @@ function canonicalMarketplaceItemKey(sale: MarketSale): string | null {
   return null;
 }
 
-function saleFingerprint(sale: MarketSale): string {
-  const canonicalKey = canonicalMarketplaceItemKey(sale);
-  if (canonicalKey) return canonicalKey;
-  const source = normalizeFingerprintText(sale.sourceId || sale.marketplace || 'unknown');
+function probableTransactionKey(sale: MarketSale): string | null {
+  const origin = normalizeFingerprintText(sale.originMarketplace || sale.marketplace);
+  const title = normalizeFingerprintText(sale.title);
   const price = Number(sale.price);
-  const amount = Number.isFinite(price) ? price.toFixed(2) : 'unknown';
-  const date = String(sale.date ?? '').slice(0, 10) || 'undated';
-  return `${source}|${normalizeFingerprintText(sale.title)}|${amount}|${date}`;
+  const date = String(sale.date ?? '').slice(0, 10);
+  return origin && title && Number.isFinite(price) && price > 0 && date ? `probable:${origin}|${title}|${price.toFixed(2)}|${date}` : null;
 }
 
-export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string }> } {
-  const seen = new Map<string, string>();
+function possibleTransactionKey(sale: MarketSale): string | null {
+  const origin = normalizeFingerprintText(sale.originMarketplace || sale.marketplace);
+  const title = normalizeFingerprintText(sale.title);
+  const date = String(sale.date ?? '').slice(0, 10);
+  return origin && title && date ? `possible:${origin}|${title}|${date}` : null;
+}
+
+export function deduplicateMarketSales(sales: MarketSale[]): { unique: MarketSale[]; duplicates: Array<{ sale: MarketSale; duplicateOf: string }>; possibleDuplicates: MarketSale[] } {
+  const seenExact = new Map<string, string>();
+  const seenProbable = new Map<string, string>();
+  const seenPossible = new Map<string, string>();
   const unique: MarketSale[] = [];
   const duplicates: Array<{ sale: MarketSale; duplicateOf: string }> = [];
+  const possibleDuplicates: MarketSale[] = [];
   for (const sale of sales) {
-    const fingerprint = saleFingerprint(sale);
-    const known = seen.get(fingerprint);
-    if (known) duplicates.push({ sale, duplicateOf: known });
-    else {
-      seen.set(fingerprint, fingerprint);
-      unique.push(sale);
+    const exactKey = canonicalMarketplaceItemKey(sale);
+    const probableKey = probableTransactionKey(sale);
+    const possibleKey = possibleTransactionKey(sale);
+    const knownExact = exactKey ? seenExact.get(exactKey) : null;
+    const knownProbable = probableKey ? seenProbable.get(probableKey) : null;
+    if (knownExact || knownProbable) {
+      duplicates.push({ sale: { ...sale, duplicateStatus: knownExact ? 'exact_duplicate' : 'probable_duplicate' }, duplicateOf: knownExact ?? knownProbable! });
+      continue;
     }
+    const knownPossible = possibleKey ? seenPossible.get(possibleKey) : null;
+    const retained = knownPossible ? { ...sale, duplicateStatus: 'possible_duplicate' as const } : { ...sale, duplicateStatus: 'unique' as const };
+    if (knownPossible) possibleDuplicates.push(retained);
+    if (exactKey) seenExact.set(exactKey, exactKey);
+    if (probableKey) seenProbable.set(probableKey, probableKey);
+    if (possibleKey && !seenPossible.has(possibleKey)) seenPossible.set(possibleKey, possibleKey);
+    unique.push(retained);
   }
-  return { unique, duplicates };
+  return { unique, duplicates, possibleDuplicates };
 }
 
 export const MAX_VALUATION_COMPARABLES = 48;
@@ -339,13 +404,17 @@ function sourceLabel(sale: MarketSale): string {
   return String(sale.sourceLabel || sale.marketplace || sale.sourceId || 'Unattributed source').trim() || 'Unattributed source';
 }
 
+function marketplaceKey(sale: MarketSale): string {
+  return normalizeFingerprintText(sale.originMarketplace || sale.marketplace || sale.sourceId || 'unattributed') || 'unattributed';
+}
+
 export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
   if (sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible') return false;
   if (sale.saleStatus && sale.saleStatus !== 'completed') return false;
   if (sale.priceBasis === 'unknown') return false;
   if (sale.recency === 'historical' || sale.recency === 'undated') return false;
   const age = daysOld(sale.date, nowMs);
-  return age !== null && age <= 365;
+  return age !== null && (age <= 365 || (sale.recency === 'extended' && age <= 730));
 }
 
 function compareValuationPriority(
@@ -356,7 +425,11 @@ function compareValuationPriority(
   const leftAge = left.ageDays ?? Number.MAX_SAFE_INTEGER;
   const rightAge = right.ageDays ?? Number.MAX_SAFE_INTEGER;
   if (leftAge !== rightAge) return leftAge - rightAge;
-  return right.match.price - left.match.price;
+  // Never use the outcome (sale price) to choose which comparable enters the
+  // valuation set. Canonical transaction identity makes tie handling stable.
+  const leftKey = left.match.canonicalTransactionId || left.match.observationId || left.match.url || left.match.saleId || left.match.title;
+  const rightKey = right.match.canonicalTransactionId || right.match.observationId || right.match.url || right.match.saleId || right.match.title;
+  return leftKey.localeCompare(rightKey);
 }
 
 function buildSelectionDiagnostics(
@@ -426,18 +499,18 @@ export function selectBalancedComparableSales(
   const deduplicated = deduplicateMarketSales(sales);
   const valuationCandidates = deduplicated.unique.filter((sale) => isCompletedSaleCandidate(sale, nowMs));
   const valuationMatches = valuationCandidates
-    .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
+    .filter((sale) => String(sale.currency ?? 'UNKNOWN').toUpperCase() === 'USD')
     .map((sale) => ({ sale, match: scoreComparable(target, sale), ageDays: daysOld(sale.date, nowMs) }));
   const accepted = valuationMatches.filter(({ match }) => match.accepted);
-  const perSource = new Map<string, typeof accepted>();
+  const perMarketplace = new Map<string, typeof accepted>();
   for (const candidate of accepted) {
-    const key = sourceKey(candidate.sale);
-    const bucket = perSource.get(key) ?? [];
+    const key = marketplaceKey(candidate.sale);
+    const bucket = perMarketplace.get(key) ?? [];
     bucket.push(candidate);
-    perSource.set(key, bucket);
+    perMarketplace.set(key, bucket);
   }
   const selected: typeof accepted = [];
-  for (const bucket of [...perSource.values()].sort((left, right) => compareValuationPriority(left[0]!, right[0]!))) {
+  for (const bucket of [...perMarketplace.values()].sort((left, right) => compareValuationPriority(left[0]!, right[0]!))) {
     bucket.sort(compareValuationPriority);
     if (selected.length < cap) selected.push(bucket[0]!);
   }
@@ -1626,7 +1699,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     title: title || 'Untitled comparable',
     price: Number.isFinite(price) ? price : 0,
     date: sale.date ?? null,
-    currency: String(sale.currency ?? 'USD').toUpperCase(),
+    currency: String(sale.currency ?? 'UNKNOWN').toUpperCase(),
     score: boundedScore,
     accepted,
     reasons,
@@ -1639,11 +1712,22 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     sourceId: sale.sourceId ?? sale.marketplace ?? null,
     sourceLabel: sale.sourceLabel ?? sale.marketplace ?? sale.sourceId ?? null,
     marketplace: sale.marketplace ?? null,
+    originMarketplace: sale.originMarketplace ?? null,
+    sourceAdapter: sale.sourceAdapter ?? null,
     saleId: sale.saleId ?? null,
     url: sale.url ?? null,
     saleStatus: sale.saleStatus ?? null,
     completedStatusBasis: sale.completedStatusBasis ?? null,
     priceBasis: sale.priceBasis ?? null,
+    buyerPremium: sale.buyerPremium ?? 'unknown',
+    shipping: sale.shipping ?? 'unknown',
+    tax: sale.tax ?? 'unknown',
+    saleForm: sale.saleForm ?? null,
+    lotQuantity: sale.lotQuantity ?? null,
+    observationId: sale.observationId ?? null,
+    canonicalTransactionId: sale.canonicalTransactionId ?? null,
+    duplicateStatus: sale.duplicateStatus ?? 'unique',
+    provenance: sale.provenance ?? null,
     visualReviewStatus: sale.visualReviewStatus ?? 'not_reviewed',
     visualReviewRationale: sale.visualReviewRationale ?? null,
     evidenceDisposition: sale.evidenceDisposition ?? 'valuation_eligible',
@@ -1695,13 +1779,42 @@ export function buildMarketProfile(
   }));
   const selectedAccepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
   const selectedAcceptedWithAge = selectedAccepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
+  const selectedMarketplaceCounts = new Map<string, number>();
+  let unknownMarketplaceCount = 0;
+  for (const { sale } of selected) {
+    const key = marketplaceKey(sale);
+    if (key === 'unknown marketplace' || key === 'unknown_marketplace' || key === 'unattributed') {
+      unknownMarketplaceCount += 1;
+      continue;
+    }
+    selectedMarketplaceCounts.set(key, (selectedMarketplaceCounts.get(key) ?? 0) + 1);
+  }
+  const independentMarketplaceCount = selectedMarketplaceCounts.size;
+  const largestMarketplaceShare = selected.length
+    ? Math.max(...selectedMarketplaceCounts.values()) / selected.length
+    : null;
+  const marketplaceConcentration: MarketProfile['marketplaceConcentration'] = unknownMarketplaceCount > 0 || independentMarketplaceCount === 0
+    ? 'unavailable'
+    : independentMarketplaceCount === 1
+      ? 'single_marketplace'
+      : largestMarketplaceShare !== null && largestMarketplaceShare > 0.75
+        ? 'concentrated'
+        : 'diversified';
   const prices = selectedAccepted.map((match) => match.price).sort((a, b) => a - b);
   const q1 = percentile(prices, 0.25);
   const q3 = percentile(prices, 0.75);
-  const median = prices.length ? prices.length % 2 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2 : null;
+  const rawMedian = prices.length ? prices.length % 2 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2 : null;
   const iqr = prices.length ? q3 - q1 : null;
-  const filtered = iqr !== null ? selectedAcceptedWithAge.filter(({ match }) => match.price >= q1 - 1.5 * iqr && match.price <= q3 + 1.5 * iqr) : selectedAcceptedWithAge;
+  // IQR is too fragile to delete evidence at small N. With 5–9 observations we
+  // flag suspicious tails for review but preserve them; automatic exclusion is
+  // permitted only at N >= 10 and is always ledger-visible.
+  const canApplyIqr = selectedAcceptedWithAge.length >= 10 && iqr !== null;
+  const canFlagSmallSampleOutliers = selectedAcceptedWithAge.length >= 5 && selectedAcceptedWithAge.length < 10 && iqr !== null;
+  const filtered = canApplyIqr ? selectedAcceptedWithAge.filter(({ match }) => match.price >= q1 - 1.5 * iqr && match.price <= q3 + 1.5 * iqr) : selectedAcceptedWithAge;
   const outlierMatches = new Set(selectedAcceptedWithAge.filter(({ match }) => !filtered.some(({ match: kept }) => kept === match)).map(({ match }) => match));
+  const flaggedSmallSampleOutliers = new Set(canFlagSmallSampleOutliers
+    ? selectedAcceptedWithAge.filter(({ match }) => match.price < q1 - 1.5 * iqr || match.price > q3 + 1.5 * iqr).map(({ match }) => match)
+    : []);
   const valuationMatchRecordsAfterOutliers = valuationMatchRecords.map((match) => outlierMatches.has(match)
     ? {
         ...match,
@@ -1714,6 +1827,10 @@ export function buildMarketProfile(
   const comparableMatches = [...valuationMatchRecordsAfterOutliers, ...contextualMatches, ...duplicateMatches];
   const accepted = filtered.map(({ match }) => match);
   const acceptedWithAge = filtered;
+  const acceptedPrices = accepted.map((match) => match.price).sort((a, b) => a - b);
+  const median = acceptedPrices.length ? acceptedPrices.length % 2 ? acceptedPrices[Math.floor(acceptedPrices.length / 2)] : (acceptedPrices[acceptedPrices.length / 2 - 1] + acceptedPrices[acceptedPrices.length / 2]) / 2 : null;
+  const acceptedQ1 = acceptedPrices.length ? percentile(acceptedPrices, 0.25) : null;
+  const acceptedQ3 = acceptedPrices.length ? percentile(acceptedPrices, 0.75) : null;
   const recentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 90);
   const ages = acceptedWithAge.map(({ ageDays }) => ageDays).filter((age): age is number => age !== null);
   const outlierExcludedCount = outlierMatches.size;
@@ -1722,9 +1839,10 @@ export function buildMarketProfile(
     return sum + match.weight;
   }, 0);
   const weightedValue = weightedDenominator > 0 ? Math.round(filtered.reduce((sum, { match }) => sum + match.price * match.weight, 0) / weightedDenominator) : null;
+  const primaryValue = median !== null ? Math.round(median) : null;
   const minimum = filtered.length ? Math.round(Math.min(...filtered.map(({ match }) => match.price))) : null;
   const maximum = filtered.length ? Math.round(Math.max(...filtered.map(({ match }) => match.price))) : null;
-  const spreadPct = weightedValue && minimum !== null && maximum !== null ? Math.round(((maximum - minimum) / weightedValue) * 100) : null;
+  const spreadPct = primaryValue && minimum !== null && maximum !== null ? Math.round(((maximum - minimum) / primaryValue) * 100) : null;
   const recentCount = recentSales.length;
   const salesVelocity = {
     sevenDay: acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 7).length,
@@ -1757,12 +1875,18 @@ export function buildMarketProfile(
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
   if (spreadPct !== null && spreadPct > 75) valuationWarnings.push('Authoritative comparable prices are widely dispersed.');
   if (accepted.length < 5) valuationWarnings.push('Fewer than five accepted completed sales are available; treat the range as preliminary review evidence.');
+  if (selectedAcceptedWithAge.length > 0 && selectedAcceptedWithAge.length < 5) valuationWarnings.push('IQR outlier filtering was not applied because fewer than five selected completed sales are available.');
+  if (flaggedSmallSampleOutliers.size > 0) valuationWarnings.push(`${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} was flagged for review but retained because the selected sample has fewer than ten completed sales.`);
   if (outlierExcludedCount > 0) valuationWarnings.push(`${outlierExcludedCount} identity-matched completed sale${outlierExcludedCount === 1 ? '' : 's'} was excluded from the deterministic value by the IQR outlier rule and remains visible in the audit ledger.`);
+  if (primaryValue !== null && weightedValue !== null && Math.abs(weightedValue - primaryValue) / primaryValue > 0.15) valuationWarnings.push('The recency-weighted mean materially differs from the median primary value; review sale timing and price dispersion.');
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
   if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
   if (gradeAdjacentComparableCount > 0) valuationWarnings.push(`${gradeAdjacentComparableCount} grade/certification-adjacent record${gradeAdjacentComparableCount === 1 ? '' : 's'} was retained as secondary evidence but excluded from direct valuation.`);
   if (deduplicated.duplicates.length > 0) valuationWarnings.push(`${deduplicated.duplicates.length} duplicate sale observation${deduplicated.duplicates.length === 1 ? '' : 's'} was excluded.`);
+  if (deduplicated.possibleDuplicates.length > 0) valuationWarnings.push(`${deduplicated.possibleDuplicates.length} possible duplicate${deduplicated.possibleDuplicates.length === 1 ? '' : 's'} remains in valuation and is labeled for manual review because its transaction identity is not proven.`);
   if (selection.diagnostics.omittedByCap > 0) valuationWarnings.push(`${selection.diagnostics.omittedByCap} otherwise matched sale observation${selection.diagnostics.omittedByCap === 1 ? '' : 's'} was retained in the audit but omitted from the bounded valuation set after source-balanced selection.`);
+  if (marketplaceConcentration === 'single_marketplace') valuationWarnings.push('All selected completed sales originate from one marketplace; independence is limited.');
+  if (marketplaceConcentration === 'concentrated') valuationWarnings.push(`Selected evidence is concentrated in one marketplace (${Math.round((largestMarketplaceShare ?? 0) * 100)}% of selected sales).`);
   const evidenceState: EvidenceState = accepted.length === 0
     ? (comparableMatches.length ? 'poor_item_identification' : 'no_market_evidence')
     : recentCount >= 3 && evidenceQuality === 'high' ? 'strong_recent_market_evidence'
@@ -1775,17 +1899,23 @@ export function buildMarketProfile(
     valuationWarnings.push('Material identity evidence conflict requires review; completed-sale records are withheld from deterministic valuation.');
     if (identityGate?.materialFlags?.length) valuationWarnings.push(...identityGate.materialFlags.map((flag) => `Identity review: ${flag}`));
   }
-  const supported = Boolean(!materialReviewRequired && weightedValue !== null && accepted.length >= 2 && (spreadPct === null || spreadPct <= 100));
+  const evidenceIndependenceAdequate = independentMarketplaceCount >= 2 || accepted.length >= 7;
+  if (!evidenceIndependenceAdequate && accepted.length > 0) valuationWarnings.push('Marketplace independence is below the definitive-evidence floor; at least two marketplaces or seven selected completed sales are required for a trade verdict.');
+  if (unknownMarketplaceCount > 0) valuationWarnings.push(`${unknownMarketplaceCount} selected completed sale${unknownMarketplaceCount === 1 ? '' : 's'} has an unknown origin marketplace and does not establish independent-market evidence.`);
+  const supported = Boolean(!materialReviewRequired && primaryValue !== null && accepted.length >= 3 && (spreadPct === null || spreadPct <= 100));
   const confidenceReasons = [
     `${accepted.length} clean completed sale${accepted.length === 1 ? '' : 's'} selected after identity, source, visual, and outlier checks${accepted.length < 5 ? '; five are required for a definitive trade verdict' : ''}.`,
+    `${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}${unknownMarketplaceCount ? `; ${unknownMarketplaceCount} selected record${unknownMarketplaceCount === 1 ? '' : 's'} has an unknown marketplace` : ''}; ${evidenceIndependenceAdequate ? 'independence floor met' : 'independence floor not met for a definitive trade verdict'}.`,
     recentCount ? `${recentCount} selected sale${recentCount === 1 ? '' : 's'} occurred within the last 90 days.` : 'No selected sale occurred within the last 90 days.',
     spreadPct === null ? 'No stable price spread can be calculated from the selected evidence.' : `Selected-value spread is ${spreadPct}% (${marketStability} stability).`,
-    outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : 'No selected price was withheld by the IQR outlier rule.',
+    outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
   return {
-    marketRange: supported ? { low: minimum!, mid: weightedValue!, high: maximum!, supported: true } : { low: 0, mid: weightedValue ?? aggregateMetrics?.median ?? 0, high: 0, supported: false },
+    marketRange: supported ? { low: minimum!, mid: primaryValue!, high: maximum!, supported: true } : { low: null, mid: null, high: null, supported: false },
+    typicalBand: supported && acceptedQ1 !== null && acceptedQ3 !== null ? { low: Math.round(acceptedQ1), high: Math.round(acceptedQ3), supported: true } : { low: null, high: null, supported: false },
+    primaryValue,
     weightedValue,
-    median: median !== null ? Math.round(median) : aggregateMetrics?.median ?? null,
+    median: primaryValue ?? aggregateMetrics?.median ?? null,
     minimum,
     maximum,
     interquartileRange: iqr !== null ? Math.round(iqr) : null,
@@ -1809,11 +1939,19 @@ export function buildMarketProfile(
     gradeAdjacentComparableCount,
     contextualComparableCount,
     duplicateSaleCount: deduplicated.duplicates.length,
+    possibleDuplicateCount: deduplicated.possibleDuplicates.length,
     outlierExcludedCount,
+    outlierFlaggedCount: flaggedSmallSampleOutliers.size,
+    outlierPolicy: selectedAcceptedWithAge.length === 0 ? 'not_applied_no_candidates' : canApplyIqr ? 'iqr_applied' : flaggedSmallSampleOutliers.size > 0 ? 'flagged_small_sample' : 'not_applied_insufficient_sample',
+    outlierEligibleSampleCount: selectedAcceptedWithAge.length,
+    independentMarketplaceCount,
+    unknownMarketplaceCount,
+    largestMarketplaceShare,
+    marketplaceConcentration,
     confidenceReasons,
     identityReadiness,
-    valuationMethod: supported ? 'recency-weighted completed-sale value using exact or near identity matches, duplicate suppression, and IQR outlier filtering' : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
-    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation.', 'Active asking prices, historical or undated records, certification, population, reference data, and RSS remain context only.', 'Duplicate observations are excluded; grade, condition, variant, and release mismatches reject the result.'],
+    valuationMethod: supported ? `median primary value from exact or near identity-matched completed sales; recency-weighted mean retained as a diagnostic, with duplicate suppression, ${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}, and ${canApplyIqr ? 'IQR outlier filtering' : flaggedSmallSampleOutliers.size ? 'small-sample outlier flagging without automatic exclusion' : 'no automatic outlier filtering because fewer than ten selected sales are available'}` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
+    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation, except a labeled 366–730-day illiquid-market extension when no current verified sale exists.', 'Active asking prices, historical or undated records outside that explicit extension, certification, population, reference data, and RSS remain context only.', 'Exact and documented-probable duplicates are excluded; possible duplicates remain visible for review; grade, condition, variant, and release mismatches reject the result.'],
     missingInformation,
     valuationWarnings,
     comparables: comparableMatches,
@@ -1827,11 +1965,11 @@ export function deterministicTradeComparison(
   leftFallback = 0,
   rightFallback = 0,
 ): DeterministicTradeComparison {
-  const leftValue = left.weightedValue ?? left.median ?? leftFallback;
-  const rightValue = right.weightedValue ?? right.median ?? rightFallback;
+  const leftValue = left.primaryValue ?? left.weightedValue ?? left.median ?? leftFallback;
+  const rightValue = right.primaryValue ?? right.weightedValue ?? right.median ?? rightFallback;
   const difference = rightValue - leftValue;
-  const hasDefensibleLeftValue = left.marketRange.supported && left.authoritativeSaleCount >= 5 && left.evidenceQuality !== 'low' && (left.spreadPct === null || left.spreadPct <= 75);
-  const hasDefensibleRightValue = right.marketRange.supported && right.authoritativeSaleCount >= 5 && right.evidenceQuality !== 'low' && (right.spreadPct === null || right.spreadPct <= 75);
+  const hasDefensibleLeftValue = left.marketRange.supported && left.marketRange.low !== null && left.marketRange.mid !== null && left.marketRange.high !== null && left.authoritativeSaleCount >= 5 && left.evidenceQuality !== 'low' && (left.spreadPct === null || left.spreadPct <= 75) && (left.independentMarketplaceCount >= 2 || left.authoritativeSaleCount >= 7);
+  const hasDefensibleRightValue = right.marketRange.supported && right.marketRange.low !== null && right.marketRange.mid !== null && right.marketRange.high !== null && right.authoritativeSaleCount >= 5 && right.evidenceQuality !== 'low' && (right.spreadPct === null || right.spreadPct <= 75) && (right.independentMarketplaceCount >= 2 || right.authoritativeSaleCount >= 7);
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
   if (!hasSufficientEvidence) {
     return {
@@ -1842,19 +1980,29 @@ export function deterministicTradeComparison(
       verdict: 'Insufficient Evidence',
       rangeRelationship: 'unsupported',
       overlapBand: null,
+      overlapAmount: null,
+      overlapRatio: null,
+      midpointDifference: null,
+      typicalBandOverlap: null,
       rangeGap: null,
       decisionBasis: 'One or both sides lack a defensible completed-sale range, so the analyzer cannot make a range-based trade conclusion.',
     };
   }
-  const overlapLow = Math.max(left.marketRange.low, right.marketRange.low);
-  const overlapHigh = Math.min(left.marketRange.high, right.marketRange.high);
+  // The defensive clause above proves these values are present; bind them once
+  // so unsupported null ranges can never enter trade-comparison arithmetic.
+  const leftLow = left.marketRange.low!;
+  const leftHigh = left.marketRange.high!;
+  const rightLow = right.marketRange.low!;
+  const rightHigh = right.marketRange.high!;
+  const overlapLow = Math.max(leftLow, rightLow);
+  const overlapHigh = Math.min(leftHigh, rightHigh);
   const rangesOverlap = overlapLow <= overlapHigh;
-  const itemBHigherBand = left.marketRange.high < right.marketRange.low;
+  const itemBHigherBand = leftHigh < rightLow;
   const rangeGap = rangesOverlap
     ? 0
     : itemBHigherBand
-      ? right.marketRange.low - left.marketRange.high
-      : left.marketRange.low - right.marketRange.high;
+      ? rightLow - leftHigh
+      : leftLow - rightHigh;
   const rangeRelationship: RangeRelationship = rangesOverlap
     ? 'overlap'
     : itemBHigherBand
@@ -1865,6 +2013,19 @@ export function deterministicTradeComparison(
     : itemBHigherBand
       ? 'Item B Worth More'
       : 'Item A Worth More';
+  const overlapAmount = rangesOverlap ? overlapHigh - overlapLow : 0;
+  const smallestObservedRange = Math.min(leftHigh - leftLow, rightHigh - rightLow);
+  const overlapRatio = rangesOverlap && smallestObservedRange > 0 ? Math.round((overlapAmount / smallestObservedRange) * 1000) / 1000 : rangesOverlap ? 1 : 0;
+  const midpointDifference = right.marketRange.mid! - left.marketRange.mid!;
+  const leftTypicalLow = left.typicalBand.low;
+  const leftTypicalHigh = left.typicalBand.high;
+  const rightTypicalLow = right.typicalBand.low;
+  const rightTypicalHigh = right.typicalBand.high;
+  const typicalBandOverlap = left.typicalBand.supported && right.typicalBand.supported && leftTypicalLow !== null && leftTypicalHigh !== null && rightTypicalLow !== null && rightTypicalHigh !== null
+    ? Math.max(leftTypicalLow, rightTypicalLow) <= Math.min(leftTypicalHigh, rightTypicalHigh)
+      ? { low: Math.max(leftTypicalLow, rightTypicalLow), high: Math.min(leftTypicalHigh, rightTypicalHigh) }
+      : null
+    : null;
   return {
     leftValue,
     rightValue,
@@ -1873,9 +2034,13 @@ export function deterministicTradeComparison(
     verdict,
     rangeRelationship,
     overlapBand: rangesOverlap ? { low: overlapLow, high: overlapHigh } : null,
+    overlapAmount,
+    overlapRatio,
+    midpointDifference,
+    typicalBandOverlap,
     rangeGap,
     decisionBasis: rangesOverlap
-      ? `The completed-sale ranges overlap from $${overlapLow.toLocaleString()} to $${overlapHigh.toLocaleString()}, so the midpoint difference is not treated as proof that either side is worth more.`
+      ? `The completed-sale ranges overlap from $${overlapLow.toLocaleString()} to $${overlapHigh.toLocaleString()} (${Math.round((overlapRatio ?? 0) * 100)}% of the narrower observed range), so the midpoint difference of $${Math.abs(midpointDifference).toLocaleString()} is not treated as proof that either side is worth more.`
       : itemBHigherBand
         ? `Item B's completed-sale range begins $${rangeGap.toLocaleString()} above Item A's range, so the evidence bands do not overlap.`
         : `Item A's completed-sale range begins $${rangeGap.toLocaleString()} above Item B's range, so the evidence bands do not overlap.`,
@@ -1886,8 +2051,8 @@ export function marketProfileForPrompt(label: string, profile: MarketProfile): s
   return [
     `${label} DETERMINISTIC MARKET PROFILE:`,
     `- Evidence state: ${profile.evidenceState}; valuation method: ${profile.valuationMethod}`,
-    `- Weighted value: ${profile.weightedValue === null ? 'unavailable' : `$${profile.weightedValue.toLocaleString()}`}; median: ${profile.median === null ? 'unavailable' : `$${profile.median.toLocaleString()}`}`,
-    `- Range supported: ${profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}-$${profile.marketRange.high.toLocaleString()}` : 'no defensible range'}`,
+    `- Primary median value: ${profile.primaryValue === null ? 'unavailable' : `$${profile.primaryValue.toLocaleString()}`}; weighted mean diagnostic: ${profile.weightedValue === null ? 'unavailable' : `$${profile.weightedValue.toLocaleString()}`}`,
+    `- Observed accepted sale range: ${profile.marketRange.supported && profile.marketRange.low !== null && profile.marketRange.high !== null ? `$${profile.marketRange.low.toLocaleString()}-$${profile.marketRange.high.toLocaleString()}` : 'no defensible range'}`,
     `- Confidence: evidence ${profile.evidenceQuality}, identification ${profile.itemIdentificationConfidence}, stability ${profile.marketStability}, liquidity ${profile.liquidity}, grade/condition ${profile.gradeConditionConfidence}`,
     `- Sales velocity: 7d ${profile.salesVelocity.sevenDay}, 30d ${profile.salesVelocity.thirtyDay}, 90d ${profile.salesVelocity.ninetyDay}; recent sales ${profile.recentSaleCount}; authoritative sales ${profile.authoritativeSaleCount}`,
     `- Comparables: ${profile.comparableCount} accepted (${profile.directComparableCount} direct; ${profile.exactMatchCount} exact, ${profile.nearMatchCount} near), ${profile.gradeAdjacentComparableCount} grade/certification-adjacent secondary, ${profile.contextualComparableCount} contextual, ${profile.rejectedComparableCount} excluded, ${profile.duplicateSaleCount} duplicates suppressed; identity readiness ${profile.identityReadiness}; warnings: ${profile.valuationWarnings.join(' ') || 'none'}`,

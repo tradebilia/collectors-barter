@@ -9,7 +9,7 @@ import {
   type ConfidenceLevel,
 } from './testAiComparableEngine';
 
-export const ANALYZER_SNAPSHOT_VERSION = '2.6.0';
+export const ANALYZER_SNAPSHOT_VERSION = '2.9.0';
 
 export type AnalysisCashAdjustment = {
   amount: number;
@@ -151,7 +151,9 @@ export function buildCashAwareTradeTerms(
     ...left.valuationWarnings,
     ...right.valuationWarnings,
   ];
-  if (!left.marketRange.supported || !right.marketRange.supported) {
+  if (!left.marketRange.supported || !right.marketRange.supported
+    || left.marketRange.low === null || left.marketRange.mid === null || left.marketRange.high === null
+    || right.marketRange.low === null || right.marketRange.mid === null || right.marketRange.high === null) {
     return {
       evidenceStrength: strength,
       baseVerdict: comparison.verdict,

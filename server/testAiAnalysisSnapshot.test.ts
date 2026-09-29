@@ -30,7 +30,7 @@ function sale(overrides: Partial<MarketSale> = {}): MarketSale {
   };
 }
 
-describe('Analyzer 2.6 unified analysis snapshot', () => {
+describe('Analyzer 2.9 unified analysis snapshot', () => {
   it('preserves source status, material flags, and visual-review counts in one versioned snapshot', () => {
     const evidence = normalizeTestAiEvidence(griffey, [
       { id: 'sold_comps', label: 'eBay Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 2 } },
@@ -42,15 +42,15 @@ describe('Analyzer 2.6 unified analysis snapshot', () => {
       evidenceSummary: evidence,
       now,
     });
-    expect(snapshot.version).toBe('2.6.0');
+    expect(snapshot.version).toBe('2.9.0');
     expect(snapshot.profile.authoritativeSaleCount).toBe(2);
     expect(snapshot.evidence.sourceStatuses.map((source) => source.id)).toEqual(['sold_comps', 'psa']);
     expect(snapshot.evidence.visualReview).toMatchObject({ match: 1, roughMatch: 1, mismatch: 1, unreadable: 0, notReviewed: 0 });
   });
 
   it('reserves representative accepted matches from multiple sources before filling the cap', () => {
-    const dominant = Array.from({ length: 6 }, (_, index) => sale({ sourceId: 'dominant', sourceLabel: 'Dominant', saleId: `dominant-${index}`, price: 100 + index }));
-    const secondary = [sale({ sourceId: 'secondary', sourceLabel: 'Secondary', saleId: 'secondary-1', price: 115 })];
+    const dominant = Array.from({ length: 6 }, (_, index) => sale({ sourceId: 'dominant', sourceLabel: 'Dominant', originMarketplace: 'ebay', saleId: `dominant-${index}`, price: 100 + index }));
+    const secondary = [sale({ sourceId: 'secondary', sourceLabel: 'Secondary', originMarketplace: 'heritage', saleId: 'secondary-1', price: 115 })];
     const selection = selectBalancedComparableSales(griffey, [...dominant, ...secondary], now, 2);
     expect(selection.selected).toHaveLength(2);
     expect(selection.selected.map((entry) => entry.sale.sourceId).sort()).toEqual(['dominant', 'secondary']);
@@ -99,13 +99,13 @@ describe('Analyzer 2.6 unified analysis snapshot', () => {
     expect(profile.valuationWarnings.join(' ')).toContain('Material identity evidence conflict');
   });
 
-  it('computes cash-adjusted overlap from range evidence instead of asking the model to judge terms', () => {
+  it('withholds cash guidance until each side meets the three-sale preliminary range floor', () => {
     const left = buildMarketProfile(griffey, [sale({ saleId: 'l1', price: 90 }), sale({ saleId: 'l2', price: 110 })], null, now);
     const right = buildMarketProfile(griffey, [sale({ saleId: 'r1', price: 170 }), sale({ saleId: 'r2', price: 190 })], null, now);
     const terms = buildCashAwareTradeTerms(left, right, { amount: 80, paidBy: 'item_a' });
-    expect(terms.termsStatus).toBe('within_overlap_band');
-    expect(terms.adjustedRangeOverlap).toBe(true);
-    expect(terms.summary).toContain('overlap band');
+    expect(terms.termsStatus).toBe('insufficient_evidence');
+    expect(terms.adjustedRangeOverlap).toBeNull();
+    expect(terms.summary).toContain('lack a defensible completed-sale range');
   });
 
   it('does not issue cash guidance when either side lacks a defensible completed-sale range', () => {

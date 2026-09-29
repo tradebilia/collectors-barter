@@ -22,8 +22,10 @@ describe('Test AI comparable audit ledger UI', () => {
 
   it('renders a simplified recommended trade summary for collectors', () => {
     expect(page).toContain('Recommended Trade Summary · User View');
-    expect(page).toContain('Supported market range:');
-    expect(page).toContain('Typical evidence value:');
+    expect(page).toContain('Observed accepted-sale range:');
+    expect(page).toContain('Typical middle band:');
+    expect(page).toContain('Primary median value:');
+    expect(page).toContain('recency-weighted diagnostic:');
     expect(page).toContain('Confidence:');
     expect(page).toContain('Confidence basis:');
     expect(page).toContain('Evidence-based');

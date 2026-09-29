@@ -289,7 +289,23 @@ export async function filterVisualSourceCandidates<
         reviewByIndex.set(candidate.candidateIndex, fallback);
       }
     }
-    const applied = applyVisualSourceReviews(args.listings, uniqueReviews, reviewedCandidateCount);
+    const imageBearingIndexes = new Set(candidates.map((candidate) => candidate.candidateIndex));
+    const reviewedIndexes = new Set(uniqueReviews.map((review) => review.candidateIndex));
+    // A candidate with a usable target and candidate image must either receive a
+    // visual verdict or remain explicit review-only. Do not let a later client
+    // treat a missing model row as an implicit pass.
+    const requirementAnnotatedListings = args.listings.map((listing, index) => {
+      if (!imageBearingIndexes.has(index)) return listing;
+      if (reviewedIndexes.has(index)) return { ...listing, visualRequirement: "required" } as T;
+      return {
+        ...listing,
+        visualRequirement: "required",
+        visualReviewStatus: "not_reviewed",
+        visualReviewRationale: "Candidate image was not reached by the bounded adaptive review window; manual image review is required.",
+        evidenceDisposition: "not_visually_reviewed_window",
+      } as T;
+    });
+    const applied = applyVisualSourceReviews(requirementAnnotatedListings, uniqueReviews, reviewedCandidateCount);
     return {
       ...applied,
       status: "applied",
@@ -298,7 +314,15 @@ export async function filterVisualSourceCandidates<
     };
   } catch {
     return {
-      listings: args.listings,
+      listings: args.listings.map((listing, index) => candidates.some((candidate) => candidate.candidateIndex === index)
+        ? {
+            ...listing,
+            visualRequirement: "required",
+            visualReviewStatus: "not_reviewed",
+            visualReviewRationale: "The visual provider was unavailable; manual image review is required.",
+            evidenceDisposition: "warning_review",
+          } as T
+        : listing),
       status: "provider_unavailable",
       reviewedCount: 0,
       removedCount: 0,

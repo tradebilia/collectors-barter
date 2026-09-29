@@ -1,4 +1,5 @@
 import type { MarketSale } from './testAiComparableEngine';
+import { verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 /**
  * The Test AI client may transport marketplace observations, but it never gets
@@ -32,17 +33,32 @@ function safeText(value: unknown, maximum = 600): string | null {
   return text ? text.slice(0, maximum) : null;
 }
 
-function normalizedDate(value: unknown, nowMs: number): { date: string | null; recency: NonNullable<MarketSale['recency']> } {
+const ILLIQUID_MARKET_EXTENSION_CATEGORIES = new Set([
+  'stamps',
+  'vintage_toys',
+  'autographs',
+  'movies',
+  'music',
+  'disney_pins',
+  'coins',
+  'comics',
+]);
+
+function normalizedDate(value: unknown, nowMs: number, options?: { category?: string | null; allowIlliquidExtension?: boolean }): { date: string | null; recency: NonNullable<MarketSale['recency']> } {
   const text = safeText(value, 120);
   if (!text) return { date: null, recency: 'undated' };
   const parsed = Date.parse(text);
   if (!Number.isFinite(parsed) || parsed > nowMs) return { date: null, recency: 'undated' };
   const ageDays = Math.floor((nowMs - parsed) / 86_400_000);
-  return { date: new Date(parsed).toISOString(), recency: ageDays <= 365 ? 'recent' : 'historical' };
+  if (ageDays <= 365) return { date: new Date(parsed).toISOString(), recency: 'recent' };
+  const category = sourceKey(options?.category);
+  const canExtend = Boolean(options?.allowIlliquidExtension && ILLIQUID_MARKET_EXTENSION_CATEGORIES.has(category) && ageDays <= 730);
+  return { date: new Date(parsed).toISOString(), recency: canExtend ? 'extended' : 'historical' };
 }
 
-function knownCurrency(value: unknown): string {
-  return safeText(value, 12)?.toUpperCase() || 'USD';
+function knownCurrency(value: unknown): string | null {
+  const currency = safeText(value, 12)?.toUpperCase() ?? null;
+  return currency && /^[A-Z]{3}$/.test(currency) ? currency : null;
 }
 
 function normalizedPriceBasis(value: unknown): NonNullable<MarketSale['priceBasis']> {
@@ -71,48 +87,63 @@ export type MarketEvidenceDecision = {
  * A known trusted completed-sale adapter may supply its fixed semantics, but an
  * arbitrary client record cannot self-attest its status, price basis, or date.
  */
-export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date()): MarketEvidenceDecision {
+export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(), options?: { signingKey?: string; category?: string | null; allowIlliquidExtension?: boolean }): MarketEvidenceDecision {
   const nowMs = now.getTime();
-  const sourceId = sourceKey(input.sourceId || input.marketplace);
+  // A browser may carry an observation back from a source panel for display,
+  // but it may not establish completed-sale facts. Rebuild the trusted facts
+  // only when the short-lived server provenance reference verifies.
+  const verification = verifyCanonicalObservation(input, { now, signingKey: options?.signingKey });
+  const trustedInput = verification.verified ? verification.sale : input;
+  const sourceId = sourceKey(trustedInput.sourceId || trustedInput.marketplace);
   const sourceDefault = COMPLETED_SALE_SOURCE_DEFAULTS[sourceId];
-  const dateInfo = normalizedDate(input.date, nowMs);
-  const price = Number(input.price);
-  const currency = knownCurrency(input.currency);
-  const declaredStatus = input.saleStatus;
+  const dateInfo = normalizedDate(trustedInput.date, nowMs, options);
+  const price = Number(trustedInput.price);
+  const currency = knownCurrency(trustedInput.currency);
+  const declaredStatus = trustedInput.saleStatus;
   const saleStatus: NonNullable<MarketSale['saleStatus']> = declaredStatus === 'completed' || declaredStatus === 'closed'
     ? 'completed'
     : declaredStatus === 'active'
       ? 'active'
-      : sourceDefault
-        ? 'completed'
-        : 'unknown';
-  const priceBasis = normalizedPriceBasis(input.priceBasis);
-  const resolvedPriceBasis = priceBasis === 'unknown' && sourceDefault ? sourceDefault.priceBasis : priceBasis;
-  const visualReviewStatus = normalizedVisualStatus(input.visualReviewStatus);
-  const inputReasons = Array.isArray(input.evidenceReasons) ? input.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
-  const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(input.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
-    ? input.evidenceDisposition
+      : 'unknown';
+  const priceBasis = normalizedPriceBasis(trustedInput.priceBasis);
+  const resolvedPriceBasis = priceBasis;
+  const buyerPremium = trustedInput.buyerPremium === 'included' || trustedInput.buyerPremium === 'excluded'
+    ? trustedInput.buyerPremium
+    : 'unknown';
+  const visualReviewStatus = normalizedVisualStatus(trustedInput.visualReviewStatus);
+  const visualRequirement = trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
+  const inputReasons = Array.isArray(trustedInput.evidenceReasons) ? trustedInput.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
+  const restrictiveInputDisposition = RESTRICTIVE_DISPOSITIONS.has(trustedInput.evidenceDisposition as NonNullable<MarketSale['evidenceDisposition']>)
+    ? trustedInput.evidenceDisposition
     : null;
-  const reasons = [...inputReasons];
+  const reasons = [...inputReasons, ...verification.reasons];
 
-  if (!safeText(input.title, 600)) reasons.push('missing marketplace title');
+  if (!verification.verified) reasons.push('server provenance is not verified; browser-carried source facts cannot influence valuation');
+  if (!safeText(trustedInput.title, 600)) reasons.push('missing marketplace title');
   if (!Number.isFinite(price) || price <= 0) reasons.push('missing or non-positive realized price');
-  if (currency !== 'USD') reasons.push(`unsupported currency ${currency}; retained as context only`);
+  if (!currency) reasons.push('sale currency is unknown; retained as context only');
+  else if (currency !== 'USD') reasons.push(`unsupported currency ${currency}; retained as context only`);
   if (saleStatus !== 'completed') reasons.push(saleStatus === 'active' ? 'active asking listing is not a completed sale' : 'completed-sale status is not verifiable for this source');
   if (resolvedPriceBasis === 'unknown') reasons.push('price basis is not verifiable as sold, closed, or realized');
+  if (resolvedPriceBasis === 'realized' && buyerPremium !== 'included') reasons.push('auction buyer premium is not confirmed included in the realized price; retained as context only');
   if (dateInfo.recency === 'undated') reasons.push('sale date is missing, invalid, or future-dated');
   if (dateInfo.recency === 'historical') reasons.push('sale date is older than one year');
-  if (visualReviewStatus === 'mismatch') reasons.push(`visual comparison requires review${input.visualReviewRationale ? `: ${safeText(input.visualReviewRationale, 300)}` : ''}`);
+  if (dateInfo.recency === 'extended') reasons.push('sale date is older than one year and is admitted only under the labeled illiquid-market extension policy');
+  if (visualReviewStatus === 'mismatch') reasons.push(`visual comparison requires review${trustedInput.visualReviewRationale ? `: ${safeText(trustedInput.visualReviewRationale, 300)}` : ''}`);
+  if (visualRequirement === 'required' && visualReviewStatus !== 'match' && visualReviewStatus !== 'rough_match') reasons.push('a required visual identity review is not confirmed');
   if (restrictiveInputDisposition) reasons.push(`source disposition retained: ${restrictiveInputDisposition}`);
 
-  const valuationEligible = !restrictiveInputDisposition
+  const valuationEligible = verification.verified
+    && !restrictiveInputDisposition
     && Number.isFinite(price)
     && price > 0
     && currency === 'USD'
     && saleStatus === 'completed'
     && resolvedPriceBasis !== 'unknown'
-    && dateInfo.recency === 'recent'
-    && visualReviewStatus !== 'mismatch';
+    && (resolvedPriceBasis !== 'realized' || buyerPremium === 'included')
+    && (dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
+    && visualReviewStatus !== 'mismatch'
+    && (visualRequirement !== 'required' || visualReviewStatus === 'match' || visualReviewStatus === 'rough_match');
   const evidenceDisposition: NonNullable<MarketSale['evidenceDisposition']> = valuationEligible
     ? 'valuation_eligible'
     : restrictiveInputDisposition === 'rejected_objective_conflict'
@@ -126,27 +157,49 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date())
             : 'context_only';
 
   const sale: MarketSale = {
-    title: safeText(input.title, 600),
+    title: safeText(trustedInput.title, 600),
     price: Number.isFinite(price) ? price : null,
     currency,
     date: dateInfo.date,
     recency: dateInfo.recency,
-    marketplace: safeText(input.marketplace, 160),
-    sourceId: sourceId || null,
-    sourceLabel: safeText(input.sourceLabel, 160),
-    saleId: safeText(input.saleId, 240),
-    url: safeText(input.url, 1_500),
+    marketplace: safeText(trustedInput.marketplace, 160),
+    originMarketplace: safeText(trustedInput.originMarketplace, 160),
+    sourceId: verification.verified ? sourceId || null : null,
+    sourceAdapter: verification.verified ? (trustedInput.sourceAdapter ?? sourceId ?? null) : null,
+    sourceLabel: verification.verified ? safeText(trustedInput.sourceLabel, 160) : 'Unverified client observation',
+    saleId: safeText(trustedInput.saleId, 240),
+    url: safeText(trustedInput.url, 1_500),
     saleStatus,
-    completedStatusBasis: safeText(input.completedStatusBasis, 240) || sourceDefault?.statusBasis || null,
+    completedStatusBasis: safeText(trustedInput.completedStatusBasis, 240) || sourceDefault?.statusBasis || null,
     priceBasis: resolvedPriceBasis,
+    visualRequirement,
     visualReviewStatus,
-    visualReviewRationale: safeText(input.visualReviewRationale, 300),
+    visualReviewRationale: safeText(trustedInput.visualReviewRationale, 300),
+    buyerPremium,
+    shipping: trustedInput.shipping ?? 'unknown',
+    tax: trustedInput.tax ?? 'unknown',
+    saleForm: safeText(trustedInput.saleForm, 80),
+    lotQuantity: Number.isInteger(Number(trustedInput.lotQuantity)) && Number(trustedInput.lotQuantity) > 0 ? Number(trustedInput.lotQuantity) : null,
+    observationId: verification.verified ? trustedInput.observationId ?? null : null,
+    canonicalTransactionId: verification.verified ? trustedInput.canonicalTransactionId ?? null : null,
+    duplicateStatus: trustedInput.duplicateStatus ?? 'unique',
+    provenance: verification.verified ? trustedInput.provenance ?? null : null,
     evidenceDisposition,
     evidenceReasons: uniqueReasons(reasons),
   };
   return { sale, valuationEligible, reasons: sale.evidenceReasons ?? [] };
 }
 
-export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undefined, now = new Date()): MarketSale[] {
-  return (inputs ?? []).map((input) => normalizeAnalysisMarketSale(input, now).sale);
+export function normalizeAnalysisMarketSales(inputs: MarketSale[] | null | undefined, now = new Date(), options?: { signingKey?: string; category?: string | null }): MarketSale[] {
+  const strict = (inputs ?? []).map((input) => normalizeAnalysisMarketSale(input, now, { signingKey: options?.signingKey, category: options?.category }).sale);
+  // The extension is intentionally a second, explicit pass. Any available
+  // current-window valuation record prevents older evidence from entering.
+  if (strict.some((sale) => sale.evidenceDisposition === 'valuation_eligible')) return strict;
+  const category = sourceKey(options?.category);
+  if (!ILLIQUID_MARKET_EXTENSION_CATEGORIES.has(category)) return strict;
+  return (inputs ?? []).map((input) => normalizeAnalysisMarketSale(input, now, {
+    signingKey: options?.signingKey,
+    category,
+    allowIlliquidExtension: true,
+  }).sale);
 }

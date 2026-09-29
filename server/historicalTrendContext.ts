@@ -4,14 +4,14 @@ export type HistoricalTrendSale = {
   currency?: string | null;
   date?: string | null;
   marketplace?: string | null;
-  recency?: 'recent' | 'historical' | 'undated' | null;
+  recency?: 'recent' | 'extended' | 'historical' | 'undated' | null;
 };
 
 export function formatHistoricalTrendContext(label: string, sales: HistoricalTrendSale[] | undefined): string {
   const records = (sales ?? []).slice(0, 10).filter((sale) => sale && typeof sale === 'object');
   if (!records.length) return `${label}: No 130point historical-sale records were selected.`;
   const lines = records.map((sale) => {
-    const bucket = sale.recency === 'recent' ? 'recent (≤12 months)' : sale.recency === 'historical' ? 'historical (>12 months)' : 'undated';
+    const bucket = sale.recency === 'recent' ? 'recent (≤12 months)' : sale.recency === 'extended' ? 'illiquid-market extension (12–24 months)' : sale.recency === 'historical' ? 'historical (>12 months)' : 'undated';
     const amount = sale.price == null ? 'price unavailable' : `${sale.currency || 'USD'} ${sale.price}`;
     return `- [${bucket}] ${sale.date || 'date unavailable'} | ${amount} | ${sale.marketplace || 'marketplace unavailable'} | ${sale.title || 'untitled sale'}`;
   });

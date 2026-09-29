@@ -2281,19 +2281,28 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
     ...sale,
     title: sale?.title ?? '',
     price: sale?.price ?? null,
-    currency: sale?.currency ?? 'USD',
+    currency: sale?.currency ?? null,
     marketplace: sale?.marketplace ?? defaults.marketplace ?? defaults.sourceLabel,
+    originMarketplace: sale?.originMarketplace ?? sale?.marketplace ?? defaults.marketplace ?? null,
     sourceId: sale?.sourceId ?? defaults.sourceId,
+    sourceAdapter: sale?.sourceAdapter ?? null,
     sourceLabel: sale?.sourceLabel ?? defaults.sourceLabel,
     saleId: sale?.saleId ?? sale?.itemId ?? sale?.lotId ?? sale?.url ?? sale?.itemUrl ?? null,
     url: sale?.url ?? sale?.itemUrl ?? sale?.itemWebUrl ?? null,
     saleStatus: sale?.saleStatus ?? (sale?.completed === false || sale?.confirmed === false ? 'unknown' : defaults.saleStatus ?? 'completed'),
     completedStatusBasis: sale?.completedStatusBasis ?? sale?.status ?? (sale?.completed ? 'provider completed flag' : sale?.confirmed ? 'provider confirmed flag' : 'provider completed-sale endpoint'),
     priceBasis: sale?.priceBasis ?? defaults.priceBasis ?? 'unknown',
+    visualRequirement: sale?.visualRequirement ?? 'not_required',
     visualReviewStatus: sale?.visualReviewStatus ?? sale?.visualReview?.verdict ?? 'not_reviewed',
     visualReviewRationale: sale?.visualReviewRationale ?? sale?.visualReview?.rationale ?? null,
     evidenceDisposition: sale?.evidenceDisposition ?? sale?.evidence?.disposition ?? null,
     evidenceReasons: Array.isArray(sale?.evidenceReasons) ? sale.evidenceReasons.slice(0, 20) : Array.isArray(sale?.evidence?.reasons) ? sale.evidence.reasons.slice(0, 20) : null,
+    buyerPremium: sale?.buyerPremium ?? 'unknown',
+    shipping: sale?.shipping ?? 'unknown',
+    tax: sale?.tax ?? 'unknown',
+    saleForm: sale?.saleForm ?? null,
+    lotQuantity: sale?.lotQuantity ?? null,
+    provenanceToken: sale?.provenanceToken ?? null,
   });
 
   // Round-robin source groups before the explicit 120-record transport ceiling.
@@ -2474,13 +2483,14 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   ].map(({ label, item, profile }) => (
                     <div key={label} className="rounded border border-slate-700/60 bg-slate-950/50 p-3 space-y-1">
                       <p className="text-gray-200 text-xs font-semibold">{label}{item?.title ? ` · ${item.title}` : ''}</p>
-                      <p className="text-gray-300 text-[10px]">Supported market range: <span className="text-white font-semibold">{profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'Not verified'}</span></p>
-                      <p className="text-gray-400 text-[10px]">Typical evidence value: <span className="text-white">{profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'Not verified'}</span></p>
+                      <p className="text-gray-300 text-[10px]">Observed accepted-sale range: <span className="text-white font-semibold">{profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'Not verified'}</span></p>
+                      <p className="text-gray-500 text-[9px]">Typical middle band: {profile.typicalBand?.supported ? `$${profile.typicalBand.low.toLocaleString()}–$${profile.typicalBand.high.toLocaleString()}` : 'not enough verified sales'}</p>
+                      <p className="text-gray-400 text-[10px]">Primary median value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · recency-weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'}</p>
                       <p className="text-gray-400 text-[10px]">Confidence: <span className="text-emerald-200 capitalize">{profile.evidenceQuality}</span> — {profile.directComparableCount} direct completed sale{profile.directComparableCount === 1 ? '' : 's'} used.</p>
                     </div>
                   ))}
                 </div>
-                {result.deterministicComparison.overlapBand && <p className="text-sky-200 text-[10px]">The supported ranges overlap from ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()} to ${Number(result.deterministicComparison.overlapBand.high).toLocaleString()}, so the available evidence does not prove a clear winner.</p>}
+                {result.deterministicComparison.overlapBand && <p className="text-sky-200 text-[10px]">The observed accepted-sale ranges overlap from ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()} to ${Number(result.deterministicComparison.overlapBand.high).toLocaleString()} ({Math.round(Number(result.deterministicComparison.overlapRatio ?? 0) * 100)}% of the narrower observed range), so the available evidence does not prove a clear winner.</p>}
                 {result.tradeTerms?.cashAdjustment && <p className="text-emerald-200 text-[10px]">Recorded cash adjustment: Item {result.tradeTerms.cashAdjustment.paidBy === 'item_a' ? 'A' : 'B'} contributes ${Number(result.tradeTerms.cashAdjustment.amount).toLocaleString()}.</p>}
                 {(result.valuationWarnings?.length > 0 || result.missingInformation?.length > 0) && <div className="rounded bg-orange-950/30 px-2 py-1.5 text-[10px] text-orange-200"><span className="font-semibold">Important limitation:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].slice(0, 2).join(' ')}</div>}
               </div>
@@ -2500,9 +2510,11 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                   <div key={label} className="rounded bg-gray-950/50 p-2 space-y-1">
                     <p className={`text-${color}-300 text-xs font-semibold`}>{label}</p>
                     <p className="text-gray-300 text-[10px]">Evidence: <span className="text-white">{profile.evidenceState.replace(/_/g, ' ')}</span></p>
-                    <p className="text-gray-300 text-[10px]">Value: <span className="text-white">{profile.weightedValue ? `$${profile.weightedValue.toLocaleString()}` : 'Not verified'}</span> · Range: {profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'unsupported'}</p>
+                    <p className="text-gray-300 text-[10px]">Primary median: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'} · Observed accepted sale range: {profile.marketRange.supported ? `$${profile.marketRange.low?.toLocaleString()}–$${profile.marketRange.high?.toLocaleString()}` : 'unsupported'}</p>
                     <p className="text-gray-400 text-[10px]">Confidence: {profile.evidenceQuality} evidence · {profile.itemIdentificationConfidence} identity · {profile.marketStability} stability · {profile.liquidity} liquidity</p>
                     {profile.confidenceReasons?.length > 0 && <p className="text-slate-500 text-[9px] leading-snug"><span className="font-semibold text-slate-300">Confidence basis:</span> {profile.confidenceReasons.join(' ')}</p>}
+                    <p className="text-slate-500 text-[9px]">Outlier policy: {profile.outlierPolicy === 'iqr_applied' ? `IQR applied to ${profile.outlierEligibleSampleCount} selected completed sales` : profile.outlierPolicy === 'flagged_small_sample' ? `${profile.outlierFlaggedCount} suspicious price tail${profile.outlierFlaggedCount === 1 ? '' : 's'} flagged but retained at N=${profile.outlierEligibleSampleCount}` : profile.outlierPolicy === 'not_applied_insufficient_sample' ? `not applied — only ${profile.outlierEligibleSampleCount} selected completed sales` : 'not applied — no selected completed sales'}.</p>
+                    <p className="text-slate-500 text-[9px]">Marketplace independence: {profile.independentMarketplaceCount} independent marketplace{profile.independentMarketplaceCount === 1 ? '' : 's'}{profile.unknownMarketplaceCount ? ` · ${profile.unknownMarketplaceCount} unknown-marketplace record${profile.unknownMarketplaceCount === 1 ? '' : 's'} excluded from independence` : ''} · {profile.marketplaceConcentration.replace(/_/g, ' ')}{profile.largestMarketplaceShare !== null ? ` · largest share ${Math.round(profile.largestMarketplaceShare * 100)}%` : ''}.</p>
                     <p className="text-gray-500 text-[10px]">Sales: {profile.salesVelocity.sevenDay} / {profile.salesVelocity.thirtyDay} / {profile.salesVelocity.ninetyDay} in 7 / 30 / 90 days · {profile.directComparableCount} direct used ({profile.exactMatchCount} exact + {profile.nearMatchCount} near) · {profile.gradeAdjacentComparableCount} grade/certification-adjacent secondary · {profile.contextualComparableCount} context only · {profile.duplicateSaleCount} duplicate{profile.duplicateSaleCount === 1 ? '' : 's'} suppressed</p>
                   </div>
                 ))}
@@ -2516,6 +2528,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
               }`}>
                 <span className="font-semibold uppercase tracking-wide">Range-first decision:</span> {result.deterministicComparison.decisionBasis}
                 {result.deterministicComparison.overlapBand && <span className="text-gray-300"> Shared band: ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()}–${Number(result.deterministicComparison.overlapBand.high).toLocaleString()}.</span>}
+                {result.deterministicComparison.typicalBandOverlap && <span className="text-gray-300"> Typical middle-band overlap: ${Number(result.deterministicComparison.typicalBandOverlap.low).toLocaleString()}–${Number(result.deterministicComparison.typicalBandOverlap.high).toLocaleString()}.</span>}
+                {result.deterministicComparison.midpointDifference !== null && <span className="text-gray-300"> Median midpoint difference: ${Math.abs(Number(result.deterministicComparison.midpointDifference)).toLocaleString()}.</span>}
                 {result.deterministicComparison.rangeGap !== null && result.deterministicComparison.rangeGap > 0 && <span className="text-gray-300"> Range gap: ${Number(result.deterministicComparison.rangeGap).toLocaleString()}.</span>}
               </div>
               {result.tradeTerms && (
@@ -2643,7 +2657,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
                                   <p className={`mt-0.5 font-semibold ${useTone}`}>{useLabel}</p>
                                   <p className="mt-0.5 text-gray-400">Reason: {used ? `Completed sale selected with ${comparable.classification} identity match (score ${comparable.score}).` : comparable.exclusionReason ?? 'No direct valuation eligibility was established.'}</p>
                                   {gate && <p className="mt-0.5 text-gray-500">Category gate: {String(gate.status).replace(/_/g, ' ')}{gate.confirmedFields?.length ? ` · confirmed ${gate.confirmedFields.join(', ')}` : ''}{gate.unconfirmedFields?.length ? ` · review ${gate.unconfirmedFields.join(', ')}` : ''}{gate.conflicts?.length ? ` · conflict ${gate.conflicts.join(', ')}` : ''}</p>}
-                                  <p className="mt-0.5 text-gray-600">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · {comparable.saleStatus ?? 'status unavailable'} · {comparable.priceBasis ?? 'price basis unavailable'} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
+                                  <p className="mt-0.5 text-gray-600">{comparable.sourceLabel ?? comparable.sourceId ?? 'source unavailable'} · adapter {comparable.sourceAdapter ?? 'unverified'} · {comparable.saleStatus ?? 'status unavailable'} · {comparable.priceBasis ?? 'price basis unavailable'} · premium {comparable.buyerPremium ?? 'unknown'} · duplicate {String(comparable.duplicateStatus ?? 'unique').replace(/_/g, ' ')} · visual {String(comparable.visualReviewStatus ?? 'not_reviewed').replace(/_/g, ' ')}</p>
+                                  <p className="mt-0.5 break-all text-gray-700">{comparable.canonicalTransactionId ? `Canonical transaction: ${comparable.canonicalTransactionId}` : 'Canonical transaction: unavailable / context only'}</p>
                                 </div>;
                               })}
                             </div>

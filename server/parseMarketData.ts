@@ -247,7 +247,9 @@ export async function lookup130PointSales(query: string, env: ParseEnv = process
         id: sale.id ?? null,
         title: sale.title ?? 'Untitled sale',
         price: sale.price ?? null,
-        currency: sale.currency ?? 'USD',
+        // Provider currency must be explicit. A missing currency remains
+        // review/context evidence and cannot be promoted by a client default.
+        currency: sale.currency ?? null,
         date: sale.date ?? null,
         recency: classifySaleRecency(sale.date),
         saleType: sale.sale_type ?? null,
@@ -290,7 +292,7 @@ export async function lookupPwccSales(query: string, env: ParseEnv = process.env
         id: sale.listing_uuid ?? sale.listing_id ?? null,
         title: sale.title ?? 'Untitled PWCC listing',
         price: typeof cents === 'number' ? cents / 100 : null,
-        currency: 'USD',
+        currency: typeof sale.currency === 'string' && sale.currency.trim() ? sale.currency.trim() : null,
         date: soldDate,
         recency: classifySaleRecency(soldDate),
         marketplace: sale.marketplace ?? 'Fanatics Collect',
