@@ -42,28 +42,65 @@ import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityR
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
-async function getEbayAppToken(): Promise<string | null> {
+const EBAY_OAUTH_TIMEOUT_MS = 8_000;
+const EBAY_BROWSE_TIMEOUT_MS = 8_000;
+// Active listings are asking-price context. Keep retrieval bounded and fast so
+// an optional AI image check cannot hold the basic market view hostage.
+export const EBAY_ACTIVE_QUERY_TIER_LIMIT = 6;
+export const EBAY_ACTIVE_RESULTS_PER_TIER = 40;
+
+type EbayAppTokenResult = {
+  token: string | null;
+  error: string | null;
+};
+
+async function getEbayAppToken(): Promise<EbayAppTokenResult> {
   const clientId = process.env.EBAY_PROD_CLIENT_ID;
   const clientSecret = process.env.EBAY_PROD_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
+  if (!clientId || !clientSecret) {
+    return { token: null, error: 'eBay credentials are not configured for this sandbox.' };
+  }
   try {
     const creds = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     const res = await fetch('https://api.ebay.com/identity/v1/oauth2/token', {
       method: 'POST',
       headers: { 'Authorization': `Basic ${creds}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: 'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
+      signal: AbortSignal.timeout(EBAY_OAUTH_TIMEOUT_MS),
     });
-    const data = await res.json() as any;
-    return res.ok ? data.access_token : null;
-  } catch { return null; }
+    const data = await res.json().catch(() => null) as any;
+    if (res.ok && typeof data?.access_token === 'string' && data.access_token) {
+      return { token: data.access_token, error: null };
+    }
+    console.warn(`[eBay Active] OAuth token unavailable (HTTP ${res.status}).`);
+    return {
+      token: null,
+      error: res.status === 401 || res.status === 403
+        ? 'eBay rejected the configured sandbox authorization. Recheck the secure eBay credentials.'
+        : `eBay authorization is temporarily unavailable (HTTP ${res.status}).`,
+    };
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError';
+    console.warn(`[eBay Active] OAuth token request ${timedOut ? 'timed out' : 'failed'}.`);
+    return {
+      token: null,
+      error: timedOut
+        ? 'eBay authorization timed out. Please try the lookup again.'
+        : 'eBay authorization could not be reached. Please try the lookup again.',
+    };
+  }
 }
 
 async function fetchEbayListings(query: string, token: string, limit = 25) {
   const res = await fetch(
     `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
-    { headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' } }
+    {
+      headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
+      signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
+    }
   );
-  const data = await res.json() as any;
+  const data = await res.json().catch(() => null) as any;
+  if (!res.ok) throw new Error(`eBay Browse lookup returned HTTP ${res.status}`);
   return data.itemSummaries ?? [];
 }
 
@@ -733,11 +770,15 @@ export const testAIRouter = router({
       itemDetails: z.string().optional(),
       itemType: z.string().optional(),
       imageUrl: z.string().url().optional(),
+      includeVisualReview: z.boolean().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      const token = await getEbayAppToken();
-      if (!token) return { query: input.title, listings: [], metrics: null, error: 'eBay credentials not configured' };
+      const tokenResult = await getEbayAppToken();
+      if (!tokenResult.token) {
+        return { query: input.title, listings: [], metrics: null, visualFilter: null, error: tokenResult.error };
+      }
+      const token = tokenResult.token;
 
       // Build a smart query from item details
       const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
@@ -864,22 +905,31 @@ export const testAIRouter = router({
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
           : buildSoldCompsQueryCandidates(query);
+        const boundedSearchQueries = searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT);
+        const queryResults = await Promise.all(
+          boundedSearchQueries.map(async (candidate) => {
+            const candidateQuery = buildEbayBrowseQuery(candidate, {
+              preserveGrade: true,
+            });
+            return fetchEbayListings(
+              candidateQuery || candidate,
+              token,
+              EBAY_ACTIVE_RESULTS_PER_TIER,
+            );
+          }),
+        );
         const fetchedByQuery = new Map<string, any>();
-        for (const candidate of searchQueries) {
-          const candidateQuery = buildEbayBrowseQuery(candidate, {
-            preserveGrade: true,
-          });
-          const candidateResults = await fetchEbayListings(candidateQuery || candidate, token, 100);
+        for (const candidateResults of queryResults) {
           candidateResults.forEach((item: any) => {
             const key = String(item.itemId ?? item.itemWebUrl ?? item.title ?? fetchedByQuery.size);
             fetchedByQuery.set(key, item);
           });
-          // Query tiers are complementary: a non-empty precise page does not
-          // establish retrieval completeness. Union every bounded tier before
-          // objective identity filtering and label the resulting coverage.
         }
+        // Query tiers are complementary: a non-empty precise page does not
+        // establish retrieval completeness. Union every bounded tier before
+        // objective identity filtering and label the resulting coverage.
         const summaries = [...fetchedByQuery.values()];
-        console.log(`[eBay Search] Fetch Query: "${searchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
+        console.log(`[eBay Search] Fetch Query: "${boundedSearchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
         const byYear = filterTestAiListingsByYear(summaries, targetYear);
         console.log(`[eBay Search] After year filter: ${byYear.length} results (target year: ${targetYear || 'none'})`);
@@ -904,15 +954,17 @@ export const testAIRouter = router({
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
           console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
         });
-        const visualActiveFilter = await filterVisualSourceCandidates({
-          sourceLabel: 'eBay active listings',
-          targetImageUrl: input.imageUrl,
-          targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`,
-          listings: filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
-        });
-        const visuallyFilteredSummaries = visualActiveFilter.listings;
-        const metrics = computeMetrics(visuallyFilteredSummaries);
-        const visualMatchMetrics = computeVisualMatchMetrics(visuallyFilteredSummaries);
+        const visualActiveFilter = input.includeVisualReview
+          ? await filterVisualSourceCandidates({
+              sourceLabel: 'eBay active listings',
+              targetImageUrl: input.imageUrl,
+              targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`,
+              listings: filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+            })
+          : null;
+        const displaySummaries = visualActiveFilter?.listings ?? filteredSummaries;
+        const metrics = computeMetrics(filteredSummaries);
+        const visualMatchMetrics = visualActiveFilter ? computeVisualMatchMetrics(displaySummaries) : null;
         return {
           query,
           debug: {
@@ -921,8 +973,10 @@ export const testAIRouter = router({
             afterNumberFilter: byNumber.length,
             afterGradeFilter: filteredSummaries.length,
             targetGrade,
+            queryTierCount: boundedSearchQueries.length,
+            resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },
-          visualReviewListings: visuallyFilteredSummaries.map((s: any) => ({
+          visualReviewListings: visualActiveFilter ? displaySummaries.map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
@@ -937,8 +991,8 @@ export const testAIRouter = router({
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
-          })),
-          listings: visuallyFilteredSummaries.slice(0, 20).map((s: any) => ({
+          })) : [],
+          listings: displaySummaries.slice(0, 20).map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
@@ -2220,10 +2274,10 @@ export const testAIRouter = router({
         : null;
       const refinedActiveLookup = async (query: VisualComparableQuery | null, item: typeof leftItem) => {
         if (!query) return { query: null, metrics: null as any, resultCount: 0 };
-        const token = await getEbayAppToken();
-        if (!token) return { query, metrics: null as any, resultCount: 0 };
+        const tokenResult = await getEbayAppToken();
+        if (!tokenResult.token) return { query, metrics: null as any, resultCount: 0 };
         try {
-          const raw = await fetchEbayListings(buildEbayBrowseQuery(query.query, { preserveGrade: true }), token, 40);
+          const raw = await fetchEbayListings(buildEbayBrowseQuery(query.query, { preserveGrade: true }), tokenResult.token, 40);
           const targetGrade = item.grade ? Number.parseFloat(item.grade) : null;
           const gradeFiltered = targetGrade ? filterListingsByGrade(raw, targetGrade) : raw;
           return { query, metrics: computeMetrics(gradeFiltered), resultCount: gradeFiltered.length };

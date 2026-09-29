@@ -675,28 +675,37 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
 }
 
 // ─── eBay Active Listings Section ────────────────────────────────────────────
-function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const [reviewRequested, setReviewRequested] = useState(false);
   const [showVisualMatchMetrics, setShowVisualMatchMetrics] = useState(false);
-  const { data, isLoading } = trpc.testAI.getEbayData.useQuery(
-    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
-    { enabled: !!item.title && item.category !== 'unknown' }
+  const visualReviewQuery = trpc.testAI.getEbayData.useQuery(
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl, includeVisualReview: true },
+    { enabled: reviewRequested && !!item.title && item.category !== 'unknown' },
   );
-  useEffect(() => setShowVisualMatchMetrics(false), [item.id, item.title]);
-  const visibleMetrics = showVisualMatchMetrics && data?.visualMatchMetrics ? data.visualMatchMetrics : data?.metrics;
-  const showingVisualMatchMetrics = showVisualMatchMetrics && !!data?.visualMatchMetrics;
-  const visualMatchCount = data?.visualMatchMetrics?.count ?? 0;
+  useEffect(() => {
+    setReviewRequested(false);
+    setShowVisualMatchMetrics(false);
+  }, [item.id, item.title]);
+  const visualReviewData = visualReviewQuery.data;
+  // A failed optional review must never replace already-loaded asking-price
+  // context with an empty/error response.
+  const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
+  const visibleMetrics = showVisualMatchMetrics && visualReviewData?.visualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics;
+  const showingVisualMatchMetrics = showVisualMatchMetrics && !!visualReviewData?.visualMatchMetrics;
+  const visualMatchCount = visualReviewData?.visualMatchMetrics?.count ?? 0;
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛒 eBay Active Listings</p>
-        {isLoading && <Spinner className="w-3 h-3" />}
+        {(isLoading || visualReviewQuery.isLoading) && <Spinner className="w-3 h-3" />}
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · {showingVisualMatchMetrics ? 'Visual-match-only asking-price metrics' : 'Full-market asking-price context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
-      {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
-      {showVisualMatchMetrics && !data?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
+      {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
+      {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
+      {showVisualMatchMetrics && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
         <div className="space-y-1.5">
           <div className="grid grid-cols-4 gap-2 text-[11px]">
@@ -716,11 +725,13 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
         </div>
       )}
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
-      <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />
-      {data?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{data.query}"</span> · {data.listings.length} results</p>}
-      {data?.listings && data.listings.length > 0 && (
+      {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Image review is a separate, bounded check and never changes valuation evidence.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
+      {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running separately. Current asking-price listings remain available below.</p>}
+      {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
+      {displayData?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{displayData.query}"</span> · {displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>}
+      {displayData?.listings && displayData.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
-          {data.listings.map((l: any, i: number) => (
+          {displayData.listings.map((l: any, i: number) => (
             <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
               <div className="flex items-center gap-2 min-w-0">
                 {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
@@ -735,7 +746,7 @@ function EbayActiveSection({ item, side }: { item: SelectedItem; side: 'left' | 
           ))}
         </div>
       )}
-      {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No listings found.</p>}
+      {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">No listings found.</p>}
     </div>
   );
 }
@@ -2816,12 +2827,13 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
   enabledSources: Set<SourceId>;
   ebayData: any;
+  ebayLoading: boolean;
   soldCompsData: any;
   hipstampData: any;
   hipstampSoldData: any;
@@ -2866,7 +2878,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, soldComp
       <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
-          ? <EbayActiveSection item={queryItem} side={side} />
+          ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} />
           : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
               <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>🛒 eBay Active Listings</p>
               <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
@@ -3155,8 +3167,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
           </div>
         )}
 
