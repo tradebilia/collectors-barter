@@ -12,8 +12,8 @@ describe("homepage launch polish", () => {
 
   it("keeps the reference statistic-bar depth, glow, separators, and four metrics", () => {
     expect(homepageSource).toContain("border-b border-[#4238cf]");
-    expect(homepageSource).toContain("py-3 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-4");
-    expect(homepageSource).toContain("h-9 w-9 sm:h-10 sm:w-10");
+    expect(homepageSource).toContain("py-2 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-2.5");
+    expect(homepageSource).toContain("h-8 w-8 sm:h-9 sm:w-9");
     expect(homepageSource).toContain("Total Members");
     expect(homepageSource).toContain("Active Listings");
     expect(homepageSource).toContain("Total Items Value");

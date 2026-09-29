@@ -610,7 +610,7 @@ export default function Home() {
 
         <CategoryBar />
 
-        <section className="border-b border-[#4238cf] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-3 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-4">
+        <section className="border-b border-[#4238cf] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-2 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-2.5">
           <div className="grid grid-cols-2 items-center gap-0 sm:grid-cols-4">
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
@@ -619,10 +619,10 @@ export default function Home() {
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {
-                users: <Users className="h-9 w-9 sm:h-10 sm:w-10" />,
-                list: <ListTodo className="h-9 w-9 sm:h-10 sm:w-10" />,
-                dollar: <DollarSign className="h-9 w-9 sm:h-10 sm:w-10" />,
-                handshake: <Handshake className="h-9 w-9 sm:h-10 sm:w-10" />,
+                users: <Users className="h-8 w-8 sm:h-9 sm:w-9" />,
+                list: <ListTodo className="h-8 w-8 sm:h-9 sm:w-9" />,
+                dollar: <DollarSign className="h-8 w-8 sm:h-9 sm:w-9" />,
+                handshake: <Handshake className="h-8 w-8 sm:h-9 sm:w-9" />,
               };
               return (
                 <div key={label as string} className="flex h-full items-center justify-center gap-3 border-r border-white/25 px-3 py-1 transition-all duration-500 last:border-r-0 sm:gap-4 sm:px-6">
