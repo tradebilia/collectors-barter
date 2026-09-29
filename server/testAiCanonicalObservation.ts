@@ -37,7 +37,11 @@ type AdapterId =
   | 'swann'
   | 'rr_auction'
   | 'alexander_historical'
-  | 'goldin';
+  | 'goldin'
+  | 'coin_archives'
+  | 'bertoia'
+  | 'heritage'
+  | 'hakes';
 
 export type VisualRequirement = 'not_required' | 'required';
 export type DuplicateStatus = 'unique' | 'exact_duplicate' | 'probable_duplicate' | 'possible_duplicate';
@@ -124,6 +128,10 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   rr_auction: { id: 'rr_auction', label: 'RR Auction', version: '1.0.0', defaultOriginMarketplace: 'rr_auction', defaultPriceBasis: 'closed', completedStatusBasis: 'RR Auction closed lot result' },
   alexander_historical: { id: 'alexander_historical', label: 'Alexander Historical Auctions', version: '1.0.0', defaultOriginMarketplace: 'alexander_historical', defaultPriceBasis: 'unknown', completedStatusBasis: 'Alexander Historical completed lot' },
   goldin: { id: 'goldin', label: 'Goldin Video Game Auctions', version: '1.0.0', defaultOriginMarketplace: 'goldin', defaultPriceBasis: 'unknown', completedStatusBasis: 'Goldin Lot Sold record' },
+  coin_archives: { id: 'coin_archives', label: 'CoinArchives', version: '1.0.0', defaultOriginMarketplace: 'coin_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'CoinArchives completed lot record' },
+  bertoia: { id: 'bertoia', label: 'Bertoia Auctions', version: '1.0.0', defaultOriginMarketplace: 'bertoia', defaultPriceBasis: 'unknown', completedStatusBasis: 'Bertoia completed lot or catalog record' },
+  heritage: { id: 'heritage', label: 'Heritage Auction Archives', version: '1.0.0', defaultOriginMarketplace: 'heritage', defaultPriceBasis: 'unknown', completedStatusBasis: 'Heritage completed lot result' },
+  hakes: { id: 'hakes', label: "Hake's Auction Results", version: '1.0.0', defaultOriginMarketplace: 'hakes', defaultPriceBasis: 'unknown', completedStatusBasis: "Hake's completed lot result" },
 };
 
 export type CanonicalObservationFacts = {

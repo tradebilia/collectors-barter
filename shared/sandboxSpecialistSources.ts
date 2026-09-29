@@ -13,7 +13,11 @@ export type SandboxSpecialistSourceId =
   | 'swann'
   | 'rr_auction'
   | 'alexander_historical'
-  | 'goldin';
+  | 'goldin'
+  | 'coin_archives'
+  | 'bertoia'
+  | 'heritage'
+  | 'hakes';
 
 export type SandboxSpecialistSource = {
   id: SandboxSpecialistSourceId;
@@ -50,6 +54,10 @@ export const SANDBOX_SPECIALIST_SOURCES: readonly SandboxSpecialistSource[] = [
   { id: 'rr_auction', label: 'RR Auction', categories: ['autographs', 'music'], sourceUrl: 'https://www.rrauction.com/auctions/auction-calendar/cron/past', currencyPolicy: 'usd_symbol_context', priceBasis: 'including_buyers_premium', evidenceMode: 'context_only_until_adapter', activationNote: 'Closed-lot, date, price, and authentication context verified.' },
   { id: 'alexander_historical', label: 'Alexander Historical Auctions', categories: ['autographs'], sourceUrl: 'https://www.alexautographs.com/past-auctions/', currencyPolicy: 'usd_symbol_context', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', activationNote: 'Historical sold-lot fields verified; basis remains source-attributed.' },
   { id: 'goldin', label: 'Goldin Video Game Auctions', categories: ['video_games'], sourceUrl: 'https://goldin.co/buy/?Category=Video%20Games&show_only=Sold%20Items', currencyPolicy: 'usd_symbol_context', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', activationNote: 'Sold state, lot identity, timestamp, price, and Wata grade verified.' },
+  { id: 'coin_archives', label: 'CoinArchives', categories: ['coins'], sourceUrl: 'https://www.coinarchives.com/faq.php', currencyPolicy: 'currency_unresolved', priceBasis: 'hammer', evidenceMode: 'context_only_until_adapter', activationNote: 'Owner authorized testing. Public completed-lot access still needs to be verified through an approved route; no valuation use yet.' },
+  { id: 'bertoia', label: 'Bertoia Auctions', categories: ['vintage_toys'], sourceUrl: 'https://www.bertoiaauctions.com/toy-auctions/past-auctions/', currencyPolicy: 'currency_unresolved', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', activationNote: 'Owner authorized testing. PDF/catalog title-to-lot joins and explicit currency still need to be resolved.' },
+  { id: 'heritage', label: 'Heritage Auction Archives', categories: ['comics', 'coins', 'stamps', 'video_games', 'movies', 'music', 'autographs', 'disney_pins', 'vintage_toys'], sourceUrl: 'https://www.ha.com/c/search.zx', currencyPolicy: 'usd_symbol_context', priceBasis: 'including_buyers_premium', evidenceMode: 'context_only_until_adapter', activationNote: 'Owner authorized testing. Access and realized-price visibility must be verified through the permitted route; no login workaround is used.' },
+  { id: 'hakes', label: "Hake's Auction Results", categories: ['disney_pins', 'video_games', 'vintage_toys'], sourceUrl: 'https://www.hakes.com/auctionresults.aspx', currencyPolicy: 'usd_symbol_context', priceBasis: 'including_buyers_premium', evidenceMode: 'context_only_until_adapter', activationNote: 'Owner authorized testing. The legacy and current result-page contracts must be reconciled before valuation use.' },
 ] as const;
 
 export function getSandboxSpecialistSource(id: string): SandboxSpecialistSource | null {

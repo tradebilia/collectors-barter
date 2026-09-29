@@ -3,13 +3,11 @@ import { SANDBOX_SPECIALIST_SOURCES, getSandboxSpecialistSource, isSandboxSpecia
 import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 describe('sandbox specialist source activation', () => {
-  it('activates exactly the 15 verified sources and excludes Omega, Heritage, and partial sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(15);
+  it('activates the 19 authorized test sources and excludes Omega, Propstore, and unapproved sources', () => {
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(19);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('omega_auctions');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('heritage');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('bertoia');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('propstore');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('hakes');
+    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['heritage', 'bertoia', 'hakes', 'coin_archives']));
   });
 
   it('keeps category mapping source-specific', () => {

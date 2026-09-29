@@ -310,7 +310,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     status: 'live' as const,
     description: 'Read-only Discogs release metadata for Music items; no valuation, authentication, grading, or stored data',
   },
-  ...PERMISSION_PENDING_SOURCE_REGISTRY,
+  ...Object.fromEntries(Object.entries(PERMISSION_PENDING_SOURCE_REGISTRY).filter(([sourceId]) => sourceId !== 'propstore')),
   ...Object.fromEntries(SANDBOX_SPECIALIST_SOURCES.map((source) => [source.id, {
     id: source.id,
     label: source.label,
