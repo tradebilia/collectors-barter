@@ -28,7 +28,7 @@ describe("responsive viewport layout contracts", () => {
   it("keeps the Trade Hub hero and category bar aligned with the homepage", () => {
     const homeSource = readPage("Home");
     const tradeHubSource = readPage("TradeHub");
-    expect(homeSource).toContain('className="container relative flex h-[400px] items-center justify-center py-0"');
+    expect(homeSource).toContain('className="container relative flex h-[280px] items-center justify-center py-0 sm:h-[400px]"');
     expect(tradeHubSource).toContain('className="container relative flex h-[400px] items-center justify-center py-0"');
     expect(tradeHubSource.indexOf("</section>\n\n        <CategoryBar />")).toBeGreaterThan(-1);
   });

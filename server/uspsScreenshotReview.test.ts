@@ -14,17 +14,14 @@ describe('Test AI USPS screenshot review', () => {
   });
 
   it('keeps the streamlined capture action permissioned and non-persistent', () => {
-    const pageSource = readFileSync(join(process.cwd(), 'client/src/pages/TestAI.tsx'), 'utf8');
-    expect(pageSource).not.toContain('const openUspsAndCapture = () =>');
-    expect(pageSource).not.toContain('Open USPS.com in new tab');
-    expect(pageSource).not.toContain('Open USPS + start capture');
-    expect(pageSource).not.toContain('Open USPS results');
-    expect(pageSource).not.toContain('Capture current Tradebilia tab');
-    expect(pageSource).not.toContain('Choose screenshot');
+    const pageSource = readFileSync(join(process.cwd(), 'client/src/pages/CarrierPayPalSandbox.tsx'), 'utf8');
     expect(pageSource).toContain('View USPS result in Tradebilia');
     expect(pageSource).toContain('navigator.mediaDevices.getDisplayMedia');
     expect(pageSource).toContain('submitUspsScreenshotForReview(image)');
+    expect(pageSource).toContain('Open USPS results');
+    expect(pageSource).toContain('Open USPS.com in new tab');
     expect(pageSource).toContain('Capture this Tradebilia view');
+    expect(pageSource).toContain('Click here and paste a USPS result screenshot.');
     expect(pageSource).not.toContain('USPS result screenshot preview');
     expect(pageSource).not.toContain('<img src={uspsScreenshot}');
     expect(pageSource).not.toContain('document.cookie');

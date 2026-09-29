@@ -36,9 +36,9 @@ describe("Profile Integrations provider logos", () => {
     expect(publicProfile).not.toContain("upload.wikimedia.org/wikipedia/commons");
   });
 
-  it("stacks connection controls below provider branding on mobile widths", () => {
+  it("stacks the integration cards and their connection controls on mobile widths", () => {
     const mobileCardLayout = "flex flex-col items-stretch gap-3 rounded-lg border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between";
-    expect(accountSettings).toContain(mobileCardLayout);
+    expect(accountSettings).toContain('<div className="space-y-3">');
     expect(ebayConnection).toContain(mobileCardLayout);
     expect(facebookConnection).toContain(mobileCardLayout);
     expect(linkedInConnection).toContain(mobileCardLayout);

@@ -46,8 +46,8 @@ describe("Review, Shipping & Payment, and Confirm Receipt lifecycle", () => {
     expect(source).toContain("includeOriginalRequestedListing");
   });
 
-  it("derives cash obligations for the full negotiation-to-receipt lifecycle", () => {
-    expect(paymentSource).toContain('["negotiating", "accepted", "shipping", "shipped"]');
+  it("derives cash obligations for the full negotiation-to-recap lifecycle", () => {
+    expect(paymentSource).toContain('["negotiating", "accepted", "shipping", "shipped", "completed"]');
     expect(paymentSource).toContain("amount <= 0");
   });
 });

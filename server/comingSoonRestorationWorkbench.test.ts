@@ -5,15 +5,17 @@ import { resolve } from "node:path";
 const source = readFileSync(resolve(__dirname, "../client/src/pages/ComingSoon.tsx"), "utf8");
 
 describe("Coming Soon baseline", () => {
-  it("keeps the exact supplied image fully visible with a centered category overlay including Music", () => {
-    expect(source).toContain("coming-soon-exact-supplied-clean-row_d8aa56d4.png");
-    expect(source).toContain("w-[min(100vw,calc(100svh*605/289))]");
-    expect(source).toContain('{ label: "Music", icon: Disc3 }');
-    expect(source).toContain("grid-cols-11");
-    expect(source).toContain("inset-x-[6%] top-[75%] h-[15%] px-[2%]");
-    expect(source).toContain('aria-label="Collections on the exchange"');
+  it("keeps the supplied desktop composition fully visible and the mobile category rail including Music", () => {
+    expect(source).toContain('const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_ba8c631b.html";');
+    expect(source).toContain('className="relative mx-auto hidden aspect-[1815/867] w-full sm:block"');
+    expect(source).toContain("<iframe");
+    expect(source).toContain("src={SUPPLIED_COMING_SOON_HTML_URL}");
+    expect(source).toContain('className="pointer-events-none absolute inset-0 size-full border-0"');
+    expect(source).toContain("const mobileCategories = [");
+    expect(source).toContain('{ label: "Music", Icon: Music2 }');
+    expect(source).toContain('aria-label="Tradebilia mobile launch signup"');
+    expect(source).toContain("grid grid-cols-5");
     expect(source).not.toContain("object-cover");
     expect(source).not.toContain("<picture>");
-    expect(source).not.toContain("tradebilia_final_transparent-Notagline");
   });
 });

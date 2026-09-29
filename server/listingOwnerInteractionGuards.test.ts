@@ -58,7 +58,7 @@ describe("listing owner interaction safeguards", () => {
     expect(detailSource).toContain("setIsProposalDialogOpen(true);");
     expect(detailSource).toContain("Your personalized message");
     expect(detailSource).toContain("message: proposalMessage.trim()");
-    expect(detailSource).toContain("disabled={createProposalMutation.isPending || isOwnListing}");
+    expect(detailSource).toContain("disabled={createProposalMutation.isPending || hasActiveTradeForListing || !proposalMessage.trim()}");
     expect(detailSource).toContain("disabled={isOwnListing}");
     expect(detailSource).not.toContain("I am interested in your ${listing.title}");
   });

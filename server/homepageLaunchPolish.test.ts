@@ -15,7 +15,7 @@ describe("homepage launch polish", () => {
   });
 
   it("extends the Follow Tradebilia background through the homepage bottom padding", () => {
-    expect(homepageSource).toContain('className="relative z-10 -mb-24 border-t border-white/10 bg-[#0b102b] px-4 pb-32 pt-8 text-white sm:pt-10"');
+    expect(homepageSource).toContain('className="relative z-10 -mb-24 border-t border-white/10 bg-[#0b102b] px-4 pb-8 pt-8 text-white sm:pt-10"');
   });
 
   it("links Facebook, Instagram, and X icons to Rich's supplied official Tradebilia destinations", () => {

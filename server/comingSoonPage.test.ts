@@ -8,17 +8,19 @@ const appSource = fs.readFileSync(path.join(projectRoot, "client/src/App.tsx"), 
 const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("Coming Soon experience", () => {
-  it("uses the exact supplied image as the no-crop visual baseline with an evenly centered category row including Music", () => {
-    expect(pageSource).toContain("coming-soon-exact-supplied-clean-row_d8aa56d4.png");
-    expect(pageSource).toContain("w-[min(100vw,calc(100svh*605/289))]");
-    expect(pageSource).toContain("const COMING_SOON_CATEGORIES = [");
-    expect(pageSource).toContain('{ label: "Music", icon: Disc3 }');
-    expect(pageSource).toContain("grid-cols-11");
-    expect(pageSource).toContain("inset-x-[6%] top-[75%] h-[15%] px-[2%]");
-    expect(pageSource).toContain('aria-label="Collections on the exchange"');
+  it("keeps the supplied desktop composition intact while providing a responsive mobile launch experience including Music", () => {
+    expect(pageSource).toContain('const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_ba8c631b.html";');
+    expect(pageSource).toContain('className="relative mx-auto hidden aspect-[1815/867] w-full sm:block"');
+    expect(pageSource).toContain("<iframe");
+    expect(pageSource).toContain("src={SUPPLIED_COMING_SOON_HTML_URL}");
+    expect(pageSource).toContain('aria-label="Tradebilia launch email signup"');
+    expect(pageSource).toContain("const mobileCategories = [");
+    expect(pageSource).toContain('{ label: "Music", Icon: Music2 }');
+    expect(pageSource).toContain('aria-label="Tradebilia mobile launch signup"');
+    expect(pageSource).toContain("grid grid-cols-5");
+    expect(pageSource).toContain('sandbox=""');
     expect(pageSource).not.toContain("object-cover");
     expect(pageSource).not.toContain("tradebilia_final_transparent-Notagline");
-    expect(pageSource).not.toContain("launchUpdates.subscribe");
   });
 
   it("registers the primary and preserved legacy Coming Soon routes", () => {
