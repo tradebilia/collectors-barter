@@ -10,7 +10,14 @@ describe("Category Bar Explore All navigation", () => {
     expect(source).toContain('href="/search"');
     expect(source).toContain("Explore All");
     expect(source).toContain('className={linkClass(isGlobalSearchPage === true)}');
-    expect(source).toContain('active ? "bg-[#3b267c] text-white');
+    expect(source).toContain('active ? "rounded-md bg-gradient-to-b from-[#7132e8] to-[#3f1a9f] text-white');
     expect(source).toContain('href={`/category/${category.value}`}');
+  });
+
+  it("preserves the spacious reference treatment for category navigation", () => {
+    expect(source).toContain("min-h-[72px]");
+    expect(source).toContain("h-5 w-5");
+    expect(source).toContain("border-y border-[#4238cf]");
+    expect(source).toContain("bg-gradient-to-b from-[#7132e8] to-[#3f1a9f]");
   });
 });

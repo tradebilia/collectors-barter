@@ -50,7 +50,7 @@ const categoryIcons: Record<string, LucideIcon | typeof PostageStampIcon | typeo
 
 function CategoryIcon({ slug }: { slug: string }) {
   const Icon = categoryIcons[slug] ?? Grid3X3;
-  return <Icon className="h-4 w-4" aria-hidden="true" />;
+  return <Icon className="h-5 w-5" aria-hidden="true" />;
 }
 
 export function CategoryBar() {
@@ -59,10 +59,10 @@ export function CategoryBar() {
   const isHomePage = useRoute("/")[0];
   const isGlobalSearchPage = useRoute("/search")[0];
 
-  const linkClass = (active: boolean) => `flex min-h-[58px] min-w-[86px] flex-1 flex-col items-center justify-center gap-1 border-r border-white/10 px-2 py-2 text-center text-[0.62rem] font-semibold uppercase tracking-[0.1em] whitespace-nowrap transition-colors hover:bg-[#33236f] sm:min-w-[96px] sm:text-[0.68rem] lg:min-w-0 lg:text-[0.7rem] ${active ? "bg-[#3b267c] text-white shadow-[inset_0_-2px_0_#b98cff]" : "text-white/85"}`;
+  const linkClass = (active: boolean) => `flex min-h-[72px] min-w-[108px] flex-1 flex-col items-center justify-center gap-1.5 border-r border-white/10 px-3 py-2 text-center text-[0.68rem] font-semibold uppercase tracking-[0.08em] whitespace-nowrap transition-colors hover:bg-[#33236f] sm:min-w-[126px] sm:text-[0.72rem] lg:min-w-[96px] lg:text-[0.62rem] lg:tracking-[0.04em] xl:min-w-0 xl:text-[0.74rem] xl:tracking-[0.08em] ${active ? "rounded-md bg-gradient-to-b from-[#7132e8] to-[#3f1a9f] text-white shadow-[0_0_18px_rgba(139,92,246,0.55),inset_0_-2px_0_#d9bdff]" : "text-white/90"}`;
 
   return (
-    <nav className="relative z-0 border-b border-white/15 bg-[#0b102d] shadow-[0_4px_14px_rgba(8,10,36,0.24)]" aria-label="Collection categories">
+    <nav className="relative z-0 border-y border-[#4238cf] bg-[#090f2d] shadow-[0_0_16px_rgba(54,65,196,0.42)]" aria-label="Collection categories">
       <div className="flex w-full snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <Link href="/" className={linkClass(isHomePage === true)}>
           <House className="h-4 w-4" aria-hidden="true" />

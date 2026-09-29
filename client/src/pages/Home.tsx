@@ -610,7 +610,7 @@ export default function Home() {
 
         <CategoryBar />
 
-        <section className="border-y border-[#332c78] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-1.5 text-white shadow-[0_3px_12px_rgba(37,19,116,0.24)]">
+        <section className="border-b border-[#4238cf] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-3 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-4">
           <div className="grid grid-cols-2 items-center gap-0 sm:grid-cols-4">
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
@@ -619,17 +619,17 @@ export default function Home() {
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {
-                users: <Users className="h-8 w-8" />,
-                list: <ListTodo className="h-8 w-8" />,
-                dollar: <DollarSign className="h-8 w-8" />,
-                handshake: <Handshake className="h-8 w-8" />,
+                users: <Users className="h-9 w-9 sm:h-10 sm:w-10" />,
+                list: <ListTodo className="h-9 w-9 sm:h-10 sm:w-10" />,
+                dollar: <DollarSign className="h-9 w-9 sm:h-10 sm:w-10" />,
+                handshake: <Handshake className="h-9 w-9 sm:h-10 sm:w-10" />,
               };
               return (
-                <div key={label as string} className="flex h-full items-center justify-center gap-2 border-r border-white/25 px-3 py-1.5 transition-all duration-500 last:border-r-0">
+                <div key={label as string} className="flex h-full items-center justify-center gap-3 border-r border-white/25 px-3 py-1 transition-all duration-500 last:border-r-0 sm:gap-4 sm:px-6">
                   <div className="flex-shrink-0 text-white flex items-center justify-center">{iconMap[iconType as string]}</div>
                   <div className="flex flex-col text-center justify-center">
-                    <p className="text-[0.65rem] leading-none text-white/75">{label as string}</p>
-                    <p className="text-lg font-bold leading-none text-white sm:text-xl">{value as string}</p>
+                    <p className="text-[0.68rem] leading-tight text-white/80 sm:text-[0.75rem]">{label as string}</p>
+                    <p className="text-xl font-bold leading-tight text-white sm:text-2xl">{value as string}</p>
                   </div>
                 </div>
               );

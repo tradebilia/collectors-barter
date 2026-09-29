@@ -36,12 +36,12 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain sm:max-w-6xl"');
     expect(homeSource).toContain("<CategoryBar />");
     expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');
-    expect(homeSource).toContain('className="h-8 w-8"');
-    expect(categoryBarSource).toContain('bg-[#0b102d]');
+    expect(homeSource).toContain('h-9 w-9 sm:h-10 sm:w-10');
+    expect(categoryBarSource).toContain('bg-[#090f2d]');
     expect(categoryBarSource).toContain('House');
     expect(categoryBarSource).toContain('Explore All');
-    expect(categoryBarSource).toContain('gap-1 border-r border-white/10');
-    expect(categoryBarSource).toContain('bg-[#3b267c]');
+    expect(categoryBarSource).toContain('gap-1.5 border-r border-white/10');
+    expect(categoryBarSource).toContain('bg-gradient-to-b from-[#7132e8] to-[#3f1a9f]');
     expect(recentlyAddedSource).toContain("w-[220px]");
     expect(recentlyAddedSource).toContain("gap-4 animate-scroll");
     expect(recentlyAddedSource).toContain("aspect-[0.75]");
