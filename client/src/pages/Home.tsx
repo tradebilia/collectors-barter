@@ -610,7 +610,7 @@ export default function Home() {
 
         <CategoryBar />
 
-        <section className="border-b border-[#4238cf] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-2 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-2.5">
+        <section className="border-b border-[#4238cf] bg-gradient-to-r from-[#11183f] via-[#4b1db7] to-[#761df2] py-1 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-1">
           <div className="grid grid-cols-2 items-center gap-0 sm:grid-cols-4">
             {[
               ["users", "Total Members", siteStatisticsQuery.data?.totalMembers ? `${siteStatisticsQuery.data.totalMembers}` : "0"],
@@ -619,13 +619,13 @@ export default function Home() {
               ["handshake", "Successful Trades", siteStatisticsQuery.data?.totalTrades ? `${siteStatisticsQuery.data.totalTrades}` : "0"],
             ].map(([iconType, label, value]) => {
               const iconMap: Record<string, React.ReactNode> = {
-                users: <Users className="h-8 w-8 sm:h-9 sm:w-9" />,
-                list: <ListTodo className="h-8 w-8 sm:h-9 sm:w-9" />,
-                dollar: <DollarSign className="h-8 w-8 sm:h-9 sm:w-9" />,
-                handshake: <Handshake className="h-8 w-8 sm:h-9 sm:w-9" />,
+                users: <Users className="h-7 w-7 sm:h-8 sm:w-8" />,
+                list: <ListTodo className="h-7 w-7 sm:h-8 sm:w-8" />,
+                dollar: <DollarSign className="h-7 w-7 sm:h-8 sm:w-8" />,
+                handshake: <Handshake className="h-7 w-7 sm:h-8 sm:w-8" />,
               };
               return (
-                <div key={label as string} className="flex h-full items-center justify-center gap-3 border-r border-white/25 px-3 py-1 transition-all duration-500 last:border-r-0 sm:gap-4 sm:px-6">
+                <div key={label as string} className="flex h-full items-center justify-center gap-3 border-r border-white/25 px-3 py-0.5 transition-all duration-500 last:border-r-0 sm:gap-4 sm:px-6">
                   <div className="flex-shrink-0 text-white flex items-center justify-center">{iconMap[iconType as string]}</div>
                   <div className="flex flex-col text-center justify-center">
                     <p className="text-[0.68rem] leading-tight text-white/80 sm:text-[0.75rem]">{label as string}</p>

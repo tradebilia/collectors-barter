@@ -36,7 +36,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain sm:max-w-6xl"');
     expect(homeSource).toContain("<CategoryBar />");
     expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');
-    expect(homeSource).toContain('h-8 w-8 sm:h-9 sm:w-9');
+    expect(homeSource).toContain('h-7 w-7 sm:h-8 sm:w-8');
     expect(categoryBarSource).toContain('bg-[#090f2d]');
     expect(categoryBarSource).toContain('House');
     expect(categoryBarSource).toContain('Explore All');
