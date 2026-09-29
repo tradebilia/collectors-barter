@@ -65,6 +65,32 @@ describe("visual source filter", () => {
     expect(reviews[0].rationale).toContain("Declared identity conflict");
   });
 
+  it("flags explicit Newsstand candidates when the target is Direct before visual review", () => {
+    const reviews = buildDeclaredIdentityReviews(
+      [
+        { title: "Edge of Spider-Verse #2 CGC 9.8 Newsstand Edition" },
+        { title: "Edge of Spider-Verse #2 CGC 9.8 Direct Market" },
+        { title: "Edge of Spider-Verse #2 CGC 9.8" },
+      ],
+      `title=Edge of Spider-Verse #2 CGC 9.8; category=comics; itemDetails=${JSON.stringify({ distributionType: "Direct" })}`,
+    );
+    expect(reviews.map((review) => review.candidateIndex)).toEqual([0]);
+    expect(reviews[0].rationale).toContain("Distribution Type is Direct");
+  });
+
+  it("flags explicit facsimile or reprint candidates when the target Facsimile field is No", () => {
+    const reviews = buildDeclaredIdentityReviews(
+      [
+        { title: "Edge of Spider-Verse #2 CGC 9.8 Facsimile" },
+        { title: "Edge of Spider-Verse #2 CGC 9.8 Reprint" },
+        { title: "Edge of Spider-Verse #2 CGC 9.8" },
+      ],
+      `title=Edge of Spider-Verse #2 CGC 9.8; category=comics; fullItemDetails=${JSON.stringify({ facsimile: "No" })}`,
+    );
+    expect(reviews.map((review) => review.candidateIndex)).toEqual([0, 1]);
+    expect(reviews[0].rationale).toContain("Facsimile is No");
+  });
+
   it("uses adaptive review windows instead of treating 20 as the total review ceiling", () => {
     expect(VISUAL_REVIEW_BATCH_SIZE).toBe(20);
     expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(7);

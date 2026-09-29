@@ -115,6 +115,21 @@ function extractTargetTitle(metadata: string): string {
   return metadata.match(/(?:^|;)\s*title=([^;]*)/i)?.[1]?.trim() ?? "";
 }
 
+function extractTargetItemDetails(metadata: string): Record<string, unknown> {
+  const raw = metadata.match(/(?:^|;)\s*(?:fullItemDetails|itemDetails|details|catalog)=(.*)$/i)?.[1]?.trim();
+  if (!raw || raw.toLowerCase() === "unknown") return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalizedChoice(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase().replace(/[ _-]+/g, "_");
+}
+
 /**
  * Marketplace titles sometimes declare a different printing or regional edition
  * more clearly than the thumbnail. These are transparent identity warnings, not
@@ -125,16 +140,32 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
   targetMetadata: string,
 ): VisualSourceReview[] {
   const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetFacsimile = normalizedChoice(targetDetails.facsimile);
+  const targetDistribution = normalizedChoice(targetDetails.distributionType);
   return listings.flatMap((listing, candidateIndex) => {
     const title = String(listing.title ?? "");
     const conflict = DECLARED_VARIANT_PATTERNS.find((pattern) => pattern.test(title) && !pattern.test(targetTitle));
-    if (!conflict) return [];
-    const phrase = title.match(conflict)?.[0] ?? "declared variant";
+    const phrase = conflict ? (title.match(conflict)?.[0] ?? "declared variant") : null;
+    const candidateIsNewsstand = /\bnewsstand(?:\s+edition)?\b/i.test(title);
+    const candidateIsDirect = /\b(?:direct\s+market|direct\s+edition)\b/i.test(title);
+    const distributionConflict =
+      (targetDistribution === "direct" && candidateIsNewsstand) ||
+      (targetDistribution === "newsstand" && candidateIsDirect);
+    const distributionPhrase = candidateIsNewsstand ? "Newsstand" : candidateIsDirect ? "Direct" : null;
+    const facsimileConflict = targetFacsimile === "no" && /\b(?:facsimile|reprint|reproduction)\b/i.test(title);
+    const fieldConflict = distributionConflict || facsimileConflict;
+    if (!conflict && !fieldConflict) return [];
+    const reason = distributionConflict
+      ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
+      : `Facsimile is No, but the title explicitly declares ${title.match(/\b(?:facsimile|reprint|reproduction)\b/i)?.[0] ?? "a reproduction"}.`;
     return [{
       candidateIndex,
       verdict: "mismatch" as const,
       confidence: "high" as const,
-      rationale: `Declared identity conflict in marketplace title: ${phrase}. Candidate retained for manual review.`,
+      rationale: fieldConflict
+        ? `${reason} Candidate retained for manual review.`
+        : `Declared identity conflict in marketplace title: ${phrase}. Candidate retained for manual review.`,
     }];
   });
 }
