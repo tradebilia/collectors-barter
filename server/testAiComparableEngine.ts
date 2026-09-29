@@ -147,6 +147,8 @@ export interface MarketProfile {
   gradeAdjacentComparableCount: number;
   contextualComparableCount: number;
   duplicateSaleCount: number;
+  outlierExcludedCount: number;
+  confidenceReasons: string[];
   identityReadiness: 'ready' | 'limited' | 'missing_critical';
   valuationMethod: string;
   majorAssumptions: string[];
@@ -228,11 +230,19 @@ function normalizeCompany(value: string | null | undefined): string | null {
   return normalized || null;
 }
 
-function extractComparableNumber(title: string): string | null {
+function extractComparableNumber(title: string, category?: string): string | null {
   const labeled = title.match(/\b(?:issue|no\.?|number|card|pin)\s*#?\s*(\d{1,6})\b/i);
   if (labeled) return labeled[1];
   const hash = title.match(/#\s*(\d{1,6})\b/);
-  return hash ? hash[1] : null;
+  if (hash) return hash[1];
+  // Comic marketplace titles routinely omit # before an issue number. Only
+  // recognize a bare integer when it sits directly before a grading/provider
+  // phrase, so years and decimal grades cannot become false issue numbers.
+  if (category === 'comics') {
+    const bareComicIssue = title.match(/\b(\d{1,4})\s+(?:(?:marvel|dc|image|dark\s+horse|idw|dynamite|boom)\s+)?(?=(?:cgc|cbcs|pgx|cbc?s|graded|first\s+print|second\s+print|third\s+print|fourth\s+print|fifth\s+print)\b)/i);
+    if (bareComicIssue) return bareComicIssue[1];
+  }
+  return null;
 }
 
 function normalizeComparableNumber(value: string | null | undefined): string | null {
@@ -584,7 +594,7 @@ type StampUseState = 'mint' | 'used' | 'cto' | 'unknown';
 function stampHingeState(value: string | null | undefined): StampHingeState {
   const normalized = normalizedIdentityText(value);
   if (/\bmnh\b|never hinged|unhinged/.test(normalized)) return 'unhinged';
-  if (/\bmh\b|hinged|previously hinged|^yes$/.test(normalized)) return 'hinged';
+  if (/\bmh\b|\bhinged\b|previously hinged|^yes$/.test(normalized)) return 'hinged';
   if (/^no$/.test(normalized)) return 'unhinged';
   return 'unknown';
 }
@@ -975,6 +985,7 @@ function coinMintMark(value: string | null | undefined): string | null {
 function coinMintMarksInTitle(title: string): string[] {
   const matches = [
     ...title.matchAll(/\b(?:18|19|20)\d{2}\s*[-/]\s*(P|D|S|O|CC|W)\b/gi),
+    ...title.matchAll(/\b(?:18|19|20)\d{2}\s+(P|D|S|O|CC|W)\s+mint\b/gi),
     ...title.matchAll(/\b(?:mint\s*(?:mark)?|(?:P|D|S|O|CC|W)\s*mint)\s*[:#-]?\s*(P|D|S|O|CC|W)\b/gi),
   ].map((match) => coinMintMark(match[1] ?? match[2])).filter((value): value is string => Boolean(value));
   return [...new Set(matches)];
@@ -1444,7 +1455,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
 
   const targetNumber = firstString(details, ['cardNumber', 'issueNumber', 'catalogNumber', 'serialNumber']);
   const normalizedTargetNumber = normalizeComparableNumber(targetNumber);
-  const observedNumber = extractComparableNumber(title);
+  const observedNumber = extractComparableNumber(title, String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_'));
   const categoryIdentity = assessComparableCategoryIdentity(target, details, title, observedNumber);
   let materialNumberConflict = false;
   if (normalizedTargetNumber && observedNumber === normalizedTargetNumber) {
@@ -1663,13 +1674,17 @@ export function buildMarketProfile(
     return match;
   });
   const contextualMatches = contextualSales
-    .filter((sale) => String(sale.currency ?? 'USD').toUpperCase() === 'USD')
-    .map((sale) => ({
-      ...scoreComparable(target, sale),
-      accepted: false,
-      classification: 'contextual' as const,
-      exclusionReason: 'historical, undated, or non-completed record is context only',
-    }));
+    .map((sale) => {
+      const match = scoreComparable(target, sale);
+      const evidenceReason = sale.evidenceReasons?.filter(Boolean).join('; ');
+      return {
+        ...match,
+        accepted: false,
+        classification: 'contextual' as const,
+        exclusionReason: evidenceReason || 'historical, undated, non-completed, or insufficiently verified record is context only',
+        reasons: evidenceReason ? [...match.reasons, `server evidence gate: ${evidenceReason}`] : match.reasons,
+      };
+    });
   const duplicateMatches: ComparableMatch[] = deduplicated.duplicates.map(({ sale, duplicateOf }) => ({
     ...scoreComparable(target, sale),
     accepted: false,
@@ -1678,17 +1693,30 @@ export function buildMarketProfile(
     duplicateOf,
     reasons: ['duplicate sale observation suppressed', `canonical record ${duplicateOf}`],
   }));
-  const comparableMatches = [...valuationMatchRecords, ...contextualMatches, ...duplicateMatches];
-  const accepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
-  const acceptedWithAge = accepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
-  const recentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 90);
-  const ages = acceptedWithAge.map(({ ageDays }) => ageDays).filter((age): age is number => age !== null);
-  const prices = accepted.map((match) => match.price).sort((a, b) => a - b);
+  const selectedAccepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
+  const selectedAcceptedWithAge = selectedAccepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
+  const prices = selectedAccepted.map((match) => match.price).sort((a, b) => a - b);
   const q1 = percentile(prices, 0.25);
   const q3 = percentile(prices, 0.75);
   const median = prices.length ? prices.length % 2 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2 : null;
   const iqr = prices.length ? q3 - q1 : null;
-  const filtered = iqr !== null ? acceptedWithAge.filter(({ match }) => match.price >= q1 - 1.5 * iqr && match.price <= q3 + 1.5 * iqr) : acceptedWithAge;
+  const filtered = iqr !== null ? selectedAcceptedWithAge.filter(({ match }) => match.price >= q1 - 1.5 * iqr && match.price <= q3 + 1.5 * iqr) : selectedAcceptedWithAge;
+  const outlierMatches = new Set(selectedAcceptedWithAge.filter(({ match }) => !filtered.some(({ match: kept }) => kept === match)).map(({ match }) => match));
+  const valuationMatchRecordsAfterOutliers = valuationMatchRecords.map((match) => outlierMatches.has(match)
+    ? {
+        ...match,
+        accepted: false,
+        classification: 'contextual' as const,
+        exclusionReason: 'excluded from the deterministic value by the IQR outlier rule; retained in the evidence ledger',
+        reasons: [...match.reasons, 'IQR outlier exclusion applied after identity and completed-sale checks'],
+      }
+    : match);
+  const comparableMatches = [...valuationMatchRecordsAfterOutliers, ...contextualMatches, ...duplicateMatches];
+  const accepted = filtered.map(({ match }) => match);
+  const acceptedWithAge = filtered;
+  const recentSales = acceptedWithAge.filter(({ ageDays }) => ageDays !== null && ageDays <= 90);
+  const ages = acceptedWithAge.map(({ ageDays }) => ageDays).filter((age): age is number => age !== null);
+  const outlierExcludedCount = outlierMatches.size;
   const weightedDenominator = filtered.reduce((sum, { match, ageDays }) => {
     match.weight = (0.5 + match.score / 100) * recencyWeight(ageDays);
     return sum + match.weight;
@@ -1712,7 +1740,11 @@ export function buildMarketProfile(
   const contextualComparableCount = comparableMatches.filter((match) => match.classification === 'contextual').length;
   const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
-  const evidenceQuality: ConfidenceLevel = accepted.length >= 6 && exactMatchCount >= 2 ? 'high' : accepted.length >= 3 ? 'medium' : 'low';
+  const evidenceQuality: ConfidenceLevel = accepted.length >= 6 && exactMatchCount >= 2 && (spreadPct === null || spreadPct <= 75)
+    ? 'high'
+    : accepted.length >= 3 && (spreadPct === null || spreadPct <= 100)
+      ? 'medium'
+      : 'low';
   const marketStability: ConfidenceLevel = spreadPct === null ? 'low' : spreadPct <= 35 ? 'high' : spreadPct <= 75 ? 'medium' : 'low';
   const liquidity: ConfidenceLevel = salesVelocity.thirtyDay >= 5 ? 'high' : salesVelocity.ninetyDay >= 3 ? 'medium' : 'low';
   const gradeConditionConfidence: ConfidenceLevel = target.grade || target.condition ? (accepted.some((match) => match.reasons.some((reason) => reason === 'grade matches')) ? 'high' : 'low') : 'medium';
@@ -1725,6 +1757,7 @@ export function buildMarketProfile(
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
   if (spreadPct !== null && spreadPct > 75) valuationWarnings.push('Authoritative comparable prices are widely dispersed.');
   if (accepted.length < 5) valuationWarnings.push('Fewer than five accepted completed sales are available; treat the range as preliminary review evidence.');
+  if (outlierExcludedCount > 0) valuationWarnings.push(`${outlierExcludedCount} identity-matched completed sale${outlierExcludedCount === 1 ? '' : 's'} was excluded from the deterministic value by the IQR outlier rule and remains visible in the audit ledger.`);
   if (oldestSaleAgeDays !== null && oldestSaleAgeDays > 365) valuationWarnings.push('The oldest included authoritative sale is more than one year old.');
   if (contextualComparableCount > 0) valuationWarnings.push('Historical, undated, non-completed, or insufficiently identified records were retained as context but excluded from valuation.');
   if (gradeAdjacentComparableCount > 0) valuationWarnings.push(`${gradeAdjacentComparableCount} grade/certification-adjacent record${gradeAdjacentComparableCount === 1 ? '' : 's'} was retained as secondary evidence but excluded from direct valuation.`);
@@ -1743,6 +1776,12 @@ export function buildMarketProfile(
     if (identityGate?.materialFlags?.length) valuationWarnings.push(...identityGate.materialFlags.map((flag) => `Identity review: ${flag}`));
   }
   const supported = Boolean(!materialReviewRequired && weightedValue !== null && accepted.length >= 2 && (spreadPct === null || spreadPct <= 100));
+  const confidenceReasons = [
+    `${accepted.length} clean completed sale${accepted.length === 1 ? '' : 's'} selected after identity, source, visual, and outlier checks${accepted.length < 5 ? '; five are required for a definitive trade verdict' : ''}.`,
+    recentCount ? `${recentCount} selected sale${recentCount === 1 ? '' : 's'} occurred within the last 90 days.` : 'No selected sale occurred within the last 90 days.',
+    spreadPct === null ? 'No stable price spread can be calculated from the selected evidence.' : `Selected-value spread is ${spreadPct}% (${marketStability} stability).`,
+    outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : 'No selected price was withheld by the IQR outlier rule.',
+  ];
   return {
     marketRange: supported ? { low: minimum!, mid: weightedValue!, high: maximum!, supported: true } : { low: 0, mid: weightedValue ?? aggregateMetrics?.median ?? 0, high: 0, supported: false },
     weightedValue,
@@ -1770,6 +1809,8 @@ export function buildMarketProfile(
     gradeAdjacentComparableCount,
     contextualComparableCount,
     duplicateSaleCount: deduplicated.duplicates.length,
+    outlierExcludedCount,
+    confidenceReasons,
     identityReadiness,
     valuationMethod: supported ? 'recency-weighted completed-sale value using exact or near identity matches, duplicate suppression, and IQR outlier filtering' : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
     majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation.', 'Active asking prices, historical or undated records, certification, population, reference data, and RSS remain context only.', 'Duplicate observations are excluded; grade, condition, variant, and release mismatches reject the result.'],

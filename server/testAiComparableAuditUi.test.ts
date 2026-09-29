@@ -25,6 +25,7 @@ describe('Test AI comparable audit ledger UI', () => {
     expect(page).toContain('Supported market range:');
     expect(page).toContain('Typical evidence value:');
     expect(page).toContain('Confidence:');
+    expect(page).toContain('Confidence basis:');
     expect(page).toContain('Evidence-based');
   });
 });

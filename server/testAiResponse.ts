@@ -38,6 +38,32 @@ export const analyzerNarrativeSchema = z.object({
 
 export type AnalyzerNarrative = z.infer<typeof analyzerNarrativeSchema>;
 
+/**
+ * Keeps the deterministic analyzer usable when a narrative model is disabled,
+ * rate-limited, malformed, or otherwise unavailable. No valuation fact is
+ * invented here: this only points the administrator back to server-computed
+ * evidence already returned with the analysis.
+ */
+export function buildDeterministicNarrativeFallback(input: {
+  leftTitle: string;
+  rightTitle: string;
+  leftEvidenceState: string;
+  rightEvidenceState: string;
+}): AnalyzerNarrative {
+  return {
+    valueSummary: 'The deterministic market comparison completed, but the narrative AI response was unavailable. Review the server-computed market profiles and evidence ledger below.',
+    itemAInsights: `${input.leftTitle}: deterministic evidence is ${input.leftEvidenceState.replace(/_/g, ' ')}. Narrative interpretation was unavailable for this run.`,
+    itemBInsights: `${input.rightTitle}: deterministic evidence is ${input.rightEvidenceState.replace(/_/g, ' ')}. Narrative interpretation was unavailable for this run.`,
+    itemAMarketNews: 'Narrative AI response unavailable; review the loaded RSS context separately.',
+    itemBMarketNews: 'Narrative AI response unavailable; review the loaded RSS context separately.',
+    itemAStrengths: ['Server-computed evidence ledger remains available.'],
+    itemARisks: ['Narrative AI response unavailable; do not infer additional market claims.'],
+    itemBStrengths: ['Server-computed evidence ledger remains available.'],
+    itemBRisks: ['Narrative AI response unavailable; do not infer additional market claims.'],
+    sourceReferences: { itemA: [], itemB: [] },
+  };
+}
+
 export const ANALYZER_NARRATIVE_RESPONSE_FORMAT = {
   type: 'json_schema' as const,
   json_schema: {

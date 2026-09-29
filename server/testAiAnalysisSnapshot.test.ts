@@ -30,7 +30,7 @@ function sale(overrides: Partial<MarketSale> = {}): MarketSale {
   };
 }
 
-describe('Analyzer 2.4 unified analysis snapshot', () => {
+describe('Analyzer 2.6 unified analysis snapshot', () => {
   it('preserves source status, material flags, and visual-review counts in one versioned snapshot', () => {
     const evidence = normalizeTestAiEvidence(griffey, [
       { id: 'sold_comps', label: 'eBay Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 2 } },
@@ -42,7 +42,7 @@ describe('Analyzer 2.4 unified analysis snapshot', () => {
       evidenceSummary: evidence,
       now,
     });
-    expect(snapshot.version).toBe('2.4.0');
+    expect(snapshot.version).toBe('2.6.0');
     expect(snapshot.profile.authoritativeSaleCount).toBe(2);
     expect(snapshot.evidence.sourceStatuses.map((source) => source.id)).toEqual(['sold_comps', 'psa']);
     expect(snapshot.evidence.visualReview).toMatchObject({ match: 1, roughMatch: 1, mismatch: 1, unreadable: 0, notReviewed: 0 });

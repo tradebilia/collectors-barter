@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyVisualSoldReviews, isSafeVisualSoldRemoval, normalizeVisualSoldReviews } from './testAiVisualSoldFilter';
+import { applyVisualSoldReviews, isSafeVisualSoldRemoval, normalizeVisualSoldReviews, VISUAL_SOLD_FILTER_PROMPT_NOTE } from './testAiVisualSoldFilter';
 
 describe('visual sold-comparable filter', () => {
   it('retains a high-confidence visual mismatch as an auditable review flag', () => {
@@ -47,5 +47,10 @@ describe('visual sold-comparable filter', () => {
     expect(result.listings).toEqual(listings);
     expect(result.removedCount).toBe(0);
     expect(result.note).toContain('Preserved 1 high-confidence visual flag');
+  });
+
+  it('requires the Sold-Comps visual reviewer to distinguish slabbed and raw packaging', () => {
+    expect(VISUAL_SOLD_FILTER_PROMPT_NOTE).toContain('Graded/slabbed versus raw/ungraded packaging is a mandatory identity gate');
+    expect(VISUAL_SOLD_FILTER_PROMPT_NOTE).toContain('visibly raw candidate must not match a graded target');
   });
 });

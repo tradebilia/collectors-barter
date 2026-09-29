@@ -143,6 +143,21 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketRange.supported).toBe(false);
   });
 
+  it('removes an IQR outlier from deterministic value while preserving it in the audit ledger', () => {
+    const profile = buildMarketProfile(target, [100, 102, 105, 110, 10_000].map((price, index) => ({
+      ...sale(target.title, price, `2026-09-${String(10 + index).padStart(2, '0')}`),
+      saleId: `iqr-${index}`,
+      sourceId: `fixture-${index}`,
+      saleStatus: 'completed' as const,
+      priceBasis: 'sold' as const,
+    })), null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.outlierExcludedCount).toBe(1);
+    expect(profile.authoritativeSaleCount).toBe(4);
+    expect(profile.weightedValue).toBeLessThan(200);
+    expect(profile.comparables.find((record) => record.price === 10_000)?.exclusionReason).toContain('IQR outlier rule');
+    expect(profile.confidenceReasons.join(' ')).toContain('outlier');
+  });
+
   it('uses deterministic profile values for the trade verdict', () => {
     const left = buildMarketProfile(target, [sale(target.title, 1000, '2026-09-15'), sale(target.title, 1100, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));
     const right = buildMarketProfile(target, [sale(target.title, 1600, '2026-09-15'), sale(target.title, 1700, '2026-09-10')], null, new Date('2026-09-22T00:00:00Z'));

@@ -9,7 +9,7 @@ import {
   type ConfidenceLevel,
 } from './testAiComparableEngine';
 
-export const ANALYZER_SNAPSHOT_VERSION = '2.4.0';
+export const ANALYZER_SNAPSHOT_VERSION = '2.6.0';
 
 export type AnalysisCashAdjustment = {
   amount: number;
