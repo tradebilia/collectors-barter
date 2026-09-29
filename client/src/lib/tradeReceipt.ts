@@ -1,5 +1,7 @@
 import { jsPDF } from "jspdf";
 
+export { deriveShippingDeadline } from "./tradeShippingDeadline";
+
 export type ReceiptItem = { title: string; referenceNumber?: string | null; estimatedValue?: string | number | null };
 export type TradeReceiptInput = {
   tradeReference: string; status: string; createdAt?: string | Date | null; acceptedAt?: string | Date | null; shippingDeadline?: string | Date | null;
@@ -7,20 +9,6 @@ export type TradeReceiptInput = {
   theirSide: { name: string; contactName?: string | null; items: ReceiptItem[]; cash: number; tracking: Array<{ carrier: string; trackingNumber: string }> };
 };
 const currency = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
-function parseValidDate(value?: string | Date | null): Date | null {
-  if (!value) return null;
-  const parsed = value instanceof Date ? new Date(value.getTime()) : new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-export function deriveShippingDeadline(shippingDeadline?: string | Date | null, shippingStartedAt?: string | Date | null): Date | null {
-  const explicitDeadline = parseValidDate(shippingDeadline);
-  if (explicitDeadline) return explicitDeadline;
-  const startedAt = parseValidDate(shippingStartedAt);
-  if (!startedAt) return null;
-  startedAt.setUTCDate(startedAt.getUTCDate() + 3);
-  return startedAt;
-}
 export function buildTradeReceiptLines(receipt: TradeReceiptInput): string[] {
   const formatDate = (value?: string | Date | null) => value ? new Date(value).toLocaleDateString() : "Not available";
   const sideLines = (label: string, side: TradeReceiptInput["mySide"]) => [

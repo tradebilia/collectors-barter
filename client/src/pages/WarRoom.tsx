@@ -14,7 +14,7 @@ import { OnlineIndicator } from "@/components/OnlineIndicator";
 import { toast } from "sonner";
 import { VideoChatPanel } from "@/components/VideoChatPanel";
 import { getNegotiationTurnState } from "@/lib/tradeNegotiationTurn";
-import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";
+import { deriveShippingDeadline } from "@/lib/tradeShippingDeadline";
 import { buildUspsTrackingUrl } from "@shared/uspsTrackingLink";
 import { formatGrade, formatItemValue, formatWholeDollar } from "@/lib/tradebilia";
 import { buildTradeProposalItemPayload } from "@/lib/tradeProposalItems";
@@ -829,30 +829,35 @@ export default function WarRoom() {
   const myTotalValue = myItemsValue + myCash;
   const theirTotalValue = theirItemsValue + theirCash;
 
-  const downloadCurrentReceipt = () => {
+  const downloadCurrentReceipt = async () => {
     if (!trade || !receiptAvailable) return;
-    downloadTradeReceipt({
-      tradeReference: (trade.proposal as any)?.tradeReferenceNumber || `TR-${proposalId}`,
-      status: currentStage,
-      createdAt: (trade.proposal as any)?.createdAt,
-      acceptedAt: (trade.proposal as any)?.acceptedAt,
-      shippingDeadline,
-      mySide: {
-        name: myDisplayName,
-        contactName: (trade as any)?.myContactInfo?.contactFullName,
-        items: myItems,
-        cash: serverMyCash,
-        tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId === myUserId),
-      },
-      theirSide: {
-        name: theirDisplayName,
-        contactName: (trade as any)?.theirContactInfo?.contactFullName,
-        items: theirItems,
-        cash: serverTheirCash,
-        tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId !== myUserId),
-      },
-    });
-    toast.success("Trade receipt downloaded.");
+    try {
+      const { downloadTradeReceipt } = await import("@/lib/tradeReceipt");
+      downloadTradeReceipt({
+        tradeReference: (trade.proposal as any)?.tradeReferenceNumber || `TR-${proposalId}`,
+        status: currentStage,
+        createdAt: (trade.proposal as any)?.createdAt,
+        acceptedAt: (trade.proposal as any)?.acceptedAt,
+        shippingDeadline,
+        mySide: {
+          name: myDisplayName,
+          contactName: (trade as any)?.myContactInfo?.contactFullName,
+          items: myItems,
+          cash: serverMyCash,
+          tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId === myUserId),
+        },
+        theirSide: {
+          name: theirDisplayName,
+          contactName: (trade as any)?.theirContactInfo?.contactFullName,
+          items: theirItems,
+          cash: serverTheirCash,
+          tracking: ((trade as any)?.trackingNumbers || []).filter((entry: any) => entry.userId !== myUserId),
+        },
+      });
+      toast.success("Trade receipt downloaded.");
+    } catch {
+      toast.error("The trade receipt could not be generated. Please try again.");
+    }
   };
 
   // Fairness calculation

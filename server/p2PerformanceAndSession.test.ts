@@ -63,6 +63,7 @@ describe("P2 preview session and route-loading contracts", () => {
     const { readFileSync } = await import("node:fs");
     const { resolve } = await import("node:path");
     const app = readFileSync(resolve(import.meta.dirname, "../client/src/App.tsx"), "utf8");
+    const warRoom = readFileSync(resolve(import.meta.dirname, "../client/src/pages/WarRoom.tsx"), "utf8");
     expect(app).toContain('lazy(() => import("./pages/AdminDashboard"))');
     expect(app).toContain('lazy(() => import("./pages/WarRoom"))');
     expect(app).toContain('lazy(() => import("./pages/TestAI"))');
@@ -71,5 +72,8 @@ describe("P2 preview session and route-loading contracts", () => {
     expect(app).toContain('lazy(() => import("./pages/TradeShowcase"))');
     expect(app).toContain('const AllMostViewedRankings = lazy(() => import("./pages/RankingPages").then(module => ({ default: module.AllMostViewedRankings })));');
     expect(app).toContain("<Suspense fallback={<RouteLoadingFallback />}>");
+    expect(warRoom).toContain('import { deriveShippingDeadline } from "@/lib/tradeShippingDeadline";');
+    expect(warRoom).toContain('await import("@/lib/tradeReceipt")');
+    expect(warRoom).not.toContain('import { deriveShippingDeadline, downloadTradeReceipt } from "@/lib/tradeReceipt";');
   });
 });
