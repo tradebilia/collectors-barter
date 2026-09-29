@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  POKEMON_SINGLE_CARD_FIELDS,
   SPORTS_CARDS_SET_FIELDS,
   SPORTS_CARDS_SINGLE_CARD_FIELDS,
   SPORTS_CARDS_UNOPENED_PRODUCT_FIELDS,
@@ -13,6 +14,16 @@ function manufacturerField(fields: Field[]) {
 }
 
 describe("Sports Manufacturer options", () => {
+  it("requires the Sports Card number for single-card identity", () => {
+    const cardNumber = SPORTS_CARDS_SINGLE_CARD_FIELDS.find((field) => field.name === "cardNumber");
+    expect(cardNumber?.requirement).toBe("required");
+  });
+
+  it("requires Pokémon language and finish or variant for single-card identity", () => {
+    expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "language")?.requirement).toBe("required");
+    expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "finishVariant")?.requirement).toBe("required");
+  });
+
   it("includes O-Pee-Chee in every Sports Manufacturer dropdown", () => {
     const sportsTypes = [
       SPORTS_CARDS_SET_FIELDS,

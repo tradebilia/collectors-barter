@@ -261,10 +261,42 @@ function normalizeFingerprintText(value: unknown): string {
   return String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/**
+ * Removes tracking-only URL differences so the same marketplace record can be
+ * recognized when it is returned through different adapters or query paths.
+ */
+export function normalizeCanonicalSaleUrl(value: unknown): string | null {
+  const raw = String(value ?? '').trim();
+  if (!raw) return null;
+  try {
+    const parsed = new URL(raw);
+    parsed.hash = '';
+    parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
+    parsed.pathname = parsed.pathname.replace(/\/{2,}/g, '/').replace(/\/$/, '') || '/';
+    const trackingParams = /^(utm_|fbclid$|gclid$|mkcid$|mkrid$|campid$|tooldomain$|customid$|hash$)/i;
+    for (const key of [...parsed.searchParams.keys()]) {
+      if (trackingParams.test(key)) parsed.searchParams.delete(key);
+    }
+    parsed.searchParams.sort();
+    const query = parsed.searchParams.toString();
+    return `${parsed.hostname}${parsed.pathname}${query ? `?${query}` : ''}`;
+  } catch {
+    return normalizeFingerprintText(raw) || null;
+  }
+}
+
+function canonicalMarketplaceItemKey(sale: MarketSale): string | null {
+  const url = normalizeCanonicalSaleUrl(sale.url);
+  if (url) return `url:${url}`;
+  const stableId = String(sale.saleId ?? '').trim();
+  if (stableId) return `item:${normalizeFingerprintText(stableId)}`;
+  return null;
+}
+
 function saleFingerprint(sale: MarketSale): string {
+  const canonicalKey = canonicalMarketplaceItemKey(sale);
+  if (canonicalKey) return canonicalKey;
   const source = normalizeFingerprintText(sale.sourceId || sale.marketplace || 'unknown');
-  const stableId = normalizeFingerprintText(sale.saleId || sale.url || '');
-  if (stableId) return `${source}|id:${stableId}`;
   const price = Number(sale.price);
   const amount = Number.isFinite(price) ? price.toFixed(2) : 'unknown';
   const date = String(sale.date ?? '').slice(0, 10) || 'undated';
@@ -1642,9 +1674,9 @@ export function buildMarketProfile(
     ...scoreComparable(target, sale),
     accepted: false,
     classification: 'rejected',
-    exclusionReason: 'duplicate sale observation',
+    exclusionReason: `duplicate sale observation; canonical record ${duplicateOf}`,
     duplicateOf,
-    reasons: ['duplicate sale observation suppressed'],
+    reasons: ['duplicate sale observation suppressed', `canonical record ${duplicateOf}`],
   }));
   const comparableMatches = [...valuationMatchRecords, ...contextualMatches, ...duplicateMatches];
   const accepted = selected.map(({ match }) => match).filter((match) => match.price > 0);

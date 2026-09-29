@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, scoreComparable } from './testAiComparableEngine';
+import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, normalizeCanonicalSaleUrl, scoreComparable } from './testAiComparableEngine';
 
 const target = {
   title: '1996 Topps Kobe Bryant #138 PSA 10',
@@ -97,6 +97,23 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.contextualComparableCount).toBe(2);
     expect(profile.duplicateSaleCount).toBe(1);
     expect(profile.weightedValue).toBe(1200);
+  });
+
+  it('deduplicates the same marketplace item across source labels by canonical item ID', () => {
+    const ebay = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', saleId: 'ebay-123' };
+    const mirror = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'one_thirty_point', sourceLabel: '130point', saleId: 'ebay-123' };
+    const result = deduplicateMarketSales([ebay, mirror]);
+    expect(result.unique).toHaveLength(1);
+    expect(result.duplicates[0]?.duplicateOf).toBe('item:ebay 123');
+  });
+
+  it('deduplicates equivalent marketplace URLs after removing tracking parameters', () => {
+    const first = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'sold_comps', url: 'https://www.ebay.com/itm/123456789?utm_source=search&mkcid=1' };
+    const mirror = { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'one_thirty_point', url: 'https://ebay.com/itm/123456789?mkcid=9&utm_campaign=mirror' };
+    const result = deduplicateMarketSales([first, mirror]);
+    expect(normalizeCanonicalSaleUrl(first.url)).toBe('ebay.com/itm/123456789');
+    expect(result.unique).toHaveLength(1);
+    expect(result.duplicates).toHaveLength(1);
   });
 
   it('does not allow an undated sale record to enter the deterministic value', () => {

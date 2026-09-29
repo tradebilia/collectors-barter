@@ -85,7 +85,7 @@ describe('Analyzer 2.4 unified analysis snapshot', () => {
     const profile = buildMarketProfile(griffey, [original, duplicate, sale({ saleId: 'unique', price: 120 })], null, now);
     expect(profile.authoritativeSaleCount).toBe(2);
     expect(profile.duplicateSaleCount).toBe(1);
-    expect(profile.comparables.some((record) => record.exclusionReason === 'duplicate sale observation')).toBe(true);
+    expect(profile.comparables.some((record) => record.exclusionReason?.startsWith('duplicate sale observation; canonical record '))).toBe(true);
   });
 
   it('withholds a defensible range when a material identity conflict is recorded', () => {
