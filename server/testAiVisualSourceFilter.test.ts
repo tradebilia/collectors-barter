@@ -91,6 +91,17 @@ describe("visual source filter", () => {
     expect(reviews[0].rationale).toContain("Facsimile is No");
   });
 
+  it("keeps the new identity conflicts out of the initial vision queue", () => {
+    const candidates = [
+      { candidateIndex: 0, item: { title: "Edge of Spider-Verse #2 Newsstand Edition" }, imageUrl: "https://example.com/newsstand.jpg" },
+      { candidateIndex: 1, item: { title: "Edge of Spider-Verse #2 Direct Market" }, imageUrl: "https://example.com/direct.jpg" },
+    ];
+    const metadata = `title=Edge of Spider-Verse #2; category=comics; fullItemDetails=${JSON.stringify({ distributionType: "Direct" })}`;
+    const declared = buildDeclaredIdentityReviews(candidates.map((candidate) => candidate.item), metadata);
+    const queue = prioritizeVisualSourceCandidates(candidates, metadata, declared);
+    expect(queue.map((candidate) => candidate.candidateIndex)).toEqual([1]);
+  });
+
   it("uses adaptive review windows instead of treating 20 as the total review ceiling", () => {
     expect(VISUAL_REVIEW_BATCH_SIZE).toBe(20);
     expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(7);

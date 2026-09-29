@@ -14,6 +14,8 @@ export type VisualSourceReview = {
 };
 export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   listings: T[];
+  contextListings?: T[];
+  preVisualExcludedCount?: number;
   status:
     | "applied"
     | "skipped_no_target_image"
@@ -379,11 +381,18 @@ export async function filterVisualSourceCandidates<
       } as T;
     });
     const applied = applyVisualSourceReviews(requirementAnnotatedListings, uniqueReviews, reviewedCandidateCount);
+    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
+    const contextListings = applied.listings.filter((_, index) => declaredConflictIndexes.has(index));
+    const visibleListings = applied.listings.filter((_, index) => !declaredConflictIndexes.has(index));
     return {
       ...applied,
+      listings: visibleListings,
+      contextListings,
+      preVisualExcludedCount: contextListings.length,
+      removedCount: contextListings.length,
       status: "applied",
       reviews: uniqueReviews,
-      note: `${buildVisualSourceFilterNote(args.sourceLabel, applied)} Initial deterministic prioritization sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates to vision; explicit title conflicts and remaining candidates were preserved for review rather than discarded.`,
+      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Initial deterministic prioritization sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates to vision; ${contextListings.length} explicit identity conflict${contextListings.length === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.`,
     };
   } catch {
     return {
