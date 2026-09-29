@@ -24,8 +24,8 @@ describe("Coming Soon experience", () => {
   });
 
   it("registers the primary and preserved legacy Coming Soon routes", () => {
-    expect(appSource).toContain('import ComingSoon from "./pages/ComingSoon"');
-    expect(appSource).toContain('import ComingSoon2 from "./pages/ComingSoon2"');
+    expect(appSource).toContain('const ComingSoon = lazy(() => import("./pages/ComingSoon"));');
+    expect(appSource).toContain('const ComingSoon2 = lazy(() => import("./pages/ComingSoon2"));');
     expect(appSource).toContain('<Route path="/coming-soon" component={ComingSoon} />');
     expect(appSource).toContain('<Route path="/coming-soon-2" component={ComingSoon2} />');
     expect(adminSource).toContain('href="/coming-soon"');

@@ -11,6 +11,7 @@ describe("unified global search contracts", () => {
     const app = read("client/src/App.tsx");
 
     expect(topBar).toContain('setLocation(trimmedValue ? `/search?q=${encodeURIComponent(trimmedValue)}` : "/search")');
+    expect(app).toContain('const SearchResults = lazy(() => import("./pages/SearchResults").then(module => ({ default: module.SearchResults })));');
     expect(app).toContain('<Route path="/search" component={SearchResults} />');
   });
 

@@ -66,6 +66,10 @@ describe("P2 preview session and route-loading contracts", () => {
     expect(app).toContain('lazy(() => import("./pages/AdminDashboard"))');
     expect(app).toContain('lazy(() => import("./pages/WarRoom"))');
     expect(app).toContain('lazy(() => import("./pages/TestAI"))');
+    expect(app).toContain('lazy(() => import("./pages/CategoryPage"))');
+    expect(app).toContain('lazy(() => import("./pages/ItemDetail"))');
+    expect(app).toContain('lazy(() => import("./pages/TradeShowcase"))');
+    expect(app).toContain('const AllMostViewedRankings = lazy(() => import("./pages/RankingPages").then(module => ({ default: module.AllMostViewedRankings })));');
     expect(app).toContain("<Suspense fallback={<RouteLoadingFallback />}>");
   });
 });

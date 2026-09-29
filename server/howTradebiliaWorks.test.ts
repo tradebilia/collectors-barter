@@ -12,7 +12,7 @@ describe("How Tradebilia Works guide", () => {
   const categoryBar = read("client/src/components/CategoryBar.tsx");
 
   it("registers a public guide route and exposes it from the homepage footer", () => {
-    expect(app).toContain('import HowTradebiliaWorks from "./pages/HowTradebiliaWorks"');
+    expect(app).toContain('const HowTradebiliaWorks = lazy(() => import("./pages/HowTradebiliaWorks"));');
     expect(app).toContain('<Route path="/how-it-works" component={HowTradebiliaWorks} />');
     expect(home).toContain('href="/how-it-works"');
     expect(home).toContain("How Tradebilia Works");

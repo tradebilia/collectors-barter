@@ -7,38 +7,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { SignInModal } from "./components/SignInModal";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
-import ItemDetail from "./pages/ItemDetail";
-import MemberSearch from "./pages/MemberSearch";
-import CategoryPage from "./pages/CategoryPage";
-import PublicProfile from "./pages/PublicProfile";
-import VerifiedMerchants from "./pages/VerifiedMerchants";
-import SignUp from "./pages/SignUp";
-import Welcome from "./pages/Welcome";
-import { MemberOnly } from "./pages/MemberOnly";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { VerifyAccount } from "./pages/VerifyAccount";
-import { ForgotPassword } from "./pages/ForgotPassword";
-import { ResetPassword } from "./pages/ResetPassword";
-import LegacyProfileCompletionRedirect from "./pages/LegacyProfileCompletionRedirect";
-import { SearchResults } from "./pages/SearchResults";
-import Conventions from "./pages/Conventions";
-import Contact from "./pages/Contact";
-import { Forum } from "./pages/Forum";
-import { ForumTopic } from "./pages/ForumTopic";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import TradeShowcase from "./pages/TradeShowcase";
-import TradeVoting from "./pages/TradeVoting";
-import ComingSoon from "./pages/ComingSoon";
-import ComingSoon2 from "./pages/ComingSoon2";
-import ComingSoonDirections from "./pages/ComingSoonDirections";
-import HowTradebiliaWorks from "./pages/HowTradebiliaWorks";
-import {
-  AllMostViewedRankings,
-  AllMostFavoritedRankings,
-  AllRatedTradersRankings,
-  AllHighestTradeValuesRankings,
-} from "./pages/RankingPages";
 
 const Inventory = lazy(() => import("./pages/Inventory"));
 const AddInventory = lazy(() => import("./pages/AddInventory"));
@@ -57,6 +26,35 @@ const TradePrintView = lazy(() => import("./pages/TradePrintView"));
 const TestAI = lazy(() => import("./pages/TestAI"));
 const CarrierPayPalSandbox = lazy(() => import("./pages/CarrierPayPalSandbox"));
 const TradeRoomGuideCapture = lazy(() => import("./pages/TradeRoomGuideCapture"));
+const ItemDetail = lazy(() => import("./pages/ItemDetail"));
+const MemberSearch = lazy(() => import("./pages/MemberSearch"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+const VerifiedMerchants = lazy(() => import("./pages/VerifiedMerchants"));
+const SignUp = lazy(() => import("./pages/SignUp"));
+const Welcome = lazy(() => import("./pages/Welcome"));
+const MemberOnly = lazy(() => import("./pages/MemberOnly").then(module => ({ default: module.MemberOnly })));
+const VerifyAccount = lazy(() => import("./pages/VerifyAccount").then(module => ({ default: module.VerifyAccount })));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword").then(module => ({ default: module.ForgotPassword })));
+const ResetPassword = lazy(() => import("./pages/ResetPassword").then(module => ({ default: module.ResetPassword })));
+const LegacyProfileCompletionRedirect = lazy(() => import("./pages/LegacyProfileCompletionRedirect"));
+const SearchResults = lazy(() => import("./pages/SearchResults").then(module => ({ default: module.SearchResults })));
+const Conventions = lazy(() => import("./pages/Conventions"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Forum = lazy(() => import("./pages/Forum").then(module => ({ default: module.Forum })));
+const ForumTopic = lazy(() => import("./pages/ForumTopic").then(module => ({ default: module.ForumTopic })));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const TradeShowcase = lazy(() => import("./pages/TradeShowcase"));
+const TradeVoting = lazy(() => import("./pages/TradeVoting"));
+const ComingSoon = lazy(() => import("./pages/ComingSoon"));
+const ComingSoon2 = lazy(() => import("./pages/ComingSoon2"));
+const ComingSoonDirections = lazy(() => import("./pages/ComingSoonDirections"));
+const HowTradebiliaWorks = lazy(() => import("./pages/HowTradebiliaWorks"));
+const AllMostViewedRankings = lazy(() => import("./pages/RankingPages").then(module => ({ default: module.AllMostViewedRankings })));
+const AllMostFavoritedRankings = lazy(() => import("./pages/RankingPages").then(module => ({ default: module.AllMostFavoritedRankings })));
+const AllRatedTradersRankings = lazy(() => import("./pages/RankingPages").then(module => ({ default: module.AllRatedTradersRankings })));
+const AllHighestTradeValuesRankings = lazy(() => import("./pages/RankingPages").then(module => ({ default: module.AllHighestTradeValuesRankings })));
 
 function RouteLoadingFallback() {
   return <main role="status" aria-live="polite" className="grid min-h-[50vh] place-items-center text-slate-600">Loading Tradebilia…</main>;
