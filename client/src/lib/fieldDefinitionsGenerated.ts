@@ -782,6 +782,14 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     displayLabels: { 'yes': 'Yes', 'no': 'No', 'unknown': 'Unknown' },
   },
   {
+    name: 'facsimile',
+    label: 'Facsimile',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    defaultValue: 'No',
+    dropdownOptions: ['Yes', 'No'],
+  },
+  {
     name: 'isGraded',
     label: 'Is Graded',
     inputType: 'dropdown',

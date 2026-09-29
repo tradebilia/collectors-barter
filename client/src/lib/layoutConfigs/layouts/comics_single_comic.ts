@@ -36,6 +36,7 @@ export const comicsSinglecomicLayout: ItemTypeLayoutConfig = {
         variantCover: { colSpan: 'half', position: 3 },
         keyIssue: { colSpan: 'half', position: 4 },
         signed: { colSpan: 'half', position: 5 },
+        facsimile: { colSpan: 'half', position: 6 },
       },
     },
     optional: {
