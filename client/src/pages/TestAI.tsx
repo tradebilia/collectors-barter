@@ -2113,6 +2113,8 @@ function SandboxSpecialistSection({ sourceId, side }: { sourceId: SourceId; side
 }
 function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const timeWindowLabel: Record<string, string> = { current_12_months: 'Current market · last 12 months', extended_12_to_36_months: 'Extended context · 12–36 months', historical_over_36_months: 'Historical trend · over 36 months', undated: 'Undated context' };
+  const timeWindowStyle: Record<string, string> = { current_12_months: 'text-emerald-300', extended_12_to_36_months: 'text-sky-300', historical_over_36_months: 'text-amber-300', undated: 'text-gray-400' };
   const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, 20);
   return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
     <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 ComicConnect Sold Archive</p>
@@ -2126,6 +2128,7 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
         {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-gray-700/50 bg-gray-950/40 p-2">
           <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{record.title || item.title}</p><span className="shrink-0 text-emerald-300 text-[10px]">{record.price != null ? `$${Number(record.price).toLocaleString()}` : 'No price'}</span></div>
           <p className="text-gray-500 text-[9px] mt-0.5">{record.grade ?? 'Grade unavailable'} · {record.date ?? 'Date unavailable'} · {record.saleStatus}</p>
+          <p className={`text-[9px] mt-0.5 ${timeWindowStyle[record.timeWindow] ?? 'text-gray-400'}`}>{timeWindowLabel[record.timeWindow] ?? 'Time window unavailable'}</p>
           <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-amber-300/80'}`}>{record.identityMatched ? 'Identity matched' : `Context only · ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
           {record.url && <a className="text-sky-400 text-[9px] underline" href={record.url} target="_blank" rel="noreferrer">Open ComicConnect record</a>}
         </div>)}

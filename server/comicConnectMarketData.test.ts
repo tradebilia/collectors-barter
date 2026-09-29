@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
+import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectTimeWindow, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
 
 const input = { title: 'Edge of the Spider-Verse #2', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: 'Edge of the Spider-Verse', issueNumber: '2', publisher: 'Marvel', facsimile: 'No', distributionType: 'Direct' }) };
 
@@ -25,6 +25,15 @@ describe('ComicConnect bounded sold adapter', () => {
       'Amazing Spider-Man 238',
       'Amazing Spider Man 238',
     ]);
+  });
+
+  it('classifies sales into current, extended, historical, and undated windows', () => {
+    const reference = new Date('2026-09-29T12:00:00Z');
+    expect(classifyComicConnectTimeWindow('2026-01-01T12:00:00Z', reference)).toBe('current_12_months');
+    expect(classifyComicConnectTimeWindow('2024-09-29T12:00:00Z', reference)).toBe('extended_12_to_36_months');
+    expect(classifyComicConnectTimeWindow('2022-01-01T12:00:00Z', reference)).toBe('historical_over_36_months');
+    expect(classifyComicConnectTimeWindow('not a date', reference)).toBe('undated');
+    expect(classifyComicConnectTimeWindow(null, reference)).toBe('undated');
   });
 
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {

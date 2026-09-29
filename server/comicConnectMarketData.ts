@@ -11,6 +11,8 @@ type JsonRecord = Record<string, unknown>;
 export const COMICCONNECT_MAX_RESULTS = 20;
 export const COMICCONNECT_TIMEOUT_MS = 12_000;
 const COMICCONNECT_BASE_URL = 'https://www.comicconnect.com';
+const CURRENT_MARKET_DAYS = 365;
+const EXTENDED_MARKET_DAYS = 365 * 3;
 
 function text(value: unknown): string {
   return value == null ? '' : String(value).replace(/\s+/g, ' ').trim();
@@ -98,6 +100,18 @@ function parsePrice(value: string | null): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+export type ComicConnectTimeWindow = 'current_12_months' | 'extended_12_to_36_months' | 'historical_over_36_months' | 'undated';
+
+export function classifyComicConnectTimeWindow(dateText: string | null | undefined, referenceDate = new Date()): ComicConnectTimeWindow {
+  if (!dateText) return 'undated';
+  const parsed = new Date(dateText);
+  if (Number.isNaN(parsed.getTime())) return 'undated';
+  const ageDays = Math.max(0, (referenceDate.getTime() - parsed.getTime()) / 86_400_000);
+  if (ageDays <= CURRENT_MARKET_DAYS) return 'current_12_months';
+  if (ageDays <= EXTENDED_MARKET_DAYS) return 'extended_12_to_36_months';
+  return 'historical_over_36_months';
+}
+
 function issueTokens(input: ComicConnectLookupInput): string[] {
   const details = parseDetails(input.itemDetails);
   return Array.from(new Set(normalize(`${details.comicTitle ?? ''} ${input.title}`).split(' ').filter((token) => token.length >= 3 && !['the', 'comic', 'comics', 'cgc', 'marvel', 'dc'].includes(token))));
@@ -145,6 +159,7 @@ export type ComicConnectSale = {
   price: number | null;
   currency: 'USD' | null;
   date: string | null;
+  timeWindow: ComicConnectTimeWindow;
   priceBasis: 'unknown';
   buyerPremiumIncluded: boolean | null;
   identityMatched: boolean;
@@ -181,13 +196,14 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
     const lotId = href?.match(/\/item\/(\d+)/i)?.[1] ?? null;
     const completed = Boolean(ended && /\bsold\s+on\b/i.test(ended) && parsePrice(priceText));
     const identity = matchesIdentity(input, title, grade ?? '');
+    const date = ended?.match(/Sold on\s+(.+)/i)?.[1] ?? null;
     return {
       sourceId: 'comicconnect', provider: 'ComicConnect Sold Archive', title,
       grade: grade ?? null, lotId, url: href ? new URL(href, COMICCONNECT_BASE_URL).toString() : null,
       imageUrl: imagePath ? new URL(imagePath, COMICCONNECT_BASE_URL).toString() : null,
       description: description ?? null, saleStatus: completed ? 'completed' : 'unknown', completed,
       price: completed ? parsePrice(priceText) : null, currency: completed ? 'USD' : null,
-      date: ended?.match(/Sold on\s+(.+)/i)?.[1] ?? null, priceBasis: 'unknown',
+      date, timeWindow: classifyComicConnectTimeWindow(date), priceBasis: 'unknown',
       buyerPremiumIncluded: null, identityMatched: identity.matched, matchedTokens: identity.matchedTokens,
       exclusionReason: !identity.matched ? identity.reason : (!completed ? 'No explicit completed-sale amount and date were found.' : 'ComicConnect buyer-premium treatment is not resolved.'),
       valuationEligible: false,
@@ -196,9 +212,10 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
 
   const sales = records.filter((record) => record.completed && record.identityMatched);
   const context = records.filter((record) => !record.completed || !record.identityMatched);
+  const windows = records.reduce<Record<string, number>>((counts, record) => { counts[record.timeWindow] = (counts[record.timeWindow] ?? 0) + 1; return counts; }, {});
   return {
     source: 'comicconnect', status: 'success', query: request.query, sales, context,
-    messages: [`ComicConnect returned ${records.length} bounded sold-archive candidates. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`],
+    messages: [`ComicConnect returned ${records.length} bounded sold-archive candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`],
     raw: { resultCount: records.length, url: request.url },
   };
 }
@@ -234,12 +251,13 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
     }
   }
   const all = [...records.values()].slice(0, COMICCONNECT_MAX_RESULTS);
+  const windows = all.reduce<Record<string, number>>((counts, record) => { counts[record.timeWindow] = (counts[record.timeWindow] ?? 0) + 1; return counts; }, {});
   return {
     source: 'comicconnect', status: errors.length === queries.length ? 'error' : 'success',
     query: queries.join(' → '),
     sales: all.filter((record) => record.completed && record.identityMatched),
     context: all.filter((record) => !record.completed || !record.identityMatched),
-    messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`, ...errors],
+    messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`, ...errors],
     raw: { resultCount: all.length, url: lastRequest.url },
   };
 }
