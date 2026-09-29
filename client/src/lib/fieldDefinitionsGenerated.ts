@@ -725,6 +725,14 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     otherFieldName: 'Custom Publisher',
   },
   {
+    name: 'distributionType',
+    label: 'Distribution Type',
+    inputType: 'dropdown',
+    requirement: 'required',
+    defaultValue: 'Direct',
+    dropdownOptions: ['Direct', 'Newsstand'],
+  },
+  {
     name: 'volume',
     label: 'Volume',
     inputType: 'text',

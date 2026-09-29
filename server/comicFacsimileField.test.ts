@@ -19,4 +19,19 @@ describe("single-comic Facsimile field", () => {
   it("places Facsimile in the single-comic Recommended Fields layout", () => {
     expect(layout).toContain("facsimile: { colSpan: 'half', position: 6 }");
   });
+
+  it("defines Distribution Type as a required Direct/Newsstand dropdown", () => {
+    const fieldStart = definitions.indexOf("name: 'distributionType'");
+    expect(fieldStart).toBeGreaterThan(-1);
+    const field = definitions.slice(fieldStart, definitions.indexOf("  },", fieldStart) + 4);
+    expect(field).toContain("label: 'Distribution Type'");
+    expect(field).toContain("inputType: 'dropdown'");
+    expect(field).toContain("requirement: 'required'");
+    expect(field).toContain("defaultValue: 'Direct'");
+    expect(field).toContain("dropdownOptions: ['Direct', 'Newsstand']");
+  });
+
+  it("places Distribution Type in the single-comic Required Fields layout", () => {
+    expect(layout).toContain("distributionType: { colSpan: 'half', position: 6 }");
+  });
 });
