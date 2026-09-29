@@ -22,7 +22,22 @@ type AdapterId =
   | 'lelands'
   | 'pristine_auction'
   | 'pcgs_auction_results'
-  | '130point';
+  | '130point'
+  | 'ngc'
+  | 'cng'
+  | 'rumsey'
+  | 'cherrystone'
+  | 'raritan'
+  | 'morphy'
+  | 'theriaults'
+  | 'poster_auctions'
+  | 'bonhams'
+  | 'comicconnect'
+  | 'university_archives'
+  | 'swann'
+  | 'rr_auction'
+  | 'alexander_historical'
+  | 'goldin';
 
 export type VisualRequirement = 'not_required' | 'required';
 export type DuplicateStatus = 'unique' | 'exact_duplicate' | 'probable_duplicate' | 'possible_duplicate';
@@ -94,6 +109,21 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
     defaultPriceBasis: 'sold',
     completedStatusBasis: '130point completed-sale search result',
   },
+  ngc: { id: 'ngc', label: 'NGC Auction Central', version: '1.0.0', defaultOriginMarketplace: 'ngc', defaultPriceBasis: 'closed', completedStatusBasis: 'NGC Prices Realized context' },
+  cng: { id: 'cng', label: 'CNG Past Auctions', version: '1.0.0', defaultOriginMarketplace: 'cng', defaultPriceBasis: 'closed', completedStatusBasis: 'CNG individually explicit Sold For lot' },
+  rumsey: { id: 'rumsey', label: 'Rumsey Auction Results', version: '1.0.0', defaultOriginMarketplace: 'rumsey', defaultPriceBasis: 'closed', completedStatusBasis: 'Rumsey Prices Realized lot join' },
+  cherrystone: { id: 'cherrystone', label: 'Cherrystone Realizations', version: '1.0.0', defaultOriginMarketplace: 'cherrystone', defaultPriceBasis: 'unknown', completedStatusBasis: 'Cherrystone Price Realized result' },
+  raritan: { id: 'raritan', label: 'Raritan Past Auctions', version: '1.0.0', defaultOriginMarketplace: 'raritan', defaultPriceBasis: 'closed', completedStatusBasis: 'Raritan Prices Realized auction table' },
+  morphy: { id: 'morphy', label: 'Morphy Auctions', version: '1.0.0', defaultOriginMarketplace: 'morphy', defaultPriceBasis: 'closed', completedStatusBasis: 'Morphy closed lot final price' },
+  theriaults: { id: 'theriaults', label: "Theriault's Archive", version: '1.0.0', defaultOriginMarketplace: 'theriaults', defaultPriceBasis: 'unknown', completedStatusBasis: "Theriault's archived Sold listing" },
+  poster_auctions: { id: 'poster_auctions', label: 'Poster Auctions International', version: '1.0.0', defaultOriginMarketplace: 'poster_auctions', defaultPriceBasis: 'closed', completedStatusBasis: 'Poster Auctions completed lot result' },
+  bonhams: { id: 'bonhams', label: 'Bonhams Popular Culture', version: '1.0.0', defaultOriginMarketplace: 'bonhams', defaultPriceBasis: 'closed', completedStatusBasis: 'Bonhams completed lot result' },
+  comicconnect: { id: 'comicconnect', label: 'ComicConnect Sold Archive', version: '1.0.0', defaultOriginMarketplace: 'comicconnect', defaultPriceBasis: 'unknown', completedStatusBasis: 'ComicConnect Sold For record' },
+  university_archives: { id: 'university_archives', label: 'University Archives', version: '1.0.0', defaultOriginMarketplace: 'university_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'University Archives sold lot' },
+  swann: { id: 'swann', label: 'Swann Galleries', version: '1.0.0', defaultOriginMarketplace: 'swann', defaultPriceBasis: 'closed', completedStatusBasis: 'Swann closed lot result' },
+  rr_auction: { id: 'rr_auction', label: 'RR Auction', version: '1.0.0', defaultOriginMarketplace: 'rr_auction', defaultPriceBasis: 'closed', completedStatusBasis: 'RR Auction closed lot result' },
+  alexander_historical: { id: 'alexander_historical', label: 'Alexander Historical Auctions', version: '1.0.0', defaultOriginMarketplace: 'alexander_historical', defaultPriceBasis: 'unknown', completedStatusBasis: 'Alexander Historical completed lot' },
+  goldin: { id: 'goldin', label: 'Goldin Video Game Auctions', version: '1.0.0', defaultOriginMarketplace: 'goldin', defaultPriceBasis: 'unknown', completedStatusBasis: 'Goldin Lot Sold record' },
 };
 
 export type CanonicalObservationFacts = {

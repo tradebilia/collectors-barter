@@ -12,6 +12,7 @@ import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSou
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
+import { SANDBOX_SPECIALIST_SOURCES } from '@shared/sandboxSpecialistSources';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -310,6 +311,15 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     description: 'Read-only Discogs release metadata for Music items; no valuation, authentication, grading, or stored data',
   },
   ...PERMISSION_PENDING_SOURCE_REGISTRY,
+  ...Object.fromEntries(SANDBOX_SPECIALIST_SOURCES.map((source) => [source.id, {
+    id: source.id,
+    label: source.label,
+    group: 'Marketplace',
+    icon: '🧪',
+    provides: ['historic_prices', 'recent_sales'],
+    status: 'live' as const,
+    description: `Sandbox-authorized read-only source. Context-only until its source-specific parser and signed admission tests are complete. ${source.activationNote}`,
+  }])),
 };
 
 type SourceId = string;
@@ -2084,6 +2094,23 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
   );
 }
 
+function SandboxSpecialistSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
+  const source = SANDBOX_SPECIALIST_SOURCES.find((candidate) => candidate.id === sourceId);
+  if (!source) return null;
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  return (
+    <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}</p>
+      <p className="text-gray-400 text-[10px]">Data type: read-only specialist auction context</p>
+      <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
+        <p className="text-sky-300 text-[10px] font-semibold">Sandbox authorized — context only</p>
+        <p className="text-gray-300 text-[10px]">The source is approved for bounded testing and mapped to this category. It cannot affect valuation or the final AI conclusion until its source-specific parser, identity gate, currency/price-basis policy, and signed-admission tests pass.</p>
+        <p className="text-gray-500 text-[10px]">{source.activationNote}</p>
+        <p className="text-gray-600 text-[9px] break-all">Source: {source.sourceUrl}</p>
+      </div>
+    </div>
+  );
+}
 function CategoryMarketSummaryPanel({ summaries }: { summaries: Array<{ category: string; articleCount: number; sourceCount: number; positiveSignals: number; negativeSignals: number; signal: string; confidence: string; rationale: string }> }) {
   if (!summaries?.length) return null;
   const signalLabel: Record<string, string> = { improving: 'Improving signal', softening: 'Softening signal', mixed: 'Mixed signal', insufficient: 'Insufficient evidence' };
@@ -2922,6 +2949,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('heritage') && <PlaceholderSection sourceId="heritage" side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
+      {SANDBOX_SPECIALIST_SOURCES.map((source) => enabledSources.has(source.id) && <SandboxSpecialistSection key={source.id} sourceId={source.id} side={side} />)}
     </div>
   );
 }
