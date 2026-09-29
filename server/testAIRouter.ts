@@ -36,6 +36,7 @@ import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
 import { lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
+import { lookupComicConnectSold } from './comicConnectMarketData';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1252,6 +1253,17 @@ export const testAIRouter = router({
         })), { query: input.title }),
         visualFilter,
       };
+    }),
+
+  // ComicConnect sold archive — bounded, read-only, context-only until source economics are resolved.
+  getComicConnectData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupComicConnectSold(input);
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API

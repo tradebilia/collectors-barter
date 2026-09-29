@@ -1,0 +1,37 @@
+import { describe, expect, it } from 'vitest';
+import { buildComicConnectSearchUrl, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
+
+const input = { title: 'Edge of the Spider-Verse #2', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: 'Edge of the Spider-Verse', issueNumber: '2', publisher: 'Marvel', facsimile: 'No', distributionType: 'Direct' }) };
+
+const html = `
+<div class="itempreview details listingbox"><div class="mainimg"><a href="/item/100"><img src="/coverimages/a.jpg" /></a></div><div class="titleline">EDGE OF THE SPIDER-VERSE #2</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="comments wrap">First appearance</div><div class="endednotice">Sold on Tuesday, 01/02/2024 2:00 PM</div><div class="pricing"><span class="val prc">$125</span></div></div>
+<div class="itempreview details listingbox"><div class="mainimg"><a href="/item/101"><img src="/coverimages/b.jpg" /></a></div><div class="titleline">EDGE OF THE SPIDER-VERSE #2 FACSIMILE</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 01/02/2024 2:00 PM</div><div class="pricing"><span class="val prc">$20</span></div></div>
+<div class="itempreview details listingbox"><div class="titleline">EDGE OF THE SPIDER-VERSE #2</div><div class="grade">Marvel CGC NM/M: 9.4</div><div class="endednotice">Sold on Tuesday, 01/02/2024 2:00 PM</div><div class="pricing"><span class="val prc">$40</span></div></div>`;
+
+describe('ComicConnect bounded sold adapter', () => {
+  it('builds a sold-only one-page request capped at 20 records', () => {
+    const request = buildComicConnectSearchUrl(input);
+    expect(request.url).toContain('filtertype=Sold');
+    expect(request.url).toContain('show_sold_search=1');
+    expect(request.url).toContain(`perpage=${COMICCONNECT_MAX_RESULTS}`);
+    expect(request.query).toContain('Edge of the Spider-Verse');
+  });
+
+  it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
+    const result = parseComicConnectSoldHtml(html, input);
+    expect(result.status).toBe('success');
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0].price).toBe(125);
+    expect(result.sales[0].currency).toBe('USD');
+    expect(result.sales[0].valuationEligible).toBe(false);
+    expect(result.context).toHaveLength(2);
+    expect(result.context.some((record) => record.title.includes('FACSIMILE'))).toBe(true);
+    expect(result.context.some((record) => record.exclusionReason?.includes('Grade conflict'))).toBe(true);
+  });
+
+  it('does not apply to non-comic categories', () => {
+    const result = parseComicConnectSoldHtml(html, { ...input, category: 'sports_cards' });
+    expect(result.status).toBe('not_applicable');
+    expect(result.sales).toHaveLength(0);
+  });
+});

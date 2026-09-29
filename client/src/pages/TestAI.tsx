@@ -2111,6 +2111,29 @@ function SandboxSpecialistSection({ sourceId, side }: { sourceId: SourceId; side
     </div>
   );
 }
+function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, 20);
+  return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
+    <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 ComicConnect Sold Archive</p>
+    <p className="text-gray-400 text-[10px]">Data type: bounded sold-archive context · maximum 20 records · Comics only</p>
+    {isLoading && <p className="text-sky-200 text-[10px]">Checking ComicConnect’s public sold archive…</p>}
+    {!isLoading && data?.status === 'error' && <p className="rounded bg-rose-950/30 p-2 text-rose-200 text-[10px]">{data.messages?.join(' ') ?? 'ComicConnect could not be checked.'}</p>}
+    {!isLoading && data?.status === 'success' && <>
+      <p className="rounded bg-sky-900/20 border border-sky-700/30 p-2 text-sky-200 text-[10px]">{data.messages?.join(' ')}</p>
+      <p className="text-gray-500 text-[9px]">Query: “{data.query}” · {records.length} records returned · none can affect valuation or the final AI conclusion yet.</p>
+      <div className="space-y-1.5">
+        {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-gray-700/50 bg-gray-950/40 p-2">
+          <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{record.title || item.title}</p><span className="shrink-0 text-emerald-300 text-[10px]">{record.price != null ? `$${Number(record.price).toLocaleString()}` : 'No price'}</span></div>
+          <p className="text-gray-500 text-[9px] mt-0.5">{record.grade ?? 'Grade unavailable'} · {record.date ?? 'Date unavailable'} · {record.saleStatus}</p>
+          <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-amber-300/80'}`}>{record.identityMatched ? 'Identity matched' : `Context only · ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
+          {record.url && <a className="text-sky-400 text-[9px] underline" href={record.url} target="_blank" rel="noreferrer">Open ComicConnect record</a>}
+        </div>)}
+        {!records.length && <p className="text-gray-500 text-[10px]">No ComicConnect records matched this bounded query.</p>}
+      </div>
+    </>}
+  </div>;
+}
 function CategoryMarketSummaryPanel({ summaries }: { summaries: Array<{ category: string; articleCount: number; sourceCount: number; positiveSignals: number; negativeSignals: number; signal: string; confidence: string; rationale: string }> }) {
   if (!summaries?.length) return null;
   const signalLabel: Record<string, string> = { improving: 'Improving signal', softening: 'Softening signal', mixed: 'Mixed signal', insufficient: 'Insufficient evidence' };
@@ -2857,7 +2880,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -2877,6 +2900,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
   lelandsLoading: boolean;
   pristineAuctionData: any;
   pristineAuctionLoading: boolean;
+  comicConnectData: any;
+  comicConnectLoading: boolean;
   pcgsAuctionData: any;
   pcgsAuctionLoading: boolean;
   oneThirtyPointData: any;
@@ -2921,6 +2946,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('cardsight_ai') && <CardsightAiSection item={item} side={side} data={cardsightAiData} isLoading={cardsightAiLoading} />}
       {enabledSources.has('lelands') && <ParseAuctionSection item={item} side={side} source="lelands" data={lelandsData} isLoading={lelandsLoading} />}
       {enabledSources.has('pristine_auction') && <ParseAuctionSection item={item} side={side} source="pristine_auction" data={pristineAuctionData} isLoading={pristineAuctionLoading} />}
+      {enabledSources.has('comicconnect') && <ComicConnectSection item={queryItem} side={side} data={comicConnectData} isLoading={comicConnectLoading} />}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
           ? <SoldCompsSection item={queryItem} side={side} />
@@ -3134,6 +3160,14 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('pristine_auction') }
   );
+  const leftComicConnectQuery = trpc.testAI.getComicConnectData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType } : { title: '', category: 'unknown' },
+    { enabled: !!leftSearchItem && leftSources.has('comicconnect') }
+  );
+  const rightComicConnectQuery = trpc.testAI.getComicConnectData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType } : { title: '', category: 'unknown' },
+    { enabled: !!rightSearchItem && rightSources.has('comicconnect') }
+  );
   const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: leftItem?.certId || '' },
     { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || '') },
@@ -3198,8 +3232,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
           </div>
         )}
 
