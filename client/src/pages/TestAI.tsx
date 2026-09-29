@@ -2116,6 +2116,8 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
   const timeWindowLabel: Record<string, string> = { current_12_months: 'Current market · last 12 months', extended_12_to_36_months: 'Extended context · 12–36 months', historical_over_36_months: 'Historical trend · over 36 months', undated: 'Undated context' };
   const timeWindowStyle: Record<string, string> = { current_12_months: 'text-emerald-300', extended_12_to_36_months: 'text-sky-300', historical_over_36_months: 'text-amber-300', undated: 'text-gray-400' };
   const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, 20);
+  const matches = records.filter((record: any) => record.identityMatched);
+  const mismatches = records.filter((record: any) => !record.identityMatched);
   return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
     <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 ComicConnect Sold Archive</p>
     <p className="text-gray-400 text-[10px]">Data type: bounded sold-archive context · maximum 20 records · Comics only</p>
@@ -2124,12 +2126,16 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
     {!isLoading && data?.status === 'success' && <>
       <p className="rounded bg-sky-900/20 border border-sky-700/30 p-2 text-sky-200 text-[10px]">{data.messages?.join(' ')}</p>
       <p className="text-gray-500 text-[9px]">Query: “{data.query}” · {records.length} records returned · none can affect valuation or the final AI conclusion yet.</p>
+      <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
+        <p className="text-[10px] font-semibold text-cyan-100">Identity review — what would be eligible for further analyzer review</p>
+        <p className="mt-0.5 text-[9px] text-cyan-200/80"><span className="text-emerald-300">✓ {matches.length} identity match{matches.length === 1 ? '' : 'es'}</span> · <span className="text-red-300">✕ {mismatches.length} mismatch{mismatches.length === 1 ? '' : 'es'}</span> · matches remain context-only until ComicConnect admission is approved.</p>
+      </div>
       <div className="space-y-1.5">
         {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-gray-700/50 bg-gray-950/40 p-2">
           <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{record.title || item.title}</p><span className="shrink-0 text-emerald-300 text-[10px]">{record.price != null ? `$${Number(record.price).toLocaleString()}` : 'No price'}</span></div>
           <p className="text-gray-500 text-[9px] mt-0.5">{record.grade ?? 'Grade unavailable'} · {record.date ?? 'Date unavailable'} · {record.saleStatus}</p>
           <p className={`text-[9px] mt-0.5 ${timeWindowStyle[record.timeWindow] ?? 'text-gray-400'}`}>{timeWindowLabel[record.timeWindow] ?? 'Time window unavailable'}</p>
-          <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-amber-300/80'}`}>{record.identityMatched ? 'Identity matched' : `Context only · ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
+          <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-red-300/90'}`}>{record.identityMatched ? '✓ Identity matched — retained for admission review' : `✕ Mismatch — ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
           {record.url && <a className="text-sky-400 text-[9px] underline" href={record.url} target="_blank" rel="noreferrer">Open ComicConnect record</a>}
         </div>)}
         {!records.length && <p className="text-gray-500 text-[10px]">No ComicConnect records matched this bounded query.</p>}
