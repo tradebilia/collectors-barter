@@ -125,6 +125,13 @@ describe('permission-pending market-source adapters', () => {
     }
   });
 
+  it('retains Omega Auctions as deferred audit evidence but removes it from Music sandbox applicability', () => {
+    const omega = PERMISSION_PENDING_MARKET_SOURCES.find((source) => source.id === 'omega_auctions');
+    expect(omega).toMatchObject({ status: 'deferred', liveTestStatus: 'deferred' });
+    const musicSourceIds = getEligibleTestAiSources({ category: 'music', hasTitle: true }).map((source) => source.sourceId);
+    expect(musicSourceIds).not.toContain('omega_auctions');
+  });
+
   it('returns a deferred, non-activatable response for an owner-deferred provider', () => {
     const status = getPermissionPendingLookupStatus('heritage', {
       title: 'Adventure Comics #78',
@@ -156,10 +163,10 @@ describe('permission-pending market-source adapters', () => {
     }, {});
 
     expect(statusCounts).toEqual({
-      verified: 16,
+      verified: 15,
       partial: 3,
       no_completed_item: 1,
-      deferred: 2,
+      deferred: 3,
     });
   });
 });
