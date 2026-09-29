@@ -62,6 +62,10 @@ function buildSearchQuery(input: ComicConnectLookupInput): string {
 
 export function buildComicConnectSearchUrl(input: ComicConnectLookupInput): { query: string; url: string } {
   const query = buildSearchQuery(input);
+  return buildComicConnectSearchUrlForQuery(query);
+}
+
+function buildComicConnectSearchUrlForQuery(query: string): { query: string; url: string } {
   const params = new URLSearchParams({
     filtertype: 'Sold',
     search: query,
@@ -70,6 +74,17 @@ export function buildComicConnectSearchUrl(input: ComicConnectLookupInput): { qu
     page: '1',
   });
   return { query, url: `${COMICCONNECT_BASE_URL}/browse/?${params.toString()}` };
+}
+
+export function buildComicConnectSearchQueries(input: ComicConnectLookupInput): string[] {
+  const primary = buildSearchQuery(input);
+  const withoutLeadingArticle = primary
+    .replace(/^(?:the|a|an)\s+/i, '')
+    .replace(/\s*#(\d+)/g, ' $1')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const punctuationNormalized = withoutLeadingArticle.replace(/[\-’']/g, ' ').replace(/\s+/g, ' ').trim();
+  return Array.from(new Set([primary, withoutLeadingArticle, punctuationNormalized].filter(Boolean)));
 }
 
 function extract(pattern: RegExp, source: string): string | null {
@@ -148,8 +163,8 @@ export type ComicConnectLookupResult = {
   raw?: { resultCount: number; url: string };
 };
 
-export function parseComicConnectSoldHtml(html: string, input: ComicConnectLookupInput): ComicConnectLookupResult {
-  const request = buildComicConnectSearchUrl(input);
+export function parseComicConnectSoldHtml(html: string, input: ComicConnectLookupInput, requestOverride?: { query: string; url: string }): ComicConnectLookupResult {
+  const request = requestOverride ?? buildComicConnectSearchUrl(input);
   if (normalize(input.category) !== 'comics') {
     return { source: 'comicconnect', status: 'not_applicable', query: request.query, sales: [], context: [], messages: ['ComicConnect is only mapped to Comics.'], raw: { resultCount: 0, url: request.url } };
   }
@@ -189,20 +204,42 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
 }
 
 export async function lookupComicConnectSold(input: ComicConnectLookupInput): Promise<ComicConnectLookupResult> {
-  const request = buildComicConnectSearchUrl(input);
+  const queries = buildComicConnectSearchQueries(input);
   if (normalize(input.category) !== 'comics') {
     return parseComicConnectSoldHtml('', input);
   }
-  try {
-    const response = await fetch(request.url, {
-      headers: { Accept: 'text/html', 'User-Agent': 'Tradebilia Sandbox Read-Only Adapter/1.0' },
-      signal: AbortSignal.timeout(COMICCONNECT_TIMEOUT_MS),
-    });
-    if (!response.ok) {
-      return { source: 'comicconnect', status: 'error', query: request.query, sales: [], context: [], messages: [`ComicConnect returned HTTP ${response.status}.`], raw: { resultCount: 0, url: request.url } };
+  const records = new Map<string, ComicConnectSale>();
+  const errors: string[] = [];
+  let lastRequest = buildComicConnectSearchUrlForQuery(queries[0]);
+  for (const query of queries) {
+    const request = buildComicConnectSearchUrlForQuery(query);
+    lastRequest = request;
+    try {
+      const response = await fetch(request.url, {
+        headers: { Accept: 'text/html', 'User-Agent': 'Tradebilia Sandbox Read-Only Adapter/1.0' },
+        signal: AbortSignal.timeout(COMICCONNECT_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        errors.push(`${query}: HTTP ${response.status}`);
+        continue;
+      }
+      const parsed = parseComicConnectSoldHtml(await response.text(), input, request);
+      for (const record of [...parsed.sales, ...parsed.context]) {
+        const key = record.lotId ?? `${normalize(record.title)}|${record.price ?? ''}|${record.date ?? ''}`;
+        if (!records.has(key)) records.set(key, record);
+      }
+      if (records.size >= COMICCONNECT_MAX_RESULTS) break;
+    } catch (error) {
+      errors.push(`${query}: ${error instanceof Error ? error.message : 'request failed'}`);
     }
-    return parseComicConnectSoldHtml(await response.text(), input);
-  } catch (error) {
-    return { source: 'comicconnect', status: 'error', query: request.query, sales: [], context: [], messages: [error instanceof Error ? `ComicConnect request failed: ${error.message}` : 'ComicConnect request failed.'], raw: { resultCount: 0, url: request.url } };
   }
+  const all = [...records.values()].slice(0, COMICCONNECT_MAX_RESULTS);
+  return {
+    source: 'comicconnect', status: errors.length === queries.length ? 'error' : 'success',
+    query: queries.join(' → '),
+    sales: all.filter((record) => record.completed && record.identityMatched),
+    context: all.filter((record) => !record.completed || !record.identityMatched),
+    messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`, ...errors],
+    raw: { resultCount: all.length, url: lastRequest.url },
+  };
 }

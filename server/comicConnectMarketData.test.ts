@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildComicConnectSearchUrl, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
+import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
 
 const input = { title: 'Edge of the Spider-Verse #2', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: 'Edge of the Spider-Verse', issueNumber: '2', publisher: 'Marvel', facsimile: 'No', distributionType: 'Direct' }) };
 
@@ -17,6 +17,14 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(request.query).toBe('Edge of the Spider-Verse #2');
     expect(request.query).not.toContain('CGC');
     expect(request.query).not.toContain('9.8');
+  });
+
+  it('builds bounded fallback queries without assuming every title has the same article behavior', () => {
+    expect(buildComicConnectSearchQueries({ ...input, itemDetails: JSON.stringify({ comicTitle: 'The Amazing Spider-Man', issueNumber: '238' }) })).toEqual([
+      'The Amazing Spider-Man #238',
+      'Amazing Spider-Man 238',
+      'Amazing Spider Man 238',
+    ]);
   });
 
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
