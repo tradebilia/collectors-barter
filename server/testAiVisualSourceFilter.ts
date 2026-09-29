@@ -196,6 +196,21 @@ export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate
     .slice(0, VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT);
 }
 
+export function applyDeclaredIdentityFilter<T extends VisualSourceCandidate>(
+  listings: T[],
+  targetMetadata: string,
+) {
+  const declaredReviews = buildDeclaredIdentityReviews(listings, targetMetadata);
+  const conflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
+  const contextListings = listings.filter((_, index) => conflictIndexes.has(index));
+  return {
+    listings: listings.filter((_, index) => !conflictIndexes.has(index)),
+    contextListings,
+    declaredReviews,
+    removedCount: contextListings.length,
+  };
+}
+
 export function buildVisualSourceFilterNote(
   sourceLabel: string,
   result: {

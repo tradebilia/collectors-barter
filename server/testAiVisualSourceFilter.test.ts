@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
   applyVisualSourceReviews,
+  applyDeclaredIdentityFilter,
   buildDeclaredIdentityReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
@@ -116,6 +117,19 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("sourceLabel: '130point sold listings'");
     expect(routerSource).toContain("sourceLabel: 'PWCC / Fanatics Collect sold listings'");
     expect(routerSource).toContain("itemDetails=${input.itemDetails ?? 'unknown'}");
+  });
+
+  it("removes explicit Facsimile titles before the initial listing display and retains context", () => {
+    const result = applyDeclaredIdentityFilter(
+      [
+        { title: "Edge of Spider-Verse: Facsimile Edition #2 CGC 9.8" },
+        { title: "Edge of Spider-Verse #2 CGC 9.8" },
+      ],
+      `title=Edge of Spider-Verse #2 CGC 9.8; fullItemDetails=${JSON.stringify({ facsimile: "No" })}`,
+    );
+    expect(result.listings.map((listing) => listing.title)).toEqual(["Edge of Spider-Verse #2 CGC 9.8"]);
+    expect(result.contextListings.map((listing) => listing.title)).toEqual(["Edge of Spider-Verse: Facsimile Edition #2 CGC 9.8"]);
+    expect(result.removedCount).toBe(1);
   });
 
   it("uses adaptive review windows instead of treating 20 as the total review ceiling", () => {

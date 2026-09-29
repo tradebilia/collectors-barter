@@ -30,7 +30,7 @@ import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFie
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import type { VisualSoldCandidateReview } from './testAiVisualSoldFilter';
-import { filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
@@ -954,16 +954,29 @@ export const testAIRouter = router({
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
           console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
         });
+        const targetMetadata = `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`;
+        const declaredIdentityFilter = applyDeclaredIdentityFilter(
+          filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+          targetMetadata,
+        );
         const visualActiveFilter = input.includeVisualReview
           ? await filterVisualSourceCandidates({
               sourceLabel: 'eBay active listings',
               targetImageUrl: input.imageUrl,
-              targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`,
-              listings: filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+              targetMetadata,
+              listings: declaredIdentityFilter.listings,
             })
           : null;
-        const displaySummaries = visualActiveFilter?.listings ?? filteredSummaries;
-        const metrics = computeMetrics(filteredSummaries);
+        const combinedVisualFilter = visualActiveFilter
+          ? {
+              ...visualActiveFilter,
+              contextListings: [...declaredIdentityFilter.contextListings, ...(visualActiveFilter.contextListings ?? [])],
+              preVisualExcludedCount: declaredIdentityFilter.removedCount + (visualActiveFilter.preVisualExcludedCount ?? 0),
+              removedCount: declaredIdentityFilter.removedCount + visualActiveFilter.removedCount,
+            }
+          : null;
+        const displaySummaries = visualActiveFilter?.listings ?? declaredIdentityFilter.listings;
+        const metrics = computeMetrics(displaySummaries);
         const visualMatchMetrics = visualActiveFilter ? computeVisualMatchMetrics(displaySummaries) : null;
         return {
           query,
@@ -972,6 +985,8 @@ export const testAIRouter = router({
             afterYearFilter: byYear.length,
             afterNumberFilter: byNumber.length,
             afterGradeFilter: filteredSummaries.length,
+            afterDeclaredIdentityFilter: declaredIdentityFilter.listings.length,
+            preVisualExcludedCount: declaredIdentityFilter.removedCount,
             targetGrade,
             queryTierCount: boundedSearchQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
@@ -1007,7 +1022,7 @@ export const testAIRouter = router({
           })),
           metrics,
           visualMatchMetrics,
-          visualFilter: visualActiveFilter,
+          visualFilter: combinedVisualFilter,
           error: null,
         };
       } catch (err: any) {
