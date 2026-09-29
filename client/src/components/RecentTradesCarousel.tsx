@@ -236,7 +236,7 @@ export function RecentTradesCarousel({ trades, isLoading = false }: { trades: Re
           <DirectionMarker side="left" />
           <TicketDivider />
           <div className="flex items-center justify-center py-2" aria-label="Trade complete">
-            <img src="/manus-storage/pasted_file_JPazU8_image_ab1ca4d7.png" alt="Trade completed" className="h-44 w-48 object-contain sm:h-48 sm:w-52" loading="eager" />
+            <img src="/manus-storage/trade-completed-seal-2026-09-28_b7c9876e.png" alt="Trade completed" className="h-44 w-48 object-contain sm:h-48 sm:w-52" loading="eager" />
           </div>
           <TicketDivider />
           <DirectionMarker side="right" />

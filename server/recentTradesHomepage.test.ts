@@ -99,7 +99,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain("const DirectionIcon = side === \"left\" ? ArrowRight : ArrowLeft;");
     expect(carouselSource).toContain("Item moves toward the right member");
     expect(carouselSource).toContain("Item moves toward the left member");
-    expect(carouselSource).toContain('/manus-storage/pasted_file_JPazU8_image_ab1ca4d7.png');
+    expect(carouselSource).toContain('/manus-storage/trade-completed-seal-2026-09-28_b7c9876e.png');
     expect(carouselSource).toContain('alt="Trade completed"');
     expect(carouselSource).toContain('className="h-44 w-48 object-contain sm:h-48 sm:w-52"');
     expect(carouselSource).not.toContain('<svg viewBox="0 0 240 220"');
