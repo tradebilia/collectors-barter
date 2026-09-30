@@ -34,7 +34,7 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
   });
 
-  it('shows active permission-pending sources only for their researched item categories', () => {
+  it('shows active specialist sources in their researched categories while making Goldin direct-lot context available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', hasTitle: true }).map((source) => source.sourceId);
     expect(coinIds).toEqual(expect.arrayContaining(['ngc', 'coin_archives', 'cng']));
     expect(coinIds).not.toContain('greatcollections');
@@ -44,11 +44,15 @@ describe('internal Test AI source-category applicability policy', () => {
     const stampIds = getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId);
     expect(stampIds).toEqual(expect.arrayContaining(['rumsey', 'cherrystone', 'raritan']));
     expect(stampIds).not.toContain('heritage');
-    expect(stampIds).not.toContain('goldin');
+    expect(stampIds).toContain('goldin');
 
     const gameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
     expect(gameIds).toEqual(expect.arrayContaining(['goldin', 'hakes']));
     expect(gameIds).not.toContain('heritage');
     expect(gameIds).not.toContain('swann');
+
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+      expect(getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId), `Goldin should be eligible for ${category}`).toContain('goldin');
+    }
   });
 });

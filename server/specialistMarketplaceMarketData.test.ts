@@ -34,6 +34,10 @@ describe('bounded specialist marketplace adapters', () => {
 
     const accepted = buildSpecialistMarketplaceRequest({ ...videoGame, sourceUrl: goldinMarioLotUrl });
     expect(accepted).toEqual({ url: goldinMarioLotUrl, error: null });
+
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+      expect(buildSpecialistMarketplaceRequest({ ...videoGame, category, sourceUrl: goldinMarioLotUrl }), `Goldin should accept a supplied public lot for ${category}`).toEqual({ url: goldinMarioLotUrl, error: null });
+    }
   });
 
   it('reads a public Goldin direct-lot response, calculates all-in context, and preserves buyer-premium transparency', async () => {

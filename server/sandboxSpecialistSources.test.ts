@@ -11,8 +11,8 @@ describe('sandbox specialist source activation', () => {
   });
 
   it('keeps category mapping source-specific', () => {
-    expect(isSandboxSpecialistSourceApplicable('goldin', 'video_games')).toBe(true);
-    expect(isSandboxSpecialistSourceApplicable('goldin', 'comics')).toBe(false);
+    const allTradebiliaCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'];
+    for (const category of allTradebiliaCategories) expect(isSandboxSpecialistSourceApplicable('goldin', category), `Goldin should be available for ${category}`).toBe(true);
     expect(isSandboxSpecialistSourceApplicable('rr_auction', 'music')).toBe(true);
     expect(isSandboxSpecialistSourceApplicable('rr_auction', 'coins')).toBe(false);
   });
@@ -48,7 +48,7 @@ describe('sandbox specialist source activation', () => {
       date: '2026-06-01',
       marketplace: 'Goldin',
       sourceId: 'goldin',
-      sourceLabel: 'Goldin Video Game Auctions',
+      sourceLabel: 'Goldin Auction Results',
       saleId: 'LOT-123',
       url: 'https://goldin.co/lot/123',
       saleStatus: 'completed',
