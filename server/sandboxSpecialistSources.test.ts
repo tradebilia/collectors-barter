@@ -34,8 +34,9 @@ describe('sandbox specialist source activation', () => {
     expect(getSandboxSpecialistSource('alexander_historical')).toMatchObject({
       searchContract: 'public_contract_unverified',
       priceBasis: 'unknown',
+      sourceUrl: 'https://www.alexautographs.com/auctions/past-auctions/',
     });
-    expect(getSandboxSpecialistSource('alexander_historical')?.searchInstruction).toMatch(/query=<title>&past=1.*HTTP 403/i);
+    expect(getSandboxSpecialistSource('alexander_historical')?.searchInstruction).toMatch(/Search Auctions\/Lots.*search-results\?query=<title>&past=1.*HTTP 403/i);
     expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');
   });
 
