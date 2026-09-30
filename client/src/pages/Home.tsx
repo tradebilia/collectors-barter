@@ -597,7 +597,7 @@ export default function Home() {
 
 
         }}>
-          <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
+          <div className="absolute inset-0 bg-black/30 sm:bg-black/45" aria-hidden="true" />
           <div className="container relative z-10 flex h-[280px] items-center justify-center py-0 sm:h-[400px]">
             <div className="flex w-[112%] max-w-[480px] -translate-x-[2%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%]">
               <img
