@@ -55,6 +55,10 @@ describe("admin social-content media upload contract", () => {
     expect(uploadSection).toContain("extractListingImageVisualReferences");
     expect(uploadSection).toContain("originalImages: [originalImage]");
     expect(uploadSection).toContain("image-conditioned generation failed; retrying from public metadata");
+    expect(uploadSection).toContain("getTestedComicScenePrompts(input)");
+    expect(uploadSection).toContain("runTestedComicScenePromptLadder(testedComicPrompts");
+    expect(uploadSection).toContain("isProviderSceneSafetyRejection(referenceError)");
+    expect(uploadSection).toContain("isProviderSceneSafetyRejection(metadataError)");
     expect(uploadSection).toContain("generated = await generateImage({");
     expect(uploadSection).toContain("prompt,");
     expect(uploadSection).toContain("model: \"MODEL_GPT_IMAGE_2\"");

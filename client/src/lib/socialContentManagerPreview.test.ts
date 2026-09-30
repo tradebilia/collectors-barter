@@ -51,8 +51,10 @@ describe("Social Content Manager post preview", () => {
     expect(graphicSource).toContain("draft,");
   });
 
-  it("uses the original image only as a reference and retains manual-publishing safeguards", () => {
-    expect(componentSource).toContain("one generated item-inspired visual");
+  it("keeps the original listing photo unchanged and retains manual-publishing safeguards", () => {
+    expect(componentSource).toContain("newly generated item-inspired background");
+    expect(componentSource).toContain("reviewed item/category background");
+    expect(componentSource).toContain("keep the original listing photo unchanged");
     expect(componentSource).toContain("The original uploaded collectible image is not placed into high-value artwork or changed.");
     expect(componentSource).not.toContain("object-cover");
     expect(componentSource).toContain("Internal planning preview only. It does not publish");
@@ -63,7 +65,7 @@ describe("Social Content Manager post preview", () => {
   it("falls back to the reviewed scene when automatic generation is temporarily unavailable", () => {
     expect(componentSource).toContain("automaticSceneRequestFailed");
     expect(componentSource).toContain("!automaticSceneRequestFailed");
-    expect(componentSource).toContain("Using the reviewed category-aware background instead.");
+    expect(componentSource).toContain("Using the reviewed background shown in the preview.");
     expect(componentSource).toContain("generatedSceneRequestRef.current = requestKey");
   });
 

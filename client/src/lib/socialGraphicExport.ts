@@ -154,6 +154,8 @@ export const HIGH_VALUE_ITEM_REFERENCE_BACKGROUND_URLS: Record<string, string> =
   beatles_sgt_pepper: "/manus-storage/tradebilia-category-ref-music-vinyl-beatles-sgt-pepper_c7929aca.jpg",
   megatron_transformers: "/manus-storage/tradebilia-category-ref-vintage-toys-megatron-g1_2660b9f0.jpg",
   daredevil_elektra: "/manus-storage/tradebilia-category-ref-comics-daredevil-elektra-marvel_363ef144.jpg",
+  spiderman_300: "/manus-storage/generated/1790782817664_2c1c4568.png",
+  xmen_137: "/manus-storage/generated/1790782907732_3dcece50.png",
 };
 
 /** Mirrors the authoritative Sports Cards dropdown values in fieldDefinitionsGenerated.ts. */
@@ -391,6 +393,12 @@ export function getHighValueSubjectReferenceKey(promotion: SocialDraft["promotio
   if (!promotion) return null;
   const sportsReference = getHighValueItemReferenceKey(promotion);
   if (sportsReference) return sportsReference;
+  if (normalizeHighValueAssetKeyPart(promotion.category ?? "") === "comics") {
+    const listingTitle = normalizeVisualToken(promotion.itemTitle);
+    const issue = (promotion.facts ?? []).find(fact => /^issue\s*(?:no\.?|number|#)$/i.test(fact.label))?.value?.trim() ?? "";
+    if (/\bspider man\b/i.test(listingTitle) && (/\b300\b/.test(listingTitle) || /^0*300$/.test(issue))) return "spiderman_300";
+    if (/\bx men\b/i.test(listingTitle) && (/\b137\b/.test(listingTitle) || /^0*137$/.test(issue))) return "xmen_137";
+  }
   const searchable = [
     promotion.itemTitle,
     ...(promotion.visualHints ?? []),

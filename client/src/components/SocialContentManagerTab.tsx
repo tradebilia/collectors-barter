@@ -367,7 +367,7 @@ export function SocialContentManagerTab() {
       // image/vision provider is temporarily unavailable. The renderer will
       // fall back to its reviewed category/item-type/subject scene instead.
       generatedSceneRequestRef.current = requestKey;
-      toast.error("The item-specific scene is temporarily unavailable. Using the reviewed category-aware background instead.");
+      toast.error("A new item-specific scene could not be generated. Using the reviewed background shown in the preview.");
     });
   }, [isPreviewOpen, preparedGraphicImageUrl, selectedDraft, generateHighValueListingScene]);
 
@@ -824,7 +824,7 @@ export function SocialContentManagerTab() {
               <DialogContent className="max-h-[calc(100vh-2rem)] max-w-5xl overflow-y-auto p-0" aria-describedby="social-post-preview-description">
                 <DialogHeader className="relative z-10 shrink-0 border-b border-slate-100 bg-white px-5 pb-4 pt-5 sm:px-6 sm:pt-6">
                   <DialogTitle className="flex items-center gap-2"><Eye className="h-5 w-5 text-indigo-600" />Social Graphic Preview</DialogTitle>
-                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account. High-value graphics use one generated item-inspired visual; the original listing photo is used only as a private visual reference and is never altered.</DialogDescription>
+                  <DialogDescription id="social-post-preview-description">Internal planning preview only. It does not publish or connect to any social account. High-value graphics keep the original listing photo unchanged; their background may be newly generated or a reviewed fallback.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-5 px-5 pb-5 pt-4 sm:px-6">
                   <div className="relative z-10 flex flex-wrap gap-2" aria-label="Preview platform">
@@ -833,7 +833,7 @@ export function SocialContentManagerTab() {
 
                   {selectedPreviewPlatform ? <div className="space-y-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div><p className="text-sm font-bold text-slate-900">Finished promotional graphic</p><p className="mt-0.5 text-xs text-slate-500">{SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].label} · {SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].size} · one generated item-inspired visual</p></div>
+                      <div><p className="text-sm font-bold text-slate-900">Finished promotional graphic</p><p className="mt-0.5 text-xs text-slate-500">{SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].label} · {SOCIAL_GRAPHIC_SPECS[selectedPreviewPlatform].size} · {selectedDraft.source === "High-Value Listing" ? (hasGeneratedHighValueScene ? "newly generated item-inspired background" : "reviewed item/category background") : "trade graphic preview"}</p></div>
                       {selectedDraft.promotion ? <Badge className="w-fit border border-indigo-100 bg-indigo-50 text-indigo-700">{formatSocialCategory(selectedDraft.promotion.category) || "Collectible"}</Badge> : null}
                     </div>
                     <div className="overflow-auto rounded-2xl border border-slate-200 bg-slate-100 p-3 sm:p-5">

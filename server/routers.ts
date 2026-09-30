@@ -5,6 +5,7 @@ import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone 
 import { COOKIE_NAME } from "@shared/const";
 import { getSocialPromotionFacts } from "@shared/socialPromotionFacts";
 import { getTradeAlertVisualHints } from "@shared/tradeAlertThemes";
+import { getTestedComicScenePrompts, isProviderSceneSafetyRejection, runTestedComicScenePromptLadder } from "./comicSocialScenePrompts";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable, ensureSupportTicketsTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
@@ -3028,6 +3029,12 @@ export const appRouter = router({
           const originalImage = parseAutomaticSceneReferenceImage(input.listingImageDataUrl);
           const imageVisualReferences = await extractListingImageVisualReferences(input.listingImageDataUrl);
           const prompt = buildAutomaticHighValueScenePrompt({ ...input, imageVisualReferences });
+          const testedComicPrompts = getTestedComicScenePrompts(input);
+          const generateTestedComicScene = () => runTestedComicScenePromptLadder(testedComicPrompts, (comicPrompt) => generateImage({
+            prompt: comicPrompt,
+            model: "MODEL_GPT_IMAGE_2",
+            quality: "medium",
+          }));
           let generated: { url?: string };
           try {
             generated = await generateImage({
@@ -3043,11 +3050,20 @@ export const appRouter = router({
             // reference image does not force the whole social preview to fall
             // back to a generic category scene.
             console.warn("[admin.generateHighValueListingScene] image-conditioned generation failed; retrying from public metadata", referenceError instanceof Error ? referenceError.message : "unknown error");
-            generated = await generateImage({
-              prompt,
-              model: "MODEL_GPT_IMAGE_2",
-              quality: "medium",
-            });
+            if (testedComicPrompts.length && isProviderSceneSafetyRejection(referenceError)) {
+              generated = await generateTestedComicScene();
+            } else {
+              try {
+                generated = await generateImage({
+                  prompt,
+                  model: "MODEL_GPT_IMAGE_2",
+                  quality: "medium",
+                });
+              } catch (metadataError) {
+                if (!testedComicPrompts.length || !isProviderSceneSafetyRejection(metadataError)) throw metadataError;
+                generated = await generateTestedComicScene();
+              }
+            }
           }
           const { url } = generated;
           if (!url?.startsWith("/manus-storage/")) throw new Error("Generated scene did not return managed storage.");
