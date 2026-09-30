@@ -1,11 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   formatPublicGradeValue,
+  normalizeNumericGrade,
   normalizePcgsCoinGrade,
+  numericGradesEquivalent,
   recoverPcgsCoinGradeFromTitle,
 } from "../shared/publicGradeValues";
 
 describe("public grade formatting", () => {
+  it("normalizes equivalent numeric grades across marketplace formats", () => {
+    expect(normalizeNumericGrade("9.60")).toBe("9.6");
+    expect(numericGradesEquivalent("9", "9.0")).toBe(true);
+    expect(numericGradesEquivalent("9.6", "9.4")).toBe(false);
+    expect(numericGradesEquivalent("MS65", "65")).toBe(false);
+  });
+
   it("uses a maximum of one decimal place without changing the stored value", () => {
     expect(formatPublicGradeValue("9.80")).toBe("9.8");
     expect(formatPublicGradeValue(9.85)).toBe("9.9");

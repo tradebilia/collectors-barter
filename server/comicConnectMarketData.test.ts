@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectTimeWindow, computeComicConnectPriceMetrics, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
+import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectCurrentConfidence, classifyComicConnectTimeWindow, computeComicConnectPriceMetrics, computeComicConnectPriceTrend, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
 
 const input = { title: 'Edge of the Spider-Verse #2', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: 'Edge of the Spider-Verse', issueNumber: '2', publisher: 'Marvel', facsimile: 'No', distributionType: 'Direct' }) };
 
@@ -38,6 +38,27 @@ describe('ComicConnect bounded sold adapter', () => {
 
   it('computes deterministic average, median, and min-to-max price context', () => {
     expect(computeComicConnectPriceMetrics([{ price: 125 }, { price: 40 }, { price: 75 }, { price: null }])).toEqual({ count: 3, avg: 80, median: 75, min: 40, max: 125 });
+  });
+
+  it('classifies current-market confidence from recent matched-sale count only', () => {
+    expect(classifyComicConnectCurrentConfidence(0).level).toBe('insufficient');
+    expect(classifyComicConnectCurrentConfidence(1).level).toBe('low');
+    expect(classifyComicConnectCurrentConfidence(2).level).toBe('medium');
+    expect(classifyComicConnectCurrentConfidence(5).level).toBe('high');
+  });
+
+  it('computes a deterministic current, extended, and historical price trend', () => {
+    const trend = computeComicConnectPriceTrend([
+      { price: 100, timeWindow: 'current_12_months' },
+      { price: 120, timeWindow: 'current_12_months' },
+      { price: 80, timeWindow: 'extended_12_to_36_months' },
+      { price: null, timeWindow: 'historical_over_36_months' },
+    ]);
+    expect(trend.map((point) => point.metrics)).toEqual([
+      { count: 2, avg: 110, median: 110, min: 100, max: 120 },
+      { count: 1, avg: 80, median: 80, min: 80, max: 80 },
+      { count: 0, avg: null, median: null, min: null, max: null },
+    ]);
   });
 
   it('treats equivalent decimal grade formatting as a match', () => {

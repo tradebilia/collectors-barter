@@ -103,6 +103,24 @@ function parsePrice(value: string | null): number | null {
 export type ComicConnectTimeWindow = 'current_12_months' | 'extended_12_to_36_months' | 'historical_over_36_months' | 'undated';
 
 export type ComicConnectPriceMetrics = { count: number; avg: number | null; median: number | null; min: number | null; max: number | null };
+export type ComicConnectConfidence = 'high' | 'medium' | 'low' | 'insufficient';
+export type ComicConnectPriceTrendPoint = { window: ComicConnectTimeWindow; label: string; metrics: ComicConnectPriceMetrics };
+
+export function classifyComicConnectCurrentConfidence(currentSaleCount: number): { level: ComicConnectConfidence; reason: string } {
+  if (currentSaleCount >= 5) return { level: 'high', reason: `${currentSaleCount} identity-matched priced sales in the last 12 months provide a strong current-market sample.` };
+  if (currentSaleCount >= 2) return { level: 'medium', reason: `${currentSaleCount} identity-matched priced sales in the last 12 months provide a usable but limited current-market sample.` };
+  if (currentSaleCount === 1) return { level: 'low', reason: 'Only 1 identity-matched priced sale is in the last 12 months; older context is not a substitute for current evidence.' };
+  return { level: 'insufficient', reason: 'No identity-matched priced sales were found in the last 12 months, so current-market confidence is insufficient.' };
+}
+
+export function computeComicConnectPriceTrend(records: Array<{ price: number | null; timeWindow: ComicConnectTimeWindow }>): ComicConnectPriceTrendPoint[] {
+  const definitions: Array<[ComicConnectTimeWindow, string]> = [
+    ['current_12_months', 'Current · 0–12 months'],
+    ['extended_12_to_36_months', 'Extended · 12–36 months'],
+    ['historical_over_36_months', 'Historical · 36+ months'],
+  ];
+  return definitions.map(([window, label]) => ({ window, label, metrics: computeComicConnectPriceMetrics(records.filter((record) => record.timeWindow === window)) }));
+}
 
 export function classifyComicConnectTimeWindow(dateText: string | null | undefined, referenceDate = new Date()): ComicConnectTimeWindow {
   if (!dateText) return 'undated';
@@ -188,6 +206,8 @@ export type ComicConnectLookupResult = {
   context: ComicConnectSale[];
   priceMetrics: ComicConnectPriceMetrics;
   currentPriceMetrics: ComicConnectPriceMetrics;
+  currentConfidence: { level: ComicConnectConfidence; reason: string };
+  priceTrend: ComicConnectPriceTrendPoint[];
   messages: string[];
   raw?: { resultCount: number; url: string };
 };
@@ -196,7 +216,7 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
   const request = requestOverride ?? buildComicConnectSearchUrl(input);
   if (normalize(input.category) !== 'comics') {
     const emptyMetrics = computeComicConnectPriceMetrics([]);
-    return { source: 'comicconnect', status: 'not_applicable', query: request.query, sales: [], context: [], priceMetrics: emptyMetrics, currentPriceMetrics: emptyMetrics, messages: ['ComicConnect is only mapped to Comics.'], raw: { resultCount: 0, url: request.url } };
+    return { source: 'comicconnect', status: 'not_applicable', query: request.query, sales: [], context: [], priceMetrics: emptyMetrics, currentPriceMetrics: emptyMetrics, currentConfidence: classifyComicConnectCurrentConfidence(0), priceTrend: computeComicConnectPriceTrend([]), messages: ['ComicConnect is only mapped to Comics.'], raw: { resultCount: 0, url: request.url } };
   }
 
   const blocks = html.split(/<div\s+class=["'][^"']*itempreview[^"']*["'][^>]*>/i).slice(1, COMICCONNECT_MAX_RESULTS + 1);
@@ -229,9 +249,10 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
   const context = records.filter((record) => !record.completed || !record.identityMatched);
   const priceMetrics = computeComicConnectPriceMetrics(sales);
   const currentPriceMetrics = computeComicConnectPriceMetrics(sales.filter((record) => record.timeWindow === 'current_12_months'));
+  const currentConfidence = classifyComicConnectCurrentConfidence(currentPriceMetrics.count);
   const windows = records.reduce<Record<string, number>>((counts, record) => { counts[record.timeWindow] = (counts[record.timeWindow] ?? 0) + 1; return counts; }, {});
   return {
-    source: 'comicconnect', status: 'success', query: request.query, sales, context, priceMetrics, currentPriceMetrics,
+    source: 'comicconnect', status: 'success', query: request.query, sales, context, priceMetrics, currentPriceMetrics, currentConfidence, priceTrend: computeComicConnectPriceTrend(sales),
     messages: [`ComicConnect returned ${records.length} bounded sold-archive candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`],
     raw: { resultCount: records.length, url: request.url },
   };
@@ -271,6 +292,7 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
   const sales = all.filter((record) => record.completed && record.identityMatched);
   const priceMetrics = computeComicConnectPriceMetrics(sales);
   const currentPriceMetrics = computeComicConnectPriceMetrics(sales.filter((record) => record.timeWindow === 'current_12_months'));
+  const currentConfidence = classifyComicConnectCurrentConfidence(currentPriceMetrics.count);
   const windows = all.reduce<Record<string, number>>((counts, record) => { counts[record.timeWindow] = (counts[record.timeWindow] ?? 0) + 1; return counts; }, {});
   return {
     source: 'comicconnect', status: errors.length === queries.length ? 'error' : 'success',
@@ -279,6 +301,8 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
     context: all.filter((record) => !record.completed || !record.identityMatched),
     priceMetrics,
     currentPriceMetrics,
+    currentConfidence,
+    priceTrend: computeComicConnectPriceTrend(sales),
     messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`, ...errors],
     raw: { resultCount: all.length, url: lastRequest.url },
   };

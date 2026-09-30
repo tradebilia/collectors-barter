@@ -1,3 +1,5 @@
+import { numericGradesEquivalent } from '../shared/publicGradeValues';
+
 export type ParseAuctionLookupInput = {
   title: string;
   category: string;
@@ -91,6 +93,7 @@ function identityMatch(target: ParseAuctionLookupInput, title: string, descripti
 
 function gradeMatches(target: ParseAuctionLookupInput, candidate: JsonRecord): boolean {
   if (!target.grade) return true;
+  if (numericGradesEquivalent(target.grade, candidate.grade)) return true;
   const expected = normalize(`${target.certificationCompany ?? ''} ${target.grade}`).replace(/ /g, '');
   const actual = normalize(`${candidate.grader ?? candidate.certificationCompany ?? ''} ${candidate.grade ?? ''} ${candidate.title ?? ''}`).replace(/ /g, '');
   return Boolean(!expected || actual.includes(expected) || (text(target.grade) && actual.includes(normalize(target.grade).replace(/ /g, ''))));

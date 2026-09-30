@@ -24,6 +24,22 @@ export function formatPublicGradeValue(value: string | number | null | undefined
   return (Math.round((numericValue + Number.EPSILON) * 10) / 10).toString();
 }
 
+/** Canonical numeric grade for cross-market identity gates; non-numeric labels remain source-specific. */
+export function normalizeNumericGrade(value: string | number | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  const normalized = String(value).trim().replace(/^grade\s*/i, '');
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const numericValue = Number(normalized);
+  return Number.isFinite(numericValue) && numericValue > 0 ? String(numericValue) : null;
+}
+
+/** Treat decimal formatting differences such as 9, 9.0, and 9.00 as equivalent. */
+export function numericGradesEquivalent(left: string | number | null | undefined, right: string | number | null | undefined): boolean {
+  const normalizedLeft = normalizeNumericGrade(left);
+  const normalizedRight = normalizeNumericGrade(right);
+  return normalizedLeft !== null && normalizedLeft === normalizedRight;
+}
+
 /** Normalize a PCGS coin label for storage and market-search matching. */
 export function normalizePcgsCoinGrade(value: string | number | null | undefined): string | null {
   if (value === null || value === undefined) return null;

@@ -3,6 +3,7 @@ import {
   isPermissionPendingMarketSourceApplicable,
   type PermissionPendingMarketSourceId,
 } from '../shared/permissionPendingMarketSources';
+import { numericGradesEquivalent } from '../shared/publicGradeValues';
 
 export type PermissionPendingLookupInput = {
   title: string;
@@ -95,6 +96,7 @@ function hasCompletedStatus(record: PendingSourceRecord): boolean {
 }
 
 function gradeMatches(input: PermissionPendingLookupInput, record: PendingSourceRecord): boolean {
+  if (numericGradesEquivalent(input.grade, String(record.grade ?? ''))) return true;
   const expected = normalized(`${input.certificationCompany ?? ''} ${input.grade ?? ''}`).replace(/ /g, '');
   if (!expected) return true;
   const observed = normalized(`${record.certificationCompany ?? ''} ${record.grade ?? ''} ${record.title ?? ''}`).replace(/ /g, '');

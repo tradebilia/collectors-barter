@@ -1,3 +1,5 @@
+import { normalizeNumericGrade } from '../shared/publicGradeValues';
+
 export type IdentityState = 'raw' | 'graded' | 'unknown';
 
 export type IdentityStateSnapshot = {
@@ -69,7 +71,7 @@ export function identityStateConflicts(target: IdentityStateSnapshot, sale: Iden
   const conflicts: string[] = [];
   if (target.state !== 'unknown' && sale.state !== 'unknown' && target.state !== sale.state) conflicts.push(`raw/graded state differs (${sale.state} vs ${target.state})`);
   if (target.grader && sale.grader && target.grader !== sale.grader) conflicts.push(`grading company differs (${sale.grader.toUpperCase()} vs ${target.grader.toUpperCase()})`);
-  if (target.grade && sale.grade && target.grade !== sale.grade) conflicts.push(`grade differs (${sale.grade} vs ${target.grade})`);
+  if (target.grade && sale.grade && target.grade !== sale.grade && normalizeNumericGrade(target.grade) !== normalizeNumericGrade(sale.grade)) conflicts.push(`grade differs (${sale.grade} vs ${target.grade})`);
   if (target.parallel && sale.parallel && target.parallel !== sale.parallel) conflicts.push(`parallel/variant differs (${sale.parallel} vs ${target.parallel})`);
   if (target.autograph === 'auto' && sale.autograph === 'unknown') conflicts.push('autograph status is not stated');
   if (target.autograph === 'unknown' && sale.autograph === 'auto') conflicts.push('sale declares an autograph/signature not declared by target');

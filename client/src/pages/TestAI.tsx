@@ -2120,6 +2120,10 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
   const mismatches = records.filter((record: any) => !record.identityMatched);
   const priceMetrics = data?.priceMetrics;
   const currentPriceMetrics = data?.currentPriceMetrics;
+  const currentConfidence = data?.currentConfidence;
+  const priceTrend = data?.priceTrend ?? [];
+  const trendMax = Math.max(...priceTrend.map((point: any) => Number(point.metrics?.avg) || 0), 1);
+  const confidenceStyle: Record<string, string> = { high: 'bg-emerald-900/60 text-emerald-200 border-emerald-700/50', medium: 'bg-sky-900/60 text-sky-200 border-sky-700/50', low: 'bg-amber-900/60 text-amber-200 border-amber-700/50', insufficient: 'bg-rose-900/60 text-rose-200 border-rose-700/50' };
   const formatPrice = (value: number | null | undefined) => value == null ? '—' : `$${Math.round(value).toLocaleString()}`;
   return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
     <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 ComicConnect Sold Archive</p>
@@ -2136,6 +2140,24 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
         </div>
         <p className="text-[9px] text-amber-200/80">Context only—not a current trade valuation. Older matched sales are included for trend visibility.</p>
         {currentPriceMetrics?.count > 0 ? <p className="text-[9px] text-emerald-300">Current 12-month context: {currentPriceMetrics.count} sale{currentPriceMetrics.count === 1 ? '' : 's'} · Avg {formatPrice(currentPriceMetrics.avg)} · Median {formatPrice(currentPriceMetrics.median)} · Range {formatPrice(currentPriceMetrics.min)}–{formatPrice(currentPriceMetrics.max)}.</p> : <p className="text-[9px] text-amber-300">No identity-matched priced sales were found in the current 12-month window; displayed prices are older context.</p>}
+      </div>}
+      {currentConfidence && <div className={`rounded border p-2 ${confidenceStyle[currentConfidence.level] ?? confidenceStyle.insufficient}`}>
+        <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold uppercase">Current-market confidence</p><span className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase">{currentConfidence.level}</span></div>
+        <p className="mt-1 text-[9px] opacity-90">{currentConfidence.reason}</p>
+        <p className="mt-1 text-[9px] opacity-70">Based only on identity-matched, priced sales in the last 12 months—not historical records or mismatches.</p>
+      </div>}
+      {priceTrend.length > 0 && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2">
+        <div className="flex items-center justify-between gap-2"><p className="text-[10px] font-semibold text-violet-100">Price trend by sale window</p><span className="text-[9px] text-violet-300/70">matched priced sales · context only</span></div>
+        <div className="mt-2 space-y-1.5">{priceTrend.map((point: any) => {
+          const average = Number(point.metrics?.avg) || 0;
+          const width = average > 0 ? Math.max(4, Math.round((average / trendMax) * 100)) : 0;
+          return <div key={point.window} className="grid grid-cols-[7.5rem_1fr_4.5rem] items-center gap-2 text-[9px]">
+            <span className="truncate text-gray-300">{point.label}</span>
+            <div className="h-2 overflow-hidden rounded-full bg-gray-800"><div className={`h-full rounded-full ${point.window === 'current_12_months' ? 'bg-emerald-400' : point.window === 'extended_12_to_36_months' ? 'bg-sky-400' : 'bg-amber-400'}`} style={{ width: `${width}%` }} /></div>
+            <span className="text-right text-gray-300">{point.metrics?.count ? `${formatPrice(point.metrics.avg)} avg · ${point.metrics.count}` : 'No priced sales'}</span>
+          </div>;
+        })}</div>
+        <p className="mt-1.5 text-[9px] text-violet-200/70">Bars compare average prices within each window. A missing bar means no identity-matched priced sale was available.</p>
       </div>}
       <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
         <p className="text-[10px] font-semibold text-cyan-100">Identity review — what would be eligible for further analyzer review</p>

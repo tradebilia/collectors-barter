@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMarketProfile, deterministicTradeComparison, scoreComparable } from './testAiComparableEngine';
-import { extractIdentityState } from './testAiIdentityState';
+import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
 
 const date = '2026-09-20';
 const sale = (title: string, price: number) => ({ title, price, currency: 'USD', date, saleStatus: 'completed' as const, priceBasis: 'sold' as const, sourceId: 'ebay', saleId: `${title}-${price}` });
@@ -9,6 +9,12 @@ describe('universal analyzer identity state', () => {
   it('distinguishes raw and graded listings', () => {
     expect(extractIdentityState({ title: '2018 Panini Luka Doncic #280 raw' }).state).toBe('raw');
     expect(extractIdentityState({ title: '2018 Panini Luka Doncic #280 PSA 10' }).state).toBe('graded');
+  });
+
+  it('treats equivalent numeric grade formatting as the same grade', () => {
+    const target = extractIdentityState({ title: 'CGC comic', grade: '9.60', certificationCompany: 'CGC' });
+    const sale = extractIdentityState({ title: 'CGC comic', grade: '9.6', certificationCompany: 'CGC' });
+    expect(identityStateConflicts(target, sale)).not.toContain('grade differs (9.6 vs 9.60)');
   });
 
   it('rejects a graded candidate for a raw target and a raw candidate for a graded target', () => {
