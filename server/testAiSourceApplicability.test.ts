@@ -50,6 +50,8 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(gameIds).toEqual(expect.arrayContaining(['goldin', 'hakes']));
     expect(gameIds).not.toContain('heritage');
     expect(gameIds).not.toContain('swann');
+    const autographIds = getEligibleTestAiSources({ category: 'autographs', hasTitle: true }).map((source) => source.sourceId);
+    for (const removed of ['university_archives', 'swann', 'alexander_historical', 'heritage']) expect(autographIds).not.toContain(removed);
 
     for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
       expect(getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId), `Goldin should be eligible for ${category}`).toContain('goldin');

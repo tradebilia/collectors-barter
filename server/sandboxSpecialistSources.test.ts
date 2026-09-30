@@ -3,11 +3,15 @@ import { SANDBOX_SPECIALIST_SOURCES, getSandboxSpecialistSource, isSandboxSpecia
 import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 describe('sandbox specialist source activation', () => {
-  it('activates the 19 authorized test sources and excludes Omega, Propstore, and unapproved sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(19);
+  it('activates the 15 displayed test sources and excludes CloudFront-blocked or unapproved sources', () => {
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(15);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('omega_auctions');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('propstore');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['heritage', 'bertoia', 'hakes', 'coin_archives']));
+    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'coin_archives']));
+    for (const removed of ['university_archives', 'swann', 'heritage', 'alexander_historical']) {
+      expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain(removed);
+      expect(getSandboxSpecialistSource(removed)).toBeNull();
+    }
   });
 
   it('keeps category mapping source-specific', () => {
@@ -30,13 +34,6 @@ describe('sandbox specialist source activation', () => {
     }
     expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('automatic_title_search');
     expect(getSandboxSpecialistSource('morphy')?.searchContract).toBe('public_locator_required');
-    expect(getSandboxSpecialistSource('heritage')?.searchContract).toBe('public_contract_unverified');
-    expect(getSandboxSpecialistSource('alexander_historical')).toMatchObject({
-      searchContract: 'public_contract_unverified',
-      priceBasis: 'unknown',
-      sourceUrl: 'https://www.alexautographs.com/auctions/past-auctions/',
-    });
-    expect(getSandboxSpecialistSource('alexander_historical')?.searchInstruction).toMatch(/Search Auctions\/Lots.*search-results\?query=<title>&past=1.*HTTP 403/i);
     expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');
   });
 

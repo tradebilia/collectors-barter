@@ -100,7 +100,8 @@ describe('permission-pending market-source adapters', () => {
   });
 
   it('keeps every registered pending source mapped to each of its researched categories', () => {
-    for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'pending_permission' && candidate.id !== 'propstore')) {
+    const removedFromSandboxDisplay = new Set(['university_archives', 'swann', 'heritage', 'alexander_historical']);
+    for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'pending_permission' && candidate.id !== 'propstore' && !removedFromSandboxDisplay.has(candidate.id))) {
       const sourceId = source.id;
       for (const category of source.categories) {
         const eligibleIds = getEligibleTestAiSources({

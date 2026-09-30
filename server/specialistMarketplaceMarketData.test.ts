@@ -178,17 +178,17 @@ describe('bounded specialist marketplace adapters', () => {
   it('hard-stops a source without a verified public completed-sale request contract', () => {
     const request = buildSpecialistMarketplaceRequest({ ...videoGame, sourceId: 'heritage' });
     expect(request.url).toBeNull();
-    expect(request.error).toMatch(/no verified public completed-sale request contract/i);
+    expect(request.error).toMatch(/source is not registered/i);
   });
 
-  it('does not attempt the browser-visible Alexander past-results query when the server contract is blocked', () => {
+  it('does not attempt the removed Alexander past-results query', () => {
     const request = buildSpecialistMarketplaceRequest({
       sourceId: 'alexander_historical',
       title: 'Donald Trump Signed Photograph',
       category: 'autographs',
     });
     expect(request.url).toBeNull();
-    expect(request.error).toMatch(/no verified public completed-sale request contract/i);
+    expect(request.error).toMatch(/source is not registered/i);
   });
 
   it('retains an explicit completed locator result as context-only and separates a different toy identity', () => {
