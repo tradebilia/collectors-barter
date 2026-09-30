@@ -38,7 +38,6 @@ import { lookupCardsightAi } from './cardsightAi';
 import { lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupComicConnectSold } from './comicConnectMarketData';
 import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
-import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
@@ -585,20 +584,20 @@ export const testAIRouter = router({
       }
       return preview;
     }),
-  // Get the logged-in user's active inventory for the item picker
+  // Read-only admin sandbox picker: include every item owned by the administrator,
+  // including inactive, archived, and traded records. Selection never changes a listing.
   getMyInventory: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
     const db = await requireDb();
     const [rows] = await db.execute(
       sql`
         SELECT
-          l.id, l.title, l.category, l.itemType, l.condition, l.grade, l.certificationCompany,
+          l.id, l.title, l.category, l.itemType, l.condition, l.grade, l.certificationCompany, l.status, l.isActive,
           l.estimatedValue, l.itemDetails, l.description,
           (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) as primaryPhotoUrl
         FROM listings l
-        WHERE l.ownerId = ${ctx.user.id} AND l.status = 'active' AND l.isActive = 1
-        ORDER BY l.createdAt DESC
-        LIMIT 100
+        WHERE l.ownerId = ${ctx.user.id}
+        ORDER BY l.updatedAt DESC, l.id DESC
       `
     ) as any;
     const arr = Array.isArray(rows) ? rows : [];
@@ -624,28 +623,28 @@ export const testAIRouter = router({
         manufacturer: resolveTestAiManufacturer(parsedDetails),
         description: r.description ?? null,
         primaryPhotoUrl: r.primaryPhotoUrl ?? null,
+        status: r.status,
+        isActive: Number(r.isActive) === 1,
       };
     });
   }),
 
-  // Read-only all-accounts picker: only active listings from open, public profiles.
-  // Test AI remains admin-only, but the same public-visibility rule protects member data.
-  getAllPublicItems: protectedProcedure.query(async ({ ctx }) => {
+  // Read-only admin sandbox picker: include every listing across the workspace,
+  // including inactive, archived, and traded records. This is not a public route.
+  getAllSandboxItems: protectedProcedure.query(async ({ ctx }) => {
     if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
     const db = await requireDb();
     const [rows] = await db.execute(
       sql`
         SELECT
-          l.id, l.title, l.category, l.itemType, l.condition, l.grade, l.certificationCompany,
+          l.id, l.title, l.category, l.itemType, l.condition, l.grade, l.certificationCompany, l.status, l.isActive,
           l.estimatedValue, l.itemDetails, l.description,
           COALESCE(NULLIF(up.displayName, ''), NULLIF(u.displayName, ''), NULLIF(u.username, ''), 'Member') AS ownerDisplayName,
           (SELECT lp.imageUrl FROM listingPhotos lp WHERE lp.listingId = l.id ORDER BY lp.sortOrder ASC LIMIT 1) AS primaryPhotoUrl
         FROM listings l
         INNER JOIN users u ON u.id = l.ownerId
         LEFT JOIN userProfiles up ON up.userId = u.id
-        WHERE l.status = 'active' AND l.isActive = 1
-          AND ${isPublicMemberEligible(sql`l.ownerId`)}
-        ORDER BY l.createdAt DESC, l.id DESC
+        ORDER BY l.updatedAt DESC, l.id DESC
       `,
     ) as any;
     const arr = Array.isArray(rows) ? rows : [];
@@ -672,6 +671,8 @@ export const testAIRouter = router({
         description: r.description ?? null,
         primaryPhotoUrl: r.primaryPhotoUrl ?? null,
         ownerDisplayName: r.ownerDisplayName ?? 'Member',
+        status: r.status,
+        isActive: Number(r.isActive) === 1,
       };
     });
   }),

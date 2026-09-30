@@ -329,6 +329,13 @@ const GRADING_COMPANIES = ['CGC', 'PSA', 'BGS', 'PCGS', 'NGC', 'CBCS', 'SGC', 'H
 type GradingCompany = typeof GRADING_COMPANIES[number];
 type ItemSource = 'inventory' | 'cert';
 
+function itemAvailabilityLabel(item: { status?: string | null; isActive?: boolean | number | null }): string {
+  const status = String(item.status ?? '').trim().toLowerCase();
+  if (status === 'traded') return 'Traded';
+  if (status === 'archived') return 'Archived';
+  return Number(item.isActive) === 1 || item.isActive === true ? 'Available' : 'Inactive';
+}
+
 interface SelectedItem {
   id?: number;
   title: string;
@@ -449,15 +456,15 @@ function SourceSelector({ enabled, onChange, side, item }: {
 }
 
 // ─── Item Panel ──────────────────────────────────────────────────────────────
-function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, inventoryLoading, allItems, allItemsLoading }: {
+function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, inventoryLoading, sandboxItems, sandboxItemsLoading }: {
   side: 'left' | 'right';
   item: SelectedItem | null;
   onItemChange: (item: SelectedItem | null) => void;
   onSourceChange: (s: Set<SourceId>) => void;
   inventory: any[];
   inventoryLoading: boolean;
-  allItems: any[];
-  allItemsLoading: boolean;
+  sandboxItems: any[];
+  sandboxItemsLoading: boolean;
 }) {
   const [source, setSource] = useState<ItemSource>('inventory');
   const [inventoryScope, setInventoryScope] = useState<'mine' | 'all'>('mine');
@@ -471,8 +478,8 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
   const bgColor = side === 'left' ? 'bg-cyan-900/10' : 'bg-amber-900/10';
   const label = side === 'left' ? 'ITEM A' : 'ITEM B';
 
-  const selectableItems = inventoryScope === 'all' ? allItems : inventory;
-  const selectableItemsLoading = inventoryScope === 'all' ? allItemsLoading : inventoryLoading;
+  const selectableItems = inventoryScope === 'all' ? sandboxItems : inventory;
+  const selectableItemsLoading = inventoryScope === 'all' ? sandboxItemsLoading : inventoryLoading;
 
   const handleInventorySelect = (id: number) => {
     setSelectedInventoryId(id);
@@ -524,11 +531,15 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
                 onClick={() => { setInventoryScope(scope); setSelectedInventoryId(null); onItemChange(null); }}
                 className={`flex-1 rounded px-2 py-1 text-[10px] font-semibold transition-colors ${inventoryScope === scope ? 'bg-white/10 text-white' : 'text-gray-500 hover:text-gray-300'}`}
               >
-                {scope === 'mine' ? 'My Inventory' : 'All Public Items'}
+                {scope === 'mine' ? 'My Inventory' : 'All Sandbox Items'}
               </button>
             ))}
           </div>
-          <p className="text-[10px] text-gray-500">All Public Items includes active listings from members who allow public profile visibility.</p>
+          <p className="text-[10px] text-gray-500">
+            {inventoryScope === 'mine'
+              ? 'My Inventory includes available, inactive, archived, and traded items.'
+              : 'All Sandbox Items includes every listing status for this administrator-only analyzer sandbox.'}
+          </p>
           {selectableItemsLoading ? (
             <div className="flex items-center gap-2 text-gray-500 text-sm"><Spinner className="w-4 h-4" /> Loading...</div>
           ) : (
@@ -537,7 +548,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
               <option value="">— Select an item —</option>
               {selectableItems.map((i: any) => (
                 <option key={i.id} value={i.id}>
-                  {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${formatGrade(i.grade)})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''}
+                  {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${formatGrade(i.grade)})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''} — {itemAvailabilityLabel(i)}
                 </option>
               ))}
             </select>
@@ -3088,7 +3099,7 @@ export default function TestAI() {
   const { data: inventory = [], isLoading: inventoryLoading } = trpc.testAI.getMyInventory.useQuery(undefined, {
     enabled: !!user && user.role === 'admin',
   });
-  const { data: allItems = [], isLoading: allItemsLoading } = trpc.testAI.getAllPublicItems.useQuery(undefined, {
+  const { data: sandboxItems = [], isLoading: sandboxItemsLoading } = trpc.testAI.getAllSandboxItems.useQuery(undefined, {
     enabled: !!user && user.role === 'admin',
   });
 
@@ -3298,11 +3309,11 @@ export default function TestAI() {
       <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {/* Item selectors */}
         <div className="flex gap-4">
-          <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} allItems={allItems} allItemsLoading={allItemsLoading} />
+          <ItemPanel side="left" item={leftItem} onItemChange={setLeftItem} onSourceChange={setLeftSources} inventory={inventory} inventoryLoading={inventoryLoading} sandboxItems={sandboxItems} sandboxItemsLoading={sandboxItemsLoading} />
           <div className="flex items-center justify-center flex-shrink-0">
             <div className="w-10 h-10 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center text-gray-400 font-bold text-sm">VS</div>
           </div>
-          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} allItems={allItems} allItemsLoading={allItemsLoading} />
+          <ItemPanel side="right" item={rightItem} onItemChange={setRightItem} onSourceChange={setRightSources} inventory={inventory} inventoryLoading={inventoryLoading} sandboxItems={sandboxItems} sandboxItemsLoading={sandboxItemsLoading} />
         </div>
 
         {/* Data source selectors — only show when items are selected */}
