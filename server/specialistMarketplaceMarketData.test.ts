@@ -1,13 +1,14 @@
-import { describe, expect, it } from 'vitest';
-import { buildSpecialistMarketplaceRequest, parseSpecialistMarketplaceHtml } from './specialistMarketplaceMarketData';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { buildSpecialistMarketplaceRequest, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml } from './specialistMarketplaceMarketData';
 
+const goldinMarioLotUrl = 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-variation-late-producti9parx';
 const videoGame = {
   sourceId: 'goldin' as const,
-  title: '1978 Atari Space Invaders Sealed Video Game Wata 9.4',
+  title: '1990 Super Mario Bros. 3 Sealed Video Game WATA 9.60',
   category: 'video_games',
-  grade: '9.40',
+  grade: '9.60',
   certificationCompany: 'WATA',
-  itemDetails: JSON.stringify({ year: '1978', platform: 'Atari 2600', title: 'Space Invaders' }),
+  itemDetails: JSON.stringify({ year: '1990', platform: 'NES', title: 'Super Mario Bros. 3' }),
 };
 
 const vintageToy = {
@@ -19,11 +20,52 @@ const vintageToy = {
 
 const morphyLotUrl = 'https://auctions.morphyauctions.com/LOT123456.aspx';
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe('bounded specialist marketplace adapters', () => {
-  it('hard-stops Goldin when its public Video Games + Sold response is only a JavaScript shell', () => {
-    const request = buildSpecialistMarketplaceRequest(videoGame);
-    expect(request.url).toBeNull();
-    expect(request.error).toMatch(/no verified public completed-sale request contract/i);
+  it('requires a public Goldin item-detail URL and accepts the verified direct-lot route', () => {
+    const missing = buildSpecialistMarketplaceRequest(videoGame);
+    expect(missing.url).toBeNull();
+    expect(missing.error).toMatch(/Paste a public Goldin \/item\//i);
+
+    const rejected = buildSpecialistMarketplaceRequest({ ...videoGame, sourceUrl: 'https://goldin.co/buy/?show_only=Sold%20Items' });
+    expect(rejected.url).toBeNull();
+    expect(rejected.error).toMatch(/allowlisted public Goldin/i);
+
+    const accepted = buildSpecialistMarketplaceRequest({ ...videoGame, sourceUrl: goldinMarioLotUrl });
+    expect(accepted).toEqual({ url: goldinMarioLotUrl, error: null });
+  });
+
+  it('reads a public Goldin direct-lot response, calculates all-in context, and preserves buyer-premium transparency', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      auction_title: 'Goldin September 2021 Auction',
+      lot: {
+        lot_id: '109637',
+        lot_number: 48,
+        title: '1990 NES Nintendo (USA) "Super Mario Bros. 3" Right Variation Sealed Video Game - WATA 9.6/A++',
+        description: 'Encapsulated and graded 9.6 by WATA Games. Sealed Nintendo Entertainment System copy.',
+        status: 'Completed_Sold',
+        final_price: 28000,
+        buyer_premium: '20',
+        end_timestamp: '2021-09-19T00:40:00Z',
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    const result = await lookupSpecialistMarketplace({ ...videoGame, sourceUrl: goldinMarioLotUrl });
+    expect(result.status).toBe('success');
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({
+      sourceId: 'goldin',
+      completed: true,
+      price: 33600,
+      winningBid: 28000,
+      buyerPremiumPercentage: 20,
+      buyerPremiumIncluded: true,
+      priceBasis: 'closed',
+      currency: 'USD',
+      valuationEligible: false,
+    });
+    expect(result.messages.join(' ')).toMatch(/Winning bid \$28,000 plus 20% buyer premium equals displayed all-in context \$33,600/i);
   });
 
   it('requires a public allowlisted locator when a source has no generic keyword contract', () => {
@@ -64,6 +106,8 @@ describe('bounded specialist marketplace adapters', () => {
       valuationEligible: false,
       priceBasis: 'closed',
       buyerPremiumIncluded: true,
+      winningBid: null,
+      buyerPremiumPercentage: null,
     });
     expect(result.context).toHaveLength(1);
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold/i);

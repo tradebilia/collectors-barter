@@ -50,7 +50,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'swann', categories: ['autographs'], requires: 'title', purpose: 'Permission-pending Swann adapter for autograph and manuscript research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'rr_auction', categories: ['autographs', 'music'], requires: 'title', purpose: 'Permission-pending RR Auction adapter for signed memorabilia and music research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'alexander_historical', categories: ['autographs'], requires: 'title', purpose: 'Permission-pending Alexander Historical Auctions adapter. Remote lookup is disabled until source authorization is recorded.' },
-  { sourceId: 'goldin', categories: ['video games'], requires: 'title', purpose: 'Permission-pending Goldin adapter for high-end video-game auction research. Remote lookup is disabled until source authorization is recorded.' },
+  { sourceId: 'goldin', categories: ['video games'], requires: 'title', purpose: 'Bounded Goldin completed-lot context. Paste one public Goldin /item/ URL; the anonymous public lot response is identity-filtered and remains outside valuation.' },
   { sourceId: 'hakes', categories: ['disney pins', 'video games', 'vintage toys'], requires: 'title', purpose: 'Permission-pending Hake’s adapter for specialist collectible-auction research. Remote lookup is disabled until source authorization is recorded.' },
 ];
 

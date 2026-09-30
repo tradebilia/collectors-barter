@@ -38,6 +38,8 @@ export type SpecialistMarketplaceRecord = {
   certificationCompany: string | null;
   priceBasis: 'realized' | 'closed' | 'unknown';
   buyerPremiumIncluded: boolean | null;
+  winningBid: number | null;
+  buyerPremiumPercentage: number | null;
   identityMatched: boolean;
   matchedTokens: string[];
   exclusionReason: string | null;
@@ -76,8 +78,10 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   bonhams: { hosts: ['bonhams.com', 'www.bonhams.com'], linkPattern: /\/auction\//i, recordCap: 8 },
   university_archives: { hosts: ['universityarchives.com', 'www.universityarchives.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   alexander_historical: { hosts: ['alexautographs.com', 'www.alexautographs.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
-  goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/(?:buy|item)\//i, recordCap: 12 },
+  goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 1 },
 };
+
+const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
 
 function text(value: unknown): string {
   return value == null ? '' : String(value)
@@ -130,6 +134,21 @@ function canonicalUrl(value: string): string | null {
   } catch {
     return null;
   }
+}
+
+function publicGoldinLotSlug(value: string): string | null {
+  if (!isAllowedSourceUrl('goldin', value)) return null;
+  const slug = new URL(value).pathname.match(/^\/item\/([a-z0-9-]{8,240})\/?$/i)?.[1] ?? null;
+  return slug ? decodeURIComponent(slug) : null;
+}
+
+function numberValue(value: unknown): number | null {
+  if (typeof value === 'number') return Number.isFinite(value) && value >= 0 ? value : null;
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value.replace(/[$,%\s,]/g, ''));
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  }
+  return null;
 }
 
 function isAllowedSourceUrl(sourceId: SandboxSpecialistSourceId, candidate: string): boolean {
@@ -349,6 +368,8 @@ export function parseSpecialistMarketplaceHtml(sourceId: SandboxSpecialistSource
       certificationCompany: extractCertificationCompany(body),
       priceBasis: pricePolicy.priceBasis,
       buyerPremiumIncluded: pricePolicy.buyerPremiumIncluded,
+      winningBid: null,
+      buyerPremiumPercentage: null,
       identityMatched: identity.matched,
       matchedTokens: identity.matchedTokens,
       exclusionReason: !completed
@@ -370,6 +391,115 @@ export function parseSpecialistMarketplaceHtml(sourceId: SandboxSpecialistSource
   };
 }
 
+type GoldinPublicLotResponse = {
+  auction_title?: unknown;
+  lot?: {
+    title?: unknown;
+    description?: unknown;
+    lot_id?: unknown;
+    lot_number?: unknown;
+    status?: unknown;
+    final_price?: unknown;
+    buyer_premium?: unknown;
+    end_timestamp?: unknown;
+  };
+};
+
+function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, sourceUrl: string, payload: GoldinPublicLotResponse): SpecialistMarketplaceLookupResult {
+  const source = getSandboxSpecialistSource('goldin')!;
+  const base = {
+    source: 'goldin' as const,
+    label: source.label,
+    searchContract: source.searchContract,
+    query: input.title,
+    sales: [] as SpecialistMarketplaceRecord[],
+    context: [] as SpecialistMarketplaceRecord[],
+    requestUrl: sourceUrl,
+    recordCap: 1,
+  };
+  const lot = payload.lot;
+  if (!lot) return { ...base, status: 'error' as const, messages: ['Goldin returned a public response without a lot record; it was not interpreted as a sale.'] };
+
+  const title = text(lot.title);
+  const description = text(lot.description);
+  const winningBid = numberValue(lot.final_price);
+  const buyerPremiumPercentage = numberValue(lot.buyer_premium);
+  const completed = normalize(lot.status) === 'completed sold' && winningBid != null && buyerPremiumPercentage != null;
+  const allInPrice = completed ? Math.round(winningBid * (1 + buyerPremiumPercentage / 100) * 100) / 100 : null;
+  const dateText = text(lot.end_timestamp);
+  const date = dateText && Number.isFinite(Date.parse(dateText)) ? new Date(dateText).toISOString() : null;
+  const grade = extractGrade(`${title} ${description}`);
+  const certificationCompany = extractCertificationCompany(`${title} ${description}`);
+  const identity = identityReview(input, title, description, grade, certificationCompany);
+  const lotId = text(lot.lot_id) || (lot.lot_number != null ? String(lot.lot_number) : null);
+  const record: SpecialistMarketplaceRecord = {
+    sourceId: 'goldin',
+    provider: source.label,
+    title: title || 'Untitled public Goldin lot',
+    description: description || null,
+    lotId,
+    auctionName: text(payload.auction_title) || null,
+    url: canonicalUrl(sourceUrl),
+    imageUrl: null,
+    saleStatus: completed ? 'completed' : 'unknown',
+    completed,
+    price: allInPrice,
+    currency: allInPrice != null ? 'USD' : null,
+    date,
+    grade,
+    certificationCompany,
+    priceBasis: completed ? 'closed' : 'unknown',
+    buyerPremiumIncluded: completed ? true : null,
+    winningBid,
+    buyerPremiumPercentage,
+    identityMatched: identity.matched,
+    matchedTokens: identity.matchedTokens,
+    exclusionReason: !completed
+      ? 'The public Goldin lot did not provide Completed_Sold status, winning bid, and buyer-premium percentage together.'
+      : !identity.matched
+        ? identity.reason ?? 'Identity could not be confirmed.'
+        : 'Context-only pending source-specific signed-admission validation.',
+    valuationEligible: false,
+  };
+  const sales = record.completed && record.identityMatched ? [record] : [];
+  return {
+    ...base,
+    status: 'success',
+    sales,
+    context: sales.length ? [] : [record],
+    messages: [`Goldin read one public supplied lot URL. ${completed ? `Winning bid $${winningBid.toLocaleString()} plus ${buyerPremiumPercentage}% buyer premium equals displayed all-in context $${allInPrice!.toLocaleString()}.` : 'The lot did not meet the completed-sale field requirement.'} The record remains context-only and cannot affect valuation or the final AI conclusion.`],
+  };
+}
+
+async function lookupGoldinPublicLot(input: SpecialistMarketplaceLookupInput, sourceUrl: string): Promise<SpecialistMarketplaceLookupResult> {
+  const source = getSandboxSpecialistSource('goldin')!;
+  const slug = publicGoldinLotSlug(sourceUrl);
+  const empty = {
+    source: 'goldin' as const,
+    label: source.label,
+    searchContract: source.searchContract,
+    query: input.title,
+    sales: [] as SpecialistMarketplaceRecord[],
+    context: [] as SpecialistMarketplaceRecord[],
+    requestUrl: sourceUrl,
+    recordCap: 1,
+  };
+  if (!slug) return { ...empty, status: 'setup_required' as const, messages: ['Paste a public Goldin /item/ lot URL.'] };
+  try {
+    const response = await fetch(`${GOLDIN_PUBLIC_LOT_ENDPOINT}${encodeURIComponent(slug)}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },
+      redirect: 'error',
+      signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS),
+    });
+    if (!response.ok) return { ...empty, status: 'error' as const, messages: [`Goldin public lot data returned HTTP ${response.status}; no retry or access workaround was attempted.`] };
+    if (!/json/i.test(response.headers.get('content-type') ?? '')) return { ...empty, status: 'error' as const, messages: ['Goldin public lot data returned an unsupported response type; it was not parsed.'] };
+    return parseGoldinPublicLotResponse(input, sourceUrl, await response.json() as GoldinPublicLotResponse);
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError';
+    return { ...empty, status: 'error' as const, messages: [timedOut ? 'Goldin public lot data timed out; no retry was attempted.' : 'Goldin public lot data could not be reached; no access workaround was attempted.'] };
+  }
+}
+
 export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource(input.sourceId);
   const request = buildSpecialistMarketplaceRequest(input);
@@ -386,6 +516,7 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (!source) return { ...empty, status: 'error', messages: ['This specialist marketplace source is not registered.'] };
   if (!isSandboxSpecialistSourceApplicable(input.sourceId, input.category)) return { ...empty, status: 'not_applicable', messages: [`${source.label} is not mapped to this item category.`] };
   if (!request.url) return { ...empty, status: source.searchContract === 'public_contract_unverified' ? 'unsupported' : 'setup_required', messages: [request.error ?? source.searchInstruction] };
+  if (input.sourceId === 'goldin') return lookupGoldinPublicLot(input, request.url);
   try {
     const response = await fetch(request.url, {
       headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },

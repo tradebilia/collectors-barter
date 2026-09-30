@@ -79,6 +79,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('No request is sent. This source stays visible for audit');
     expect(source).toContain('No specialist record from this panel affects valuation');
     expect(source).toContain("source.id !== 'comicconnect'");
+    expect(source).toContain('buyer premium = all-in context');
   });
 
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
