@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectCurrentConfidence, classifyComicConnectTimeWindow, computeComicConnectPriceMetrics, computeComicConnectPriceTrend, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
+import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectCurrentConfidence, classifyComicConnectTimeWindow, computeComicConnectPriceMetrics, computeComicConnectPriceTrend, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml, rankComicConnectSearchQueries, rememberSuccessfulComicConnectQuery, resetComicConnectQueryLearningForTests } from './comicConnectMarketData';
 
 const input = { title: 'Edge of the Spider-Verse #2', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: 'Edge of the Spider-Verse', issueNumber: '2', publisher: 'Marvel', facsimile: 'No', distributionType: 'Direct' }) };
 
@@ -29,6 +29,16 @@ describe('ComicConnect bounded sold adapter', () => {
       'Spider-Man 238',
     ].filter((query, index, values) => values.indexOf(query) === index));
     expect(buildComicConnectSearchQueries({ ...input, itemDetails: JSON.stringify({ comicTitle: 'Edge of Spider-Verse', issueNumber: '2' }) })).toContain('Spider-Verse 2');
+  });
+
+  it('learns successful variants and ranks them before weaker variants for the same title and issue', () => {
+    resetComicConnectQueryLearningForTests();
+    const learnedInput = { ...input, itemDetails: JSON.stringify({ comicTitle: 'Edge of Spider-Verse', issueNumber: '2' }) };
+    rememberSuccessfulComicConnectQuery(learnedInput, 'Spider-Verse 2');
+    rememberSuccessfulComicConnectQuery(learnedInput, 'Spider-Verse 2');
+    const ranked = rankComicConnectSearchQueries(learnedInput, ['Edge of Spider-Verse #2', 'Spider-Verse 2']);
+    expect(ranked[0]).toBe('Spider-Verse 2');
+    resetComicConnectQueryLearningForTests();
   });
 
   it('classifies sales into current, extended, historical, and undated windows', () => {

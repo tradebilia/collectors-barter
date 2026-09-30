@@ -10,9 +10,14 @@ type JsonRecord = Record<string, unknown>;
 
 export const COMICCONNECT_MAX_RESULTS = 20;
 export const COMICCONNECT_TIMEOUT_MS = 12_000;
+const COMICCONNECT_QUERY_LEARNING_MAX_KEYS = 250;
+const COMICCONNECT_QUERY_LEARNING_MAX_VARIANTS = 5;
 const COMICCONNECT_BASE_URL = 'https://www.comicconnect.com';
 const CURRENT_MARKET_DAYS = 365;
 const EXTENDED_MARKET_DAYS = 365 * 3;
+
+type ComicConnectQueryLearningEntry = { query: string; successes: number; lastUsedAt: number };
+const comicConnectQueryLearning = new Map<string, ComicConnectQueryLearningEntry[]>();
 
 function text(value: unknown): string {
   return value == null ? '' : String(value).replace(/\s+/g, ' ').trim();
@@ -100,13 +105,48 @@ export function buildComicConnectSearchQueries(input: ComicConnectLookupInput): 
   const distinctiveTail = titleTokens.length && issue
     ? `${titleTokens[titleTokens.length - 1]} ${issue}`
     : '';
-  return Array.from(new Set([
+  const variants = Array.from(new Set([
     primary,
     withoutLeadingArticle,
     withoutArticlesAndConnectors,
     punctuationNormalized,
     distinctiveTail,
-  ].filter(Boolean))).slice(0, 5);
+  ].filter(Boolean))).slice(0, COMICCONNECT_QUERY_LEARNING_MAX_VARIANTS);
+  return rankComicConnectSearchQueries(input, variants);
+}
+
+function comicConnectQueryLearningKey(input: ComicConnectLookupInput): string {
+  const details = parseDetails(input.itemDetails);
+  return normalize(`${details.comicTitle ?? input.title} ${details.issueNumber ?? ''}`) || normalize(input.title);
+}
+
+/** Rank only known bounded variants; learned scores never invent a query. */
+export function rankComicConnectSearchQueries(input: ComicConnectLookupInput, queries: string[]): string[] {
+  const learned = comicConnectQueryLearning.get(comicConnectQueryLearningKey(input)) ?? [];
+  const score = new Map(learned.map((entry) => [entry.query, entry.successes]));
+  return [...queries].sort((left, right) => (score.get(right) ?? 0) - (score.get(left) ?? 0));
+}
+
+export function rememberSuccessfulComicConnectQuery(input: ComicConnectLookupInput, query: string): void {
+  const key = comicConnectQueryLearningKey(input);
+  const entries = comicConnectQueryLearning.get(key) ?? [];
+  const existing = entries.find((entry) => entry.query === query);
+  if (existing) {
+    existing.successes += 1;
+    existing.lastUsedAt = Date.now();
+  } else {
+    entries.push({ query, successes: 1, lastUsedAt: Date.now() });
+  }
+  entries.sort((left, right) => right.successes - left.successes || right.lastUsedAt - left.lastUsedAt);
+  comicConnectQueryLearning.set(key, entries.slice(0, COMICCONNECT_QUERY_LEARNING_MAX_VARIANTS));
+  if (comicConnectQueryLearning.size > COMICCONNECT_QUERY_LEARNING_MAX_KEYS) {
+    const oldestKey = [...comicConnectQueryLearning.entries()].sort((left, right) => Math.min(...left[1].map((entry) => entry.lastUsedAt)) - Math.min(...right[1].map((entry) => entry.lastUsedAt)))[0]?.[0];
+    if (oldestKey) comicConnectQueryLearning.delete(oldestKey);
+  }
+}
+
+export function resetComicConnectQueryLearningForTests(): void {
+  comicConnectQueryLearning.clear();
 }
 
 function extract(pattern: RegExp, source: string): string | null {
@@ -299,6 +339,7 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
         continue;
       }
       const parsed = parseComicConnectSoldHtml(await response.text(), input, request);
+      if (parsed.sales.length > 0) rememberSuccessfulComicConnectQuery(input, query);
       for (const record of [...parsed.sales, ...parsed.context]) {
         const key = record.lotId ?? `${normalize(record.title)}|${record.price ?? ''}|${record.date ?? ''}`;
         if (!records.has(key)) records.set(key, record);
