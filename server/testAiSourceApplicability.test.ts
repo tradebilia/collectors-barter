@@ -36,7 +36,7 @@ describe('internal Test AI source-category applicability policy', () => {
 
   it('shows active permission-pending sources only for their researched item categories', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', hasTitle: true }).map((source) => source.sourceId);
-    expect(coinIds).toEqual(expect.arrayContaining(['ngc_auction_central', 'coin_archives', 'cng']));
+    expect(coinIds).toEqual(expect.arrayContaining(['ngc', 'coin_archives', 'cng']));
     expect(coinIds).not.toContain('greatcollections');
     expect(coinIds).not.toContain('heritage');
     expect(coinIds).not.toContain('rumsey');

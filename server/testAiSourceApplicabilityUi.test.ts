@@ -72,6 +72,15 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Applicable to the loaded item.');
   });
 
+  it('shows bounded specialist lookup contracts without treating unresolved sources as live valuation inputs', () => {
+    expect(source).toContain('getSpecialistMarketplaceData.useQuery');
+    expect(source).toContain('Bounded public locator lookup');
+    expect(source).toContain('Public contract not sufficient for automated lookup');
+    expect(source).toContain('No request is sent. This source stays visible for audit');
+    expect(source).toContain('No specialist record from this panel affects valuation');
+    expect(source).toContain("source.id !== 'comicconnect'");
+  });
+
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
     expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
     expect(source).toContain('function EvidenceNormalizationSummary');

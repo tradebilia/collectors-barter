@@ -101,7 +101,7 @@ describe('permission-pending market-source adapters', () => {
 
   it('keeps every registered pending source mapped to each of its researched categories', () => {
     for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'pending_permission' && candidate.id !== 'propstore')) {
-      const sourceId = source.id === 'ngc' ? 'ngc_auction_central' : source.id;
+      const sourceId = source.id;
       for (const category of source.categories) {
         const eligibleIds = getEligibleTestAiSources({
           category: category.replace(/_/g, ' '),
@@ -114,7 +114,7 @@ describe('permission-pending market-source adapters', () => {
 
   it('excludes owner-deferred sources from active Test AI applicability', () => {
     for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'deferred')) {
-      const sourceId = source.id === 'ngc' ? 'ngc_auction_central' : source.id;
+      const sourceId = source.id;
       for (const category of source.categories) {
         const eligibleIds = getEligibleTestAiSources({
           category: category.replace(/_/g, ' '),

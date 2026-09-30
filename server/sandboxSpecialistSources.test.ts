@@ -23,6 +23,17 @@ describe('sandbox specialist source activation', () => {
     expect(getSandboxSpecialistSource('raritan')?.currencyPolicy).toBe('currency_unresolved');
   });
 
+  it('declares a specific bounded public search contract for every specialist source', () => {
+    for (const source of SANDBOX_SPECIALIST_SOURCES) {
+      expect(source.searchInstruction.length, `${source.label} needs a visible sandbox instruction`).toBeGreaterThan(30);
+      expect(['automatic_title_search', 'public_locator_required', 'price_table_locator_required', 'public_contract_unverified']).toContain(source.searchContract);
+    }
+    expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('public_contract_unverified');
+    expect(getSandboxSpecialistSource('morphy')?.searchContract).toBe('public_locator_required');
+    expect(getSandboxSpecialistSource('heritage')?.searchContract).toBe('public_contract_unverified');
+    expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');
+  });
+
   it('has a matching signed canonical adapter for every activated source', () => {
     for (const source of SANDBOX_SPECIALIST_SOURCES) {
       expect(CANONICAL_ADAPTER_REGISTRY[source.id]).toBeDefined();

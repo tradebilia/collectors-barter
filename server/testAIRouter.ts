@@ -37,6 +37,7 @@ import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
 import { lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupComicConnectSold } from './comicConnectMarketData';
+import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { isPublicMemberEligible } from './publicVisibility';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
@@ -1264,6 +1265,20 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupComicConnectSold(input);
+    }),
+
+  // New specialist marketplaces are deliberately separate from ComicConnect. Every
+  // supported request is one bounded, same-origin public page and the output remains
+  // context-only until source-specific price-basis and signed-admission work is complete.
+  getSpecialistMarketplaceData: protectedProcedure
+    .input(z.object({
+      sourceId: z.enum(['ngc', 'cng', 'rumsey', 'cherrystone', 'raritan', 'morphy', 'theriaults', 'poster_auctions', 'bonhams', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'goldin', 'coin_archives', 'bertoia', 'heritage', 'hakes']),
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), sourceUrl: z.string().url().nullish(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupSpecialistMarketplace(input);
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API

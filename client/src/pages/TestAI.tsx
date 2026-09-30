@@ -12,7 +12,7 @@ import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSou
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
-import { SANDBOX_SPECIALIST_SOURCES } from '@shared/sandboxSpecialistSources';
+import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -30,8 +30,8 @@ type DataSourceDefinition = {
 };
 
 const PERMISSION_PENDING_SOURCE_REGISTRY: Record<string, DataSourceDefinition> = Object.fromEntries(
-  PERMISSION_PENDING_MARKET_SOURCES.map((source) => {
-    const id = source.id === 'ngc' ? 'ngc_auction_central' : source.id;
+  PERMISSION_PENDING_MARKET_SOURCES.filter((source) => source.id !== 'ngc').map((source) => {
+    const id = source.id;
     return [id, {
       id,
       label: source.label,
@@ -317,8 +317,8 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     group: 'Marketplace',
     icon: '🧪',
     provides: ['historic_prices', 'recent_sales'],
-    status: 'live' as const,
-    description: `Sandbox-authorized read-only source. Context-only until its source-specific parser and signed admission tests are complete. ${source.activationNote}`,
+    status: (source.searchContract === 'automatic_title_search' || source.searchContract === 'public_locator_required') ? 'live' as const : 'placeholder' as const,
+    description: `Sandbox-authorized read-only source. ${source.searchInstruction} Context-only until its source-specific parser, price-basis, and signed-admission tests are complete. ${source.activationNote}`,
   }])),
 };
 
@@ -2094,20 +2094,63 @@ function PlaceholderSection({ sourceId, side }: { sourceId: SourceId; side: 'lef
   );
 }
 
-function SandboxSpecialistSection({ sourceId, side }: { sourceId: SourceId; side: 'left' | 'right' }) {
-  const source = SANDBOX_SPECIALIST_SOURCES.find((candidate) => candidate.id === sourceId);
-  if (!source) return null;
+function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const automatic = source.searchContract === 'automatic_title_search';
+  const locatorRequired = source.searchContract === 'public_locator_required';
+  const blocked = source.searchContract === 'public_contract_unverified' || source.searchContract === 'price_table_locator_required';
+  const [sourceUrl, setSourceUrl] = useState('');
+  const normalizedSourceUrl = useMemo(() => {
+    try {
+      const parsed = new URL(sourceUrl.trim());
+      return parsed.protocol === 'https:' ? parsed.toString() : '';
+    } catch {
+      return '';
+    }
+  }, [sourceUrl]);
+  const enabled = automatic || Boolean(normalizedSourceUrl);
+  const lookup = trpc.testAI.getSpecialistMarketplaceData.useQuery(
+    {
+      // ComicConnect is filtered at the render site and remains on its own
+      // dedicated query ladder, so this panel can call only the non-ComicConnect
+      // specialist procedure IDs.
+      sourceId: source.id as Exclude<SandboxSpecialistSource['id'], 'comicconnect'>,
+      title: item.title,
+      category: item.category,
+      grade: item.grade ?? undefined,
+      condition: item.condition ?? undefined,
+      certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined,
+      itemDetails: item.itemDetails ?? undefined,
+      sourceUrl: normalizedSourceUrl || undefined,
+    },
+    { enabled: enabled && !blocked, retry: false },
+  );
+  const data = lookup.data;
+  const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, data?.recordCap ?? 12);
+  const formatPrice = (value: number | null | undefined) => value == null ? 'No realized price' : `$${Math.round(value).toLocaleString()}`;
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
-      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}</p>
-      <p className="text-gray-400 text-[10px]">Data type: read-only specialist auction context</p>
+      <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
+      <p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
-        <p className="text-sky-300 text-[10px] font-semibold">Sandbox authorized — context only</p>
-        <p className="text-gray-300 text-[10px]">The source is approved for bounded testing and mapped to this category. It cannot affect valuation or the final AI conclusion until its source-specific parser, identity gate, currency/price-basis policy, and signed-admission tests pass.</p>
-        <p className="text-gray-500 text-[10px]">{source.activationNote}</p>
-        <p className="text-gray-600 text-[9px] break-all">Source: {source.sourceUrl}</p>
+        <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>
+        <p className="text-gray-300 text-[10px]">{source.searchInstruction}</p>
+        <p className="text-gray-500 text-[9px]">{source.activationNote}</p>
+        <a className="text-sky-400 text-[9px] underline break-all" href={source.sourceUrl} target="_blank" rel="noreferrer">Open source</a>
       </div>
+      {locatorRequired && <div className="space-y-1.5">
+        <label className="text-[9px] text-gray-400">Public closed-auction, catalog, or lot URL</label>
+        <div className="flex gap-2"><input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://…" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-950/70 px-2 py-1 text-[10px] text-slate-100 placeholder:text-slate-600 focus:border-sky-500 focus:outline-none" /><button type="button" onClick={() => lookup.refetch()} disabled={!normalizedSourceUrl || lookup.isFetching} className="rounded border border-sky-600/60 bg-sky-900/30 px-2 py-1 text-[9px] font-semibold text-sky-100 transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50">Check</button></div>
+        {sourceUrl.trim() && !normalizedSourceUrl && <p className="text-[9px] text-rose-300">Enter a complete HTTPS URL from this source.</p>}
+      </div>}
+      {blocked && <p className="rounded border border-amber-700/30 bg-amber-950/20 p-2 text-[9px] text-amber-100">No request is sent. This source stays visible for audit, but Tradebilia will not guess a query URL or bypass source protections.</p>}
+      {!blocked && lookup.isFetching && <p className="text-[10px] text-sky-200">Reading one bounded public page…</p>}
+      {!blocked && data?.messages?.map((message: string, index: number) => <p key={`${message}-${index}`} className={`rounded p-1.5 text-[9px] ${data.status === 'success' ? 'bg-sky-950/40 text-sky-100' : 'bg-amber-950/25 text-amber-100'}`}>{message}</p>)}
+      {records.length > 0 && <div className="space-y-1.5">
+        <p className="text-[9px] text-gray-400">✓ {data?.sales?.length ?? 0} identity-matched completed context record{(data?.sales?.length ?? 0) === 1 ? '' : 's'} · ✕ {data?.context?.length ?? 0} retained mismatch/incomplete record{(data?.context?.length ?? 0) === 1 ? '' : 's'}</p>
+        {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-slate-700/50 bg-slate-950/40 p-2"><div className="flex items-start justify-between gap-2"><p className="text-[10px] font-medium text-slate-100">{record.title}</p><span className="shrink-0 text-[10px] text-emerald-300">{formatPrice(record.price)}</span></div><p className="mt-0.5 text-[9px] text-slate-500">{record.lotId ? `Lot ${record.lotId} · ` : ''}{record.date ? new Date(record.date).toLocaleDateString() : 'Date unavailable'} · {record.priceBasis.replace(/_/g, ' ')}</p><p className={`mt-0.5 text-[9px] ${record.identityMatched ? 'text-emerald-300/80' : 'text-rose-300/90'}`}>{record.identityMatched && record.completed ? '✓ Identity matched — retained for admission review' : `✕ ${record.exclusionReason ?? 'Identity or completed-sale state not confirmed'}`}</p>{record.url && <a className="mt-1 inline-block text-[9px] text-sky-400 underline" href={record.url} target="_blank" rel="noreferrer">Open public record</a>}</div>)}
+      </div>}
+      <p className="text-[9px] text-amber-200/80">No specialist record from this panel affects valuation, recommended trade terms, or the final AI conclusion.</p>
     </div>
   );
 }
@@ -3012,13 +3055,11 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('discogs') && <DiscogsSection item={item} side={side} />}
       {enabledSources.has('wikidata') && <WikidataSection item={item} side={side} />}
       {enabledSources.has('smithsonian') && <SmithsonianSection item={item} side={side} />}
-      {enabledSources.has('ngc') && <PlaceholderSection sourceId="ngc" side={side} />}
       {enabledSources.has('cbcs') && <PlaceholderSection sourceId="cbcs" side={side} />}
       {enabledSources.has('comic_book_realm') && <PlaceholderSection sourceId="comic_book_realm" side={side} />}
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
-      {enabledSources.has('heritage') && <PlaceholderSection sourceId="heritage" side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
-      {SANDBOX_SPECIALIST_SOURCES.map((source) => enabledSources.has(source.id) && <SandboxSpecialistSection key={source.id} sourceId={source.id} side={side} />)}
+      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} />)}
     </div>
   );
 }
