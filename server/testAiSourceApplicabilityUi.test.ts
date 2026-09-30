@@ -74,6 +74,7 @@ describe('manual Test AI selector boundary', () => {
 
   it('shows bounded specialist lookup contracts without treating unresolved sources as live valuation inputs', () => {
     expect(source).toContain('getSpecialistMarketplaceData.useQuery');
+    expect(source).toContain('Bounded automatic public lookup');
     expect(source).toContain('Bounded public locator lookup');
     expect(source).toContain('Public contract not sufficient for automated lookup');
     expect(source).toContain('No request is sent. This source stays visible for audit');

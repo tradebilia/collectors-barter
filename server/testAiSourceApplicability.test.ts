@@ -34,7 +34,7 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
   });
 
-  it('shows active specialist sources in their researched categories while making Goldin direct-lot context available everywhere', () => {
+  it('shows active specialist sources in their researched categories while making Goldin automatic context search available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', hasTitle: true }).map((source) => source.sourceId);
     expect(coinIds).toEqual(expect.arrayContaining(['ngc', 'coin_archives', 'cng']));
     expect(coinIds).not.toContain('greatcollections');

@@ -28,7 +28,7 @@ describe('sandbox specialist source activation', () => {
       expect(source.searchInstruction.length, `${source.label} needs a visible sandbox instruction`).toBeGreaterThan(30);
       expect(['automatic_title_search', 'public_locator_required', 'price_table_locator_required', 'public_contract_unverified']).toContain(source.searchContract);
     }
-    expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('public_locator_required');
+    expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('automatic_title_search');
     expect(getSandboxSpecialistSource('morphy')?.searchContract).toBe('public_locator_required');
     expect(getSandboxSpecialistSource('heritage')?.searchContract).toBe('public_contract_unverified');
     expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');

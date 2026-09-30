@@ -23,21 +23,67 @@ const morphyLotUrl = 'https://auctions.morphyauctions.com/LOT123456.aspx';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('bounded specialist marketplace adapters', () => {
-  it('requires a public Goldin item-detail URL and accepts the verified direct-lot route', () => {
-    const missing = buildSpecialistMarketplaceRequest(videoGame);
-    expect(missing.url).toBeNull();
-    expect(missing.error).toMatch(/Paste a public Goldin \/item\//i);
-
-    const rejected = buildSpecialistMarketplaceRequest({ ...videoGame, sourceUrl: 'https://goldin.co/buy/?show_only=Sold%20Items' });
-    expect(rejected.url).toBeNull();
-    expect(rejected.error).toMatch(/allowlisted public Goldin/i);
+  it('uses the verified Goldin public sold-search endpoint automatically and preserves direct-lot support', () => {
+    const automatic = buildSpecialistMarketplaceRequest(videoGame);
+    expect(automatic).toEqual({ url: 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', error: null });
 
     const accepted = buildSpecialistMarketplaceRequest({ ...videoGame, sourceUrl: goldinMarioLotUrl });
     expect(accepted).toEqual({ url: goldinMarioLotUrl, error: null });
 
     for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
-      expect(buildSpecialistMarketplaceRequest({ ...videoGame, category, sourceUrl: goldinMarioLotUrl }), `Goldin should accept a supplied public lot for ${category}`).toEqual({ url: goldinMarioLotUrl, error: null });
+      expect(buildSpecialistMarketplaceRequest({ ...videoGame, category }), `Goldin should automatically search ${category}`).toEqual({ url: 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', error: null });
     }
+  });
+
+  it('runs one capped public Goldin title search, converts cents, and retains mismatches as context-only', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      searchalgolia: {
+        total: 33,
+        lots: [
+          {
+            lot_id: 'goldin-mario-1',
+            lot_number: 611,
+            meta_slug: '1990-nes-nintendo-usa-super-mario-bros-3-right-bros-sealed-video-gamegemqt',
+            title: '1990 NES Nintendo Super Mario Bros. 3 (USA) Sealed Video Game - WATA 9.6/A++',
+            status: 'Completed_Sold',
+            current_price: 2800000,
+            buyer_premium: 20,
+            end_timestamp: '2021-05-22T02:30:00Z',
+          },
+          {
+            lot_id: 'goldin-mario-2',
+            lot_number: 638,
+            meta_slug: '1996-n64-nintendo-64-usa-super-mario-64-sealed-video-game-wata-9-2-ah4ckb',
+            title: '1996 N64 Nintendo 64 Super Mario 64 (USA) Sealed Video Game - WATA 9.2/A+',
+            status: 'Completed_Sold',
+            current_price: 1417000,
+            buyer_premium: 20,
+            end_timestamp: '2022-05-22T02:30:00Z',
+          },
+        ],
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace(videoGame);
+    expect(result.status).toBe('success');
+    expect(result.recordCap).toBe(12);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({
+      completed: true,
+      price: 33600,
+      winningBid: 28000,
+      buyerPremiumPercentage: 20,
+      buyerPremiumIncluded: true,
+      url: 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-bros-sealed-video-gamegemqt',
+      valuationEligible: false,
+    });
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
+    expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
+      method: 'POST',
+      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: videoGame.title, size: 12, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
+    }));
   });
 
   it('reads a public Goldin direct-lot response, calculates all-in context, and preserves buyer-premium transparency', async () => {
@@ -49,7 +95,7 @@ describe('bounded specialist marketplace adapters', () => {
         title: '1990 NES Nintendo (USA) "Super Mario Bros. 3" Right Variation Sealed Video Game - WATA 9.6/A++',
         description: 'Encapsulated and graded 9.6 by WATA Games. Sealed Nintendo Entertainment System copy.',
         status: 'Completed_Sold',
-        final_price: 28000,
+        final_price: 2800000,
         buyer_premium: '20',
         end_timestamp: '2021-09-19T00:40:00Z',
       },
