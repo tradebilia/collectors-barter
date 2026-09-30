@@ -58,6 +58,11 @@ describe("admin social-content media upload contract", () => {
     expect(uploadSection).toContain("getTestedComicScenePrompts(input)");
     expect(uploadSection).toContain("runTestedComicScenePromptLadder(testedComicPrompts");
     expect(uploadSection).toContain("isProviderSceneSafetyRejection(referenceError)");
+    expect(uploadSection).toContain("getVisualReferenceOnlyScenePrompt()");
+    expect(uploadSection).toContain("generateVisualReferenceOnlyScene");
+    expect(uploadSection).toContain("visualReferenceOnlyPrompt");
+    expect(uploadSection).toContain("originalImages: [originalImage]");
+    expect(uploadSection).toContain("isProviderSceneSafetyRejection(visualReferenceError)");
     expect(uploadSection).toContain("isProviderSceneSafetyRejection(metadataError)");
     expect(uploadSection).toContain("generated = await generateImage({");
     expect(uploadSection).toContain("prompt,");

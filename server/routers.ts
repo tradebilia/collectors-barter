@@ -6,6 +6,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSocialPromotionFacts } from "@shared/socialPromotionFacts";
 import { getTradeAlertVisualHints } from "@shared/tradeAlertThemes";
 import { getTestedComicScenePrompts, isProviderSceneSafetyRejection, runTestedComicScenePromptLadder } from "./comicSocialScenePrompts";
+import { getVisualReferenceOnlyScenePrompt } from "./visualReferenceScenePrompt";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable, ensureSupportTicketsTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
@@ -3030,6 +3031,13 @@ export const appRouter = router({
           const imageVisualReferences = await extractListingImageVisualReferences(input.listingImageDataUrl);
           const prompt = buildAutomaticHighValueScenePrompt({ ...input, imageVisualReferences });
           const testedComicPrompts = getTestedComicScenePrompts(input);
+          const visualReferenceOnlyPrompt = getVisualReferenceOnlyScenePrompt();
+          const generateVisualReferenceOnlyScene = () => generateImage({
+            prompt: visualReferenceOnlyPrompt,
+            originalImages: [originalImage],
+            model: "MODEL_GPT_IMAGE_2",
+            quality: "medium",
+          });
           const generateTestedComicScene = () => runTestedComicScenePromptLadder(testedComicPrompts, (comicPrompt) => generateImage({
             prompt: comicPrompt,
             model: "MODEL_GPT_IMAGE_2",
@@ -3050,8 +3058,16 @@ export const appRouter = router({
             // reference image does not force the whole social preview to fall
             // back to a generic category scene.
             console.warn("[admin.generateHighValueListingScene] image-conditioned generation failed; retrying from public metadata", referenceError instanceof Error ? referenceError.message : "unknown error");
-            if (testedComicPrompts.length && isProviderSceneSafetyRejection(referenceError)) {
-              generated = await generateTestedComicScene();
+            if (isProviderSceneSafetyRejection(referenceError)) {
+              try {
+                // This fallback keeps the real image only as high-level visual
+                // context—palette, era, and mood—without asking for a title,
+                // character, cover, slab, or collectible recreation.
+                generated = await generateVisualReferenceOnlyScene();
+              } catch (visualReferenceError) {
+                if (!testedComicPrompts.length || !isProviderSceneSafetyRejection(visualReferenceError)) throw visualReferenceError;
+                generated = await generateTestedComicScene();
+              }
             } else {
               try {
                 generated = await generateImage({
