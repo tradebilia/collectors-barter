@@ -31,8 +31,8 @@ describe("homepage Recent Trades carousel", () => {
     expect(homeSource).toContain('w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44');
     expect(carouselSource).toContain('aria-label="Recent Trades section"');
     expect(carouselSource).toContain('w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44');
-    expect(homeSource).toContain('className="container relative flex h-[280px] items-center justify-center py-0 sm:h-[400px]"');
-    expect(homeSource).toContain('className="flex w-[112%] max-w-[480px] -translate-x-[2%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%]"');
+    expect(homeSource).toContain('className="container relative z-10 flex h-[280px] items-center justify-center py-0 sm:h-[400px]"');
+    expect(homeSource).toContain('className="flex w-[131%] max-w-[583px] flex-none -translate-x-[4.3%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%] sm:flex-initial"');
     expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain sm:max-w-6xl"');
     expect(homeSource).toContain("<CategoryBar />");
     expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');

@@ -127,7 +127,7 @@ export default function Conventions() {
       {/* Hero */}
       <section className="relative w-full overflow-hidden bg-white text-white">
         <div className="absolute inset-0" style={{
-          backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
+          backgroundImage: "url(/manus-storage/Background3_30307310.png)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",

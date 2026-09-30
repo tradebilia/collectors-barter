@@ -8,7 +8,7 @@ describe("Member Directory hero integration", () => {
   it("uses the shared top bar, homepage hero background, supplied title artwork, and category bar", () => {
     expect(source).toContain('import { TopBar } from "@/components/TopBar"');
     expect(source).toContain('import { CategoryBar } from "@/components/CategoryBar"');
-    expect(source).toContain('backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)"');
+    expect(source).toContain('backgroundImage: "url(/manus-storage/Background3_30307310.png)"');
     expect(source).toContain('src="/manus-storage/MemberDirectory2_c8de2e96.svg"');
     expect(source).not.toContain('AnimatedHeroTitleArtwork');
     expect(source).toContain('max-w-[1049px]');

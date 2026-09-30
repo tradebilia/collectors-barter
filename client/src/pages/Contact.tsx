@@ -69,7 +69,7 @@ export default function Contact() {
       {/* Hero Section */}
       <section className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden bg-[#00143A] text-white border-b border-white/10">
         <div className="absolute inset-0" style={{
-          backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
+          backgroundImage: "url(/manus-storage/Background3_30307310.png)",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat"

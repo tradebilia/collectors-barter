@@ -17,7 +17,7 @@ export function RankingPageHero({ title }: RankingPageHeroProps) {
     <section
       className="relative z-0 w-screen -mx-[calc((100vw-100%)/2)] overflow-hidden text-white"
       style={{
-        backgroundImage: "url(https://assets.tradebilia.com/Background_23084d14.jpg)",
+        backgroundImage: "url(/manus-storage/Background3_30307310.png)",
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",

@@ -72,7 +72,7 @@ export default function Watchlist() {
       />
 
       <section className="border-b border-white/10 bg-[#00143A]" style={{
-        backgroundImage: 'url(https://assets.tradebilia.com/Background_48b923f1.jpg)',
+        backgroundImage: 'url(/manus-storage/Background3_30307310.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'

@@ -289,7 +289,7 @@ export default function ItemDetail() {
         <div
           className="absolute inset-0"
           style={{
-            backgroundImage: getCategoryWallpaperUrl(listing.category) ? `url(${getCategoryWallpaperUrl(listing.category)})` : 'url(https://assets.tradebilia.com/Background_23084d14.jpg)',
+            backgroundImage: getCategoryWallpaperUrl(listing.category) ? `url(${getCategoryWallpaperUrl(listing.category)})` : 'url(/manus-storage/Background3_30307310.png)',
             backgroundSize: 'cover',
             backgroundPosition: heroTreatment.backgroundPosition,
             backgroundRepeat: heroTreatment.backgroundRepeat,
