@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 export type ComicConnectLookupInput = {
   title: string;
   category: string;
@@ -18,6 +21,37 @@ const EXTENDED_MARKET_DAYS = 365 * 3;
 
 type ComicConnectQueryLearningEntry = { query: string; successes: number; lastUsedAt: number };
 const comicConnectQueryLearning = new Map<string, ComicConnectQueryLearningEntry[]>();
+const comicConnectQueryLearningPath = process.env.TRADEBILIA_COMICCONNECT_QUERY_LEARNING_PATH
+  ?? path.join('/tmp', 'tradebilia-comicconnect-query-learning.json');
+let comicConnectQueryLearningLoaded = false;
+
+function loadComicConnectQueryLearning(): void {
+  if (comicConnectQueryLearningLoaded) return;
+  comicConnectQueryLearningLoaded = true;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(comicConnectQueryLearningPath, 'utf8')) as Record<string, unknown>;
+    for (const [key, value] of Object.entries(parsed)) {
+      if (!Array.isArray(value)) continue;
+      const entries = value.filter((entry): entry is ComicConnectQueryLearningEntry => Boolean(entry && typeof entry === 'object' && typeof (entry as ComicConnectQueryLearningEntry).query === 'string' && Number.isFinite((entry as ComicConnectQueryLearningEntry).successes) && Number.isFinite((entry as ComicConnectQueryLearningEntry).lastUsedAt))).slice(0, COMICCONNECT_QUERY_LEARNING_MAX_VARIANTS);
+      if (entries.length) comicConnectQueryLearning.set(key, entries);
+    }
+  } catch {
+    // Missing, malformed, or inaccessible learning storage is non-fatal; the
+    // bounded in-memory learner remains available for the current process.
+  }
+}
+
+function persistComicConnectQueryLearning(): void {
+  try {
+    const directory = path.dirname(comicConnectQueryLearningPath);
+    fs.mkdirSync(directory, { recursive: true });
+    const temporaryPath = `${comicConnectQueryLearningPath}.${process.pid}.tmp`;
+    fs.writeFileSync(temporaryPath, JSON.stringify(Object.fromEntries(comicConnectQueryLearning), null, 2), 'utf8');
+    fs.renameSync(temporaryPath, comicConnectQueryLearningPath);
+  } catch {
+    // Persistence is best-effort and must never block or alter market lookup.
+  }
+}
 
 function text(value: unknown): string {
   return value == null ? '' : String(value).replace(/\s+/g, ' ').trim();
@@ -122,12 +156,14 @@ function comicConnectQueryLearningKey(input: ComicConnectLookupInput): string {
 
 /** Rank only known bounded variants; learned scores never invent a query. */
 export function rankComicConnectSearchQueries(input: ComicConnectLookupInput, queries: string[]): string[] {
+  loadComicConnectQueryLearning();
   const learned = comicConnectQueryLearning.get(comicConnectQueryLearningKey(input)) ?? [];
   const score = new Map(learned.map((entry) => [entry.query, entry.successes]));
   return [...queries].sort((left, right) => (score.get(right) ?? 0) - (score.get(left) ?? 0));
 }
 
 export function rememberSuccessfulComicConnectQuery(input: ComicConnectLookupInput, query: string): void {
+  loadComicConnectQueryLearning();
   const key = comicConnectQueryLearningKey(input);
   const entries = comicConnectQueryLearning.get(key) ?? [];
   const existing = entries.find((entry) => entry.query === query);
@@ -143,10 +179,13 @@ export function rememberSuccessfulComicConnectQuery(input: ComicConnectLookupInp
     const oldestKey = [...comicConnectQueryLearning.entries()].sort((left, right) => Math.min(...left[1].map((entry) => entry.lastUsedAt)) - Math.min(...right[1].map((entry) => entry.lastUsedAt)))[0]?.[0];
     if (oldestKey) comicConnectQueryLearning.delete(oldestKey);
   }
+  persistComicConnectQueryLearning();
 }
 
 export function resetComicConnectQueryLearningForTests(): void {
   comicConnectQueryLearning.clear();
+  comicConnectQueryLearningLoaded = true;
+  persistComicConnectQueryLearning();
 }
 
 function extract(pattern: RegExp, source: string): string | null {
@@ -268,6 +307,7 @@ export type ComicConnectLookupResult = {
   currentPriceMetrics: ComicConnectPriceMetrics;
   currentConfidence: { level: ComicConnectConfidence; reason: string };
   priceTrend: ComicConnectPriceTrendPoint[];
+  winningQuery: string | null;
   messages: string[];
   raw?: { resultCount: number; url: string };
 };
@@ -276,7 +316,7 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
   const request = requestOverride ?? buildComicConnectSearchUrl(input);
   if (normalize(input.category) !== 'comics') {
     const emptyMetrics = computeComicConnectPriceMetrics([]);
-    return { source: 'comicconnect', status: 'not_applicable', query: request.query, sales: [], context: [], priceMetrics: emptyMetrics, currentPriceMetrics: emptyMetrics, currentConfidence: classifyComicConnectCurrentConfidence(0), priceTrend: computeComicConnectPriceTrend([]), messages: ['ComicConnect is only mapped to Comics.'], raw: { resultCount: 0, url: request.url } };
+    return { source: 'comicconnect', status: 'not_applicable', query: request.query, sales: [], context: [], priceMetrics: emptyMetrics, currentPriceMetrics: emptyMetrics, currentConfidence: classifyComicConnectCurrentConfidence(0), priceTrend: computeComicConnectPriceTrend([]), winningQuery: null, messages: ['ComicConnect is only mapped to Comics.'], raw: { resultCount: 0, url: request.url } };
   }
 
   const blocks = html.split(/<div\s+class=["'][^"']*itempreview[^"']*["'][^>]*>/i).slice(1, COMICCONNECT_MAX_RESULTS + 1);
@@ -312,7 +352,7 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
   const currentConfidence = classifyComicConnectCurrentConfidence(currentPriceMetrics.count);
   const windows = records.reduce<Record<string, number>>((counts, record) => { counts[record.timeWindow] = (counts[record.timeWindow] ?? 0) + 1; return counts; }, {});
   return {
-    source: 'comicconnect', status: 'success', query: request.query, sales, context, priceMetrics, currentPriceMetrics, currentConfidence, priceTrend: computeComicConnectPriceTrend(sales),
+    source: 'comicconnect', status: 'success', query: request.query, sales, context, priceMetrics, currentPriceMetrics, currentConfidence, priceTrend: computeComicConnectPriceTrend(sales), winningQuery: null,
     messages: [`ComicConnect returned ${records.length} bounded sold-archive candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`],
     raw: { resultCount: records.length, url: request.url },
   };
@@ -325,6 +365,7 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
   }
   const records = new Map<string, ComicConnectSale>();
   const errors: string[] = [];
+  let winningQuery: string | null = null;
   let lastRequest = buildComicConnectSearchUrlForQuery(queries[0]);
   for (const query of queries) {
     const request = buildComicConnectSearchUrlForQuery(query);
@@ -339,7 +380,10 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
         continue;
       }
       const parsed = parseComicConnectSoldHtml(await response.text(), input, request);
-      if (parsed.sales.length > 0) rememberSuccessfulComicConnectQuery(input, query);
+      if (parsed.sales.length > 0) {
+        winningQuery ??= query;
+        rememberSuccessfulComicConnectQuery(input, query);
+      }
       for (const record of [...parsed.sales, ...parsed.context]) {
         const key = record.lotId ?? `${normalize(record.title)}|${record.price ?? ''}|${record.date ?? ''}`;
         if (!records.has(key)) records.set(key, record);
@@ -364,6 +408,7 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
     currentPriceMetrics,
     currentConfidence,
     priceTrend: computeComicConnectPriceTrend(sales),
+    winningQuery,
     messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`, ...errors],
     raw: { resultCount: all.length, url: lastRequest.url },
   };

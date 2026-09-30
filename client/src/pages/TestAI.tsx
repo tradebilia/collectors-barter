@@ -2132,7 +2132,8 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
     {!isLoading && data?.status === 'error' && <p className="rounded bg-rose-950/30 p-2 text-rose-200 text-[10px]">{data.messages?.join(' ') ?? 'ComicConnect could not be checked.'}</p>}
     {!isLoading && data?.status === 'success' && <>
       <p className="rounded bg-sky-900/20 border border-sky-700/30 p-2 text-sky-200 text-[10px]">{data.messages?.join(' ')}</p>
-      <p className="text-gray-500 text-[9px]">Query: “{data.query}” · {records.length} records returned · none can affect valuation or the final AI conclusion yet.</p>
+      <p className="text-gray-500 text-[9px]">Query ladder: “{data.query}” · {records.length} records returned · none can affect valuation or the final AI conclusion yet.</p>
+      {data.winningQuery && <p className="rounded border border-emerald-700/30 bg-emerald-950/20 p-1.5 text-[9px] text-emerald-200">Winning query: “{data.winningQuery}” · this variant returned identity-matched completed sales and was recorded for future ranking.</p>}
       {priceMetrics?.count > 0 && <div className="space-y-1.5">
         <p className="text-[10px] font-semibold text-sky-100">Matched-record price context · {priceMetrics.count} priced identity match{priceMetrics.count === 1 ? '' : 'es'}</p>
         <div className="grid grid-cols-3 gap-2 text-[10px]">
