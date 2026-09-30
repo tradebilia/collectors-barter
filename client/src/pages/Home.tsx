@@ -647,6 +647,7 @@ export default function Home() {
                       <h3 className="text-sm font-bold uppercase tracking-wider text-white">Subscriber Tools</h3>
                       <p className="mt-2 text-xs leading-relaxed text-white/80">Sign in to access your inventory, watchlist, and more.</p>
                     </div>
+                    <div className="grid grid-cols-2 gap-2 sm:block sm:space-y-4">
                     <button onClick={() => {
                       if (!isAuthenticated) {
                         toast.error('Members only - Please sign in to access your inventory');
@@ -701,6 +702,7 @@ export default function Home() {
                     <button onClick={() => {
                       setLocation('/trade-showcase');
                     }} className="w-full px-3 py-2 rounded bg-white/10 hover:bg-[#8b5cf6]/30 transition text-white text-sm font-medium text-left flex items-center gap-2"><Handshake className="w-4 h-4 flex-shrink-0" /> Trade Showcase</button>
+                    </div>
                     <div className="pt-4 border-t border-white/20 space-y-3">
                       {isAuthenticated && (
                         <div>
