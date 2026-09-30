@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { classifyStampFormat, classifyStampListing, stampFormatsCompatible, type StampFormatProfile } from './stampFormat';
 
 export type HipstampLookupInput = {
@@ -85,6 +87,62 @@ function normalized(value: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
+}
+
+type HipstampQueryLearningEntry = { query: string; successes: number; lastUsedAt: number };
+const HIPSTAMP_QUERY_LEARNING_MAX_KEYS = 250;
+const HIPSTAMP_QUERY_LEARNING_MAX_VARIANTS = 4;
+const hipstampQueryLearningPath = process.env.TRADEBILIA_HIPSTAMP_QUERY_LEARNING_PATH ?? path.join('/tmp', 'tradebilia-hipstamp-query-learning.json');
+const hipstampQueryLearning = new Map<string, HipstampQueryLearningEntry[]>();
+let hipstampQueryLearningLoaded = false;
+
+function hipstampLearningKey(input: HipstampLookupInput): string {
+  const details = parseDetails(input.itemDetails);
+  return normalized(`${input.title} ${firstText(details, ['scottNumber', 'catalogNumber', 'catalogNo', 'number'])}`);
+}
+
+function loadHipstampQueryLearning(): void {
+  if (hipstampQueryLearningLoaded) return;
+  hipstampQueryLearningLoaded = true;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(hipstampQueryLearningPath, 'utf8')) as Record<string, unknown>;
+    for (const [key, value] of Object.entries(parsed)) {
+      if (!Array.isArray(value)) continue;
+      const entries = value.filter((entry): entry is HipstampQueryLearningEntry => Boolean(entry && typeof entry === 'object' && typeof (entry as HipstampQueryLearningEntry).query === 'string' && Number.isFinite((entry as HipstampQueryLearningEntry).successes) && Number.isFinite((entry as HipstampQueryLearningEntry).lastUsedAt))).slice(0, HIPSTAMP_QUERY_LEARNING_MAX_VARIANTS);
+      if (entries.length) hipstampQueryLearning.set(key, entries);
+    }
+  } catch { /* best-effort persistence; lookup remains available */ }
+}
+
+function persistHipstampQueryLearning(): void {
+  try {
+    fs.mkdirSync(path.dirname(hipstampQueryLearningPath), { recursive: true });
+    const temporaryPath = `${hipstampQueryLearningPath}.${process.pid}.tmp`;
+    fs.writeFileSync(temporaryPath, JSON.stringify(Object.fromEntries(hipstampQueryLearning), null, 2), 'utf8');
+    fs.renameSync(temporaryPath, hipstampQueryLearningPath);
+  } catch { /* persistence must never block market lookup */ }
+}
+
+function rankHipstampQueries(input: HipstampLookupInput, queries: string[]): string[] {
+  loadHipstampQueryLearning();
+  const scores = new Map((hipstampQueryLearning.get(hipstampLearningKey(input)) ?? []).map((entry) => [entry.query, entry.successes]));
+  return [...queries].sort((left, right) => (scores.get(right) ?? 0) - (scores.get(left) ?? 0));
+}
+
+function rememberHipstampQuery(input: HipstampLookupInput, query: string): void {
+  loadHipstampQueryLearning();
+  const key = hipstampLearningKey(input);
+  const entries = hipstampQueryLearning.get(key) ?? [];
+  const existing = entries.find((entry) => entry.query === query);
+  if (existing) { existing.successes += 1; existing.lastUsedAt = Date.now(); }
+  else entries.push({ query, successes: 1, lastUsedAt: Date.now() });
+  entries.sort((left, right) => right.successes - left.successes || right.lastUsedAt - left.lastUsedAt);
+  hipstampQueryLearning.set(key, entries.slice(0, HIPSTAMP_QUERY_LEARNING_MAX_VARIANTS));
+  if (hipstampQueryLearning.size > HIPSTAMP_QUERY_LEARNING_MAX_KEYS) {
+    const oldestKey = [...hipstampQueryLearning.entries()].sort((left, right) => Math.min(...left[1].map((entry) => entry.lastUsedAt)) - Math.min(...right[1].map((entry) => entry.lastUsedAt)))[0]?.[0];
+    if (oldestKey) hipstampQueryLearning.delete(oldestKey);
+  }
+  persistHipstampQueryLearning();
 }
 
 function equivalent(left: string, right: string): boolean {
@@ -242,7 +300,7 @@ export async function lookupHipstampListings(input: HipstampLookupInput): Promis
   }
 
   try {
-    const queries = [requestedQuery, fallbackQuery].filter((candidate, index, all) => candidate && all.indexOf(candidate) === index);
+    const queries = rankHipstampQueries(input, [requestedQuery, fallbackQuery].filter((candidate, index, all) => candidate && all.indexOf(candidate) === index));
     let fetched: HipstampListing[] = [];
     for (const candidateQuery of queries) {
       const params = new URLSearchParams({ limit: '50', page: '1', sort: 'default' });
@@ -268,6 +326,7 @@ export async function lookupHipstampListings(input: HipstampLookupInput): Promis
     const filtered = filterHipstampListings(identityFiltered, input);
     const nonUsdListings = filtered.filter((listing) => listing.currency !== 'USD').length;
     const listings = filtered.slice(0, 20);
+    if (listings.length > 0) rememberHipstampQuery(input, query);
     return {
       query,
       listings,
@@ -312,6 +371,7 @@ export async function lookupHipstampSoldListings(input: HipstampLookupInput): Pr
     const filtered = filterHipstampListings(identityFiltered, input);
     const nonUsdListings = filtered.filter((listing) => listing.currency !== 'USD').length;
     const listings = filtered.slice(0, 20);
+    if (listings.length > 0) rememberHipstampQuery(input, query);
     return {
       query,
       listings,
