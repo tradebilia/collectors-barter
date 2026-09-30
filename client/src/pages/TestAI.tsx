@@ -2118,6 +2118,9 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
   const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, 20);
   const matches = records.filter((record: any) => record.identityMatched);
   const mismatches = records.filter((record: any) => !record.identityMatched);
+  const priceMetrics = data?.priceMetrics;
+  const currentPriceMetrics = data?.currentPriceMetrics;
+  const formatPrice = (value: number | null | undefined) => value == null ? '—' : `$${Math.round(value).toLocaleString()}`;
   return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
     <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 ComicConnect Sold Archive</p>
     <p className="text-gray-400 text-[10px]">Data type: bounded sold-archive context · maximum 20 records · Comics only</p>
@@ -2126,6 +2129,14 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
     {!isLoading && data?.status === 'success' && <>
       <p className="rounded bg-sky-900/20 border border-sky-700/30 p-2 text-sky-200 text-[10px]">{data.messages?.join(' ')}</p>
       <p className="text-gray-500 text-[9px]">Query: “{data.query}” · {records.length} records returned · none can affect valuation or the final AI conclusion yet.</p>
+      {priceMetrics?.count > 0 && <div className="space-y-1.5">
+        <p className="text-[10px] font-semibold text-sky-100">Matched-record price context · {priceMetrics.count} priced identity match{priceMetrics.count === 1 ? '' : 'es'}</p>
+        <div className="grid grid-cols-3 gap-2 text-[10px]">
+          {[['Avg', formatPrice(priceMetrics.avg)], ['Median', formatPrice(priceMetrics.median)], ['Range', `${formatPrice(priceMetrics.min)}–${formatPrice(priceMetrics.max)}`]].map(([label, value]) => <div key={label} className="rounded bg-gray-900/50 p-1.5 text-center"><p className="text-[9px] uppercase text-gray-500">{label}</p><p className="font-semibold text-white">{value}</p></div>)}
+        </div>
+        <p className="text-[9px] text-amber-200/80">Context only—not a current trade valuation. Older matched sales are included for trend visibility.</p>
+        {currentPriceMetrics?.count > 0 ? <p className="text-[9px] text-emerald-300">Current 12-month context: {currentPriceMetrics.count} sale{currentPriceMetrics.count === 1 ? '' : 's'} · Avg {formatPrice(currentPriceMetrics.avg)} · Median {formatPrice(currentPriceMetrics.median)} · Range {formatPrice(currentPriceMetrics.min)}–{formatPrice(currentPriceMetrics.max)}.</p> : <p className="text-[9px] text-amber-300">No identity-matched priced sales were found in the current 12-month window; displayed prices are older context.</p>}
+      </div>}
       <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
         <p className="text-[10px] font-semibold text-cyan-100">Identity review — what would be eligible for further analyzer review</p>
         <p className="mt-0.5 text-[9px] text-cyan-200/80"><span className="text-emerald-300">✓ {matches.length} identity match{matches.length === 1 ? '' : 'es'}</span> · <span className="text-red-300">✕ {mismatches.length} mismatch{mismatches.length === 1 ? '' : 'es'}</span> · matches remain context-only until ComicConnect admission is approved.</p>

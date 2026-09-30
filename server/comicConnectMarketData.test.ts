@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectTimeWindow, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
+import { buildComicConnectSearchQueries, buildComicConnectSearchUrl, classifyComicConnectTimeWindow, computeComicConnectPriceMetrics, COMICCONNECT_MAX_RESULTS, parseComicConnectSoldHtml } from './comicConnectMarketData';
 
 const input = { title: 'Edge of the Spider-Verse #2', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: 'Edge of the Spider-Verse', issueNumber: '2', publisher: 'Marvel', facsimile: 'No', distributionType: 'Direct' }) };
 
@@ -36,6 +36,17 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(classifyComicConnectTimeWindow(null, reference)).toBe('undated');
   });
 
+  it('computes deterministic average, median, and min-to-max price context', () => {
+    expect(computeComicConnectPriceMetrics([{ price: 125 }, { price: 40 }, { price: 75 }, { price: null }])).toEqual({ count: 3, avg: 80, median: 75, min: 40, max: 125 });
+  });
+
+  it('treats equivalent decimal grade formatting as a match', () => {
+    const equivalentHtml = '<div class="itempreview"><div class="titleline">EDGE OF THE SPIDER-VERSE #2</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 01/02/2024 2:00 PM</div><div class="pricing"><span class="val prc">$125</span></div></div>';
+    const result = parseComicConnectSoldHtml(equivalentHtml, { ...input, grade: '9.80' });
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0].exclusionReason).toContain('buyer-premium');
+  });
+
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
     const result = parseComicConnectSoldHtml(html, input);
     expect(result.status).toBe('success');
@@ -46,6 +57,8 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(result.context).toHaveLength(2);
     expect(result.context.some((record) => record.title.includes('FACSIMILE'))).toBe(true);
     expect(result.context.some((record) => record.exclusionReason?.includes('Grade conflict'))).toBe(true);
+    expect(result.priceMetrics).toEqual({ count: 1, avg: 125, median: 125, min: 125, max: 125 });
+    expect(result.currentPriceMetrics.count).toBe(0);
   });
 
   it('does not apply to non-comic categories', () => {
