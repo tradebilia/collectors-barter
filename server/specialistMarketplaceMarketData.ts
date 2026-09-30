@@ -431,11 +431,6 @@ type GoldinPublicSearchResponse = {
   };
 };
 
-function centsToUsd(value: unknown): number | null {
-  const cents = numberValue(value);
-  return cents == null ? null : Math.round(cents) / 100;
-}
-
 function publicGoldinRecordUrl(value: unknown): string | null {
   const slug = text(value);
   return /^[a-z0-9-]{8,240}$/i.test(slug)
@@ -458,7 +453,9 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
   };
   const records = lots.map((lot) => {
     const title = text(lot.title);
-    const winningBid = centsToUsd(lot.current_price);
+    // Goldin's public browser result contract supplies dollar-denominated
+    // winning-bid amounts (for example, 425000 plus a 20% premium is 510000).
+    const winningBid = numberValue(lot.current_price);
     const buyerPremiumPercentage = numberValue(lot.buyer_premium);
     const completed = normalize(lot.status) === 'completed sold' && winningBid != null && buyerPremiumPercentage != null;
     const allInPrice = completed ? Math.round(winningBid * (1 + buyerPremiumPercentage / 100) * 100) / 100 : null;
@@ -504,7 +501,7 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
     status: 'success',
     sales,
     context: records.filter((record) => !record.completed || !record.identityMatched),
-    messages: [`Goldin ran one anonymous public sold-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale and identity checks. Returned bid amounts were converted from Goldin cents and combined with the returned buyer-premium percentage for all-in context. All records remain context-only and cannot affect valuation or the final AI conclusion.`],
+    messages: [`Goldin ran one anonymous public sold-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale and identity checks. Goldin’s returned dollar winning bids were combined with the returned buyer-premium percentage for all-in context. All records remain context-only and cannot affect valuation or the final AI conclusion.`],
   };
 }
 
@@ -525,7 +522,7 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
 
   const title = text(lot.title);
   const description = text(lot.description);
-  const winningBid = centsToUsd(lot.final_price);
+  const winningBid = numberValue(lot.final_price);
   const buyerPremiumPercentage = numberValue(lot.buyer_premium);
   const completed = normalize(lot.status) === 'completed sold' && winningBid != null && buyerPremiumPercentage != null;
   const allInPrice = completed ? Math.round(winningBid * (1 + buyerPremiumPercentage / 100) * 100) / 100 : null;

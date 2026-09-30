@@ -35,7 +35,7 @@ describe('bounded specialist marketplace adapters', () => {
     }
   });
 
-  it('runs one capped public Goldin title search, converts cents, and retains mismatches as context-only', async () => {
+  it('runs one capped public Goldin title search, preserves dollar-denominated bids, and retains mismatches as context-only', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({
       searchalgolia: {
         total: 33,
@@ -46,7 +46,7 @@ describe('bounded specialist marketplace adapters', () => {
             meta_slug: '1990-nes-nintendo-usa-super-mario-bros-3-right-bros-sealed-video-gamegemqt',
             title: '1990 NES Nintendo Super Mario Bros. 3 (USA) Sealed Video Game - WATA 9.6/A++',
             status: 'Completed_Sold',
-            current_price: 2800000,
+            current_price: 28000,
             buyer_premium: 20,
             end_timestamp: '2021-05-22T02:30:00Z',
           },
@@ -56,7 +56,7 @@ describe('bounded specialist marketplace adapters', () => {
             meta_slug: '1996-n64-nintendo-64-usa-super-mario-64-sealed-video-game-wata-9-2-ah4ckb',
             title: '1996 N64 Nintendo 64 Super Mario 64 (USA) Sealed Video Game - WATA 9.2/A+',
             status: 'Completed_Sold',
-            current_price: 1417000,
+            current_price: 14170,
             buyer_premium: 20,
             end_timestamp: '2022-05-22T02:30:00Z',
           },
@@ -86,6 +86,50 @@ describe('bounded specialist marketplace adapters', () => {
     }));
   });
 
+  it('keeps Goldin’s $425,000 Jordan winning bid in dollars before calculating the $510,000 all-in amount', async () => {
+    const jordanRookie = {
+      sourceId: 'goldin' as const,
+      title: '1986-87 Fleer #57 Michael Jordan Rookie Card PSA GEM MT 10',
+      category: 'sports_cards',
+      certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ year: '1986-87', cardNumber: '57', player: 'Michael Jordan' }),
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      searchalgolia: {
+        lots: [{
+          lot_id: 'goldin-jordan-1',
+          lot_number: 57,
+          meta_slug: '1986-87-fleer-57-michael-jordan-rookie-card-psa-gem-mt-10eim16',
+          title: '1986-87 Fleer #57 Michael Jordan Rookie Card – PSA GEM MT 10',
+          status: 'Completed_Sold',
+          current_price: 425000,
+          buyer_premium: 20,
+          end_timestamp: '2021-04-07T01:14:42Z',
+        }, {
+          lot_id: 'goldin-jordan-complete-set',
+          lot_number: 58,
+          meta_slug: '1986-87-fleer-basketball-psa-graded-high-grade-complete-set-132-includzfnwa',
+          title: '1986-87 Fleer Basketball PSA-Graded Near Complete Set (131/132) – Includes #57 Michael Jordan Rookie Card PSA GEM MT 10',
+          status: 'Completed_Sold',
+          current_price: 425000,
+          buyer_premium: 20,
+          end_timestamp: '2022-03-13T03:30:11Z',
+        }],
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    const result = await lookupSpecialistMarketplace(jordanRookie);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({
+      winningBid: 425000,
+      buyerPremiumPercentage: 20,
+      price: 510000,
+      buyerPremiumIncluded: true,
+    });
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]?.exclusionReason).toMatch(/single item versus lot\/bundle differs/i);
+  });
+
   it('reads a public Goldin direct-lot response, calculates all-in context, and preserves buyer-premium transparency', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
       auction_title: 'Goldin September 2021 Auction',
@@ -95,7 +139,7 @@ describe('bounded specialist marketplace adapters', () => {
         title: '1990 NES Nintendo (USA) "Super Mario Bros. 3" Right Variation Sealed Video Game - WATA 9.6/A++',
         description: 'Encapsulated and graded 9.6 by WATA Games. Sealed Nintendo Entertainment System copy.',
         status: 'Completed_Sold',
-        final_price: 2800000,
+        final_price: 28000,
         buyer_premium: '20',
         end_timestamp: '2021-09-19T00:40:00Z',
       },

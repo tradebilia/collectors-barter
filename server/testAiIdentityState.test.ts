@@ -32,6 +32,13 @@ describe('universal analyzer identity state', () => {
     expect(proxy.accepted).toBe(false);
   });
 
+  it('rejects a complete card set when the selected item is a single card', () => {
+    const target = extractIdentityState({ title: '1986-87 Fleer #57 Michael Jordan Rookie Card PSA GEM MT 10', certificationCompany: 'PSA' });
+    const completeSet = extractIdentityState({ title: '1986-87 Fleer Basketball PSA-Graded Near Complete Set (131/132) – Includes #57 Michael Jordan Rookie Card PSA GEM MT 10' });
+    expect(completeSet.lot).toBe(true);
+    expect(identityStateConflicts(target, completeSet)).toContain('single item versus lot/bundle differs');
+  });
+
   it('requires five clean accepted sales per side before a definitive verdict', () => {
     const target = { title: '1996 Topps Kobe Bryant #138 PSA 10', category: 'sports_cards', grade: '10', certificationCompany: 'PSA', itemDetails: JSON.stringify({ player: 'Kobe Bryant', year: '1996', manufacturer: 'Topps', cardNumber: '138' }) };
     const left = buildMarketProfile(target, [100, 105, 110].map((p) => sale(target.title, p)));

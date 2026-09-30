@@ -54,7 +54,7 @@ export function extractIdentityState(input: { title?: string | null; grade?: str
   const gradedSignal = Boolean(grader || input.grade || /\b(?:graded|slab|certified|encapsulated)\b/i.test(text));
   const rawSignal = /\b(?:raw|ungraded|ungraded copy|no grade|未评级)\b/i.test(text);
   const autograph = /\b(?:autograph|autographed|signed|signature|auto)\b/i.test(text) ? 'auto' : 'unknown';
-  const lot = /\b(?:lot|bundle|collection)\b|\b\d+\s*(?:cards|comics|pins|games|records)\b/i.test(text);
+  const lot = /\b(?:lot|bundle|collection)\b|\b(?:near\s+)?complete\s+(?:set|collection)\b|\b\d+\s*(?:cards|comics|pins|games|records)\b/i.test(text);
   const negativeSignals = NEGATIVE_PATTERNS.filter(([pattern]) => pattern.test(text)).map(([, label]) => label);
   return {
     state: gradedSignal && !rawSignal ? 'graded' : rawSignal && !gradedSignal ? 'raw' : 'unknown',
