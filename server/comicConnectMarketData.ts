@@ -80,13 +80,33 @@ function buildComicConnectSearchUrlForQuery(query: string): { query: string; url
 
 export function buildComicConnectSearchQueries(input: ComicConnectLookupInput): string[] {
   const primary = buildSearchQuery(input);
-  const withoutLeadingArticle = primary
-    .replace(/^(?:the|a|an)\s+/i, '')
+  const withoutIssueHash = primary
     .replace(/\s*#(\d+)/g, ' $1')
     .replace(/\s+/g, ' ')
     .trim();
-  const punctuationNormalized = withoutLeadingArticle.replace(/[\-’']/g, ' ').replace(/\s+/g, ' ').trim();
-  return Array.from(new Set([primary, withoutLeadingArticle, punctuationNormalized].filter(Boolean)));
+  const withoutLeadingArticle = withoutIssueHash
+    .replace(/^(?:the|a|an)\s+/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const withoutArticlesAndConnectors = withoutLeadingArticle
+    .replace(/\b(?:the|a|an|of)\b/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const punctuationNormalized = withoutArticlesAndConnectors.replace(/[\-’']/g, ' ').replace(/\s+/g, ' ').trim();
+  const issueMatch = withoutIssueHash.match(/(\d+(?:\.\d+)?)\s*$/);
+  const issue = issueMatch?.[1] ?? '';
+  const titleOnly = withoutIssueHash.replace(/\s+\d+(?:\.\d+)?\s*$/, '').trim();
+  const titleTokens = titleOnly.split(/\s+/).filter(Boolean);
+  const distinctiveTail = titleTokens.length && issue
+    ? `${titleTokens[titleTokens.length - 1]} ${issue}`
+    : '';
+  return Array.from(new Set([
+    primary,
+    withoutLeadingArticle,
+    withoutArticlesAndConnectors,
+    punctuationNormalized,
+    distinctiveTail,
+  ].filter(Boolean))).slice(0, 5);
 }
 
 function extract(pattern: RegExp, source: string): string | null {

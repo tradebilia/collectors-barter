@@ -20,11 +20,15 @@ describe('ComicConnect bounded sold adapter', () => {
   });
 
   it('builds bounded fallback queries without assuming every title has the same article behavior', () => {
-    expect(buildComicConnectSearchQueries({ ...input, itemDetails: JSON.stringify({ comicTitle: 'The Amazing Spider-Man', issueNumber: '238' }) })).toEqual([
+    const queries = buildComicConnectSearchQueries({ ...input, itemDetails: JSON.stringify({ comicTitle: 'The Amazing Spider-Man', issueNumber: '238' }) });
+    expect(queries).toEqual([
       'The Amazing Spider-Man #238',
       'Amazing Spider-Man 238',
+      'Amazing Spider-Man 238',
       'Amazing Spider Man 238',
-    ]);
+      'Spider-Man 238',
+    ].filter((query, index, values) => values.indexOf(query) === index));
+    expect(buildComicConnectSearchQueries({ ...input, itemDetails: JSON.stringify({ comicTitle: 'Edge of Spider-Verse', issueNumber: '2' }) })).toContain('Spider-Verse 2');
   });
 
   it('classifies sales into current, extended, historical, and undated windows', () => {
