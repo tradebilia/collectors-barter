@@ -31,6 +31,11 @@ describe('sandbox specialist source activation', () => {
     expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('automatic_title_search');
     expect(getSandboxSpecialistSource('morphy')?.searchContract).toBe('public_locator_required');
     expect(getSandboxSpecialistSource('heritage')?.searchContract).toBe('public_contract_unverified');
+    expect(getSandboxSpecialistSource('alexander_historical')).toMatchObject({
+      searchContract: 'public_contract_unverified',
+      priceBasis: 'unknown',
+    });
+    expect(getSandboxSpecialistSource('alexander_historical')?.searchInstruction).toMatch(/query=<title>&past=1.*HTTP 403/i);
     expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');
   });
 
