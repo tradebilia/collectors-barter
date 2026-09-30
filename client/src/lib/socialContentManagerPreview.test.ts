@@ -67,6 +67,7 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("!automaticSceneRequestFailed");
     expect(componentSource).toContain("Using the reviewed background shown in the preview.");
     expect(componentSource).toContain("generatedSceneRequestRef.current = requestKey");
+    expect(componentSource).toContain("fall back to its reviewed category/item-type/subject scene instead.");
   });
 
   it("offers a completed-trade breaking-news video studio with real lip-sync and official-logo guardrails", () => {

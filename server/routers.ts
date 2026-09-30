@@ -5,8 +5,7 @@ import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone 
 import { COOKIE_NAME } from "@shared/const";
 import { getSocialPromotionFacts } from "@shared/socialPromotionFacts";
 import { getTradeAlertVisualHints } from "@shared/tradeAlertThemes";
-import { getTestedComicScenePrompts, isProviderSceneSafetyRejection, runTestedComicScenePromptLadder } from "./comicSocialScenePrompts";
-import { getVisualReferenceOnlyScenePrompt } from "./visualReferenceScenePrompt";
+import { getTestedComicWorldScenePrompt, isProviderSceneSafetyRejection } from "./imageSceneRecovery";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable, ensureSupportTicketsTable } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
@@ -3030,19 +3029,7 @@ export const appRouter = router({
           const originalImage = parseAutomaticSceneReferenceImage(input.listingImageDataUrl);
           const imageVisualReferences = await extractListingImageVisualReferences(input.listingImageDataUrl);
           const prompt = buildAutomaticHighValueScenePrompt({ ...input, imageVisualReferences });
-          const testedComicPrompts = getTestedComicScenePrompts(input);
-          const visualReferenceOnlyPrompt = getVisualReferenceOnlyScenePrompt();
-          const generateVisualReferenceOnlyScene = () => generateImage({
-            prompt: visualReferenceOnlyPrompt,
-            originalImages: [originalImage],
-            model: "MODEL_GPT_IMAGE_2",
-            quality: "medium",
-          });
-          const generateTestedComicScene = () => runTestedComicScenePromptLadder(testedComicPrompts, (comicPrompt) => generateImage({
-            prompt: comicPrompt,
-            model: "MODEL_GPT_IMAGE_2",
-            quality: "medium",
-          }));
+          const comicWorldRecoveryPrompt = getTestedComicWorldScenePrompt(input);
           let generated: { url?: string };
           try {
             generated = await generateImage({
@@ -3054,31 +3041,25 @@ export const appRouter = router({
           } catch (referenceError) {
             // A valid listing photo can still be rejected by the image model
             // because of format, moderation, or transient provider limits.
-            // Retry once from the same bounded public metadata so one bad
-            // reference image does not force the whole social preview to fall
-            // back to a generic category scene.
-            console.warn("[admin.generateHighValueListingScene] image-conditioned generation failed; retrying from public metadata", referenceError instanceof Error ? referenceError.message : "unknown error");
+            // Safety rejections use one tightly bounded, visually reviewed
+            // comic-world recovery only for exact subjects that have passed
+            // real-listing tests. All other subjects remain fail-closed and
+            // render their deterministic reviewed static background.
+            console.warn("[admin.generateHighValueListingScene] image-conditioned generation failed; evaluating controlled recovery", referenceError instanceof Error ? referenceError.message : "unknown error");
             if (isProviderSceneSafetyRejection(referenceError)) {
-              try {
-                // This fallback keeps the real image only as high-level visual
-                // context—palette, era, and mood—without asking for a title,
-                // character, cover, slab, or collectible recreation.
-                generated = await generateVisualReferenceOnlyScene();
-              } catch (visualReferenceError) {
-                if (!testedComicPrompts.length || !isProviderSceneSafetyRejection(visualReferenceError)) throw visualReferenceError;
-                generated = await generateTestedComicScene();
-              }
+              if (!comicWorldRecoveryPrompt) throw referenceError;
+              generated = await generateImage({
+                prompt: comicWorldRecoveryPrompt,
+                originalImages: [originalImage],
+                model: "MODEL_GPT_IMAGE_2",
+                quality: "medium",
+              });
             } else {
-              try {
-                generated = await generateImage({
-                  prompt,
-                  model: "MODEL_GPT_IMAGE_2",
-                  quality: "medium",
-                });
-              } catch (metadataError) {
-                if (!testedComicPrompts.length || !isProviderSceneSafetyRejection(metadataError)) throw metadataError;
-                generated = await generateTestedComicScene();
-              }
+              generated = await generateImage({
+                prompt,
+                model: "MODEL_GPT_IMAGE_2",
+                quality: "medium",
+              });
             }
           }
           const { url } = generated;
