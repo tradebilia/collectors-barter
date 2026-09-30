@@ -10,6 +10,12 @@ describe("homepage launch polish", () => {
     expect(homepageSource).toContain("grid-cols-2 items-center gap-0 sm:grid-cols-4");
   });
 
+  it("uses the supplied animated deeper-shadow logo only in the homepage hero", () => {
+    expect(homepageSource).toContain('src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"');
+    expect(homepageSource).toContain('src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"\n                alt="Tradebilia"');
+    expect(homepageSource).toContain('<img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-7 w-auto opacity-70" />');
+  });
+
   it("keeps the reference statistic-bar depth, glow, separators, and four metrics", () => {
     expect(homepageSource).toContain("border-b border-[#4238cf]");
     expect(homepageSource).toContain("py-1 text-white shadow-[0_0_22px_rgba(78,44,220,0.55)] sm:py-1");
