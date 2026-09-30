@@ -43,7 +43,10 @@ describe("mobile-only responsive layout contracts", () => {
 
   it("keeps desktop homepage ranking columns while compacting phone ranking modules", () => {
     const source = read("client/src/pages/Home.tsx");
-    expect(source).toContain("grid grid-cols-2 gap-3");
+    expect(source).toContain("grid grid-cols-1 gap-3");
+    expect(source).toContain("index >= 5 ? \"hidden md:block\" : undefined");
+    expect(source).toContain('<span className="md:hidden">Top 5</span>');
+    expect(source).toContain('<span className="hidden md:inline">Top 10</span>');
     expect(source).toContain("xl:grid-cols-4");
   });
 

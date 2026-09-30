@@ -758,7 +758,7 @@ export default function Home() {
                   <RecentTradesCarousel trades={recentTradesQuery.data?.trades ?? []} isLoading={recentTradesQuery.isLoading} />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 bg-[#f4f1ea] px-4 py-4 md:col-start-2 md:grid-cols-2 md:gap-4 lg:px-8 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 bg-[#f4f1ea] px-4 py-4 md:col-start-2 md:grid-cols-2 md:gap-4 lg:px-8 xl:grid-cols-4">
                 {/* Most Viewed */}
                 <Card className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d152b] text-white shadow-2xl hover:border-white/20 transition-all flex flex-col">
                   <CardHeader className="pb-4 pt-7 px-6 relative">
@@ -767,7 +767,7 @@ export default function Home() {
                         <TrendingUp className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Most Viewed</CardTitle>
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white"><span className="md:hidden">Top 5</span><span className="hidden md:inline">Top 10</span> Most Viewed</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Items getting the most attention</p>
                       </div>
                     </div>
@@ -776,7 +776,7 @@ export default function Home() {
                       <div className="space-y-0">
                         {mostViewedItemsData.map((item, index) => {
                           const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
-                          return <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} />;
+                          return <div key={`${item.id}-${index}`} className={index >= 5 ? "hidden md:block" : undefined}><RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="views" metrics={item.viewCount} /></div>;
                         })}
                       </div>
                   </CardContent>
@@ -795,7 +795,7 @@ export default function Home() {
                         <Heart className="w-5 h-5 fill-current" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Most Favorited</CardTitle>
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white"><span className="md:hidden">Top 5</span><span className="hidden md:inline">Top 10</span> Most Favorited</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Items collectors love most</p>
                       </div>
                     </div>
@@ -804,7 +804,7 @@ export default function Home() {
                       <div className="space-y-0">
                         {mostRequestedItemsData.map((item, index) => {
                           const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
-                          return <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} />;
+                          return <div key={`${item.id}-${index}`} className={index >= 5 ? "hidden md:block" : undefined}><RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="favorites" metrics={item.favoriteCount} /></div>;
                         })}
                       </div>
                   </CardContent>
@@ -823,7 +823,7 @@ export default function Home() {
                         <Star className="w-5 h-5 fill-current" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Rated Traders</CardTitle>
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white"><span className="md:hidden">Top 5</span><span className="hidden md:inline">Top 10</span> Rated Traders</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Highest rated by the community</p>
                       </div>
                     </div>
@@ -834,7 +834,8 @@ export default function Home() {
                           const initials = getAvatarInitials({ firstName: (owner as any).firstName, lastName: (owner as any).lastName, displayName: owner.displayName });
                           const badge = index === 0 ? { text: 'text-yellow-400', label: '🥇' } : index === 1 ? { text: 'text-gray-300', label: '🥈' } : index === 2 ? { text: 'text-orange-400', label: '🥉' } : { text: 'text-white/60', label: `${index + 1}` };
                           return (
-                            <Link key={`trader-${index}`} href={`/profile/${owner.id}`}>
+                            <div key={`trader-${index}`} className={index >= 5 ? "hidden md:block" : undefined}>
+                            <Link href={`/profile/${owner.id}`}>
                               <div className="flex items-center gap-3 px-3 py-2.5 transition-all hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-b-0">
                                 <div className={`min-w-[40px] h-10 flex items-center justify-center font-bold text-[18px] ${badge.text}`}>
                                   <span className={badge.label.match(/[🥇🥈🥉]/) ? 'text-[24px]' : 'text-[16px]'}>{badge.label}</span>
@@ -856,6 +857,7 @@ export default function Home() {
                                 <div className="text-white/90 text-[11px] font-bold min-w-[30px] text-right">{Number(owner.averageRating) > 0 ? Number(owner.averageRating).toFixed(1) : 'N/A'}</div>
                               </div>
                             </Link>
+                            </div>
                           );
                         })}
                       </div>
@@ -875,7 +877,7 @@ export default function Home() {
                         <DollarSign className="w-5 h-5" />
                       </div>
                       <div className="flex-1">
-                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white">Top 10 Highest Values</CardTitle>
+                        <CardTitle className="font-['Oswald'] text-[1.3rem] font-bold uppercase tracking-wider text-white"><span className="md:hidden">Top 5</span><span className="hidden md:inline">Top 10</span> Highest Values</CardTitle>
                         <p className="text-[11px] text-white/40 font-medium mt-0.5">Highest value items traded</p>
                       </div>
                     </div>
@@ -884,7 +886,7 @@ export default function Home() {
                       <div className="space-y-0">
                         {(highestTradeValueItems ?? []).map((item, index) => {
                           const imageUrl = resolveTradebiliaListingImage({ title: item.title, category: item.category, primaryPhotoUrl: item.primaryPhotoUrl });
-                          return <RankingListingItem key={`${item.id}-${index}`} item={item} index={index} imageUrl={imageUrl} metricsType="value" metrics={item.estimatedValue} />;
+                          return <div key={`${item.id}-${index}`} className={index >= 5 ? "hidden md:block" : undefined}><RankingListingItem item={item} index={index} imageUrl={imageUrl} metricsType="value" metrics={item.estimatedValue} /></div>;
                         })}
                       </div>
                   </CardContent>
