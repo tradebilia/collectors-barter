@@ -598,6 +598,14 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 }
 
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
+function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
+  const visibleQuery = query || item.title || 'No title supplied';
+  return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
+    <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview'})</span></p>
+    <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleQuery}"</p>
+  </div>;
+}
+
 function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
@@ -615,6 +623,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>💰 Sold-Comps — eBay Sold History</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
@@ -725,6 +734,8 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
   const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
+  const visibleSearchQuery = displayData?.query || requestQueryPreview || item.title || 'No title supplied';
+  const queryStatus = displayData?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview';
   // Image review changes the displayed asking-price summary as soon as its
   // response arrives. Opening the detail drawer is no longer required.
   const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics;
@@ -736,6 +747,10 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       <div className="flex items-center justify-between">
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛒 eBay Active Listings</p>
         {(isLoading || visualReviewQuery.isLoading) && <Spinner className="w-3 h-3" />}
+      </div>
+      <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
+        <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({queryStatus})</span></p>
+        <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p>
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · {showingVisualMatchMetrics ? 'Visual-match-only asking-price metrics' : 'Full-market asking-price context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
@@ -765,9 +780,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Image review is a separate, bounded check; accepted visual matches update this asking-price context, not completed-sale valuation evidence.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
       {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running separately. Current asking-price listings remain available below.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
-      {displayData?.query
-        ? <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{displayData.query}"</span> · {displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>
-        : <p className="text-gray-500 text-[10px]">Search query preview: <span className="font-mono text-gray-400">"{requestQueryPreview}"</span> · {isLoading ? 'waiting for eBay response' : 'eBay lookup has not started for this item yet'}</p>}
+      {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>}
       {displayData?.listings && displayData.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {displayData.listings.map((l: any, i: number) => (
@@ -813,6 +826,7 @@ function HipstampSection({ item, side }: { item: SelectedItem; side: 'left' | 'r
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✉️ HIPStamp Active Listings</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Authorized read-only current asking prices and supply context · USD metrics only · never completed-sale evidence</p>
       {data?.error && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.error}</p>}
       {data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
@@ -879,6 +893,7 @@ function HipstampSoldSection({ item, side }: { item: SelectedItem; side: 'left' 
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>✅ HIPStamp Sold / Closed Listings</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Closed listings marked sold · store-scoped discovery · not a marketplace-wide sales history</p>
       {data?.error && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.error}</p>}
       {data?.metrics && (
@@ -1507,7 +1522,7 @@ function ParseAuctionSection({ item, side, data, isLoading, source }: { item: Se
   const context = data?.context ?? [];
   const rows = (items: any[], eligible: boolean) => <div className="max-h-56 space-y-1 overflow-y-auto">{items.map((sale: any, index: number) => <div key={`${sale.url || sale.title}-${sale.date}-${index}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title || 'Untitled auction lot'}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.auctionName, sale.category, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${eligible ? 'text-emerald-400' : 'text-amber-300'}`}>{eligible ? 'Sold candidate — comparable gate required' : 'Context only — not admitted'}</p></div></div><p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}` : null, sale.priceBasis, sale.identityMatched ? 'Identity matched' : 'Identity review failed'].filter(Boolean).join(' · ')}</p><p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p><details className="mt-1"><summary className="cursor-pointer text-[9px] text-sky-200">All returned lot fields</summary><pre className="mt-1 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-900/70 p-1.5 text-[8px] text-gray-400">{JSON.stringify(sale.raw ?? sale, null, 2)}</pre></details></div>)}</div>;
   if (!['sports_cards', 'autographs'].includes(item.category) || (source === 'pristine_auction' && item.category !== 'sports_cards')) return <div className="rounded-lg border border-dashed border-gray-700/40 bg-gray-800/30 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : '🏆'} {label}</p><p className="text-[10px] text-gray-500">This read-only sandbox source is not applicable to the selected category.</p></div>;
-  return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3"><div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : '🏆'} {label}</p>{isLoading && <Spinner className="h-3 w-3" />}</div><p className="text-[10px] text-gray-500">Read-only auction archive. Search results only discover candidates; detail-level explicit sold status, dated evidence, identity/grade compatibility, duplicate checks, and visual review are required before any record can influence the sandbox valuation. Premium-inclusive and hammer prices are kept source-attributed.</p>{data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}{data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/25 p-2 text-[10px] text-cyan-100">{data.visualFilter.note}</p>}<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={label} />{sales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Explicit sold detail records — candidate review</p>{rows(sales, true)}</div>}{context.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Ended, unsold, ambiguous, or identity-mismatched records — context only</p>{rows(context, false)}</div>}{!sales.length && !context.length && data?.status === 'success' && <p className="text-[10px] text-gray-500">No auction records were returned for this bounded query.</p>}<details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details></div>;
+  return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3"><div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : '🏆'} {label}</p>{isLoading && <Spinner className="h-3 w-3" />}</div><MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} /><p className="text-[10px] text-gray-500">Read-only auction archive. Search results only discover candidates; detail-level explicit sold status, dated evidence, identity/grade compatibility, duplicate checks, and visual review are required before any record can influence the sandbox valuation. Premium-inclusive and hammer prices are kept source-attributed.</p>{data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}{data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/25 p-2 text-[10px] text-cyan-100">{data.visualFilter.note}</p>}<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={label} />{sales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Explicit sold detail records — candidate review</p>{rows(sales, true)}</div>}{context.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Ended, unsold, ambiguous, or identity-mismatched records — context only</p>{rows(context, false)}</div>}{!sales.length && !context.length && data?.status === 'success' && <p className="text-[10px] text-gray-500">No auction records were returned for this bounded query.</p>}<details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details></div>;
 }
 
 function CardsightAiSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
@@ -2157,7 +2172,7 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
       <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
-      <p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
+      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={lookup.isFetching} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
         <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>
         <p className="text-gray-300 text-[10px]">{source.searchInstruction}</p>
@@ -2196,7 +2211,7 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
   const formatPrice = (value: number | null | undefined) => value == null ? '—' : `$${Math.round(value).toLocaleString()}`;
   return <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
     <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 ComicConnect Sold Archive</p>
-    <p className="text-gray-400 text-[10px]">Data type: bounded sold-archive context · maximum 20 records · Comics only</p>
+    <MarketplaceQueryBanner item={item} query={data?.query || data?.winningQuery} isLoading={isLoading} /><p className="text-gray-400 text-[10px]">Data type: bounded sold-archive context · maximum 20 records · Comics only</p>
     {isLoading && <p className="text-sky-200 text-[10px]">Checking ComicConnect’s public sold archive…</p>}
     {!isLoading && data?.status === 'error' && <p className="rounded bg-rose-950/30 p-2 text-rose-200 text-[10px]">{data.messages?.join(' ') ?? 'ComicConnect could not be checked.'}</p>}
     {!isLoading && data?.status === 'success' && <>

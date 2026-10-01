@@ -61,9 +61,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
   it("shows the movie search request while eBay is still loading", () => {
     expect(pageSource).toContain("const requestQueryPreview = useMemo(() => {");
     expect(pageSource).toContain("if (item.category === 'movies')");
-    expect(pageSource).toContain("Search query preview:");
-    expect(pageSource).toContain("waiting for eBay response");
-    expect(pageSource).toContain("eBay lookup has not started for this item yet");
+    expect(pageSource).toContain("Search query <span className=\"font-normal text-cyan-200/60\">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview'})</span>");
+  });
+
+  it("keeps the query visible across searchable marketplace panels", () => {
+    expect(pageSource).toContain("function MarketplaceQueryBanner");
+    expect(pageSource).toContain("<MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />");
+    expect(pageSource).toContain("query={data?.query || data?.winningQuery}");
   });
 
   it("updates the primary asking-price cards from accepted visual matches automatically", () => {
