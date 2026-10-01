@@ -39,6 +39,8 @@ type AdapterId =
   | 'alexander_historical'
   | 'goldin'
   | 'weiss'
+  | 'stephen_album'
+  | 'nate_sanders'
   | 'coin_archives'
   | 'bertoia'
   | 'heritage'
@@ -130,6 +132,8 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   alexander_historical: { id: 'alexander_historical', label: 'Alexander Historical Auctions', version: '1.0.0', defaultOriginMarketplace: 'alexander_historical', defaultPriceBasis: 'unknown', completedStatusBasis: 'Alexander Historical completed lot' },
   goldin: { id: 'goldin', label: 'Goldin Video Game Auctions', version: '1.0.0', defaultOriginMarketplace: 'goldin', defaultPriceBasis: 'unknown', completedStatusBasis: 'Goldin Lot Sold record' },
   weiss: { id: 'weiss', label: 'Weiss Auctions', version: '1.0.0', defaultOriginMarketplace: 'weiss', defaultPriceBasis: 'realized', completedStatusBasis: 'Weiss completed-webcast final leading bid' },
+  stephen_album: { id: 'stephen_album', label: 'Stephen Album Rare Coins', version: '1.0.0', defaultOriginMarketplace: 'stephen_album', defaultPriceBasis: 'realized', completedStatusBasis: 'Stephen Album SOLD lot with hammer and buyer-premium separation' },
+  nate_sanders: { id: 'nate_sanders', label: 'Nate D. Sanders Auctions', version: '1.0.0', defaultOriginMarketplace: 'nate_sanders', defaultPriceBasis: 'closed', completedStatusBasis: 'Nate D. Sanders closed lot with final price including buyer premium' },
   coin_archives: { id: 'coin_archives', label: 'CoinArchives', version: '1.0.0', defaultOriginMarketplace: 'coin_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'CoinArchives completed lot record' },
   bertoia: { id: 'bertoia', label: 'Bertoia Auctions', version: '1.0.0', defaultOriginMarketplace: 'bertoia', defaultPriceBasis: 'unknown', completedStatusBasis: 'Bertoia completed lot or catalog record' },
   heritage: { id: 'heritage', label: 'Heritage Auction Archives', version: '1.0.0', defaultOriginMarketplace: 'heritage', defaultPriceBasis: 'unknown', completedStatusBasis: 'Heritage completed lot result' },

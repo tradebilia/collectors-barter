@@ -80,11 +80,14 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   alexander_historical: { hosts: ['alexautographs.com', 'www.alexautographs.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 12 },
   weiss: { hosts: ['api-frontend.nextlot.net'], linkPattern: /\/api\/frontend\/v1\/sites\/2218285\/search\/lots/i, recordCap: 12 },
+  stephen_album: { hosts: ['sarc.auction', 'www.sarc.auction'], linkPattern: /(?:\/auctionlist\.aspx\?dv=2|_as\d+(?:_p\d+)?$|_i\d+$)/i, recordCap: 12 },
+  nate_sanders: { hosts: ['natedsanders.com', 'www.natedsanders.com'], linkPattern: /\/(?:catalog\.aspx|[^/]+-LOT\d+\.aspx)/i, recordCap: 12 },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
 const GOLDIN_PUBLIC_SOLD_SEARCH_ENDPOINT = 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2';
 const WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT = 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots';
+const STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT = 'https://www.sarc.auction/auctionlist.aspx?dv=2';
 
 function text(value: unknown): string {
   return value == null ? '' : String(value)
@@ -186,6 +189,15 @@ function extractRealizedAmount(value: string): number | null {
     return Number.isFinite(amount) && amount > 0 ? amount : null;
   }
   return null;
+}
+
+function extractStephenHammer(value: string): { hammer: number; premium: number | null } | null {
+  const match = value.match(/Sold\s+for\s*\(\s*([\d,]+(?:\.\d+)?)\s*\+\s*([\d,]+(?:\.\d+)?)\s*BP\s*\)/i);
+  if (!match) return null;
+  const hammer = Number(match[1].replace(/,/g, ''));
+  const premiumAmount = Number(match[2].replace(/,/g, ''));
+  if (!Number.isFinite(hammer) || hammer <= 0) return null;
+  return { hammer, premium: Number.isFinite(premiumAmount) ? Math.round((premiumAmount / hammer) * 10000) / 100 : null };
 }
 
 function hasExplicitCompletedStatus(value: string): boolean {
@@ -322,6 +334,13 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
   }
   if (input.sourceId === 'weiss' && source.searchContract === 'automatic_title_search') {
     return { url: WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT, error: null };
+  }
+  if (input.sourceId === 'stephen_album' && source.searchContract === 'automatic_title_search') {
+    return { url: STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT, error: null };
+  }
+  if (input.sourceId === 'nate_sanders' && source.searchContract === 'automatic_title_search') {
+    const query = text(input.title).slice(0, 180);
+    return { url: `https://natedsanders.com/catalog.aspx?searchby=3&searchvalue=${encodeURIComponent(query)}`, error: null };
   }
   if (source.searchContract === 'automatic_title_search') return { url: null, error: `${source.label} is handled by its dedicated adapter rather than this generic specialist route.` };
   const sourceUrl = text(input.sourceUrl);
@@ -808,6 +827,55 @@ async function lookupWeissPublicCompletedLots(input: SpecialistMarketplaceLookup
   }
 }
 
+function parseStephenAuctionPage(input: SpecialistMarketplaceLookupInput, html: string, requestUrl: string): SpecialistMarketplaceLookupResult {
+  const source = getSandboxSpecialistSource('stephen_album')!;
+  const dom = new JSDOM(html, { url: requestUrl });
+  const document = dom.window.document;
+  const records: SpecialistMarketplaceRecord[] = [];
+  const pageDate = extractDate(text(document.body?.textContent));
+  const auctionName = text(document.querySelector('h1')?.textContent) || text(document.title);
+  for (const block of Array.from(document.querySelectorAll('.gridItem'))) {
+    if (records.length >= SOURCE_RULES.stephen_album!.recordCap) break;
+    const body = text(block.textContent);
+    const title = text(block.querySelector('.gridView_title')?.textContent || block.querySelector('a[title]')?.getAttribute('title') || '');
+    const href = block.querySelector('a[href*="_i"]')?.getAttribute('href');
+    const url = href ? canonicalUrl(new URL(href, requestUrl).toString()) : null;
+    const hammerData = extractStephenHammer(body);
+    const completed = Boolean(hammerData && /bidding has concluded/i.test(body));
+    const grade = extractGrade(`${title} ${body}`);
+    const certificationCompany = extractCertificationCompany(`${title} ${body}`);
+    const identity = identityReview(input, title, body, grade, certificationCompany);
+    const image = block.querySelector('img[src]')?.getAttribute('src');
+    records.push({ sourceId: 'stephen_album', provider: source.label, title: title || 'Untitled public Stephen Album lot', description: text(block.querySelector('.gridView_description')?.textContent) || null, lotId: url?.match(/_i(\d+)$/i)?.[1] ?? extractLotId(body, url), auctionName: auctionName || null, url, imageUrl: image ? canonicalUrl(new URL(image, requestUrl).toString()) : null, saleStatus: completed ? 'completed' : 'unknown', completed, price: completed ? hammerData!.hammer : null, currency: completed ? 'USD' : null, date: extractDate(body) ?? pageDate, grade, certificationCompany, priceBasis: 'realized', buyerPremiumIncluded: false, winningBid: completed ? hammerData!.hammer : null, buyerPremiumPercentage: completed ? hammerData!.premium : null, identityMatched: identity.matched, matchedTokens: identity.matchedTokens, exclusionReason: !completed ? 'The public Stephen Album lot did not expose SOLD status and a hammer-plus-premium breakdown.' : !identity.matched ? identity.reason ?? 'Identity could not be confirmed.' : 'Context-only pending source-specific signed-admission validation.', valuationEligible: false });
+  }
+  const capped = records.slice(0, SOURCE_RULES.stephen_album!.recordCap);
+  const sales = capped.filter((record) => record.completed && record.identityMatched);
+  return { source: 'stephen_album', label: source.label, searchContract: source.searchContract, query: input.title, sales, context: capped.filter((record) => !record.completed || !record.identityMatched), requestUrl, recordCap: SOURCE_RULES.stephen_album!.recordCap, status: 'success', messages: [`Stephen Album read one bounded completed auction page and found ${capped.length} candidate records; ${sales.length} passed deterministic SOLD, price, and identity checks. Hammer prices exclude buyer premium. All results remain context-only.`] };
+}
+
+async function lookupStephenAlbum(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
+  const source = getSandboxSpecialistSource('stephen_album')!;
+  const empty = { source: 'stephen_album' as const, label: source.label, searchContract: source.searchContract, query: input.title, sales: [] as SpecialistMarketplaceRecord[], context: [] as SpecialistMarketplaceRecord[], requestUrl: STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT, recordCap: SOURCE_RULES.stephen_album!.recordCap };
+  try {
+    const archive = await fetch(STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' }, redirect: 'error', signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS) });
+    if (!archive.ok) return { ...empty, status: 'error', messages: [`Stephen Album archive returned HTTP ${archive.status}; no retry or workaround was attempted.`] };
+    const dom = new JSDOM(await archive.text(), { url: archive.url });
+    const auctionUrls = [...new Set(Array.from(dom.window.document.querySelectorAll('a[href]')).map((anchor) => canonicalUrl(new URL(anchor.getAttribute('href')!, archive.url).toString())).filter((url): url is string => Boolean(url && new URL(url).hostname.toLowerCase() === 'www.sarc.auction' && /_as\d+(?:_p\d+)?$/i.test(new URL(url).pathname))).map((url) => url.replace(/_p\d+$/i, '')))].slice(0, 8);
+    const combined: SpecialistMarketplaceRecord[] = [];
+    for (const auctionUrl of auctionUrls) {
+      const response = await fetch(auctionUrl, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' }, redirect: 'error', signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS) });
+      if (!response.ok) continue;
+      const parsed = parseStephenAuctionPage(input, await response.text(), response.url);
+      combined.push(...parsed.sales, ...parsed.context);
+    }
+    const capped = combined.slice(0, SOURCE_RULES.stephen_album!.recordCap);
+    const sales = capped.filter((record) => record.completed && record.identityMatched);
+    return { ...empty, status: 'success', requestUrl: auctionUrls[0] ?? empty.requestUrl, sales, context: capped.filter((record) => !record.completed || !record.identityMatched), messages: [`Stephen Album searched ${auctionUrls.length} bounded completed auction pages and found ${capped.length} candidates; ${sales.length} passed deterministic identity checks. All results remain context-only.`] };
+  } catch (error) {
+    return { ...empty, status: 'error', messages: [error instanceof Error && error.name === 'TimeoutError' ? 'Stephen Album search timed out; no retry was attempted.' : 'Stephen Album search could not be reached; no access workaround was attempted.'] };
+  }
+}
+
 export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource(input.sourceId);
   const request = buildSpecialistMarketplaceRequest(input);
@@ -826,6 +894,7 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (!request.url) return { ...empty, status: source.searchContract === 'public_contract_unverified' ? 'unsupported' : 'setup_required', messages: [request.error ?? source.searchInstruction] };
   if (input.sourceId === 'goldin') return text(input.sourceUrl) ? lookupGoldinPublicLot(input, request.url) : lookupGoldinPublicSearch(input);
   if (input.sourceId === 'weiss') return lookupWeissPublicCompletedLots(input);
+  if (input.sourceId === 'stephen_album') return lookupStephenAlbum(input);
   try {
     const response = await fetch(request.url, {
       headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },

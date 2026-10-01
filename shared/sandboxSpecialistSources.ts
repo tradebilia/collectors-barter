@@ -18,7 +18,9 @@ export type SandboxSpecialistSourceId =
   | 'bertoia'
   | 'heritage'
   | 'hakes'
-  | 'weiss';
+  | 'weiss'
+  | 'stephen_album'
+  | 'nate_sanders';
 
 export type SpecialistSourceSearchContract =
   | 'automatic_title_search'
@@ -64,6 +66,8 @@ export const SANDBOX_SPECIALIST_SOURCES: readonly SandboxSpecialistSource[] = [
   { id: 'coin_archives', label: 'CoinArchives', categories: ['coins'], sourceUrl: 'https://www.coinarchives.com/faq.php', currencyPolicy: 'currency_unresolved', priceBasis: 'hammer', evidenceMode: 'context_only_until_adapter', searchContract: 'public_contract_unverified', searchInstruction: 'The public search route was verified, but did not return a completed record with a numeric realized price.', activationNote: 'Remote lookup stays off until an ordinary public search proves explicit completed-sale results.' },
   { id: 'bertoia', label: 'Bertoia Auctions', categories: ['vintage_toys'], sourceUrl: 'https://www.bertoiaauctions.com/toy-auctions/past-auctions/', currencyPolicy: 'currency_unresolved', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', searchContract: 'price_table_locator_required', searchInstruction: 'A public Prices Realized PDF can be read only with an exact lot locator; it lacks title data for an arbitrary title search.', activationNote: 'No bid-platform or hidden API path is used.' },
   { id: 'hakes', label: "Hake's Auction Results", categories: ['disney_pins', 'video_games', 'vintage_toys'], sourceUrl: 'https://www.hakes.com/auctionresults.aspx', currencyPolicy: 'usd_symbol_context', priceBasis: 'including_buyers_premium', evidenceMode: 'context_only_until_adapter', searchContract: 'public_contract_unverified', searchInstruction: 'The public result shell did not expose an individual completed-sale response contract.', activationNote: 'Remote lookup stays off until a public realized-lot route is verified.' },
+  { id: 'stephen_album', label: 'Stephen Album Rare Coins', categories: ['coins'], sourceUrl: 'https://www.sarc.auction/auctionlist.aspx?dv=2', currencyPolicy: 'usd_explicit', priceBasis: 'hammer', evidenceMode: 'context_only_until_adapter', searchContract: 'automatic_title_search', searchInstruction: 'Tradebilia searches a bounded set of Stephen Album completed auction pages for the selected coin title (maximum 12 candidates).', activationNote: 'Completed archive rows and lot pages expose SOLD status, USD hammer, buyer-premium text, stable lot URLs, dates, and public images. Results remain context-only.' },
+  { id: 'nate_sanders', label: 'Nate D. Sanders Auctions', categories: ['comics', 'sports_cards', 'movies', 'music', 'autographs'], sourceUrl: 'https://natedsanders.com/catalog.aspx', currencyPolicy: 'usd_explicit', priceBasis: 'including_buyers_premium', evidenceMode: 'context_only_until_adapter', searchContract: 'automatic_title_search', searchInstruction: 'Tradebilia sends one bounded public closed-lot title search to Nate D. Sanders (maximum 12 candidates).', activationNote: 'Closed catalog and lot pages expose final prices including buyer premium, ended dates, stable lot IDs, titles, and public images. Pass/non-sale records are excluded; results remain context-only.' },
 ] as const;
 
 export function getSandboxSpecialistSource(id: string): SandboxSpecialistSource | null {
