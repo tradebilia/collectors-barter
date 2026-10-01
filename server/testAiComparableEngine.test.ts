@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales } from './testAiComparableEngine';
+import { buildMarketProfile, deduplicateMarketSales, deterministicTradeComparison, getCategoryEvidenceThresholds, normalizeCanonicalSaleUrl, scoreComparable, selectBalancedComparableSales } from './testAiComparableEngine';
 
 const target = {
   title: '1996 Topps Kobe Bryant #138 PSA 10',
@@ -207,6 +207,15 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.sourceReliabilityScore).toBeGreaterThanOrEqual(80);
     expect(profile.evidenceCoverage.independentMarketplaceCount).toBe(3);
     expect(profile.evidenceCoverage.serverAttributedCount).toBe(6);
+    expect(profile.categoryEvidenceThresholds.minimumSelectedSales).toBe(5);
+    expect(profile.adapterReliabilityHistory).toHaveLength(3);
+    expect(profile.adapterReliabilityHistory.every((adapter) => adapter.reliability === 'high')).toBe(true);
+  });
+
+  it('uses conservative defaults for unmapped categories and stricter comic thresholds', () => {
+    expect(getCategoryEvidenceThresholds('comics').maximumSpreadPct).toBe(75);
+    expect(getCategoryEvidenceThresholds('unknown category').minimumIndependentMarketplaces).toBe(2);
+    expect(getCategoryEvidenceThresholds('unknown category').rationale).toContain('conservative');
   });
 
   it('flags a small-sample IQR outlier for review without deleting it from the valuation population', () => {

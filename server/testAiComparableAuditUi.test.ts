@@ -35,5 +35,8 @@ describe('Test AI comparable audit ledger UI', () => {
     expect(page).toContain('Source reliability:');
     expect(page).toContain('Evidence coverage:');
     expect(page).toContain('selected records attributed');
+    expect(page).toContain('Source reliability meter');
+    expect(page).toContain('Category threshold:');
+    expect(page).toContain('Adapter reliability history');
   });
 });

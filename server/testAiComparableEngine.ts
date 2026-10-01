@@ -140,6 +140,25 @@ export type ComparableSourceDiagnostic = {
 
 export type SourceReliabilityLevel = 'high' | 'medium' | 'low' | 'unavailable';
 
+export type CategoryEvidenceThresholds = {
+  category: string;
+  minimumSelectedSales: number;
+  minimumIndependentMarketplaces: number;
+  maximumSpreadPct: number;
+  rationale: string;
+};
+
+export type AdapterReliabilityHistory = {
+  adapterId: string;
+  receivedCount: number;
+  selectedCount: number;
+  duplicateCount: number;
+  attributedCount: number;
+  currentWindowCount: number;
+  selectionRatePct: number;
+  reliability: SourceReliabilityLevel;
+};
+
 export type MarketEvidenceCoverage = {
   receivedCount: number;
   selectedCount: number;
@@ -210,6 +229,8 @@ export interface MarketProfile {
   sourceReliabilityScore: number | null;
   sourceReliabilityReasons: string[];
   evidenceCoverage: MarketEvidenceCoverage;
+  categoryEvidenceThresholds: CategoryEvidenceThresholds;
+  adapterReliabilityHistory: AdapterReliabilityHistory[];
   confidenceReasons: string[];
   identityReadiness: 'ready' | 'limited' | 'missing_critical';
   valuationMethod: string;
@@ -433,6 +454,56 @@ const KNOWN_SERVER_ADAPTERS = new Set([
   'ngc', 'cng', 'coin_archives', 'hakes', 'morphy', 'theriaults', 'bertoia', 'rumsey',
   'cherrystone', 'raritan', 'poster_auctions', 'bonhams', 'hipstamp', 'pricecharting',
 ]);
+
+const CATEGORY_EVIDENCE_THRESHOLDS: Record<string, Omit<CategoryEvidenceThresholds, 'category'>> = {
+  comics: { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Issue, grade, variant, and slab differences can materially change comic values.' },
+  sports_cards: { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Grade, parallel, and certification differences can materially change card values.' },
+  pokemon: { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Set, card number, language, and grade need multiple independent confirmations.' },
+  coins: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Mint, denomination, grade, and variety evidence is often thinner but still requires source breadth.' },
+  stamps: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Country, catalog number, denomination, and hinge/use state can fragment the market.' },
+  video_games: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Platform, edition, completeness, and grading state drive condition-sensitive prices.' },
+  music: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Pressing, format, release year, and autograph state can differ across records.' },
+  movies: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Format, release year, region, and graded/raw state must be cross-checked.' },
+  vintage_toys: { minimumSelectedSales: 4, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Completeness, edition, packaging, and condition vary substantially.' },
+  disney_pins: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Release, edition, set, and authenticity details can affect comparability.' },
+  autographs: { minimumSelectedSales: 3, minimumIndependentMarketplaces: 2, maximumSpreadPct: 100, rationale: 'Signer, item type, authentication, and inscription details require corroboration.' },
+};
+
+export function getCategoryEvidenceThresholds(category: string): CategoryEvidenceThresholds {
+  const normalized = String(category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const thresholds = CATEGORY_EVIDENCE_THRESHOLDS[normalized] ?? { minimumSelectedSales: 5, minimumIndependentMarketplaces: 2, maximumSpreadPct: 75, rationale: 'Unmapped categories use the conservative general evidence standard.' };
+  return { category: normalized || 'unknown', ...thresholds };
+}
+
+function adapterKey(sale: MarketSale): string {
+  return normalizeFingerprintText(sale.sourceAdapter || sale.sourceId || sale.sourceLabel || sale.marketplace || 'unattributed') || 'unattributed';
+}
+
+function buildAdapterReliabilityHistory(
+  receivedSales: MarketSale[],
+  selectedSales: MarketSale[],
+  duplicateSales: MarketSale[],
+  nowMs: number,
+): AdapterReliabilityHistory[] {
+  const keys = new Set([...receivedSales, ...selectedSales].map(adapterKey));
+  return [...keys].sort().map((adapterId) => {
+    const received = receivedSales.filter((sale) => adapterKey(sale) === adapterId).length;
+    const selected = selectedSales.filter((sale) => adapterKey(sale) === adapterId);
+    const duplicates = duplicateSales.filter((sale) => adapterKey(sale) === adapterId).length;
+    const attributed = selected.filter((sale) => marketplaceKey(sale) !== 'unattributed').length;
+    const currentWindow = selected.filter((sale) => {
+      const age = daysOld(sale.date, nowMs);
+      return age !== null && age <= 365;
+    }).length;
+    const selectionRatePct = received ? Math.round((selected.length / received) * 100) : 0;
+    const reliability: SourceReliabilityLevel = !selected.length
+      ? 'low'
+      : attributed === selected.length && currentWindow >= Math.max(1, Math.ceil(selected.length / 2)) && selectionRatePct >= 25
+        ? 'high'
+        : attributed > 0 && currentWindow > 0 ? 'medium' : 'low';
+    return { adapterId, receivedCount: received, selectedCount: selected.length, duplicateCount: duplicates, attributedCount: attributed, currentWindowCount: currentWindow, selectionRatePct, reliability };
+  });
+}
 
 function assessMarketEvidenceCoverage(
   receivedSales: MarketSale[],
@@ -1855,6 +1926,8 @@ export function buildMarketProfile(
   const selectedAccepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
   const selectedSales = selected.map(({ sale }) => sale);
   const evidenceCoverage = assessMarketEvidenceCoverage(sales, selectedSales, deduplicated.duplicates.length, nowMs);
+  const categoryEvidenceThresholds = getCategoryEvidenceThresholds(target.category);
+  const adapterReliabilityHistory = buildAdapterReliabilityHistory(sales, selectedSales, deduplicated.duplicates.map(({ sale }) => sale), nowMs);
   const selectedAcceptedWithAge = selectedAccepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
   const selectedMarketplaceCounts = new Map<string, number>();
   let unknownMarketplaceCount = 0;
@@ -1935,9 +2008,9 @@ export function buildMarketProfile(
   const contextualComparableCount = comparableMatches.filter((match) => match.classification === 'contextual').length;
   const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
-  const calculatedEvidenceQuality: ConfidenceLevel = accepted.length >= 6 && exactMatchCount >= 2 && (spreadPct === null || spreadPct <= 75)
+  const calculatedEvidenceQuality: ConfidenceLevel = accepted.length >= categoryEvidenceThresholds.minimumSelectedSales + 1 && exactMatchCount >= 2 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct)
     ? 'high'
-    : accepted.length >= 3 && (spreadPct === null || spreadPct <= 100)
+    : accepted.length >= Math.max(3, categoryEvidenceThresholds.minimumSelectedSales - 1) && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25)
       ? 'medium'
       : 'low';
   const evidenceQuality: ConfidenceLevel = evidenceCoverage.sourceReliability === 'low' || evidenceCoverage.sourceReliability === 'unavailable'
@@ -1955,8 +2028,8 @@ export function buildMarketProfile(
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
-  if (spreadPct !== null && spreadPct > 75) valuationWarnings.push('Authoritative comparable prices are widely dispersed.');
-  if (accepted.length < 5) valuationWarnings.push('Fewer than five accepted completed sales are available; treat the range as preliminary review evidence.');
+  if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
+  if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);
   if (selectedAcceptedWithAge.length > 0 && selectedAcceptedWithAge.length < 5) valuationWarnings.push('IQR outlier filtering was not applied because fewer than five selected completed sales are available.');
   if (flaggedSmallSampleOutliers.size > 0) valuationWarnings.push(`${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} was flagged for review but retained because the selected sample has fewer than ten completed sales.`);
   if (outlierExcludedCount > 0) valuationWarnings.push(`${outlierExcludedCount} identity-matched completed sale${outlierExcludedCount === 1 ? '' : 's'} was excluded from the deterministic value by the IQR outlier rule and remains visible in the audit ledger.`);
@@ -1983,16 +2056,20 @@ export function buildMarketProfile(
     valuationWarnings.push('Material identity evidence conflict requires review; completed-sale records are withheld from deterministic valuation.');
     if (identityGate?.materialFlags?.length) valuationWarnings.push(...identityGate.materialFlags.map((flag) => `Identity review: ${flag}`));
   }
-  const evidenceIndependenceAdequate = independentMarketplaceCount >= 2 || accepted.length >= 7;
-  if (!evidenceIndependenceAdequate && accepted.length > 0) valuationWarnings.push('Marketplace independence is below the definitive-evidence floor; at least two marketplaces or seven selected completed sales are required for a trade verdict.');
+  const evidenceIndependenceAdequate = independentMarketplaceCount >= categoryEvidenceThresholds.minimumIndependentMarketplaces || accepted.length >= categoryEvidenceThresholds.minimumSelectedSales + 2;
+  if (!evidenceIndependenceAdequate && accepted.length > 0) valuationWarnings.push(`Marketplace independence is below the ${categoryEvidenceThresholds.category} evidence floor; at least ${categoryEvidenceThresholds.minimumIndependentMarketplaces} marketplaces or ${categoryEvidenceThresholds.minimumSelectedSales + 2} selected completed sales are required.`);
   if (unknownMarketplaceCount > 0) valuationWarnings.push(`${unknownMarketplaceCount} selected completed sale${unknownMarketplaceCount === 1 ? '' : 's'} has an unknown origin marketplace and does not establish independent-market evidence.`);
-  const supported = Boolean(!materialReviewRequired && primaryValue !== null && accepted.length >= 3 && (spreadPct === null || spreadPct <= 100));
+  // A preliminary range can be displayed from three accepted sales; the
+  // category-specific floor is enforced later by deterministicTradeComparison
+  // before a definitive trade verdict is allowed.
+  const supported = Boolean(!materialReviewRequired && primaryValue !== null && accepted.length >= 3 && (spreadPct === null || spreadPct <= categoryEvidenceThresholds.maximumSpreadPct + 25));
   const confidenceReasons = [
     `${accepted.length} clean completed sale${accepted.length === 1 ? '' : 's'} selected after identity, source, visual, and outlier checks${accepted.length < 5 ? '; five are required for a definitive trade verdict' : ''}.`,
     `${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}${unknownMarketplaceCount ? `; ${unknownMarketplaceCount} selected record${unknownMarketplaceCount === 1 ? '' : 's'} has an unknown marketplace` : ''}; ${evidenceIndependenceAdequate ? 'independence floor met' : 'independence floor not met for a definitive trade verdict'}.`,
     recentCount ? `${recentCount} selected sale${recentCount === 1 ? '' : 's'} occurred within the last 90 days.` : 'No selected sale occurred within the last 90 days.',
     spreadPct === null ? 'No stable price spread can be calculated from the selected evidence.' : `Selected-value spread is ${spreadPct}% (${marketStability} stability).`,
     `Source reliability is ${evidenceCoverage.sourceReliability}${evidenceCoverage.sourceReliabilityScore !== null ? ` (${evidenceCoverage.sourceReliabilityScore}/100)` : ''}; ${evidenceCoverage.attributedCount}/${evidenceCoverage.selectedCount} selected records are marketplace-attributed and ${evidenceCoverage.independentMarketplaceCount} independent marketplace${evidenceCoverage.independentMarketplaceCount === 1 ? '' : 's'} are represented.`,
+    `${categoryEvidenceThresholds.category} threshold: ${categoryEvidenceThresholds.minimumSelectedSales} selected sales, ${categoryEvidenceThresholds.minimumIndependentMarketplaces} independent marketplaces, and no more than ${categoryEvidenceThresholds.maximumSpreadPct}% spread for strong evidence.`,
     outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
   return {
@@ -2037,6 +2114,8 @@ export function buildMarketProfile(
     sourceReliabilityScore: evidenceCoverage.sourceReliabilityScore,
     sourceReliabilityReasons: evidenceCoverage.sourceReliabilityReasons,
     evidenceCoverage,
+    categoryEvidenceThresholds,
+    adapterReliabilityHistory,
     confidenceReasons,
     identityReadiness,
     valuationMethod: supported ? `median primary value from exact or near identity-matched completed sales; recency-weighted mean retained as a diagnostic, with duplicate suppression, ${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}, and ${canApplyIqr ? 'IQR outlier filtering' : flaggedSmallSampleOutliers.size ? 'small-sample outlier flagging without automatic exclusion' : 'no automatic outlier filtering because fewer than ten selected sales are available'}` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
@@ -2057,8 +2136,10 @@ export function deterministicTradeComparison(
   const leftValue = left.primaryValue ?? left.weightedValue ?? left.median ?? leftFallback;
   const rightValue = right.primaryValue ?? right.weightedValue ?? right.median ?? rightFallback;
   const difference = rightValue - leftValue;
-  const hasDefensibleLeftValue = left.marketRange.supported && left.marketRange.low !== null && left.marketRange.mid !== null && left.marketRange.high !== null && left.authoritativeSaleCount >= 5 && left.evidenceQuality !== 'low' && (left.spreadPct === null || left.spreadPct <= 75) && (left.independentMarketplaceCount >= 2 || left.authoritativeSaleCount >= 7);
-  const hasDefensibleRightValue = right.marketRange.supported && right.marketRange.low !== null && right.marketRange.mid !== null && right.marketRange.high !== null && right.authoritativeSaleCount >= 5 && right.evidenceQuality !== 'low' && (right.spreadPct === null || right.spreadPct <= 75) && (right.independentMarketplaceCount >= 2 || right.authoritativeSaleCount >= 7);
+  const leftThresholds = left.categoryEvidenceThresholds;
+  const rightThresholds = right.categoryEvidenceThresholds;
+  const hasDefensibleLeftValue = left.marketRange.supported && left.marketRange.low !== null && left.marketRange.mid !== null && left.marketRange.high !== null && left.authoritativeSaleCount >= leftThresholds.minimumSelectedSales && left.evidenceQuality !== 'low' && (left.spreadPct === null || left.spreadPct <= leftThresholds.maximumSpreadPct) && (left.independentMarketplaceCount >= leftThresholds.minimumIndependentMarketplaces || left.authoritativeSaleCount >= leftThresholds.minimumSelectedSales + 2);
+  const hasDefensibleRightValue = right.marketRange.supported && right.marketRange.low !== null && right.marketRange.mid !== null && right.marketRange.high !== null && right.authoritativeSaleCount >= rightThresholds.minimumSelectedSales && right.evidenceQuality !== 'low' && (right.spreadPct === null || right.spreadPct <= rightThresholds.maximumSpreadPct) && (right.independentMarketplaceCount >= rightThresholds.minimumIndependentMarketplaces || right.authoritativeSaleCount >= rightThresholds.minimumSelectedSales + 2);
   const hasSufficientEvidence = hasDefensibleLeftValue && hasDefensibleRightValue;
   if (!hasSufficientEvidence) {
     return {
