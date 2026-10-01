@@ -1,3 +1,5 @@
+import { isSandboxSiteBlockedSource } from './sandboxBlockedSources';
+
 export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'hakes';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
@@ -61,6 +63,7 @@ function certificateRequirementMet(requirement: SourceApplicability['requires'],
 export function getEligibleTestAiSources(context: SourceEligibilityContext): SourceApplicability[] {
   const category = normalizeCategory(context.category);
   return TEST_AI_SOURCE_APPLICABILITY.filter((source) => {
+    if (isSandboxSiteBlockedSource(source.sourceId)) return false;
     const categoryMatches = source.categories === '*' || source.categories.includes(category);
     const titleMatches = source.requires !== 'title' || context.hasTitle !== false;
     return categoryMatches && titleMatches && certificateRequirementMet(source.requires, context.gradingCompany);

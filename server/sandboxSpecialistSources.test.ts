@@ -3,12 +3,12 @@ import { SANDBOX_SPECIALIST_SOURCES, getSandboxSpecialistSource, isSandboxSpecia
 import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 describe('sandbox specialist source activation', () => {
-  it('activates the 15 displayed test sources and excludes CloudFront-blocked or unapproved sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(15);
+  it('activates the 14 displayed test sources and excludes HTTP 403-blocked or unapproved sources', () => {
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(14);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('omega_auctions');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('propstore');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'coin_archives']));
-    for (const removed of ['university_archives', 'swann', 'heritage', 'alexander_historical']) {
+    for (const removed of ['greatcollections', 'university_archives', 'swann', 'heritage', 'rr_auction', 'alexander_historical']) {
       expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain(removed);
       expect(getSandboxSpecialistSource(removed)).toBeNull();
     }
@@ -17,7 +17,7 @@ describe('sandbox specialist source activation', () => {
   it('keeps category mapping source-specific', () => {
     const allTradebiliaCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'];
     for (const category of allTradebiliaCategories) expect(isSandboxSpecialistSourceApplicable('goldin', category), `Goldin should be available for ${category}`).toBe(true);
-    expect(isSandboxSpecialistSourceApplicable('rr_auction', 'music')).toBe(true);
+    expect(isSandboxSpecialistSourceApplicable('rr_auction', 'music')).toBe(false);
     expect(isSandboxSpecialistSourceApplicable('rr_auction', 'coins')).toBe(false);
   });
 

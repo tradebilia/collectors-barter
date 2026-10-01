@@ -13,8 +13,7 @@ import { normalizeTestAiEvidence, type EvidenceSourceObservation, type Normalize
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
-
-const REMOVED_SANDBOX_SOURCE_IDS = new Set(['university_archives', 'swann', 'heritage', 'alexander_historical']);
+import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -32,7 +31,7 @@ type DataSourceDefinition = {
 };
 
 const PERMISSION_PENDING_SOURCE_REGISTRY: Record<string, DataSourceDefinition> = Object.fromEntries(
-  PERMISSION_PENDING_MARKET_SOURCES.filter((source) => source.id !== 'ngc' && !REMOVED_SANDBOX_SOURCE_IDS.has(source.id)).map((source) => {
+  PERMISSION_PENDING_MARKET_SOURCES.filter((source) => source.id !== 'ngc' && !isSandboxSiteBlockedSource(source.id)).map((source) => {
     const id = source.id;
     return [id, {
       id,
@@ -313,7 +312,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     description: 'Read-only Discogs release metadata for Music items; no valuation, authentication, grading, or stored data',
   },
   ...Object.fromEntries(Object.entries(PERMISSION_PENDING_SOURCE_REGISTRY).filter(([sourceId]) => sourceId !== 'propstore')),
-  ...Object.fromEntries(SANDBOX_SPECIALIST_SOURCES.filter((source) => !REMOVED_SANDBOX_SOURCE_IDS.has(source.id)).map((source) => [source.id, {
+  ...Object.fromEntries(SANDBOX_SPECIALIST_SOURCES.filter((source) => !isSandboxSiteBlockedSource(source.id)).map((source) => [source.id, {
     id: source.id,
     label: source.label,
     group: 'Marketplace',
