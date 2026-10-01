@@ -178,6 +178,37 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.marketRange.supported).toBe(false);
   });
 
+  it('explains when valuation evidence has weak source attribution', () => {
+    const profile = buildMarketProfile(target, [
+      { ...sale(target.title, 1000, '2026-09-20'), saleStatus: 'completed' as const, priceBasis: 'sold' as const },
+      { ...sale(target.title, 1100, '2026-09-18'), saleStatus: 'completed' as const, priceBasis: 'sold' as const },
+      { ...sale(target.title, 1050, '2026-09-16'), saleStatus: 'completed' as const, priceBasis: 'sold' as const },
+    ], null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.sourceReliability).toBe('low');
+    expect(profile.sourceReliabilityScore).toBe(0);
+    expect(profile.sourceReliabilityReasons.join(' ')).toContain('attributable marketplace');
+  });
+
+  it('rewards recognized adapter provenance and independent marketplace breadth', () => {
+    const records = [
+      ['weiss', 'weiss', 1000], ['comicconnect', 'comicconnect', 1100], ['goldin', 'goldin', 1050],
+      ['weiss', 'weiss', 1025], ['comicconnect', 'comicconnect', 1075], ['goldin', 'goldin', 1125],
+    ].map(([marketplace, adapter, price], index) => ({
+      ...sale(target.title, Number(price), `2026-09-${String(10 + index).padStart(2, '0')}`),
+      sourceId: marketplace,
+      sourceAdapter: adapter,
+      originMarketplace: marketplace,
+      saleId: `${marketplace}-${index}`,
+      saleStatus: 'completed' as const,
+      priceBasis: 'sold' as const,
+    }));
+    const profile = buildMarketProfile(target, records, null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.sourceReliability).toBe('high');
+    expect(profile.sourceReliabilityScore).toBeGreaterThanOrEqual(80);
+    expect(profile.evidenceCoverage.independentMarketplaceCount).toBe(3);
+    expect(profile.evidenceCoverage.serverAttributedCount).toBe(6);
+  });
+
   it('flags a small-sample IQR outlier for review without deleting it from the valuation population', () => {
     const profile = buildMarketProfile(target, [100, 102, 105, 110, 10_000].map((price, index) => ({
       ...sale(target.title, price, `2026-09-${String(10 + index).padStart(2, '0')}`),

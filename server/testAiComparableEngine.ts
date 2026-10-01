@@ -138,6 +138,21 @@ export type ComparableSourceDiagnostic = {
   omittedByCap: number;
 };
 
+export type SourceReliabilityLevel = 'high' | 'medium' | 'low' | 'unavailable';
+
+export type MarketEvidenceCoverage = {
+  receivedCount: number;
+  selectedCount: number;
+  attributedCount: number;
+  serverAttributedCount: number;
+  independentMarketplaceCount: number;
+  currentWindowCount: number;
+  duplicatePressurePct: number | null;
+  sourceReliability: SourceReliabilityLevel;
+  sourceReliabilityScore: number | null;
+  sourceReliabilityReasons: string[];
+};
+
 export type ComparableSelectionDiagnostics = {
   cap: number;
   received: number;
@@ -191,6 +206,10 @@ export interface MarketProfile {
   unknownMarketplaceCount: number;
   largestMarketplaceShare: number | null;
   marketplaceConcentration: 'diversified' | 'concentrated' | 'single_marketplace' | 'unavailable';
+  sourceReliability: SourceReliabilityLevel;
+  sourceReliabilityScore: number | null;
+  sourceReliabilityReasons: string[];
+  evidenceCoverage: MarketEvidenceCoverage;
   confidenceReasons: string[];
   identityReadiness: 'ready' | 'limited' | 'missing_critical';
   valuationMethod: string;
@@ -406,6 +425,62 @@ function sourceLabel(sale: MarketSale): string {
 
 function marketplaceKey(sale: MarketSale): string {
   return normalizeFingerprintText(sale.originMarketplace || sale.marketplace || sale.sourceId || 'unattributed') || 'unattributed';
+}
+
+const KNOWN_SERVER_ADAPTERS = new Set([
+  '130point', 'sold_comps', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction',
+  'pcgs_auction_results', 'comicconnect', 'goldin', 'weiss', 'stephen_album', 'nate_sanders',
+  'ngc', 'cng', 'coin_archives', 'hakes', 'morphy', 'theriaults', 'bertoia', 'rumsey',
+  'cherrystone', 'raritan', 'poster_auctions', 'bonhams', 'hipstamp', 'pricecharting',
+]);
+
+function assessMarketEvidenceCoverage(
+  receivedSales: MarketSale[],
+  selectedSales: MarketSale[],
+  duplicateCount: number,
+  nowMs: number,
+): MarketEvidenceCoverage {
+  const attributed = selectedSales.filter((sale) => marketplaceKey(sale) !== 'unattributed');
+  const serverAttributed = selectedSales.filter((sale) => {
+    const adapter = normalizeFingerprintText(sale.sourceAdapter || sale.sourceId);
+    return Boolean(sale.provenanceToken || sale.observationId || (adapter && KNOWN_SERVER_ADAPTERS.has(adapter.replace(/ /g, '_'))));
+  });
+  const independent = new Set(attributed.map((sale) => marketplaceKey(sale))).size;
+  const currentWindowCount = selectedSales.filter((sale) => {
+    const age = daysOld(sale.date, nowMs);
+    return age !== null && age <= 365;
+  }).length;
+  const duplicatePressurePct = receivedSales.length ? Math.round((duplicateCount / receivedSales.length) * 100) : null;
+  const attributionRate = selectedSales.length ? attributed.length / selectedSales.length : 0;
+  const serverRate = selectedSales.length ? serverAttributed.length / selectedSales.length : 0;
+  const diversityScore = selectedSales.length ? Math.min(1, independent / 3) : 0;
+  const score = selectedSales.length ? Math.round((attributionRate * 0.35 + serverRate * 0.35 + diversityScore * 0.3) * 100) : null;
+  const reasons: string[] = [];
+  if (!selectedSales.length) reasons.push('No selected completed sales are available to assess source reliability.');
+  else {
+    reasons.push(`${attributed.length} of ${selectedSales.length} selected sales have an attributable marketplace.`);
+    reasons.push(`${serverAttributed.length} of ${selectedSales.length} selected sales have a recognized server adapter or signed observation reference.`);
+    reasons.push(`${independent} independent marketplace${independent === 1 ? '' : 's'} support the selected evidence.`);
+    if (!currentWindowCount) reasons.push('No selected sale is within the current one-year evidence window.');
+    if (duplicatePressurePct !== null && duplicatePressurePct >= 25) reasons.push(`Duplicate pressure is ${duplicatePressurePct}% of received records and may overstate source breadth.`);
+  }
+  const sourceReliability: SourceReliabilityLevel = !selectedSales.length
+    ? 'unavailable'
+    : score !== null && score >= 80 && independent >= 2 ? 'high'
+      : score !== null && score >= 50 ? 'medium'
+        : 'low';
+  return {
+    receivedCount: receivedSales.length,
+    selectedCount: selectedSales.length,
+    attributedCount: attributed.length,
+    serverAttributedCount: serverAttributed.length,
+    independentMarketplaceCount: independent,
+    currentWindowCount,
+    duplicatePressurePct,
+    sourceReliability,
+    sourceReliabilityScore: score,
+    sourceReliabilityReasons: reasons,
+  };
 }
 
 export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
@@ -1778,6 +1853,8 @@ export function buildMarketProfile(
     reasons: ['duplicate sale observation suppressed', `canonical record ${duplicateOf}`],
   }));
   const selectedAccepted = selected.map(({ match }) => match).filter((match) => match.price > 0);
+  const selectedSales = selected.map(({ sale }) => sale);
+  const evidenceCoverage = assessMarketEvidenceCoverage(sales, selectedSales, deduplicated.duplicates.length, nowMs);
   const selectedAcceptedWithAge = selectedAccepted.map((match) => ({ match, ageDays: daysOld(match.date, nowMs) }));
   const selectedMarketplaceCounts = new Map<string, number>();
   let unknownMarketplaceCount = 0;
@@ -1858,11 +1935,16 @@ export function buildMarketProfile(
   const contextualComparableCount = comparableMatches.filter((match) => match.classification === 'contextual').length;
   const identityReadiness = buildTestAiP0Identity(target).readiness;
   const itemIdentificationConfidence: ConfidenceLevel = exactMatchCount >= 3 ? 'high' : exactMatchCount >= 1 || accepted.length >= 3 ? 'medium' : 'low';
-  const evidenceQuality: ConfidenceLevel = accepted.length >= 6 && exactMatchCount >= 2 && (spreadPct === null || spreadPct <= 75)
+  const calculatedEvidenceQuality: ConfidenceLevel = accepted.length >= 6 && exactMatchCount >= 2 && (spreadPct === null || spreadPct <= 75)
     ? 'high'
     : accepted.length >= 3 && (spreadPct === null || spreadPct <= 100)
       ? 'medium'
       : 'low';
+  const evidenceQuality: ConfidenceLevel = evidenceCoverage.sourceReliability === 'low' || evidenceCoverage.sourceReliability === 'unavailable'
+    ? 'low'
+    : evidenceCoverage.sourceReliability === 'medium' && calculatedEvidenceQuality === 'high'
+      ? 'medium'
+      : calculatedEvidenceQuality;
   const marketStability: ConfidenceLevel = spreadPct === null ? 'low' : spreadPct <= 35 ? 'high' : spreadPct <= 75 ? 'medium' : 'low';
   const liquidity: ConfidenceLevel = salesVelocity.thirtyDay >= 5 ? 'high' : salesVelocity.ninetyDay >= 3 ? 'medium' : 'low';
   const gradeConditionConfidence: ConfidenceLevel = target.grade || target.condition ? (accepted.some((match) => match.reasons.some((reason) => reason === 'grade matches')) ? 'high' : 'low') : 'medium';
@@ -1887,6 +1969,8 @@ export function buildMarketProfile(
   if (selection.diagnostics.omittedByCap > 0) valuationWarnings.push(`${selection.diagnostics.omittedByCap} otherwise matched sale observation${selection.diagnostics.omittedByCap === 1 ? '' : 's'} was retained in the audit but omitted from the bounded valuation set after source-balanced selection.`);
   if (marketplaceConcentration === 'single_marketplace') valuationWarnings.push('All selected completed sales originate from one marketplace; independence is limited.');
   if (marketplaceConcentration === 'concentrated') valuationWarnings.push(`Selected evidence is concentrated in one marketplace (${Math.round((largestMarketplaceShare ?? 0) * 100)}% of selected sales).`);
+  if (evidenceCoverage.sourceReliability === 'low') valuationWarnings.push('Source reliability is low because marketplace attribution, server provenance, or independent-source breadth is limited.');
+  if (evidenceCoverage.sourceReliability === 'medium') valuationWarnings.push('Source reliability is moderate; review the evidence-coverage details before treating the result as broadly representative.');
   const evidenceState: EvidenceState = accepted.length === 0
     ? (comparableMatches.length ? 'poor_item_identification' : 'no_market_evidence')
     : recentCount >= 3 && evidenceQuality === 'high' ? 'strong_recent_market_evidence'
@@ -1908,6 +1992,7 @@ export function buildMarketProfile(
     `${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}${unknownMarketplaceCount ? `; ${unknownMarketplaceCount} selected record${unknownMarketplaceCount === 1 ? '' : 's'} has an unknown marketplace` : ''}; ${evidenceIndependenceAdequate ? 'independence floor met' : 'independence floor not met for a definitive trade verdict'}.`,
     recentCount ? `${recentCount} selected sale${recentCount === 1 ? '' : 's'} occurred within the last 90 days.` : 'No selected sale occurred within the last 90 days.',
     spreadPct === null ? 'No stable price spread can be calculated from the selected evidence.' : `Selected-value spread is ${spreadPct}% (${marketStability} stability).`,
+    `Source reliability is ${evidenceCoverage.sourceReliability}${evidenceCoverage.sourceReliabilityScore !== null ? ` (${evidenceCoverage.sourceReliabilityScore}/100)` : ''}; ${evidenceCoverage.attributedCount}/${evidenceCoverage.selectedCount} selected records are marketplace-attributed and ${evidenceCoverage.independentMarketplaceCount} independent marketplace${evidenceCoverage.independentMarketplaceCount === 1 ? '' : 's'} are represented.`,
     outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
   return {
@@ -1948,6 +2033,10 @@ export function buildMarketProfile(
     unknownMarketplaceCount,
     largestMarketplaceShare,
     marketplaceConcentration,
+    sourceReliability: evidenceCoverage.sourceReliability,
+    sourceReliabilityScore: evidenceCoverage.sourceReliabilityScore,
+    sourceReliabilityReasons: evidenceCoverage.sourceReliabilityReasons,
+    evidenceCoverage,
     confidenceReasons,
     identityReadiness,
     valuationMethod: supported ? `median primary value from exact or near identity-matched completed sales; recency-weighted mean retained as a diagnostic, with duplicate suppression, ${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}, and ${canApplyIqr ? 'IQR outlier filtering' : flaggedSmallSampleOutliers.size ? 'small-sample outlier flagging without automatic exclusion' : 'no automatic outlier filtering because fewer than ten selected sales are available'}` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',

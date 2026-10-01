@@ -30,4 +30,10 @@ describe('Test AI comparable audit ledger UI', () => {
     expect(page).toContain('Confidence basis:');
     expect(page).toContain('Evidence-based');
   });
+
+  it('renders source reliability and evidence coverage explanations', () => {
+    expect(page).toContain('Source reliability:');
+    expect(page).toContain('Evidence coverage:');
+    expect(page).toContain('selected records attributed');
+  });
 });
