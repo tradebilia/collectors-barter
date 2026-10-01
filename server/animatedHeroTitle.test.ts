@@ -11,9 +11,9 @@ describe("uploaded hero title wheel animation", () => {
     const artwork = read("client/src/components/AnimatedHeroTitleArtwork.tsx");
     const wheel = read("client/src/components/TradebiliaWheel.tsx");
 
-    expect(reportUser).toContain("/manus-storage/ReportaMember_d6e803c4.svg");
+    expect(reportUser).toContain("/manus-storage/ReportaMember(1)_a84fd6d7.webp");
     expect(reportUser).not.toContain("AnimatedHeroTitleArtwork");
-    expect(memberDirectory).toContain("/manus-storage/MemberDirectory2_c8de2e96.svg");
+    expect(memberDirectory).toContain("/manus-storage/MemberDirectory2(1)_bd873d74.webp");
     expect(memberDirectory).not.toContain("AnimatedHeroTitleArtwork");
     expect(artwork).toContain("TradebiliaWheel");
     expect(wheel).toContain("tradebilia-wheel-rotor");
@@ -28,4 +28,3 @@ describe("uploaded hero title wheel animation", () => {
     expect(styles).toContain(".tradebilia-wheel-home,\n    .tradebilia-wheel-rotor");
   });
 });
-

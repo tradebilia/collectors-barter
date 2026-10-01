@@ -6,7 +6,8 @@ const reportUserSource = readFileSync(resolve(process.cwd(), "client/src/pages/R
 
 describe("Report a User hero", () => {
   it("retains the supplied title artwork over the original collector-background hero", () => {
-    expect(reportUserSource).toContain('src="/manus-storage/ReportaMember_d6e803c4.svg"');
+    expect(reportUserSource).toContain('src={REPORT_USER_HERO_TITLE_URL}');
+    expect(reportUserSource).toContain('ReportaMember(1)_a84fd6d7.webp');
     expect(reportUserSource).toContain('REPORT_USER_HERO_BACKGROUND_URL = "/manus-storage/Background3_30307310.png"');
     expect(reportUserSource).toContain('max-w-7xl');
     expect(reportUserSource).not.toContain('AnimatedHeroTitleArtwork');

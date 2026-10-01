@@ -1,8 +1,8 @@
 const RANKING_TITLE_URLS: Record<string, string> = {
-  "Most Viewed": "https://assets.tradebilia.com/MostViewed_4b1eb573.svg",
-  "Most Favorited": "https://assets.tradebilia.com/MostRequested_388aaf8b.svg",
-  "Top Rated Traders": "https://assets.tradebilia.com/TopRatedTraders_dde137be.svg",
-  "Highest Trade Values": "https://assets.tradebilia.com/HighestTradeValue_804dd20b.svg",
+  "Most Viewed": "/manus-storage/MostViewed(1)_bbadfec8.svg",
+  "Most Favorited": "/manus-storage/MostRequested(1)_f9f0340b.svg",
+  "Top Rated Traders": "/manus-storage/TopRatedTraders(1)_b55576e3.svg",
+  "Highest Trade Values": "/manus-storage/HighestTradeValue(1)_e554daf6.svg",
 };
 
 interface RankingPageHeroProps {

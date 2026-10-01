@@ -41,7 +41,7 @@ describe("Admin Trades and Refer a Collector refinements", () => {
 
   it("uses the exact durable Referral Request SVG asset", async () => {
     const [, , referralSource] = await readSources();
-    expect(referralSource).toContain("/manus-storage/ReferralRequest_89fadd07.svg");
+    expect(referralSource).toContain("/manus-storage/ReferralRequest(1)_fed686ec.webp");
     expect(referralSource).not.toContain("ReferralRequest_2e59ce3c.webp");
     expect(referralSource).toContain("border-slate-200 bg-white text-slate-900 placeholder:text-slate-500");
     expect(referralSource).toContain('rounded-[1.75rem] border-white/10 bg-white/5');

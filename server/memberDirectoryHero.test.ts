@@ -9,7 +9,7 @@ describe("Member Directory hero integration", () => {
     expect(source).toContain('import { TopBar } from "@/components/TopBar"');
     expect(source).toContain('import { CategoryBar } from "@/components/CategoryBar"');
     expect(source).toContain('backgroundImage: "url(/manus-storage/Background3_30307310.png)"');
-    expect(source).toContain('src="/manus-storage/MemberDirectory2_c8de2e96.svg"');
+    expect(source).toContain('src="/manus-storage/MemberDirectory2(1)_bd873d74.webp"');
     expect(source).not.toContain('AnimatedHeroTitleArtwork');
     expect(source).toContain('max-w-[1049px]');
     expect(source).toContain('<CategoryBar />');

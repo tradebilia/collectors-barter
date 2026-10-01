@@ -12,7 +12,7 @@ import { Mail, CheckCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 
-const CONTACT_HERO_URL = "https://assets.tradebilia.com/Contact_Us_10be55f2.svg";
+const CONTACT_HERO_URL = "/manus-storage/Contact_Us(1)_47d5e697.svg";
 
 export default function Contact() {
   const { user } = useAuth();

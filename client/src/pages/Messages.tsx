@@ -403,7 +403,7 @@ export default function Messages() {
         backgroundRepeat: 'no-repeat'
       }}>
         <div className="container relative flex min-h-[16rem] h-[clamp(16rem,32vw,25rem)] items-center justify-center py-0 text-center">
-          <img src="https://assets.tradebilia.com/Messages_297e64f2.svg" alt="Messages" className="mx-auto h-auto w-full max-w-6xl object-contain" style={{ transform: "translateX(-2.34375%)" }} />
+          <img src="/manus-storage/Messages(1)_04d05d66.svg" alt="Messages" className="mx-auto h-auto w-full max-w-6xl object-contain" style={{ transform: "translateX(-2.34375%)" }} />
         </div>
       </section>
       <CategoryBar />

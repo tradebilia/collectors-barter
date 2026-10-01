@@ -34,7 +34,7 @@ describe("mobile inventory upload and category hero repairs", () => {
     const source = read("client/src/pages/Inventory.tsx");
     expect(source).toContain('className="container relative flex min-h-[16rem] h-[clamp(16rem,32vw,25rem)] items-center justify-center py-0"');
     expect(source).toContain('className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4"');
-    expect(source).toContain('src="/manus-storage/Myinventory(1)_e6fcd30a.svg"');
+    expect(source).toContain('src="/manus-storage/Myinventory(1)_a3b2722b.svg"');
     expect(source).toContain('alt="My Inventory"');
     expect(source).toContain('className="h-auto w-full object-contain"');
     expect(source).toContain('</section>\n\n      <CategoryBar />');

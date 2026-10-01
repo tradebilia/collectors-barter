@@ -428,7 +428,7 @@ export default function Inventory() {
         <div className="container relative flex min-h-[16rem] h-[clamp(16rem,32vw,25rem)] items-center justify-center py-0">
           <div className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4">
             <img
-              src="/manus-storage/Myinventory(1)_e6fcd30a.svg"
+              src="/manus-storage/Myinventory(1)_a3b2722b.svg"
               alt="My Inventory"
               className="h-auto w-full object-contain"
             />

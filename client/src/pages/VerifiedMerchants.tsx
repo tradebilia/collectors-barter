@@ -4,7 +4,7 @@ import { BadgeCheck, Store, MapPin, ExternalLink, Package } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
 
-const VERIFIED_MERCHANTS_LOGO_URL = "https://assets.tradebilia.com/VerifiedMerchants_c3431deb.webp";
+const VERIFIED_MERCHANTS_LOGO_URL = "/manus-storage/VerifiedMerchants(1)_0de02f01.webp";
 const HERO_BG_URL = "/manus-storage/Background3_30307310.png";
 
 /** Ensure an external URL has a protocol so it is not treated as a relative path. */

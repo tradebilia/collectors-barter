@@ -18,7 +18,7 @@ import { CategoryBar } from "@/components/CategoryBar";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { formatItemValue } from "@/lib/tradebilia";
 
-const TRADE_HUB_LOGO_URL = "/manus-storage/TradeHub(1)_86f42c12.svg";
+const TRADE_HUB_LOGO_URL = "/manus-storage/TradeHub(1)_52f1d90e.svg";
 
 type TradeFolder = 'proposal' | 'negotiating' | 'accepted' | 'shipped' | 'declined' | 'completed';
 type TradeSort = 'lastActive' | 'newest' | 'oldest' | 'partner' | 'reference';
