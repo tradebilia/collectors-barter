@@ -58,6 +58,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
 
+  it("shows the movie search request while eBay is still loading", () => {
+    expect(pageSource).toContain("const requestQueryPreview = useMemo(() => {");
+    expect(pageSource).toContain("if (item.category === 'movies')");
+    expect(pageSource).toContain("Search query:");
+    expect(pageSource).toContain("waiting for eBay response");
+  });
+
   it("updates the primary asking-price cards from accepted visual matches automatically", () => {
     expect(pageSource).toContain("const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics");
     expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics");

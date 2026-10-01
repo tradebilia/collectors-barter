@@ -701,6 +701,17 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [reviewRequested, setReviewRequested] = useState(false);
   const [showVisualMatchMetrics, setShowVisualMatchMetrics] = useState(false);
+  const requestQueryPreview = useMemo(() => {
+    const details = item.itemDetails ? (() => {
+      try { return JSON.parse(item.itemDetails); } catch { return {}; }
+    })() : {};
+    if (item.category === 'movies') {
+      const movieTitle = details.title || item.title;
+      const format = details.format === 'Other' ? (details.customFormat || '') : (details.format || '');
+      return [movieTitle, format].filter(Boolean).join(' ') || item.title;
+    }
+    return item.title;
+  }, [item.category, item.itemDetails, item.title]);
   const visualReviewQuery = trpc.testAI.getEbayData.useQuery(
     { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl, includeVisualReview: true },
     { enabled: reviewRequested && !!item.title && item.category !== 'unknown' },
@@ -753,7 +764,9 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Image review is a separate, bounded check; accepted visual matches update this asking-price context, not completed-sale valuation evidence.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
       {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running separately. Current asking-price listings remain available below.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
-      {displayData?.query && <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{displayData.query}"</span> · {displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>}
+      {displayData?.query
+        ? <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{displayData.query}"</span> · {displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>
+        : isLoading && <p className="text-gray-500 text-[10px]">Search query: <span className="font-mono text-gray-400">"{requestQueryPreview}"</span> · waiting for eBay response</p>}
       {displayData?.listings && displayData.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {displayData.listings.map((l: any, i: number) => (
