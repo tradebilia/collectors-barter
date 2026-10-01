@@ -33,7 +33,7 @@ describe("homepage Recent Trades carousel", () => {
     expect(carouselSource).toContain('w-12 flex-none bg-[#1f1a16] sm:w-20 md:w-32 lg:w-44');
     expect(homeSource).toContain('className="container relative z-10 flex h-[280px] items-center justify-center py-0 sm:h-[400px]"');
     expect(homeSource).toContain('className="flex w-[131%] max-w-[583px] flex-none -translate-x-[4.3%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%] sm:flex-initial"');
-    expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain sm:max-w-6xl"');
+    expect(homeSource).toContain('className="h-auto w-full max-w-none object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.78)] sm:max-w-6xl"');
     expect(homeSource).toContain("<CategoryBar />");
     expect(homeSource).toContain('from-[#11183f] via-[#4b1db7] to-[#761df2]');
     expect(homeSource).toContain('h-7 w-7 sm:h-8 sm:w-8');
