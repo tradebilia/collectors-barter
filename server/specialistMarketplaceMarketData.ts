@@ -7,6 +7,7 @@ import {
 } from '../shared/sandboxSpecialistSources';
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
 import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
+import { ENV } from './_core/env';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -82,12 +83,20 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   weiss: { hosts: ['api-frontend.nextlot.net'], linkPattern: /\/api\/frontend\/v1\/sites\/2218285\/search\/lots/i, recordCap: 12 },
   stephen_album: { hosts: ['sarc.auction', 'www.sarc.auction'], linkPattern: /(?:\/auctionlist\.aspx\?dv=2|_as\d+(?:_p\d+)?$|_i\d+$)/i, recordCap: 12 },
   nate_sanders: { hosts: ['natedsanders.com', 'www.natedsanders.com'], linkPattern: /\/(?:catalog\.aspx|[^/]+-LOT\d+\.aspx)/i, recordCap: 12 },
+  tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
+  catawiki_reef: { hosts: ['api.reefapi.com', 'www.catawiki.com'], linkPattern: /(?:api\.reefapi\.com\/catawiki\/v1|www\.catawiki\.com\/en\/l\/\d+)/i, recordCap: 12 },
+  auctionet: { hosts: ['api.reefapi.com'], linkPattern: /api\.reefapi\.com\/auctionet\/v1/i, recordCap: 12 },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
 const GOLDIN_PUBLIC_SOLD_SEARCH_ENDPOINT = 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2';
 const WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT = 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots';
 const STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT = 'https://www.sarc.auction/auctionlist.aspx?dv=2';
+const REEF_API_BASE = 'https://api.reefapi.com';
+const TCGPLAYER_SEARCH_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/search`;
+const TCGPLAYER_SALES_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/product/sales`;
+const CATAWIKI_SEARCH_ENDPOINT = `${REEF_API_BASE}/catawiki/v1/search`;
+const AUCTIONET_SEARCH_ENDPOINT = `${REEF_API_BASE}/auctionet/v1/search`;
 
 function text(value: unknown): string {
   return value == null ? '' : String(value)
@@ -341,6 +350,16 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
   if (input.sourceId === 'nate_sanders' && source.searchContract === 'automatic_title_search') {
     const query = text(input.title).slice(0, 180);
     return { url: `https://natedsanders.com/catalog.aspx?searchby=3&searchvalue=${encodeURIComponent(query)}`, error: null };
+  }
+  if (input.sourceId === 'tcgplayer_reef' && source.searchContract === 'automatic_title_search') {
+    return { url: TCGPLAYER_SEARCH_ENDPOINT, error: null };
+  }
+  if (input.sourceId === 'catawiki_reef' && source.searchContract === 'automatic_title_search') {
+    return { url: CATAWIKI_SEARCH_ENDPOINT, error: null };
+  }
+  if (input.sourceId === 'auctionet' && source.searchContract === 'automatic_title_search') {
+    const query = text(input.title).slice(0, 180);
+    return { url: AUCTIONET_SEARCH_ENDPOINT, error: null };
   }
   if (source.searchContract === 'automatic_title_search') return { url: null, error: `${source.label} is handled by its dedicated adapter rather than this generic specialist route.` };
   const sourceUrl = text(input.sourceUrl);
@@ -876,6 +895,165 @@ async function lookupStephenAlbum(input: SpecialistMarketplaceLookupInput): Prom
   }
 }
 
+function reefNumber(value: unknown): number | null {
+  const parsed = typeof value === 'number' ? value : Number(String(value ?? '').replace(/[$,]/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function reefBase(sourceId: 'tcgplayer_reef' | 'catawiki_reef', input: SpecialistMarketplaceLookupInput, requestUrl: string) {
+  const source = getSandboxSpecialistSource(sourceId)!;
+  return {
+    source: sourceId,
+    label: source.label,
+    searchContract: source.searchContract,
+    query: text(input.title).slice(0, 180),
+    sales: [] as SpecialistMarketplaceRecord[],
+    context: [] as SpecialistMarketplaceRecord[],
+    requestUrl,
+    recordCap: SOURCE_RULES[sourceId]!.recordCap,
+  };
+}
+
+async function reefPost<T>(endpoint: string, body: Record<string, unknown>): Promise<T> {
+  if (!ENV.reefApiKey) throw new Error('ReefAPI is not configured for this sandbox.');
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json', 'X-API-Key': ENV.reefApiKey },
+    body: JSON.stringify(body),
+    redirect: 'error',
+    signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS),
+  });
+  if (!response.ok) throw new Error(`ReefAPI returned HTTP ${response.status}.`);
+  const payload = await response.json() as { ok?: boolean; data?: T; error?: { message?: string } };
+  if (!payload.ok || payload.data == null) throw new Error(payload.error?.message ?? 'ReefAPI returned no usable data.');
+  return payload.data;
+}
+
+type TcgSearchData = { results?: Array<Record<string, unknown>> };
+type TcgSalesData = { product?: Record<string, unknown>; sales?: Array<Record<string, unknown>> };
+type CataSearchData = { lots?: Array<Record<string, unknown>> };
+
+function reefRecord(
+  sourceId: 'tcgplayer_reef' | 'catawiki_reef',
+  input: SpecialistMarketplaceLookupInput,
+  fields: { title: string; description?: string; lotId?: string | null; url?: string | null; imageUrl?: string | null; date?: string | null; price?: number | null; currency?: string | null; completed: boolean; grade?: string | null; certificationCompany?: string | null; detail: string },
+): SpecialistMarketplaceRecord {
+  const identity = identityReview(input, fields.title, `${fields.title} ${fields.description ?? ''}`, fields.grade ?? null, fields.certificationCompany ?? null);
+  const usdCompleted = fields.completed && fields.currency?.toUpperCase() === 'USD' && Boolean(fields.price);
+  return {
+    sourceId,
+    provider: getSandboxSpecialistSource(sourceId)!.label,
+    title: fields.title || 'Untitled ReefAPI record',
+    description: fields.description?.slice(0, 2_000) ?? null,
+    lotId: fields.lotId ?? null,
+    auctionName: null,
+    url: fields.url ?? null,
+    imageUrl: fields.imageUrl ?? null,
+    saleStatus: usdCompleted ? 'completed' : 'unknown',
+    completed: usdCompleted,
+    price: usdCompleted ? fields.price! : null,
+    currency: usdCompleted ? 'USD' : null,
+    date: fields.date ?? null,
+    grade: fields.grade ?? null,
+    certificationCompany: fields.certificationCompany ?? null,
+    priceBasis: usdCompleted ? 'closed' : 'unknown',
+    buyerPremiumIncluded: null,
+    winningBid: usdCompleted ? fields.price! : null,
+    buyerPremiumPercentage: null,
+    identityMatched: identity.matched,
+    matchedTokens: identity.matchedTokens,
+    exclusionReason: !fields.completed
+      ? fields.detail
+      : fields.currency?.toUpperCase() !== 'USD'
+        ? `Provider returned ${fields.currency ?? 'an unspecified currency'}; only explicit USD records are admitted. ${fields.detail}`
+        : !fields.price
+          ? 'Provider record did not include a positive completed-sale price.'
+          : !identity.matched
+            ? identity.reason ?? 'Identity could not be confirmed.'
+            : 'Context-only pending source-specific signed-admission validation.',
+    valuationEligible: false,
+  };
+}
+
+async function lookupTcgplayerReef(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
+  const empty = reefBase('tcgplayer_reef', input, TCGPLAYER_SEARCH_ENDPOINT);
+  if (!empty.query) return { ...empty, status: 'setup_required', messages: ['TCGplayer search requires an item title.'] };
+  try {
+    const searched = await reefPost<TcgSearchData>(TCGPLAYER_SEARCH_ENDPOINT, { query: empty.query, per_page: empty.recordCap, page: 1, currency: 'USD' });
+    const products = (searched.results ?? []).slice(0, 4);
+    const records: SpecialistMarketplaceRecord[] = [];
+    for (const product of products) {
+      const productId = String(product.product_id ?? '');
+      if (!productId) continue;
+      const sales = await reefPost<TcgSalesData>(TCGPLAYER_SALES_ENDPOINT, { product_id: Number(productId), per_page: 5, currency: 'USD' });
+      for (const sale of (sales.sales ?? []).slice(0, 5)) {
+        records.push(reefRecord('tcgplayer_reef', input, {
+          title: text(sale.title) || text(product.name),
+          description: `${text(product.set)}${product.condition ? ` · ${text(product.condition)}` : ''}`,
+          lotId: `${productId}:${text(sale.sold_at)}`,
+          url: text(product.url) || `https://www.tcgplayer.com/product/${productId}`,
+          imageUrl: text(product.image) || null,
+          date: text(sale.sold_at) || null,
+          price: reefNumber(sale.price),
+          currency: text(sale.currency || product.currency),
+          completed: Boolean(text(sale.sold_at) && reefNumber(sale.price)),
+          detail: 'This is a provider-confirmed TCGplayer sale record; active listing and market-price fields were not used.',
+        }));
+      }
+    }
+    const capped = records.slice(0, empty.recordCap);
+    const sales = capped.filter(record => record.completed && record.identityMatched);
+    return { ...empty, status: 'success', sales, context: capped.filter(record => !record.completed || !record.identityMatched), messages: [`TCGplayer via ReefAPI searched ${products.length} bounded products and read ${capped.length} recent sale records; ${sales.length} passed USD, price, and identity checks. Active listings and guide prices were excluded. All results remain context-only.`] };
+  } catch (error) {
+    return { ...empty, status: 'error', messages: [error instanceof Error ? error.message : 'TCGplayer ReefAPI lookup failed; no retry was attempted.'] };
+  }
+}
+
+async function lookupCatawikiReef(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
+  const empty = reefBase('catawiki_reef', input, CATAWIKI_SEARCH_ENDPOINT);
+  if (!empty.query) return { ...empty, status: 'setup_required', messages: ['Catawiki search requires an item title.'] };
+  try {
+    const searched = await reefPost<CataSearchData>(CATAWIKI_SEARCH_ENDPOINT, { query: empty.query, currency: 'USD', per_page: empty.recordCap, page: 1, status: 'closed' });
+    const records = (searched.lots ?? []).slice(0, empty.recordCap).map((lot) => reefRecord('catawiki_reef', input, {
+      title: text(lot.title),
+      description: text(lot.subtitle),
+      lotId: text(lot.lot_id) || null,
+      url: text(lot.url) || null,
+      imageUrl: text(lot.image) || null,
+      date: text(lot.end_time) || null,
+      price: reefNumber(lot.sold_price),
+      currency: text(lot.currency),
+      completed: ['closed', 'sold', 'ended'].includes(text(lot.status).toLowerCase()) && Boolean(lot.is_sold) && Boolean(reefNumber(lot.sold_price)),
+      detail: ['open', 'open_now'].includes(text(lot.status).toLowerCase()) ? 'Provider returned an open/current-bid lot; it is not completed-sale evidence.' : 'Provider did not return an explicit sold lot with a positive sold_price.',
+    }));
+    const sales = records.filter(record => record.completed && record.identityMatched);
+    return { ...empty, status: 'success', sales, context: records.filter(record => !record.completed || !record.identityMatched), messages: [`Catawiki via ReefAPI returned ${records.length} bounded lot records; ${sales.length} had explicit USD sold prices and passed identity checks. Open/current-bid lots were retained only as context. All results remain context-only.`] };
+  } catch (error) {
+    return { ...empty, status: 'error', messages: [error instanceof Error ? error.message : 'Catawiki ReefAPI lookup failed; no retry was attempted.'] };
+  }
+}
+
+async function lookupAuctionet(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
+  const empty = { source: 'auctionet' as const, label: getSandboxSpecialistSource('auctionet')!.label, searchContract: 'automatic_title_search' as const, query: text(input.title), sales: [] as SpecialistMarketplaceRecord[], context: [] as SpecialistMarketplaceRecord[], requestUrl: AUCTIONET_SEARCH_ENDPOINT, recordCap: SOURCE_RULES.auctionet!.recordCap };
+  if (!empty.query) return { ...empty, status: 'setup_required', messages: ['Auctionet search requires an item title.'] };
+  try {
+    const data = await reefPost<{ results?: Array<Record<string, unknown>> }>(AUCTIONET_SEARCH_ENDPOINT, { query: empty.query, status: 'ended', sort: 'sold_only_recent', page: 1, max_results: empty.recordCap, locale: 'en' });
+    const records = (data.results ?? []).slice(0, empty.recordCap).map((lot) => {
+      const title = text(lot.title);
+      const price = reefNumber(lot.final_bid);
+      const sold = Boolean(lot.is_sold) && text(lot.status).toLowerCase() === 'ended' && Boolean(price);
+      const currency = text(lot.currency).toUpperCase() || null;
+      const identity = identityReview(input, title, `${title} ${text(lot.description)} ${text(lot.category)}`, extractGrade(title), extractCertificationCompany(title));
+      const admitted = sold && currency === 'USD';
+      return { sourceId: 'auctionet' as const, provider: getSandboxSpecialistSource('auctionet')!.label, title: title || 'Untitled Auctionet record', description: text(lot.description) || null, lotId: text(lot.item_id) || null, auctionName: text(lot.house) || null, url: text(lot.url) || null, imageUrl: text(lot.thumbnail) || (Array.isArray(lot.images) ? text(lot.images[0]) : null), saleStatus: admitted ? 'completed' as const : 'unknown' as const, completed: admitted, price: admitted ? price : null, currency: admitted ? 'USD' as const : null, date: text(lot.ends_at) || null, grade: extractGrade(title), certificationCompany: extractCertificationCompany(title), priceBasis: admitted ? 'closed' as const : 'unknown' as const, buyerPremiumIncluded: null, winningBid: admitted ? price : null, buyerPremiumPercentage: null, identityMatched: identity.matched, matchedTokens: identity.matchedTokens, exclusionReason: !sold ? 'ReefAPI did not return an explicit sold Auctionet ended lot with a positive final_bid.' : currency !== 'USD' ? `Auctionet returned ${currency}; ReefAPI documents that amounts remain in each lot currency, so non-USD records are not admitted.` : !identity.matched ? identity.reason ?? 'Identity could not be confirmed.' : 'Context-only pending buyer-premium and source-specific signed-admission validation.', valuationEligible: false as const };
+    });
+    const sales = records.filter(record => record.completed && record.identityMatched);
+    return { ...empty, status: 'success', sales, context: records.filter(record => !record.completed || !record.identityMatched), messages: [`Auctionet via ReefAPI searched one bounded ended-auction page and returned ${records.length} lots; ${sales.length} passed sold, USD, and identity checks. ReefAPI does not convert currencies, and buyer-premium treatment remains unresolved, so all results remain context-only.`] };
+  } catch (error) {
+    return { ...empty, status: 'error', messages: [error instanceof Error ? error.message : 'Auctionet ReefAPI lookup failed; no retry was attempted.'] };
+  }
+}
+
 export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource(input.sourceId);
   const request = buildSpecialistMarketplaceRequest(input);
@@ -895,6 +1073,9 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (input.sourceId === 'goldin') return text(input.sourceUrl) ? lookupGoldinPublicLot(input, request.url) : lookupGoldinPublicSearch(input);
   if (input.sourceId === 'weiss') return lookupWeissPublicCompletedLots(input);
   if (input.sourceId === 'stephen_album') return lookupStephenAlbum(input);
+  if (input.sourceId === 'tcgplayer_reef') return lookupTcgplayerReef(input);
+  if (input.sourceId === 'catawiki_reef') return lookupCatawikiReef(input);
+  if (input.sourceId === 'auctionet') return lookupAuctionet(input);
   try {
     const response = await fetch(request.url, {
       headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },

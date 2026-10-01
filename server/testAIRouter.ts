@@ -1273,7 +1273,7 @@ export const testAIRouter = router({
   // context-only until source-specific price-basis and signed-admission work is complete.
   getSpecialistMarketplaceData: protectedProcedure
     .input(z.object({
-      sourceId: z.enum(['ngc', 'cng', 'rumsey', 'cherrystone', 'raritan', 'morphy', 'theriaults', 'poster_auctions', 'bonhams', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'goldin', 'weiss', 'coin_archives', 'bertoia', 'heritage', 'hakes', 'stephen_album', 'nate_sanders']),
+      sourceId: z.enum(['ngc', 'cng', 'rumsey', 'cherrystone', 'raritan', 'morphy', 'theriaults', 'poster_auctions', 'bonhams', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'goldin', 'weiss', 'coin_archives', 'bertoia', 'heritage', 'hakes', 'stephen_album', 'nate_sanders', 'tcgplayer_reef', 'catawiki_reef', 'auctionet']),
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), sourceUrl: z.string().url().nullish(),
     }))

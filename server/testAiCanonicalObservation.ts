@@ -41,6 +41,9 @@ type AdapterId =
   | 'weiss'
   | 'stephen_album'
   | 'nate_sanders'
+  | 'tcgplayer_reef'
+  | 'catawiki_reef'
+  | 'auctionet'
   | 'coin_archives'
   | 'bertoia'
   | 'heritage'
@@ -134,6 +137,9 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   weiss: { id: 'weiss', label: 'Weiss Auctions', version: '1.0.0', defaultOriginMarketplace: 'weiss', defaultPriceBasis: 'realized', completedStatusBasis: 'Weiss completed-webcast final leading bid' },
   stephen_album: { id: 'stephen_album', label: 'Stephen Album Rare Coins', version: '1.0.0', defaultOriginMarketplace: 'stephen_album', defaultPriceBasis: 'realized', completedStatusBasis: 'Stephen Album SOLD lot with hammer and buyer-premium separation' },
   nate_sanders: { id: 'nate_sanders', label: 'Nate D. Sanders Auctions', version: '1.0.0', defaultOriginMarketplace: 'nate_sanders', defaultPriceBasis: 'closed', completedStatusBasis: 'Nate D. Sanders closed lot with final price including buyer premium' },
+  tcgplayer_reef: { id: 'tcgplayer_reef', label: 'TCGplayer via ReefAPI', version: '1.0.0', defaultOriginMarketplace: 'tcgplayer', defaultPriceBasis: 'sold', completedStatusBasis: 'TCGplayer latest-sale record returned by ReefAPI' },
+  catawiki_reef: { id: 'catawiki_reef', label: 'Catawiki via ReefAPI', version: '1.0.0', defaultOriginMarketplace: 'catawiki', defaultPriceBasis: 'closed', completedStatusBasis: 'Catawiki sold lot with explicit sold_price returned by ReefAPI' },
+  auctionet: { id: 'auctionet', label: 'Auctionet', version: '1.0.0', defaultOriginMarketplace: 'auctionet', defaultPriceBasis: 'closed', completedStatusBasis: 'Auctionet ended search record with Hammered status and USD amount' },
   coin_archives: { id: 'coin_archives', label: 'CoinArchives', version: '1.0.0', defaultOriginMarketplace: 'coin_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'CoinArchives completed lot record' },
   bertoia: { id: 'bertoia', label: 'Bertoia Auctions', version: '1.0.0', defaultOriginMarketplace: 'bertoia', defaultPriceBasis: 'unknown', completedStatusBasis: 'Bertoia completed lot or catalog record' },
   heritage: { id: 'heritage', label: 'Heritage Auction Archives', version: '1.0.0', defaultOriginMarketplace: 'heritage', defaultPriceBasis: 'unknown', completedStatusBasis: 'Heritage completed lot result' },

@@ -27,6 +27,8 @@ export const ENV = {
   encryptionKey: process.env.ENCRYPTION_KEY ?? "",
   // OpenAI for trade analysis
   openaiApiKey: process.env.TRADEBILIA_OPENAI_API_KEY ?? "", // key refreshed 2026-08-06
+  // ReefAPI read-only marketplace aggregation
+  reefApiKey: process.env.REEF_API_KEY ?? "",
   // Apify Whatnot Reference actor
   apifyApiToken: process.env.APIFY_API_TOKEN ?? "",
   // PSA API (placeholder)
