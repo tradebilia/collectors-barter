@@ -79,10 +79,12 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   university_archives: { hosts: ['universityarchives.com', 'www.universityarchives.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   alexander_historical: { hosts: ['alexautographs.com', 'www.alexautographs.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 12 },
+  weiss: { hosts: ['api-frontend.nextlot.net'], linkPattern: /\/api\/frontend\/v1\/sites\/2218285\/search\/lots/i, recordCap: 12 },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
 const GOLDIN_PUBLIC_SOLD_SEARCH_ENDPOINT = 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2';
+const WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT = 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots';
 
 function text(value: unknown): string {
   return value == null ? '' : String(value)
@@ -318,6 +320,9 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
       ? { url: sourceUrl, error: null }
       : { url: null, error: 'That URL is not an allowlisted public Goldin /item/ lot route.' };
   }
+  if (input.sourceId === 'weiss' && source.searchContract === 'automatic_title_search') {
+    return { url: WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT, error: null };
+  }
   if (source.searchContract === 'automatic_title_search') return { url: null, error: `${source.label} is handled by its dedicated adapter rather than this generic specialist route.` };
   const sourceUrl = text(input.sourceUrl);
   if (!sourceUrl) return { url: null, error: source.searchInstruction };
@@ -430,6 +435,133 @@ type GoldinPublicSearchResponse = {
     total?: unknown;
   };
 };
+
+type WeissPublicAuction = {
+  id?: unknown;
+  name?: unknown;
+  is_completed?: unknown;
+  completes_at?: unknown;
+  currency_code?: unknown;
+};
+
+type WeissPublicSearchLot = {
+  id?: unknown;
+  auction_id?: unknown;
+  number?: unknown;
+  name?: unknown;
+  description_html?: unknown;
+  focal_media_file_url_thumb_image?: unknown;
+  is_completed?: unknown;
+  leading_bid_amount_cents?: unknown;
+  auction?: WeissPublicAuction;
+};
+
+type WeissPublicSearchResponse = {
+  data?: WeissPublicSearchLot[];
+  total_count?: unknown;
+};
+
+function epochSecondsToIso(value: unknown): string | null {
+  const seconds = numberValue(value);
+  if (seconds == null || seconds <= 0) return null;
+  const date = new Date(seconds * 1_000);
+  return Number.isFinite(date.getTime()) ? date.toISOString() : null;
+}
+
+function plainHtml(value: unknown): string {
+  return decodeHtml(text(value).replace(/<[^>]*>/g, ' ')).replace(/\s+/g, ' ').trim();
+}
+
+function publicWeissLotUrl(auctionId: unknown, lotId: unknown): string | null {
+  const auction = numberValue(auctionId);
+  const lot = numberValue(lotId);
+  return auction != null && lot != null
+    ? canonicalUrl(`https://weiss.auction/auctions/${Math.trunc(auction)}/lots/${Math.trunc(lot)}`)
+    : null;
+}
+
+function buildWeissCompletedLotSearchUrl(query: string): string {
+  const search = new URLSearchParams({
+    page_number: '1',
+    page_size: String(SOURCE_RULES.weiss!.recordCap),
+    filters: `text_search:${query}|auction_completes_at:-1`,
+  });
+  return `${WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT}?${search.toString()}`;
+}
+
+function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput, requestUrl: string, payload: WeissPublicSearchResponse): SpecialistMarketplaceLookupResult {
+  const source = getSandboxSpecialistSource('weiss')!;
+  const lots = Array.isArray(payload.data) ? payload.data.slice(0, SOURCE_RULES.weiss!.recordCap) : [];
+  const base = {
+    source: 'weiss' as const,
+    label: source.label,
+    searchContract: source.searchContract,
+    query: text(input.title).slice(0, 240),
+    sales: [] as SpecialistMarketplaceRecord[],
+    context: [] as SpecialistMarketplaceRecord[],
+    requestUrl,
+    recordCap: SOURCE_RULES.weiss!.recordCap,
+  };
+  const records = lots.map((lot) => {
+    const auction = lot.auction;
+    const title = text(lot.name);
+    const description = plainHtml(lot.description_html);
+    const date = epochSecondsToIso(auction?.completes_at);
+    const winningBidCents = numberValue(lot.leading_bid_amount_cents);
+    const winningBid = winningBidCents != null ? winningBidCents / 100 : null;
+    const currency = text(auction?.currency_code).toUpperCase() === 'USD' ? 'USD' as const : null;
+    // The browser-visible provider record calls this a leading bid. With both
+    // the lot and its parent auction marked completed, it is the final hammer
+    // bid—not an active-listing current bid. We never add buyer premium.
+    const completed = lot.is_completed === true
+      && auction?.is_completed === true
+      && date != null
+      && currency === 'USD'
+      && winningBid != null
+      && winningBid > 0;
+    const grade = extractGrade(`${title} ${description}`);
+    const certificationCompany = extractCertificationCompany(`${title} ${description}`);
+    const identity = identityReview(input, title, description, grade, certificationCompany);
+    const record: SpecialistMarketplaceRecord = {
+      sourceId: 'weiss',
+      provider: source.label,
+      title: title || 'Untitled public Weiss lot',
+      description: description || null,
+      lotId: text(lot.number) || (lot.id != null ? String(lot.id) : null),
+      auctionName: text(auction?.name) || null,
+      url: publicWeissLotUrl(lot.auction_id, lot.id),
+      imageUrl: canonicalUrl(text(lot.focal_media_file_url_thumb_image)) ?? null,
+      saleStatus: completed ? 'completed' : 'unknown',
+      completed,
+      price: completed ? winningBid : null,
+      currency: completed ? currency : null,
+      date,
+      grade,
+      certificationCompany,
+      priceBasis: completed ? 'realized' : 'unknown',
+      buyerPremiumIncluded: completed ? false : null,
+      winningBid: completed ? winningBid : null,
+      buyerPremiumPercentage: null,
+      identityMatched: identity.matched,
+      matchedTokens: identity.matchedTokens,
+      exclusionReason: !completed
+        ? 'The public Weiss result did not provide completed lot and auction flags, completed date, positive final leading bid, and explicit USD currency together.'
+        : !identity.matched
+          ? identity.reason ?? 'Identity could not be confirmed.'
+          : 'Context-only pending source-specific signed-admission validation.',
+      valuationEligible: false,
+    };
+    return record;
+  });
+  const sales = records.filter((record) => record.completed && record.identityMatched);
+  return {
+    ...base,
+    status: 'success',
+    sales,
+    context: records.filter((record) => !record.completed || !record.identityMatched),
+    messages: [`Weiss ran one public completed-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale and identity checks. Displayed prices are the returned final hammer bids; buyer premium is not added. All records remain context-only and cannot affect valuation or the final AI conclusion.`],
+  };
+}
 
 function publicGoldinRecordUrl(value: unknown): string | null {
   const slug = text(value);
@@ -645,6 +777,37 @@ async function lookupGoldinPublicLot(input: SpecialistMarketplaceLookupInput, so
   }
 }
 
+async function lookupWeissPublicCompletedLots(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
+  const source = getSandboxSpecialistSource('weiss')!;
+  const query = text(input.title).slice(0, 240);
+  const requestUrl = query ? buildWeissCompletedLotSearchUrl(query) : WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT;
+  const empty = {
+    source: 'weiss' as const,
+    label: source.label,
+    searchContract: source.searchContract,
+    query,
+    sales: [] as SpecialistMarketplaceRecord[],
+    context: [] as SpecialistMarketplaceRecord[],
+    requestUrl,
+    recordCap: SOURCE_RULES.weiss!.recordCap,
+  };
+  if (!query) return { ...empty, status: 'setup_required' as const, messages: ['Weiss automatic search requires an item title.'] };
+  try {
+    const response = await fetch(requestUrl, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },
+      redirect: 'error',
+      signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS),
+    });
+    if (!response.ok) return { ...empty, status: 'error' as const, messages: [`Weiss public completed-lot search returned HTTP ${response.status}; no retry, pagination, login, or workaround was attempted.`] };
+    if (!isAllowedSourceUrl('weiss', response.url)) return { ...empty, status: 'error' as const, messages: ['Weiss public completed-lot search redirected outside the allowlisted contract; the response was not parsed.'] };
+    if (!/json/i.test(response.headers.get('content-type') ?? '')) return { ...empty, status: 'error' as const, messages: ['Weiss public completed-lot search returned an unsupported response type; it was not parsed.'] };
+    return parseWeissPublicSearchResponse(input, response.url, await response.json() as WeissPublicSearchResponse);
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError';
+    return { ...empty, status: 'error' as const, messages: [timedOut ? 'Weiss public completed-lot search timed out; no retry was attempted.' : 'Weiss public completed-lot search could not be reached; no access workaround was attempted.'] };
+  }
+}
+
 export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource(input.sourceId);
   const request = buildSpecialistMarketplaceRequest(input);
@@ -662,6 +825,7 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (!isSandboxSpecialistSourceApplicable(input.sourceId, input.category)) return { ...empty, status: 'not_applicable', messages: [`${source.label} is not mapped to this item category.`] };
   if (!request.url) return { ...empty, status: source.searchContract === 'public_contract_unverified' ? 'unsupported' : 'setup_required', messages: [request.error ?? source.searchInstruction] };
   if (input.sourceId === 'goldin') return text(input.sourceUrl) ? lookupGoldinPublicLot(input, request.url) : lookupGoldinPublicSearch(input);
+  if (input.sourceId === 'weiss') return lookupWeissPublicCompletedLots(input);
   try {
     const response = await fetch(request.url, {
       headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },

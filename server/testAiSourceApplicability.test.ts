@@ -34,7 +34,7 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
   });
 
-  it('shows active specialist sources in their researched categories while making Goldin automatic context search available everywhere', () => {
+  it('shows active specialist sources in their researched categories while making Goldin and Weiss automatic context searches available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', hasTitle: true }).map((source) => source.sourceId);
     expect(coinIds).toEqual(expect.arrayContaining(['ngc', 'coin_archives', 'cng']));
     expect(coinIds).not.toContain('greatcollections');
@@ -54,7 +54,9 @@ describe('internal Test AI source-category applicability policy', () => {
     for (const removed of ['greatcollections', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'heritage']) expect(autographIds).not.toContain(removed);
 
     for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
-      expect(getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId), `Goldin should be eligible for ${category}`).toContain('goldin');
+      const sourceIds = getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId);
+      expect(sourceIds, `Goldin should be eligible for ${category}`).toContain('goldin');
+      expect(sourceIds, `Weiss should be eligible for ${category}`).toContain('weiss');
     }
   });
 });

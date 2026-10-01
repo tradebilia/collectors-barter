@@ -1,6 +1,6 @@
 import { isSandboxSiteBlockedSource } from './sandboxBlockedSources';
 
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'hakes';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
@@ -50,6 +50,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'comicconnect', categories: ['comics'], requires: 'title', purpose: 'Bounded ComicConnect sold-archive context lookup for comic research. Records remain outside valuation until source economics and signed-admission validation are complete.' },
   { sourceId: 'rr_auction', categories: ['autographs', 'music'], requires: 'title', purpose: 'Permission-pending RR Auction adapter for signed memorabilia and music research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'goldin', categories: ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'], requires: 'title', purpose: 'Bounded Goldin completed-lot context for every Tradebilia category. One anonymous public sold-lot title search returns at most 12 candidates, each identity-filtered and retained outside valuation.' },
+  { sourceId: 'weiss', categories: ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'], requires: 'title', purpose: 'Bounded Weiss Auctions completed-lot context across all Tradebilia categories. One public completed-only title search returns at most 12 candidates; final hammer bids remain identity-filtered and outside valuation.' },
   { sourceId: 'hakes', categories: ['disney pins', 'video games', 'vintage toys'], requires: 'title', purpose: 'Permission-pending Hake’s adapter for specialist collectible-auction research. Remote lookup is disabled until source authorization is recorded.' },
 ];
 

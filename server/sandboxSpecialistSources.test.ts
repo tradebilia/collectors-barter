@@ -3,11 +3,11 @@ import { SANDBOX_SPECIALIST_SOURCES, getSandboxSpecialistSource, isSandboxSpecia
 import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 describe('sandbox specialist source activation', () => {
-  it('activates the 14 displayed test sources and excludes HTTP 403-blocked or unapproved sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(14);
+  it('activates the 15 displayed test sources and excludes HTTP 403-blocked or unapproved sources', () => {
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(15);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('omega_auctions');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('propstore');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'coin_archives']));
+    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'coin_archives', 'weiss']));
     for (const removed of ['greatcollections', 'university_archives', 'swann', 'heritage', 'rr_auction', 'alexander_historical']) {
       expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain(removed);
       expect(getSandboxSpecialistSource(removed)).toBeNull();
@@ -17,6 +17,7 @@ describe('sandbox specialist source activation', () => {
   it('keeps category mapping source-specific', () => {
     const allTradebiliaCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'];
     for (const category of allTradebiliaCategories) expect(isSandboxSpecialistSourceApplicable('goldin', category), `Goldin should be available for ${category}`).toBe(true);
+    for (const category of allTradebiliaCategories) expect(isSandboxSpecialistSourceApplicable('weiss', category), `Weiss should be available for ${category}`).toBe(true);
     expect(isSandboxSpecialistSourceApplicable('rr_auction', 'music')).toBe(false);
     expect(isSandboxSpecialistSourceApplicable('rr_auction', 'coins')).toBe(false);
   });
@@ -33,6 +34,7 @@ describe('sandbox specialist source activation', () => {
       expect(['automatic_title_search', 'public_locator_required', 'price_table_locator_required', 'public_contract_unverified']).toContain(source.searchContract);
     }
     expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('automatic_title_search');
+    expect(getSandboxSpecialistSource('weiss')?.searchContract).toBe('automatic_title_search');
     expect(getSandboxSpecialistSource('morphy')?.searchContract).toBe('public_locator_required');
     expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');
   });

@@ -18,6 +18,15 @@ const vintageToy = {
   itemDetails: JSON.stringify({ manufacturer: 'Caterpillar', itemType: 'Tin Toy', era: '1930s' }),
 };
 
+const weissComic = {
+  sourceId: 'weiss' as const,
+  title: 'Marvel Incredible Hulk #2 (1962) CGC 5.5',
+  category: 'comics',
+  grade: '5.5',
+  certificationCompany: 'CGC',
+  itemDetails: JSON.stringify({ year: '1962', issueNumber: '2', title: 'Incredible Hulk' }),
+};
+
 const morphyLotUrl = 'https://auctions.morphyauctions.com/LOT123456.aspx';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -33,6 +42,88 @@ describe('bounded specialist marketplace adapters', () => {
     for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
       expect(buildSpecialistMarketplaceRequest({ ...videoGame, category }), `Goldin should automatically search ${category}`).toEqual({ url: 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', error: null });
     }
+  });
+
+  it('uses the verified Weiss public completed-lot endpoint automatically across all mapped categories', () => {
+    expect(buildSpecialistMarketplaceRequest(weissComic)).toEqual({
+      url: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots',
+      error: null,
+    });
+
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+      expect(buildSpecialistMarketplaceRequest({ ...weissComic, category }), `Weiss should automatically search ${category}`).toEqual({
+        url: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots',
+        error: null,
+      });
+    }
+  });
+
+  it('runs one capped public Weiss completed-lot search, preserves final hammer bids, and retains non-completed rows as context-only', async () => {
+    const response = new Response(JSON.stringify({
+      total_count: 2,
+      data: [{
+        id: 48137391,
+        auction_id: 1803422,
+        number: '59',
+        name: 'Marvel Incredible Hulk #2 (1962) CGC 5.5',
+        description_html: 'Marvel Comics. Certified CGC 5.5.',
+        focal_media_file_url_thumb_image: 'https://nlnx-media-files-production.s3.amazonaws.com/weiss/hulk.jpg',
+        is_completed: true,
+        leading_bid_amount_cents: 280000,
+        auction: { id: 1803422, name: 'February Comics, Comic Art, & Animation', is_completed: true, completes_at: 1772061960, currency_code: 'USD' },
+      }, {
+        id: 48137392,
+        auction_id: 1803422,
+        number: '60',
+        name: 'Marvel Avengers #1 CGC 5.5',
+        is_completed: false,
+        leading_bid_amount_cents: 500000,
+        auction: { id: 1803422, name: 'February Comics, Comic Art, & Animation', is_completed: true, completes_at: 1772061960, currency_code: 'USD' },
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    Object.defineProperty(response, 'url', { value: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots' });
+    const fetchMock = vi.fn(async () => response);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace(weissComic);
+
+    expect(result.status).toBe('success');
+    expect(result.recordCap).toBe(12);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({
+      sourceId: 'weiss',
+      completed: true,
+      price: 2800,
+      winningBid: 2800,
+      buyerPremiumIncluded: false,
+      buyerPremiumPercentage: null,
+      currency: 'USD',
+      priceBasis: 'realized',
+      url: 'https://weiss.auction/auctions/1803422/lots/48137391',
+      valuationEligible: false,
+    });
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]).toMatchObject({ completed: false, price: null, valuationEligible: false });
+    expect(result.messages.join(' ')).toMatch(/final hammer bids; buyer premium is not added/i);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const requestUrl = String(fetchMock.mock.calls[0]?.[0]);
+    expect(requestUrl).toContain('page_number=1');
+    expect(requestUrl).toContain('page_size=12');
+    expect(requestUrl).toContain('filters=text_search%3A');
+    expect(requestUrl).toContain('%7Cauction_completes_at%3A-1');
+  });
+
+  it('reports Weiss HTTP 403 without retrying or displaying a synthetic result', async () => {
+    const fetchMock = vi.fn(async () => new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/plain' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace(weissComic);
+
+    expect(result.status).toBe('error');
+    expect(result.sales).toEqual([]);
+    expect(result.context).toEqual([]);
+    expect(result.messages.join(' ')).toMatch(/HTTP 403/i);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it('runs one capped public Goldin title search, preserves dollar-denominated bids, and retains mismatches as context-only', async () => {
