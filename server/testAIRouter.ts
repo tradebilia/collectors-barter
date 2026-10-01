@@ -1276,6 +1276,7 @@ export const testAIRouter = router({
       sourceId: z.enum(['ngc', 'cng', 'rumsey', 'cherrystone', 'raritan', 'morphy', 'theriaults', 'poster_auctions', 'bonhams', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'goldin', 'weiss', 'coin_archives', 'bertoia', 'heritage', 'hakes', 'stephen_album', 'nate_sanders', 'tcgplayer_reef', 'catawiki_reef', 'auctionet']),
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), sourceUrl: z.string().url().nullish(),
+      historyWindow: z.enum(['recent_12_months', 'historical', 'all']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });

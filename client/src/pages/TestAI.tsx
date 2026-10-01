@@ -2141,6 +2141,7 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
   const locatorRequired = source.searchContract === 'public_locator_required';
   const blocked = source.searchContract === 'public_contract_unverified' || source.searchContract === 'price_table_locator_required';
   const [sourceUrl, setSourceUrl] = useState('');
+  const [historyWindow, setHistoryWindow] = useState<'recent_12_months' | 'historical' | 'all'>('recent_12_months');
   const normalizedSourceUrl = useMemo(() => {
     try {
       const parsed = new URL(sourceUrl.trim());
@@ -2163,6 +2164,7 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
       certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined,
       itemDetails: item.itemDetails ?? undefined,
       sourceUrl: normalizedSourceUrl || undefined,
+      historyWindow: source.id === 'auctionet' ? historyWindow : undefined,
     },
     { enabled: enabled && !blocked, retry: false },
   );
@@ -2173,12 +2175,14 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
       <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={lookup.isFetching} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
+      <p className="text-[9px] text-sky-200/80">Transport: {source.id === 'auctionet' || source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: context-only</p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
         <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>
         <p className="text-gray-300 text-[10px]">{source.searchInstruction}</p>
         <p className="text-gray-500 text-[9px]">{source.activationNote}</p>
         <a className="text-sky-400 text-[9px] underline break-all" href={source.sourceUrl} target="_blank" rel="noreferrer">Open source</a>
       </div>
+      {source.id === 'auctionet' && <label className="flex items-center justify-between gap-2 rounded border border-sky-700/30 bg-sky-950/20 px-2 py-1.5 text-[9px] text-sky-100">History window<select value={historyWindow} onChange={(event) => setHistoryWindow(event.target.value as typeof historyWindow)} className="rounded border border-sky-700/50 bg-slate-950 px-1.5 py-1 text-[9px] text-slate-100"><option value="recent_12_months">Recent · last 12 months</option><option value="historical">Historical · older than 12 months</option><option value="all">All returned dates</option></select></label>}
       {locatorRequired && <div className="space-y-1.5">
         <label className="text-[9px] text-gray-400">Public closed-auction, catalog, or lot URL</label>
         <div className="flex gap-2"><input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://…" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-950/70 px-2 py-1 text-[10px] text-slate-100 placeholder:text-slate-600 focus:border-sky-500 focus:outline-none" /><button type="button" onClick={() => lookup.refetch()} disabled={!normalizedSourceUrl || lookup.isFetching} className="rounded border border-sky-600/60 bg-sky-900/30 px-2 py-1 text-[9px] font-semibold text-sky-100 transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50">Check</button></div>
