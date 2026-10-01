@@ -79,7 +79,7 @@ export default function Contact() {
             <img
               src={CONTACT_HERO_URL}
               alt="Contact Us"
-              className="h-auto w-full"
+              className="mobile-hero-title-reference h-auto w-full"
             />
           </div>
         </div>

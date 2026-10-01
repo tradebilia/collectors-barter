@@ -389,11 +389,11 @@ export function ForumTopic() {
           backgroundRepeat: 'no-repeat'
         }} />
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
-          <div className="flex w-full max-w-7xl scale-110 items-center justify-center">
+          <div className="flex w-full max-w-7xl items-center justify-center sm:scale-110">
             <img
               src="/manus-storage/Collectorsforum(1)_9c5fcba9.svg"
               alt="Collector's Forum"
-              className="h-auto w-full"
+              className="mobile-hero-title-reference h-auto w-full"
             />
           </div>
         </div>

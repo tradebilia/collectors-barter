@@ -430,7 +430,7 @@ export default function Inventory() {
             <img
               src="/manus-storage/Myinventory(1)_a3b2722b.svg"
               alt="My Inventory"
-              className="h-auto w-full object-contain"
+              className="mobile-hero-title-reference h-auto w-full object-contain"
             />
           </div>
         </div>

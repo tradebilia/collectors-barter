@@ -36,7 +36,7 @@ describe("mobile inventory upload and category hero repairs", () => {
     expect(source).toContain('className="flex w-full max-w-6xl -translate-x-[5.56%] items-center justify-center px-4"');
     expect(source).toContain('src="/manus-storage/Myinventory(1)_a3b2722b.svg"');
     expect(source).toContain('alt="My Inventory"');
-    expect(source).toContain('className="h-auto w-full object-contain"');
+    expect(source).toContain('className="mobile-hero-title-reference h-auto w-full object-contain"');
     expect(source).toContain('</section>\n\n      <CategoryBar />');
     expect(source).toContain('Show draft and unsaved items');
     expect(source).toContain('grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-left');

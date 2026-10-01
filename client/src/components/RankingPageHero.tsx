@@ -25,7 +25,7 @@ export function RankingPageHero({ title }: RankingPageHeroProps) {
     >
       <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
         {titleUrl ? (
-          <img src={titleUrl} alt={title} className="h-auto w-full max-w-5xl object-contain" />
+          <img src={titleUrl} alt={title} className="mobile-hero-title-reference h-auto w-full max-w-5xl object-contain" />
         ) : (
           <h1 className="text-center text-5xl font-black tracking-wide sm:text-6xl">{title}</h1>
         )}

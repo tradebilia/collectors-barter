@@ -46,8 +46,10 @@ describe("Collectors Forum UX contracts", () => {
   });
 
   it("keeps hero sizing consistent and renders author identity data", () => {
-    expect(forumSource).toContain('className="flex w-full max-w-7xl scale-110 items-center justify-center"');
-    expect(topicSource).toContain('className="flex w-full max-w-7xl scale-110 items-center justify-center"');
+    expect(forumSource).toContain('className="flex w-full max-w-7xl items-center justify-center sm:scale-110"');
+    expect(topicSource).toContain('className="flex w-full max-w-7xl items-center justify-center sm:scale-110"');
+    expect(forumSource).toContain("mobile-hero-title-reference");
+    expect(topicSource).toContain("mobile-hero-title-reference");
     expect(topicSource).toContain("<AuthorAvatar name={post.author?.name} avatarUrl={post.author?.avatarUrl} />");
     expect(topicSource).toContain("<AuthorAvatar name={reply.author?.name} avatarUrl={reply.author?.avatarUrl} avatarRef=");
     expect(dbSource).toContain("COALESCE(NULLIF(${userProfiles.displayName}, ''), NULLIF(${users.displayName}, ''), ${users.name}, 'Anonymous')");
@@ -243,4 +245,3 @@ describe("Collectors Forum UX contracts", () => {
     expect(forumSource).toContain("setShowNewTopicModal(true)");
   });
 });
-

@@ -35,10 +35,10 @@ describe("mobile-only responsive layout contracts", () => {
     expect(source).toContain("xl:hidden");
   });
 
-  it("uses a phone-only Conventions title fallback and preserves desktop artwork", () => {
+  it("uses the supplied Conventions artwork in the homepage-reference mobile title frame", () => {
     const source = read("client/src/pages/Conventions.tsx");
-    expect(source).toContain('sm:hidden">Conventions');
-    expect(source).toContain("hidden h-auto w-full object-contain sm:block");
+    expect(source).toContain('className="hidden px-6 text-center text-4xl font-semibold tracking-tight text-white"');
+    expect(source).toContain("mobile-hero-title-reference h-auto w-full object-contain");
   });
 
   it("keeps desktop homepage ranking columns while compacting phone ranking modules", () => {

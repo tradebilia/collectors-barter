@@ -55,7 +55,7 @@ describe("authenticated mobile-only responsive layout contracts", () => {
 
   it("keeps the Report a Member hero centered at every breakpoint without injected offset styles", () => {
     const source = read("client/src/pages/ReportUser.tsx");
-    expect(source).toContain('className="h-auto w-full max-w-7xl object-contain px-4"');
+    expect(source).toContain('className="mobile-hero-title-reference h-auto w-full max-w-7xl object-contain px-4"');
     expect(source).not.toContain("@media (max-width: 1023px)");
     expect(source).not.toContain("mobileHeroStyle.dataset.reportUserMobileHero");
     expect(source).not.toContain("-ml-32");

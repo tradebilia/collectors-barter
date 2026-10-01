@@ -223,7 +223,7 @@ export default function Profile() {
             <img
               src="/manus-storage/Profile(1)_9b059290.svg"
               alt="Profile"
-              className="h-auto w-full"
+              className="mobile-hero-title-reference h-auto w-full"
             />
           </div>
         </div>

@@ -287,7 +287,7 @@ export default function PublicProfile() {
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 lg:h-80">
           <div className="flex w-full max-w-6xl items-center justify-center">
-            <img src="/manus-storage/Profile(1)_9b059290.svg" alt="Profile" className="h-auto w-full" />
+            <img src="/manus-storage/Profile(1)_9b059290.svg" alt="Profile" className="mobile-hero-title-reference h-auto w-full" />
           </div>
         </div>
       </section>

@@ -467,7 +467,7 @@ export default function AccountSetup() {
             <img
               src="/manus-storage/AccountSetup(1)_92c77e1f.webp"
               alt="Account Setup"
-              className="h-auto w-full"
+              className="mobile-hero-title-reference h-auto w-full"
             />
           </div>
         </div>

@@ -161,6 +161,18 @@
     padding-right: 1rem;
   }
 
+  /* Mirrors the homepage mobile hero-title frame. It is intentionally scoped
+     below the sm breakpoint so desktop title artwork, hero dimensions, and
+     background wallpaper remain unchanged. */
+  @media (max-width: 639px) {
+    .mobile-hero-title-reference {
+      width: calc(131% - 2rem) !important;
+      max-width: 583px !important;
+      flex: none !important;
+      transform: translateX(-4.3%) !important;
+    }
+  }
+
   .flex {
     min-height: 0;
     min-width: 0;

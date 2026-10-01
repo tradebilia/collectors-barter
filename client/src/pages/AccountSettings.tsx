@@ -747,7 +747,7 @@ export default function AccountSettings() {
             <img
               src="/manus-storage/AccountSettingsTitle(1)_9ec042b0.webp"
               alt="Account Settings"
-              className="h-auto w-full"
+              className="mobile-hero-title-reference h-auto w-full"
             />
           </div>
         </div>

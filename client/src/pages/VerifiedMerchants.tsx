@@ -36,7 +36,7 @@ export default function VerifiedMerchants() {
           <img
             src={VERIFIED_MERCHANTS_LOGO_URL}
             alt="Verified Merchants"
-            className="h-auto w-full"
+            className="mobile-hero-title-reference h-auto w-full"
           />
         </div>
       </section>

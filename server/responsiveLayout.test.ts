@@ -33,9 +33,9 @@ describe("responsive viewport layout contracts", () => {
     expect(tradeHubSource.indexOf("</section>\n\n        <CategoryBar />")).toBeGreaterThan(-1);
   });
 
-  it("enlarges the Explore All hero title only on mobile", () => {
+  it("uses the homepage-reference size and centering for the Trade Hub title only on mobile", () => {
     const tradeHubSource = readPage("TradeHub");
-    expect(tradeHubSource).toContain('className="h-auto w-[130%] max-w-none sm:w-full sm:max-w-[1100px]"');
+    expect(tradeHubSource).toContain('className="mobile-hero-title-reference h-auto w-[130%] max-w-none sm:w-full sm:max-w-[1100px]"');
     expect(tradeHubSource).toContain("style={{ maxWidth: '1100px' }}");
   });
 });

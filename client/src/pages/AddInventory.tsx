@@ -493,7 +493,7 @@ export default function AddInventory() {
       }}>
         <div className="container relative flex h-64 items-center justify-center py-0 sm:h-72 sm:py-0 lg:h-80 lg:py-0">
           <div className="flex w-full max-w-4xl items-center justify-center overflow-visible">
-            <img src="/manus-storage/Add_To_Your_Inventory(1)_6696e75d.svg" alt="Add To Your Inventory" className="h-auto w-[140%] max-w-none sm:w-[130%] lg:w-[140%]" />
+            <img src="/manus-storage/Add_To_Your_Inventory(1)_6696e75d.svg" alt="Add To Your Inventory" className="mobile-hero-title-reference h-auto w-[140%] max-w-none sm:w-[130%] lg:w-[140%]" />
           </div>
         </div>
       </section>

@@ -14,7 +14,7 @@ describe('Add Inventory submit action', () => {
   });
 
   it('uses the enlarged responsive Add To Your Inventory hero artwork', () => {
-    expect(source).toContain('className="h-auto w-[140%] max-w-none sm:w-[130%] lg:w-[140%]"');
+    expect(source).toContain('className="mobile-hero-title-reference h-auto w-[140%] max-w-none sm:w-[130%] lg:w-[140%]"');
     expect(source).toContain('alt="Add To Your Inventory"');
     expect(selectorSource).toContain('bg-white text-slate-900 placeholder:text-slate-500 border-slate-300');
     expect(selectorSource).toContain('disabled:bg-white disabled:text-slate-500 disabled:opacity-100');
