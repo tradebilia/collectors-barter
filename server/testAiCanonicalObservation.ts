@@ -44,6 +44,7 @@ type AdapterId =
   | 'tcgplayer_reef'
   | 'catawiki_reef'
   | 'auctionet'
+  | 'comic_book_realm'
   | 'coin_archives'
   | 'bertoia'
   | 'heritage'
@@ -140,6 +141,7 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   tcgplayer_reef: { id: 'tcgplayer_reef', label: 'TCGplayer via ReefAPI', version: '1.0.0', defaultOriginMarketplace: 'tcgplayer', defaultPriceBasis: 'sold', completedStatusBasis: 'TCGplayer latest-sale record returned by ReefAPI' },
   catawiki_reef: { id: 'catawiki_reef', label: 'Catawiki via ReefAPI', version: '1.0.0', defaultOriginMarketplace: 'catawiki', defaultPriceBasis: 'closed', completedStatusBasis: 'Catawiki sold lot with explicit sold_price returned by ReefAPI' },
   auctionet: { id: 'auctionet', label: 'Auctionet', version: '1.0.0', defaultOriginMarketplace: 'auctionet', defaultPriceBasis: 'closed', completedStatusBasis: 'Auctionet ended search record with Hammered status and USD amount' },
+  comic_book_realm: { id: 'comic_book_realm', label: 'Comic Book Realm CGC Analyzer', version: '1.0.0', defaultOriginMarketplace: 'comic_book_realm', defaultPriceBasis: 'unknown', completedStatusBasis: 'Aggregated CGC guide estimate; never an individual completed sale' },
   coin_archives: { id: 'coin_archives', label: 'CoinArchives', version: '1.0.0', defaultOriginMarketplace: 'coin_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'CoinArchives completed lot record' },
   bertoia: { id: 'bertoia', label: 'Bertoia Auctions', version: '1.0.0', defaultOriginMarketplace: 'bertoia', defaultPriceBasis: 'unknown', completedStatusBasis: 'Bertoia completed lot or catalog record' },
   heritage: { id: 'heritage', label: 'Heritage Auction Archives', version: '1.0.0', defaultOriginMarketplace: 'heritage', defaultPriceBasis: 'unknown', completedStatusBasis: 'Heritage completed lot result' },

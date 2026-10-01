@@ -358,3 +358,64 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.reefApiAudit).toMatchObject({ apiCalls: 2, searchCalls: 1, detailCalls: 1, estimatedCredits: 2 });
   });
 });
+
+describe("Comic Book Realm CGC guide context adapter", () => {
+  const comic = {
+    sourceId: "comic_book_realm" as const,
+    title: "X-Men #137",
+    category: "comics",
+    grade: "9.8",
+    certificationCompany: "CGC",
+    itemDetails: JSON.stringify({
+      issueNumber: "137",
+      year: "1980",
+      title: "X-Men",
+    }),
+  };
+  const cbrUrl =
+    "https://comicbookrealm.com/cgc-analyzer/comic/id/535/marvel-comics-x-men-137";
+  it("requires an allowlisted public CGC Analyzer locator", () => {
+    expect(buildSpecialistMarketplaceRequest(comic)).toMatchObject({
+      url: null,
+    });
+    expect(
+      buildSpecialistMarketplaceRequest({ ...comic, sourceUrl: cbrUrl })
+    ).toEqual({ url: cbrUrl, error: null });
+    expect(
+      buildSpecialistMarketplaceRequest({
+        ...comic,
+        sourceUrl: "https://comicbookrealm.com/series/113/535/x-men-137",
+      }).url
+    ).toBeNull();
+  });
+  it("parses guide estimates and recorded-sale context without creating sold comps", () => {
+    const html = `<html><head><title>X-Men #137 9/80 Marvel Comics (CGC Analyzer)</title></head><body><h1>X-Men #137 9/80 Marvel Comics (CGC Analyzer)</h1><table><tr><td>Certified Category:</td><td>Universal/Modern</td></tr><tr><td>Recorded Sales:</td><td>1,142</td></tr></table><table><tr><th>Grade</th><th>Population</th><th>Last Sale</th><th>Recorded Sales</th><th>Estimated Value</th><th>Raw Value</th></tr><tr><td>9.8</td><td>0</td><td>Sep 15, 2026</td><td>156</td><td>$455.00</td><td>*</td></tr><tr><td>9.6</td><td>0</td><td>Sep 8, 2026</td><td>295</td><td>$165.00</td><td>*</td></tr><tr><td>9.4</td><td>0</td><td>Sep 13, 2026</td><td>212</td><td>$120.00</td><td>*</td></tr></table></body></html>`;
+    const result = parseSpecialistMarketplaceHtml(
+      "comic_book_realm",
+      html,
+      comic,
+      cbrUrl
+    );
+    expect(result.status).toBe("success");
+    expect(result.sales).toEqual([]);
+    expect(result.context).toHaveLength(3);
+    expect(result.guideSummary).toMatchObject({
+      totalRecordedSales: 1142,
+      certifiedCategory: "Universal/Modern",
+    });
+    expect(result.guideRows?.[0]).toMatchObject({
+      grade: "9.8",
+      recordedSales: 156,
+      estimatedValue: 455,
+    });
+    expect(result.context[0]).toMatchObject({
+      price: 455,
+      currency: "USD",
+      valuationEligible: false,
+      completed: false,
+    });
+    expect(result.context[0]?.exclusionReason).toMatch(
+      /aggregated guide estimate/i
+    );
+  });
+});

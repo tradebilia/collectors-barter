@@ -23,7 +23,8 @@ export type SandboxSpecialistSourceId =
   | 'nate_sanders'
   | 'tcgplayer_reef'
   | 'catawiki_reef'
-  | 'auctionet';
+  | 'auctionet'
+  | 'comic_book_realm';
 
 export type SpecialistSourceSearchContract =
   | 'automatic_title_search'
@@ -74,6 +75,7 @@ export const SANDBOX_SPECIALIST_SOURCES: readonly SandboxSpecialistSource[] = [
   { id: 'tcgplayer_reef', label: 'TCGplayer via ReefAPI', categories: ['pokemon'], sourceUrl: 'https://www.tcgplayer.com/', currencyPolicy: 'usd_explicit', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', searchContract: 'automatic_title_search', searchInstruction: 'Tradebilia sends one bounded TCGplayer product search and reads recent provider-confirmed sales through ReefAPI (maximum 12 products; five latest sales per product).', activationNote: 'Search identity, product detail, sale timestamp, price, condition, printing, language, and product URL are returned by the authorized read-only ReefAPI. Active listings and guide prices are not treated as completed sales; results remain context-only.' },
   { id: 'catawiki_reef', label: 'Catawiki via ReefAPI', categories: ['comics', 'sports cards', 'vintage toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'], sourceUrl: 'https://www.catawiki.com/', currencyPolicy: 'usd_explicit', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', searchContract: 'automatic_title_search', searchInstruction: 'Tradebilia sends one bounded Catawiki lot search and checks returned lot details for sold status and a positive USD sold price (maximum 12 lots).', activationNote: 'Open/current bids are retained only as context and never treated as completed sales. Only provider-confirmed sold_price records with explicit USD currency and deterministic identity matching are retained as completed-sale context.' },
   { id: 'auctionet', label: 'Auctionet via ReefAPI', categories: ['comics', 'sports cards', 'vintage toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'], sourceUrl: 'https://auctionet.com/en/search?is=ended', currencyPolicy: 'usd_explicit', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', searchContract: 'automatic_title_search', searchInstruction: 'Tradebilia sends one bounded ended-auction title search to ReefAPI’s Auctionet endpoint (maximum 12 records).', activationNote: 'ReefAPI provides the approved read-only Auctionet transport. Only explicit sold ended lots with positive USD final_bid values and deterministic identity matches are retained; ReefAPI does not convert currencies and buyer-premium treatment remains unresolved, so results are context-only.' },
+  { id: 'comic_book_realm', label: 'Comic Book Realm CGC Analyzer', categories: ['comics'], sourceUrl: 'https://comicbookrealm.com/cgc-analyzer/', currencyPolicy: 'usd_symbol_context', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', searchContract: 'public_locator_required', searchInstruction: 'Paste a public Comic Book Realm CGC Analyzer URL for the exact comic issue (for example, /cgc-analyzer/comic/id/535/marvel-comics-x-men-137).', activationNote: 'The public server-rendered CGC table provides grade-specific estimated values, last-sale dates, recorded-sale counts, and aggregate recorded sales. These are guide/market context only—not individual sold comparables and never valuation-eligible.' },
 ] as const;
 
 export function getSandboxSpecialistSource(id: string): SandboxSpecialistSource | null {

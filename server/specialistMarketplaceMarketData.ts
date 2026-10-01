@@ -61,6 +61,22 @@ export type SpecialistMarketplaceLookupResult = {
   recordCap: number;
   historyWindow?: 'recent_12_months' | 'historical' | 'all';
   reefApiAudit?: ReefApiAudit;
+  guideRows?: ComicBookRealmGuideRow[];
+  guideSummary?: ComicBookRealmGuideSummary;
+};
+
+export type ComicBookRealmGuideRow = {
+  grade: string;
+  population: number | null;
+  lastSaleDate: string | null;
+  recordedSales: number | null;
+  estimatedValue: number | null;
+};
+
+export type ComicBookRealmGuideSummary = {
+  issueTitle: string | null;
+  certifiedCategory: string | null;
+  totalRecordedSales: number | null;
 };
 
 export type ReefApiAudit = {
@@ -97,6 +113,7 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
   catawiki_reef: { hosts: ['api.reefapi.com', 'www.catawiki.com'], linkPattern: /(?:api\.reefapi\.com\/catawiki\/v1|www\.catawiki\.com\/en\/l\/\d+)/i, recordCap: 12 },
   auctionet: { hosts: ['api.reefapi.com'], linkPattern: /api\.reefapi\.com\/auctionet\/v1/i, recordCap: 12 },
+  comic_book_realm: { hosts: ['comicbookrealm.com', 'www.comicbookrealm.com'], linkPattern: /\/cgc-analyzer\/comic\/id\/\d+\//i, recordCap: 30 },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
@@ -108,6 +125,7 @@ const TCGPLAYER_SEARCH_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/search`;
 const TCGPLAYER_SALES_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/product/sales`;
 const CATAWIKI_SEARCH_ENDPOINT = `${REEF_API_BASE}/catawiki/v1/search`;
 const AUCTIONET_SEARCH_ENDPOINT = `${REEF_API_BASE}/auctionet/v1/search`;
+const COMIC_BOOK_REALM_CGC_ANALYZER_BASE = 'https://comicbookrealm.com/cgc-analyzer/';
 
 function text(value: unknown): string {
   return value == null ? '' : String(value)
@@ -339,6 +357,149 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
   };
 }
 
+function parseGuideMoney(value: string): number | null {
+  const match = value.match(/\$\s*([\d,]+(?:\.\d{2})?)/);
+  if (!match?.[1]) return null;
+  const amount = Number(match[1].replace(/,/g, ""));
+  return Number.isFinite(amount) && amount >= 0 ? amount : null;
+}
+
+function parseGuideCount(value: string): number | null {
+  const cleaned = value.replace(/,/g, "").trim();
+  if (!/^\d+$/.test(cleaned)) return null;
+  const count = Number(cleaned);
+  return Number.isSafeInteger(count) ? count : null;
+}
+
+function parseComicBookRealmCgcAnalyzerHtml(
+  html: string,
+  input: SpecialistMarketplaceLookupInput,
+  requestUrl: string
+): SpecialistMarketplaceLookupResult {
+  const source = getSandboxSpecialistSource("comic_book_realm")!;
+  const base = {
+    source: "comic_book_realm" as const,
+    label: source.label,
+    searchContract: source.searchContract,
+    query: requestUrl,
+    sales: [] as SpecialistMarketplaceRecord[],
+    context: [] as SpecialistMarketplaceRecord[],
+    messages: [] as string[],
+    requestUrl,
+    recordCap: SOURCE_RULES.comic_book_realm!.recordCap,
+  };
+  const document = new JSDOM(html, { url: requestUrl }).window.document;
+  const table = Array.from(document.querySelectorAll("table")).find(
+    candidate =>
+      /grade/i.test(text(candidate.textContent)) &&
+      /estimated value/i.test(text(candidate.textContent))
+  );
+  if (!table)
+    return {
+      ...base,
+      status: "error",
+      messages: [
+        "Comic Book Realm returned no public CGC grade/value table; no synthetic estimate was created.",
+      ],
+    };
+  const headers = Array.from(
+    table.querySelectorAll("tr:first-child th, tr:first-child td")
+  ).map(cell => normalize(cell.textContent));
+  const indexOf = (name: string) =>
+    headers.findIndex(header => header === name || header.includes(name));
+  const gradeIndex = indexOf("grade");
+  const populationIndex = indexOf("population");
+  const lastSaleIndex = indexOf("last sale");
+  const recordedIndex = indexOf("recorded sales");
+  const estimateIndex = indexOf("estimated value");
+  const rows: ComicBookRealmGuideRow[] = [];
+  for (const row of Array.from(table.querySelectorAll("tr")).slice(1)) {
+    const cells = Array.from(row.querySelectorAll("td, th")).map(cell =>
+      text(cell.textContent)
+    );
+    const grade = gradeIndex >= 0 ? (cells[gradeIndex] ?? "") : "";
+    if (!/^\d+(?:\.\d+)?$|^\.\d+$/.test(grade)) continue;
+    const lastSaleText = lastSaleIndex >= 0 ? (cells[lastSaleIndex] ?? "") : "";
+    rows.push({
+      grade,
+      population:
+        populationIndex >= 0
+          ? parseGuideCount(cells[populationIndex] ?? "")
+          : null,
+      lastSaleDate: extractDate(lastSaleText),
+      recordedSales:
+        recordedIndex >= 0 ? parseGuideCount(cells[recordedIndex] ?? "") : null,
+      estimatedValue:
+        estimateIndex >= 0 ? parseGuideMoney(cells[estimateIndex] ?? "") : null,
+    });
+    if (rows.length >= SOURCE_RULES.comic_book_realm!.recordCap) break;
+  }
+  if (!rows.length)
+    return {
+      ...base,
+      status: "error",
+      messages: [
+        "Comic Book Realm returned a CGC table but no grade rows could be parsed deterministically.",
+      ],
+    };
+  const pageText = text(document.body?.textContent);
+  const issueTitle =
+    text(document.querySelector("h1")?.textContent) ||
+    text(document.title) ||
+    null;
+  const certifiedCategory =
+    text(
+      Array.from(document.querySelectorAll("tr"))
+        .find(row => /certified category/i.test(text(row.textContent)))
+        ?.querySelector("td:last-child")?.textContent
+    ) || null;
+  const totalMatch = pageText.match(/Recorded Sales\s*:?\s*([\d,]+)/i);
+  const totalRecordedSales = totalMatch?.[1]
+    ? parseGuideCount(totalMatch[1])
+    : null;
+  const targetGrade = input.grade?.trim() || null;
+  const records = rows.map(
+    row =>
+      ({
+        sourceId: "comic_book_realm" as const,
+        provider: source.label,
+        title: `${issueTitle ?? input.title} · CGC ${row.grade}`,
+        description: `Public CGC Analyzer guide row: estimated value ${row.estimatedValue == null ? "unavailable" : `$${row.estimatedValue.toLocaleString()}`}; recorded sales ${row.recordedSales ?? "unavailable"}; last sale ${row.lastSaleDate ?? "unavailable"}.`,
+        lotId: null,
+        auctionName: "Comic Book Realm CGC Analyzer",
+        url: requestUrl,
+        imageUrl: null,
+        saleStatus: "unknown" as const,
+        completed: false,
+        price: row.estimatedValue,
+        currency: row.estimatedValue != null ? ("USD" as const) : null,
+        date: row.lastSaleDate,
+        grade: row.grade,
+        certificationCompany: "CGC",
+        priceBasis: "unknown" as const,
+        buyerPremiumIncluded: null,
+        winningBid: null,
+        buyerPremiumPercentage: null,
+        identityMatched:
+          !targetGrade || numericGradesEquivalent(targetGrade, row.grade),
+        matchedTokens: [],
+        exclusionReason:
+          "Aggregated guide estimate; not an individual completed sale and never valuation-eligible.",
+        valuationEligible: false as const,
+      }) satisfies SpecialistMarketplaceRecord
+  );
+  return {
+    ...base,
+    status: "success",
+    context: records,
+    guideRows: rows,
+    guideSummary: { issueTitle, certifiedCategory, totalRecordedSales },
+    messages: [
+      `Comic Book Realm returned ${rows.length} grade rows for ${issueTitle ?? input.title}. Values are grade-specific guide estimates with recorded-sale counts—not individual sold comparables—and cannot affect valuation or the final AI conclusion.`,
+    ],
+  };
+}
+
 export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLookupInput): { url: string | null; error: string | null } {
   const source = getSandboxSpecialistSource(input.sourceId);
   if (!source) return { url: null, error: 'This specialist marketplace source is not registered.' };
@@ -372,6 +533,11 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
     const query = text(input.title).slice(0, 180);
     return { url: AUCTIONET_SEARCH_ENDPOINT, error: null };
   }
+  if (input.sourceId === 'comic_book_realm' && source.searchContract === 'public_locator_required') {
+    const sourceUrl = text(input.sourceUrl);
+    if (!sourceUrl) return { url: null, error: source.searchInstruction };
+    return isAllowedSourceUrl(input.sourceId, sourceUrl) ? { url: sourceUrl, error: null } : { url: null, error: 'That URL is not an allowlisted public Comic Book Realm CGC Analyzer route.' };
+  }
   if (source.searchContract === 'automatic_title_search') return { url: null, error: `${source.label} is handled by its dedicated adapter rather than this generic specialist route.` };
   const sourceUrl = text(input.sourceUrl);
   if (!sourceUrl) return { url: null, error: source.searchInstruction };
@@ -397,6 +563,7 @@ export function parseSpecialistMarketplaceHtml(sourceId: SandboxSpecialistSource
   if (!isSandboxSpecialistSourceApplicable(sourceId, input.category)) return { ...base, status: 'not_applicable', messages: [`${source.label} is not mapped to this item category.`] };
   if (source.searchContract === 'public_contract_unverified' || source.searchContract === 'price_table_locator_required') return { ...base, status: 'unsupported', messages: [source.searchInstruction] };
 
+  if (sourceId === 'comic_book_realm') return parseComicBookRealmCgcAnalyzerHtml(html, input, requestUrl);
   const dom = new JSDOM(html, { url: requestUrl });
   const document = dom.window.document;
   const pageText = text(document.body?.textContent);
@@ -1122,6 +1289,17 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (input.sourceId === 'tcgplayer_reef') return lookupTcgplayerReef(input);
   if (input.sourceId === 'catawiki_reef') return lookupCatawikiReef(input);
   if (input.sourceId === 'auctionet') return lookupAuctionet(input);
+  if (input.sourceId === 'comic_book_realm') {
+    try {
+      const response = await fetch(request.url, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS) });
+      if (!response.ok) return { ...empty, status: 'error', messages: [`${source.label} returned HTTP ${response.status}; no retry or access workaround was attempted.`] };
+      if (!isAllowedSourceUrl(input.sourceId, response.url)) return { ...empty, status: 'error', messages: [`${source.label} redirected outside the allowlisted public contract; the response was not parsed.`] };
+      return parseComicBookRealmCgcAnalyzerHtml(await response.text(), input, response.url);
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === 'TimeoutError';
+      return { ...empty, status: 'error', messages: [timedOut ? `${source.label} timed out; no retry was attempted.` : `${source.label} could not be reached; no access workaround was attempted.`] };
+    }
+  }
   try {
     const response = await fetch(request.url, {
       headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },
