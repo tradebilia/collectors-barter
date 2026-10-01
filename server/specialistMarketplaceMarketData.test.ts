@@ -338,6 +338,7 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.sales).toHaveLength(1);
     expect(result.sales[0]).toMatchObject({ lotId: '101', price: 125, completed: true });
     expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(result.reefApiAudit).toMatchObject({ apiCalls: 3, searchCalls: 1, detailCalls: 2, estimatedCredits: 3, creditBasis: 'one-credit-per-request' });
   });
 
   it('supports Auctionet historical window without treating detail failures as sales', async () => {
@@ -354,5 +355,6 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.sales).toEqual([]);
     expect(result.context[0]?.completed).toBe(false);
     expect(result.context[0]?.exclusionReason).toMatch(/identity|completed-sale|USD|explicit sold/i);
+    expect(result.reefApiAudit).toMatchObject({ apiCalls: 2, searchCalls: 1, detailCalls: 1, estimatedCredits: 2 });
   });
 });

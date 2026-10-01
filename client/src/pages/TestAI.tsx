@@ -2164,7 +2164,7 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
       certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined,
       itemDetails: item.itemDetails ?? undefined,
       sourceUrl: normalizedSourceUrl || undefined,
-      historyWindow: source.id === 'auctionet' ? historyWindow : undefined,
+      historyWindow: source.id === 'auctionet' || source.id.endsWith('_reef') ? historyWindow : undefined,
     },
     { enabled: enabled && !blocked, retry: false },
   );
@@ -2182,7 +2182,8 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
         <p className="text-gray-500 text-[9px]">{source.activationNote}</p>
         <a className="text-sky-400 text-[9px] underline break-all" href={source.sourceUrl} target="_blank" rel="noreferrer">Open source</a>
       </div>
-      {source.id === 'auctionet' && <label className="flex items-center justify-between gap-2 rounded border border-sky-700/30 bg-sky-950/20 px-2 py-1.5 text-[9px] text-sky-100">History window<select value={historyWindow} onChange={(event) => setHistoryWindow(event.target.value as typeof historyWindow)} className="rounded border border-sky-700/50 bg-slate-950 px-1.5 py-1 text-[9px] text-slate-100"><option value="recent_12_months">Recent · last 12 months</option><option value="historical">Historical · older than 12 months</option><option value="all">All returned dates</option></select></label>}
+      {(source.id === 'auctionet' || source.id.endsWith('_reef')) && <label className="flex items-center justify-between gap-2 rounded border border-sky-700/30 bg-sky-950/20 px-2 py-1.5 text-[9px] text-sky-100">History window<select value={historyWindow} onChange={(event) => setHistoryWindow(event.target.value as typeof historyWindow)} className="rounded border border-sky-700/50 bg-slate-950 px-1.5 py-1 text-[9px] text-slate-100"><option value="recent_12_months">Recent · last 12 months</option><option value="historical">Historical · older than 12 months</option><option value="all">All returned dates</option></select></label>}
+      {data?.reefApiAudit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[9px] text-violet-100"><p className="font-semibold uppercase text-violet-300">ReefAPI usage for this run</p><p className="mt-0.5">API calls: {data.reefApiAudit.apiCalls} · Search calls: {data.reefApiAudit.searchCalls} · Detail calls: {data.reefApiAudit.detailCalls} · Estimated credits: {data.reefApiAudit.estimatedCredits}</p><p className="mt-0.5 text-violet-200/70">Estimate uses the documented one-credit-per-request basis; it is not a billing statement.</p></div>}
       {locatorRequired && <div className="space-y-1.5">
         <label className="text-[9px] text-gray-400">Public closed-auction, catalog, or lot URL</label>
         <div className="flex gap-2"><input value={sourceUrl} onChange={(event) => setSourceUrl(event.target.value)} placeholder="https://…" className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-950/70 px-2 py-1 text-[10px] text-slate-100 placeholder:text-slate-600 focus:border-sky-500 focus:outline-none" /><button type="button" onClick={() => lookup.refetch()} disabled={!normalizedSourceUrl || lookup.isFetching} className="rounded border border-sky-600/60 bg-sky-900/30 px-2 py-1 text-[9px] font-semibold text-sky-100 transition active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50">Check</button></div>

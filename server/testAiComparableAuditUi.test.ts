@@ -39,4 +39,14 @@ describe('Test AI comparable audit ledger UI', () => {
     expect(page).toContain('Category threshold:');
     expect(page).toContain('Adapter reliability history');
   });
+
+  it('shows ReefAPI history controls and per-run request usage without presenting it as billing', () => {
+    expect(page).toContain('History window');
+    expect(page).toContain('Recent · last 12 months');
+    expect(page).toContain('Historical · older than 12 months');
+    expect(page).toContain('ReefAPI usage for this run');
+    expect(page).toContain('Detail calls:');
+    expect(page).toContain('Estimated credits:');
+    expect(page).toContain('it is not a billing statement');
+  });
 });
