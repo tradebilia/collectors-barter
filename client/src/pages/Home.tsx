@@ -600,11 +600,14 @@ export default function Home() {
           <div className="absolute inset-0 bg-black/45" aria-hidden="true" />
           <div className="container relative z-10 flex h-[280px] items-center justify-center py-0 sm:h-[400px]">
             <div className="flex w-[131%] max-w-[583px] flex-none -translate-x-[4.3%] items-center justify-center px-4 sm:w-full sm:max-w-6xl sm:-translate-x-[6.5%] sm:flex-initial">
-              <img
-                src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"
-                alt="Tradebilia"
-                className="h-auto w-full max-w-none object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.78)] sm:max-w-6xl"
-              />
+              <picture>
+                <source media="(max-width: 639px)" srcSet="/manus-storage/tradebilia_mobile_opaque_a25bafb1.svg" />
+                <img
+                  src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"
+                  alt="Tradebilia"
+                  className="h-auto w-full max-w-none object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.78)] sm:max-w-6xl"
+                />
+              </picture>
             </div>
           </div>
         </section>

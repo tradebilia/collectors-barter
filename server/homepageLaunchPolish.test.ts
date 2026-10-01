@@ -12,7 +12,9 @@ describe("homepage launch polish", () => {
 
   it("uses the supplied animated deeper-shadow logo only in the homepage hero", () => {
     expect(homepageSource).toContain('src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"');
-    expect(homepageSource).toContain('src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"\n                alt="Tradebilia"');
+    expect(homepageSource).toContain('src="/manus-storage/tradebilia_animated_deeper_inner_font_shadow_3f555088.svg"');
+    expect(homepageSource).toContain('alt="Tradebilia"');
+    expect(homepageSource).toContain('<source media="(max-width: 639px)" srcSet="/manus-storage/tradebilia_mobile_opaque_a25bafb1.svg" />');
     expect(homepageSource).toContain('className="absolute inset-0 bg-black/45"');
     expect(homepageSource).toContain('drop-shadow-[0_2px_8px_rgba(0,0,0,0.78)]');
     expect(homepageSource).toContain('<img src={TRADEBILIA_LOGO_URL} alt="Tradebilia" className="h-7 w-auto opacity-70" />');
