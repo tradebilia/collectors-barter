@@ -20,6 +20,10 @@ describe("Trade Hub and Inventory status presentation", () => {
   it("keeps the Trade Hub dark background through the viewport root", () => {
     expect(tradeHubSource).toContain('<div className="min-h-screen bg-[#0a0a2a] text-foreground">');
   });
+  it("uses the supplied Trade Hub hero logo asset", () => {
+    expect(tradeHubSource).toContain('const TRADE_HUB_LOGO_URL = "/manus-storage/TradeHub(1)_86f42c12.svg";');
+    expect(tradeHubSource).toContain('alt="Trade Hub"');
+  });
 
   it("uses a trade-appropriate icon for the Enter Trade Room action", () => {
     expect(tradeHubSource).toContain('import { ArrowLeftRight, Mail } from "lucide-react";');
