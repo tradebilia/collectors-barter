@@ -710,8 +710,9 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       const format = details.format === 'Other' ? (details.customFormat || '') : (details.format || '');
       return [movieTitle, format].filter(Boolean).join(' ') || item.title;
     }
-    return item.title;
-  }, [item.category, item.itemDetails, item.title]);
+    const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean);
+    return parts.join(' ') || item.title;
+  }, [item.category, item.itemDetails, item.title, item.certificationCompany, item.grade, item.condition]);
   const visualReviewQuery = trpc.testAI.getEbayData.useQuery(
     { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl, includeVisualReview: true },
     { enabled: reviewRequested && !!item.title && item.category !== 'unknown' },
@@ -766,7 +767,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query
         ? <p className="text-gray-500 text-[10px]">Query: <span className="font-mono text-gray-400">"{displayData.query}"</span> · {displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>
-        : isLoading && <p className="text-gray-500 text-[10px]">Search query: <span className="font-mono text-gray-400">"{requestQueryPreview}"</span> · waiting for eBay response</p>}
+        : <p className="text-gray-500 text-[10px]">Search query preview: <span className="font-mono text-gray-400">"{requestQueryPreview}"</span> · {isLoading ? 'waiting for eBay response' : 'eBay lookup has not started for this item yet'}</p>}
       {displayData?.listings && displayData.listings.length > 0 && (
         <div className="space-y-1 max-h-48 overflow-y-auto">
           {displayData.listings.map((l: any, i: number) => (
