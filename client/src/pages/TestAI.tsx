@@ -717,7 +717,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
     if (item.category === 'movies') {
       const movieTitle = details.title || item.title;
       const format = details.format === 'Other' ? (details.customFormat || '') : (details.format || '');
-      return [movieTitle, format].filter(Boolean).join(' ') || item.title;
+      return [movieTitle, format, item.certificationCompany, item.grade, item.condition].filter(Boolean).join(' ') || item.title;
     }
     const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean);
     return parts.join(' ') || item.title;
@@ -3166,7 +3166,10 @@ export default function TestAI() {
   // Otherwise fall back to the item as-is (inventory mode).
   function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any, cgcData: any): SelectedItem | null {
     if (!item) return null;
-    if (item.category !== 'unknown' && !(item.certId && item.gradingCompany === 'CGC')) return item; // inventory item — already has all fields
+    // Only a CGC comic needs the comics certificate response to synthesize its
+    // search identity. A CGC-certified movie, toy, game, or other inventory
+    // item already has a usable title/format/grade and must not be blocked.
+    if (item.category !== 'unknown' && !(item.certId && item.gradingCompany === 'CGC' && item.category === 'comics')) return item;
 
     // Choose data source based on grading company
     const company = item.gradingCompany;

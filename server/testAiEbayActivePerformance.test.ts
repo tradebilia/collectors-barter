@@ -70,6 +70,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("query={data?.query || data?.winningQuery}");
   });
 
+  it("does not block a CGC-certified movie from starting active marketplace searches", () => {
+    expect(pageSource).toContain("item.certId && item.gradingCompany === 'CGC' && item.category === 'comics'");
+    expect(pageSource).toContain("A CGC-certified movie, toy, game, or other inventory");
+    expect(pageSource).toContain("[movieTitle, format, item.certificationCompany, item.grade, item.condition]");
+  });
+
   it("updates the primary asking-price cards from accepted visual matches automatically", () => {
     expect(pageSource).toContain("const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics");
     expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics");
