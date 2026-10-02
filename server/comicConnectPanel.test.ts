@@ -8,7 +8,7 @@ describe('ComicConnect identity review panel', () => {
     expect(source).toContain('Identity review — what would be eligible for further analyzer review');
     expect(source).toContain('identity match');
     expect(source).toContain('mismatch');
-    expect(source).toContain('matches remain context-only until ComicConnect admission is approved');
+    expect(source).toContain('dated current/extended matches are sent to the analyzer');
   });
 
   it('shows explicit per-record match and mismatch verdicts with reasons', () => {

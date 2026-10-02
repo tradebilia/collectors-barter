@@ -343,12 +343,12 @@ export type ComicConnectSale = {
   timeWindow: ComicConnectTimeWindow;
   publicationYears: string[];
   targetPublicationYear: string | null;
-  priceBasis: 'unknown';
+  priceBasis: 'sold';
   buyerPremiumIncluded: boolean | null;
   identityMatched: boolean;
   matchedTokens: string[];
   exclusionReason?: string;
-  valuationEligible: false;
+  valuationEligible: boolean;
 };
 
 export type ComicConnectLookupResult = {
@@ -394,10 +394,10 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
       imageUrl: imagePath ? new URL(imagePath, COMICCONNECT_BASE_URL).toString() : null,
       description: description ?? null, saleStatus: completed ? 'completed' : 'unknown', completed,
       price: completed ? parsePrice(priceText) : null, currency: completed ? 'USD' : null,
-      date, timeWindow: classifyComicConnectTimeWindow(date), publicationYears, targetPublicationYear, priceBasis: 'unknown',
+      date, timeWindow: classifyComicConnectTimeWindow(date), publicationYears, targetPublicationYear, priceBasis: 'sold',
       buyerPremiumIncluded: null, identityMatched: identity.matched, matchedTokens: identity.matchedTokens,
-      exclusionReason: !identity.matched ? identity.reason : (!completed ? 'No explicit completed-sale amount and date were found.' : 'ComicConnect buyer-premium treatment is not resolved.'),
-      valuationEligible: false,
+      exclusionReason: !identity.matched ? identity.reason : (!completed ? 'No explicit completed-sale amount and date were found.' : undefined),
+      valuationEligible: completed && identity.matched,
     };
   });
 
@@ -409,7 +409,7 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
   const windows = records.reduce<Record<string, number>>((counts, record) => { counts[record.timeWindow] = (counts[record.timeWindow] ?? 0) + 1; return counts; }, {});
   return {
     source: 'comicconnect', status: 'success', query: request.query, sales, context, priceMetrics, currentPriceMetrics, currentConfidence, priceTrend: computeComicConnectPriceTrend(sales), winningQuery: null,
-    messages: [`ComicConnect returned ${records.length} bounded sold-archive candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`],
+    messages: [`ComicConnect returned ${records.length} bounded sold-archive candidates. Verified identity-matched completed sales are available to the deterministic analyzer; current and extended windows may support valuation, while records older than 36 months remain historical trend context. Buyer-premium treatment is reported as unknown and is not silently normalized. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated.`],
     raw: { resultCount: records.length, url: request.url },
   };
 }
@@ -465,7 +465,7 @@ export async function lookupComicConnectSold(input: ComicConnectLookupInput): Pr
     currentConfidence,
     priceTrend: computeComicConnectPriceTrend(sales),
     winningQuery,
-    messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated. Records remain context-only because buyer-premium treatment and signed-admission tests are not complete.`, ...errors],
+    messages: [`ComicConnect checked ${queries.length} bounded query variants and returned ${all.length} deduplicated candidates. Verified identity-matched completed sales are available to the deterministic analyzer; current and extended windows may support valuation, while records older than 36 months remain historical trend context. Buyer-premium treatment is reported as unknown and is not silently normalized. Time windows: ${windows.current_12_months ?? 0} current (12 months), ${windows.extended_12_to_36_months ?? 0} extended (12–36 months), ${windows.historical_over_36_months ?? 0} historical (over 36 months), ${windows.undated ?? 0} undated.`, ...errors],
     raw: { resultCount: all.length, url: lastRequest.url },
   };
 }

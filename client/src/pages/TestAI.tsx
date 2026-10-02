@@ -210,7 +210,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     icon: '📚',
     provides: ['item_details', 'population_report', 'historic_prices'],
     status: 'live' as const,
-    description: 'Public CGC Analyzer grade-specific guide estimates, last-sale dates, and recorded-sale counts — context only; never a sold comparable',
+    description: 'Public CGC Analyzer grade-specific guide estimates, last-sale dates, and recorded-sale counts — guide anchor only; never an individual sold comparable',
   },
   pwcc: {
     id: 'pwcc',
@@ -319,7 +319,9 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     icon: '🧪',
     provides: ['historic_prices', 'recent_sales'],
     status: (source.searchContract === 'automatic_title_search' || source.searchContract === 'public_locator_required') ? 'live' as const : 'placeholder' as const,
-    description: `Sandbox-authorized read-only source. ${source.searchInstruction} Context-only until its source-specific parser, price-basis, and signed-admission tests are complete. ${source.activationNote}`,
+    description: source.id === 'comicconnect'
+      ? `Sandbox-authorized read-only source. ${source.searchInstruction} Identity-matched current and extended completed sales can enter deterministic valuation; older records remain historical context. ${source.activationNote}`
+      : `Sandbox-authorized read-only source. ${source.searchInstruction} Context-only until its source-specific parser, price-basis, and signed-admission tests are complete. ${source.activationNote}`,
   }])),
 };
 
@@ -2384,7 +2386,7 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
     {!isLoading && data?.status === 'error' && <p className="rounded bg-rose-950/30 p-2 text-rose-200 text-[10px]">{data.messages?.join(' ') ?? 'ComicConnect could not be checked.'}</p>}
     {!isLoading && data?.status === 'success' && <>
       <p className="rounded bg-sky-900/20 border border-sky-700/30 p-2 text-sky-200 text-[10px]">{data.messages?.join(' ')}</p>
-      <p className="text-gray-500 text-[9px]">Query ladder: “{data.query}” · {records.length} records returned · none can affect valuation or the final AI conclusion yet.</p>
+      <p className="text-gray-500 text-[9px]">Query ladder: “{data.query}” · {records.length} records returned · verified current/extended identity matches may affect deterministic valuation; older records remain trend context.</p>
       {data.winningQuery && <p className="rounded border border-emerald-700/30 bg-emerald-950/20 p-1.5 text-[9px] text-emerald-200">Winning query: “{data.winningQuery}” · this variant returned identity-matched completed sales and was recorded for future ranking.</p>}
       {priceMetrics?.count > 0 && <div className="space-y-1.5">
         <p className="text-[10px] font-semibold text-sky-100">Matched-record price context · {priceMetrics.count} priced identity match{priceMetrics.count === 1 ? '' : 'es'}</p>
@@ -2414,7 +2416,7 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
       </div>}
       <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
         <p className="text-[10px] font-semibold text-cyan-100">Identity review — what would be eligible for further analyzer review</p>
-        <p className="mt-0.5 text-[9px] text-cyan-200/80"><span className="text-emerald-300">✓ {matches.length} identity match{matches.length === 1 ? '' : 'es'}</span> · <span className="text-red-300">✕ {mismatches.length} mismatch{mismatches.length === 1 ? '' : 'es'}</span> · matches remain context-only until ComicConnect admission is approved.</p>
+        <p className="mt-0.5 text-[9px] text-cyan-200/80"><span className="text-emerald-300">✓ {matches.length} identity match{matches.length === 1 ? '' : 'es'}</span> · <span className="text-red-300">✕ {mismatches.length} mismatch{mismatches.length === 1 ? '' : 'es'}</span> · dated current/extended matches are sent to the analyzer; older matches remain historical context.</p>
       </div>
       <div className="space-y-1.5">
         {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-gray-700/50 bg-gray-950/40 p-2">
@@ -2575,7 +2577,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -2596,6 +2598,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightPristineAuctionData?: any;
   leftPcgsAuctionData?: any;
   rightPcgsAuctionData?: any;
+  leftComicConnectData?: any;
+  rightComicConnectData?: any;
   leftHistoricalTrendData?: any;
   rightHistoricalTrendData?: any;
   leftEvidenceSummary?: NormalizedEvidenceSummary | null;
@@ -2634,6 +2638,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const rightHasPristineAuction = rightSources.has('pristine_auction');
   const leftHasPcgsAuction = leftSources.has('pcgs');
   const rightHasPcgsAuction = rightSources.has('pcgs');
+  const leftHasComicConnect = leftSources.has('comicconnect');
+  const rightHasComicConnect = rightSources.has('comicconnect');
   const leftHas130Point = leftSources.has('one_thirty_point');
   const rightHas130Point = rightSources.has('one_thirty_point');
 
@@ -2692,6 +2698,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       leftHasLelands ? (leftLelandsData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'lelands', sourceLabel: 'Lelands Auctions', marketplace: 'Lelands Auctions', priceBasis: 'realized' })) : [],
       leftHasPristineAuction ? (leftPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
       leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: leftPcgsAuctionData?.data?.name ?? leftItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleId: `${sale.certNo || leftPcgsAuctionData?.data?.certNo || leftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
+      leftHasComicConnect ? (leftComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
       leftHasSoldComps ? (leftSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.saleId ?? sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed', completedStatusBasis: 'Sold-Comps completed-sale endpoint', priceBasis: 'sold', visualReviewStatus: sale.visualReviewStatus, visualReviewRationale: sale.visualReviewRationale, evidenceDisposition: sale.evidenceDisposition, evidenceReasons: sale.evidenceReasons }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
     ]);
     const rightSales = balanceSaleGroups([
@@ -2701,6 +2708,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHasLelands ? (rightLelandsData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'lelands', sourceLabel: 'Lelands Auctions', marketplace: 'Lelands Auctions', priceBasis: 'realized' })) : [],
       rightHasPristineAuction ? (rightPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
       rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: rightPcgsAuctionData?.data?.name ?? rightItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleId: `${sale.certNo || rightPcgsAuctionData?.data?.certNo || rightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
+      rightHasComicConnect ? (rightComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
       rightHasSoldComps ? (rightSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.saleId ?? sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed', completedStatusBasis: 'Sold-Comps completed-sale endpoint', priceBasis: 'sold', visualReviewStatus: sale.visualReviewStatus, visualReviewRationale: sale.visualReviewRationale, evidenceDisposition: sale.evidenceDisposition, evidenceReasons: sale.evidenceReasons }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
     ]);
     const parsedCashAmount = Number(cashAmount);
@@ -3565,6 +3573,8 @@ export default function TestAI() {
              rightPristineAuctionData={rightPristineAuctionQuery.data}
              leftPcgsAuctionData={leftPcgsAuctionQuery.data}
              rightPcgsAuctionData={rightPcgsAuctionQuery.data}
+             leftComicConnectData={leftComicConnectQuery.data}
+             rightComicConnectData={rightComicConnectQuery.data}
              leftHistoricalTrendData={left130PointQuery.data}
              rightHistoricalTrendData={right130PointQuery.data}
              leftEvidenceSummary={leftEvidenceSummary}

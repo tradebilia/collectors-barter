@@ -1280,7 +1280,10 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupComicConnectSold(input);
+      const result = await lookupComicConnectSold(input);
+      const sealedSales = attachCanonicalProvenance('comicconnect', result.sales as MarketSale[], { query: result.query });
+      const sealedContext = attachCanonicalProvenance('comicconnect', result.context as MarketSale[], { query: result.query });
+      return { ...result, sales: sealedSales, context: sealedContext };
     }),
 
   // New specialist marketplaces are deliberately separate from ComicConnect. Every

@@ -20,6 +20,7 @@ describe('ComicConnect bounded sold adapter', () => {
   });
 
   it('builds bounded fallback queries without assuming every title has the same article behavior', () => {
+    resetComicConnectQueryLearningForTests();
     const queries = buildComicConnectSearchQueries({ ...input, itemDetails: JSON.stringify({ comicTitle: 'The Amazing Spider-Man', issueNumber: '238' }) });
     expect(queries).toEqual([
       'The Amazing Spider-Man #238',
@@ -79,7 +80,9 @@ describe('ComicConnect bounded sold adapter', () => {
     const equivalentHtml = '<div class="itempreview"><div class="titleline">EDGE OF THE SPIDER-VERSE #2</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 01/02/2024 2:00 PM</div><div class="pricing"><span class="val prc">$125</span></div></div>';
     const result = parseComicConnectSoldHtml(equivalentHtml, { ...input, grade: '9.80' });
     expect(result.sales).toHaveLength(1);
-    expect(result.sales[0].exclusionReason).toContain('buyer-premium');
+    expect(result.sales[0].valuationEligible).toBe(true);
+    expect(result.sales[0].priceBasis).toBe('sold');
+    expect(result.sales[0].buyerPremiumIncluded).toBeNull();
   });
 
   it('rejects subtitle series and conflicting publication-year Star Wars issues', () => {
@@ -142,7 +145,8 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(result.sales).toHaveLength(1);
     expect(result.sales[0].price).toBe(125);
     expect(result.sales[0].currency).toBe('USD');
-    expect(result.sales[0].valuationEligible).toBe(false);
+    expect(result.sales[0].valuationEligible).toBe(true);
+    expect(result.sales[0].priceBasis).toBe('sold');
     expect(result.context).toHaveLength(2);
     expect(result.context.some((record) => record.title.includes('FACSIMILE'))).toBe(true);
     expect(result.context.some((record) => record.exclusionReason?.includes('Grade conflict'))).toBe(true);
