@@ -191,6 +191,17 @@ function normalize(value: unknown): string {
     .trim();
 }
 
+function normalizePreservingSpelling(value: unknown): string {
+  return String(value ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
 function decodeHtml(value: string): string {
   return value
     .replace(/&nbsp;/gi, ' ')
@@ -457,7 +468,7 @@ function collectCandidateBlocks(sourceId: SandboxSpecialistSourceId, document: D
 
 function identityReview(input: SpecialistMarketplaceLookupInput, title: string, description: string, grade: string | null, certificationCompany: string | null) {
   const details = parseDetails(input.itemDetails);
-  const targetTokens = significantTokens([input.title, details.year, details.catalogNumber, details.cardNumber, details.issueNumber, details.model, details.edition].map(text).filter(Boolean).join(' '));
+  const targetTokens = significantTokens([normalizePreservingSpelling(input.title), details.year, details.catalogNumber, details.cardNumber, details.issueNumber, details.model, details.edition].map(text).filter(Boolean).join(' '));
   const candidate = normalize(`${title} ${description}`);
   const matchedTokens = targetTokens.filter((token) => candidate.includes(token));
   // Platform, condition, media, and grading words are shared by many listings.

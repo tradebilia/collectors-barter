@@ -266,6 +266,36 @@ describe('bounded specialist marketplace adapters', () => {
     }));
   });
 
+  it('matches a DareDevil target against a Daredevil Goldin title without splitting the series name', async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      searchalgolia: {
+        total: 1,
+        lots: [{
+          lot_id: 'goldin-daredevil-168',
+          lot_number: 168,
+          meta_slug: 'daredevil-168-1981-cgc-98',
+          title: 'Daredevil #168 (1981 Marvel) - CGC 9.8 - Origin/1st Appearance of Elektra - White pages',
+          status: 'Completed_Sold',
+          current_price: 125500,
+          buyer_premium: 22,
+          end_timestamp: '2024-04-13T02:30:00Z',
+        }],
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin',
+      title: 'DareDevil #168',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'DareDevil', issueNumber: '168', publicationYear: '1981', publisher: 'Marvel' }),
+    });
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]?.matchedTokens).toContain('daredevil');
+  });
+
   it('rejects a Goldin CGC Signature Series 9.6 when the selected comic is CGC 9.8', async () => {
     const comic = {
       sourceId: 'goldin' as const,
