@@ -114,7 +114,7 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   // Keep provider search focused on stable card identity. Grade and grader are
   // applied as structured filters first, then retried without them because
   // eBay records may expose those fields only in the title.
-  const query = stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]) || input.title.trim();
+  const query = stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]);
   const requestedGrade = canonicalGrade(input.grade);
 
   const sales = new URLSearchParams({
@@ -133,13 +133,14 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   if (cardCategory === 'tcg') catalog.set('category', 'trading_card_games');
   if (setName) catalog.set('set_name', setName);
   if (cardNumber) catalog.set('card_number', cardNumber.replace(/^#/, ''));
-  if (subject || input.title.trim()) catalog.set('q', subject || input.title.trim());
+  if (subject) catalog.set('q', subject);
   if (sport && cardCategory === 'sports') catalog.set('sport', sport);
   if (year) catalog.set('year', year);
 
   return {
     category: cardCategory,
     identity: { subject, setName, cardNumber, manufacturer, variant, year, sport },
+    identityQuery: query,
     salesPath: `/sales?${sales.toString()}`,
     identityFallbackSalesPath: `/sales?${identityFallback.toString()}`,
     catalogPath: `?${catalog.toString()}`,
@@ -270,6 +271,19 @@ export async function lookupTheCardApi(input: TheCardApiLookupInput) {
       sales: [],
       catalog: { status: 'not_requested' as const, message: 'The Card API source is available only for Sports Cards and Pokémon/TCG items.', candidates: [], audit: null },
       messages: ['The Card API source is available only for Sports Cards and Pokémon/TCG items.'],
+      raw: { sales: null, catalog: null },
+      audit: { sales: null, catalog: null },
+      visualFilter: null,
+    };
+  }
+
+  if (!request.identityQuery) {
+    return {
+      status: 'review_required' as LookupStatus,
+      request,
+      sales: [],
+      catalog: { status: 'not_requested' as const, message: 'The Card API requires structured card fields. No listing-title fallback query was sent.', candidates: [], audit: null },
+      messages: ['No structured card identity fields were supplied. Add the player/card name, set, card number, or year before querying The Card API. No listing-title fallback query was sent.'],
       raw: { sales: null, catalog: null },
       audit: { sales: null, catalog: null },
       visualFilter: null,

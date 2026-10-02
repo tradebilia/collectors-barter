@@ -37,6 +37,7 @@ describe('The Card API Test AI adapter', () => {
   it('builds a bounded sports-card completed-sales request with grade and provider filters', () => {
     const query = buildTheCardApiQuery(sportsListing);
     expect(query).toMatchObject({ category: 'sports', saleLimit: 20, catalogLimit: 5 });
+    expect(query.identityQuery).toBe('1989 Upper Deck Ken Griffey Jr. 1989 Upper Deck 1');
     expect(query.salesPath).toContain('graded=true');
     expect(query.salesPath).toContain('grader=PSA');
     expect(query.salesPath).toContain('grade=10');
@@ -52,6 +53,13 @@ describe('The Card API Test AI adapter', () => {
     expect(query.category).toBe('tcg');
     expect(query.identity).toMatchObject({ subject: 'Charizard', setName: 'Base Set', cardNumber: '4/102' });
     expect(query.catalogPath).toContain('category=trading_card_games');
+  });
+
+  it('does not derive a provider query from the listing title when structured fields are absent', () => {
+    const query = buildTheCardApiQuery({ title: '1989 Upper Deck Ken Griffey Jr. #1 PSA 10', category: 'sports_cards' });
+    expect(query.identityQuery).toBe('');
+    expect(query.salesPath).not.toContain('1989');
+    expect(query.catalogPath).not.toContain('q=');
   });
 
   it('does not make non-card categories eligible for a provider request', () => {
