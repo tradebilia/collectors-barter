@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildSpecialistMarketplaceRequest, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
+import { buildGoldinSearchQuery, buildSpecialistMarketplaceRequest, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
 
 const goldinMarioLotUrl = 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-variation-late-producti9parx';
 const videoGame = {
@@ -32,6 +32,17 @@ const morphyLotUrl = 'https://auctions.morphyauctions.com/LOT123456.aspx';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('bounded specialist marketplace adapters', () => {
+  it('builds Goldin queries from structured fields and includes comic year without publisher', () => {
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin',
+      title: 'X-Men #137 CGC 9.8',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publicationYear: '1980', publisher: 'Marvel' }),
+    })).toBe('X-Men 137 1980 CGC 9.8');
+  });
+
   it('uses the verified Goldin public sold-search endpoint automatically and preserves direct-lot support', () => {
     const automatic = buildSpecialistMarketplaceRequest(videoGame);
     expect(automatic).toEqual({ url: 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', error: null });
@@ -173,7 +184,7 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
     expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: videoGame.title, size: 12, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
+      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990 WATA 9.60', size: 12, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
     }));
   });
 

@@ -211,6 +211,51 @@ function parseDetails(value?: string | null): Record<string, unknown> {
   }
 }
 
+function firstDetail(details: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = text(details[key]).trim();
+    if (value) return value;
+  }
+  return '';
+}
+
+/** Goldin query built from structured identity fields; publisher/manufacturer is intentionally excluded. */
+export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput): string {
+  const details = parseDetails(input.itemDetails);
+  const category = normalize(input.category).replace(/_/g, ' ');
+  const parts: string[] = [];
+  const add = (...values: string[]) => values.forEach((value) => {
+    const cleaned = value.trim();
+    if (cleaned && !parts.some((part) => normalize(part) === normalize(cleaned))) parts.push(cleaned);
+  });
+
+  if (category === 'comics') {
+    add(firstDetail(details, ['comicTitle', 'series', 'title']) || input.title);
+    add(firstDetail(details, ['issueNumber', 'issueNo', 'issue', 'number']));
+    // Comic year is an additional query and verification layer, not a publisher substitute.
+    add(firstDetail(details, ['publicationYear', 'year', 'issueYear']));
+  } else if (category === 'sports cards') {
+    add(firstDetail(details, ['player', 'athlete', 'subject']) || input.title);
+    add(firstDetail(details, ['year']), firstDetail(details, ['setName', 'set', 'cardSet']));
+    add(firstDetail(details, ['cardNumber', 'cardNo', 'number']));
+  } else if (category === 'pokemon') {
+    add(firstDetail(details, ['cardName', 'pokemonName', 'name']) || input.title);
+    add(firstDetail(details, ['setName', 'set', 'cardSet']));
+    add(firstDetail(details, ['cardNumber', 'cardNo', 'number']));
+  } else if (category === 'video games') {
+    add(firstDetail(details, ['gameTitle', 'title']) || input.title);
+    add(firstDetail(details, ['platform', 'console', 'consoleName']));
+    add(firstDetail(details, ['releaseYear', 'year']));
+    add(firstDetail(details, ['edition', 'version']));
+  } else {
+    add(input.title);
+    add(firstDetail(details, ['year', 'releaseYear', 'issueYear', 'catalogNumber', 'cardNumber', 'edition', 'variant', 'country', 'denomination', 'platform', 'format']));
+  }
+
+  add(input.certificationCompany ?? '', input.grade ?? '');
+  return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
+}
+
 function significantTokens(value: string): string[] {
   const stopWords = new Set(['the', 'and', 'with', 'from', 'for', 'auction', 'auctions', 'lot', 'item', 'vintage', 'collectible', 'collectibles', 'sale', 'sold', 'price', 'realized', 'graded', 'grade']);
   return [...new Set(normalize(value).split(' ').filter((token) => token.length >= 3 && !stopWords.has(token)))];
@@ -856,7 +901,7 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
     source: 'goldin' as const,
     label: source.label,
     searchContract: source.searchContract,
-    query: text(input.title).slice(0, 240),
+    query: buildGoldinSearchQuery(input),
     sales: [] as SpecialistMarketplaceRecord[],
     context: [] as SpecialistMarketplaceRecord[],
     requestUrl: GOLDIN_PUBLIC_SOLD_SEARCH_ENDPOINT,
@@ -984,7 +1029,7 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
 
 async function lookupGoldinPublicSearch(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource('goldin')!;
-  const query = text(input.title).slice(0, 240);
+  const query = buildGoldinSearchQuery(input);
   const empty = {
     source: 'goldin' as const,
     label: source.label,
