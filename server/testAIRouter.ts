@@ -1715,7 +1715,7 @@ export const testAIRouter = router({
           return {
             certNumber: input.certNumber,
             status: 'error',
-            message: `Parse.bot API error: ${certFullData?.message || 'Unknown error'}`,
+            message: formatParseBotApiError(certFullData, certFullRes.status, 'Parse.bot PSA'),
             data: null,
           };
         }
@@ -2028,7 +2028,7 @@ export const testAIRouter = router({
           return {
             certNumber: input.certNumber,
             status: 'error',
-            message: `Parse.bot Beckett API error: ${beckettData?.message || 'Unknown error'}`,
+            message: formatParseBotApiError(beckettData, beckettRes.status, 'Parse.bot Beckett'),
             data: null,
           };
         }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
+import { classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification, parseErrorMessage } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -131,5 +131,19 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(result.status).toBe('success');
     expect(result.data?.items[0]).toEqual(expect.objectContaining({ price: 3240, recency: 'historical', marketplace: 'PREMIER' }));
     expect(fetchMock.mock.calls[0][0]).toContain('/6f75fc48-78a3-4fa4-a96a-937d35bf9385/search_listings?keywords=charizard+psa+10&status=Sold&page=0&hits_per_page=10');
+  });
+
+  it('identifies Parse.bot credit exhaustion and provider-supplied errors clearly', () => {
+    expect(parseErrorMessage(402, 'Parse PriceCharting', { error: { message: 'All your credits are used' } })).toContain('monthly credit limit');
+    expect(parseErrorMessage(403, 'Parse SGC', { message: 'API key is invalid' })).toBe('Parse SGC credentials are not authorized (HTTP 403). Check the secure Parse key configuration.');
+    expect(parseErrorMessage(500, 'Parse 130point', { error: { message: 'Upstream scraper unavailable' } })).toBe('Parse 130point returned HTTP 500: Upstream scraper unavailable');
+  });
+
+  it('surfaces a structured Parse.bot credit error from a live adapter', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 402, json: async () => ({ status: 'error', error: { message: 'All your credits are used' } }) }) as typeof fetch;
+    const result = await lookup130PointSales('Michael Jordan rookie', { PARSE_BOT_API_KEY: 'configured-key' });
+    expect(result.status).toBe('error');
+    expect(result.message).toContain('monthly credit limit');
+    expect(result.message).toContain('HTTP 402');
   });
 });
