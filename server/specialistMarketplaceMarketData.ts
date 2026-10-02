@@ -239,10 +239,11 @@ function firstDetailPreservingSpelling(details: Record<string, unknown>, keys: s
   return '';
 }
 
-function formatSearchGrade(value: unknown): string {
+function formatSearchGrade(value: unknown, gradingCompany = ''): string {
   const grade = text(value).trim();
   if (!/^\d+(?:\.\d+)?$/.test(grade)) return grade;
   const numeric = Number(grade);
+  if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
   return Number.isFinite(numeric) ? (grade.includes('.') ? numeric.toFixed(1) : String(numeric)) : grade;
 }
 
@@ -291,8 +292,9 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['year', 'releaseYear', 'issueYear', 'catalogNumber', 'cardNumber', 'edition', 'variant', 'country', 'denomination', 'platform', 'format']));
   }
 
-  if (includeCertification) add(resolveTestAiGradingCompany(details, input.certificationCompany ?? ''));
-  if (includeGrade) add(formatSearchGrade(input.grade));
+  const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
+  if (includeCertification) add(gradingCompany);
+  if (includeGrade) add(formatSearchGrade(input.grade, gradingCompany));
   return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
 }
 

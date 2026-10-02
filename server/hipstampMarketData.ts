@@ -164,7 +164,7 @@ export function buildHipstampQuery(input: HipstampLookupInput): string {
   ].filter(Boolean);
 
   const cert = resolveTestAiGradingCompany(details, text(input.certificationCompany));
-  const grade = normalizeTestAiGrade(input.grade);
+  const grade = normalizeTestAiGrade(input.grade, cert);
   if (cert && grade) parts.push(cert, grade);
   else if (grade) parts.push(grade);
 

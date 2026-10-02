@@ -24,6 +24,13 @@ describe('HIPStamp market adapter', () => {
     })).toBe('United States C1 1918 Custom Grade 95');
   });
 
+  it('uses a whole-number PSA grade in stamp queries', () => {
+    expect(buildHipstampQuery({
+      title: 'PSA graded stamp', category: 'stamps', grade: '9.0', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ country: 'United States', catalogNumber: 'C1', year: '1918' }),
+    })).toBe('United States C1 1918 PSA 9');
+  });
+
   it('normalizes live HIPStamp listing fields and response results', () => {
     const listings = normalizeHipstampResponse({ results: [{
       id: '123',

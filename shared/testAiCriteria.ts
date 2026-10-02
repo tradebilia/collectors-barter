@@ -15,11 +15,12 @@ export function resolveTestAiGradingCompany(itemDetails: unknown, fallback = '')
   return detailText(details, ['customGradingCompany', 'customCertificationCompany']) || direct;
 }
 
-export function normalizeTestAiGrade(value: unknown): string {
+export function normalizeTestAiGrade(value: unknown, gradingCompany = ''): string {
   const raw = String(value ?? '').trim();
   if (!raw) return '';
   const numeric = Number(raw);
   if (!Number.isFinite(numeric)) return raw;
+  if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
   return raw.includes('.') ? numeric.toFixed(1) : String(numeric);
 }
 
@@ -73,7 +74,7 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
   const manufacturer = normalizedCategory === 'sports_cards' ? resolveTestAiManufacturer(details) : '';
   return [...keys.map((key) => key === 'manufacturer' ? manufacturer : detailText(details, [key])), gradingCompany, ...extra.map((value) => {
     const normalized = String(value ?? '').trim();
-    if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized);
+    if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized, gradingCompany);
     return normalized.toLowerCase() === 'other' && gradingCompany ? gradingCompany : normalized;
   })]
     .filter(Boolean)

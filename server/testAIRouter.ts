@@ -124,6 +124,10 @@ function normalizeExtractedGrade(prefix: string | undefined, numeric: string, pl
 function normalizeSearchGrade(value: string | undefined, category: string, certificationCompany: string): string | null {
   const normalized = String(value ?? '').trim();
   if (!normalized) return null;
+  if (/^psa$/i.test(certificationCompany.trim())) {
+    const psaGrade = Number(normalized);
+    return Number.isFinite(psaGrade) && psaGrade > 0 ? String(Math.round(psaGrade)) : null;
+  }
   const isPcgsCoin = category === 'coins' && /^pcgs$/i.test(certificationCompany.trim());
   if (isPcgsCoin && /^[A-Za-z]{1,8}\s*\d{1,3}(?:\+)?(?:\s*[A-Za-z]{1,12})?$/i.test(normalized)) {
     return normalized.replace(/\s+/g, '').toUpperCase();

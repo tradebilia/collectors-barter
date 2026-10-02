@@ -44,4 +44,8 @@ describe('Test AI manufacturer criteria', () => {
     expect(query).toBe('1979 O-Pee-Chee Wayne Gretzky 18 9.0 PSA');
     expect(query).not.toContain('mint');
   });
+
+  it('uses whole-number grades for PSA in shared structured queries', () => {
+    expect(buildStructuredItemQuery('sports_cards', { year: '1989', gradingCompany: 'PSA' }, ['9.00'])).toBe('1989 PSA 9');
+  });
 });

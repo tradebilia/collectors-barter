@@ -74,6 +74,13 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('Wayne Gretzky 1979 18 KSA 9');
   });
 
+  it('uses a whole-number PSA grade in specialist queries', () => {
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin', title: 'Ken Griffey Jr. card', category: 'sports_cards', grade: '9.0', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ player: 'Ken Griffey Jr.', year: '1989', cardNumber: '1' }),
+    })).toBe('Ken Griffey Jr. 1989 1 PSA 9');
+  });
+
   it('preserves camel-case comic series names such as DareDevil in Goldin queries', () => {
     expect(buildGoldinSearchQuery({
       sourceId: 'goldin',

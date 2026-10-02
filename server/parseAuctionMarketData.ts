@@ -44,8 +44,8 @@ function parseDetails(itemDetails?: string | null): JsonRecord {
 
 function buildSearchQuery(input: ParseAuctionLookupInput): string {
   const details = parseDetails(input.itemDetails);
-  return buildStructuredItemQuery(input.category, details, [
-    resolveTestAiGradingCompany(details, input.certificationCompany ?? ''),
+  const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
+  return buildStructuredItemQuery(input.category, { ...details, gradingCompany }, [
     input.grade,
     input.itemType,
   ]);
