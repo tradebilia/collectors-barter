@@ -25,6 +25,8 @@ Explicit title extraction is limited to wording such as **“Signed by Stan Lee�
 
 Goldin’s strict comic query now includes the structured comic title, issue number, available publication year, all recorded signer names, certification company, and grade. If that query produces no lots, bounded signer-free and progressively vaguer fallback queries are attempted. The displayed query remains transparent and lists the attempted variants.
 
+Numeric grades are canonicalized for search output: `9.80` becomes `9.8`, while meaningful distinctions such as `9.6` versus `9.8` remain unchanged. This affects query formatting only, not grade-admission comparisons.
+
 The final deterministic analyzer applies the signer gate to all marketplace records that reach comparable scoring, including eBay, ComicConnect, Goldin, Parse.bot sources, and specialist adapters. Existing non-comic autograph-category rules remain unchanged.
 
 ## Validation

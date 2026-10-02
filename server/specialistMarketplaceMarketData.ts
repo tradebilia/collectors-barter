@@ -219,6 +219,13 @@ function firstDetail(details: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
+function formatSearchGrade(value: unknown): string {
+  const grade = text(value).trim();
+  if (!/^\d+(?:\.\d+)?$/.test(grade)) return grade;
+  const numeric = Number(grade);
+  return Number.isFinite(numeric) ? String(numeric) : grade;
+}
+
 type GoldinQueryOptions = {
   includeCertification?: boolean;
   includeGrade?: boolean;
@@ -265,7 +272,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   }
 
   if (includeCertification) add(input.certificationCompany ?? '');
-  if (includeGrade) add(input.grade ?? '');
+  if (includeGrade) add(formatSearchGrade(input.grade));
   return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
 }
 

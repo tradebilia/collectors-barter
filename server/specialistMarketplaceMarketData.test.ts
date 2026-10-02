@@ -56,6 +56,17 @@ describe('bounded specialist marketplace adapters', () => {
     ]);
   });
 
+  it('canonicalizes numeric grades in Goldin queries instead of sending two decimal places', () => {
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin',
+      title: 'X-Men #137 CGC 9.80',
+      category: 'comics',
+      grade: '9.80',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publicationYear: '1980' }),
+    })).toBe('X-Men 137 1980 CGC 9.8');
+  });
+
   it('falls back to a vaguer Goldin query only after the stricter query returns zero lots', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
@@ -240,7 +251,7 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
     expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990 WATA 9.60', size: 12, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
+      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990 WATA 9.6', size: 12, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
     }));
   });
 
