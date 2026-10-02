@@ -88,6 +88,13 @@ function stableQueryTerms(values: Array<string | null | undefined>): string {
     .slice(0, 240);
 }
 
+function canonicalGrade(value: string | null | undefined): string {
+  const normalized = text(value);
+  if (!normalized) return '';
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) ? String(numeric) : normalized;
+}
+
 export function getTheCardApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
   return env.THE_CARD_API_KEY?.trim() || null;
 }
@@ -104,17 +111,22 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   const variant = firstText(details, ['variant', 'parallel', 'printing', 'edition', 'finish']);
   const year = firstInteger(details, ['year', 'releaseYear', 'cardYear']);
   const sport = firstText(details, ['sport', 'customSport']);
-  const query = stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant, input.certificationCompany, input.grade]) || input.title.trim();
+  // Keep provider search focused on stable card identity. Grade and grader are
+  // applied as structured filters first, then retried without them because
+  // eBay records may expose those fields only in the title.
+  const query = stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]) || input.title.trim();
+  const requestedGrade = canonicalGrade(input.grade);
 
   const sales = new URLSearchParams({
     q: query,
-    category: cardCategory ?? '',
     limit: String(SALE_LIMIT),
     sort: 'date_desc',
   });
-  if (input.grade?.trim()) sales.set('grade', input.grade.trim());
+  if (requestedGrade) sales.set('grade', requestedGrade);
   if (input.certificationCompany?.trim()) sales.set('grader', input.certificationCompany.trim());
-  if (input.grade?.trim() || input.certificationCompany?.trim()) sales.set('graded', 'true');
+  if (requestedGrade || input.certificationCompany?.trim()) sales.set('graded', 'true');
+
+  const identityFallback = new URLSearchParams({ q: query, limit: String(SALE_LIMIT), sort: 'date_desc' });
 
   const catalog = new URLSearchParams({ limit: String(CATALOG_LIMIT) });
   if (cardCategory === 'sports') catalog.set('category', 'sports');
@@ -129,6 +141,7 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
     category: cardCategory,
     identity: { subject, setName, cardNumber, manufacturer, variant, year, sport },
     salesPath: `/sales?${sales.toString()}`,
+    identityFallbackSalesPath: `/sales?${identityFallback.toString()}`,
     catalogPath: `?${catalog.toString()}`,
     saleLimit: SALE_LIMIT,
     catalogLimit: CATALOG_LIMIT,
@@ -277,7 +290,7 @@ export async function lookupTheCardApi(input: TheCardApiLookupInput) {
     };
   }
 
-  const salesResult = await apiGet(MARKET_BASE, request.salesPath, 'x-market-api-key', apiKey);
+  let salesResult = await apiGet(MARKET_BASE, request.salesPath, 'x-market-api-key', apiKey);
   if (salesResult.error) {
     return {
       status: 'error' as LookupStatus,
@@ -291,6 +304,15 @@ export async function lookupTheCardApi(input: TheCardApiLookupInput) {
     };
   }
 
+  let usedIdentityFallback = false;
+  if (asRecords(salesResult.payload?.data).length === 0) {
+    const fallbackResult = await apiGet(MARKET_BASE, request.identityFallbackSalesPath, 'x-market-api-key', apiKey);
+    if (!fallbackResult.error && asRecords(fallbackResult.payload?.data).length > 0) {
+      salesResult = fallbackResult;
+      usedIdentityFallback = true;
+    }
+  }
+
   const catalogResult = await apiGet(CATALOG_BASE, request.catalogPath, 'x-api-key', apiKey);
   const catalog = catalogStatus(catalogResult);
   const candidates = rankTheCardApiCatalogCandidates(input, catalog.candidates);
@@ -301,6 +323,7 @@ export async function lookupTheCardApi(input: TheCardApiLookupInput) {
   const messages = [
     'Read-only The Card API sales remain subject to Tradebilia’s identity, date, grade/company, duplicate, currency, and recency evidence gates. The provider does not override valuation safeguards.',
     exactCatalogCandidate ? 'A catalog candidate matched the listing identity. Catalog fields are factual context only.' : null,
+    usedIdentityFallback ? 'The provider returned no rows with structured grade/grader filters, so Tradebilia retried the stable card-identity query and applied grade and identity gates locally.' : null,
     catalog.message,
     unconfirmedCount ? `${unconfirmedCount} returned sale${unconfirmedCount === 1 ? ' is' : 's are'} unconfirmed fast-settle data and retained as context only.` : null,
     sales.some((sale) => String(sale.marketplace).toLowerCase() === 'goldin') ? 'Goldin prices are hammer prices in the provider response and exclude buyer premium; they remain individually labeled.' : null,

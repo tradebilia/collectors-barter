@@ -37,10 +37,12 @@ describe('The Card API Test AI adapter', () => {
   it('builds a bounded sports-card completed-sales request with grade and provider filters', () => {
     const query = buildTheCardApiQuery(sportsListing);
     expect(query).toMatchObject({ category: 'sports', saleLimit: 20, catalogLimit: 5 });
-    expect(query.salesPath).toContain('category=sports');
     expect(query.salesPath).toContain('graded=true');
     expect(query.salesPath).toContain('grader=PSA');
     expect(query.salesPath).toContain('grade=10');
+    expect(query.salesPath).not.toContain('category=sports');
+    expect(query.identityFallbackSalesPath).toContain('q=1989+Upper+Deck+Ken+Griffey+Jr.+1');
+    expect(query.identityFallbackSalesPath).not.toContain('grade=');
     expect(query.catalogPath).toContain('category=sports');
     expect(query.catalogPath).toContain('card_number=1');
   });
@@ -48,8 +50,8 @@ describe('The Card API Test AI adapter', () => {
   it('maps Pokémon/TCG to the provider category and carries stable identity fields', () => {
     const query = buildTheCardApiQuery(pokemonListing);
     expect(query.category).toBe('tcg');
-    expect(query.salesPath).toContain('category=tcg');
     expect(query.identity).toMatchObject({ subject: 'Charizard', setName: 'Base Set', cardNumber: '4/102' });
+    expect(query.catalogPath).toContain('category=trading_card_games');
   });
 
   it('does not make non-card categories eligible for a provider request', () => {
