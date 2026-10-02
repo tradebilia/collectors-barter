@@ -390,6 +390,7 @@ function isCgcCompany(company?: string | null): boolean {
 // confirmed mismatches are red. Keep keys normalized as category:sourceId.
 const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'comics:ebay_active': 'match',
+  'sports cards:ebay_active': 'match',
   'comics:comic_book_realm': 'match',
   'comics:comicconnect': 'match',
   'comics:goldin': 'match',
