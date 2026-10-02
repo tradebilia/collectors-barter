@@ -393,6 +393,17 @@ describe("Comic Book Realm CGC guide context adapter", () => {
     const searchHtml = `<a href="/cgc-analyzer/comic/id/209295/marvel-comics-x-men-facsimile-edition-137">The X-Men #137 Marvel Comics</a><a href="/cgc-analyzer/comic/id/535/marvel-comics-x-men-137">The X-Men #137 Marvel Comics</a><a href="/cgc-analyzer/comic/id/344706/editions-heritage-x-men-137-french-canadian-edition">X-Men #137 Editions Heritage</a>`;
     expect(resolveComicBookRealmAnalyzerUrl(searchHtml, comic, "https://comicbookrealm.com/cgc-analyzer/search-results/X-Men%20137")).toBe(cbrUrl);
   });
+  it("does not confuse the base Star Wars series with Return of the Jedi", () => {
+    const starWars = {
+      sourceId: "comic_book_realm" as const,
+      title: "Star Wars #1",
+      category: "comics",
+      grade: "9.8",
+      itemDetails: JSON.stringify({ issueNumber: "1", title: "Star Wars" }),
+    };
+    const searchHtml = `<a href="/cgc-analyzer/comic/id/1080/marvel-comics-star-wars-return-of-the-jedi-1">Star Wars: Return of the Jedi #1 Marvel Comics</a><a href="/cgc-analyzer/comic/id/570/marvel-comics-star-wars-1">Star Wars #1 Marvel Comics</a>`;
+    expect(resolveComicBookRealmAnalyzerUrl(searchHtml, starWars, "https://comicbookrealm.com/cgc-analyzer/search-results/Star%20Wars%201")).toBe("https://comicbookrealm.com/cgc-analyzer/comic/id/570/marvel-comics-star-wars-1");
+  });
   it("parses guide estimates and recorded-sale context without creating sold comps", () => {
     const html = `<html><head><title>X-Men #137 9/80 Marvel Comics (CGC Analyzer)</title></head><body><h1>X-Men #137 9/80 Marvel Comics (CGC Analyzer)</h1><table><tr><td>Certified Category:</td><td>Universal/Modern</td></tr><tr><td>Recorded Sales:</td><td>1,142</td></tr></table><table><tr><th>Grade</th><th>Population</th><th>Last Sale</th><th>Recorded Sales</th><th>Estimated Value</th><th>Raw Value</th></tr><tr><td>9.8</td><td>0</td><td>Sep 15, 2026</td><td>156</td><td>$455.00</td><td>*</td></tr><tr><td>9.6</td><td>0</td><td>Sep 8, 2026</td><td>295</td><td>$165.00</td><td>*</td></tr><tr><td>9.4</td><td>0</td><td>Sep 13, 2026</td><td>212</td><td>$120.00</td><td>*</td></tr></table></body></html>`;
     const result = parseSpecialistMarketplaceHtml(

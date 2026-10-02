@@ -144,22 +144,32 @@ export function resolveComicBookRealmAnalyzerUrl(html: string, input: Specialist
   const document = new JSDOM(html, { url: requestUrl }).window.document;
   const details = parseDetails(input.itemDetails);
   const issue = text(details.issueNumber ?? details.issue ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
+  const seriesName = normalize(text(details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, ''));
+  const publisherTokens = significantTokens(text(details.publisher ?? details.publisherName ?? details.manufacturer ?? ''));
   const issuePattern = issue ? new RegExp(`(?:^|[^0-9A-Za-z])${issue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[^0-9A-Za-z])`, 'i') : null;
   const wantedTokens = significantTokens(text(details.title) || input.title).filter(token => token !== issue.toLowerCase());
-  const rejected = /facsimile|variant|foreign|french|german|greek|hungarian|dutch|italian|spanish|edition/i;
-  const candidates = Array.from(document.querySelectorAll('a[href]')).flatMap(anchor => {
+  const rejected = /facsimile|variant|foreign|french|german|greek|hungarian|dutch|italian|spanish|reprint|multi[ -]?pack|edition/i;
+  const candidates = Array.from(document.querySelectorAll('a[href]')).flatMap((anchor, sourceIndex) => {
     const href = anchor.getAttribute('href') ?? '';
     const absolute = new URL(href, requestUrl).toString();
     if (!isAllowedSourceUrl('comic_book_realm', absolute) || !/\/comic\/id\//i.test(absolute)) return [];
-    const haystack = text(`${anchor.textContent ?? ''} ${absolute}`);
+    const anchorText = text(anchor.textContent);
+    if (!anchorText) return [];
+    const haystack = text(`${anchorText} ${absolute}`);
     if (issuePattern && !issuePattern.test(haystack)) return [];
     if (rejected.test(haystack)) return [];
     const normalized = normalize(haystack);
+    const normalizedAnchor = normalize(anchorText);
+    const normalizedUrl = normalize(absolute);
+    const issuePosition = issue ? normalizedAnchor.search(new RegExp(`(?:^|\\s)${issue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|\\s)`, 'i')) : -1;
+    const titleBeforeIssue = issuePosition >= 0 ? normalizedAnchor.slice(0, issuePosition).trim() : '';
+    const exactSeriesBeforeIssue = Boolean(seriesName && titleBeforeIssue && (titleBeforeIssue.endsWith(seriesName) || titleBeforeIssue.endsWith(`the ${seriesName}`)));
+    const publisherMatches = publisherTokens.length > 0 && publisherTokens.every(token => normalizedUrl.includes(token));
     const matched = wantedTokens.filter(token => normalized.includes(token));
-    const score = matched.length * 10 + (issuePattern?.test(haystack) ? 50 : 0) + (/marvel/i.test(haystack) ? 3 : 0);
-    return [{ absolute, score, matched }];
+    const score = matched.length * 10 + (exactSeriesBeforeIssue ? 150 : -100) + (issuePattern?.test(haystack) ? 50 : 0) + (publisherTokens.length ? (publisherMatches ? 40 : -80) : 0);
+    return [{ absolute, score, matched, sourceIndex }];
   });
-  candidates.sort((a, b) => b.score - a.score || b.matched.length - a.matched.length || a.absolute.localeCompare(b.absolute));
+  candidates.sort((a, b) => b.score - a.score || b.matched.length - a.matched.length || a.sourceIndex - b.sourceIndex);
   return candidates[0]?.absolute ?? null;
 }
 
