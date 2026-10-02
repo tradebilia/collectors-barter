@@ -219,6 +219,14 @@ function firstDetail(details: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
+function firstDetailPreservingSpelling(details: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = String(details[key] ?? '').replace(/\s+/g, ' ').trim();
+    if (value) return value;
+  }
+  return '';
+}
+
 function formatSearchGrade(value: unknown): string {
   const grade = text(value).trim();
   if (!/^\d+(?:\.\d+)?$/.test(grade)) return grade;
@@ -248,7 +256,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   });
 
   if (category === 'comics') {
-    add(firstDetail(details, ['comicTitle', 'series', 'title']) || input.title);
+    add(firstDetailPreservingSpelling(details, ['comicTitle', 'series', 'title']) || input.title);
     add(firstDetail(details, ['issueNumber', 'issueNo', 'issue', 'number']));
     // Comic year is an additional query and verification layer, not a publisher substitute.
     if (includeComicYear) add(firstDetail(details, ['publicationYear', 'year', 'issueYear']));

@@ -67,6 +67,17 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('X-Men 137 1980 CGC 9.8');
   });
 
+  it('preserves camel-case comic series names such as DareDevil in Goldin queries', () => {
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin',
+      title: 'DareDevil #168 CGC 9.8',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'DareDevil', issueNumber: '168', publicationYear: '1981' }),
+    })).toBe('DareDevil 168 1981 CGC 9.8');
+  });
+
   it('falls back to a vaguer Goldin query only after the stricter query returns zero lots', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
