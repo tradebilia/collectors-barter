@@ -241,10 +241,12 @@ function firstDetailPreservingSpelling(details: Record<string, unknown>, keys: s
 
 function formatSearchGrade(value: unknown, gradingCompany = ''): string {
   const grade = text(value).trim();
+  if (/^(?:raw|ungraded|n\/a|none|null|undefined)$/i.test(grade)) return '';
   if (!/^\d+(?:\.\d+)?$/.test(grade)) return grade;
   const numeric = Number(grade);
+  if (!Number.isFinite(numeric) || numeric <= 0) return '';
   if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
-  return Number.isFinite(numeric) ? (grade.includes('.') ? numeric.toFixed(1) : String(numeric)) : grade;
+  return grade.includes('.') ? numeric.toFixed(1) : String(numeric);
 }
 
 type GoldinQueryOptions = {

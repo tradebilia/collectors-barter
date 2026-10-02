@@ -92,8 +92,10 @@ function stableQueryTerms(values: Array<string | null | undefined>): string {
 function canonicalGrade(value: string | null | undefined, gradingCompany = ''): string {
   const normalized = text(value);
   if (!normalized) return '';
+  if (/^(?:raw|ungraded|n\/a|none|null|undefined)$/i.test(normalized)) return '';
   const numeric = Number(normalized);
   if (!Number.isFinite(numeric)) return normalized;
+  if (numeric <= 0) return '';
   if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
   return normalized.includes('.') ? numeric.toFixed(1) : String(numeric);
 }

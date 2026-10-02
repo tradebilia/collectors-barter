@@ -18,8 +18,10 @@ export function resolveTestAiGradingCompany(itemDetails: unknown, fallback = '')
 export function normalizeTestAiGrade(value: unknown, gradingCompany = ''): string {
   const raw = String(value ?? '').trim();
   if (!raw) return '';
+  if (/^(?:raw|ungraded|n\/a|none|null|undefined)$/i.test(raw)) return '';
   const numeric = Number(raw);
   if (!Number.isFinite(numeric)) return raw;
+  if (numeric <= 0) return '';
   if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
   return raw.includes('.') ? numeric.toFixed(1) : String(numeric);
 }

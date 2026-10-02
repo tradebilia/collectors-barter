@@ -621,7 +621,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
             <div className="flex flex-wrap gap-1 mt-1">
               {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="bg-slate-700/80 text-[10px] text-slate-100 border-slate-500/70">{item.category.replace(/_/g, ' ')}</Badge>}
               {getItemManufacturer(item) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{getItemManufacturer(item)}</Badge>}
-              {item.grade && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? ''))}</Badge>}
+              {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '')) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? ''))}</Badge>}
               {resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '') && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '')}</Badge>}
             </div>
             {item.estimatedValue != null && <p className="text-green-400 text-sm font-semibold mt-1">{formatItemValue(item.estimatedValue)}</p>}
@@ -636,7 +636,8 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
 function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
   const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
-  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [normalizeTestAiGrade(item.grade, gradingCompany), gradingCompany, item.grade ? null : item.condition]);
+  const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany);
+  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [normalizedGrade, gradingCompany, normalizedGrade ? null : item.condition]);
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>

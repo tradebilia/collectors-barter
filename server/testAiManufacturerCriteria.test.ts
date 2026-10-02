@@ -48,4 +48,8 @@ describe('Test AI manufacturer criteria', () => {
   it('uses whole-number grades for PSA in shared structured queries', () => {
     expect(buildStructuredItemQuery('sports_cards', { year: '1989', gradingCompany: 'PSA' }, ['9.00'])).toBe('1989 PSA 9');
   });
+
+  it('omits zero and ungraded values instead of treating them as grades', () => {
+    expect(buildStructuredItemQuery('sports_cards', { year: '1985' }, ['0.0', 'mint'])).toBe('1985 mint');
+  });
 });

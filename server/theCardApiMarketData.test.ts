@@ -79,6 +79,12 @@ describe('The Card API Test AI adapter', () => {
     expect(bgs.salesPath).toContain('grade=9.0');
   });
 
+  it('does not send a zero grade filter for an ungraded item', () => {
+    const query = buildTheCardApiQuery({ ...sportsListing, grade: '0.0', certificationCompany: '' });
+    expect(query.salesPath).not.toContain('grade=');
+    expect(query.salesPath).not.toContain('graded=true');
+  });
+
   it('does not derive a provider query from the listing title when structured fields are absent', () => {
     const query = buildTheCardApiQuery({ title: '1989 Upper Deck Ken Griffey Jr. #1 PSA 10', category: 'sports_cards' });
     expect(query.identityQuery).toBe('');
