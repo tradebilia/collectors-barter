@@ -1,3 +1,5 @@
+import { formatProviderError, formatProviderNetworkError } from './providerError';
+
 const DISCOGS_API_BASE = "https://api.discogs.com";
 export const DISCOGS_USER_AGENT = "TradebiliaTestAI/1.0 (+https://tradebilia.manus.space)";
 
@@ -186,10 +188,9 @@ export async function lookupDiscogsReleases(
         },
         signal: AbortSignal.timeout(12_000),
       });
-      if (response.status === 401 || response.status === 403) return { error: "Discogs rejected the configured credential." };
-      if (response.status === 429) return { error: "Discogs rate limit reached. Please wait before trying again." };
-      if (!response.ok) return { error: `Discogs returned HTTP ${response.status}.` };
-      const payload = await response.json() as DiscogsSearchResponse;
+      const payload = await response.json().catch(() => null) as DiscogsSearchResponse | null;
+      if (!response.ok) return { error: formatProviderError('Discogs', response.status, payload) };
+      if (!payload) return { error: 'Discogs returned an empty or invalid JSON response.' };
       const results = (payload.results ?? []).map(normalizeRecord).filter((result): result is DiscogsReleaseResult => Boolean(result));
       return { payload, results };
     };
@@ -213,6 +214,6 @@ export async function lookupDiscogsReleases(
     }
     return { status: "success", query, data: { results, total, requestedReleaseYear, releaseYearFilterApplied } };
   } catch {
-    return { status: "error", query, message: "Discogs is temporarily unavailable. Please try again." };
+    return { status: "error", query, message: formatProviderNetworkError('Discogs') };
   }
 }

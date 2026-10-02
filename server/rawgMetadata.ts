@@ -1,3 +1,5 @@
+import { formatProviderError, formatProviderNetworkError } from './providerError';
+
 type RawgEnvironment = { RAWG_API_KEY?: string };
 type RawgFact = { label: string; value: string };
 
@@ -110,7 +112,7 @@ export async function lookupRawgGameMetadata(
       const query = new URLSearchParams({ key, search: term, search_precise: 'true', page_size: '12' });
       const response = await fetchImpl(`https://api.rawg.io/api/games?${query}`, { signal: AbortSignal.timeout(12_000) });
       payload = await response.json().catch(() => null) as { results?: RawgGame[] } | null;
-      if (!response.ok) return { status: 'error', message: `RAWG returned HTTP ${response.status}.` };
+      if (!response.ok) return { status: 'error', message: formatProviderError('RAWG', response.status, payload) };
       if (payload?.results?.length) break;
     }
 
@@ -153,7 +155,7 @@ export async function lookupRawgGameMetadata(
       },
     };
   } catch {
-    return { status: 'error', message: 'RAWG is temporarily unavailable. Please try again.' };
+    return { status: 'error', message: formatProviderNetworkError('RAWG') };
   }
 }
 

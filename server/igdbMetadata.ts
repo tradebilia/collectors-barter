@@ -1,3 +1,5 @@
+import { formatProviderError, formatProviderNetworkError } from './providerError';
+
 type FetchLike = typeof fetch;
 type IgdbEnvironment = { TWITCH_CLIENT_ID?: string; TWITCH_CLIENT_SECRET?: string };
 
@@ -138,7 +140,7 @@ export async function lookupIgdbGameMetadata(
         signal: AbortSignal.timeout(12_000),
       });
       payload = await response.json().catch(() => null);
-      if (!response.ok) return { status: 'error', message: `IGDB returned HTTP ${response.status}.` };
+      if (!response.ok) return { status: 'error', message: formatProviderError('IGDB', response.status, payload) };
       return null;
     };
     const mainReleaseError = await requestGames(primarySearchTerm, true);
@@ -194,6 +196,6 @@ export async function lookupIgdbGameMetadata(
       },
     };
   } catch {
-    return { status: 'error', message: 'IGDB is temporarily unavailable. Please try again.' };
+    return { status: 'error', message: formatProviderNetworkError('IGDB') };
   }
 }

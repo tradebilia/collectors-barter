@@ -1,3 +1,5 @@
+import { formatProviderError, formatProviderNetworkError } from './providerError';
+
 type FetchLike = typeof fetch;
 
 type TcgDexFact = { label: string; value: string };
@@ -107,7 +109,7 @@ export async function lookupTcgDexCatalog(
 
   try {
     const search = await fetchJson(`https://api.tcgdex.net/v2/en/cards?name=${encodeURIComponent(searchTerm)}`, fetchImpl);
-    if (!search.ok) return { status: 'error', message: `TCGdex search returned HTTP ${search.status}.` };
+    if (!search.ok) return { status: 'error', message: formatProviderError('TCGdex', search.status, search.data) };
     if (!Array.isArray(search.data) || !search.data.length) return { status: 'not_found', message: 'No matching TCGdex card record was found.' };
 
     const stubs = (search.data as TcgDexCardStub[])
@@ -122,11 +124,17 @@ export async function lookupTcgDexCatalog(
       .slice(0, 8);
 
     const cards: TcgDexCard[] = [];
+    let lastDetailFailure: { status: number; data: unknown } | null = null;
     for (const stub of stubs) {
       const detail = await fetchJson(`https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(stub.id!)}`, fetchImpl);
       if (detail.ok && detail.data && typeof detail.data === 'object') cards.push(detail.data as TcgDexCard);
+      else lastDetailFailure = { status: detail.status, data: detail.data };
     }
-    if (!cards.length) return { status: 'error', message: 'TCGdex returned matching cards but their details could not be read.' };
+    if (!cards.length) {
+      return lastDetailFailure
+        ? { status: 'error', message: formatProviderError('TCGdex card detail', lastDetailFailure.status, lastDetailFailure.data) }
+        : { status: 'error', message: 'TCGdex returned matching cards but their details could not be read.' };
+    }
 
     const card = [...cards].sort((a, b) => scoreCard(b, normalizedQuery, options.cardNumber, options.setName) - scoreCard(a, normalizedQuery, options.cardNumber, options.setName))[0];
     const id = card?.id;
@@ -169,6 +177,6 @@ export async function lookupTcgDexCatalog(
       },
     };
   } catch {
-    return { status: 'error', message: 'TCGdex is temporarily unavailable. Please try again.' };
+    return { status: 'error', message: formatProviderNetworkError('TCGdex') };
   }
 }

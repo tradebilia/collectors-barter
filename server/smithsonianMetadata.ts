@@ -1,3 +1,5 @@
+import { formatProviderError, formatProviderNetworkError } from './providerError';
+
 type FetchLike = typeof fetch;
 
 type SmithsonianFact = { label: string; value: string };
@@ -48,7 +50,7 @@ export async function lookupSmithsonianStampReference(query: string, fetchImpl: 
     const url = `https://api.si.edu/openaccess/api/v1.0/search?q=${encodeURIComponent(normalizedQuery)}&api_key=${encodeURIComponent(apiKey)}&rows=12`;
     const response = await fetchImpl(url, { headers: { Accept: 'application/json' } });
     const payload: any = await response.json().catch(() => null);
-    if (!response.ok) return { status: 'error', message: `Smithsonian search returned HTTP ${response.status}.` };
+    if (!response.ok) return { status: 'error', message: formatProviderError('Smithsonian', response.status, payload) };
     const record = ((payload?.response?.rows ?? []) as SmithsonianRecord[]).find(isPostalMuseumRecord);
     if (!record) return { status: 'not_found', message: 'No relevant National Postal Museum stamp reference was found for this query.' };
     const free = record.content?.freetext ?? {};
@@ -76,6 +78,6 @@ export async function lookupSmithsonianStampReference(query: string, fetchImpl: 
       },
     };
   } catch {
-    return { status: 'error', message: 'Smithsonian is temporarily unavailable. Please try again.' };
+    return { status: 'error', message: formatProviderNetworkError('Smithsonian') };
   }
 }
