@@ -14,6 +14,7 @@ const COMPLETED_SALE_SOURCE_DEFAULTS: Record<string, { priceBasis: NonNullable<M
   lelands: { priceBasis: 'realized', statusBasis: 'Lelands realized-auction endpoint' },
   pristine_auction: { priceBasis: 'realized', statusBasis: 'Pristine Auction realized-auction endpoint' },
   collect_auction: { priceBasis: 'realized', statusBasis: 'Collect Auctions completed-sale endpoint via Parse.bot' },
+  sirius_sports_auctions: { priceBasis: 'realized', statusBasis: 'Sirius closed-lot prices-realized archive' },
   pcgs_auction_results: { priceBasis: 'realized', statusBasis: 'PCGS auction-prices-realized endpoint' },
 };
 

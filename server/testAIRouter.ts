@@ -36,6 +36,7 @@ import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
 import { lookupCollectAuctions, lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
+import { lookupSiriusSportsAuctions } from './siriusSportsAuctionMarketData';
 import { lookupComicConnectSold } from './comicConnectMarketData';
 import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { consumePayPalComparisonInspection } from './paypalInspection';
@@ -1298,6 +1299,26 @@ export const testAIRouter = router({
       };
     }),
 
+  // Sirius Sports Auctions public prices-realized archive — bounded, read-only.
+  getSiriusSportsAuctionData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const result = await lookupSiriusSportsAuctions(input);
+      if (!result.sales.length) return result;
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Sirius Sports Auctions completed records', targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        listings: result.sales,
+      });
+      return { ...result, sales: attachCanonicalProvenance('sirius_sports_auctions', visualFilter.listings.map((sale: any) => ({
+        ...sale, saleId: sale.lotId ?? sale.url ?? null, saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+        completedStatusBasis: sale.completed ? 'Sirius closed-lot prices-realized archive' : null, priceBasis: 'realized', buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown',
+      })), { query: input.title }), visualFilter };
+    }),
   // ComicConnect sold archive — bounded, read-only, context-only until source economics are resolved.
   getComicConnectData: protectedProcedure
     .input(z.object({

@@ -149,6 +149,11 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     status: 'live' as const,
     description: 'Read-only completed Collect Auctions sports-card lots via Parse.bot; explicit sold, dated, identity/grade-matched records may support sandbox valuation',
   },
+  sirius_sports_auctions: {
+    id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', group: 'Marketplace', icon: '⚾',
+    provides: ['historic_prices', 'recent_sales'], status: 'live' as const,
+    description: 'Read-only Sirius public prices-realized archive for Sports Cards; closed, dated, final-price, identity/grade-matched lots may support sandbox valuation',
+  },
   cgc: {
     id: 'cgc',
     label: 'Parse.bot CGC Comics',
@@ -1544,16 +1549,17 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
   </div>;
 }
 
-function ParseAuctionSection({ item, side, data, isLoading, source }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; source: 'lelands' | 'pristine_auction' | 'collect_auction' }) {
+function ParseAuctionSection({ item, side, data, isLoading, source }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; source: 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const isLelands = source === 'lelands';
   const isCollect = source === 'collect_auction';
-  const label = isLelands ? 'Parse.bot Lelands Auctions' : isCollect ? 'Parse.bot Collect Auctions' : 'Parse.bot Pristine Auction';
+  const isSirius = source === 'sirius_sports_auctions';
+  const label = isLelands ? 'Parse.bot Lelands Auctions' : isCollect ? 'Parse.bot Collect Auctions' : isSirius ? 'Sirius Sports Auctions' : 'Parse.bot Pristine Auction';
   const sales = data?.sales ?? [];
   const context = data?.context ?? [];
   const rows = (items: any[], eligible: boolean) => <div className="max-h-56 space-y-1 overflow-y-auto">{items.map((sale: any, index: number) => <div key={`${sale.url || sale.title}-${sale.date}-${index}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]"><div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title || 'Untitled auction lot'}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.auctionName, sale.category, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${eligible ? 'text-emerald-400' : 'text-amber-300'}`}>{eligible ? 'Sold candidate — comparable gate required' : 'Context only — not admitted'}</p></div></div><p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}` : null, sale.priceBasis, sale.identityMatched ? 'Identity matched' : 'Identity review failed'].filter(Boolean).join(' · ')}</p><p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p><details className="mt-1"><summary className="cursor-pointer text-[9px] text-sky-200">All returned lot fields</summary><pre className="mt-1 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-900/70 p-1.5 text-[8px] text-gray-400">{JSON.stringify(sale.raw ?? sale, null, 2)}</pre></details></div>)}</div>;
-  if (!['sports_cards', 'autographs'].includes(item.category) || ((source === 'pristine_auction' || source === 'collect_auction') && item.category !== 'sports_cards')) return <div className="rounded-lg border border-dashed border-gray-700/40 bg-gray-800/30 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : isCollect ? '🧢' : '🏆'} {label}</p><p className="text-[10px] text-gray-500">This read-only sandbox source is not applicable to the selected category.</p></div>;
-  return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3"><div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : isCollect ? '🧢' : '🏆'} {label}</p>{isLoading && <Spinner className="h-3 w-3" />}</div><MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} /><p className="text-[10px] text-gray-500">Read-only auction archive. Search results only discover candidates; detail-level explicit sold status, dated evidence, identity/grade compatibility, duplicate checks, and visual review are required before any record can influence the sandbox valuation. Premium-inclusive and hammer prices are kept source-attributed.</p>{data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}{data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/25 p-2 text-[10px] text-cyan-100">{data.visualFilter.note}</p>}<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={label} />{sales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Explicit sold detail records — candidate review</p>{rows(sales, true)}</div>}{context.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Ended, unsold, ambiguous, or identity-mismatched records — context only</p>{rows(context, false)}</div>}{!sales.length && !context.length && data?.status === 'success' && <p className="text-[10px] text-gray-500">No auction records were returned for this bounded query.</p>}<details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details></div>;
+  if (!['sports_cards', 'autographs'].includes(item.category) || ((source === 'pristine_auction' || source === 'collect_auction' || source === 'sirius_sports_auctions') && item.category !== 'sports_cards')) return <div className="rounded-lg border border-dashed border-gray-700/40 bg-gray-800/30 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : isCollect ? '🧢' : isSirius ? '⚾' : '🏆'} {label}</p><p className="text-[10px] text-gray-500">This read-only sandbox source is not applicable to the selected category.</p></div>;
+  return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3"><div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>{isLelands ? '🏟️' : isCollect ? '🧢' : isSirius ? '⚾' : '🏆'} {label}</p>{isLoading && <Spinner className="h-3 w-3" />}</div><MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} /><p className="text-[10px] text-gray-500">Read-only auction archive. Search results only discover candidates; detail-level explicit sold status, dated evidence, identity/grade compatibility, duplicate checks, and visual review are required before any record can influence the sandbox valuation. Premium-inclusive and hammer prices are kept source-attributed.</p>{data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}{data?.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/25 p-2 text-[10px] text-cyan-100">{data.visualFilter.note}</p>}<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={label} />{sales.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-emerald-300">Explicit sold detail records — candidate review</p>{rows(sales, true)}</div>}{context.length > 0 && <div><p className="mb-1 text-[10px] font-semibold uppercase text-amber-300">Ended, unsold, ambiguous, or identity-mismatched records — context only</p>{rows(context, false)}</div>}{!sales.length && !context.length && data?.status === 'success' && <p className="text-[10px] text-gray-500">No auction records were returned for this bounded query.</p>}<details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details></div>;
 }
 
 function CardsightAiSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
@@ -1874,7 +1880,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, pcgsAuctionData, oneThirtyPointData, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, pcgsAuctionData, oneThirtyPointData, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -1889,6 +1895,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   lelandsData: any;
   pristineAuctionData: any;
   collectAuctionData: any;
+  siriusSportsAuctionData: any;
   pcgsAuctionData: any;
   oneThirtyPointData: any;
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
@@ -2014,7 +2021,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         message: cardsightAiData?.messages?.join(' ') ?? null,
       });
     }
-    for (const source of [{ id: 'lelands', label: 'Lelands Auctions', data: lelandsData }, { id: 'pristine_auction', label: 'Pristine Auction', data: pristineAuctionData }, { id: 'collect_auction', label: 'Collect Auctions', data: collectAuctionData }] as const) {
+    for (const source of [{ id: 'lelands', label: 'Lelands Auctions', data: lelandsData }, { id: 'pristine_auction', label: 'Pristine Auction', data: pristineAuctionData }, { id: 'collect_auction', label: 'Collect Auctions', data: collectAuctionData }, { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', data: siriusSportsAuctionData }] as const) {
       if (!enabledSources.has(source.id)) continue;
       const sales = source.data?.sales ?? [];
       const context = source.data?.context ?? [];
@@ -2106,7 +2113,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, historicalSaleCount: auctions.length - dated.length, undatedSaleCount: auctions.filter((auction: any) => !auction.date).length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -2590,7 +2597,7 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
   leftEbayData: any;
@@ -2611,6 +2618,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   rightPristineAuctionData?: any;
   leftCollectAuctionData?: any;
   rightCollectAuctionData?: any;
+  leftSiriusSportsAuctionData?: any;
+  rightSiriusSportsAuctionData?: any;
   leftPcgsAuctionData?: any;
   rightPcgsAuctionData?: any;
   leftComicConnectData?: any;
@@ -2653,6 +2662,8 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const rightHasPristineAuction = rightSources.has('pristine_auction');
   const leftHasCollectAuction = leftSources.has('collect_auction');
   const rightHasCollectAuction = rightSources.has('collect_auction');
+  const leftHasSiriusSportsAuctions = leftSources.has('sirius_sports_auctions');
+  const rightHasSiriusSportsAuctions = rightSources.has('sirius_sports_auctions');
   const leftHasPcgsAuction = leftSources.has('pcgs');
   const rightHasPcgsAuction = rightSources.has('pcgs');
   const leftHasComicConnect = leftSources.has('comicconnect');
@@ -2715,6 +2726,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       leftHasLelands ? (leftLelandsData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'lelands', sourceLabel: 'Lelands Auctions', marketplace: 'Lelands Auctions', priceBasis: 'realized' })) : [],
       leftHasPristineAuction ? (leftPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
       leftHasCollectAuction ? (leftCollectAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'collect_auction', sourceLabel: 'Collect Auctions', marketplace: 'Collect Auctions', priceBasis: 'realized' })) : [],
+      leftHasSiriusSportsAuctions ? (leftSiriusSportsAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'sirius_sports_auctions', sourceLabel: 'Sirius Sports Auctions', marketplace: 'Sirius Sports Auctions', priceBasis: 'realized' })) : [],
       leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: leftPcgsAuctionData?.data?.name ?? leftItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleId: `${sale.certNo || leftPcgsAuctionData?.data?.certNo || leftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
       leftHasComicConnect ? (leftComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
       leftHasSoldComps ? (leftSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.saleId ?? sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed', completedStatusBasis: 'Sold-Comps completed-sale endpoint', priceBasis: 'sold', visualReviewStatus: sale.visualReviewStatus, visualReviewRationale: sale.visualReviewRationale, evidenceDisposition: sale.evidenceDisposition, evidenceReasons: sale.evidenceReasons }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
@@ -2726,6 +2738,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHasLelands ? (rightLelandsData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'lelands', sourceLabel: 'Lelands Auctions', marketplace: 'Lelands Auctions', priceBasis: 'realized' })) : [],
       rightHasPristineAuction ? (rightPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
       rightHasCollectAuction ? (rightCollectAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'collect_auction', sourceLabel: 'Collect Auctions', marketplace: 'Collect Auctions', priceBasis: 'realized' })) : [],
+      rightHasSiriusSportsAuctions ? (rightSiriusSportsAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'sirius_sports_auctions', sourceLabel: 'Sirius Sports Auctions', marketplace: 'Sirius Sports Auctions', priceBasis: 'realized' })) : [],
       rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: rightPcgsAuctionData?.data?.name ?? rightItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleId: `${sale.certNo || rightPcgsAuctionData?.data?.certNo || rightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
       rightHasComicConnect ? (rightComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
       rightHasSoldComps ? (rightSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.saleId ?? sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed', completedStatusBasis: 'Sold-Comps completed-sale endpoint', priceBasis: 'sold', visualReviewStatus: sale.visualReviewStatus, visualReviewRationale: sale.visualReviewRationale, evidenceDisposition: sale.evidenceDisposition, evidenceReasons: sale.evidenceReasons }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
@@ -3208,7 +3221,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -3230,6 +3243,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
   pristineAuctionLoading: boolean;
   collectAuctionData: any;
   collectAuctionLoading: boolean;
+  siriusSportsAuctionData: any;
+  siriusSportsAuctionLoading: boolean;
   comicConnectData: any;
   comicConnectLoading: boolean;
   pcgsAuctionData: any;
@@ -3260,7 +3275,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} />
@@ -3277,6 +3292,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('lelands') && <ParseAuctionSection item={item} side={side} source="lelands" data={lelandsData} isLoading={lelandsLoading} />}
       {enabledSources.has('pristine_auction') && <ParseAuctionSection item={item} side={side} source="pristine_auction" data={pristineAuctionData} isLoading={pristineAuctionLoading} />}
       {enabledSources.has('collect_auction') && <ParseAuctionSection item={item} side={side} source="collect_auction" data={collectAuctionData} isLoading={collectAuctionLoading} />}
+      {enabledSources.has('sirius_sports_auctions') && <ParseAuctionSection item={item} side={side} source="sirius_sports_auctions" data={siriusSportsAuctionData} isLoading={siriusSportsAuctionLoading} />}
       {enabledSources.has('comicconnect') && <ComicConnectSection item={queryItem} side={side} data={comicConnectData} isLoading={comicConnectLoading} />}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
@@ -3500,6 +3516,14 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('collect_auction') }
   );
+  const leftSiriusSportsAuctionQuery = trpc.testAI.getSiriusSportsAuctionData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    { enabled: !!leftSearchItem && leftSources.has('sirius_sports_auctions') }
+  );
+  const rightSiriusSportsAuctionQuery = trpc.testAI.getSiriusSportsAuctionData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    { enabled: !!rightSearchItem && rightSources.has('sirius_sports_auctions') }
+  );
   const leftComicConnectQuery = trpc.testAI.getComicConnectData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType } : { title: '', category: 'unknown' },
     { enabled: !!leftSearchItem && leftSources.has('comicconnect') }
@@ -3572,8 +3596,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
           </div>
         )}
 
@@ -3602,6 +3626,8 @@ export default function TestAI() {
              leftPristineAuctionData={leftPristineAuctionQuery.data}
              rightPristineAuctionData={rightPristineAuctionQuery.data}
              leftCollectAuctionData={leftCollectAuctionQuery.data}
+             leftSiriusSportsAuctionData={leftSiriusSportsAuctionQuery.data}
+             rightSiriusSportsAuctionData={rightSiriusSportsAuctionQuery.data}
              rightCollectAuctionData={rightCollectAuctionQuery.data}
              leftPcgsAuctionData={leftPcgsAuctionQuery.data}
              rightPcgsAuctionData={rightPcgsAuctionQuery.data}

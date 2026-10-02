@@ -22,6 +22,7 @@ type AdapterId =
   | 'lelands'
   | 'pristine_auction'
   | 'collect_auction'
+  | 'sirius_sports_auctions'
   | 'pcgs_auction_results'
   | '130point'
   | 'ngc'
@@ -106,6 +107,7 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
     completedStatusBasis: 'Pristine Auction realized-auction archive',
   },
   collect_auction: { id: 'collect_auction', label: 'Collect Auctions via Parse.bot', version: '1.0.0', defaultOriginMarketplace: 'collect_auction', defaultPriceBasis: 'realized', completedStatusBasis: 'Collect Auctions completed-sale archive via Parse.bot' },
+  sirius_sports_auctions: { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', version: '1.0.0', defaultOriginMarketplace: 'sirius_sports_auctions', defaultPriceBasis: 'realized', completedStatusBasis: 'Sirius closed-lot prices-realized archive' },
   pcgs_auction_results: {
     id: 'pcgs_auction_results',
     label: 'PCGS Auction Prices Realized',
