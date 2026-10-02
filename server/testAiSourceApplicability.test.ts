@@ -76,4 +76,11 @@ describe('internal Test AI source-category applicability policy', () => {
   it('keeps Comic Book Realm configured for automatic title searching', () => {
     expect(SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === 'comic_book_realm')?.searchContract).toBe('automatic_title_search');
   });
+
+  it('does not associate Nate D. Sanders with Comics', () => {
+    const comicsIds = getEligibleTestAiSources({ category: 'comics', hasTitle: true }).map((source) => source.sourceId);
+    expect(comicsIds).not.toContain('nate_sanders');
+    expect(SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === 'nate_sanders')?.categories).not.toContain('comics');
+    expect(getEligibleTestAiSources({ category: 'autographs', hasTitle: true }).map((source) => source.sourceId)).toContain('nate_sanders');
+  });
 });
