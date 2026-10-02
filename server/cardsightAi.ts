@@ -97,7 +97,7 @@ function identityFromInput(input: CardsightLookupInput): CardsightIdentity {
     : ['player', 'athlete', 'subject', 'cardName', 'name']);
   const rawSetName = firstText(details, ['setName', 'cardSet', 'set', 'series', 'productName', 'releaseName']);
   return {
-    subject: subject || input.title.replace(/^pokemon\s+/i, '').trim(),
+    subject,
     setName: isPokemon ? cardsightPokemonReleaseName(rawSetName) : rawSetName,
     cardNumber: firstText(details, ['cardNumber', 'cardNo', 'number']),
     year: firstYear(details),
@@ -297,6 +297,9 @@ export async function lookupCardsightAi(input: CardsightLookupInput) {
   const request = buildCardsightCatalogQuery(input);
   if (!request.categorySupported) {
     return { status: 'error' as LookupStatus, request, candidates: [], selected: null, detail: null, parallel: null, sales: [], activeListings: [], population: null, messages: ['Cardsight.ai is available only for Sports Cards and Pokémon/TCG items.'], raw: { catalog: null, detail: null, pricing: null, marketplace: null, population: null } };
+  }
+  if (!request.identity.subject && !request.identity.cardNumber && !request.identity.setName) {
+    return { status: 'review_required' as LookupStatus, request, candidates: [], selected: null, detail: null, parallel: null, sales: [], activeListings: [], population: null, messages: ['No structured card identity fields were supplied. No listing-title fallback query was sent.'], raw: { catalog: null, detail: null, pricing: null, marketplace: null, population: null } };
   }
   const apiKey = getCardsightApiKey();
   if (!apiKey) {

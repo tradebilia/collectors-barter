@@ -1,4 +1,5 @@
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
+import { buildStructuredItemQuery } from '../shared/testAiCriteria';
 
 export type ParseAuctionLookupInput = {
   title: string;
@@ -43,13 +44,11 @@ function parseDetails(itemDetails?: string | null): JsonRecord {
 
 function buildSearchQuery(input: ParseAuctionLookupInput): string {
   const details = parseDetails(input.itemDetails);
-  const values = [
-    input.title,
-    details.player, details.athlete, details.subject, details.cardName,
-    details.setName, details.cardSet, details.year, details.cardNumber,
-    input.certificationCompany, input.grade,
-  ].map(text).filter(Boolean);
-  return Array.from(new Set(values)).join(' ').slice(0, 240).trim() || input.title.trim();
+  return buildStructuredItemQuery(input.category, details, [
+    input.certificationCompany,
+    input.grade,
+    input.itemType,
+  ]);
 }
 
 function significantTokens(value: string): string[] {
@@ -182,6 +181,9 @@ async function lookupSource(source: SourceId, input: ParseAuctionLookupInput) {
   const empty = { source, status: 'error' as const, query: request.query, sales: [], context: [], messages: [] as string[], raw: { search: null, details: [] as JsonRecord[] }, visualFilter: null };
   if (!isParseAuctionSourceSupported(source, input.category)) {
     return { ...empty, status: 'not_applicable' as const, messages: [`${source === 'lelands' ? 'Lelands' : source === 'pristine_auction' ? 'Pristine Auction' : 'Collect Auctions'} is not enabled for this item category.`] };
+  }
+  if (!request.query) {
+    return { ...empty, status: 'review_required' as const, messages: ['No structured item fields were supplied. No listing-title fallback query was sent. Add the player/card, set, year, or card number before searching this source.'] };
   }
   const apiKey = getParseAuctionApiKey();
   if (!apiKey) return { ...empty, messages: ['PARSE_BOT_API_KEY is not configured.'] };

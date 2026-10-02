@@ -1393,12 +1393,12 @@ export const testAIRouter = router({
       }
       // Sports cards
       else if (input.category === 'sports_cards') {
-        const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '') || input.title;
+        const baseQuery = buildSportsCardTestAiCriteria(details, input.itemType || '');
         const isUnopenedProduct = String(input.itemType || '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product';
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
         else if (input.condition && !isUnopenedProduct) query = `${baseQuery} ${input.condition}`.trim();
-        else query = baseQuery || input.title;
+        else query = baseQuery;
       }
       // Video games
       else if (input.category === 'video_games') {
@@ -1475,6 +1475,10 @@ export const testAIRouter = router({
       else {
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
+      }
+
+      if (input.category === 'sports_cards' && !query.trim()) {
+        return { query: '', listings: [], metrics: null, error: 'No structured sports-card fields were supplied. No listing-title fallback query was sent.' };
       }
 
       try {

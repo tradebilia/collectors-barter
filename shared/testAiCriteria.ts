@@ -8,6 +8,60 @@ export function resolveTestAiManufacturer(itemDetails: unknown): string {
   return manufacturer.toLowerCase() === 'other' ? customManufacturer : manufacturer;
 }
 
+export type TestAiRequestAudit = {
+  kind: 'search' | 'certificate' | 'locator' | 'feed' | 'catalog';
+  criteria: Array<{ label: string; value: string }>;
+  executed: Array<{ label: string; query?: string; parameters?: Record<string, string | number | boolean>; used?: boolean }>;
+  fallbackUsed?: boolean;
+};
+
+export function parseTestAiDetails(itemDetails: unknown): Record<string, unknown> {
+  if (itemDetails && typeof itemDetails === 'object' && !Array.isArray(itemDetails)) return itemDetails as Record<string, unknown>;
+  if (typeof itemDetails !== 'string' || !itemDetails.trim()) return {};
+  try {
+    const parsed = JSON.parse(itemDetails);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
+
+function detailText(details: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = details[key];
+    if (typeof value === 'string' || typeof value === 'number') {
+      const text = String(value).trim();
+      if (text) return text;
+    }
+  }
+  return '';
+}
+
+/** Builds an ordered, title-independent identity term list for request previews and adapters. */
+export function buildStructuredItemQuery(category: string, itemDetails: unknown, extra: Array<string | null | undefined> = []): string {
+  const details = parseTestAiDetails(itemDetails);
+  const normalizedCategory = category.trim().toLowerCase().replace(/[- ]+/g, '_');
+  const keys = normalizedCategory === 'sports_cards'
+    ? ['year', 'manufacturer', 'customManufacturer', 'player', 'athlete', 'cardNumber', 'setName', 'cardSet', 'parallel', 'variant']
+    : normalizedCategory === 'pokemon'
+      ? ['cardName', 'pokemonName', 'name', 'cardNumber', 'cardNo', 'number', 'setName', 'set', 'cardSet', 'variant', 'printing', 'language']
+      : normalizedCategory === 'comics'
+        ? ['comicTitle', 'series', 'title', 'issueNumber', 'issueNo', 'issue', 'year', 'publisher', 'variant']
+        : normalizedCategory === 'music'
+          ? ['releaseTitle', 'album', 'artist', 'performer', 'releaseYear', 'catalogNumber']
+          : normalizedCategory === 'video_games'
+            ? ['gameTitle', 'videoGameTitle', 'title', 'releaseYear', 'year', 'platform', 'console', 'system', 'upc', 'barcode']
+            : normalizedCategory === 'stamps'
+              ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series']
+              : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
+  return [...keys.map((key) => detailText(details, [key])), ...extra.map((value) => String(value ?? '').trim())]
+    .filter(Boolean)
+    .filter((value, index, all) => all.indexOf(value) === index)
+    .join(' ')
+    .slice(0, 240)
+    .trim();
+}
+
 function isYes(value: unknown): boolean {
   return typeof value === 'string' && value.trim().toLowerCase() === 'yes';
 }

@@ -111,12 +111,12 @@ function cardPrintings(candidate: JsonRecord): string[] {
 
 function listingIdentity(input: PokemonPriceTrackerLookupInput) {
   const details = parseDetails(input.itemDetails);
-  const cardName = firstText(details, ['cardName', 'pokemonName', 'name']) || input.title.replace(/^pokemon\s+/i, '').trim();
+  const cardName = firstText(details, ['cardName', 'pokemonName', 'name']);
   const cardNumber = firstText(details, ['cardNumber', 'cardNo', 'number']);
   const setName = firstText(details, ['setName', 'set', 'cardSet', 'expansion']);
   const variant = firstText(details, ['variant', 'variation', 'printing', 'editionEra', 'finish']);
   const language = normalizeLanguage(firstText(details, ['language', 'cardLanguage', 'printingLanguage']));
-  const search = [cardName, cardNumber, setName, variant].filter(Boolean).join(' ').trim() || input.title.trim();
+  const search = [cardName, cardNumber, setName, variant].filter(Boolean).join(' ').trim();
   return { cardName, cardNumber, setName, variant, language, search };
 }
 

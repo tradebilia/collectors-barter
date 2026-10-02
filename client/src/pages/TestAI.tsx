@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildStructuredItemQuery, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
@@ -635,9 +635,11 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
 function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
-  const visibleQuery = query || item.title || 'No title supplied';
+  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [item.grade, item.certificationCompany, item.condition]);
+  const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
-    <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview'})</span></p>
+    <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>
+    <p className="mt-0.5 break-words text-[9px] text-cyan-200/80"><span className="font-semibold">Structured fields:</span> {structuredQuery || 'none — provider request should not be sent'}</p>
     <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleQuery}"</p>
   </div>;
 }
@@ -966,6 +968,7 @@ function CgcComicsSection({ item, side }: { item: SelectedItem; side: 'left' | '
   if (!effectiveCertId) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report</p><p className="text-gray-500 text-[10px]">No certificate ID is stored on this listing. The source cannot query Parse.bot until an ID is available.</p>{item.primaryPhotoUrl && <button type="button" onClick={() => readCertMutation.mutate({ imageUrl: item.primaryPhotoUrl!, category: item.category, expectedCompany: item.gradingCompany })} disabled={readCertMutation.isPending} className="rounded bg-indigo-600 px-2 py-1 text-[10px] text-white disabled:opacity-50">{readCertMutation.isPending ? 'Reading label…' : 'Read certificate ID from image'}</button>}{readCertMutation.data?.status === 'error' && <p className="text-red-400 text-[10px]">{readCertMutation.data.message}</p>}{ocrReview && <p className="text-gray-400 text-[10px]">{ocrReview.evidence} {ocrReview.certId ? `Candidate ID: ${ocrReview.certId} (${ocrReview.confidence} confidence).` : 'No readable ID was found.'}</p>}</div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 CGC Comics Report (Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={`certificate=${effectiveCertId}`} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Read-only sandbox evidence for certificate {effectiveCertId}: identity, grade, label details, and population context.</p>
     {data?.status === 'error' && <div className="bg-red-900/20 border border-red-700/30 rounded p-2"><p className="text-red-400 text-[10px]">{data.message}</p></div>}
     {data?.status === 'success' && data.data && <div className="space-y-2">
@@ -999,6 +1002,7 @@ function PSASection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PSA Population Report (via Parse.bot)</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={`certificate=${item.certId}`} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Data type: Cert details, full grade breakdown, recent sales</p>
       
       {data?.status === 'error' && (
@@ -1152,6 +1156,7 @@ function BeckettSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 BGS Grading Report (via Parse.bot)</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={`certificate=${item.certId}`} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Data type: Cert details, final grade, sub-grades, label color, population</p>
 
       {data?.status === 'error' && (
@@ -1277,6 +1282,7 @@ function SgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 SGC Certification (via Parse.bot)</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={`certificate=${item.certId}`} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Read-only cert details, grade, designation, and population data</p>
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'success' && data.data && (
@@ -1315,6 +1321,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 PCGS CoinFacts</p>
         {(isLoading || auctionLoading) && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={`certificate=${item.certId}`} isLoading={isLoading || auctionLoading} />
       <p className="text-gray-500 text-[10px]">Official read-only certification, population, and price-guide data</p>
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
@@ -1467,6 +1474,7 @@ function PokemonPriceTrackerSection({ item, side, data, isLoading }: { item: Sel
 
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🃏 Pokémon Price Tracker</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={data?.request?.query || data?.query} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Read-only Pokémon card market prices by grade and provider context. Catalog details, guide prices, history, eBay, Cardmarket, and population do not alter Tradebilia valuation, confidence, or trade verdicts.</p>
     {data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}
     {data?.status === 'error' && !data?.messages?.length && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">The provider lookup could not be completed.</p>}
@@ -1638,6 +1646,7 @@ function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left
 
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 130point Sales (via Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Read-only completed sales. No current average or valuation is calculated; confirm the exact variant and grade before using a record as a comparable.</p>
     {data?.status === 'success' && data.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
@@ -1680,6 +1689,7 @@ function DiscogsSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎵 Discogs Music Catalog</p>
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
+      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Read-only release metadata for identity matching. This source does not provide Tradebilia valuation or authentication.</p>
       {!releaseTitle && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-200">Add an Album / Release Title to search Discogs. The listing title is not used for this lookup.</p>}
       {data?.data?.requestedReleaseYear && <p className="text-[10px] text-gray-500">{data.data.releaseYearFilterApplied ? `Candidates narrowed by release year ${data.data.requestedReleaseYear}.` : `No candidates matched release year ${data.data.requestedReleaseYear}; showing broader title and artist matches.`}</p>}
@@ -1721,6 +1731,7 @@ function TcgDexSection({ item, side }: { item: SelectedItem; side: 'left' | 'rig
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🃏 TCGdex Pokémon Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Pokémon card items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🃏 TCGdex Pokémon Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={undefined} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Read-only card identification metadata · Query: {lookupInput.query} · Not a price, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
@@ -1745,6 +1756,7 @@ function RawgSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Video Game items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={undefined} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">User-approved read-only Video Game catalog metadata · Query: {lookupInput.title} · Not a price, grading, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
@@ -1769,6 +1781,7 @@ function IgdbSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🕹️ IGDB Video Game Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Video Game items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🕹️ IGDB Video Game Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={undefined} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Commercially approved read-only game identification metadata · Query: {lookupInput.title} · Not a price, grading, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
@@ -1806,6 +1819,7 @@ function SmithsonianSection({ item, side }: { item: SelectedItem; side: 'left' |
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏛️ Smithsonian Stamp Reference</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Stamp items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🏛️ Smithsonian Stamp Reference</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={undefined} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Read-only National Postal Museum reference · Not a price, certification, or authenticity source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
@@ -1824,6 +1838,7 @@ function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   ] as const;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PWCC / Fanatics Collect</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
     <p className="text-gray-500 text-[10px]">Read-only Parse.bot sold listings. No current average or valuation is calculated; verify exact card, grade, and certification before comparing.</p>
     {data && 'visualFilter' in data && data.visualFilter?.note && <p className="rounded border border-cyan-700/30 bg-cyan-950/30 p-2 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
     <MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel="PWCC / Fanatics Collect sales" />

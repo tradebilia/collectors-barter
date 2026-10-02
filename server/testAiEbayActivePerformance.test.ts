@@ -61,7 +61,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
   it("shows the movie search request while eBay is still loading", () => {
     expect(pageSource).toContain("const requestQueryPreview = useMemo(() => {");
     expect(pageSource).toContain("if (item.category === 'movies')");
-    expect(pageSource).toContain("Search query <span className=\"font-normal text-cyan-200/60\">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview'})</span>");
+    expect(pageSource).toContain("Search criteria / request <span className=\"font-normal text-cyan-200/60\">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span>");
   });
 
   it("keeps the query visible across searchable marketplace panels", () => {
