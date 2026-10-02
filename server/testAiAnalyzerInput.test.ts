@@ -71,7 +71,7 @@ describe('Test AI analyzer input compatibility', () => {
   });
 
   it('seals every valuation-bearing source before a browser can return its observations for analysis', () => {
-    for (const adapter of ['sold_comps', '130point', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'pcgs_auction_results']) {
+    for (const adapter of ['sold_comps', '130point', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'collect_auction', 'pcgs_auction_results']) {
       expect(routerSource).toContain(`attachCanonicalProvenance('${adapter}'`);
     }
     expect(routerSource).toContain('provenanceToken: z.string().max(16_000).nullable().optional()');

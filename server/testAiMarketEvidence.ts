@@ -13,6 +13,7 @@ const COMPLETED_SALE_SOURCE_DEFAULTS: Record<string, { priceBasis: NonNullable<M
   cardsight_ai: { priceBasis: 'sold', statusBasis: 'Cardsight.ai completed-sale endpoint' },
   lelands: { priceBasis: 'realized', statusBasis: 'Lelands realized-auction endpoint' },
   pristine_auction: { priceBasis: 'realized', statusBasis: 'Pristine Auction realized-auction endpoint' },
+  collect_auction: { priceBasis: 'realized', statusBasis: 'Collect Auctions completed-sale endpoint via Parse.bot' },
   pcgs_auction_results: { priceBasis: 'realized', statusBasis: 'PCGS auction-prices-realized endpoint' },
 };
 

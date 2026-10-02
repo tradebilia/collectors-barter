@@ -21,6 +21,7 @@ type AdapterId =
   | 'cardsight_ai'
   | 'lelands'
   | 'pristine_auction'
+  | 'collect_auction'
   | 'pcgs_auction_results'
   | '130point'
   | 'ngc'
@@ -104,6 +105,7 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
     defaultPriceBasis: 'realized',
     completedStatusBasis: 'Pristine Auction realized-auction archive',
   },
+  collect_auction: { id: 'collect_auction', label: 'Collect Auctions via Parse.bot', version: '1.0.0', defaultOriginMarketplace: 'collect_auction', defaultPriceBasis: 'realized', completedStatusBasis: 'Collect Auctions completed-sale archive via Parse.bot' },
   pcgs_auction_results: {
     id: 'pcgs_auction_results',
     label: 'PCGS Auction Prices Realized',

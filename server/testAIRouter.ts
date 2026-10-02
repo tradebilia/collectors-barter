@@ -35,7 +35,7 @@ import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListi
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
-import { lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
+import { lookupCollectAuctions, lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupComicConnectSold } from './comicConnectMarketData';
 import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { consumePayPalComparisonInspection } from './paypalInspection';
@@ -1267,6 +1267,32 @@ export const testAIRouter = router({
           completedStatusBasis: sale.completed ? 'Pristine Auction realized-auction archive' : null,
           priceBasis: 'realized',
           buyerPremium: sale.totalPrice != null ? 'included' : 'unknown',
+        })), { query: input.title }),
+        visualFilter,
+      };
+    }),
+
+  // Collect Auctions completed archive via Parse.bot — bounded, read-only.
+  getCollectAuctionData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const result = await lookupCollectAuctions(input);
+      if (!result.sales.length) return result;
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Collect Auctions completed records', targetImageUrl: input.imageUrl,
+        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        listings: result.sales,
+      });
+      return {
+        ...result,
+        sales: attachCanonicalProvenance('collect_auction', visualFilter.listings.map((sale: any) => ({
+          ...sale, saleId: sale.lotId ?? sale.url ?? null, saleStatus: sale.completed ? 'completed' : sale.saleStatus,
+          completedStatusBasis: sale.completed ? 'Collect Auctions completed-sale archive via Parse.bot' : null,
+          priceBasis: 'realized', buyerPremium: 'unknown',
         })), { query: input.title }),
         visualFilter,
       };
