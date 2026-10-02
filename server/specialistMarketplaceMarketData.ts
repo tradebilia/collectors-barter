@@ -307,7 +307,14 @@ function extractDate(value: string): string | null {
 
 function extractGrade(value: string): string | null {
   const match = value.match(/\b(?:NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\s*(?:graded?\s*)?([A-Z]{0,8}\s*\d{1,3}(?:\.\d+)?(?:\+|\s*(?:CAMEO|DCAM|UCAM))?)/i);
-  return match?.[1] ? match[1].replace(/\s+/g, ' ').trim().toUpperCase() : null;
+  if (match?.[1]) return match[1].replace(/\s+/g, ' ').trim().toUpperCase();
+
+  // Goldin commonly writes comic grades as "CGC Signature Series 9.6".
+  // The label between the grader and numeric grade is descriptive, not the
+  // grade itself; retain the numeric grade so a 9.6 cannot pass a 9.8 target.
+  const labeledMatches = [...value.matchAll(/\b(?:NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\b[^\d]{1,48}(\d{1,3}(?:\.\d+)?)(?:\+|\s*(?:CAMEO|DCAM|UCAM))?/gi)];
+  const labeledMatch = labeledMatches.at(-1);
+  return labeledMatch?.[1] ? labeledMatch[1].trim().toUpperCase() : null;
 }
 
 function extractCertificationCompany(value: string): string | null {
@@ -386,7 +393,8 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
     || (distinctiveTokens.length > 0
       ? distinctiveTokens.some((token) => matchedTokens.includes(token))
       : matchedTokens.length >= Math.min(2, targetTokens.length));
-  const gradeMatch = !input.grade || !grade || numericGradesEquivalent(input.grade, grade) || normalize(`${certificationCompany ?? ''} ${grade}`).includes(normalize(input.grade));
+  const gradeMatch = !input.grade
+    || (grade != null && (numericGradesEquivalent(input.grade, grade) || normalize(`${certificationCompany ?? ''} ${grade}`).includes(normalize(input.grade))));
   const stateConflicts = identityStateConflicts(
     extractIdentityState(input),
     extractIdentityState({ title, grade, certificationCompany, condition: null, itemDetails: description }),

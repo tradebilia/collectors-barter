@@ -177,11 +177,51 @@ describe('bounded specialist marketplace adapters', () => {
     }));
   });
 
+  it('rejects a Goldin CGC Signature Series 9.6 when the selected comic is CGC 9.8', async () => {
+    const comic = {
+      sourceId: 'goldin' as const,
+      title: 'X-Men #137 CGC 9.8',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publisher: 'Marvel' }),
+    };
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
+      searchalgolia: {
+        lots: [{
+          lot_id: 'goldin-xmen-98',
+          meta_slug: 'x-men-137-cgc-98-example',
+          title: 'X-Men #137 (1980 Marvel) - CGC 9.8 - Death of Phoenix',
+          status: 'Completed_Sold',
+          current_price: 400,
+          buyer_premium: 20,
+          end_timestamp: '2025-05-08T00:00:00Z',
+        }, {
+          lot_id: 'goldin-xmen-96',
+          meta_slug: 'x-men-137-cgc-signature-series-96-example',
+          title: 'X-Men #137 (1980 Marvel) - CGC Signature Series 9.6 - Death of Phoenix',
+          status: 'Completed_Sold',
+          current_price: 250,
+          buyer_premium: 20,
+          end_timestamp: '2025-05-09T00:00:00Z',
+        }],
+      },
+    }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    const result = await lookupSpecialistMarketplace(comic);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]?.grade).toBe('9.8');
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]).toMatchObject({ grade: '9.6', identityMatched: false });
+    expect(result.context[0]?.exclusionReason).toMatch(/grade conflicts/i);
+  });
+
   it('keeps Goldin’s $425,000 Jordan winning bid in dollars before calculating the $510,000 all-in amount', async () => {
     const jordanRookie = {
       sourceId: 'goldin' as const,
       title: '1986-87 Fleer #57 Michael Jordan Rookie Card PSA GEM MT 10',
       category: 'sports_cards',
+      grade: '10',
       certificationCompany: 'PSA',
       itemDetails: JSON.stringify({ year: '1986-87', cardNumber: '57', player: 'Michael Jordan' }),
     };
