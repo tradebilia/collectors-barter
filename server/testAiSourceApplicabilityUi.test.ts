@@ -108,4 +108,10 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('function TheCardApiSection');
     expect(source).toContain('query={data?.request?.salesPath || data?.query}');
   });
+
+  it('explains whether each The Card API sale can enter analyzer valuation', () => {
+    expect(source).toContain('Analyzer: YES — submitted as a completed-sale candidate');
+    expect(source).toContain('NOT direct valuation — grade mismatch');
+    expect(source).toContain('final identity, date, currency, duplicate, and comparable gates still apply');
+  });
 });

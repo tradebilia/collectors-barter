@@ -1524,6 +1524,21 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
   const catalogSelected = catalog?.selected ?? null;
   const catalogCandidates = catalog?.candidates ?? [];
   const visualFilter = data?.visualFilter;
+  const targetGrade = Number(item.grade);
+  const targetCompany = String(item.certificationCompany ?? item.gradingCompany ?? '').trim().toUpperCase();
+  const analyzerComment = (sale: any): { text: string; className: string } => {
+    if (!sale.confirmed) return { text: 'Analyzer: NOT eligible — unconfirmed provider estimate; context only.', className: 'text-amber-300' };
+    const saleTitle = String(sale.title ?? '');
+    const saleCompany = String(sale.grader ?? sale.certificationCompany ?? saleTitle.match(/\b(PSA|CGC|BGS|SGC|PCGS|NGC|AFA|WATA|VGA)\b/i)?.[1] ?? '').trim().toUpperCase();
+    const saleGrade = Number(sale.grade ?? saleTitle.match(/\b(?:PSA|CGC|BGS|SGC|PCGS|NGC|AFA|WATA|VGA)\s*(?:GEM\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
+    if (Number.isFinite(targetGrade) && targetGrade > 0 && Number.isFinite(saleGrade) && saleGrade !== targetGrade) {
+      return { text: `Analyzer: submitted for evidence, but NOT direct valuation — grade mismatch (target ${targetCompany || 'graded'} ${targetGrade}; sale ${saleCompany || 'graded'} ${saleGrade}).`, className: 'text-amber-300' };
+    }
+    if (targetCompany && saleCompany && targetCompany !== saleCompany) {
+      return { text: `Analyzer: submitted for evidence, but NOT direct valuation — grading company mismatch (target ${targetCompany}; sale ${saleCompany}).`, className: 'text-amber-300' };
+    }
+    return { text: 'Analyzer: YES — submitted as a completed-sale candidate; final identity, date, currency, duplicate, and comparable gates still apply.', className: 'text-emerald-300' };
+  };
 
   if (!supported) return <div className="rounded-lg border border-dashed border-gray-700/40 bg-gray-800/30 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>📊 The Card API Sales</p><p className="text-[10px] text-gray-500">This read-only sandbox source is available only for Sports Cards and Pokémon/TCG items.</p></div>;
 
@@ -1531,6 +1546,7 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
     {rows.map((sale: any) => <div key={sale.saleId || `${sale.title}-${sale.date}-${sale.price}`} className="rounded border border-gray-700/25 bg-gray-950/25 p-2 text-[10px]">
       <div className="flex items-start justify-between gap-2"><div className="min-w-0"><a href={sale.url || undefined} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold text-blue-300 hover:underline">{sale.title}</a><p className="mt-0.5 text-[9px] text-gray-500">{[sale.marketplace, sale.listing_type, sale.date || 'Date unavailable'].filter(Boolean).join(' · ')}</p></div><div className="shrink-0 text-right"><p className="font-semibold text-emerald-300">{sale.price != null ? `${sale.currency || 'USD'} ${formatWholeDollar(sale.price)}` : 'Price unavailable'}</p><p className={`text-[8px] ${sale.confirmed ? 'text-emerald-400' : 'text-amber-300'}`}>{sale.confirmed ? 'Confirmed final price' : 'Fast-settle estimate — context only'}</p></div></div>
       <p className="mt-1 text-[9px] text-gray-400">{[sale.grader && sale.grade ? `${sale.grader} ${sale.grade}${sale.grade_qualifier ? ` ${sale.grade_qualifier}` : ''}` : null, sale.player, sale.manufacturer, sale.card_set, sale.card_number ? `#${sale.card_number}` : null, sale.year, sale.print_run ? `/${sale.print_run}` : null].filter(Boolean).join(' · ') || 'No structured card identity was returned for this sale.'}</p>
+      <p className={`mt-1 text-[8px] font-semibold ${analyzerComment(sale).className}`}>{analyzerComment(sale).text}</p>
       <p className="mt-1 text-[8px] text-gray-500">{sale.priceSemantics}</p>
       <details className="mt-1"><summary className="cursor-pointer text-[9px] text-sky-200">All returned sale fields</summary><pre className="mt-1 max-h-44 overflow-auto whitespace-pre-wrap break-words rounded bg-gray-900/70 p-1.5 text-[8px] text-gray-400">{JSON.stringify(sale, null, 2)}</pre></details>
     </div>)}
