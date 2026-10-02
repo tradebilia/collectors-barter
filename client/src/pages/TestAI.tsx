@@ -2420,6 +2420,7 @@ function ComicConnectSection({ item, side, data, isLoading }: { item: SelectedIt
         {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-gray-700/50 bg-gray-950/40 p-2">
           <div className="flex items-start justify-between gap-2"><p className="text-gray-200 text-[10px] font-medium">{record.title || item.title}</p><span className="shrink-0 text-emerald-300 text-[10px]">{record.price != null ? `$${Number(record.price).toLocaleString()}` : 'No price'}</span></div>
           <p className="text-gray-500 text-[9px] mt-0.5">{record.grade ?? 'Grade unavailable'} · {record.date ?? 'Date unavailable'} · {record.saleStatus}</p>
+          <p className="text-gray-400 text-[9px] mt-0.5">Publication year: target {record.targetPublicationYear ?? 'not recorded'} · candidate {record.publicationYears?.length ? record.publicationYears.join(', ') : 'not stated'}</p>
           <p className={`text-[9px] mt-0.5 ${timeWindowStyle[record.timeWindow] ?? 'text-gray-400'}`}>{timeWindowLabel[record.timeWindow] ?? 'Time window unavailable'}</p>
           <p className={`text-[9px] mt-0.5 ${record.identityMatched ? 'text-emerald-300/80' : 'text-red-300/90'}`}>{record.identityMatched ? '✓ Identity matched — retained for admission review' : `✕ Mismatch — ${record.exclusionReason ?? 'identity not confirmed'}`}</p>
           {record.url && <a className="text-sky-400 text-[9px] underline" href={record.url} target="_blank" rel="noreferrer">Open ComicConnect record</a>}

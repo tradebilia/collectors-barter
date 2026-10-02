@@ -256,13 +256,19 @@ function comicIdentity(input: ComicConnectLookupInput): { series: string; year: 
 
 function candidateComicIdentity(title: string): { series: string; years: string[] } {
   const raw = normalize(title);
-  const years = Array.from(raw.matchAll(/\b(19|20)\d{2}\b/g), match => match[0]);
+  const years = new Set(Array.from(raw.matchAll(/\b(19|20)\d{2}\b/g), match => Number(match[0])));
+  const range = title.match(/\b((?:19|20)\d{2})\s*[-–]\s*((?:19|20)\d{2})\b/);
+  if (range) {
+    const start = Number(range[1]);
+    const end = Number(range[2]);
+    if (end >= start && end - start <= 25) for (let year = start; year <= end; year += 1) years.add(year);
+  }
   const series = raw
     .replace(/\b(19|20)\d{2}\b/g, '')
     .replace(/\s+\d+(?:\.\d+)?\s*$/, '')
     .replace(/\s+/g, ' ')
     .trim();
-  return { series, years };
+  return { series, years: [...years].sort((left, right) => left - right).map(String) };
 }
 
 function explicitGrade(value: string): string | null {
@@ -321,6 +327,8 @@ export type ComicConnectSale = {
   currency: 'USD' | null;
   date: string | null;
   timeWindow: ComicConnectTimeWindow;
+  publicationYears: string[];
+  targetPublicationYear: string | null;
   priceBasis: 'unknown';
   buyerPremiumIncluded: boolean | null;
   identityMatched: boolean;
@@ -363,6 +371,8 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
     const lotId = href?.match(/\/item\/(\d+)/i)?.[1] ?? null;
     const completed = Boolean(ended && /\bsold\s+on\b/i.test(ended) && parsePrice(priceText));
     const identity = matchesIdentity(input, title, grade ?? '');
+    const targetPublicationYear = comicIdentity(input).year;
+    const publicationYears = candidateComicIdentity(title).years;
     const date = ended?.match(/Sold on\s+(.+)/i)?.[1] ?? null;
     return {
       sourceId: 'comicconnect', provider: 'ComicConnect Sold Archive', title,
@@ -370,7 +380,7 @@ export function parseComicConnectSoldHtml(html: string, input: ComicConnectLooku
       imageUrl: imagePath ? new URL(imagePath, COMICCONNECT_BASE_URL).toString() : null,
       description: description ?? null, saleStatus: completed ? 'completed' : 'unknown', completed,
       price: completed ? parsePrice(priceText) : null, currency: completed ? 'USD' : null,
-      date, timeWindow: classifyComicConnectTimeWindow(date), priceBasis: 'unknown',
+      date, timeWindow: classifyComicConnectTimeWindow(date), publicationYears, targetPublicationYear, priceBasis: 'unknown',
       buyerPremiumIncluded: null, identityMatched: identity.matched, matchedTokens: identity.matchedTokens,
       exclusionReason: !identity.matched ? identity.reason : (!completed ? 'No explicit completed-sale amount and date were found.' : 'ComicConnect buyer-premium treatment is not resolved.'),
       valuationEligible: false,

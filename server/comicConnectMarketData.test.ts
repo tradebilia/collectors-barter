@@ -99,6 +99,18 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(result.context.find(record => record.title.includes('(2015)'))?.exclusionReason).toContain('Publication-year conflict');
   });
 
+  it('accepts a publication-year range that contains the target year', () => {
+    const starWars = {
+      ...input,
+      title: 'Star Wars #1',
+      itemDetails: JSON.stringify({ comicTitle: 'Star Wars', issueNumber: '1', publisher: 'Marvel', year: '1977' }),
+    };
+    const rangeHtml = '<div class="itempreview"><div class="titleline">STAR WARS (1977-1978) #1</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 09/26/2026</div><div class="pricing"><span class="val prc">$194</span></div></div>';
+    const result = parseComicConnectSoldHtml(rangeHtml, starWars);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0].publicationYears).toEqual(['1977', '1978']);
+  });
+
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
     const result = parseComicConnectSoldHtml(html, input);
     expect(result.status).toBe('success');
