@@ -113,7 +113,7 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
   catawiki_reef: { hosts: ['api.reefapi.com', 'www.catawiki.com'], linkPattern: /(?:api\.reefapi\.com\/catawiki\/v1|www\.catawiki\.com\/en\/l\/\d+)/i, recordCap: 12 },
   auctionet: { hosts: ['api.reefapi.com'], linkPattern: /api\.reefapi\.com\/auctionet\/v1/i, recordCap: 12 },
-  comic_book_realm: { hosts: ['comicbookrealm.com', 'www.comicbookrealm.com'], linkPattern: /\/cgc-analyzer\/comic\/id\/\d+\//i, recordCap: 30 },
+  comic_book_realm: { hosts: ['comicbookrealm.com', 'www.comicbookrealm.com'], linkPattern: /\/cgc-analyzer\/(?:search-results\/[^/?#]+|comic\/id\/\d+(?:\/[^/?#]+)?)\/?/i, recordCap: 30 },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
@@ -126,6 +126,42 @@ const TCGPLAYER_SALES_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/product/sales`;
 const CATAWIKI_SEARCH_ENDPOINT = `${REEF_API_BASE}/catawiki/v1/search`;
 const AUCTIONET_SEARCH_ENDPOINT = `${REEF_API_BASE}/auctionet/v1/search`;
 const COMIC_BOOK_REALM_CGC_ANALYZER_BASE = 'https://comicbookrealm.com/cgc-analyzer/';
+const COMIC_BOOK_REALM_CGC_SEARCH_BASE = 'https://comicbookrealm.com/cgc-analyzer/search-results/';
+
+function comicBookRealmSearchQuery(input: SpecialistMarketplaceLookupInput): string {
+  const details = parseDetails(input.itemDetails);
+  const issue = text(details.issueNumber ?? details.issue ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
+  const series = text(details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, '').trim();
+  return `${series || input.title} ${issue}`.replace(/\s+/g, ' ').trim().slice(0, 180);
+}
+
+/**
+ * Resolves the normal public CGC Analyzer search page to one exact issue page.
+ * Facsimiles, variants, and foreign editions are rejected before fetching the
+ * guide table so a broad title search cannot silently produce the wrong guide.
+ */
+export function resolveComicBookRealmAnalyzerUrl(html: string, input: SpecialistMarketplaceLookupInput, requestUrl: string): string | null {
+  const document = new JSDOM(html, { url: requestUrl }).window.document;
+  const details = parseDetails(input.itemDetails);
+  const issue = text(details.issueNumber ?? details.issue ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
+  const issuePattern = issue ? new RegExp(`(?:^|[^0-9A-Za-z])${issue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[^0-9A-Za-z])`, 'i') : null;
+  const wantedTokens = significantTokens(text(details.title) || input.title).filter(token => token !== issue.toLowerCase());
+  const rejected = /facsimile|variant|foreign|french|german|greek|hungarian|dutch|italian|spanish|edition/i;
+  const candidates = Array.from(document.querySelectorAll('a[href]')).flatMap(anchor => {
+    const href = anchor.getAttribute('href') ?? '';
+    const absolute = new URL(href, requestUrl).toString();
+    if (!isAllowedSourceUrl('comic_book_realm', absolute) || !/\/comic\/id\//i.test(absolute)) return [];
+    const haystack = text(`${anchor.textContent ?? ''} ${absolute}`);
+    if (issuePattern && !issuePattern.test(haystack)) return [];
+    if (rejected.test(haystack)) return [];
+    const normalized = normalize(haystack);
+    const matched = wantedTokens.filter(token => normalized.includes(token));
+    const score = matched.length * 10 + (issuePattern?.test(haystack) ? 50 : 0) + (/marvel/i.test(haystack) ? 3 : 0);
+    return [{ absolute, score, matched }];
+  });
+  candidates.sort((a, b) => b.score - a.score || b.matched.length - a.matched.length || a.absolute.localeCompare(b.absolute));
+  return candidates[0]?.absolute ?? null;
+}
 
 function text(value: unknown): string {
   return value == null ? '' : String(value)
@@ -532,6 +568,15 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
   if (input.sourceId === 'auctionet' && source.searchContract === 'automatic_title_search') {
     const query = text(input.title).slice(0, 180);
     return { url: AUCTIONET_SEARCH_ENDPOINT, error: null };
+  }
+  if (input.sourceId === 'comic_book_realm' && source.searchContract === 'automatic_title_search') {
+    const sourceUrl = text(input.sourceUrl);
+    if (sourceUrl) {
+      return isAllowedSourceUrl(input.sourceId, sourceUrl)
+        ? { url: sourceUrl, error: null }
+        : { url: null, error: 'That URL is not an allowlisted public Comic Book Realm route.' };
+    }
+    return { url: `${COMIC_BOOK_REALM_CGC_SEARCH_BASE}${encodeURIComponent(comicBookRealmSearchQuery(input))}`, error: null };
   }
   if (input.sourceId === 'comic_book_realm' && source.searchContract === 'public_locator_required') {
     const sourceUrl = text(input.sourceUrl);
@@ -1291,10 +1336,19 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (input.sourceId === 'auctionet') return lookupAuctionet(input);
   if (input.sourceId === 'comic_book_realm') {
     try {
-      const response = await fetch(request.url, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS) });
-      if (!response.ok) return { ...empty, status: 'error', messages: [`${source.label} returned HTTP ${response.status}; no retry or access workaround was attempted.`] };
-      if (!isAllowedSourceUrl(input.sourceId, response.url)) return { ...empty, status: 'error', messages: [`${source.label} redirected outside the allowlisted public contract; the response was not parsed.`] };
-      return parseComicBookRealmCgcAnalyzerHtml(await response.text(), input, response.url);
+      const fetchPage = (url: string) => fetch(url, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS) });
+      const searchResponse = await fetchPage(request.url!);
+      if (!searchResponse.ok) return { ...empty, status: 'error', messages: [`${source.label} search returned HTTP ${searchResponse.status}; no retry or access workaround was attempted.`] };
+      if (!isAllowedSourceUrl(input.sourceId, searchResponse.url)) return { ...empty, status: 'error', messages: [`${source.label} search redirected outside the allowlisted public contract; the response was not parsed.`] };
+      const searchHtml = await searchResponse.text();
+      const issueUrl = text(input.sourceUrl) && isAllowedSourceUrl(input.sourceId, request.url!)
+        ? request.url!
+        : resolveComicBookRealmAnalyzerUrl(searchHtml, input, searchResponse.url);
+      if (!issueUrl) return { ...empty, status: 'error', messages: [`${source.label} found no exact public CGC Analyzer issue page for “${comicBookRealmSearchQuery(input)}”. Facsimiles, variants, and foreign editions were excluded.`] };
+      const issueResponse = issueUrl === searchResponse.url ? searchResponse : await fetchPage(issueUrl);
+      if (!issueResponse.ok) return { ...empty, status: 'error', messages: [`${source.label} issue page returned HTTP ${issueResponse.status}; no retry or access workaround was attempted.`] };
+      if (!isAllowedSourceUrl(input.sourceId, issueResponse.url) || !/\/comic\/id\//i.test(issueResponse.url)) return { ...empty, status: 'error', messages: [`${source.label} did not resolve to an allowlisted public issue page; the response was not parsed.`] };
+      return parseComicBookRealmCgcAnalyzerHtml(issueResponse === searchResponse ? searchHtml : await issueResponse.text(), input, issueResponse.url);
     } catch (error) {
       const timedOut = error instanceof Error && error.name === 'TimeoutError';
       return { ...empty, status: 'error', messages: [timedOut ? `${source.label} timed out; no retry was attempted.` : `${source.label} could not be reached; no access workaround was attempted.`] };

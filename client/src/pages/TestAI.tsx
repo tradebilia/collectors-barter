@@ -2159,15 +2159,6 @@ function ComicBookRealmSection({
   side: "left" | "right";
 }) {
   const accentColor = side === "left" ? "text-cyan-300" : "text-amber-300";
-  const [sourceUrl, setSourceUrl] = useState("");
-  const normalizedSourceUrl = useMemo(() => {
-    try {
-      const parsed = new URL(sourceUrl.trim());
-      return parsed.protocol === "https:" ? parsed.toString() : "";
-    } catch {
-      return "";
-    }
-  }, [sourceUrl]);
   const lookup = trpc.testAI.getSpecialistMarketplaceData.useQuery(
     {
       sourceId: "comic_book_realm",
@@ -2178,9 +2169,9 @@ function ComicBookRealmSection({
       certificationCompany:
         item.certificationCompany ?? item.gradingCompany ?? undefined,
       itemDetails: item.itemDetails ?? undefined,
-      sourceUrl: normalizedSourceUrl || undefined,
+      sourceUrl: undefined,
     },
-    { enabled: Boolean(normalizedSourceUrl), retry: false }
+    { enabled: true, retry: false }
   );
   const rows = lookup.data?.guideRows ?? [];
   const summary = lookup.data?.guideSummary;
@@ -2196,7 +2187,7 @@ function ComicBookRealmSection({
       </div>
       <MarketplaceQueryBanner
         item={item}
-        query={lookup.data?.query || normalizedSourceUrl}
+        query={lookup.data?.query || `${item.title}${item.grade ? ` CGC ${item.grade}` : ""}`}
         isLoading={lookup.isFetching}
       />
       <p className="text-gray-400 text-[10px]">
@@ -2204,29 +2195,10 @@ function ComicBookRealmSection({
         sale · never valuation-eligible
       </p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
-        <p className="text-sky-300 text-[10px] font-semibold">
-          Public CGC Analyzer URL required
-        </p>
+        <p className="text-sky-300 text-[10px] font-semibold">Automatic public CGC Analyzer lookup</p>
         <p className="text-gray-300 text-[10px]">
-          Paste the exact issue URL, such as
-          /cgc-analyzer/comic/id/535/marvel-comics-x-men-137.
+          Tradebilia searches Comic Book Realm by title and issue number, excludes facsimiles and variants, then reads the matching public guide page.
         </p>
-        <div className="flex gap-2">
-          <input
-            value={sourceUrl}
-            onChange={event => setSourceUrl(event.target.value)}
-            placeholder="https://comicbookrealm.com/cgc-analyzer/comic/id/..."
-            className="min-w-0 flex-1 rounded border border-slate-700 bg-slate-950/70 px-2 py-1 text-[10px] text-slate-100 placeholder:text-slate-600 focus:border-sky-500 focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={() => lookup.refetch()}
-            disabled={!normalizedSourceUrl || lookup.isFetching}
-            className="rounded border border-sky-600/60 bg-sky-900/30 px-2 py-1 text-[9px] font-semibold text-sky-100 disabled:opacity-50"
-          >
-            Check
-          </button>
-        </div>
       </div>
       {lookup.isFetching && (
         <p className="text-[10px] text-sky-200">

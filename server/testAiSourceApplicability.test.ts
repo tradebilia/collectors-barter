@@ -72,4 +72,8 @@ describe('internal Test AI source-category applicability policy', () => {
     }
     expect(getEligibleTestAiSources({ category: 'comics', gradingCompany: 'CGC', hasTitle: true }).map((source) => source.sourceId)).toContain('comic_book_realm');
   });
+
+  it('keeps Comic Book Realm configured for automatic title searching', () => {
+    expect(SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === 'comic_book_realm')?.searchContract).toBe('automatic_title_search');
+  });
 });
