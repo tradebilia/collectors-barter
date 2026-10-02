@@ -369,6 +369,13 @@ function isCgcCompany(company?: string | null): boolean {
   return (company ?? '').trim().toUpperCase().replace(/\s+(COMICS|CARDS)$/, '') === 'CGC';
 }
 
+// Manual source-test outcomes recorded from the category/source test matrix.
+// Untested applicable sources remain yellow; confirmed matches are green;
+// confirmed mismatches are red. Keep keys normalized as category:sourceId.
+const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
+  'comics:ebay_active': 'match',
+};
+
 // ─── Source Selector ─────────────────────────────────────────────────────────
 function SourceSelector({ enabled, onChange, side, item }: {
   enabled: Set<SourceId>;
@@ -406,6 +413,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 const isEnabled = enabled.has(source.id as SourceId);
                 const isLive = source.status === 'live';
                 const isApplicable = applicableSourceIds.has(source.id as TestAiSourceId);
+                const testResult = item ? SOURCE_TEST_RESULTS[`${item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')}:${source.id}`] : undefined;
                 const isPermissionPending = source.status === 'permission_pending';
                 const isDeferred = source.status === 'deferred';
                 const isSelectable = !isPermissionPending && !isDeferred;
@@ -425,9 +433,13 @@ function SourceSelector({ enabled, onChange, side, item }: {
                     ? 'cursor-not-allowed border-orange-500/70 bg-orange-950/30 text-orange-200 opacity-90'
                     : 'cursor-not-allowed border-orange-900/50 bg-gray-900/40 text-gray-500 opacity-70'
                   : isApplicable
-                  ? isEnabled
-                    ? 'bg-green-900/40 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/30'
-                    : 'bg-yellow-900/20 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/20'
+                  ? testResult === 'match'
+                    ? 'bg-green-900/40 border-green-400 text-green-200 ring-1 ring-green-400/30'
+                    : testResult === 'mismatch'
+                    ? 'bg-red-900/40 border-red-400 text-red-200 ring-1 ring-red-400/30'
+                    : isEnabled
+                      ? 'bg-green-900/40 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/30'
+                      : 'bg-yellow-900/20 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/20'
                   : isEnabled
                     ? isLive
                       ? 'bg-green-900/40 border-green-600 text-green-300'
@@ -438,8 +450,8 @@ function SourceSelector({ enabled, onChange, side, item }: {
                     key={source.id}
                     onClick={() => isSelectable && toggle(source.id as SourceId)}
                     disabled={!isSelectable}
-                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}${isDeferred ? ' It is not applicable or activatable.' : ''}`}
-                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}${isDeferred ? ' — deferred by owner and disabled' : ''}`}
+                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${testResult === 'match' ? ' Confirmed match for this category/source test.' : ''}${testResult === 'mismatch' ? ' Confirmed mismatch for this category/source test.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}${isDeferred ? ' It is not applicable or activatable.' : ''}`}
+                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${testResult === 'match' ? ' — confirmed match' : ''}${testResult === 'mismatch' ? ' — confirmed mismatch' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}${isDeferred ? ' — deferred by owner and disabled' : ''}`}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all disabled:cursor-not-allowed ${sourceClassName}`}
                   >
                     <span>{source.icon}</span>
@@ -451,7 +463,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
           </div>
         </div>
       ))}
-      <p className="text-gray-600 text-[10px]">Green = live data · Blue = placeholder · Orange = permission pending, remote lookup disabled · Gray = deferred by owner and excluded · Pending labels show the last bounded public-item test{item && ' · Yellow border = applicable to loaded item'}</p>
+      <p className="text-gray-600 text-[10px]">Green = live data or confirmed match · Red = confirmed mismatch · Blue = placeholder · Orange = permission pending, remote lookup disabled · Gray = deferred by owner and excluded · Pending labels show the last bounded public-item test{item && ' · Yellow border = applicable and not yet test-confirmed'}</p>
     </div>
   );
 }
