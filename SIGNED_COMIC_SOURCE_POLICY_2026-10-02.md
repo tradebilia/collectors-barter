@@ -18,6 +18,7 @@ Explicit title extraction is limited to wording such as **â€œSigned by Stan Leeâ
 - Signed target with known signer names + candidate signed but no signer name stated: review-only; never accepted as a clean direct comparable.
 - Signed target with a candidate signer set that is missing a target signer or contains an additional signer: hard mismatch; it cannot be a perfect identity match.
 - Multiple target signers require exact set equality. Every target signer must be present and no additional candidate signer may be present. The order of names does not matter.
+- Signer normalization handles harmless formatting differences, including common `Mc Farlane` versus `McFarlane` spacing, before exact set comparison. This does not merge different people or allow extra names.
 
 ## Query behavior
 

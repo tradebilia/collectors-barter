@@ -42,6 +42,12 @@ describe('universal analyzer identity state', () => {
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.8 Signed', 500)).accepted).toBe(false);
   });
 
+  it('treats common Mc-name spacing as the same signer without relaxing exact signer sets', () => {
+    const target = { title: 'Amazing Spider-Man #300 CGC 9.6 Signed', category: 'comics', grade: '9.6', certificationCompany: 'CGC', itemDetails: JSON.stringify({ issueNumber: '300', publisher: 'Marvel', signed: 'Yes', signers: ['Todd McFarlane'] }) };
+    expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by Todd Mc Farlane', 500)).accepted).toBe(true);
+    expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by Todd Mc Farlane and Stan Lee', 500)).accepted).toBe(false);
+  });
+
   it('rejects a complete card set when the selected item is a single card', () => {
     const target = extractIdentityState({ title: '1986-87 Fleer #57 Michael Jordan Rookie Card PSA GEM MT 10', certificationCompany: 'PSA' });
     const completeSet = extractIdentityState({ title: '1986-87 Fleer Basketball PSA-Graded Near Complete Set (131/132) – Includes #57 Michael Jordan Rookie Card PSA GEM MT 10' });

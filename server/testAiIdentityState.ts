@@ -44,7 +44,7 @@ function findParallel(text: string): string | null {
 }
 
 function normalizeSignatureName(value: unknown): string {
-  return normalized(value).replace(/\b(?:signed|signature|autograph|autographed|by)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  return normalized(value).replace(/\b(?:signed|signature|autograph|autographed|by)\b/g, ' ').replace(/\bmc\s+(?=[a-z])/g, 'mc').replace(/\s+/g, ' ').trim();
 }
 
 function collectSignatureNames(value: unknown): string[] {
