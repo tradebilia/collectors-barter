@@ -319,6 +319,20 @@ export function normalizeCgcComicsResponse(certNumber: string, certPayload: any,
   };
 }
 
+export function formatParseBotApiError(payload: any, status: number, sourceLabel: string): string {
+  const providerError = payload?.error;
+  const providerMessage = typeof providerError === 'string'
+    ? providerError
+    : providerError && typeof providerError === 'object'
+      ? providerError.message || providerError.error || null
+      : null;
+  const message = typeof payload?.message === 'string' ? payload.message : providerMessage;
+  if (status === 402 || /usage limit exceeded|all your credits/i.test(String(message ?? ''))) {
+    return `${sourceLabel} is temporarily unavailable because the Parse.bot monthly credit limit has been reached (HTTP 402). No certificate data was returned.`;
+  }
+  return `${sourceLabel} API error${status ? ` (HTTP ${status})` : ''}: ${message || 'Certificate not found'}`;
+}
+
 // Extract issue number from a listing title (e.g., "Daredevil #168 CGC 9.8" -> "168")
 function extractIssueFromTitle(title: string): string | null {
   // Match #168, #168N (newsstand), #168A (variant), etc. — capture just the numeric part
@@ -1656,7 +1670,7 @@ export const testAIRouter = router({
         const certResponse = await fetch(`${baseUrl}/get_cert?cert_number=${encodeURIComponent(input.certNumber)}`, { headers });
         const certPayload = await certResponse.json() as any;
         if (!certResponse.ok || certPayload?.status === 'error' || certPayload?.error) {
-          return { certNumber: input.certNumber, status: 'error' as const, message: `Parse.bot CGC Comics API error: ${certPayload?.message || certPayload?.error || 'Certificate not found'}`, data: null };
+          return { certNumber: input.certNumber, status: 'error' as const, message: formatParseBotApiError(certPayload, certResponse.status, 'Parse.bot CGC Comics'), data: null };
         }
         const cert = certPayload?.data ?? certPayload;
         let populationPayload: any = {};
