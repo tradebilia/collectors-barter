@@ -38,4 +38,10 @@ describe('Test AI manufacturer criteria', () => {
   it('normalizes a two-decimal grade to one decimal in the structured query', () => {
     expect(buildStructuredItemQuery('sports_cards', { year: '1979' }, ['9.00'])).toBe('1979 9.0');
   });
+
+  it('does not append condition when a grading company and grade are present', () => {
+    const query = buildStructuredItemQuery('sports_cards', { year: '1979', manufacturer: 'Other', customManufacturer: 'O-Pee-Chee', player: 'Wayne Gretzky', cardNumber: '18' }, ['9.00', 'PSA']);
+    expect(query).toBe('1979 O-Pee-Chee Wayne Gretzky 18 9.0 PSA');
+    expect(query).not.toContain('mint');
+  });
 });

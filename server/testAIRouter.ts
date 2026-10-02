@@ -841,8 +841,8 @@ export const testAIRouter = router({
           query = `${comicTitle}${issueStr} ${cert} ${grade}`;
         } else if (grade) {
           query = `${comicTitle}${issueStr} ${grade}`;
-        } else if (input.condition) {
-          query = `${comicTitle}${issueStr} ${input.condition}`;
+        } else if ((grade ? undefined : input.condition)) {
+          query = `${comicTitle}${issueStr} ${(grade ? undefined : input.condition)}`;
         } else {
           query = `${comicTitle}${issueStr}`;
         }
@@ -856,8 +856,8 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if (input.condition && !isUnopenedProduct) {
-          query = `${baseQuery} ${input.condition}`.trim();
+        } else if ((grade ? undefined : input.condition) && !isUnopenedProduct) {
+          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
@@ -871,8 +871,8 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if (input.condition) {
-          query = `${baseQuery} ${input.condition}`.trim();
+        } else if ((grade ? undefined : input.condition)) {
+          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
@@ -893,8 +893,8 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if (input.condition) {
-          query = `${baseQuery} ${input.condition}`.trim();
+        } else if ((grade ? undefined : input.condition)) {
+          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
@@ -911,8 +911,8 @@ export const testAIRouter = router({
           query = `${baseQuery} ${cert} ${grade}`.trim();
         } else if (grade) {
           query = `${baseQuery} ${grade}`.trim();
-        } else if (input.condition) {
-          query = `${baseQuery} ${input.condition}`.trim();
+        } else if ((grade ? undefined : input.condition)) {
+          query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         } else {
           query = baseQuery || input.title;
         }
@@ -1381,7 +1381,7 @@ export const testAIRouter = router({
         const issueStr = issueNumber ? ` #${issueNumber}` : '';
         if (cert && grade) query = `${comicTitle}${issueStr} ${cert} ${grade}`;
         else if (grade) query = `${comicTitle}${issueStr} ${grade}`;
-        else if (input.condition) query = `${comicTitle}${issueStr} ${input.condition}`;
+        else if ((grade ? undefined : input.condition)) query = `${comicTitle}${issueStr} ${(grade ? undefined : input.condition)}`;
         else query = `${comicTitle}${issueStr}`.trim() || input.title;
       }
       // Sports cards
@@ -1390,7 +1390,7 @@ export const testAIRouter = router({
         const isUnopenedProduct = String(input.itemType || '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product';
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition && !isUnopenedProduct) query = `${baseQuery} ${input.condition}`.trim();
+        else if ((grade ? undefined : input.condition) && !isUnopenedProduct) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         else query = baseQuery;
       }
       // Video games
@@ -1398,7 +1398,7 @@ export const testAIRouter = router({
         const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         else query = baseQuery || input.title;
       }
       // Vintage toys
@@ -1410,7 +1410,7 @@ export const testAIRouter = router({
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         else query = baseQuery || input.title;
       }
       // Disney pins
@@ -1427,7 +1427,7 @@ export const testAIRouter = router({
         const parts = [year, scottNumber ? `US#${scottNumber}` : '', cert].filter((p: string) => p);
         const baseQuery = parts.join(' ');
         if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         else query = baseQuery || input.title;
       }
       // Movies
@@ -1438,7 +1438,7 @@ export const testAIRouter = router({
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         else query = baseQuery || input.title;
       }
       // Autographs
@@ -1461,7 +1461,7 @@ export const testAIRouter = router({
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();
-        else if (input.condition) query = `${baseQuery} ${input.condition}`.trim();
+        else if ((grade ? undefined : input.condition)) query = `${baseQuery} ${(grade ? undefined : input.condition)}`.trim();
         else query = baseQuery || input.title;
       }
       // Other categories: use title
