@@ -35,8 +35,9 @@ describe('universal analyzer identity state', () => {
   it('extracts multiple signer names and rejects a different signed comic', () => {
     const details = JSON.stringify({ signed: 'Yes', signers: ['Stan Lee', 'John Romita'] });
     expect(extractSignatureNames({ title: 'Amazing Spider-Man #300', itemDetails: details })).toEqual(['stan lee', 'john romita']);
-    const target = { title: 'Amazing Spider-Man #300 CGC 9.8 Signed', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ issueNumber: '300', publisher: 'Marvel', signed: 'Yes', signers: ['Stan Lee', 'John Romita'] }) };
+    const target = { title: 'Amazing Spider-Man #300 CGC 9.8 Signed', category: 'comics', grade: '9.8', certificationCompany: 'CGC', itemDetails: JSON.stringify({ issueNumber: '300', publisher: 'Marvel', signed: 'Yes', signers: ['Stan Lee'] }) };
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.8 Signed by Stan Lee', 500)).accepted).toBe(true);
+    expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.8 Signed by Stan Lee and Todd McFarlane', 500)).accepted).toBe(false);
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.8 Signed by Todd McFarlane', 500)).accepted).toBe(false);
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.8 Signed', 500)).accepted).toBe(false);
   });

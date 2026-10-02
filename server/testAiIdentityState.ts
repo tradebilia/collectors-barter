@@ -66,7 +66,7 @@ export function extractSignatureNames(input: { title?: string | null; itemDetail
   } catch { /* malformed details remain unknown */ }
   const explicitKeys = ['signer', 'signers', 'signatureName', 'signatureNames', 'signedBy', 'signedByName', 'autographBy', 'autographNames', 'artistSignature'];
   const names = explicitKeys.flatMap((key) => collectSignatureNames(details[key]));
-  const titleNames = String(input.title ?? '').match(/\b(?:signed|autograph(?:ed)?)\s+by\s+([A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,3})/i)?.[1];
+  const titleNames = String(input.title ?? '').match(/\b(?:signed|autograph(?:ed)?)\s+by\s+(.+?)(?=\s+[-–—(]|$)/i)?.[1];
   if (titleNames) names.push(...collectSignatureNames(titleNames));
   return [...new Set(names.map((name) => normalizeSignatureName(name)).filter(Boolean))];
 }
@@ -108,7 +108,7 @@ export function identityStateConflicts(target: IdentityStateSnapshot, sale: Iden
   if (target.autograph === 'unknown' && sale.autograph === 'auto') conflicts.push('sale declares an autograph/signature not declared by target');
   if (compareSignatureNames && target.autograph === 'auto' && sale.autograph === 'auto' && target.signatureNames.length) {
     if (!sale.signatureNames.length) conflicts.push('signature name is not stated');
-    else if (!target.signatureNames.some((name) => sale.signatureNames.includes(name))) conflicts.push(`signature name differs (${sale.signatureNames.join(', ')} vs ${target.signatureNames.join(', ')})`);
+    else if (target.signatureNames.length !== sale.signatureNames.length || target.signatureNames.some((name) => !sale.signatureNames.includes(name))) conflicts.push(`signature name set differs (${sale.signatureNames.join(', ')} vs ${target.signatureNames.join(', ')})`);
   }
   if (target.lot !== sale.lot && (target.lot || sale.lot)) conflicts.push('single item versus lot/bundle differs');
   conflicts.push(...sale.negativeSignals.map((signal) => `negative listing signal: ${signal}`));

@@ -16,8 +16,8 @@ Explicit title extraction is limited to wording such as **â€œSigned by Stan Leeâ
 - Signed target + unsigned candidate: hard mismatch or review according to the existing identity-state gate.
 - Signed target with known signer names + candidate signed by a different person: hard mismatch; never valuation-eligible.
 - Signed target with known signer names + candidate signed but no signer name stated: review-only; never accepted as a clean direct comparable.
-- Signed target with one or more matching signer names: signer gate passes, subject to all other identity, grade, issue, year, visual, and source-quality gates.
-- Multiple target signers use an overlap rule: at least one recorded signer must match. A different signer is not accepted as an equivalent signature.
+- Signed target with a candidate signer set that is missing a target signer or contains an additional signer: hard mismatch; it cannot be a perfect identity match.
+- Multiple target signers require exact set equality. Every target signer must be present and no additional candidate signer may be present. The order of names does not matter.
 
 ## Query behavior
 

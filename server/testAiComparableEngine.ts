@@ -1769,7 +1769,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push(...universalIdentityConflicts.map((reason) => `identity state conflict: ${reason}`));
   }
   const universalHardConflict = universalIdentityConflicts.some((reason) =>
-    /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph|signature name differs/.test(reason),
+    /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph|signature name(?: set)? differs/.test(reason),
   );
   const universalNeedsReview = universalIdentityConflicts.some((reason) => reason.includes('not stated'));
   const categoryNeedsReview = categoryIdentity.status === 'needs_review';

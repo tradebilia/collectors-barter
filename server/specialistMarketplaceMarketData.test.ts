@@ -308,6 +308,31 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/autograph|signature not declared/i);
   });
 
+  it('rejects a Goldin signed lot with an additional signer not on the target item', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ searchalgolia: { lots: [{
+      lot_id: 'goldin-asm-extra-signer',
+      meta_slug: 'amazing-spider-man-300-extra-signer',
+      title: 'Amazing Spider-Man #300 (1988 Marvel) - CGC Signature Series 9.6 - Signed by Stan Lee, David Michelinie, Todd McFarlane - Origin and 1st Full Appearance',
+      status: 'Completed_Sold',
+      current_price: 1900,
+      buyer_premium: 22,
+      end_timestamp: '2026-02-25T00:00:00Z',
+    }] } }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin',
+      title: 'The Amazing Spider-Man #300 CGC 9.6 Signed',
+      category: 'comics',
+      grade: '9.6',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'The Amazing Spider-Man', issueNumber: '300', year: '1988', signed: 'Yes', signers: ['Stan Lee'] }),
+    });
+
+    expect(result.sales).toHaveLength(0);
+    expect(result.context[0]?.identityMatched).toBe(false);
+    expect(result.context[0]?.exclusionReason).toMatch(/signature name/i);
+  });
+
   it('keeps Goldin’s $425,000 Jordan winning bid in dollars before calculating the $510,000 all-in amount', async () => {
     const jordanRookie = {
       sourceId: 'goldin' as const,
