@@ -15,6 +15,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'comics:ebay_active': 'match'");
     expect(source).toContain("'comics:comic_book_realm': 'match'");
     expect(source).toContain("'comics:comicconnect': 'match'");
+    expect(source).toContain("'comics:goldin': 'match'");
     expect(source).toContain('border-green-400');
     expect(source).toContain('border-red-400');
   });

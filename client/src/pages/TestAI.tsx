@@ -378,6 +378,7 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'comics:ebay_active': 'match',
   'comics:comic_book_realm': 'match',
   'comics:comicconnect': 'match',
+  'comics:goldin': 'match',
 };
 
 // ─── Source Selector ─────────────────────────────────────────────────────────
