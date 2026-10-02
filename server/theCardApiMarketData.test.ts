@@ -85,6 +85,17 @@ describe('The Card API Test AI adapter', () => {
     expect(query.salesPath).not.toContain('graded=true');
   });
 
+  it('uses Year-first unopened-product criteria universally without graded-card filters', () => {
+    const query = buildTheCardApiQuery({
+      title: '2024 Topps Hockey Box', category: 'sports_cards', itemType: 'unopened_product', grade: '10', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ year: '2024', manufacturer: 'Topps', sport: 'Hockey', productFormat: 'Box', authentication: 'yes', authenticationCompany: 'BBCE', fromSealedCase: 'yes' }),
+    });
+    expect(query.identityQuery).toBe('2024 Topps Hockey Box BBCE FASC');
+    expect(query.salesPath).not.toContain('grade=');
+    expect(query.salesPath).not.toContain('grader=');
+    expect(query.salesPath).not.toContain('graded=true');
+  });
+
   it('does not derive a provider query from the listing title when structured fields are absent', () => {
     const query = buildTheCardApiQuery({ title: '1989 Upper Deck Ken Griffey Jr. #1 PSA 10', category: 'sports_cards' });
     expect(query.identityQuery).toBe('');

@@ -48,7 +48,7 @@ function buildSearchQuery(input: ParseAuctionLookupInput): string {
   return buildStructuredItemQuery(input.category, { ...details, gradingCompany }, [
     input.grade,
     input.itemType,
-  ]);
+  ], input.itemType ?? '');
 }
 
 function significantTokens(value: string): string[] {

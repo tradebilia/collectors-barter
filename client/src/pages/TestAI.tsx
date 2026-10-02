@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { buildStructuredItemQuery, normalizeTestAiGrade, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
@@ -637,7 +637,9 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
   const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
   const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany);
-  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition]);
+  const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
+  const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || Boolean((parseTestAiDetails(item.itemDetails) as Record<string, unknown>).productFormat));
+  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, isUnopenedProduct ? [] : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition], item.itemType ?? '');
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>
@@ -1977,12 +1979,14 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
     const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || details.productName || details.productFormat);
     const isYes = (value: unknown) => String(value ?? '').trim().toLowerCase() === 'yes';
+    const year = String(details.year ?? '').trim();
+    const manufacturer = String(details.manufacturer ?? '').trim().toLowerCase() === 'other' ? String(details.customManufacturer ?? '').trim() : String(details.manufacturer ?? '').trim();
     const sport = String(details.sport ?? details.customSport ?? '').trim();
     const productFormat = String(details.productFormat ?? '').trim();
-    const isAuthenticated = isYes(details.authenticated) || isYes(details.isGraded) || isYes(details.graded);
+    const isAuthenticated = isYes(details.authentication) || isYes(details.authenticated) || isYes(details.isAuthenticated);
     const authenticationCompany = isAuthenticated ? String(details.authenticationCompany ?? details.customAuthenticationCompany ?? '').trim() : '';
-    const fromSealedCase = isYes(details.fromASealedCase);
-    return { isUnopenedProduct: Boolean(isUnopenedProduct), sport, productFormat, isAuthenticated, authenticationCompany, fromSealedCase };
+    const fromSealedCase = isYes(details.fromASealedCase) || isYes(details.fromSealedCase);
+    return { isUnopenedProduct: Boolean(isUnopenedProduct), year, manufacturer, sport, productFormat, isAuthenticated, authenticationCompany, fromSealedCase };
   }, [item.category, item.itemType, details]);
   const discogsSearchCriteria = useMemo(() => {
     const isMusic = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'music';
@@ -2208,6 +2212,8 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     {sportsUnopenedSearchCriteria.isUnopenedProduct && <div className="rounded border border-amber-700/30 bg-amber-950/15 p-2">
       <p className="text-[9px] font-semibold uppercase text-amber-300">Sports Cards Unopened Product search criteria</p>
       <div className="mt-1 grid gap-1 text-[10px] text-gray-300 sm:grid-cols-3">
+        <p><span className="text-gray-500">Year:</span> {sportsUnopenedSearchCriteria.year || 'Missing'}</p>
+        <p><span className="text-gray-500">Manufacturer:</span> {sportsUnopenedSearchCriteria.manufacturer || 'Missing'}</p>
         <p><span className="text-gray-500">Sport:</span> {sportsUnopenedSearchCriteria.sport || 'Missing'}</p>
         <p><span className="text-gray-500">Product Format:</span> {sportsUnopenedSearchCriteria.productFormat || 'Missing'}</p>
         {sportsUnopenedSearchCriteria.isAuthenticated && <p><span className="text-gray-500">Authentication Company:</span> {sportsUnopenedSearchCriteria.authenticationCompany || 'Not supplied'}</p>}
@@ -3543,11 +3549,11 @@ export default function TestAI() {
     { enabled: !!rightItem && rightSources.has('pokemon_price_tracker') }
   );
   const leftTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!leftSearchItem && leftSources.has('the_card_api') }
   );
   const rightTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('the_card_api') }
   );
   const leftCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(

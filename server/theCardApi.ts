@@ -1,4 +1,4 @@
-import { parseTestAiDetails, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { buildStructuredItemQuery, parseTestAiDetails, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 
 export type TheCardApiLookupInput = {
   title: string;
@@ -7,6 +7,7 @@ export type TheCardApiLookupInput = {
   condition?: string | null;
   certificationCompany?: string | null;
   itemDetails?: string | null;
+  itemType?: string | null;
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -120,7 +121,10 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   // Keep provider search focused on stable card identity. Grade and grader are
   // applied as structured filters first, then retried without them because
   // eBay records may expose those fields only in the title.
-  const query = stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]);
+  const isUnopenedProduct = cardCategory === 'sports' && (typeof details.productFormat === 'string' || input.itemType?.trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product');
+  const query = isUnopenedProduct
+    ? buildStructuredItemQuery(input.category, details, [], input.itemType ?? '')
+    : stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]);
   const requestedGrade = canonicalGrade(input.grade, gradingCompany);
 
   const sales = new URLSearchParams({
@@ -128,9 +132,9 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
     limit: String(SALE_LIMIT),
     sort: 'date_desc',
   });
-  if (requestedGrade) sales.set('grade', requestedGrade);
-  if (gradingCompany) sales.set('grader', gradingCompany);
-  if (requestedGrade || gradingCompany) sales.set('graded', 'true');
+  if (!isUnopenedProduct && requestedGrade) sales.set('grade', requestedGrade);
+  if (!isUnopenedProduct && gradingCompany) sales.set('grader', gradingCompany);
+  if (!isUnopenedProduct && (requestedGrade || gradingCompany)) sales.set('graded', 'true');
 
   const identityFallback = new URLSearchParams({ q: query, limit: String(SALE_LIMIT), sort: 'date_desc' });
 

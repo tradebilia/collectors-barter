@@ -56,9 +56,10 @@ function detailText(details: Record<string, unknown>, keys: string[]): string {
 }
 
 /** Builds an ordered, title-independent identity term list for request previews and adapters. */
-export function buildStructuredItemQuery(category: string, itemDetails: unknown, extra: Array<string | null | undefined> = []): string {
+export function buildStructuredItemQuery(category: string, itemDetails: unknown, extra: Array<string | null | undefined> = [], itemType = ''): string {
   const details = parseTestAiDetails(itemDetails);
   const normalizedCategory = category.trim().toLowerCase().replace(/[- ]+/g, '_');
+  const unopenedProduct = normalizedCategory === 'sports_cards' && isSportsCardsUnopenedProduct(details, itemType);
   const keys = normalizedCategory === 'sports_cards'
     ? ['year', 'manufacturer', 'player', 'athlete', 'cardNumber', 'setName', 'cardSet', 'parallel', 'variant']
     : normalizedCategory === 'pokemon'
@@ -74,11 +75,15 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
               : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
   const gradingCompany = resolveTestAiGradingCompany(details);
   const manufacturer = normalizedCategory === 'sports_cards' ? resolveTestAiManufacturer(details) : '';
-  return [...keys.map((key) => key === 'manufacturer' ? manufacturer : detailText(details, [key])), gradingCompany, ...extra.map((value) => {
+  const baseValues = unopenedProduct
+    ? [detailText(details, ['year']), manufacturer, ...buildSportsCardsUnopenedProductCriteria(details)]
+    : keys.map((key) => key === 'manufacturer' ? manufacturer : detailText(details, [key]));
+  const extraValues = unopenedProduct ? [] : extra.map((value) => {
     const normalized = String(value ?? '').trim();
     if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized, gradingCompany);
     return normalized.toLowerCase() === 'other' && gradingCompany ? gradingCompany : normalized;
-  })]
+  });
+  return [...baseValues, unopenedProduct ? '' : gradingCompany, ...extraValues]
     .filter(Boolean)
     .filter((value, index, all) => all.indexOf(value) === index)
     .join(' ')
@@ -100,11 +105,11 @@ function buildSportsCardsUnopenedProductCriteria(details: Record<string, unknown
   const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
   const sport = value('sport') || value('customSport');
   const parts = [sport, value('productFormat')];
-  if (isYes(details.authenticated) || isYes(details.isGraded) || isYes(details.graded)) {
+  if (isYes(details.authentication) || isYes(details.authenticated) || isYes(details.isAuthenticated)) {
     const authCompany = value('authenticationCompany') || value('customAuthenticationCompany');
     if (authCompany) parts.push(authCompany);
   }
-  if (isYes(details.fromASealedCase)) parts.push('FASC');
+  if (isYes(details.fromASealedCase) || isYes(details.fromSealedCase)) parts.push('FASC');
   return parts.filter(Boolean);
 }
 
@@ -114,7 +119,10 @@ export function buildSportsCardTestAiCriteria(itemDetails: unknown, itemType = '
   const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
   const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
 
-  return [...[value('year'), resolveTestAiManufacturer(details), value('player'), value('cardNumber')], ...unopened]
+  const identity = unopened.length
+    ? [value('year'), resolveTestAiManufacturer(details)]
+    : [value('year'), resolveTestAiManufacturer(details), value('player'), value('cardNumber')];
+  return [...identity, ...unopened]
     .filter(Boolean)
     .join(' ');
 }
@@ -144,12 +152,16 @@ export function buildSportsCardTestAiQueries(
   const normalizedCert = certificationCompany.trim();
   const normalizedGrade = grade.trim();
   const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
-  const candidates = [
-    [year, manufacturer, player, cardNumber, ...unopened, normalizedCert, normalizedGrade],
-    [year, manufacturer, player, ...unopened, normalizedCert, normalizedGrade],
-    [manufacturer, player, ...unopened, normalizedCert, normalizedGrade],
+  const candidateParts: string[][] = unopened.length ? [
+    [year, manufacturer, ...unopened],
+    [manufacturer, ...unopened],
+  ] : [
+    [year, manufacturer, player, cardNumber, normalizedCert, normalizedGrade],
+    [year, manufacturer, player, normalizedCert, normalizedGrade],
+    [manufacturer, player, normalizedCert, normalizedGrade],
     [fallbackTitle],
-  ].map((parts) => parts.filter(Boolean).join(' ').trim());
+  ];
+  const candidates = candidateParts.map((parts) => parts.filter(Boolean).join(' ').trim());
   return [...new Set(candidates)].filter(Boolean);
 }
 

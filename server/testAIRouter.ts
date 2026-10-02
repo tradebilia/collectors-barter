@@ -1154,6 +1154,7 @@ export const testAIRouter = router({
       condition: z.string().nullish(),
       certificationCompany: z.string().nullish(),
       itemDetails: z.string().nullish(),
+      itemType: z.string().nullish(),
       imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {

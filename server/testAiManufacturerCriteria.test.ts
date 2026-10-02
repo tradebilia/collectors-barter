@@ -52,4 +52,11 @@ describe('Test AI manufacturer criteria', () => {
   it('omits zero and ungraded values instead of treating them as grades', () => {
     expect(buildStructuredItemQuery('sports_cards', { year: '1985' }, ['0.0', 'mint'])).toBe('1985 mint');
   });
+
+  it('keeps Year first and orders unopened-product fields after Manufacturer', () => {
+    expect(buildStructuredItemQuery('sports_cards', {
+      year: '2024', manufacturer: 'Topps', sport: 'Hockey', productFormat: 'Box',
+      authentication: 'yes', authenticationCompany: 'BBCE', fromSealedCase: 'yes',
+    })).toBe('2024 Topps Hockey Box BBCE FASC');
+  });
 });
