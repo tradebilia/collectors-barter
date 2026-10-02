@@ -89,11 +89,13 @@ function stableQueryTerms(values: Array<string | null | undefined>): string {
     .slice(0, 240);
 }
 
-function canonicalGrade(value: string | null | undefined): string {
+function canonicalGrade(value: string | null | undefined, gradingCompany = ''): string {
   const normalized = text(value);
   if (!normalized) return '';
   const numeric = Number(normalized);
-  return Number.isFinite(numeric) ? (normalized.includes('.') ? numeric.toFixed(1) : String(numeric)) : normalized;
+  if (!Number.isFinite(numeric)) return normalized;
+  if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
+  return normalized.includes('.') ? numeric.toFixed(1) : String(numeric);
 }
 
 export function getTheCardApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
@@ -117,7 +119,7 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   // applied as structured filters first, then retried without them because
   // eBay records may expose those fields only in the title.
   const query = stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]);
-  const requestedGrade = canonicalGrade(input.grade);
+  const requestedGrade = canonicalGrade(input.grade, gradingCompany);
 
   const sales = new URLSearchParams({
     q: query,
