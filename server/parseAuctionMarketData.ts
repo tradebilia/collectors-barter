@@ -1,5 +1,5 @@
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
-import { buildStructuredItemQuery } from '../shared/testAiCriteria';
+import { buildStructuredItemQuery, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 
 export type ParseAuctionLookupInput = {
   title: string;
@@ -45,7 +45,7 @@ function parseDetails(itemDetails?: string | null): JsonRecord {
 function buildSearchQuery(input: ParseAuctionLookupInput): string {
   const details = parseDetails(input.itemDetails);
   return buildStructuredItemQuery(input.category, details, [
-    input.certificationCompany,
+    resolveTestAiGradingCompany(details, input.certificationCompany ?? ''),
     input.grade,
     input.itemType,
   ]);

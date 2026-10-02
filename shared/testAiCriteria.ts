@@ -8,6 +8,13 @@ export function resolveTestAiManufacturer(itemDetails: unknown): string {
   return manufacturer.toLowerCase() === 'other' ? customManufacturer : manufacturer;
 }
 
+export function resolveTestAiGradingCompany(itemDetails: unknown, fallback = ''): string {
+  const details = parseTestAiDetails(itemDetails);
+  const direct = fallback.trim() || detailText(details, ['gradingCompany', 'certificationCompany']);
+  if (direct.toLowerCase() !== 'other') return direct;
+  return detailText(details, ['customGradingCompany', 'customCertificationCompany']) || direct;
+}
+
 export type TestAiRequestAudit = {
   kind: 'search' | 'certificate' | 'locator' | 'feed' | 'catalog';
   criteria: Array<{ label: string; value: string }>;
@@ -54,7 +61,11 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
             : normalizedCategory === 'stamps'
               ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series']
               : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
-  return [...keys.map((key) => detailText(details, [key])), ...extra.map((value) => String(value ?? '').trim())]
+  const gradingCompany = resolveTestAiGradingCompany(details);
+  return [...keys.map((key) => detailText(details, [key])), gradingCompany, ...extra.map((value) => {
+    const normalized = String(value ?? '').trim();
+    return normalized.toLowerCase() === 'other' && gradingCompany ? gradingCompany : normalized;
+  })]
     .filter(Boolean)
     .filter((value, index, all) => all.indexOf(value) === index)
     .join(' ')

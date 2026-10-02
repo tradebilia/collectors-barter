@@ -17,6 +17,13 @@ describe('HIPStamp market adapter', () => {
     })).toBe('United States C1 24c 1918 PSE 95');
   });
 
+  it('uses the custom grading company when the selected company is Other', () => {
+    expect(buildHipstampQuery({
+      title: 'Custom graded stamp', category: 'stamps', grade: '95', certificationCompany: 'Other',
+      itemDetails: JSON.stringify({ country: 'United States', catalogNumber: 'C1', year: '1918', customGradingCompany: 'Custom Grade' }),
+    })).toBe('United States C1 1918 Custom Grade 95');
+  });
+
   it('normalizes live HIPStamp listing fields and response results', () => {
     const listings = normalizeHipstampResponse({ results: [{
       id: '123',

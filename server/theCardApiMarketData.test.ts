@@ -55,6 +55,20 @@ describe('The Card API Test AI adapter', () => {
     expect(query.catalogPath).toContain('category=trading_card_games');
   });
 
+  it('uses custom grading company when the grading-company field is Other', () => {
+    const query = buildTheCardApiQuery({
+      ...sportsListing,
+      certificationCompany: 'Other',
+      itemDetails: JSON.stringify({
+        year: '1979', manufacturer: 'Topps', player: 'Wayne Gretzky', cardNumber: '18',
+        gradingCompany: 'Other', customGradingCompany: 'KSA',
+      }),
+    });
+    expect(query.identity.gradingCompany).toBe('KSA');
+    expect(query.salesPath).toContain('grader=KSA');
+    expect(query.salesPath).not.toContain('grader=Other');
+  });
+
   it('does not derive a provider query from the listing title when structured fields are absent', () => {
     const query = buildTheCardApiQuery({ title: '1989 Upper Deck Ken Griffey Jr. #1 PSA 10', category: 'sports_cards' });
     expect(query.identityQuery).toBe('');

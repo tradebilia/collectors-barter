@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { buildStructuredItemQuery, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildStructuredItemQuery, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
@@ -635,7 +635,8 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
 function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
-  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [item.grade, item.certificationCompany, item.condition]);
+  const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
+  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [item.grade, gradingCompany, item.condition]);
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>

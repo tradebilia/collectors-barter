@@ -8,6 +8,7 @@ import {
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
 import { extractIdentityState, extractSignatureNames, identityStateConflicts } from './testAiIdentityState';
 import { ENV } from './_core/env';
+import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -290,7 +291,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['year', 'releaseYear', 'issueYear', 'catalogNumber', 'cardNumber', 'edition', 'variant', 'country', 'denomination', 'platform', 'format']));
   }
 
-  if (includeCertification) add(input.certificationCompany ?? '');
+  if (includeCertification) add(resolveTestAiGradingCompany(details, input.certificationCompany ?? ''));
   if (includeGrade) add(formatSearchGrade(input.grade));
   return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
 }

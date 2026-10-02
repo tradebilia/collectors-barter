@@ -1,3 +1,5 @@
+import { parseTestAiDetails, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+
 export type TheCardApiLookupInput = {
   title: string;
   category: string;
@@ -55,8 +57,7 @@ function normalizeCategory(value: string): string {
 }
 
 function parseDetails(itemDetails: string | null | undefined): JsonRecord {
-  if (!itemDetails?.trim()) return {};
-  try { return asRecord(JSON.parse(itemDetails)); } catch { return {}; }
+  return asRecord(parseTestAiDetails(itemDetails));
 }
 
 function firstText(details: JsonRecord, keys: string[]): string {
@@ -111,6 +112,7 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   const variant = firstText(details, ['variant', 'parallel', 'printing', 'edition', 'finish']);
   const year = firstInteger(details, ['year', 'releaseYear', 'cardYear']);
   const sport = firstText(details, ['sport', 'customSport']);
+  const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
   // Keep provider search focused on stable card identity. Grade and grader are
   // applied as structured filters first, then retried without them because
   // eBay records may expose those fields only in the title.
@@ -123,8 +125,8 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
     sort: 'date_desc',
   });
   if (requestedGrade) sales.set('grade', requestedGrade);
-  if (input.certificationCompany?.trim()) sales.set('grader', input.certificationCompany.trim());
-  if (requestedGrade || input.certificationCompany?.trim()) sales.set('graded', 'true');
+  if (gradingCompany) sales.set('grader', gradingCompany);
+  if (requestedGrade || gradingCompany) sales.set('graded', 'true');
 
   const identityFallback = new URLSearchParams({ q: query, limit: String(SALE_LIMIT), sort: 'date_desc' });
 
@@ -139,7 +141,7 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
 
   return {
     category: cardCategory,
-    identity: { subject, setName, cardNumber, manufacturer, variant, year, sport },
+    identity: { subject, setName, cardNumber, manufacturer, variant, year, sport, gradingCompany },
     identityQuery: query,
     salesPath: `/sales?${sales.toString()}`,
     identityFallbackSalesPath: `/sales?${identityFallback.toString()}`,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSportsCardTestAiCriteria, buildStructuredItemQuery, resolveTestAiManufacturer } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildStructuredItemQuery, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '../shared/testAiCriteria';
 
 describe('Test AI manufacturer criteria', () => {
   it('uses Custom Manufacturer rather than the Other placeholder', () => {
@@ -26,5 +26,12 @@ describe('Test AI manufacturer criteria', () => {
       year: '1989', manufacturer: 'Upper Deck', player: 'Ken Griffey Jr.', cardNumber: '1', setName: 'Base',
     }), ['PSA', '10.00'])).toBe('1989 Upper Deck Ken Griffey Jr. 1 Base PSA 10.00');
     expect(buildStructuredItemQuery('sports_cards', JSON.stringify({ year: '1989' }))).toBe('1989');
+  });
+
+  it('replaces Other with the custom grading-company field', () => {
+    const details = { gradingCompany: 'Other', customGradingCompany: 'KSA' };
+    expect(resolveTestAiGradingCompany(details, 'Other')).toBe('KSA');
+    expect(buildStructuredItemQuery('sports_cards', details, ['Other'])).toContain('KSA');
+    expect(buildStructuredItemQuery('sports_cards', details, ['Other'])).not.toContain('Other');
   });
 });

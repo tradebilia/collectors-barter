@@ -18,7 +18,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -820,11 +820,7 @@ export const testAIRouter = router({
       // Build a smart query from item details
       const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
       console.log(`[Query Builder] category="${input.category}", title="${input.title}"`);
-      // If grading company is "Other", use the custom grading company from itemDetails
-      let cert = input.certificationCompany || details.certificationCompany || '';
-      if (cert === 'Other' || !cert) {
-        cert = details.customGradingCompany || cert;
-      }
+      let cert = resolveTestAiGradingCompany(details, input.certificationCompany || details.certificationCompany || '');
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
       const grade = normalizeSearchGrade(input.grade, input.category, cert);
       
@@ -1367,10 +1363,7 @@ export const testAIRouter = router({
 
       // Reuse same query-building logic as getEbayData
       const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
-      let cert = input.certificationCompany || details.certificationCompany || '';
-      if (cert === 'Other' || !cert) {
-        cert = details.customGradingCompany || cert;
-      }
+      let cert = resolveTestAiGradingCompany(details, input.certificationCompany || details.certificationCompany || '');
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
       const grade = normalizeSearchGrade(input.grade, input.category, cert);
 

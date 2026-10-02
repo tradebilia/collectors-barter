@@ -67,6 +67,13 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('X-Men 137 1980 CGC 9.8');
   });
 
+  it('uses the custom grading company when the selected company is Other', () => {
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin', title: 'Wayne Gretzky card', category: 'sports_cards', grade: '9', certificationCompany: 'Other',
+      itemDetails: JSON.stringify({ player: 'Wayne Gretzky', year: '1979', cardNumber: '18', gradingCompany: 'Other', customGradingCompany: 'KSA' }),
+    })).toBe('Wayne Gretzky 1979 18 KSA 9');
+  });
+
   it('preserves camel-case comic series names such as DareDevil in Goldin queries', () => {
     expect(buildGoldinSearchQuery({
       sourceId: 'goldin',
