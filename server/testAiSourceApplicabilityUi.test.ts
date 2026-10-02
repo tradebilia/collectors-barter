@@ -112,6 +112,8 @@ describe('manual Test AI selector boundary', () => {
   it('explains whether each The Card API sale can enter analyzer valuation', () => {
     expect(source).toContain('Analyzer: YES — submitted as a completed-sale candidate');
     expect(source).toContain('NOT direct valuation — grade mismatch');
+    expect(source).toContain('sale has no compatible grade evidence');
+    expect(source).toContain('target is raw/ungraded while sale is graded');
     expect(source).toContain('final identity, date, currency, duplicate, and comparable gates still apply');
   });
 

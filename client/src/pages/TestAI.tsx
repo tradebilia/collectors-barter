@@ -1535,6 +1535,14 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
     const saleTitle = String(sale.title ?? '');
     const saleCompany = String(sale.grader ?? sale.certificationCompany ?? saleTitle.match(/\b(PSA|CGC|BGS|SGC|PCGS|NGC|AFA|WATA|VGA)\b/i)?.[1] ?? '').trim().toUpperCase();
     const saleGrade = Number(sale.grade ?? saleTitle.match(/\b(?:PSA|CGC|BGS|SGC|PCGS|NGC|AFA|WATA|VGA)\s*(?:GEM\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
+    const targetIsGraded = Number.isFinite(targetGrade) && targetGrade > 0;
+    const saleIsGraded = Number.isFinite(saleGrade) && saleGrade > 0;
+    if (targetIsGraded && !saleIsGraded) {
+      return { text: `Analyzer: submitted for evidence, but NOT direct valuation — sale has no compatible grade evidence (target ${targetCompany || 'graded'} ${targetGrade}; sale is raw/ungraded or grade unavailable).`, className: 'text-amber-300' };
+    }
+    if (!targetIsGraded && saleIsGraded) {
+      return { text: `Analyzer: submitted for evidence, but NOT direct valuation — target is raw/ungraded while sale is graded ${saleCompany || ''} ${saleGrade}.`, className: 'text-amber-300' };
+    }
     if (Number.isFinite(targetGrade) && targetGrade > 0 && Number.isFinite(saleGrade) && saleGrade !== targetGrade) {
       return { text: `Analyzer: submitted for evidence, but NOT direct valuation — grade mismatch (target ${targetCompany || 'graded'} ${targetGrade}; sale ${saleCompany || 'graded'} ${saleGrade}).`, className: 'text-amber-300' };
     }
