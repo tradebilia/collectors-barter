@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { getEligibleTestAiSources } from '../shared/testAiSourceApplicability';
+import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY } from '../shared/testAiSourceApplicability';
+import { SANDBOX_SPECIALIST_SOURCES } from '../shared/sandboxSpecialistSources';
 
 describe('internal Test AI source-category applicability policy', () => {
   it('limits grading and marketplace sources to valid categories and certificate prerequisites', () => {
@@ -58,5 +59,17 @@ describe('internal Test AI source-category applicability policy', () => {
       expect(sourceIds, `Goldin should be eligible for ${category}`).toContain('goldin');
       expect(sourceIds, `Weiss should be eligible for ${category}`).toContain('weiss');
     }
+  });
+
+  it('keeps every active specialist source synchronized with the yellow-highlight applicability matrix', () => {
+    for (const specialist of SANDBOX_SPECIALIST_SOURCES) {
+      const applicability = TEST_AI_SOURCE_APPLICABILITY.find((source) => source.sourceId === specialist.id);
+      expect(applicability, `${specialist.id} needs a source-applicability entry`).toBeDefined();
+      for (const category of specialist.categories) {
+        const eligibleIds = getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId);
+        expect(eligibleIds, `${specialist.id} should highlight for ${category}`).toContain(specialist.id);
+      }
+    }
+    expect(getEligibleTestAiSources({ category: 'comics', gradingCompany: 'CGC', hasTitle: true }).map((source) => source.sourceId)).toContain('comic_book_realm');
   });
 });
