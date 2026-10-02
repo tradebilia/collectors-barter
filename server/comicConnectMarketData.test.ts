@@ -124,6 +124,18 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(result.sales[0].publicationYears).toEqual(['1963', '2011']);
   });
 
+  it('matches abbreviated multi-range years such as Amazing Spider-Man 1963-98 and 2003-13', () => {
+    const amazingSpiderMan = {
+      ...input,
+      title: 'The Amazing Spider-Man #238',
+      itemDetails: JSON.stringify({ comicTitle: 'The Amazing Spider-Man', issueNumber: '238', publisher: 'Marvel', year: '1983' }),
+    };
+    const html = '<div class="itempreview"><div class="titleline">AMAZING SPIDER-MAN (1963-98; 2003-13) #238</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 09/26/2026</div><div class="pricing"><span class="val prc">$1,150</span></div></div>';
+    const result = parseComicConnectSoldHtml(html, amazingSpiderMan);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0].publicationYears).toEqual(['1963', '1998', '2003', '2013']);
+  });
+
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
     const result = parseComicConnectSoldHtml(html, input);
     expect(result.status).toBe('success');

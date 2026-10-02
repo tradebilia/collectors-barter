@@ -254,19 +254,25 @@ function comicIdentity(input: ComicConnectLookupInput): { series: string; year: 
   return { series: normalize(series).replace(/\b(19|20)\d{2}\b/g, '').replace(/\s+/g, ' ').trim(), year };
 }
 
-function candidateComicIdentity(title: string): { series: string; years: string[]; range: [number, number] | null } {
+function candidateComicIdentity(title: string): { series: string; years: string[]; ranges: Array<[number, number]> } {
   const raw = normalize(title);
   const years = Array.from(raw.matchAll(/\b(19|20)\d{2}\b/g), match => Number(match[0]));
-  const range = title.match(/\b((?:19|20)\d{2})\s*[-–]\s*((?:19|20)\d{2})\b/);
-  const yearRange = range && Number(range[2]) >= Number(range[1]) && Number(range[2]) - Number(range[1]) <= 100
-    ? [Number(range[1]), Number(range[2])] as [number, number]
-    : null;
+  const ranges: Array<[number, number]> = [];
+  for (const match of title.matchAll(/\b((?:19|20)\d{2})\s*[-–]\s*((?:19|20)\d{2}|\d{2})\b/g)) {
+    const start = Number(match[1]);
+    const endText = match[2];
+    const end = endText.length === 2 ? Math.floor(start / 100) * 100 + Number(endText) : Number(endText);
+    if (end >= start && end - start <= 100) {
+      ranges.push([start, end]);
+      years.push(start, end);
+    }
+  }
   const series = raw
-    .replace(/\b(19|20)\d{2}\b/g, '')
+    .replace(/\b(?:(?:19|20)\d{2}|\d{2})\b/g, '')
     .replace(/\s+\d+(?:\.\d+)?\s*$/, '')
     .replace(/\s+/g, ' ')
     .trim();
-  return { series, years: [...new Set(years)].sort((left, right) => left - right).map(String), range: yearRange };
+  return { series, years: [...new Set(years)].sort((left, right) => left - right).map(String), ranges };
 }
 
 function comicSeriesMatches(target: string, candidate: string): boolean {
@@ -299,7 +305,7 @@ function matchesIdentity(input: ComicConnectLookupInput, title: string, grade: s
     return { matched: false, matchedTokens: [], reason: `Series conflict: target “${targetIdentity.series}”, candidate “${candidateIdentity.series}”.` };
   }
   const targetYearNumber = targetIdentity.year ? Number(targetIdentity.year) : null;
-  const yearInRange = targetYearNumber != null && candidateIdentity.range != null && targetYearNumber >= candidateIdentity.range[0] && targetYearNumber <= candidateIdentity.range[1];
+  const yearInRange = targetYearNumber != null && candidateIdentity.ranges.some(([start, end]) => targetYearNumber >= start && targetYearNumber <= end);
   if (targetIdentity.year && candidateIdentity.years.length && !candidateIdentity.years.includes(targetIdentity.year) && !yearInRange) {
     return { matched: false, matchedTokens: [], reason: `Publication-year conflict: target ${targetIdentity.year}, candidate ${candidateIdentity.years.join(', ')}.` };
   }
