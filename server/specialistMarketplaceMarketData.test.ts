@@ -389,6 +389,16 @@ describe("Comic Book Realm CGC guide context adapter", () => {
       }).url
     ).toBeNull();
   });
+  it("includes issue number when the inventory uses issueNo and comicTitle aliases", () => {
+    expect(buildSpecialistMarketplaceRequest({
+      ...comic,
+      title: "DareDevil 1st Electra",
+      itemDetails: JSON.stringify({ comicTitle: "DareDevil", issueNo: "168", publisher: "Marvel" }),
+    })).toMatchObject({
+      url: "https://comicbookrealm.com/cgc-analyzer/search-results/Dare%20Devil%20168",
+      error: null,
+    });
+  });
   it("selects the exact non-facsimile issue from public search results", () => {
     const searchHtml = `<a href="/cgc-analyzer/comic/id/209295/marvel-comics-x-men-facsimile-edition-137">The X-Men #137 Marvel Comics</a><a href="/cgc-analyzer/comic/id/535/marvel-comics-x-men-137">The X-Men #137 Marvel Comics</a><a href="/cgc-analyzer/comic/id/344706/editions-heritage-x-men-137-french-canadian-edition">X-Men #137 Editions Heritage</a>`;
     expect(resolveComicBookRealmAnalyzerUrl(searchHtml, comic, "https://comicbookrealm.com/cgc-analyzer/search-results/X-Men%20137")).toBe(cbrUrl);

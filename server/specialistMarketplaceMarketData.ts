@@ -130,8 +130,8 @@ const COMIC_BOOK_REALM_CGC_SEARCH_BASE = 'https://comicbookrealm.com/cgc-analyze
 
 function comicBookRealmSearchQuery(input: SpecialistMarketplaceLookupInput): string {
   const details = parseDetails(input.itemDetails);
-  const issue = text(details.issueNumber ?? details.issue ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
-  const series = text(details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, '').trim();
+  const issue = text(details.issueNumber ?? details.issueNo ?? details.issue ?? details.number ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
+  const series = text(details.comicTitle ?? details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, '').trim();
   return `${series || input.title} ${issue}`.replace(/\s+/g, ' ').trim().slice(0, 180);
 }
 
@@ -143,8 +143,8 @@ function comicBookRealmSearchQuery(input: SpecialistMarketplaceLookupInput): str
 export function resolveComicBookRealmAnalyzerUrl(html: string, input: SpecialistMarketplaceLookupInput, requestUrl: string): string | null {
   const document = new JSDOM(html, { url: requestUrl }).window.document;
   const details = parseDetails(input.itemDetails);
-  const issue = text(details.issueNumber ?? details.issue ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
-  const seriesName = normalize(text(details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, ''));
+  const issue = text(details.issueNumber ?? details.issueNo ?? details.issue ?? details.number ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
+  const seriesName = normalize(text(details.comicTitle ?? details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, ''));
   const publisherTokens = significantTokens(text(details.publisher ?? details.publisherName ?? details.manufacturer ?? ''));
   const issuePattern = issue ? new RegExp(`(?:^|[^0-9A-Za-z])${issue.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:$|[^0-9A-Za-z])`, 'i') : null;
   const wantedTokens = significantTokens(text(details.title) || input.title).filter(token => token !== issue.toLowerCase());
