@@ -76,6 +76,14 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.sources[0]?.role).toBe('valuation_candidate');
   });
 
+  it('summarizes only prices submitted to the analyzer', () => {
+    const summary = normalizeTestAiEvidence({ title: 'Barry Sanders Rookie', category: 'sports_cards', grade: '10', certificationCompany: 'PSA' }, [
+      { id: 'the_card_api', label: 'The Card API Sales', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 3, analyzerSubmittedSaleCount: 2, analyzerSubmittedPrices: [100, 300] } },
+    ]);
+
+    expect(summary.marketEvidencePriceSummaries).toEqual(['The Card API Sales: submitted-price summary — 2 sales · average $200 · median $200 · range $100–$300.']);
+  });
+
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {
     const summary = normalizeTestAiEvidence({
       title: '1923 Peace Dollar',

@@ -127,7 +127,7 @@ describe('manual Test AI selector boundary', () => {
 
   it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
     expect(source).toContain('analyzerSubmittedSaleCount');
-    expect(source).toContain('market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: cardApiAnalyzerSubmittedCount(sales)');
-    expect(source).toContain('cardApiAnalyzerSubmittedCount');
+    expect(source).toContain('market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length');
+    expect(source).toContain('cardApiAnalyzerSubmittedSales');
   });
 });

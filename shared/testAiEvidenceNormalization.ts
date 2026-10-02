@@ -23,6 +23,7 @@ export type EvidenceSourceObservation = {
     currentListingCount?: number;
     completedSaleCount?: number;
     analyzerSubmittedSaleCount?: number;
+    analyzerSubmittedPrices?: number[];
     recentSaleCount?: number;
     historicalSaleCount?: number;
     undatedSaleCount?: number;
@@ -60,6 +61,7 @@ export type NormalizedEvidenceSummary = {
   alignedSources: { id: string; label: string; fields: string[] }[];
   reviewFlags: EvidenceReviewFlag[];
   marketEvidence: string[];
+  marketEvidencePriceSummaries?: string[];
   guideAnchors: GuideValueAnchor[];
   sources: { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null }[];
 };
@@ -329,6 +331,15 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
   return parts.length ? `${source.label}: ${parts.join(', ')}.` : null;
 }
 
+function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string | null {
+  const prices = (source.market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0).sort((a, b) => a - b);
+  if (!prices.length) return null;
+  const total = prices.reduce((sum, price) => sum + price, 0);
+  const median = prices.length % 2 === 1 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+  const money = (value: number) => `$${Math.round(value).toLocaleString()}`;
+  return `${source.label}: submitted-price summary — ${prices.length} sale${prices.length === 1 ? '' : 's'} · average ${money(total / prices.length)} · median ${money(median)} · range ${money(prices[0])}–${money(prices[prices.length - 1])}.`;
+}
+
 export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: EvidenceSourceObservation[]): NormalizedEvidenceSummary {
   const category = normalizeCategory(input.category);
   const listingValues = getListingValues(input);
@@ -387,6 +398,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
   }
 
   const marketEvidence = sources.map(compactMarketSummary).filter((entry): entry is string => Boolean(entry));
+  const marketEvidencePriceSummaries = sources.map(compactSubmittedPriceSummary).filter((entry): entry is string => Boolean(entry));
   const evidenceSufficiency = buildP0EvidenceSufficiency({
     completedSaleCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
     askingListingCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
@@ -401,6 +413,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     alignedSources,
     reviewFlags,
     marketEvidence,
+    marketEvidencePriceSummaries,
     guideAnchors,
     sources: sources.map(({ id, label, kind, role, status, message }) => ({ id, label, kind, role: role ?? evidenceRoleForSourceKind(kind), status, message })),
   };

@@ -2030,7 +2030,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     });
   }, [item.id, item.title, discogsCandidates]);
 
-  const cardApiAnalyzerSubmittedCount = (sales: any[]): number => {
+  const cardApiAnalyzerSubmittedSales = (sales: any[]): any[] => {
     const targetGrade = Number(item.grade);
     const targetIsGraded = Number.isFinite(targetGrade) && targetGrade > 0;
     const targetCompany = String(item.certificationCompany ?? item.gradingCompany ?? '').trim().toUpperCase();
@@ -2043,7 +2043,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       if (targetIsGraded !== saleIsGraded) return false;
       if (targetIsGraded && (!saleCompany || saleCompany !== targetCompany || saleGrade !== targetGrade)) return false;
       return true;
-    }).length;
+    });
   };
 
   const summary = useMemo(() => {
@@ -2056,13 +2056,14 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('the_card_api')) {
       const sales = theCardApiData?.sales ?? [];
       const confirmedRecent = sales.filter((sale: any) => sale.confirmed && sale.recency === 'recent').length;
+      const analyzerSubmittedSales = cardApiAnalyzerSubmittedSales(sales);
       add({
         id: 'the_card_api',
         label: 'The Card API Sales',
         kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical',
         role: confirmedRecent > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(theCardApiData),
-        market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: cardApiAnalyzerSubmittedCount(sales), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
+        market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length, analyzerSubmittedPrices: analyzerSubmittedSales.map((sale: any) => Number(sale.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
         fields: { subject: theCardApiData?.catalog?.selected?.candidate?.subject, set: theCardApiData?.catalog?.selected?.candidate?.set_name, cardNumber: theCardApiData?.catalog?.selected?.candidate?.card_number, catalogId: theCardApiData?.catalog?.selected?.candidate?.ucid },
         message: theCardApiData?.messages?.join(' ') ?? null,
       });
@@ -2233,7 +2234,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       {discogsCandidates.length === 1 && <p className="mt-2 text-[9px] text-emerald-100/70">One Discogs candidate returned and is included as reference metadata for this sandbox run.</p>}
     </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
-    {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div>}
+    {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}{summary.marketEvidencePriceSummaries?.length ? <div className="mt-2 border-t border-sky-800/30 pt-2"><p className="text-[9px] font-semibold uppercase text-sky-200">Prices submitted to analyzer</p>{summary.marketEvidencePriceSummaries.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div> : null}</div>}
     {summary.guideAnchors.length > 0 && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Guide-value anchors retained</p>{summary.guideAnchors.map((anchor) => <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} recorded sales{anchor.lastSaleDate ? ` · last sale ${anchor.lastSaleDate}` : ''}. This is blended only as bounded secondary evidence.</p>)}</div>}
     {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
     <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${source.role.replace(/_/g, ' ')} · ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
