@@ -19,6 +19,7 @@ Explicit title extraction is limited to wording such as **â€œSigned by Stan Leeâ
 - Signed target with a candidate signer set that is missing a target signer or contains an additional signer: hard mismatch; it cannot be a perfect identity match.
 - Multiple target signers require exact set equality. Every target signer must be present and no additional candidate signer may be present. The order of names does not matter.
 - Signer normalization handles harmless formatting differences, including common `Mc Farlane` versus `McFarlane` spacing, before exact set comparison. This does not merge different people or allow extra names.
+- For names with at least five characters per corresponding token, one single-character insertion, deletion, or substitution is tolerated as a likely minor typo. Name counts and token counts must still match, signer pairing is one-to-one, and larger or structurally different names remain mismatches.
 
 ## Query behavior
 

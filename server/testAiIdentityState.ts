@@ -58,6 +58,44 @@ function collectSignatureNames(value: unknown): string[] {
   });
 }
 
+function editDistance(left: string, right: string): number {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    let diagonal = previous[0];
+    previous[0] = row;
+    for (let column = 1; column <= right.length; column += 1) {
+      const above = previous[column];
+      previous[column] = left[row - 1] === right[column - 1]
+        ? diagonal
+        : Math.min(diagonal + 1, previous[column] + 1, previous[column - 1] + 1);
+      diagonal = above;
+    }
+  }
+  return previous[right.length];
+}
+
+function signatureNamesEquivalent(left: string, right: string): boolean {
+  if (left === right) return true;
+  const leftTokens = left.split(' ').filter(Boolean);
+  const rightTokens = right.split(' ').filter(Boolean);
+  if (leftTokens.length !== rightTokens.length) return false;
+  return leftTokens.every((token, index) => {
+    const candidate = rightTokens[index] ?? '';
+    return token.length >= 5 && candidate.length >= 5 && editDistance(token, candidate) <= 1;
+  });
+}
+
+function signatureNameSetsEquivalent(targetNames: string[], saleNames: string[]): boolean {
+  if (targetNames.length !== saleNames.length) return false;
+  const remaining = [...saleNames];
+  return targetNames.every((targetName) => {
+    const matchIndex = remaining.findIndex((saleName) => signatureNamesEquivalent(targetName, saleName));
+    if (matchIndex < 0) return false;
+    remaining.splice(matchIndex, 1);
+    return true;
+  });
+}
+
 export function extractSignatureNames(input: { title?: string | null; itemDetails?: string | null }): string[] {
   let details: Record<string, unknown> = {};
   try {
@@ -108,7 +146,7 @@ export function identityStateConflicts(target: IdentityStateSnapshot, sale: Iden
   if (target.autograph === 'unknown' && sale.autograph === 'auto') conflicts.push('sale declares an autograph/signature not declared by target');
   if (compareSignatureNames && target.autograph === 'auto' && sale.autograph === 'auto' && target.signatureNames.length) {
     if (!sale.signatureNames.length) conflicts.push('signature name is not stated');
-    else if (target.signatureNames.length !== sale.signatureNames.length || target.signatureNames.some((name) => !sale.signatureNames.includes(name))) conflicts.push(`signature name set differs (${sale.signatureNames.join(', ')} vs ${target.signatureNames.join(', ')})`);
+    else if (!signatureNameSetsEquivalent(target.signatureNames, sale.signatureNames)) conflicts.push(`signature name set differs (${sale.signatureNames.join(', ')} vs ${target.signatureNames.join(', ')})`);
   }
   if (target.lot !== sale.lot && (target.lot || sale.lot)) conflicts.push('single item versus lot/bundle differs');
   conflicts.push(...sale.negativeSignals.map((signal) => `negative listing signal: ${signal}`));
