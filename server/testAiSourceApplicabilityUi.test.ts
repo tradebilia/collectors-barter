@@ -114,4 +114,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('NOT direct valuation — grade mismatch');
     expect(source).toContain('final identity, date, currency, duplicate, and comparable gates still apply');
   });
+
+  it('shows analyzer-use status for every completed-sale panel family', () => {
+    expect(source).toContain('function AnalyzerUseLine');
+    expect(source).toContain('explicit sold status and price passed the archive gate');
+    expect(source).toContain('active or fixed-price data cannot establish completed-sale valuation');
+    expect(source).toContain('historical or undated data is retained for context');
+    expect(source).toContain('identity mismatch prevents direct valuation');
+  });
 });
