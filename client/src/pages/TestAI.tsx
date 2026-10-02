@@ -637,7 +637,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
   const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
   const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany);
-  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [normalizedGrade, gradingCompany, normalizedGrade ? null : item.condition]);
+  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition]);
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>

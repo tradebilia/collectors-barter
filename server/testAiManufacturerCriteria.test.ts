@@ -40,8 +40,8 @@ describe('Test AI manufacturer criteria', () => {
   });
 
   it('does not append condition when a grading company and grade are present', () => {
-    const query = buildStructuredItemQuery('sports_cards', { year: '1979', manufacturer: 'Other', customManufacturer: 'O-Pee-Chee', player: 'Wayne Gretzky', cardNumber: '18' }, ['9.00', 'PSA']);
-    expect(query).toBe('1979 O-Pee-Chee Wayne Gretzky 18 9.0 PSA');
+    const query = buildStructuredItemQuery('sports_cards', { year: '1979', manufacturer: 'Other', customManufacturer: 'O-Pee-Chee', player: 'Wayne Gretzky', cardNumber: '18' }, ['PSA', '9.00']);
+    expect(query).toBe('1979 O-Pee-Chee Wayne Gretzky 18 PSA 9.0');
     expect(query).not.toContain('mint');
   });
 
