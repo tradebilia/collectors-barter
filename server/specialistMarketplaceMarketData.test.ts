@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildGoldinSearchQuery, buildSpecialistMarketplaceRequest, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
+import { buildGoldinSearchQueries, buildGoldinSearchQuery, buildSpecialistMarketplaceRequest, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
 
 const goldinMarioLotUrl = 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-variation-late-producti9parx';
 const videoGame = {
@@ -41,6 +41,49 @@ describe('bounded specialist marketplace adapters', () => {
       certificationCompany: 'CGC',
       itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publicationYear: '1980', publisher: 'Marvel' }),
     })).toBe('X-Men 137 1980 CGC 9.8');
+    expect(buildGoldinSearchQueries({
+      sourceId: 'goldin',
+      title: 'X-Men #137 CGC 9.8',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publicationYear: '1980' }),
+    })).toEqual([
+      'X-Men 137 1980 CGC 9.8',
+      'X-Men 137 1980',
+      'X-Men 137',
+      'X-Men #137 CGC 9.8',
+    ]);
+  });
+
+  it('falls back to a vaguer Goldin query only after the stricter query returns zero lots', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [{
+        lot_id: 'goldin-xmen-fallback',
+        meta_slug: 'x-men-137-cgc-98-fallback',
+        title: 'X-Men #137 CGC 9.8',
+        status: 'Completed_Sold',
+        current_price: 300,
+        buyer_premium: 20,
+        end_timestamp: '2025-05-08T00:00:00Z',
+      }] } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin',
+      title: 'X-Men #137 CGC 9.8',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publicationYear: '1980' }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string).search.keyword).toBe('X-Men 137 1980');
+    expect(result.sales).toHaveLength(1);
+    expect(result.query).toBe('X-Men 137 1980 CGC 9.8 → X-Men 137 1980');
+    expect(result.messages.join(' ')).toMatch(/checked 2 bounded query variants/i);
   });
 
   it('uses the verified Goldin public sold-search endpoint automatically and preserves direct-lot support', () => {

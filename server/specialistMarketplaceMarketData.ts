@@ -219,9 +219,18 @@ function firstDetail(details: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
+type GoldinQueryOptions = {
+  includeCertification?: boolean;
+  includeGrade?: boolean;
+  includeComicYear?: boolean;
+};
+
 /** Goldin query built from structured identity fields; publisher/manufacturer is intentionally excluded. */
-export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput): string {
+export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, options: GoldinQueryOptions = {}): string {
   const details = parseDetails(input.itemDetails);
+  const includeCertification = options.includeCertification !== false;
+  const includeGrade = options.includeGrade !== false;
+  const includeComicYear = options.includeComicYear !== false;
   const category = normalize(input.category).replace(/_/g, ' ');
   const parts: string[] = [];
   const add = (...values: string[]) => values.forEach((value) => {
@@ -233,7 +242,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput):
     add(firstDetail(details, ['comicTitle', 'series', 'title']) || input.title);
     add(firstDetail(details, ['issueNumber', 'issueNo', 'issue', 'number']));
     // Comic year is an additional query and verification layer, not a publisher substitute.
-    add(firstDetail(details, ['publicationYear', 'year', 'issueYear']));
+    if (includeComicYear) add(firstDetail(details, ['publicationYear', 'year', 'issueYear']));
   } else if (category === 'sports cards') {
     add(firstDetail(details, ['player', 'athlete', 'subject']) || input.title);
     add(firstDetail(details, ['year']), firstDetail(details, ['setName', 'set', 'cardSet']));
@@ -252,8 +261,19 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput):
     add(firstDetail(details, ['year', 'releaseYear', 'issueYear', 'catalogNumber', 'cardNumber', 'edition', 'variant', 'country', 'denomination', 'platform', 'format']));
   }
 
-  add(input.certificationCompany ?? '', input.grade ?? '');
+  if (includeCertification) add(input.certificationCompany ?? '');
+  if (includeGrade) add(input.grade ?? '');
   return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
+}
+
+export function buildGoldinSearchQueries(input: SpecialistMarketplaceLookupInput): string[] {
+  const variants = [
+    buildGoldinSearchQuery(input),
+    buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false }),
+    buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false, includeComicYear: false }),
+    text(input.title).slice(0, 240),
+  ];
+  return [...new Set(variants.filter(Boolean))].slice(0, 4);
 }
 
 function significantTokens(value: string): string[] {
@@ -1029,7 +1049,8 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
 
 async function lookupGoldinPublicSearch(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource('goldin')!;
-  const query = buildGoldinSearchQuery(input);
+  const queries = buildGoldinSearchQueries(input);
+  const query = queries[0] ?? '';
   const empty = {
     source: 'goldin' as const,
     label: source.label,
@@ -1041,35 +1062,58 @@ async function lookupGoldinPublicSearch(input: SpecialistMarketplaceLookupInput)
     recordCap: SOURCE_RULES.goldin!.recordCap,
   };
   if (!query) return { ...empty, status: 'setup_required' as const, messages: ['Goldin automatic search requires an item title.'] };
-  const body = {
-    search: {
-      queryType: 'Highest_Bids',
-      keyword: query,
-      size: empty.recordCap,
-      from: 0,
-      show_only: 'Sold',
-      hasAnalyticsConsent: false,
-    },
-  };
-  try {
-    const response = await fetch(GOLDIN_PUBLIC_SOLD_SEARCH_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0',
+  const errors: string[] = [];
+  for (const [index, candidateQuery] of queries.entries()) {
+    const body = {
+      search: {
+        queryType: 'Highest_Bids',
+        keyword: candidateQuery,
+        size: empty.recordCap,
+        from: 0,
+        show_only: 'Sold',
+        hasAnalyticsConsent: false,
       },
-      body: JSON.stringify(body),
-      redirect: 'error',
-      signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS),
-    });
-    if (!response.ok) return { ...empty, status: 'error' as const, messages: [`Goldin public sold search returned HTTP ${response.status}; no retry, pagination, account access, or workaround was attempted.`] };
-    if (!/json/i.test(response.headers.get('content-type') ?? '')) return { ...empty, status: 'error' as const, messages: ['Goldin public sold search returned an unsupported response type; it was not parsed.'] };
-    return parseGoldinPublicSearchResponse(input, await response.json() as GoldinPublicSearchResponse);
-  } catch (error) {
-    const timedOut = error instanceof Error && error.name === 'TimeoutError';
-    return { ...empty, status: 'error' as const, messages: [timedOut ? 'Goldin public sold search timed out; no retry was attempted.' : 'Goldin public sold search could not be reached; no access workaround was attempted.'] };
+    };
+    try {
+      const response = await fetch(GOLDIN_PUBLIC_SOLD_SEARCH_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0',
+        },
+        body: JSON.stringify(body),
+        redirect: 'error',
+        signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS),
+      });
+      if (!response.ok) {
+        errors.push(`${candidateQuery}: HTTP ${response.status}`);
+        continue;
+      }
+      if (!/json/i.test(response.headers.get('content-type') ?? '')) {
+        errors.push(`${candidateQuery}: unsupported response type`);
+        continue;
+      }
+      const payload = await response.json() as GoldinPublicSearchResponse;
+      const returnedLots = Array.isArray(payload.searchalgolia?.lots) ? payload.searchalgolia!.lots : [];
+      if (returnedLots.length === 0 && index < queries.length - 1) continue;
+      const parsed = parseGoldinPublicSearchResponse(input, payload);
+      return {
+        ...parsed,
+        query: queries.slice(0, index + 1).join(' → '),
+        messages: [`Goldin checked ${index + 1} bounded query variant${index === 0 ? '' : 's'} and used “${candidateQuery}”${index === 0 ? '' : ' after stricter queries returned zero lots'}.`, ...parsed.messages, ...errors],
+      };
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === 'TimeoutError';
+      errors.push(`${candidateQuery}: ${timedOut ? 'timed out' : 'request failed'}`);
+    }
   }
+  return {
+    ...empty,
+    query: queries.join(' → '),
+    status: 'error' as const,
+    messages: [`Goldin checked ${queries.length} bounded query variants but returned no lots. No pagination, account access, or workaround was attempted.`, ...errors],
+  };
 }
 
 async function lookupGoldinPublicLot(input: SpecialistMarketplaceLookupInput, sourceUrl: string): Promise<SpecialistMarketplaceLookupResult> {
