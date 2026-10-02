@@ -270,6 +270,31 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/grade conflicts/i);
   });
 
+  it('rejects a same-grade CGC Signature Series lot when the selected comic is not signed', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ searchalgolia: { lots: [{
+      lot_id: 'goldin-edge-signed',
+      meta_slug: 'edge-spider-verse-2-cgc-signature-series-98',
+      title: 'Edge of Spider-Verse #2 (2014 Marvel) Variant Edition - CGC Signature Series 9.8 - Signed by Stan Lee',
+      status: 'Completed_Sold',
+      current_price: 4500,
+      buyer_premium: 20,
+      end_timestamp: '2025-05-08T00:00:00Z',
+    }] } }), { status: 200, headers: { 'content-type': 'application/json' } })));
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin',
+      title: 'Edge of Spider-Verse #2 CGC 9.8',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'Edge of Spider-Verse', issueNumber: '2', year: '2014', signed: 'No' }),
+    });
+
+    expect(result.sales).toHaveLength(0);
+    expect(result.context[0]).toMatchObject({ grade: '9.8', identityMatched: false });
+    expect(result.context[0]?.exclusionReason).toMatch(/autograph|signature not declared/i);
+  });
+
   it('keeps Goldin’s $425,000 Jordan winning bid in dollars before calculating the $510,000 all-in amount', async () => {
     const jordanRookie = {
       sourceId: 'goldin' as const,

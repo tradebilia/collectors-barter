@@ -464,7 +464,7 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
     extractIdentityState(input),
     extractIdentityState({ title, grade, certificationCompany, condition: null, itemDetails: description }),
   );
-  const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|single item versus lot|negative listing/i.test(reason)) ?? null;
+  const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|single item versus lot|negative listing/i.test(reason)) ?? null;
   return {
     matchedTokens,
     matched: tokenMatch && gradeMatch && !conflict,
