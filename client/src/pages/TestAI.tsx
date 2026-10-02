@@ -1528,6 +1528,7 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
 
   return <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-3 space-y-3">
     <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>📊 The Card API Sales</p>{isLoading && <Spinner className="h-3 w-3" />}</div>
+    <MarketplaceQueryBanner item={item} query={data?.request?.salesPath || data?.query} isLoading={isLoading} />
     <p className="text-[10px] text-gray-500">Read-only completed-sale research. Only individually dated, confirmed final prices that also pass the existing exact/near identity, grading, recency, duplicate, and currency gates may support a sandbox value. Provider catalog data, unconfirmed fast-settle prices, and platform price caveats remain context.</p>
     {data?.messages?.map((message: string) => <p key={message} className="rounded border border-sky-700/30 bg-sky-950/25 p-2 text-[10px] text-sky-100">{message}</p>)}
     {data?.status === 'error' && !data?.messages?.length && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-300">The Card API lookup could not be completed.</p>}

@@ -331,7 +331,7 @@ export async function lookupTheCardApi(input: TheCardApiLookupInput) {
 
   return {
     status: (sales.length ? (catalog.status === 'available' || catalog.status === 'not_found' ? 'success' : 'partial') : 'not_found') as LookupStatus,
-    request,
+    request: usedIdentityFallback ? { ...request, salesPath: request.identityFallbackSalesPath } : request,
     sales,
     catalog: {
       ...catalog,

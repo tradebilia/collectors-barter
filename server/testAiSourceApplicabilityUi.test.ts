@@ -103,4 +103,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('setLeftEvidenceSummary(null)');
     expect(source).toContain('setRightEvidenceSummary(null)');
   });
+
+  it('shows The Card API sales request in the visible query banner', () => {
+    expect(source).toContain('function TheCardApiSection');
+    expect(source).toContain('query={data?.request?.salesPath || data?.query}');
+  });
 });
