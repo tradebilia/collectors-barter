@@ -109,7 +109,9 @@ export function extractSignatureNames(input: { title?: string | null; itemDetail
     const parsed = input.itemDetails ? JSON.parse(input.itemDetails) : {};
     if (parsed && typeof parsed === 'object') details = parsed;
   } catch { /* malformed details remain unknown */ }
-  const explicitKeys = ['signer', 'signers', 'signatureName', 'signatureNames', 'signedBy', 'signedByName', 'autographBy', 'autographNames', 'artistSignature'];
+  // Comics created by Add Inventory persist the individual signer inputs as
+  // `signatures`; retain the broader aliases for older/imported records.
+  const explicitKeys = ['signatures', 'signer', 'signers', 'signatureName', 'signatureNames', 'signedBy', 'signedByName', 'autographBy', 'autographNames', 'artistSignature'];
   const names = explicitKeys.flatMap((key) => collectSignatureNames(details[key]));
   const titleNames = String(input.title ?? '').match(/\b(?:signed|autograph(?:ed)?)\s+by\s+(.+?)(?=\s+[-–—(]|$)/i)?.[1];
   if (titleNames) names.push(...collectSignatureNames(trimSignatureDescription(titleNames)));

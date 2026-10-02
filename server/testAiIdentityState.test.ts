@@ -42,6 +42,14 @@ describe('universal analyzer identity state', () => {
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.8 Signed', 500)).accepted).toBe(false);
   });
 
+  it('reads the comic inventory signatures field instead of relying on the title', () => {
+    const details = JSON.stringify({ signed: 'yes', numberOfSignatures: '2', signatures: ['Stan Lee', 'Todd McFarlane'] });
+    expect(extractSignatureNames({ title: 'Amazing Spider-Man #300 Signed by Stan Lee', itemDetails: details })).toEqual(['stan lee', 'todd mcfarlane']);
+    const target = { title: 'Amazing Spider-Man #300 CGC 9.6 Signed by Stan Lee', category: 'comics', grade: '9.6', certificationCompany: 'CGC', itemDetails: JSON.stringify({ issueNumber: '300', publisher: 'Marvel', signed: 'yes', numberOfSignatures: '2', signatures: ['Stan Lee', 'Todd McFarlane'] }) };
+    expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by Stan Lee and Todd McFarlane', 500)).accepted).toBe(true);
+    expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by Stan Lee', 500)).accepted).toBe(false);
+  });
+
   it('treats common Mc-name spacing as the same signer without relaxing exact signer sets', () => {
     const target = { title: 'Amazing Spider-Man #300 CGC 9.6 Signed', category: 'comics', grade: '9.6', certificationCompany: 'CGC', itemDetails: JSON.stringify({ issueNumber: '300', publisher: 'Marvel', signed: 'Yes', signers: ['Todd McFarlane'] }) };
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by Todd Mc Farlane', 500)).accepted).toBe(true);
