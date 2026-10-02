@@ -48,6 +48,12 @@ describe('universal analyzer identity state', () => {
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by Todd Mc Farlane and Stan Lee', 500)).accepted).toBe(false);
   });
 
+  it('does not attach comic descriptors to a McFarlane signer name', () => {
+    expect(extractSignatureNames({
+      title: 'Amazing Spider-Man #300 Signed by Stan Lee & Todd Mc Farlane First Full Appearance to Venom - CGC 9.6',
+    })).toEqual(['stan lee', 'todd mcfarlane']);
+  });
+
   it('allows one-character signer typos but does not broadly fuzzy-match different people', () => {
     const target = { title: 'Amazing Spider-Man #300 CGC 9.6 Signed', category: 'comics', grade: '9.6', certificationCompany: 'CGC', itemDetails: JSON.stringify({ issueNumber: '300', publisher: 'Marvel', signed: 'Yes', signers: ['David Michelinie'] }) };
     expect(scoreComparable(target, sale('Amazing Spider-Man #300 Marvel CGC 9.6 Signed by David Michelini', 500)).accepted).toBe(true);

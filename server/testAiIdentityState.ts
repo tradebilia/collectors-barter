@@ -58,6 +58,13 @@ function collectSignatureNames(value: unknown): string[] {
   });
 }
 
+function trimSignatureDescription(value: string): string {
+  return value
+    .split(/\s+(?=(?:first|origin|appearance|white pages|off[- ]white|newsstand|direct edition)\b)/i)[0]
+    .replace(/[–—-]\s*$/, '')
+    .trim();
+}
+
 function editDistance(left: string, right: string): number {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
   for (let row = 1; row <= left.length; row += 1) {
@@ -105,7 +112,7 @@ export function extractSignatureNames(input: { title?: string | null; itemDetail
   const explicitKeys = ['signer', 'signers', 'signatureName', 'signatureNames', 'signedBy', 'signedByName', 'autographBy', 'autographNames', 'artistSignature'];
   const names = explicitKeys.flatMap((key) => collectSignatureNames(details[key]));
   const titleNames = String(input.title ?? '').match(/\b(?:signed|autograph(?:ed)?)\s+by\s+(.+?)(?=\s+[-–—(]|$)/i)?.[1];
-  if (titleNames) names.push(...collectSignatureNames(titleNames));
+  if (titleNames) names.push(...collectSignatureNames(trimSignatureDescription(titleNames)));
   return [...new Set(names.map((name) => normalizeSignatureName(name)).filter(Boolean))];
 }
 
