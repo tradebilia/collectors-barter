@@ -22,8 +22,9 @@ type CardsightIdentity = {
 
 const API_BASE = 'https://api.cardsight.ai/v1';
 const CATALOG_LIMIT = 5;
-const PRICING_LIMIT = 25;
-const MARKETPLACE_LIMIT = 20;
+const PRICING_LIMIT = 100;
+const MARKETPLACE_LIMIT = 100;
+const PRICING_PERIODS = 12;
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as JsonRecord : {};
@@ -329,17 +330,21 @@ export async function lookupCardsightAi(input: CardsightLookupInput) {
   }
 
   const parallelParams = new URLSearchParams({ period: '1y', listing_type: 'both', limit: String(PRICING_LIMIT) });
+  const timeseriesParams = new URLSearchParams({ interval: 'month', periods: String(PRICING_PERIODS), listing_type: 'both' });
   const marketplaceParams = new URLSearchParams({ listing_type: 'both', limit: String(MARKETPLACE_LIMIT) });
   if (parallel.status === 'base') {
     parallelParams.set('parallel_id', 'null');
+    timeseriesParams.set('parallel_id', 'null');
     marketplaceParams.set('parallel_id', 'null');
   } else if (parallel.id) {
     parallelParams.set('parallel_id', parallel.id);
+    timeseriesParams.set('parallel_id', parallel.id);
     marketplaceParams.set('parallel_id', parallel.id);
   }
 
-  const [pricing, marketplace, population] = await Promise.all([
+  const [pricing, pricingTimeseries, marketplace, population] = await Promise.all([
     apiGet(`/pricing/${encodeURIComponent(cardId)}?${parallelParams.toString()}`, apiKey),
+    apiGet(`/pricing/${encodeURIComponent(cardId)}/timeseries?${timeseriesParams.toString()}`, apiKey),
     apiGet(`/marketplace/${encodeURIComponent(cardId)}?${marketplaceParams.toString()}`, apiKey),
     apiGet(`/population/card/${encodeURIComponent(cardId)}`, apiKey),
   ]);
@@ -347,19 +352,21 @@ export async function lookupCardsightAi(input: CardsightLookupInput) {
   const activeListings = flattenCardsightMarketplace(marketplace.payload, input);
   const providerMessages = [
     ...extractProviderMessages(pricing.payload),
+    ...extractProviderMessages(pricingTimeseries.payload),
     ...extractProviderMessages(marketplace.payload),
   ];
   const messages = [
     'Cardsight.ai catalog, population, and active listings are source-attributed context only. Only individually dated completed auction records that pass Tradebilia identity, grade/company, recency, duplicate, currency, and visual safeguards can support sandbox valuation.',
     parallel.status === 'base' ? 'The listing has no declared variant / parallel, so this lookup is limited to the provider base-card partition.' : `The lookup is limited to the exact provider parallel: ${parallel.name}.`,
     pricing.error ? `Pricing request: ${pricing.error}` : null,
+    pricingTimeseries.error ? `Pricing time-series request: ${pricingTimeseries.error}` : null,
     marketplace.error ? `Active-market request: ${marketplace.error}` : null,
     population.error ? `Population request: ${population.error}` : null,
     ...providerMessages,
   ].filter((message): message is string => Boolean(message));
 
   return {
-    status: pricing.error && marketplace.error && population.error ? 'partial' as LookupStatus : 'success' as LookupStatus,
+    status: pricing.error && pricingTimeseries.error && marketplace.error && population.error ? 'partial' as LookupStatus : 'success' as LookupStatus,
     request,
     candidates,
     selected,
@@ -368,8 +375,12 @@ export async function lookupCardsightAi(input: CardsightLookupInput) {
     sales,
     activeListings,
     population: { status: population.error ? 'unavailable' as const : 'available' as const, data: populationForTarget(population.payload, parallel, input.certificationCompany), message: population.error, totalPopulation: population.payload?.total_population ?? null },
+    pricingDetails: pricing.payload,
+    pricingTimeseriesDetails: pricingTimeseries.payload,
+    marketplaceDetails: marketplace.payload,
+    populationDetails: population.payload,
     messages,
-    raw: { catalog: catalog.payload, detail: detail.payload, pricing: pricing.payload, marketplace: marketplace.payload, population: population.payload },
-    diagnostics: { pricingStatus: pricing.status, marketplaceStatus: marketplace.status, populationStatus: population.status, pricingLimit: PRICING_LIMIT, marketplaceLimit: MARKETPLACE_LIMIT },
+    raw: { catalog: catalog.payload, detail: detail.payload, pricing: pricing.payload, pricingTimeseries: pricingTimeseries.payload, marketplace: marketplace.payload, population: population.payload },
+    diagnostics: { pricingStatus: pricing.status, pricingTimeseriesStatus: pricingTimeseries.status, marketplaceStatus: marketplace.status, populationStatus: population.status, pricingLimit: PRICING_LIMIT, marketplaceLimit: MARKETPLACE_LIMIT, pricingPeriods: PRICING_PERIODS },
   };
 }

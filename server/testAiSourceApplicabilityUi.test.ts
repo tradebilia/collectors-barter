@@ -131,4 +131,15 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length');
     expect(source).toContain('cardApiAnalyzerSubmittedSales');
   });
+
+  it('exposes full Cardsight pricing, population, marketplace, and time-series details for review', () => {
+    expect(source).toContain('Full pricing details');
+    expect(source).toContain('Pricing time series');
+    expect(source).toContain('Full population details');
+    expect(source).toContain('Full marketplace details');
+    expect(source).toContain('data?.pricingDetails');
+    expect(source).toContain('data?.pricingTimeseriesDetails');
+    expect(source).toContain('data?.populationDetails');
+    expect(source).toContain('data?.marketplaceDetails');
+  });
 });

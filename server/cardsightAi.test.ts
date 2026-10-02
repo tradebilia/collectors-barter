@@ -94,4 +94,16 @@ describe('Cardsight.ai Test AI adapter', () => {
     expect(getCardsightApiKey({ CARDSIGHT_API_KEY: ' cardsight_example ' } as NodeJS.ProcessEnv)).toBe('cardsight_example');
     expect(getCardsightApiKey({} as NodeJS.ProcessEnv)).toBeNull();
   });
+
+  it('keeps full pricing, time-series, marketplace, and population payloads distinct', async () => {
+    const source = await import('node:fs').then((fs) => fs.readFileSync(new URL('./cardsightAi.ts', import.meta.url), 'utf8'));
+    expect(source).toContain('/pricing/${encodeURIComponent(cardId)}?');
+    expect(source).toContain('/pricing/${encodeURIComponent(cardId)}/timeseries?');
+    expect(source).toContain('/marketplace/${encodeURIComponent(cardId)}?');
+    expect(source).toContain('/population/card/${encodeURIComponent(cardId)}');
+    expect(source).toContain('pricingDetails: pricing.payload');
+    expect(source).toContain('pricingTimeseriesDetails: pricingTimeseries.payload');
+    expect(source).toContain('marketplaceDetails: marketplace.payload');
+    expect(source).toContain('populationDetails: population.payload');
+  });
 });
