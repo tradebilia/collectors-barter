@@ -24,7 +24,7 @@ describe('Test AI manufacturer criteria', () => {
   it('builds a title-independent structured query from stored fields', () => {
     expect(buildStructuredItemQuery('sports_cards', JSON.stringify({
       year: '1989', manufacturer: 'Upper Deck', player: 'Ken Griffey Jr.', cardNumber: '1', setName: 'Base',
-    }), ['PSA', '10.00'])).toBe('1989 Upper Deck Ken Griffey Jr. 1 Base PSA 10.00');
+    }), ['PSA', '10.00'])).toBe('1989 Upper Deck Ken Griffey Jr. 1 Base PSA 10.0');
     expect(buildStructuredItemQuery('sports_cards', JSON.stringify({ year: '1989' }))).toBe('1989');
   });
 
@@ -33,5 +33,9 @@ describe('Test AI manufacturer criteria', () => {
     expect(resolveTestAiGradingCompany(details, 'Other')).toBe('KSA');
     expect(buildStructuredItemQuery('sports_cards', details, ['Other'])).toContain('KSA');
     expect(buildStructuredItemQuery('sports_cards', details, ['Other'])).not.toContain('Other');
+  });
+
+  it('normalizes a two-decimal grade to one decimal in the structured query', () => {
+    expect(buildStructuredItemQuery('sports_cards', { year: '1979' }, ['9.00'])).toBe('1979 9.0');
   });
 });

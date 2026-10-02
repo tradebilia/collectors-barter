@@ -243,7 +243,7 @@ function formatSearchGrade(value: unknown): string {
   const grade = text(value).trim();
   if (!/^\d+(?:\.\d+)?$/.test(grade)) return grade;
   const numeric = Number(grade);
-  return Number.isFinite(numeric) ? String(numeric) : grade;
+  return Number.isFinite(numeric) ? (grade.includes('.') ? numeric.toFixed(1) : String(numeric)) : grade;
 }
 
 type GoldinQueryOptions = {

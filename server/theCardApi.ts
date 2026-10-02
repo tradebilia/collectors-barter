@@ -93,7 +93,7 @@ function canonicalGrade(value: string | null | undefined): string {
   const normalized = text(value);
   if (!normalized) return '';
   const numeric = Number(normalized);
-  return Number.isFinite(numeric) ? String(numeric) : normalized;
+  return Number.isFinite(numeric) ? (normalized.includes('.') ? numeric.toFixed(1) : String(numeric)) : normalized;
 }
 
 export function getTheCardApiKey(env: NodeJS.ProcessEnv = process.env): string | null {

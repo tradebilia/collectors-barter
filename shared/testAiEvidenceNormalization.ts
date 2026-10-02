@@ -231,7 +231,7 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
   const base: Record<string, string> = {
     title: text(input.title),
     grade: text(input.grade),
-    certificationCompany: text(input.certificationCompany),
+    certificationCompany: resolveTestAiGradingCompany(details, text(input.certificationCompany)),
   };
 
   const mappings: Record<string, string[]> = {
@@ -427,3 +427,4 @@ ${sufficiency}
 Guide-value anchors: ${guides}
 Rule: Dated completed sales remain primary evidence. A validated exact-grade guide anchor may influence the deterministic value only through the server-capped secondary weighting contract; it is never treated as a dated sale. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this validated guide-anchor contract, and do not use historical or undated records as current-value averages.`;
 }
+import { resolveTestAiGradingCompany } from './testAiCriteria';

@@ -129,7 +129,7 @@ function normalizeSearchGrade(value: string | undefined, category: string, certi
     return normalized.replace(/\s+/g, '').toUpperCase();
   }
   const parsedGrade = parseFloat(normalized);
-  return Number.isFinite(parsedGrade) && parsedGrade > 0 ? String(parsedGrade) : null;
+  return Number.isFinite(parsedGrade) && parsedGrade > 0 ? (normalized.includes('.') ? parsedGrade.toFixed(1) : String(parsedGrade)) : null;
 }
 
 export function extractGradeFromQuery(query: string): ExtractedGrade | null {

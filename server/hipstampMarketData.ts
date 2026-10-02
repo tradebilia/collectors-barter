@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { classifyStampFormat, classifyStampListing, stampFormatsCompatible, type StampFormatProfile } from './stampFormat';
-import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { normalizeTestAiGrade, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 
 export type HipstampLookupInput = {
   title: string;
@@ -164,7 +164,7 @@ export function buildHipstampQuery(input: HipstampLookupInput): string {
   ].filter(Boolean);
 
   const cert = resolveTestAiGradingCompany(details, text(input.certificationCompany));
-  const grade = text(input.grade);
+  const grade = normalizeTestAiGrade(input.grade);
   if (cert && grade) parts.push(cert, grade);
   else if (grade) parts.push(grade);
 

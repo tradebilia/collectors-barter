@@ -50,7 +50,10 @@ export function normalizeTestAiSelectedItem<T extends TestAiSelectedItemInput>(i
     if (variant) details.variant = variant;
   }
   const certId = firstText(item.certId, item.certNumber, item.certificationNumber, item.certificateNumber, details.certId, details.certNumber, details.certificationNumber, details.certificateNumber);
-  const gradingCompany = firstText(item.certificationCompany, item.gradingCompany, details.certificationCompany, details.gradingCompany, details.customGradingCompany);
+  const gradingCompany = resolveTestAiGradingCompany(
+    details,
+    firstText(item.certificationCompany, item.gradingCompany, details.certificationCompany, details.gradingCompany),
+  );
 
   return {
     ...item,
@@ -61,3 +64,4 @@ export function normalizeTestAiSelectedItem<T extends TestAiSelectedItemInput>(i
     itemDetails: JSON.stringify(details),
   } as T & { year?: string; certId?: string; certificationCompany?: string; gradingCompany?: string; itemDetails: string };
 }
+import { resolveTestAiGradingCompany } from './testAiCriteria';
