@@ -124,4 +124,10 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('historical or undated data is retained for context');
     expect(source).toContain('identity mismatch prevents direct valuation');
   });
+
+  it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
+    expect(source).toContain('analyzerSubmittedSaleCount');
+    expect(source).toContain('market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: cardApiAnalyzerSubmittedCount(sales)');
+    expect(source).toContain('cardApiAnalyzerSubmittedCount');
+  });
 });

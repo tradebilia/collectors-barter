@@ -22,6 +22,7 @@ export type EvidenceSourceObservation = {
   market?: {
     currentListingCount?: number;
     completedSaleCount?: number;
+    analyzerSubmittedSaleCount?: number;
     recentSaleCount?: number;
     historicalSaleCount?: number;
     undatedSaleCount?: number;
@@ -321,6 +322,7 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
   const parts: string[] = [];
   if (market.currentListingCount) parts.push(`${market.currentListingCount} current asking listing${market.currentListingCount === 1 ? '' : 's'}`);
   if (market.completedSaleCount) parts.push(`${market.completedSaleCount} completed sale${market.completedSaleCount === 1 ? '' : 's'}`);
+  if (market.analyzerSubmittedSaleCount != null) parts.push(`${market.analyzerSubmittedSaleCount} submitted to analyzer`);
   if (market.recentSaleCount) parts.push(`${market.recentSaleCount} recent sale${market.recentSaleCount === 1 ? '' : 's'}`);
   if (market.historicalSaleCount) parts.push(`${market.historicalSaleCount} historical record${market.historicalSaleCount === 1 ? '' : 's'}`);
   if (market.undatedSaleCount) parts.push(`${market.undatedSaleCount} undated record${market.undatedSaleCount === 1 ? '' : 's'}`);

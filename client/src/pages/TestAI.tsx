@@ -2030,6 +2030,22 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     });
   }, [item.id, item.title, discogsCandidates]);
 
+  const cardApiAnalyzerSubmittedCount = (sales: any[]): number => {
+    const targetGrade = Number(item.grade);
+    const targetIsGraded = Number.isFinite(targetGrade) && targetGrade > 0;
+    const targetCompany = String(item.certificationCompany ?? item.gradingCompany ?? '').trim().toUpperCase();
+    return sales.filter((sale: any) => {
+      if (!sale.confirmed || sale.recency !== 'recent') return false;
+      const title = String(sale.title ?? '');
+      const saleCompany = String(sale.grader ?? sale.certificationCompany ?? title.match(/\b(PSA|CGC|BGS|SGC|PCGS|NGC|AFA|WATA|VGA)\b/i)?.[1] ?? '').trim().toUpperCase();
+      const saleGrade = Number(sale.grade ?? title.match(/\b(?:PSA|CGC|BGS|SGC|PCGS|NGC|AFA|WATA|VGA)\s*(?:GEM\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
+      const saleIsGraded = Number.isFinite(saleGrade) && saleGrade > 0;
+      if (targetIsGraded !== saleIsGraded) return false;
+      if (targetIsGraded && (!saleCompany || saleCompany !== targetCompany || saleGrade !== targetGrade)) return false;
+      return true;
+    }).length;
+  };
+
   const summary = useMemo(() => {
     const observations: EvidenceSourceObservation[] = [];
     const add = (observation: EvidenceSourceObservation) => observations.push(observation);
@@ -2046,7 +2062,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical',
         role: confirmedRecent > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(theCardApiData),
-        market: { completedSaleCount: confirmedRecent, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
+        market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: cardApiAnalyzerSubmittedCount(sales), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
         fields: { subject: theCardApiData?.catalog?.selected?.candidate?.subject, set: theCardApiData?.catalog?.selected?.candidate?.set_name, cardNumber: theCardApiData?.catalog?.selected?.candidate?.card_number, catalogId: theCardApiData?.catalog?.selected?.candidate?.ucid },
         message: theCardApiData?.messages?.join(' ') ?? null,
       });
