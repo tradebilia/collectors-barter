@@ -254,21 +254,27 @@ function comicIdentity(input: ComicConnectLookupInput): { series: string; year: 
   return { series: normalize(series).replace(/\b(19|20)\d{2}\b/g, '').replace(/\s+/g, ' ').trim(), year };
 }
 
-function candidateComicIdentity(title: string): { series: string; years: string[] } {
+function candidateComicIdentity(title: string): { series: string; years: string[]; range: [number, number] | null } {
   const raw = normalize(title);
-  const years = new Set(Array.from(raw.matchAll(/\b(19|20)\d{2}\b/g), match => Number(match[0])));
+  const years = Array.from(raw.matchAll(/\b(19|20)\d{2}\b/g), match => Number(match[0]));
   const range = title.match(/\b((?:19|20)\d{2})\s*[-–]\s*((?:19|20)\d{2})\b/);
-  if (range) {
-    const start = Number(range[1]);
-    const end = Number(range[2]);
-    if (end >= start && end - start <= 25) for (let year = start; year <= end; year += 1) years.add(year);
-  }
+  const yearRange = range && Number(range[2]) >= Number(range[1]) && Number(range[2]) - Number(range[1]) <= 100
+    ? [Number(range[1]), Number(range[2])] as [number, number]
+    : null;
   const series = raw
     .replace(/\b(19|20)\d{2}\b/g, '')
     .replace(/\s+\d+(?:\.\d+)?\s*$/, '')
     .replace(/\s+/g, ' ')
     .trim();
-  return { series, years: [...years].sort((left, right) => left - right).map(String) };
+  return { series, years: [...new Set(years)].sort((left, right) => left - right).map(String), range: yearRange };
+}
+
+function comicSeriesMatches(target: string, candidate: string): boolean {
+  if (target === candidate) return true;
+  // Some catalogs shorten a canonical series name, e.g. “Uncanny X-Men” to
+  // “X-Men”. Accept that suffix alias, but never accept a longer subtitle such
+  // as “Star Wars: Knights of the Old Republic” for “Star Wars”.
+  return target.endsWith(` ${candidate}`) && candidate.split(' ').length >= 2;
 }
 
 function explicitGrade(value: string): string | null {
@@ -289,10 +295,12 @@ function matchesIdentity(input: ComicConnectLookupInput, title: string, grade: s
   if (targetDistribution === 'newsstand' && /\bdirect(?: market)?\b/.test(candidateText)) return { matched: false, matchedTokens: [], reason: 'Distribution conflict: target is Newsstand, candidate is Direct.' };
   const targetIdentity = comicIdentity(input);
   const candidateIdentity = candidateComicIdentity(title);
-  if (targetIdentity.series && candidateIdentity.series !== targetIdentity.series) {
+  if (targetIdentity.series && !comicSeriesMatches(targetIdentity.series, candidateIdentity.series)) {
     return { matched: false, matchedTokens: [], reason: `Series conflict: target “${targetIdentity.series}”, candidate “${candidateIdentity.series}”.` };
   }
-  if (targetIdentity.year && candidateIdentity.years.length && !candidateIdentity.years.includes(targetIdentity.year)) {
+  const targetYearNumber = targetIdentity.year ? Number(targetIdentity.year) : null;
+  const yearInRange = targetYearNumber != null && candidateIdentity.range != null && targetYearNumber >= candidateIdentity.range[0] && targetYearNumber <= candidateIdentity.range[1];
+  if (targetIdentity.year && candidateIdentity.years.length && !candidateIdentity.years.includes(targetIdentity.year) && !yearInRange) {
     return { matched: false, matchedTokens: [], reason: `Publication-year conflict: target ${targetIdentity.year}, candidate ${candidateIdentity.years.join(', ')}.` };
   }
   if (!targetIdentity.year && candidateIdentity.years.length) {

@@ -111,6 +111,19 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(result.sales[0].publicationYears).toEqual(['1977', '1978']);
   });
 
+  it('accepts X-Men as a catalog alias for Uncanny X-Men when the year range contains the target year', () => {
+    const uncanny = {
+      ...input,
+      title: 'Uncanny X-Men #137',
+      itemDetails: JSON.stringify({ comicTitle: 'Uncanny X-Men', issueNumber: '137', publisher: 'Marvel', year: '1980' }),
+    };
+    const html = '<div class="itempreview"><div class="titleline">X-MEN (1963-2011) #137</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 09/26/2026</div><div class="pricing"><span class="val prc">$305</span></div></div>';
+    const result = parseComicConnectSoldHtml(html, uncanny);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0].targetPublicationYear).toBe('1980');
+    expect(result.sales[0].publicationYears).toEqual(['1963', '2011']);
+  });
+
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
     const result = parseComicConnectSoldHtml(html, input);
     expect(result.status).toBe('success');
