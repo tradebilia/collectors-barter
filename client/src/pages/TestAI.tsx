@@ -426,6 +426,16 @@ function SourceSelector({ enabled, onChange, side, item }: {
                       : source.liveTestStatus === 'deferred'
                         ? 'deferred by owner'
                         : 'permission pending';
+                const applicableFillClassName = isEnabled
+                  ? 'bg-green-900/40 text-green-300'
+                  : 'bg-yellow-900/20 text-yellow-200';
+                const applicableResultBorderClassName = testResult === 'match'
+                  ? 'border-green-400 ring-1 ring-green-400/30'
+                  : testResult === 'mismatch'
+                    ? 'border-red-400 ring-1 ring-red-400/30'
+                    : isEnabled
+                      ? 'border-yellow-400 ring-1 ring-yellow-400/30'
+                      : 'border-yellow-400 ring-1 ring-yellow-400/20';
                 const sourceClassName = isDeferred
                   ? 'cursor-not-allowed border-slate-700 bg-slate-950/50 text-slate-500 opacity-65'
                   : isPermissionPending
@@ -433,13 +443,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
                     ? 'cursor-not-allowed border-orange-500/70 bg-orange-950/30 text-orange-200 opacity-90'
                     : 'cursor-not-allowed border-orange-900/50 bg-gray-900/40 text-gray-500 opacity-70'
                   : isApplicable
-                  ? testResult === 'match'
-                    ? 'bg-green-900/40 border-green-400 text-green-200 ring-1 ring-green-400/30'
-                    : testResult === 'mismatch'
-                    ? 'bg-red-900/40 border-red-400 text-red-200 ring-1 ring-red-400/30'
-                    : isEnabled
-                      ? 'bg-green-900/40 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/30'
-                      : 'bg-yellow-900/20 border-yellow-400 text-yellow-200 ring-1 ring-yellow-400/20'
+                  ? `${applicableFillClassName} ${applicableResultBorderClassName}`
                   : isEnabled
                     ? isLive
                       ? 'bg-green-900/40 border-green-600 text-green-300'
