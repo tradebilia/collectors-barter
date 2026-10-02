@@ -244,6 +244,27 @@ function issueTokens(input: ComicConnectLookupInput): string[] {
   return Array.from(new Set(normalize(`${details.comicTitle ?? ''} ${input.title}`).split(' ').filter((token) => token.length >= 3 && !['the', 'comic', 'comics', 'cgc', 'marvel', 'dc'].includes(token))));
 }
 
+function comicIdentity(input: ComicConnectLookupInput): { series: string; year: string | null } {
+  const details = parseDetails(input.itemDetails);
+  const series = text(details.comicTitle ?? details.series ?? input.title)
+    .replace(/\s*#\s*[0-9A-Za-z-]+.*$/i, '')
+    .replace(/\s+(?:CGC|CBCS|PSA|BGS|SGC)\b.*$/i, '')
+    .trim();
+  const year = text(details.year ?? details.publicationYear ?? details.originalReleaseYear).match(/\b(19|20)\d{2}\b/)?.[0] ?? null;
+  return { series: normalize(series).replace(/\b(19|20)\d{2}\b/g, '').replace(/\s+/g, ' ').trim(), year };
+}
+
+function candidateComicIdentity(title: string): { series: string; years: string[] } {
+  const raw = normalize(title);
+  const years = Array.from(raw.matchAll(/\b(19|20)\d{2}\b/g), match => match[0]);
+  const series = raw
+    .replace(/\b(19|20)\d{2}\b/g, '')
+    .replace(/\s+\d+(?:\.\d+)?\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return { series, years };
+}
+
 function explicitGrade(value: string): string | null {
   const match = value.match(/(?:CGC|CBCS|PSA|BGS|SGC)?\s*(\d+(?:\.\d+)?)/i);
   if (!match?.[1]) return null;
@@ -260,6 +281,17 @@ function matchesIdentity(input: ComicConnectLookupInput, title: string, grade: s
   const targetDistribution = text(details.distributionType || details.distribution || details.DistributionType).toLowerCase();
   if (targetDistribution === 'direct' && /\bnewsstand\b/.test(candidateText)) return { matched: false, matchedTokens: [], reason: 'Distribution conflict: target is Direct, candidate is Newsstand.' };
   if (targetDistribution === 'newsstand' && /\bdirect(?: market)?\b/.test(candidateText)) return { matched: false, matchedTokens: [], reason: 'Distribution conflict: target is Newsstand, candidate is Direct.' };
+  const targetIdentity = comicIdentity(input);
+  const candidateIdentity = candidateComicIdentity(title);
+  if (targetIdentity.series && candidateIdentity.series !== targetIdentity.series) {
+    return { matched: false, matchedTokens: [], reason: `Series conflict: target “${targetIdentity.series}”, candidate “${candidateIdentity.series}”.` };
+  }
+  if (targetIdentity.year && candidateIdentity.years.length && !candidateIdentity.years.includes(targetIdentity.year)) {
+    return { matched: false, matchedTokens: [], reason: `Publication-year conflict: target ${targetIdentity.year}, candidate ${candidateIdentity.years.join(', ')}.` };
+  }
+  if (!targetIdentity.year && candidateIdentity.years.length) {
+    return { matched: false, matchedTokens: [], reason: `Publication year ${candidateIdentity.years.join(', ')} is not confirmed for the selected comic.` };
+  }
   const candidate = normalize(`${title} ${grade}`);
   const tokens = issueTokens(input);
   const matchedTokens = tokens.filter((token) => candidate.includes(token));

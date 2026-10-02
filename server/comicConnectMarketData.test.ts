@@ -82,6 +82,23 @@ describe('ComicConnect bounded sold adapter', () => {
     expect(result.sales[0].exclusionReason).toContain('buyer-premium');
   });
 
+  it('rejects subtitle series and conflicting publication-year Star Wars issues', () => {
+    const starWars = {
+      ...input,
+      title: 'Star Wars #1',
+      itemDetails: JSON.stringify({ comicTitle: 'Star Wars', issueNumber: '1', publisher: 'Marvel', year: '1977' }),
+    };
+    const mixedHtml = `
+      <div class="itempreview"><div class="titleline">STAR WARS: KNIGHTS OF THE OLD REPUBLIC #1</div><div class="grade">Dark Horse NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 10/28/2025</div><div class="pricing"><span class="val prc">$8</span></div></div>
+      <div class="itempreview"><div class="titleline">STAR WARS (2015) #1</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 09/26/2026</div><div class="pricing"><span class="val prc">$380</span></div></div>
+      <div class="itempreview"><div class="titleline">STAR WARS #1</div><div class="grade">Marvel CGC NM/M: 9.8</div><div class="endednotice">Sold on Tuesday, 09/26/2026</div><div class="pricing"><span class="val prc">$194</span></div></div>`;
+    const result = parseComicConnectSoldHtml(mixedHtml, starWars);
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0].title).toBe('STAR WARS #1');
+    expect(result.context.find(record => record.title.includes('KNIGHTS'))?.exclusionReason).toContain('Series conflict');
+    expect(result.context.find(record => record.title.includes('(2015)'))?.exclusionReason).toContain('Publication-year conflict');
+  });
+
   it('parses records, keeps only identity-matched completed records in sales, and preserves exclusions as context', () => {
     const result = parseComicConnectSoldHtml(html, input);
     expect(result.status).toBe('success');
