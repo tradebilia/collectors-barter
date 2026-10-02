@@ -545,6 +545,7 @@ const testAiEvidenceSummarySchema = z.object({
   alignedSources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), fields: z.array(z.string().max(120)).max(20) })).max(20),
   reviewFlags: z.array(z.object({ kind: z.enum(['material', 'context', 'coverage']), sourceId: z.string().max(80).optional(), sourceLabel: z.string().max(120).optional(), field: z.string().max(120).optional(), message: z.string().max(600) })).max(30),
   marketEvidence: z.array(z.string().max(600)).max(20),
+  guideAnchors: z.array(z.object({ sourceId: z.string().max(80), sourceLabel: z.string().max(120), grade: z.string().max(40), value: z.number().positive().max(10_000_000), recordedSales: z.number().int().nonnegative().nullable(), lastSaleDate: z.string().max(80).nullable(), totalRecordedSales: z.number().int().nonnegative().nullable() })).max(5),
   sources: z.array(z.object({ id: z.string().max(80), label: z.string().max(120), kind: z.enum(['market_current', 'market_completed', 'market_historical', 'certification', 'reference']), role: z.enum(['valuation_candidate', 'asking_price_context', 'historical_context', 'certification_context', 'reference_context']), status: z.enum(['success', 'not_found', 'error', 'idle']), message: z.string().max(600).nullable().optional() })).max(30),
 });
 

@@ -1949,6 +1949,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const sgcQuery = trpc.testAI.getSgcData.useQuery({ certNumber }, { enabled: enabledSources.has('sgc') && !!certNumber });
   const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && isCgcCompany(item.gradingCompany) && !!certNumber });
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
+  const comicBookRealmQuery = trpc.testAI.getSpecialistMarketplaceData.useQuery({ sourceId: 'comic_book_realm', title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined, itemDetails: item.itemDetails ?? undefined, sourceUrl: undefined }, { enabled: enabledSources.has('comic_book_realm') && item.category === 'comics' && !!item.title, retry: false });
   const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title, itemDetails: marketItem.itemDetails }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
   const discogsCandidates = useMemo(() => discogsQuery.data?.data?.results ?? [], [discogsQuery.data]);
 
@@ -2030,6 +2031,21 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const sales = pwccQuery.data?.data?.items ?? [];
       add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: pwccQuery.data?.message ?? null });
     }
+    if (enabledSources.has('comic_book_realm')) {
+      const guideRows = comicBookRealmQuery.data?.guideRows ?? [];
+      const exactGrade = guideRows.find((row: any) => String(row.grade) === String(item.grade)) ?? guideRows.find((row: any) => Number(row.grade) === Number(item.grade));
+      const guideFields = exactGrade && Number(exactGrade.estimatedValue) > 0 ? { guideGrade: exactGrade.grade, guideValue: Number(exactGrade.estimatedValue), guideRecordedSales: exactGrade.recordedSales, guideLastSaleDate: exactGrade.lastSaleDate, guideTotalRecordedSales: comicBookRealmQuery.data?.guideSummary?.totalRecordedSales } : undefined;
+      add({
+        id: 'comic_book_realm',
+        label: 'Comic Book Realm CGC Analyzer',
+        kind: 'market_historical',
+        role: 'historical_context',
+        status: evidenceStatus(comicBookRealmQuery.data),
+        market: { historicalSaleCount: guideRows.reduce((sum: number, row: any) => sum + (Number(row.recordedSales) || 0), 0) },
+        fields: guideFields,
+        message: comicBookRealmQuery.data?.messages?.join(' ') ?? null,
+      });
+    }
     if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
     if (enabledSources.has('pricecharting')) {
       const priceData = priceChartingQuery.data ?? priceChartingCoinQuery.data ?? priceChartingVideoGameQuery.data ?? priceChartingSlugQuery.data;
@@ -2075,7 +2091,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, historicalSaleCount: auctions.length - dated.length, undatedSaleCount: auctions.filter((auction: any) => !auction.date).length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -2132,6 +2148,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
     {summary.marketEvidence.length > 0 && <div className="rounded bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Market evidence classification</p>{summary.marketEvidence.map((entry) => <p key={entry} className="mt-1 text-[10px] text-gray-300">{entry}</p>)}</div>}
+    {summary.guideAnchors.length > 0 && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Guide-value anchors retained</p>{summary.guideAnchors.map((anchor) => <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} recorded sales{anchor.lastSaleDate ? ` · last sale ${anchor.lastSaleDate}` : ''}. This is blended only as bounded secondary evidence.</p>)}</div>}
     {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
     <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${source.role.replace(/_/g, ' ')} · ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
   </section>;

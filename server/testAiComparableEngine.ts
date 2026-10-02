@@ -190,6 +190,10 @@ export interface MarketProfile {
   typicalBand: { low: number | null; high: number | null; supported: boolean };
   /** Robust primary center: median of the accepted, post-policy sale population. */
   primaryValue: number | null;
+  /** Exact-grade guide estimate blended as a capped secondary anchor; never a sale count. */
+  guideAnchorValue: number | null;
+  guideAnchorWeightPct: number;
+  guideAdjustedValue: number | null;
   /** Kept as a recency-sensitive diagnostic; never the primary valuation center. */
   weightedValue: number | null;
   median: number | null;
@@ -1887,6 +1891,7 @@ export function buildMarketProfile(
   aggregateMetrics?: { median?: number; min?: number; max?: number; count?: number; confidence?: ConfidenceLevel } | null,
   now = new Date(),
   identityGate?: ComparableIdentityGate | null,
+  guideAnchor?: { value: number; grade?: string | null; recordedSales?: number | null; lastSaleDate?: string | null } | null,
 ): MarketProfile {
   const nowMs = now.getTime();
   const selection = selectBalancedComparableSales(target, sales, now, MAX_VALUATION_COMPARABLES);
@@ -1990,6 +1995,16 @@ export function buildMarketProfile(
   }, 0);
   const weightedValue = weightedDenominator > 0 ? Math.round(filtered.reduce((sum, { match }) => sum + match.price * match.weight, 0) / weightedDenominator) : null;
   const primaryValue = median !== null ? Math.round(median) : null;
+  const guideAnchorValue = guideAnchor && Number.isFinite(guideAnchor.value) && guideAnchor.value > 0 ? Math.round(guideAnchor.value) : null;
+  // Guide estimates are not dated sales. They receive a capped secondary
+  // weight based only on the amount of accepted sale evidence: 5% with a
+  // well-supported sample, 10% with a preliminary 3–4-sale sample, and 15%
+  // when one or two sales are present. They never raise evidence quality or
+  // satisfy the completed-sale thresholds on their own.
+  const guideAnchorWeightPct = guideAnchorValue === null ? 0 : accepted.length >= 5 ? 5 : accepted.length >= 3 ? 10 : accepted.length > 0 ? 15 : 0;
+  const guideAdjustedValue = primaryValue !== null && guideAnchorWeightPct > 0
+    ? Math.round(primaryValue * (1 - guideAnchorWeightPct / 100) + guideAnchorValue! * (guideAnchorWeightPct / 100))
+    : primaryValue;
   const minimum = filtered.length ? Math.round(Math.min(...filtered.map(({ match }) => match.price))) : null;
   const maximum = filtered.length ? Math.round(Math.max(...filtered.map(({ match }) => match.price))) : null;
   const spreadPct = primaryValue && minimum !== null && maximum !== null ? Math.round(((maximum - minimum) / primaryValue) * 100) : null;
@@ -2028,6 +2043,8 @@ export function buildMarketProfile(
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
+  if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The exact-grade Comic Book Realm guide anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% as secondary context; it was not treated as a dated sale.`);
+  if (guideAnchorValue !== null && guideAnchorWeightPct === 0) valuationWarnings.push(`The exact-grade guide anchor of $${guideAnchorValue.toLocaleString()} was retained in the audit but did not change the value because no accepted completed-sale sample exists.`);
   if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
   if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);
   if (selectedAcceptedWithAge.length > 0 && selectedAcceptedWithAge.length < 5) valuationWarnings.push('IQR outlier filtering was not applied because fewer than five selected completed sales are available.');
@@ -2073,9 +2090,12 @@ export function buildMarketProfile(
     outlierExcludedCount ? `${outlierExcludedCount} price outlier${outlierExcludedCount === 1 ? '' : 's'} was withheld from the deterministic value.` : flaggedSmallSampleOutliers.size ? `${flaggedSmallSampleOutliers.size} suspicious price tail${flaggedSmallSampleOutliers.size === 1 ? '' : 's'} remains in the small-sample review set.` : 'No selected price was withheld by the IQR outlier rule.',
   ];
   return {
-    marketRange: supported ? { low: minimum!, mid: primaryValue!, high: maximum!, supported: true } : { low: null, mid: null, high: null, supported: false },
+    marketRange: supported ? { low: minimum!, mid: guideAdjustedValue!, high: maximum!, supported: true } : { low: null, mid: null, high: null, supported: false },
     typicalBand: supported && acceptedQ1 !== null && acceptedQ3 !== null ? { low: Math.round(acceptedQ1), high: Math.round(acceptedQ3), supported: true } : { low: null, high: null, supported: false },
-    primaryValue,
+    primaryValue: guideAdjustedValue,
+    guideAnchorValue,
+    guideAnchorWeightPct,
+    guideAdjustedValue,
     weightedValue,
     median: primaryValue ?? aggregateMetrics?.median ?? null,
     minimum,
@@ -2118,8 +2138,8 @@ export function buildMarketProfile(
     adapterReliabilityHistory,
     confidenceReasons,
     identityReadiness,
-    valuationMethod: supported ? `median primary value from exact or near identity-matched completed sales; recency-weighted mean retained as a diagnostic, with duplicate suppression, ${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}, and ${canApplyIqr ? 'IQR outlier filtering' : flaggedSmallSampleOutliers.size ? 'small-sample outlier flagging without automatic exclusion' : 'no automatic outlier filtering because fewer than ten selected sales are available'}` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
-    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation, except a labeled 366–730-day illiquid-market extension when no current verified sale exists.', 'Active asking prices, historical or undated records outside that explicit extension, certification, population, reference data, and RSS remain context only.', 'Exact and documented-probable duplicates are excluded; possible duplicates remain visible for review; grade, condition, variant, and release mismatches reject the result.'],
+    valuationMethod: supported ? `median primary value from exact or near identity-matched completed sales${guideAnchorWeightPct > 0 ? ` blended with a ${guideAnchorWeightPct}% exact-grade guide anchor` : ''}; recency-weighted mean retained as a diagnostic, with duplicate suppression, ${independentMarketplaceCount} independent marketplace${independentMarketplaceCount === 1 ? '' : 's'}, and ${canApplyIqr ? 'IQR outlier filtering' : flaggedSmallSampleOutliers.size ? 'small-sample outlier flagging without automatic exclusion' : 'no automatic outlier filtering because fewer than ten selected sales are available'}` : materialReviewRequired ? 'no verified valuation; material identity evidence conflict requires review' : aggregateMetrics?.median ? 'no verified valuation; aggregate market median shown as unverified context because completed identity-matched sales are insufficient' : 'no verified valuation; insufficient completed-sale evidence',
+    majorAssumptions: ['Only USD observations with positive prices were considered.', 'Only completed, dated records within one year and classified exact or near may influence valuation, except a labeled 366–730-day illiquid-market extension when no current verified sale exists.', 'Active asking prices, historical or undated records outside that explicit extension, certification, population, reference data, and RSS remain context only; an exact-grade guide anchor may contribute only through the capped secondary weighting contract.', 'Exact and documented-probable duplicates are excluded; possible duplicates remain visible for review; grade, condition, variant, and release mismatches reject the result.'],
     missingInformation,
     valuationWarnings,
     comparables: comparableMatches,
@@ -2221,7 +2241,7 @@ export function marketProfileForPrompt(label: string, profile: MarketProfile): s
   return [
     `${label} DETERMINISTIC MARKET PROFILE:`,
     `- Evidence state: ${profile.evidenceState}; valuation method: ${profile.valuationMethod}`,
-    `- Primary median value: ${profile.primaryValue === null ? 'unavailable' : `$${profile.primaryValue.toLocaleString()}`}; weighted mean diagnostic: ${profile.weightedValue === null ? 'unavailable' : `$${profile.weightedValue.toLocaleString()}`}`,
+    `- Primary value: ${profile.primaryValue === null ? 'unavailable' : `$${profile.primaryValue.toLocaleString()}`}; guide anchor: ${profile.guideAnchorValue === null ? 'none' : `$${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}% secondary weight`}; weighted mean diagnostic: ${profile.weightedValue === null ? 'unavailable' : `$${profile.weightedValue.toLocaleString()}`}`,
     `- Observed accepted sale range: ${profile.marketRange.supported && profile.marketRange.low !== null && profile.marketRange.high !== null ? `$${profile.marketRange.low.toLocaleString()}-$${profile.marketRange.high.toLocaleString()}` : 'no defensible range'}`,
     `- Confidence: evidence ${profile.evidenceQuality}, identification ${profile.itemIdentificationConfidence}, stability ${profile.marketStability}, liquidity ${profile.liquidity}, grade/condition ${profile.gradeConditionConfidence}`,
     `- Sales velocity: 7d ${profile.salesVelocity.sevenDay}, 30d ${profile.salesVelocity.thirtyDay}, 90d ${profile.salesVelocity.ninetyDay}; recent sales ${profile.recentSaleCount}; authoritative sales ${profile.authoritativeSaleCount}`,

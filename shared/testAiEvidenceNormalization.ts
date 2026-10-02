@@ -59,7 +59,18 @@ export type NormalizedEvidenceSummary = {
   alignedSources: { id: string; label: string; fields: string[] }[];
   reviewFlags: EvidenceReviewFlag[];
   marketEvidence: string[];
+  guideAnchors: GuideValueAnchor[];
   sources: { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null }[];
+};
+
+export type GuideValueAnchor = {
+  sourceId: string;
+  sourceLabel: string;
+  grade: string;
+  value: number;
+  recordedSales: number | null;
+  lastSaleDate: string | null;
+  totalRecordedSales: number | null;
 };
 
 type DetailRecord = Record<string, unknown>;
@@ -325,9 +336,22 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     .filter((field) => field.value);
   const reviewFlags: EvidenceReviewFlag[] = [];
   const alignedSources: NormalizedEvidenceSummary['alignedSources'] = [];
+  const guideAnchors: GuideValueAnchor[] = [];
   const materialFields = MATERIAL_FIELDS[category] ?? ['title', 'certificationCompany', 'grade'];
 
   for (const source of sources) {
+    const guideValue = Number(source.fields?.guideValue);
+    if (source.status === 'success' && source.id === 'comic_book_realm' && Number.isFinite(guideValue) && guideValue > 0) {
+      guideAnchors.push({
+        sourceId: source.id,
+        sourceLabel: source.label,
+        grade: text(source.fields?.guideGrade),
+        value: guideValue,
+        recordedSales: Number.isFinite(Number(source.fields?.guideRecordedSales)) ? Number(source.fields?.guideRecordedSales) : null,
+        lastSaleDate: text(source.fields?.guideLastSaleDate) || null,
+        totalRecordedSales: Number.isFinite(Number(source.fields?.guideTotalRecordedSales)) ? Number(source.fields?.guideTotalRecordedSales) : null,
+      });
+    }
     if (source.status === 'error') {
       reviewFlags.push({ kind: 'coverage', sourceId: source.id, sourceLabel: source.label, message: `${source.label} could not be checked${source.message ? `: ${source.message}` : '.'}` });
       continue;
@@ -375,6 +399,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     alignedSources,
     reviewFlags,
     marketEvidence,
+    guideAnchors,
     sources: sources.map(({ id, label, kind, role, status, message }) => ({ id, label, kind, role: role ?? evidenceRoleForSourceKind(kind), status, message })),
   };
 }
@@ -386,6 +411,7 @@ export function formatTestAiEvidenceForAnalysis(summary: NormalizedEvidenceSumma
     ? summary.alignedSources.map((source) => `${source.label}: ${source.fields.join(', ')}`).join('; ')
     : 'No specialist field alignment established.';
   const market = summary.marketEvidence.length ? summary.marketEvidence.join(' ') : 'No classified market evidence returned.';
+  const guides = summary.guideAnchors.length ? summary.guideAnchors.map((anchor) => `${anchor.sourceLabel}: exact grade ${anchor.grade || 'unknown'} guide anchor $${anchor.value.toLocaleString()}${anchor.recordedSales !== null ? ` with ${anchor.recordedSales} recorded sales` : ''}.`).join(' ') : 'No grade-specific guide anchor returned.';
   const flags = summary.reviewFlags.length ? summary.reviewFlags.map((flag) => flag.message).join(' ') : 'No material identity discrepancy was detected from the selected source fields.';
   const readiness = summary.identityReadiness.missingCriticalFields.length
     ? `Identity readiness: ${summary.identityReadiness.readiness}; missing critical identifiers: ${summary.identityReadiness.missingCriticalFields.join(', ')}.`
@@ -398,5 +424,6 @@ Market evidence classification: ${market}
 Review flags: ${flags}
 ${readiness}
 ${sufficiency}
-Rule: Source roles are fixed: completed sales are the only valuation candidates; asking prices, certification or population data, reference metadata, and historical or undated records are context only. Do not resolve a discrepancy silently, do not use factual reference metadata as value, and do not use historical or undated records as current-value averages.`;
+Guide-value anchors: ${guides}
+Rule: Dated completed sales remain primary evidence. A validated exact-grade guide anchor may influence the deterministic value only through the server-capped secondary weighting contract; it is never treated as a dated sale. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this validated guide-anchor contract, and do not use historical or undated records as current-value averages.`;
 }

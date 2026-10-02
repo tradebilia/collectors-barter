@@ -67,6 +67,20 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.salesVelocity.thirtyDay).toBe(1);
   });
 
+  it('uses an exact-grade guide anchor as capped secondary evidence without changing sale counts', () => {
+    const profile = buildMarketProfile(target, [
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 1100, '2026-08-20'),
+      sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-08-01'),
+    ], null, new Date('2026-09-22T00:00:00Z'), null, { value: 2000, grade: '10', recordedSales: 140 });
+    expect(profile.guideAnchorValue).toBe(2000);
+    expect(profile.guideAnchorWeightPct).toBe(10);
+    expect(profile.guideAdjustedValue).toBe(1190);
+    expect(profile.primaryValue).toBe(1190);
+    expect(profile.authoritativeSaleCount).toBe(3);
+    expect(profile.valuationWarnings.join(' ')).toMatch(/guide anchor of \$2,000 contributed 10% as secondary context/i);
+  });
+
   it('does not manufacture a verified value from active-only aggregate context', () => {
     const profile = buildMarketProfile(target, [], { median: 800, count: 12, confidence: 'high' });
     expect(profile.marketRange.supported).toBe(false);

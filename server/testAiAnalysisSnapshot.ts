@@ -89,7 +89,7 @@ export function buildAnalysisSnapshot(input: {
   sales?: MarketSale[];
   aggregateMetrics?: { median?: number; min?: number; max?: number; count?: number; confidence?: ConfidenceLevel } | null;
   identityGate?: ComparableIdentityGate | null;
-  evidenceSummary?: NormalizedEvidenceSummary | null;
+    evidenceSummary?: NormalizedEvidenceSummary | null;
   now?: Date;
 }): AnalysisSnapshot {
   const sales = input.sales ?? [];
@@ -99,6 +99,12 @@ export function buildAnalysisSnapshot(input: {
     input.aggregateMetrics,
     input.now ?? new Date(),
     input.identityGate,
+    input.evidenceSummary?.guideAnchors?.[0] ? {
+      value: input.evidenceSummary.guideAnchors[0].value,
+      grade: input.evidenceSummary.guideAnchors[0].grade,
+      recordedSales: input.evidenceSummary.guideAnchors[0].recordedSales,
+      lastSaleDate: input.evidenceSummary.guideAnchors[0].lastSaleDate,
+    } : null,
   );
   const summary = input.evidenceSummary;
   return {
