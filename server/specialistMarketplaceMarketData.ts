@@ -6,7 +6,7 @@ import {
   type SpecialistSourceSearchContract,
 } from '../shared/sandboxSpecialistSources';
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
-import { extractIdentityState, identityStateConflicts } from './testAiIdentityState';
+import { extractIdentityState, extractSignatureNames, identityStateConflicts } from './testAiIdentityState';
 import { ENV } from './_core/env';
 
 export type SpecialistMarketplaceLookupInput = {
@@ -223,6 +223,7 @@ type GoldinQueryOptions = {
   includeCertification?: boolean;
   includeGrade?: boolean;
   includeComicYear?: boolean;
+  includeSigners?: boolean;
 };
 
 /** Goldin query built from structured identity fields; publisher/manufacturer is intentionally excluded. */
@@ -231,6 +232,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   const includeCertification = options.includeCertification !== false;
   const includeGrade = options.includeGrade !== false;
   const includeComicYear = options.includeComicYear !== false;
+  const includeSigners = options.includeSigners !== false;
   const category = normalize(input.category).replace(/_/g, ' ');
   const parts: string[] = [];
   const add = (...values: string[]) => values.forEach((value) => {
@@ -243,6 +245,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['issueNumber', 'issueNo', 'issue', 'number']));
     // Comic year is an additional query and verification layer, not a publisher substitute.
     if (includeComicYear) add(firstDetail(details, ['publicationYear', 'year', 'issueYear']));
+    if (includeSigners) extractSignatureNames(input).forEach((signer) => add(signer));
   } else if (category === 'sports cards') {
     add(firstDetail(details, ['player', 'athlete', 'subject']) || input.title);
     add(firstDetail(details, ['year']), firstDetail(details, ['setName', 'set', 'cardSet']));
@@ -269,8 +272,9 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
 export function buildGoldinSearchQueries(input: SpecialistMarketplaceLookupInput): string[] {
   const variants = [
     buildGoldinSearchQuery(input),
+    buildGoldinSearchQuery(input, { includeSigners: false }),
     buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false }),
-    buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false, includeComicYear: false }),
+    buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false, includeComicYear: false, includeSigners: false }),
     text(input.title).slice(0, 240),
   ];
   return [...new Set(variants.filter(Boolean))].slice(0, 4);
@@ -463,8 +467,9 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
   const stateConflicts = identityStateConflicts(
     extractIdentityState(input),
     extractIdentityState({ title, grade, certificationCompany, condition: null, itemDetails: description }),
+    normalize(input.category).replace(/_/g, ' ') === 'comics',
   );
-  const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|single item versus lot|negative listing/i.test(reason)) ?? null;
+  const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason)) ?? null;
   return {
     matchedTokens,
     matched: tokenMatch && gradeMatch && !conflict,

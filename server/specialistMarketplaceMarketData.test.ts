@@ -86,6 +86,19 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.messages.join(' ')).toMatch(/checked 2 bounded query variants/i);
   });
 
+  it('adds all recorded comic signers to the strict Goldin query before signer-free fallbacks', () => {
+    const input = {
+      sourceId: 'goldin' as const,
+      title: 'Amazing Spider-Man #300 CGC 9.8 Signed',
+      category: 'comics',
+      grade: '9.8',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ comicTitle: 'Amazing Spider-Man', issueNumber: '300', publicationYear: '1990', signed: 'Yes', signers: ['Stan Lee', 'John Romita'] }),
+    };
+    expect(buildGoldinSearchQueries(input)[0]).toBe('Amazing Spider-Man 300 1990 stan lee john romita CGC 9.8');
+    expect(buildGoldinSearchQueries(input)).toContain('Amazing Spider-Man 300 1990 CGC 9.8');
+  });
+
   it('uses the verified Goldin public sold-search endpoint automatically and preserves direct-lot support', () => {
     const automatic = buildSpecialistMarketplaceRequest(videoGame);
     expect(automatic).toEqual({ url: 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', error: null });

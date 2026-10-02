@@ -1652,7 +1652,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const details = parseDetails(target);
   const targetIdentityState = extractIdentityState(target);
   const saleIdentityState = extractIdentityState({ title, grade: null, certificationCompany: null, itemDetails: null });
-  const universalIdentityConflicts = identityStateConflicts(targetIdentityState, saleIdentityState);
+  const universalIdentityConflicts = identityStateConflicts(targetIdentityState, saleIdentityState, String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'comics');
   const identity = buildTestAiP0Identity(target);
   const targetTokens = new Set(textTokens(target.title));
   const saleTokens = new Set(textTokens(title));
@@ -1769,7 +1769,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push(...universalIdentityConflicts.map((reason) => `identity state conflict: ${reason}`));
   }
   const universalHardConflict = universalIdentityConflicts.some((reason) =>
-    /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph/.test(reason),
+    /raw\/graded state differs|single item versus lot\/bundle differs|negative listing signal|parallel\/variant differs|sale declares an autograph|signature name differs/.test(reason),
   );
   const universalNeedsReview = universalIdentityConflicts.some((reason) => reason.includes('not stated'));
   const categoryNeedsReview = categoryIdentity.status === 'needs_review';

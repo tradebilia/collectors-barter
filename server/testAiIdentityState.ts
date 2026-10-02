@@ -8,6 +8,7 @@ export type IdentityStateSnapshot = {
   grader: string | null;
   parallel: string | null;
   autograph: 'auto' | 'non_auto' | 'unknown';
+  signatureNames: string[];
   lot: boolean;
   negativeSignals: string[];
 };
@@ -42,6 +43,34 @@ function findParallel(text: string): string | null {
   return match?.[0]?.trim().toLowerCase() ?? null;
 }
 
+function normalizeSignatureName(value: unknown): string {
+  return normalized(value).replace(/\b(?:signed|signature|autograph|autographed|by)\b/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function collectSignatureNames(value: unknown): string[] {
+  const values = Array.isArray(value) ? value : [value];
+  return values.flatMap((entry) => {
+    if (entry && typeof entry === 'object') {
+      const record = entry as Record<string, unknown>;
+      return collectSignatureNames(record.name ?? record.signer ?? record.signedBy ?? record.artist ?? record.value);
+    }
+    return String(entry ?? '').split(/\s*(?:,|;|&|\band\b)\s*/i).map(normalizeSignatureName).filter((name) => name.length >= 2);
+  });
+}
+
+export function extractSignatureNames(input: { title?: string | null; itemDetails?: string | null }): string[] {
+  let details: Record<string, unknown> = {};
+  try {
+    const parsed = input.itemDetails ? JSON.parse(input.itemDetails) : {};
+    if (parsed && typeof parsed === 'object') details = parsed;
+  } catch { /* malformed details remain unknown */ }
+  const explicitKeys = ['signer', 'signers', 'signatureName', 'signatureNames', 'signedBy', 'signedByName', 'autographBy', 'autographNames', 'artistSignature'];
+  const names = explicitKeys.flatMap((key) => collectSignatureNames(details[key]));
+  const titleNames = String(input.title ?? '').match(/\b(?:signed|autograph(?:ed)?)\s+by\s+([A-Z][A-Za-z.'-]+(?:\s+[A-Z][A-Za-z.'-]+){0,3})/i)?.[1];
+  if (titleNames) names.push(...collectSignatureNames(titleNames));
+  return [...new Set(names.map((name) => normalizeSignatureName(name)).filter(Boolean))];
+}
+
 export function extractIdentityState(input: { title?: string | null; grade?: string | null; certificationCompany?: string | null; condition?: string | null; itemDetails?: string | null }): IdentityStateSnapshot {
   let details: Record<string, unknown> = {};
   try {
@@ -54,6 +83,7 @@ export function extractIdentityState(input: { title?: string | null; grade?: str
   const gradedSignal = Boolean(grader || input.grade || /\b(?:graded|slab|certified|encapsulated)\b/i.test(text));
   const rawSignal = /\b(?:raw|ungraded|ungraded copy|no grade|未评级)\b/i.test(text);
   const autograph = /\b(?:autograph|autographed|signed|signature|auto)\b/i.test(text) ? 'auto' : 'unknown';
+  const signatureNames = extractSignatureNames(input);
   const lot = /\b(?:lot|bundle|collection)\b|\b(?:near\s+)?complete\s+(?:set|collection)\b|\b\d+\s*(?:cards|comics|pins|games|records)\b/i.test(text);
   const negativeSignals = NEGATIVE_PATTERNS.filter(([pattern]) => pattern.test(text)).map(([, label]) => label);
   return {
@@ -62,12 +92,13 @@ export function extractIdentityState(input: { title?: string | null; grade?: str
     grader,
     parallel: findParallel(text),
     autograph,
+    signatureNames,
     lot,
     negativeSignals,
   };
 }
 
-export function identityStateConflicts(target: IdentityStateSnapshot, sale: IdentityStateSnapshot): string[] {
+export function identityStateConflicts(target: IdentityStateSnapshot, sale: IdentityStateSnapshot, compareSignatureNames = false): string[] {
   const conflicts: string[] = [];
   if (target.state !== 'unknown' && sale.state !== 'unknown' && target.state !== sale.state) conflicts.push(`raw/graded state differs (${sale.state} vs ${target.state})`);
   if (target.grader && sale.grader && target.grader !== sale.grader) conflicts.push(`grading company differs (${sale.grader.toUpperCase()} vs ${target.grader.toUpperCase()})`);
@@ -75,6 +106,10 @@ export function identityStateConflicts(target: IdentityStateSnapshot, sale: Iden
   if (target.parallel && sale.parallel && target.parallel !== sale.parallel) conflicts.push(`parallel/variant differs (${sale.parallel} vs ${target.parallel})`);
   if (target.autograph === 'auto' && sale.autograph === 'unknown') conflicts.push('autograph status is not stated');
   if (target.autograph === 'unknown' && sale.autograph === 'auto') conflicts.push('sale declares an autograph/signature not declared by target');
+  if (compareSignatureNames && target.autograph === 'auto' && sale.autograph === 'auto' && target.signatureNames.length) {
+    if (!sale.signatureNames.length) conflicts.push('signature name is not stated');
+    else if (!target.signatureNames.some((name) => sale.signatureNames.includes(name))) conflicts.push(`signature name differs (${sale.signatureNames.join(', ')} vs ${target.signatureNames.join(', ')})`);
+  }
   if (target.lot !== sale.lot && (target.lot || sale.lot)) conflicts.push('single item versus lot/bundle differs');
   conflicts.push(...sale.negativeSignals.map((signal) => `negative listing signal: ${signal}`));
   return conflicts;
