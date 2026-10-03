@@ -33,5 +33,13 @@ describe('Sirius Sports Auctions adapter', () => {
     expect(sold).toMatchObject({ completed: true, sold: true, price: 319.5, priceBasis: 'realized', buyerPremiumIncluded: true, identityMatched: true });
     expect(open).toMatchObject({ completed: false, sold: false, price: null });
     expect(wrongGrade.identityMatched).toBe(false);
+    expect(wrongGrade.exclusionReason).toContain('Grader/grade gate failed');
+  });
+
+  it('diagnoses an identity mismatch separately from a compatible GEM MT grade', () => {
+    const summary: any = { auctionName: 'Sirius Sports Cards Auction', lotId: 'x', title: '1989 UPPER DECK 1 KEN GRIFFEY JR. STAR ROOKIE PSA GEM MT 10', minBid: null, finalPrice: 4663, status: 'realized', url: null, auctionUrl: null };
+    const targetItem = { title: '1989 Upper Deck Ken Griffey Jr. Star Rookie', category: 'sports_cards', grade: '10', certificationCompany: 'PSA', itemDetails: JSON.stringify({ player: 'Ken Griffey Jr.', manufacturer: 'Upper Deck', year: '1989', cardNumber: '1' }) };
+    const result = normalizeSiriusSale(summary, { title: summary.title, description: summary.title, finalPrice: 4663, date: '2/26/2021', closed: true }, targetItem);
+    expect(result).toMatchObject({ completed: true, sold: true, identityMatched: true, exclusionReason: null });
   });
 });

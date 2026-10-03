@@ -286,6 +286,15 @@ export function normalizeSiriusSale(
     Number.isFinite(Date.parse(date));
   const gradeCompatible = gradeMatches(target, `${title} ${description}`);
   const identityMatched = identity.matched && gradeCompatible;
+  const exclusionReason = sold && identityMatched
+    ? null
+    : !sold
+      ? "Missing explicit closed status, final price, or valid close date."
+      : !identity.matched
+        ? `Identity token gate failed: matched ${identity.matchedTokens.length} of the target identity tokens (${identity.matchedTokens.join(", ") || "none"}).`
+        : !gradeCompatible
+          ? `Grader/grade gate failed: target ${target.certificationCompany ?? "grader unavailable"} ${target.grade ?? "grade unavailable"} was not found as a compatible value in the Sirius lot text.`
+          : "Identity or grade compatibility failed.";
   return {
     sourceId: "sirius_sports_auctions",
     provider: "Sirius Sports Auctions",
@@ -315,12 +324,7 @@ export function normalizeSiriusSale(
     priceSemantics: sold
       ? "Sirius final price including buyers premium; candidate only after identity, date, duplicate, and visual gates."
       : "Not an explicit dated closed sale; context only.",
-    exclusionReason:
-      sold && identityMatched
-        ? null
-        : !sold
-          ? "Missing explicit closed status, final price, or valid close date."
-          : "Identity or grade compatibility failed.",
+    exclusionReason,
     raw: { summary, detail },
   };
 }

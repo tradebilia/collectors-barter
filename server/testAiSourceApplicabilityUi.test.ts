@@ -127,6 +127,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('active or fixed-price data cannot establish completed-sale valuation');
     expect(source).toContain('historical or undated data is retained for context');
     expect(source).toContain('identity mismatch prevents direct valuation');
+    expect(source).toContain('Exclusion reason:');
   });
 
   it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
