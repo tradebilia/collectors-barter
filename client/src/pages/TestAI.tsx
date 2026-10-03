@@ -1707,7 +1707,7 @@ function CardsightAiSection({ item, side, data, isLoading }: { item: SelectedIte
 function OneThirtyPointSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.get130PointData.useQuery(
-    { query: item.title, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl },
+    { query: item.title, title: item.title, category: item.category, grade: item.grade, condition: item.condition, certificationCompany: item.certificationCompany ?? '', itemType: item.itemType, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title },
   );
   const items = data?.data?.items ?? [];
@@ -3738,11 +3738,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: leftSearchItem?.title || '', itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl },
+    { query: leftSearchItem?.title, title: leftSearchItem?.title, category: leftSearchItem?.category || '', grade: leftSearchItem?.grade, condition: leftSearchItem?.condition, certificationCompany: leftSearchItem?.certificationCompany ?? '', itemType: leftSearchItem?.itemType, itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl },
     { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
   );
   const right130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: rightSearchItem?.title || '', itemDetails: rightSearchItem?.itemDetails, imageUrl: rightSearchItem?.primaryPhotoUrl },
+    { query: rightSearchItem?.title, title: rightSearchItem?.title, category: rightSearchItem?.category || '', grade: rightSearchItem?.grade, condition: rightSearchItem?.condition, certificationCompany: rightSearchItem?.certificationCompany ?? '', itemType: rightSearchItem?.itemType, itemDetails: rightSearchItem?.itemDetails, imageUrl: rightSearchItem?.primaryPhotoUrl },
     { enabled: !!rightSearchItem && rightSources.has('one_thirty_point') },
   );
 

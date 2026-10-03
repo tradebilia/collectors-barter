@@ -9,7 +9,7 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
-import { lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
+import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
@@ -38,6 +38,7 @@ import { lookupCardsightAi } from './cardsightAi';
 import { lookupCollectAuctions, lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupSiriusSportsAuctions } from './siriusSportsAuctionMarketData';
 import { lookupComcListings } from './parseComcMarketData';
+import { lookupParse130PointSales } from './parse130PointMarketData';
 import { lookupComicConnectSold } from './comicConnectMarketData';
 import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { consumePayPalComparisonInspection } from './paypalInspection';
@@ -1961,12 +1962,12 @@ export const testAIRouter = router({
 
   // Parse.bot 130point sold-card search — administrator-only and read-only.
   get130PointData: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
+    .input(z.object({ query: z.string().trim().max(240).optional(), title: z.string().trim().max(240).optional(), category: z.string().trim(), grade: z.string().trim().max(32).optional(), condition: z.string().trim().max(80).optional(), certificationCompany: z.string().trim().max(80).optional(), itemType: z.string().trim().max(80).optional(), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      const result = await lookup130PointSales(input.query);
+      const result = await lookupParse130PointSales(input);
       if (result.status !== 'success' || !result.data) return result;
-      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `title=${input.query}; category=unknown; itemDetails=${input.itemDetails ?? 'unknown'}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `title=${input.title ?? input.query ?? 'structured item'}; category=${input.category}; itemDetails=${input.itemDetails ?? 'unknown'}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
       return {
         ...result,
         data: {
@@ -1977,7 +1978,7 @@ export const testAIRouter = router({
             saleStatus: 'completed',
             completedStatusBasis: '130point completed-sale search result',
             priceBasis: 'sold',
-          })), { query: input.query }),
+          })), { query: result.query }),
         },
         visualFilter,
       };
