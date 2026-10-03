@@ -812,6 +812,9 @@ type GoldinPublicLotResponse = {
     final_price?: unknown;
     buyer_premium?: unknown;
     end_timestamp?: unknown;
+    primary_image_name?: unknown;
+    image_url?: unknown;
+    imageUrl?: unknown;
   };
 };
 
@@ -824,6 +827,9 @@ type GoldinPublicSearchLot = {
   current_price?: unknown;
   buyer_premium?: unknown;
   end_timestamp?: unknown;
+  primary_image_name?: unknown;
+  image_url?: unknown;
+  imageUrl?: unknown;
 };
 
 type GoldinPublicSearchResponse = {
@@ -967,6 +973,24 @@ function publicGoldinRecordUrl(value: unknown): string | null {
     : null;
 }
 
+function publicGoldinImageUrl(value: unknown): string | null {
+  const raw = text(value).trim();
+  if (!raw) return null;
+  if (/^https:\/\//i.test(raw)) return canonicalUrl(raw);
+  // Goldin's public lot/search contract returns primary_image_name; the
+  // public lot page resolves it to this CDN asset pattern.
+  const name = raw.replace(/@1x$/i, '');
+  return /^[a-z0-9_-]{8,240}$/i.test(name)
+    ? canonicalUrl(`https://d2tt46f3mh26nl.cloudfront.net/${encodeURIComponent(name)}@1x`)
+    : null;
+}
+
+function goldinImageUrl(record: { primary_image_name?: unknown; image_url?: unknown; imageUrl?: unknown }): string | null {
+  return publicGoldinImageUrl(record.image_url)
+    ?? publicGoldinImageUrl(record.imageUrl)
+    ?? publicGoldinImageUrl(record.primary_image_name);
+}
+
 function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput, payload: GoldinPublicSearchResponse): SpecialistMarketplaceLookupResult {
   const source = getSandboxSpecialistSource('goldin')!;
   const lots = Array.isArray(payload.searchalgolia?.lots) ? payload.searchalgolia!.lots.slice(0, SOURCE_RULES.goldin!.recordCap) : [];
@@ -1003,7 +1027,7 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
       lotId,
       auctionName: null,
       url: publicGoldinRecordUrl(lot.meta_slug),
-      imageUrl: null,
+      imageUrl: goldinImageUrl(lot),
       saleStatus: completed ? 'completed' as const : 'unknown' as const,
       completed,
       price: allInPrice,
@@ -1075,7 +1099,7 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
     lotId,
     auctionName: text(payload.auction_title) || null,
     url: canonicalUrl(sourceUrl),
-    imageUrl: null,
+    imageUrl: goldinImageUrl(lot),
     saleStatus: completed ? 'completed' : 'unknown',
     completed,
     price: allInPrice,

@@ -255,6 +255,7 @@ describe('bounded specialist marketplace adapters', () => {
             current_price: 28000,
             buyer_premium: 20,
             end_timestamp: '2021-05-22T02:30:00Z',
+            primary_image_name: 'goldin-mario-front_abc123',
           },
           {
             lot_id: 'goldin-mario-2',
@@ -282,6 +283,7 @@ describe('bounded specialist marketplace adapters', () => {
       buyerPremiumPercentage: 20,
       buyerPremiumIncluded: true,
       url: 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-bros-sealed-video-gamegemqt',
+      imageUrl: 'https://d2tt46f3mh26nl.cloudfront.net/goldin-mario-front_abc123@1x',
       valuationEligible: true,
     });
     expect(result.context).toHaveLength(1);
@@ -486,6 +488,7 @@ describe('bounded specialist marketplace adapters', () => {
         final_price: 28000,
         buyer_premium: '20',
         end_timestamp: '2021-09-19T00:40:00Z',
+        primary_image_name: 'goldin-direct-front_xyz789',
       },
     }), { status: 200, headers: { 'content-type': 'application/json' } })));
 
@@ -501,6 +504,7 @@ describe('bounded specialist marketplace adapters', () => {
       buyerPremiumIncluded: true,
       priceBasis: 'closed',
       currency: 'USD',
+      imageUrl: 'https://d2tt46f3mh26nl.cloudfront.net/goldin-direct-front_xyz789@1x',
       valuationEligible: true,
     });
     expect(result.messages.join(' ')).toMatch(/Winning bid \$28,000 plus 20% buyer premium equals displayed all-in analyzer price \$33,600/i);
