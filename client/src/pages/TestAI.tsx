@@ -2147,13 +2147,18 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const submittedPrices = analyzerSubmitted
         .map((sale: any) => Number(sale.price ?? sale.finalPrice))
         .filter((price: number) => Number.isFinite(price) && price > 0);
+      const currentValueSales = analyzerSubmitted.filter((sale: any) => {
+        const timestamp = Date.parse(String(sale.date ?? ''));
+        return Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp <= 365 * 86_400_000;
+      });
+      const historicalTrendSales = analyzerSubmitted.filter((sale: any) => !currentValueSales.includes(sale));
       const completedSaleCount = completedCandidates.length;
       const historicalSaleCount = completedCandidates.filter((sale: any) => {
         const timestamp = Date.parse(String(sale.date ?? ''));
         return Number.isFinite(timestamp) && Date.now() - timestamp > 365 * 86_400_000;
       }).length;
       const undatedSaleCount = completedCandidates.filter((sale: any) => !Number.isFinite(Date.parse(String(sale.date ?? '')))).length;
-      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
+      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, currentValueSaleCount: currentValueSales.length, historicalTrendSaleCount: historicalTrendSales.length, currentValuePrices: currentValueSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalTrendPrices: historicalTrendSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
     }
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {

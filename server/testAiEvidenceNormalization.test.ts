@@ -70,7 +70,7 @@ describe('normalizeTestAiEvidence', () => {
       { id: 'one_thirty_point', label: '130point', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 2, historicalSaleCount: 3, undatedSaleCount: 1 } },
     ]);
 
-    expect(summary.marketEvidence).toEqual(['130point: 2 completed sales, 3 historical records, 1 undated record.']);
+    expect(summary.marketEvidence).toEqual(['130point: 2 completed sales, 0 current-value, 3 historical-trend, 3 historical records, 1 undated record.']);
     expect(summary.reviewFlags).toHaveLength(0);
     expect(summary.evidenceSufficiency.status).toBe('limited');
     expect(summary.sources[0]?.role).toBe('valuation_candidate');
@@ -89,7 +89,7 @@ describe('normalizeTestAiEvidence', () => {
       { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 3, analyzerSubmittedSaleCount: 0, analyzerSubmittedPrices: [], historicalSaleCount: 3 } },
     ]);
 
-    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 3 completed sales, 0 submitted to analyzer, 3 historical records.']);
+    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 3 completed sales, 0 submitted to analyzer, 0 current-value, 3 historical-trend, 3 historical records.']);
     expect(summary.marketEvidencePriceSummaries).toEqual(['Sirius Sports Auctions: submitted-price summary — 0 sales · no prices submitted to analyzer.']);
   });
 
@@ -105,6 +105,16 @@ describe('normalizeTestAiEvidence', () => {
       'TCGdex: selected reference source; completed-sales and analyzer-price summary not applicable.',
       'Parse.bot PSA: no record returned; 0 completed sales and 0 submitted to analyzer.',
     ]);
+  });
+
+  it('keeps current-value and historical-trend matching data in separate summaries', () => {
+    const summary = normalizeTestAiEvidence({ title: 'Ken Griffey Jr. Rookie', category: 'sports_cards' }, [
+      { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', kind: 'market_completed', status: 'success', market: { completedSaleCount: 4, analyzerSubmittedSaleCount: 4, currentValueSaleCount: 1, historicalTrendSaleCount: 3, currentValuePrices: [5000], historicalTrendPrices: [100, 200, 300] } },
+    ]);
+
+    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 4 completed sales, 4 submitted to analyzer, 1 current-value, 3 historical-trend.']);
+    expect(summary.marketEvidencePriceSummaries?.[0]).toContain('current-value: 1 prices');
+    expect(summary.marketEvidencePriceSummaries?.[0]).toContain('historical-trend: 3 prices');
   });
 
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {

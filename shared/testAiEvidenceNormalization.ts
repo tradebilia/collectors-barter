@@ -24,6 +24,10 @@ export type EvidenceSourceObservation = {
     completedSaleCount?: number;
     analyzerSubmittedSaleCount?: number;
     analyzerSubmittedPrices?: number[];
+    currentValueSaleCount?: number;
+    historicalTrendSaleCount?: number;
+    currentValuePrices?: number[];
+    historicalTrendPrices?: number[];
     recentSaleCount?: number;
     historicalSaleCount?: number;
     undatedSaleCount?: number;
@@ -326,6 +330,9 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
   if (market.currentListingCount) parts.push(`${market.currentListingCount} current asking listing${market.currentListingCount === 1 ? '' : 's'}`);
   if (market.completedSaleCount) parts.push(`${market.completedSaleCount} completed sale${market.completedSaleCount === 1 ? '' : 's'}`);
   if (market.analyzerSubmittedSaleCount != null) parts.push(`${market.analyzerSubmittedSaleCount} submitted to analyzer`);
+  const currentValueCount = market.currentValueSaleCount ?? market.recentSaleCount;
+  const historicalTrendCount = market.historicalTrendSaleCount ?? market.historicalSaleCount;
+  if (currentValueCount != null || historicalTrendCount != null) parts.push(`${currentValueCount ?? 0} current-value, ${historicalTrendCount ?? 0} historical-trend`);
   if (market.recentSaleCount) parts.push(`${market.recentSaleCount} recent sale${market.recentSaleCount === 1 ? '' : 's'}`);
   if (market.historicalSaleCount) parts.push(`${market.historicalSaleCount} historical record${market.historicalSaleCount === 1 ? '' : 's'}`);
   if (market.undatedSaleCount) parts.push(`${market.undatedSaleCount} undated record${market.undatedSaleCount === 1 ? '' : 's'}`);
@@ -333,6 +340,19 @@ function compactMarketSummary(source: EvidenceSourceObservation): string | null 
 }
 
 function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string | null {
+  const currentPrices = source.market?.currentValuePrices;
+  const historicalPrices = source.market?.historicalTrendPrices;
+  if (currentPrices || historicalPrices) {
+    const formatGroup = (label: string, values: number[]) => {
+      const prices = values.filter((price) => Number.isFinite(price) && price > 0).sort((a, b) => a - b);
+      if (!prices.length) return `${label}: 0 prices`;
+      const total = prices.reduce((sum, price) => sum + price, 0);
+      const median = prices.length % 2 === 1 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
+      const money = (value: number) => `$${Math.round(value).toLocaleString()}`;
+      return `${label}: ${prices.length} prices · average ${money(total / prices.length)} · median ${money(median)} · range ${money(prices[0])}–${money(prices[prices.length - 1])}`;
+    };
+    return `${source.label}: submitted-price summary — ${formatGroup('current-value', currentPrices ?? [])}; ${formatGroup('historical-trend', historicalPrices ?? [])}.`;
+  }
   const prices = (source.market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0).sort((a, b) => a - b);
   if (!prices.length && source.market?.analyzerSubmittedSaleCount == null) return null;
   if (!prices.length) return `${source.label}: submitted-price summary — 0 sales · no prices submitted to analyzer.`;
