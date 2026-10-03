@@ -113,6 +113,15 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     status: 'live' as const,
     description: 'Read-only Sports Cards and Pokémon/TCG completed-sales research with plan-gated catalog identity — sandbox-only; confirmed records still pass Tradebilia comparable gates',
   },
+  comc_parse: {
+    id: 'comc_parse',
+    label: 'COMC Listings (via Parse.bot)',
+    group: 'Marketplace',
+    icon: '🛍️',
+    provides: ['current_prices', 'item_details'],
+    status: 'live' as const,
+    description: 'Read-only active COMC inventory via Parse.bot for Sports Cards and Pokémon; asking prices, seller availability, grading, and variants are context only — not completed-sale evidence',
+  },
   cardsight_ai: {
     id: 'cardsight_ai',
     label: 'Cardsight.ai Market Data',
@@ -1590,6 +1599,30 @@ function TheCardApiSection({ item, side, data, isLoading }: { item: SelectedItem
     </div>
     <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Full provider payload — all returned fields</summary><pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-[9px] text-gray-400">{JSON.stringify(data?.raw, null, 2)}</pre></details>
   </div>;
+}
+
+function ComcSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const query = data?.query ?? '';
+  const listings = Array.isArray(data?.listings) ? data.listings : [];
+  return (
+    <div className="rounded-xl border border-gray-700/40 bg-gray-900/40 p-3 space-y-2">
+      <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛍️ COMC Listings (via Parse.bot)</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
+      <MarketplaceQueryBanner item={item} query={query} isLoading={isLoading} />
+      {data?.requestUrl && <p className="break-all rounded border border-gray-700/40 bg-gray-950/40 px-2 py-1 font-mono text-[9px] text-gray-400">Provider request: {data.requestUrl}</p>}
+      <p className="text-gray-400 text-[10px]">Active COMC asking-price inventory only. These records are context and are not submitted to the completed-sale analyzer because this API does not provide sales history.</p>
+      {data?.messages?.map((message: string, index: number) => <p key={index} className="rounded border border-cyan-800/40 bg-cyan-950/20 p-2 text-[10px] text-cyan-200">{message}</p>)}
+      {listings.length === 0 && !isLoading && <p className="text-gray-500 text-[10px]">No active COMC listings were returned for the structured query.</p>}
+      {listings.map((listing: any, index: number) => (
+        <div key={listing.url ?? index} className="rounded border border-gray-700/50 bg-gray-950/40 p-2 text-[10px] space-y-1">
+          <div className="flex items-start justify-between gap-2"><p className="font-semibold text-gray-200">{listing.title || listing.setDescription || 'COMC listing'}</p><span className="shrink-0 font-bold text-emerald-300">{listing.displayedPrice || (listing.price != null ? `$${listing.price}` : 'Price unavailable')}</span></div>
+          <p className="text-gray-500">{listing.setDescription || 'Set unavailable'}{listing.grader || listing.grade ? ` • ${listing.grader ?? ''} ${listing.grade ?? ''}` : ''}{listing.quantityAvailable != null ? ` • Qty ${listing.quantityAvailable}` : ''}</p>
+          <p className="text-violet-300">Analyzer: NO — active asking-price context only.</p>
+          {listing.url && <a href={listing.url} target="_blank" rel="noreferrer" className="text-cyan-300 underline">Open COMC listing</a>}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function ParseAuctionSection({ item, side, data, isLoading, source }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; source: 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' }) {
@@ -3303,7 +3336,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -3319,6 +3352,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
   theCardApiLoading: boolean;
   cardsightAiData: any;
   cardsightAiLoading: boolean;
+  comcData: any;
+  comcLoading: boolean;
   lelandsData: any;
   lelandsLoading: boolean;
   pristineAuctionData: any;
@@ -3371,6 +3406,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('pokemon_price_tracker') && <PokemonPriceTrackerSection item={item} side={side} data={pokemonPriceTrackerData} isLoading={pokemonPriceTrackerLoading} />}
       {enabledSources.has('the_card_api') && <TheCardApiSection item={item} side={side} data={theCardApiData} isLoading={theCardApiLoading} />}
       {enabledSources.has('cardsight_ai') && <CardsightAiSection item={item} side={side} data={cardsightAiData} isLoading={cardsightAiLoading} />}
+      {enabledSources.has('comc_parse') && <ComcSection item={item} side={side} data={comcData} isLoading={comcLoading} />}
       {enabledSources.has('lelands') && <ParseAuctionSection item={item} side={side} source="lelands" data={lelandsData} isLoading={lelandsLoading} />}
       {enabledSources.has('pristine_auction') && <ParseAuctionSection item={item} side={side} source="pristine_auction" data={pristineAuctionData} isLoading={pristineAuctionLoading} />}
       {enabledSources.has('collect_auction') && <ParseAuctionSection item={item} side={side} source="collect_auction" data={collectAuctionData} isLoading={collectAuctionLoading} />}
@@ -3574,6 +3610,14 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('cardsight_ai') }
   );
+  const leftComcQuery = trpc.testAI.getComcData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType } : { title: '', category: 'unknown' },
+    { enabled: !!leftSearchItem && leftSources.has('comc_parse') }
+  );
+  const rightComcQuery = trpc.testAI.getComcData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType } : { title: '', category: 'unknown' },
+    { enabled: !!rightSearchItem && rightSources.has('comc_parse') }
+  );
   const leftLelandsQuery = trpc.testAI.getLelandsAuctionData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!leftSearchItem && leftSources.has('lelands') }
@@ -3678,8 +3722,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} />}
           </div>
         )}
 

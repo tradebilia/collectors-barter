@@ -28,6 +28,12 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).not.toContain('cardsight_ai');
   });
 
+  it('maps COMC Parse.bot listings to Sports Cards and Pokémon only', () => {
+    expect(getEligibleTestAiSources({ category: 'sports cards', hasTitle: true }).map((source) => source.sourceId)).toContain('comc_parse');
+    expect(getEligibleTestAiSources({ category: 'pokemon', hasTitle: true }).map((source) => source.sourceId)).toContain('comc_parse');
+    expect(getEligibleTestAiSources({ category: 'comics', hasTitle: true }).map((source) => source.sourceId)).not.toContain('comc_parse');
+  });
+
   it('enables Discogs only for titled Music items', () => {
     expect(getEligibleTestAiSources({ category: 'music', hasTitle: true }).map((source) => source.sourceId)).toContain('discogs');
     expect(getEligibleTestAiSources({ category: 'Music', hasTitle: true }).map((source) => source.sourceId)).toContain('discogs');

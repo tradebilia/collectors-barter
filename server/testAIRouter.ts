@@ -37,6 +37,7 @@ import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
 import { lookupCollectAuctions, lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupSiriusSportsAuctions } from './siriusSportsAuctionMarketData';
+import { lookupComcListings } from './parseComcMarketData';
 import { lookupComicConnectSold } from './comicConnectMarketData';
 import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { consumePayPalComparisonInspection } from './paypalInspection';
@@ -1320,6 +1321,17 @@ export const testAIRouter = router({
         completedStatusBasis: sale.completed ? 'Sirius closed-lot prices-realized archive' : null, priceBasis: 'realized', buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown',
       })), { query: input.title }), visualFilter };
     }),
+  // COMC active marketplace inventory through Parse.bot — bounded, read-only, context-only.
+  getComcData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupComcListings(input);
+    }),
+
   // ComicConnect sold archive — bounded, read-only, context-only until source economics are resolved.
   getComicConnectData: protectedProcedure
     .input(z.object({
