@@ -136,6 +136,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('cardApiAnalyzerSubmittedSales');
     expect(source).toContain('completedCandidates');
     expect(source).toContain('analyzerSubmittedPrices: submittedPrices');
+    expect(source).toContain('analyzerSubmittedSaleCount: analyzerSubmitted.length');
     expect(source).toContain('Selected data-source summaries');
     expect(source).toContain('summary.selectedSourceSummaries');
   });
