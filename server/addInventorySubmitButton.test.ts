@@ -8,9 +8,19 @@ const selectorSource = readFileSync(resolve(process.cwd(), 'client/src/component
 describe('Add Inventory submit action', () => {
   it('uses the blue Submit Collectible action without changing submit behavior', () => {
     expect(source).toContain('type="submit" className="bg-blue-600 text-white hover:bg-blue-700"');
-    expect(source).toContain('{isEditMode ? "Update Listing" : "Submit Collectible"}');
+    expect(source).toContain('value="submit" className="bg-blue-600 text-white hover:bg-blue-700"');
+    expect(source).toContain('Submit Collectible');
     expect(source).toContain('createListingMutation.isPending || updateListingMutation.isPending');
     expect(source).toContain('Loader2 className="mr-2 h-4 w-4 animate-spin"');
+  });
+
+  it('gives an existing draft three distinct actions', () => {
+    expect(source).toContain('{isDraftMode ? "Save as New Draft" : "Save as Draft"}');
+    expect(source).toContain('value="update"');
+    expect(source).toContain('Update Existing Draft');
+    expect(source).toContain('trpc.market.publishDraft.useMutation()');
+    expect(source).toContain('publishDraftMutation.mutateAsync(commonDraftData)');
+    expect(source).toContain('sourceDraftId: isDraftMode ? draftId ?? undefined : undefined');
   });
 
   it('uses the enlarged responsive Add To Your Inventory hero artwork', () => {

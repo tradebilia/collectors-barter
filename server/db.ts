@@ -2205,11 +2205,22 @@ export async function saveDraft(
     estimatedValue?: number;
     categoryFields?: Record<string, any>;
     additionalNotes?: string;
+    sourceDraftId?: number;
     photos: PhotoUploadInput[];
   },
 ) {
   const db = await requireDb();
   await ensureUserProfileRecord(user);
+  if (input.sourceDraftId) {
+    const sourceDraft = await db
+      .select({ userId: draftListings.userId })
+      .from(draftListings)
+      .where(eq(draftListings.id, input.sourceDraftId))
+      .limit(1);
+    if (!sourceDraft[0] || sourceDraft[0].userId !== user.id) {
+      throw new Error("You can only copy photos from your own draft.");
+    }
+  }
 
   const insertResult = await db.insert(draftListings).values({
     userId: user.id,
@@ -2223,20 +2234,122 @@ export async function saveDraft(
     additionalNotes: input.additionalNotes || null,
   });
   const draftId = getInsertId(insertResult);
+  const sourcePhotos = input.sourceDraftId
+    ? await db
+        .select({ fileKey: listingPhotos.fileKey, imageUrl: listingPhotos.imageUrl, altText: listingPhotos.altText })
+        .from(listingPhotos)
+        .where(eq(listingPhotos.listingId, input.sourceDraftId))
+    : [];
+  const sourcePhotoByUrl = new Map(sourcePhotos.map(photo => [photo.imageUrl, photo]));
 
   for (let index = 0; index < input.photos.length; index += 1) {
     const photo = input.photos[index]!;
-    const uploaded = await uploadImage("drafts", user.id, photo);
-    await db.insert(listingPhotos).values({
-      listingId: draftId,
-      fileKey: uploaded.key,
-      imageUrl: uploaded.url,
-      altText: `${input.title.trim()} draft photo ${index + 1}`,
-      sortOrder: index,
-    });
+    if (photo.contentBase64) {
+      const uploaded = await uploadImage("drafts", user.id, photo);
+      await db.insert(listingPhotos).values({
+        listingId: draftId,
+        fileKey: uploaded.key,
+        imageUrl: uploaded.url,
+        altText: `${input.title.trim()} draft photo ${index + 1}`,
+        sortOrder: index,
+      });
+    } else if (photo.imageUrl) {
+      const sourcePhoto = sourcePhotoByUrl.get(photo.imageUrl);
+      if (!sourcePhoto) throw new Error("A saved draft photo could not be copied.");
+      await db.insert(listingPhotos).values({
+        listingId: draftId,
+        fileKey: sourcePhoto.fileKey,
+        imageUrl: sourcePhoto.imageUrl,
+        altText: sourcePhoto.altText || `${input.title.trim()} draft photo ${index + 1}`,
+        sortOrder: index,
+      });
+    }
   }
 
   return { draftId };
+}
+
+export async function publishDraft(
+  user: Pick<User, "id" | "name">,
+  input: {
+    draftId: number;
+    title: string;
+    category: (typeof collectibleCategories)[number];
+    itemType: string;
+    condition: (typeof itemConditions)[number];
+    description: string;
+    estimatedValue?: number;
+    photos: PhotoUploadInput[];
+    itemDetails?: Record<string, string>;
+    certificationCompany?: string;
+    certificationNumber?: string;
+    grade?: string;
+  },
+) {
+  const db = await requireDb();
+  await ensureUserProfileRecord(user);
+
+  const draft = await db
+    .select({ userId: draftListings.userId })
+    .from(draftListings)
+    .where(eq(draftListings.id, input.draftId))
+    .limit(1);
+  if (!draft[0]) throw new Error("Draft not found.");
+  if (draft[0].userId !== user.id) throw new Error("You can only publish your own drafts.");
+
+  const storedPhotos = await db
+    .select({ fileKey: listingPhotos.fileKey, imageUrl: listingPhotos.imageUrl, altText: listingPhotos.altText, sortOrder: listingPhotos.sortOrder })
+    .from(listingPhotos)
+    .where(eq(listingPhotos.listingId, input.draftId));
+  const storedPhotoByUrl = new Map(storedPhotos.map(photo => [photo.imageUrl, photo]));
+
+  let listingId = 0;
+  await db.transaction(async tx => {
+    const insertResult = await tx.insert(listings).values({
+      ownerId: user.id,
+      title: input.title.trim(),
+      category: input.category,
+      itemType: input.itemType,
+      condition: input.condition,
+      description: input.description.trim(),
+      estimatedValue: normalizeListingEstimatedValue(input.estimatedValue)?.toString() ?? null,
+      itemDetails: input.itemDetails ? JSON.stringify(input.itemDetails) : null,
+      certificationCompany: input.certificationCompany || undefined,
+      certificationNumber: input.certificationNumber || undefined,
+      grade: normalizeListingGradeForStorage(input.grade, input.category, input.certificationCompany),
+      featured: 0,
+    });
+    listingId = getInsertId(insertResult);
+
+    for (let index = 0; index < input.photos.length; index += 1) {
+      const photo = input.photos[index]!;
+      if (photo.contentBase64) {
+        const uploaded = await uploadImage("listings", user.id, photo);
+        await tx.insert(listingPhotos).values({
+          listingId,
+          fileKey: uploaded.key,
+          imageUrl: uploaded.url,
+          altText: `${input.title.trim()} photo ${index + 1}`,
+          sortOrder: index,
+        });
+      } else if (photo.imageUrl) {
+        const stored = storedPhotoByUrl.get(photo.imageUrl);
+        if (!stored) throw new Error("A saved draft photo could not be verified.");
+        await tx.insert(listingPhotos).values({
+          listingId,
+          fileKey: stored.fileKey,
+          imageUrl: stored.imageUrl,
+          altText: stored.altText || `${input.title.trim()} photo ${index + 1}`,
+          sortOrder: index,
+        });
+      }
+    }
+
+    await tx.delete(listingPhotos).where(eq(listingPhotos.listingId, input.draftId));
+    await tx.delete(draftListings).where(eq(draftListings.id, input.draftId));
+  });
+
+  return getDashboardData(user);
 }
 
 export async function getDrafts(user: Pick<User, "id" | "name">) {

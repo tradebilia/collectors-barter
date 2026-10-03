@@ -30,6 +30,7 @@ import {
   restoreDeletedListings,
   getUnreadMessageCount,
   saveDraft,
+  publishDraft,
   getDrafts,
   getDraftById,
   updateDraft,
@@ -2021,6 +2022,7 @@ export const appRouter = router({
           estimatedValue: z.number().nonnegative().optional(),
           categoryFields: z.record(z.string(), z.string()).optional().default({}),
           additionalNotes: z.string().max(4000).optional(),
+          sourceDraftId: z.number().int().positive().optional(),
           photos: z.array(uploadedImageSchema).optional().default([]),
         }),
       )
@@ -2052,6 +2054,7 @@ export const appRouter = router({
           estimatedValue: input.estimatedValue,
           categoryFields: input.categoryFields,
           additionalNotes: input.additionalNotes,
+          sourceDraftId: input.sourceDraftId,
           photos: input.photos,
         });
       }),
@@ -2095,6 +2098,22 @@ export const appRouter = router({
           photos: input.photos,
         });
       }),
+    publishDraft: protectedProcedure
+      .input(z.object({
+        draftId: z.number().int().positive(),
+        title: z.string().min(3).max(160),
+        category: z.enum(collectibleCategories),
+        itemType: z.string().min(1).max(50),
+        condition: z.enum(itemConditions),
+        description: z.string().max(4000),
+        estimatedValue: z.number().nonnegative().optional(),
+        photos: z.array(uploadedImageSchema).max(10),
+        itemDetails: z.record(z.string(), z.string()).optional(),
+        certificationCompany: z.string().optional(),
+        certificationNumber: z.string().optional(),
+        grade: z.string().optional(),
+      }))
+      .mutation(({ ctx, input }) => publishDraft({ id: ctx.user.id, name: ctx.user.name }, input)),
     deleteDraft: protectedProcedure
       .input(
         z.object({

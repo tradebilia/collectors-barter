@@ -123,6 +123,7 @@ export default function AddInventory() {
   );
 
   const updateDraftMutation = trpc.market.updateDraft.useMutation();
+  const publishDraftMutation = trpc.market.publishDraft.useMutation();
 
   // Load existing draft data when in draft edit mode
   useEffect(() => {
@@ -286,8 +287,13 @@ export default function AddInventory() {
       // Use the actual grade value from the form
       const gradeValue = formData.grade || "ungraded";
       
-      // Filter photos to only include new photos with contentBase64
-      const newPhotos = photos.filter(photo => photo.contentBase64);
+      const draftPhotos = photos
+        .map((photo): { name: string; type: string; contentBase64?: string; imageUrl?: string } | null => photo.contentBase64
+          ? { name: photo.name || "", type: photo.type || "", contentBase64: photo.contentBase64 }
+          : photo.imageUrl
+            ? { name: photo.name || "", type: photo.type || "", imageUrl: photo.imageUrl }
+            : null)
+        .filter((photo): photo is { name: string; type: string; contentBase64?: string; imageUrl?: string } => Boolean(photo));
       
       const draftData = {
         title: formData.listingTitle || "",
@@ -302,13 +308,15 @@ export default function AddInventory() {
           condition: String(formData.condition || ""),
         },
         additionalNotes: formData.description || "",
-        photos: newPhotos,
+        sourceDraftId: isDraftMode ? draftId ?? undefined : undefined,
+        photos: draftPhotos,
       };
       
       console.log('Saving draft with data:', draftData);
       
-      await saveDraftMutation.mutateAsync(draftData);
-      toast.success("Inventory draft saved.");
+      const savedDraft = await saveDraftMutation.mutateAsync(draftData);
+      toast.success(isDraftMode ? `New draft created (Ref #${savedDraft.draftId}).` : "Inventory draft saved.");
+      if (isDraftMode) navigate("/inventory");
       // Reset form after successful save
       // You might want to navigate back or clear the form
     } catch (error) {
@@ -321,6 +329,7 @@ export default function AddInventory() {
   const submitListing = async (event: FormEvent<HTMLFormElement>) => {
     console.log('submitListing called with event:', event);
     event.preventDefault();
+    const action = ((event.nativeEvent as SubmitEvent).submitter as HTMLButtonElement | null)?.value || "submit";
 
     try {
       // Validate required fields
@@ -372,11 +381,30 @@ export default function AddInventory() {
               })
           .filter((photo) => Boolean(photo.contentBase64 || photo.imageUrl));
         if (formData.category) {
-          await updateDraftMutation.mutateAsync({
+          const conditionField = currentFields.find(f => f.name === 'condition');
+          const condition = conditionField && !shouldShowField(conditionField) ? "mint" : (formData.condition || "mint");
+          const itemDetails = getItemDetails();
+          const commonDraftData = {
+            draftId,
+            title: formData.listingTitle,
+            category: formData.category,
+            itemType: String(formData.itemType || ""),
+            condition,
+            description: formData.description,
+            estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
+            itemDetails,
+            certificationCompany: formData.gradingCompany && formData.gradingCompany !== "Raw" ? formData.gradingCompany : undefined,
+            certificationNumber: formData.certificationNumber || undefined,
+            grade: formData.grade && formData.grade !== "ungraded" ? String(formData.grade) : "ungraded",
+            photos: draftPhotos,
+          };
+
+          if (action === "update") {
+            await updateDraftMutation.mutateAsync({
             draftId: draftId,
             title: formData.listingTitle,
             category: formData.category,
-            condition: formData.condition || "mint",
+            condition,
             description: formData.description,
             grade: formData.grade,
             graderCompany: formData.gradingCompany,
@@ -388,8 +416,12 @@ export default function AddInventory() {
               condition: String(formData.condition || ""),
             },
             photos: draftPhotos,
-          });
-          toast.success("Draft updated successfully!");
+            });
+            toast.success("Existing draft updated successfully!");
+          } else {
+            await publishDraftMutation.mutateAsync(commonDraftData);
+            toast.success("Collectible submitted successfully!");
+          }
           navigate("/inventory");
         } else {
           toast.error("Please select a category before updating.");
@@ -757,15 +789,24 @@ export default function AddInventory() {
             </CollapsibleFormSection>
 
             {/* Action Buttons - Inside form content */}
-            <div className="mt-8 flex justify-center gap-4 pb-20">
+            <div className="mt-8 flex flex-wrap justify-center gap-4 pb-20">
               <Button variant="outline" type="button" onClick={handleSaveDraft} disabled={saveDraftMutation.isPending}>
                 {saveDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save as Draft
+                {isDraftMode ? "Save as New Draft" : "Save as Draft"}
               </Button>
-              <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
+              {isDraftMode ? <>
+                <Button type="submit" name="draftAction" value="update" variant="outline" disabled={updateDraftMutation.isPending || publishDraftMutation.isPending}>
+                  {updateDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Update Existing Draft
+                </Button>
+                <Button type="submit" name="draftAction" value="submit" className="bg-blue-600 text-white hover:bg-blue-700" disabled={updateDraftMutation.isPending || publishDraftMutation.isPending}>
+                  {publishDraftMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Submit Collectible
+                </Button>
+              </> : <Button type="submit" className="bg-blue-600 text-white hover:bg-blue-700" disabled={createListingMutation.isPending || updateListingMutation.isPending}>
                 {(createListingMutation.isPending || updateListingMutation.isPending) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditMode ? "Update Listing" : "Submit Collectible"}
-              </Button>
+              </Button>}
             </div>
           </form>
         </div>

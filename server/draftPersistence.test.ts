@@ -12,6 +12,9 @@ describe("inventory draft persistence", () => {
     expect(db).toContain("additionalNotes: input.additionalNotes || null");
     expect(router).toContain("categoryFields: input.categoryFields");
     expect(router).toContain("additionalNotes: input.additionalNotes");
+    expect(router).toContain("publishDraft: protectedProcedure");
+    expect(db).toContain("export async function publishDraft(");
+    expect(db).toContain("await tx.delete(draftListings).where(eq(draftListings.id, input.draftId));");
   });
 
   it("persists item type and restores draft form state in one update", () => {
@@ -23,6 +26,8 @@ describe("inventory draft persistence", () => {
     expect(page).toContain("condition: String(savedCategoryFields.condition || \"\")");
     expect(page).toContain("itemType: savedItemType");
     expect(page).toContain("setFormData((previous) => ({");
+    expect(page).toContain('if (action === "update")');
+    expect(page).toContain('toast.success("Collectible submitted successfully!")');
   });
 
   it("keeps existing draft photos compatible with later updates", () => {
