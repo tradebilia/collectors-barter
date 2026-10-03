@@ -67,8 +67,23 @@ export type NormalizedEvidenceSummary = {
   marketEvidence: string[];
   marketEvidencePriceSummaries?: string[];
   selectedSourceSummaries?: string[];
+  sourceDecisions?: EvidenceSourceDecision[];
   guideAnchors: GuideValueAnchor[];
   sources: { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null }[];
+};
+
+export type EvidenceSourceDecision = {
+  id: string;
+  label: string;
+  status: EvidenceSourceStatus;
+  kind: EvidenceSourceKind;
+  completed: number;
+  accepted: number;
+  currentValue: number;
+  historicalTrend: number;
+  context: number;
+  acceptedPrices: number[];
+  message?: string | null;
 };
 
 export type GuideValueAnchor = {
@@ -373,6 +388,30 @@ function compactSelectedSourceSummary(source: EvidenceSourceObservation): string
   return `${source.label}: selected ${source.kind.replace(/_/g, ' ')} source; completed-sales and analyzer-price summary not applicable.`;
 }
 
+function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceDecision {
+  const market = source.market;
+  const completed = Number(market?.completedSaleCount ?? 0);
+  const accepted = Number(market?.analyzerSubmittedSaleCount ?? 0);
+  const currentValue = Number(market?.currentValueSaleCount ?? market?.recentSaleCount ?? 0);
+  const historicalTrend = Number(market?.historicalTrendSaleCount ?? market?.historicalSaleCount ?? 0);
+  const undated = Number(market?.undatedSaleCount ?? 0);
+  const currentListings = Number(market?.currentListingCount ?? 0);
+  const context = market ? Math.max(0, currentListings + completed - accepted - currentValue - historicalTrend + undated) : 0;
+  return {
+    id: source.id,
+    label: source.label,
+    status: source.status,
+    kind: source.kind,
+    completed,
+    accepted,
+    currentValue,
+    historicalTrend,
+    context,
+    acceptedPrices: (market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0),
+    message: source.message,
+  };
+}
+
 export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: EvidenceSourceObservation[]): NormalizedEvidenceSummary {
   const category = normalizeCategory(input.category);
   const listingValues = getListingValues(input);
@@ -449,6 +488,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     marketEvidence,
     marketEvidencePriceSummaries,
     selectedSourceSummaries,
+    sourceDecisions: sources.map(buildSourceDecision),
     guideAnchors,
     sources: sources.map(({ id, label, kind, role, status, message }) => ({ id, label, kind, role: role ?? evidenceRoleForSourceKind(kind), status, message })),
   };

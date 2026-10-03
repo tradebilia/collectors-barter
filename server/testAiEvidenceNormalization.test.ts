@@ -115,6 +115,18 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 4 completed sales, 4 submitted to analyzer, 1 current-value, 3 historical-trend.']);
     expect(summary.marketEvidencePriceSummaries?.[0]).toContain('current-value: 1 prices');
     expect(summary.marketEvidencePriceSummaries?.[0]).toContain('historical-trend: 3 prices');
+    expect(summary.sourceDecisions?.[0]).toMatchObject({ completed: 4, accepted: 4, currentValue: 1, historicalTrend: 3, context: 0 });
+  });
+
+  it('keeps asking listings and non-market sources in context-only buckets', () => {
+    const summary = normalizeTestAiEvidence({ title: 'Megatron', category: 'vintage_toys' }, [
+      { id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: 'success', market: { currentListingCount: 20 } },
+      { id: 'tcgdex', label: 'Reference Catalog', kind: 'reference', status: 'success' },
+    ]);
+    expect(summary.sourceDecisions).toEqual(expect.arrayContaining([
+      expect.objectContaining({ label: 'eBay Active Listings', accepted: 0, currentValue: 0, historicalTrend: 0, context: 20 }),
+      expect.objectContaining({ label: 'Reference Catalog', context: 0 }),
+    ]));
   });
 
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {
