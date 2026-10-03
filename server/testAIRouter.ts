@@ -241,6 +241,24 @@ export function filterListingsByCertificationCompany(summaries: any[], certifica
   });
 }
 
+const explicitGradedListingPattern = new RegExp(
+  `(?:${certificationProviderPattern.source}|\\bgraded\\b|\\bslab(?:bed)?\\b|\\bencapsulated\\b|\\bcertified\\b)`,
+  'i',
+);
+
+/**
+ * Raw/ungraded targets must not display listings that explicitly identify a
+ * grading company or graded/slabbed packaging. Unknown titles remain eligible
+ * because absence of a grading signal is not proof that the item is raw.
+ */
+export function filterListingsByTargetGradingState(
+  summaries: any[],
+  targetIsGraded: boolean,
+): any[] {
+  if (targetIsGraded) return summaries;
+  return summaries.filter((item: any) => !explicitGradedListingPattern.test(String(item?.title ?? '')));
+}
+
 export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean }): string[] {
   const precise = query.trim();
   const withoutGrade = buildEbayBrowseQuery(precise, { preserveGrade: false });
@@ -1079,7 +1097,9 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const filteredSummaries = filterListingsByGrade(bySport, targetGrade, input.category, cert)
+        const targetIsGraded = Boolean(cert || grade);
+        const byTargetGradingState = filterListingsByTargetGradingState(bySport, targetIsGraded);
+        const filteredSummaries = filterListingsByGrade(byTargetGradingState, targetGrade, input.category, cert)
           .sort((a: any, b: any) => Number(a.__tradebiliaQueryTier ?? 0) - Number(b.__tradebiliaQueryTier ?? 0));
         console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
@@ -1127,6 +1147,8 @@ export const testAIRouter = router({
             exactTierUsedFallbacks: fallbackQueries.length > 0,
             exactTierResultCount: summaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
             exactTierFilteredCount: filteredSummaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
+            rawTargetExcludedGradedCount: bySport.length - byTargetGradingState.length,
+            targetIsGraded,
             queryTierCount: 1 + fallbackQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },

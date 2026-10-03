@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSportsCardTestAiQueries, filterTestAiListingsBySport } from "../shared/testAiCriteria";
-import { buildEbayBrowseQuery, filterListingsByGrade, filterListingsByNumber } from "./testAIRouter";
+import { buildEbayBrowseQuery, filterListingsByGrade, filterListingsByNumber, filterListingsByTargetGradingState } from "./testAIRouter";
 
 describe("Test AI sports-card eBay query candidates", () => {
   it("preserves the target certification grade in precise sports-card Browse searches", () => {
@@ -100,5 +100,17 @@ describe("Test AI sports-card eBay query candidates", () => {
     ];
 
     expect(filterListingsByGrade(listings, 60, "vintage_toys", "AFA")).toEqual([listings[0]]);
+  });
+
+  it("excludes explicitly graded listings when the eBay target is raw or ungraded", () => {
+    const listings = [
+      { title: "2024 Upper Deck Macklin Celebrini Young Guns #451" },
+      { title: "2024 Upper Deck Macklin Celebrini Young Guns #451 PSA 9" },
+      { title: "2024 Upper Deck Macklin Celebrini Young Guns #451 graded slab" },
+      { title: "2024 Upper Deck Macklin Celebrini Young Guns #451" },
+    ];
+
+    expect(filterListingsByTargetGradingState(listings, false)).toEqual([listings[0], listings[3]]);
+    expect(filterListingsByTargetGradingState(listings, true)).toEqual(listings);
   });
 });
