@@ -560,8 +560,8 @@ function assessMarketEvidenceCoverage(
 
 export function isCompletedSaleCandidate(sale: MarketSale, nowMs: number): boolean {
   if (sale.evidenceDisposition && sale.evidenceDisposition !== 'valuation_eligible') return false;
-  if (sale.saleStatus && sale.saleStatus !== 'completed') return false;
-  if (sale.priceBasis === 'unknown') return false;
+  if (sale.saleStatus !== 'completed') return false;
+  if (!sale.priceBasis || !['realized', 'sold', 'closed'].includes(sale.priceBasis)) return false;
   if (sale.recency === 'historical' || sale.recency === 'undated') return false;
   const age = daysOld(sale.date, nowMs);
   return age !== null && (age <= 365 || (sale.recency === 'extended' && age <= 730));

@@ -9,7 +9,7 @@ const target = {
   itemDetails: JSON.stringify({ year: '1996', manufacturer: 'Topps', player: 'Kobe Bryant', cardNumber: '138' }),
 };
 
-const sale = (title: string, price: number, date: string) => ({ title, price, currency: 'USD', date });
+const sale = (title: string, price: number, date: string) => ({ title, price, currency: 'USD', date, saleStatus: 'completed' as const, priceBasis: 'sold' as const });
 
 describe('Trade Analyzer 2.0 comparable engine', () => {
   it('scores exact identity and grade matches above weaker comparables', () => {
@@ -165,6 +165,15 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     }], null, new Date('2026-09-22T00:00:00Z'));
     expect(profile.weightedValue).toBeNull();
     expect(profile.contextualComparableCount).toBe(1);
+  });
+
+  it('does not allow records with omitted completion status or price basis to enter deterministic value', () => {
+    const profile = buildMarketProfile(target, [
+      { ...sale(target.title, 1200, '2026-09-15'), sourceId: 'missing-status', saleStatus: undefined, priceBasis: undefined },
+      { ...sale(target.title, 1300, '2026-09-14'), sourceId: 'missing-basis', priceBasis: undefined },
+    ], null, new Date('2026-09-22T00:00:00Z'));
+    expect(profile.weightedValue).toBeNull();
+    expect(profile.contextualComparableCount).toBe(2);
   });
 
   it('does not apply IQR exclusion to fewer than five selected completed sales', () => {
