@@ -81,6 +81,18 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('Ken Griffey Jr. 1989 1 PSA 9');
   });
 
+  it('ignores condition words between the grading company and numeric grade', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ searchalgolia: { lots: [{
+      lot_id: 'goldin-gretzky-mint-9', meta_slug: 'gretzky-psa-mint-9', title: '1979-80 O-Pee-Chee #18 Wayne Gretzky Rookie Card – PSA MINT 9', status: 'Completed_Sold', current_price: 202000, buyer_premium: 20, end_timestamp: '2024-04-24T00:00:00Z',
+    }] } }), { status: 200, headers: { 'content-type': 'application/json' } })));
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin', title: 'Wayne Gretzky 1979 O-Pee-Chee 18 PSA 9', category: 'sports_cards', grade: '9.00', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ player: 'Wayne Gretzky', year: '1979', cardNumber: '18' }),
+    });
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({ grade: '9', certificationCompany: 'PSA', identityMatched: true });
+  });
+
   it('preserves camel-case comic series names such as DareDevil in Goldin queries', () => {
     expect(buildGoldinSearchQuery({
       sourceId: 'goldin',

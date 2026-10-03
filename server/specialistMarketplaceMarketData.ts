@@ -407,7 +407,10 @@ function extractDate(value: string): string | null {
 
 function extractGrade(value: string): string | null {
   const match = value.match(/\b(?:NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\s*(?:graded?\s*)?([A-Z]{0,8}\s*\d{1,3}(?:\.\d+)?(?:\+|\s*(?:CAMEO|DCAM|UCAM))?)/i);
-  if (match?.[1]) return match[1].replace(/\s+/g, ' ').trim().toUpperCase();
+  if (match?.[1]) {
+    const numericGrade = match[1].match(/\d{1,3}(?:\.\d+)?/)?.[0];
+    if (numericGrade) return numericGrade;
+  }
 
   // Goldin commonly writes comic grades as "CGC Signature Series 9.6".
   // The label between the grader and numeric grade is descriptive, not the
