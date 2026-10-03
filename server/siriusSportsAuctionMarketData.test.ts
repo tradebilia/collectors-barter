@@ -40,6 +40,13 @@ describe('Sirius Sports Auctions adapter', () => {
     const summary: any = { auctionName: 'Sirius Sports Cards Auction', lotId: 'x', title: '1989 UPPER DECK 1 KEN GRIFFEY JR. STAR ROOKIE PSA GEM MT 10', minBid: null, finalPrice: 4663, status: 'realized', url: null, auctionUrl: null };
     const targetItem = { title: '1989 Upper Deck Ken Griffey Jr. Star Rookie', category: 'sports_cards', grade: '10', certificationCompany: 'PSA', itemDetails: JSON.stringify({ player: 'Ken Griffey Jr.', manufacturer: 'Upper Deck', year: '1989', cardNumber: '1' }) };
     const result = normalizeSiriusSale(summary, { title: summary.title, description: summary.title, finalPrice: 4663, date: '2/26/2021', closed: true }, targetItem);
-    expect(result).toMatchObject({ completed: true, sold: true, identityMatched: true, exclusionReason: null });
+    expect(result).toMatchObject({ completed: true, sold: true, identityMatched: true, valuationEligible: true, exclusionReason: null });
+  });
+
+  it('matches PSA 10.00 targets to Sirius titles written as PSA GEM MT 10', () => {
+    const summary: any = { auctionName: 'Sirius Sports Cards Auction', lotId: 'x', title: '1989 UPPER DECK 1 KEN GRIFFEY JR. STAR ROOKIE PSA GEM MT 10', finalPrice: 4663, status: 'realized' };
+    const targetItem = { title: '1989 Upper Deck Ken Griffey Jr. Star Rookie', category: 'sports_cards', grade: '10.00', certificationCompany: 'PSA', itemDetails: JSON.stringify({ player: 'Ken Griffey Jr.', manufacturer: 'Upper Deck', year: '1989', cardNumber: '1' }) };
+    const result = normalizeSiriusSale(summary, { title: summary.title, description: summary.title, finalPrice: 4663, date: '2/26/2021', closed: true }, targetItem);
+    expect(result).toMatchObject({ identityMatched: true, valuationEligible: true, exclusionReason: null });
   });
 });

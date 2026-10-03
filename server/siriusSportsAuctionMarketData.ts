@@ -130,10 +130,8 @@ function gradeMatches(
 ): boolean {
   if (!target.grade) return true;
   const candidate = text(candidateText);
-  const numeric = candidate.match(
-    /(?:grade|psa|bgs|sgc|cgc|beckett)?\s*(\d+(?:\.\d+)?)/i
-  )?.[1];
-  if (numeric && numericGradesEquivalent(target.grade, numeric)) return true;
+  const numericValues = [...candidate.matchAll(/\b\d+(?:\.\d+)?\b/g)].map(match => match[0]);
+  if (numericValues.some(numeric => numericGradesEquivalent(target.grade, numeric))) return true;
   const expected = normalize(
     `${target.certificationCompany ?? ""} ${target.grade}`
   ).replace(/ /g, "");
@@ -320,7 +318,7 @@ export function normalizeSiriusSale(
     identityScore: identity.score,
     matchedTokens: identity.matchedTokens,
     saleStatus: sold ? "completed" : summary.status || "unknown",
-    valuationEligible: false,
+    valuationEligible: Boolean(sold && identityMatched && date && price != null),
     priceSemantics: sold
       ? "Sirius final price including buyers premium; candidate only after identity, date, duplicate, and visual gates."
       : "Not an explicit dated closed sale; context only.",
