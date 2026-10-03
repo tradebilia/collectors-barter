@@ -322,6 +322,24 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.sales[0]?.matchedTokens).toContain('daredevil');
   });
 
+  it('matches Goldin sports-card titles when player spacing differs from structured fields', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ searchalgolia: { lots: [{
+      lot_id: 'goldin-mcgwire-1985-401',
+      meta_slug: '1985-topps-1984-usa-baseball-team-401-mark-mc-gwire-rookie-card-psa-gem-mt-10',
+      title: '1985 Topps (1984 USA Baseball Team) #401 Mark Mc Gwire Rookie Card - PSA GEM MT 10',
+      status: 'Completed_Sold',
+      current_price: 2150,
+      buyer_premium: 20,
+      end_timestamp: '2022-10-09T00:00:00Z',
+    }] } }), { status: 200, headers: { 'content-type': 'application/json' } })));
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin', title: '1985 Topps #401 Mark McGwire Rookie Card PSA 10', category: 'sports_cards', grade: '10', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ year: '1985', manufacturer: 'Topps', setName: 'Topps', cardNumber: '401', player: 'Mark McGwire' }),
+    });
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({ identityMatched: true, valuationEligible: true, price: 2580 });
+  });
+
   it('rejects a Goldin CGC Signature Series 9.6 when the selected comic is CGC 9.8', async () => {
     const comic = {
       sourceId: 'goldin' as const,

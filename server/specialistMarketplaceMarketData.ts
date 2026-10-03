@@ -479,6 +479,18 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
   const targetTokens = significantTokens([normalizePreservingSpelling(input.title), details.year, details.catalogNumber, details.cardNumber, details.issueNumber, details.model, details.edition].map(text).filter(Boolean).join(' '));
   const candidate = normalize(`${title} ${description}`);
   const matchedTokens = targetTokens.filter((token) => candidate.includes(token));
+  const normalizedCategory = normalize(input.category).replace(/_/g, ' ');
+  const sportsPlayer = firstDetail(details, ['player', 'athlete', 'subject']);
+  const sportsYear = firstDetail(details, ['year']);
+  const sportsCardNumber = firstDetail(details, ['cardNumber', 'cardNo', 'number']);
+  const sportsSet = firstDetail(details, ['setName', 'set', 'cardSet']);
+  const candidateCompact = candidate.replace(/\s+/g, '');
+  const playerTokens = significantTokens(sportsPlayer);
+  const sportsPlayerMatch = Boolean(sportsPlayer) && (candidateCompact.includes(normalize(sportsPlayer).replace(/\s+/g, '')) || playerTokens.every((token) => candidate.includes(token)));
+  const sportsCardNumberMatch = Boolean(sportsCardNumber) && candidate.includes(normalize(sportsCardNumber));
+  const sportsYearMatch = Boolean(sportsYear) && candidate.includes(normalize(sportsYear));
+  const sportsSetMatch = Boolean(sportsSet) && significantTokens(sportsSet).every((token) => candidate.includes(token));
+  const structuredSportsMatch = normalizedCategory === 'sports cards' && sportsPlayerMatch && sportsCardNumberMatch && (sportsYearMatch || sportsSetMatch);
   // Platform, condition, media, and grading words are shared by many listings.
   // When the selected title has a distinctive long token, require that token rather
   // than allowing a different item through on generic overlap such as "Atari",
@@ -506,8 +518,10 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
   const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason)) ?? null;
   return {
     matchedTokens,
-    matched: tokenMatch && gradeMatch && !conflict,
-    reason: !tokenMatch
+    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict,
+    reason: normalizedCategory === 'sports cards' && !structuredSportsMatch
+      ? 'Sports-card player, card number, and year/set identity fields did not match the Goldin title.'
+      : !tokenMatch
       ? 'Title/details did not meet the deterministic identity-token threshold.'
       : !gradeMatch
         ? `Grade conflicts with the selected item (${grade ?? 'candidate grade unavailable'} vs ${input.grade}).`
