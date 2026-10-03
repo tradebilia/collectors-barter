@@ -5,6 +5,7 @@ import {
   EBAY_ACTIVE_QUERY_TIER_LIMIT,
   EBAY_ACTIVE_RESULTS_PER_TIER,
 } from "./testAIRouter";
+import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
@@ -96,5 +97,26 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(visualSource).toContain("VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT");
     expect(visualSource).toContain("prioritizeVisualSourceCandidates");
     expect(visualSource).toContain("outside the initial prioritized vision-review queue");
+  });
+
+  it("prioritizes all exact-tier candidates before relaxed listings", () => {
+    const candidates = Array.from({ length: 21 }, (_, index) => ({
+      candidateIndex: index,
+      imageUrl: `https://images.example/${index}.jpg`,
+      item: {
+        title: index === 20
+          ? "Rare 1984 Hasbro Transformer G1 Megatron AFA Graded Q60 MIB"
+          : `Transformers Megatron G1 AFA listing ${index}`,
+        __tradebiliaQueryTier: index === 20 ? 0 : 1,
+      },
+    }));
+    const prioritized = prioritizeVisualSourceCandidates(
+      candidates,
+      "title=Transformers Megatron G1; grade=60.00; category=vintage_toys",
+      [],
+    );
+    expect(prioritized).toHaveLength(20);
+    expect(prioritized.some((candidate) => candidate.candidateIndex === 20)).toBe(true);
+    expect(prioritized.findIndex((candidate) => candidate.candidateIndex === 20)).toBe(0);
   });
 });

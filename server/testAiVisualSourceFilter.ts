@@ -179,9 +179,14 @@ function visualPriorityScore<T extends VisualSourceCandidate>(item: T, targetMet
   const titleTokens = new Set(title.split(/[^a-z0-9]+/).filter(token => token.length >= 2));
   const overlap = [...targetTokens].filter(token => titleTokens.has(token)).length;
   const targetGrade = targetMetadata.match(/(?:^|;)\s*grade=([^;]+)/i)?.[1]?.trim().toLowerCase();
-  const gradeMatch = targetGrade && title.includes(targetGrade) ? 10 : 0;
+  const normalizedTargetGrade = targetGrade?.match(/\d+(?:\.\d+)?/)?.[0];
+  const gradeMatch = normalizedTargetGrade && new RegExp(`(?:^|[^0-9])(?:q|afa)?\\s*${normalizedTargetGrade.replace('.', '\\.')}(?:\\.0+)?(?:$|[^0-9])`, 'i').test(title) ? 10 : 0;
   const issueMatch = /(?:#|issue\s*)\d+[a-z]?/i.test(targetTitle) && /(?:#|issue\s*)\d+[a-z]?/i.test(title) ? 20 : 0;
   return overlap + gradeMatch + issueMatch;
+}
+
+function visualQueryTierPriority<T extends VisualSourceCandidate>(item: T): number {
+  return Number((item as any).__tradebiliaQueryTier) === 0 ? 1 : 0;
 }
 
 export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate>(
@@ -192,7 +197,9 @@ export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate
   const declaredConflicts = new Set(declaredReviews.filter(review => review.verdict === "mismatch").map(review => review.candidateIndex));
   return candidates
     .filter(candidate => !declaredConflicts.has(candidate.candidateIndex))
-    .sort((a, b) => visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || a.candidateIndex - b.candidateIndex)
+    // Exact-tier results are the strongest evidence of the user's requested
+    // search and must enter the bounded vision window before relaxed tiers.
+    .sort((a, b) => visualQueryTierPriority(b.item) - visualQueryTierPriority(a.item) || visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || a.candidateIndex - b.candidateIndex)
     .slice(0, VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT);
 }
 
