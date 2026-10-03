@@ -2050,6 +2050,8 @@ export const appRouter = router({
           graderCompany: input.graderCompany,
           certificationNumber: input.certificationNumber,
           estimatedValue: input.estimatedValue,
+          categoryFields: input.categoryFields,
+          additionalNotes: input.additionalNotes,
           photos: input.photos,
         });
       }),
@@ -2073,7 +2075,8 @@ export const appRouter = router({
           graderCompany: z.string().optional(),
           certificationNumber: z.string().optional(),
           estimatedValue: z.number().optional(),
-          photos: z.array(z.object({ name: z.string(), type: z.string(), contentBase64: z.string() })),
+          categoryFields: z.record(z.string(), z.string()).optional().default({}),
+          photos: z.array(uploadedImageSchema),
         }),
       )
       .mutation(({ ctx, input }) => {
@@ -2085,7 +2088,7 @@ export const appRouter = router({
           graderCompany: input.graderCompany,
           certificationNumber: input.certificationNumber,
           estimatedValue: input.estimatedValue,
-          categoryFields: {},
+          categoryFields: input.categoryFields,
           additionalNotes: input.description,
           photos: input.photos,
         });

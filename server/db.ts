@@ -2203,6 +2203,8 @@ export async function saveDraft(
     graderCompany?: string;
     certificationNumber?: string;
     estimatedValue?: number;
+    categoryFields?: Record<string, any>;
+    additionalNotes?: string;
     photos: PhotoUploadInput[];
   },
 ) {
@@ -2217,6 +2219,8 @@ export async function saveDraft(
     graderCompany: input.graderCompany || null,
     certificationNumber: input.certificationNumber || null,
     estimatedValue: normalizeListingEstimatedValue(input.estimatedValue)?.toString() ?? null,
+    categoryFields: input.categoryFields ? JSON.stringify(input.categoryFields) : null,
+    additionalNotes: input.additionalNotes || null,
   });
   const draftId = getInsertId(insertResult);
 

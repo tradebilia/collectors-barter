@@ -127,22 +127,27 @@ export default function AddInventory() {
   useEffect(() => {
     if (isDraftMode && getDraftByIdQuery.data) {
       const draft = getDraftByIdQuery.data;
-      if (draft.category) {
-        setCategory(draft.category as CollectibleCategory);
-      }
-      updateField("listingTitle", draft.title);
-      updateField("estimatedValue", String(draft.estimatedValue || ""));
-      updateField("description", draft.additionalNotes || "");
-      updateField("gradingCompany", draft.graderCompany || "");
-      updateField("certificationNumber", draft.certificationNumber || "");
-      updateField("grade", draft.grade || "ungraded");
+      const savedCategoryFields = draft.categoryFields && typeof draft.categoryFields === "object"
+        ? draft.categoryFields as Record<string, unknown>
+        : {};
+      const savedItemType = String(savedCategoryFields.itemType || "");
 
-      // Load category fields
-      if (draft.categoryFields && typeof draft.categoryFields === "object") {
-        Object.entries(draft.categoryFields).forEach(([key, value]) => {
-          updateField(key, String(value || ""));
-        });
-      }
+      // Apply the draft in one state update. Calling setCategory/setItemType and
+      // then individual updateField calls caused React updates to race and also
+      // could not restore the category-specific fields after navigation.
+      setFormData((previous) => ({
+        ...previous,
+        category: (draft.category || "") as CollectibleCategory,
+        itemType: savedItemType,
+        listingTitle: draft.title || "",
+        tradeValue: String(draft.estimatedValue ?? ""),
+        description: draft.additionalNotes || "",
+        condition: String(savedCategoryFields.condition || ""),
+        gradingCompany: draft.graderCompany || "",
+        certificationNumber: draft.certificationNumber || "",
+        grade: draft.grade || "ungraded",
+        ...Object.fromEntries(Object.entries(savedCategoryFields).map(([key, value]) => [key, String(value ?? "")]))
+      }));
 
       // Load existing photos
       if (draft.photos && draft.photos.length > 0) {
@@ -289,7 +294,11 @@ export default function AddInventory() {
         graderCompany: formData.gradingCompany || "Raw",
         certificationNumber: formData.certificationNumber || "",
         estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
-        categoryFields: getItemDetails(),
+        categoryFields: {
+          ...getItemDetails(),
+          itemType: String(formData.itemType || ""),
+          condition: String(formData.condition || ""),
+        },
         additionalNotes: formData.description || "",
         photos: newPhotos,
       };
@@ -356,6 +365,11 @@ export default function AddInventory() {
             graderCompany: formData.gradingCompany,
             certificationNumber: formData.certificationNumber,
             estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
+            categoryFields: {
+              ...getItemDetails(),
+              itemType: String(formData.itemType || ""),
+              condition: String(formData.condition || ""),
+            },
             photos: newPhotos.length > 0 ? newPhotos : reorderedPhotos,
           });
           toast.success("Draft updated successfully!");
