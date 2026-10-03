@@ -843,18 +843,18 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'}</p>}
       {displayData?.debug && displayData.debug.queryTierCount > 1 && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay).</p>}
       {displayData?.listings && displayData.listings.length > 0 && (
-        <div className="space-y-1 max-h-48 overflow-y-auto">
+        <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
           {displayData.listings.map((l: any, i: number) => (
-            <div key={i} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
-              <div className="flex items-center gap-2 min-w-0">
+            <div key={i} className="flex items-start justify-between gap-2 py-1.5 border-b border-gray-700/20 last:border-b-0">
+              <div className="flex min-w-0 flex-1 items-start gap-2">
                 {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
                   <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
-                  {l.visualReviewStatus === 'mismatch' && <p className="mt-0.5 flex items-start gap-1 text-[9px] leading-snug text-red-300"><span className="shrink-0 font-bold" aria-label="Image mismatch">✕</span><span><strong>Image mismatch:</strong> {l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</span></p>}
+                  {l.visualReviewStatus === 'mismatch' && <div className="mt-0.5 text-[9px] leading-snug text-red-300"><p className="flex items-start gap-1 break-words whitespace-normal"><span className="shrink-0 font-bold" aria-label="Image mismatch">✕</span><span><strong>Image mismatch:</strong> {l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</span></p><details className="mt-1 pl-4"><summary className="cursor-pointer text-[8px] text-red-200/80">View full mismatch explanation</summary><p className="mt-0.5 break-words whitespace-normal text-[9px] text-red-200/90">{l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</p></details></div>}
                 </div>
               </div>
-              <p className="text-green-400 font-semibold text-sm flex-shrink-0">{formatWholeDollar(l.price)}</p>
+              <p className="shrink-0 pl-1 text-right text-green-400 font-semibold text-sm">{formatWholeDollar(l.price)}</p>
             </div>
           ))}
         </div>
