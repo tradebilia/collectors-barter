@@ -46,7 +46,7 @@ export type SpecialistMarketplaceRecord = {
   identityMatched: boolean;
   matchedTokens: string[];
   exclusionReason: string | null;
-  valuationEligible: false;
+  valuationEligible: boolean;
 };
 
 export type SpecialistMarketplaceLookupResult = {
@@ -980,6 +980,7 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
     const certificationCompany = extractCertificationCompany(title);
     const identity = identityReview(input, title, '', grade, certificationCompany);
     const lotId = text(lot.lot_id) || (lot.lot_number != null ? String(lot.lot_number) : null);
+    const valuationEligible = Boolean(completed && date && allInPrice != null && allInPrice > 0 && identity.matched);
     return {
       sourceId: 'goldin' as const,
       provider: source.label,
@@ -1004,10 +1005,14 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
       matchedTokens: identity.matchedTokens,
       exclusionReason: !completed
         ? 'The public Goldin search record did not provide Completed_Sold status, winning bid, and buyer-premium percentage together.'
-        : !identity.matched
-          ? identity.reason ?? 'Identity could not be confirmed.'
-          : 'Context-only pending source-specific signed-admission validation.',
-      valuationEligible: false as const,
+        : !date
+          ? 'Goldin did not provide a valid completed-sale date.'
+          : !identity.matched
+            ? identity.reason ?? 'Identity could not be confirmed.'
+            : !valuationEligible
+              ? 'Goldin record did not pass the positive-price admission gate.'
+              : null,
+      valuationEligible,
     } satisfies SpecialistMarketplaceRecord;
   });
   const sales = records.filter((record) => record.completed && record.identityMatched);
@@ -1016,7 +1021,7 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
     status: 'success',
     sales,
     context: records.filter((record) => !record.completed || !record.identityMatched),
-    messages: [`Goldin ran one anonymous public sold-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale and identity checks. Goldin’s returned dollar winning bids were combined with the returned buyer-premium percentage for all-in context. All records remain context-only and cannot affect valuation or the final AI conclusion.`],
+    messages: [`Goldin ran one anonymous public sold-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale, dated-price, identity, and admission checks. Goldin’s returned dollar winning bids were combined with the returned buyer-premium percentage for the all-in analyzer price. Non-qualifying records remain context-only.`],
   };
 }
 
@@ -1047,6 +1052,7 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
   const certificationCompany = extractCertificationCompany(`${title} ${description}`);
   const identity = identityReview(input, title, description, grade, certificationCompany);
   const lotId = text(lot.lot_id) || (lot.lot_number != null ? String(lot.lot_number) : null);
+  const valuationEligible = Boolean(completed && date && allInPrice != null && allInPrice > 0 && identity.matched);
   const record: SpecialistMarketplaceRecord = {
     sourceId: 'goldin',
     provider: source.label,
@@ -1071,10 +1077,12 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
     matchedTokens: identity.matchedTokens,
     exclusionReason: !completed
       ? 'The public Goldin lot did not provide Completed_Sold status, winning bid, and buyer-premium percentage together.'
+      : !date
+        ? 'Goldin did not provide a valid completed-sale date.'
       : !identity.matched
         ? identity.reason ?? 'Identity could not be confirmed.'
-        : 'Context-only pending source-specific signed-admission validation.',
-    valuationEligible: false,
+        : !valuationEligible ? 'Goldin record did not pass the positive-price admission gate.' : null,
+    valuationEligible,
   };
   const sales = record.completed && record.identityMatched ? [record] : [];
   return {
@@ -1082,7 +1090,7 @@ function parseGoldinPublicLotResponse(input: SpecialistMarketplaceLookupInput, s
     status: 'success',
     sales,
     context: sales.length ? [] : [record],
-    messages: [`Goldin read one public supplied lot URL. ${completed ? `Winning bid $${winningBid.toLocaleString()} plus ${buyerPremiumPercentage}% buyer premium equals displayed all-in context $${allInPrice!.toLocaleString()}.` : 'The lot did not meet the completed-sale field requirement.'} The record remains context-only and cannot affect valuation or the final AI conclusion.`],
+    messages: [`Goldin read one public supplied lot URL. ${completed ? `Winning bid $${winningBid.toLocaleString()} plus ${buyerPremiumPercentage}% buyer premium equals displayed all-in analyzer price $${allInPrice!.toLocaleString()}.` : 'The lot did not meet the completed-sale field requirement.'} Only records passing the dated-price and identity gates can affect valuation.`],
   };
 }
 

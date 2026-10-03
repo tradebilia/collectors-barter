@@ -282,7 +282,7 @@ describe('bounded specialist marketplace adapters', () => {
       buyerPremiumPercentage: 20,
       buyerPremiumIncluded: true,
       url: 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-bros-sealed-video-gamegemqt',
-      valuationEligible: false,
+      valuationEligible: true,
     });
     expect(result.context).toHaveLength(1);
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
@@ -483,9 +483,9 @@ describe('bounded specialist marketplace adapters', () => {
       buyerPremiumIncluded: true,
       priceBasis: 'closed',
       currency: 'USD',
-      valuationEligible: false,
+      valuationEligible: true,
     });
-    expect(result.messages.join(' ')).toMatch(/Winning bid \$28,000 plus 20% buyer premium equals displayed all-in context \$33,600/i);
+    expect(result.messages.join(' ')).toMatch(/Winning bid \$28,000 plus 20% buyer premium equals displayed all-in analyzer price \$33,600/i);
   });
 
   it('requires a public allowlisted locator when a source has no generic keyword contract', () => {
