@@ -35,6 +35,7 @@ type UploadedImage = {
   type: string;
   contentBase64: string;
   previewUrl: string;
+  imageUrl?: string;
 };
 
 // Read files as base64
@@ -156,6 +157,7 @@ export default function AddInventory() {
           type: "image/jpeg",
           contentBase64: "",
           previewUrl: photo.imageUrl,
+          imageUrl: photo.imageUrl,
         }));
         setPhotos(existingPhotos);
       }
@@ -353,7 +355,22 @@ export default function AddInventory() {
       
       if (isDraftMode && draftId) {
         // Update draft
-        const newPhotos = reorderedPhotos.filter(p => p.contentBase64);
+        // Existing draft photos are represented by stored URLs. Do not send
+        // their empty contentBase64 placeholders: the upload field is only
+        // valid for newly selected files.
+        const draftPhotos = reorderedPhotos
+          .map((photo): { name: string; type: string; contentBase64?: string; imageUrl?: string } => photo.contentBase64
+            ? {
+                name: photo.name || "",
+                type: photo.type || "",
+                contentBase64: photo.contentBase64,
+              }
+            : {
+                name: photo.name || "",
+                type: photo.type || "",
+                ...(photo.imageUrl ? { imageUrl: photo.imageUrl } : {}),
+              })
+          .filter((photo) => Boolean(photo.contentBase64 || photo.imageUrl));
         if (formData.category) {
           await updateDraftMutation.mutateAsync({
             draftId: draftId,
@@ -370,7 +387,7 @@ export default function AddInventory() {
               itemType: String(formData.itemType || ""),
               condition: String(formData.condition || ""),
             },
-            photos: newPhotos.length > 0 ? newPhotos : reorderedPhotos,
+            photos: draftPhotos,
           });
           toast.success("Draft updated successfully!");
           navigate("/inventory");

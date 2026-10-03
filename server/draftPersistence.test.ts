@@ -26,8 +26,11 @@ describe("inventory draft persistence", () => {
   });
 
   it("keeps existing draft photos compatible with later updates", () => {
+    const page = read("client/src/pages/AddInventory.tsx");
     const router = read("server/routers.ts");
     expect(router).toContain("photos: z.array(uploadedImageSchema)");
     expect(router).toContain("grade: z.union([z.string().max(50), z.number()]).optional()");
+    expect(page).toContain("const draftPhotos = reorderedPhotos");
+    expect(page).toContain("Boolean(photo.contentBase64 || photo.imageUrl)");
   });
 });
