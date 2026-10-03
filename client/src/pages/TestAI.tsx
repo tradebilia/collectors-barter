@@ -2137,11 +2137,22 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       if (!enabledSources.has(source.id)) continue;
       const sales = source.data?.sales ?? [];
       const context = source.data?.context ?? [];
+      const allRecords = [...sales, ...context];
+      const completedCandidates = allRecords.filter((sale: any) => sale.completed === true || sale.sold === true || /completed|closed|sold/i.test(String(sale.saleStatus ?? sale.status ?? '')));
       const recent = sales.filter((sale: any) => {
         const timestamp = Date.parse(String(sale.date ?? ''));
         return Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp <= 365 * 86_400_000;
+      });
+      const submittedPrices = recent
+        .map((sale: any) => Number(sale.price ?? sale.finalPrice))
+        .filter((price: number) => Number.isFinite(price) && price > 0);
+      const completedSaleCount = completedCandidates.length;
+      const historicalSaleCount = completedCandidates.filter((sale: any) => {
+        const timestamp = Date.parse(String(sale.date ?? ''));
+        return Number.isFinite(timestamp) && Date.now() - timestamp > 365 * 86_400_000;
       }).length;
-      add({ id: source.id, label: source.label, kind: recent > 0 ? 'market_completed' : 'market_historical', role: recent > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { completedSaleCount: recent, historicalSaleCount: sales.length - recent, undatedSaleCount: context.filter((sale: any) => !sale.date).length }, message: source.data?.messages?.join(' ') ?? null });
+      const undatedSaleCount = completedCandidates.filter((sale: any) => !Number.isFinite(Date.parse(String(sale.date ?? '')))).length;
+      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { completedSaleCount, analyzerSubmittedSaleCount: recent.length, analyzerSubmittedPrices: submittedPrices, historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
     }
     if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
     if (enabledSources.has('one_thirty_point')) {

@@ -84,6 +84,15 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.marketEvidencePriceSummaries).toEqual(['The Card API Sales: submitted-price summary — 2 sales · average $200 · median $200 · range $100–$300.']);
   });
 
+  it('reports Sirius completed candidates separately from zero analyzer submissions', () => {
+    const summary = normalizeTestAiEvidence({ title: '1985 Topps Mark McGwire', category: 'sports_cards', grade: '10', certificationCompany: 'PSA' }, [
+      { id: 'sirius_sports_auctions', label: 'Sirius Sports Auctions', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 3, analyzerSubmittedSaleCount: 0, analyzerSubmittedPrices: [], historicalSaleCount: 3 } },
+    ]);
+
+    expect(summary.marketEvidence).toEqual(['Sirius Sports Auctions: 3 completed sales, 0 submitted to analyzer, 3 historical records.']);
+    expect(summary.marketEvidencePriceSummaries).toEqual(['Sirius Sports Auctions: submitted-price summary — 0 sales · no prices submitted to analyzer.']);
+  });
+
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {
     const summary = normalizeTestAiEvidence({
       title: '1923 Peace Dollar',
