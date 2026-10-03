@@ -56,8 +56,11 @@ export function normalizeVisualSourceReviews(
       candidateIndex: Number(row?.candidateIndex),
       verdict: row?.verdict,
       confidence: row?.confidence,
+      // Keep the complete model explanation for the review panel. The previous
+      // 240-character cap cut rationales off mid-sentence before the UI could
+      // wrap or expand them.
       rationale:
-        typeof row?.rationale === "string" ? row.rationale.slice(0, 240) : "",
+        typeof row?.rationale === "string" ? row.rationale.trim() : "",
     }))
     .filter(
       (row: VisualSourceReview) =>

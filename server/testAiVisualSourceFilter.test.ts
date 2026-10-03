@@ -52,6 +52,17 @@ describe("visual source filter", () => {
     expect(result.removedCount).toBe(0);
   });
 
+  it("preserves long visual explanations instead of cutting them off at 240 characters", () => {
+    const ending = "The candidate front art, packaging, and visible certification details require manual comparison before any valuation decision.";
+    const longRationale = `${"The target and candidate were compared across packaging, orientation, visible holder details, and front artwork. ".repeat(8)}${ending}`;
+    const rows = normalizeVisualSourceReviews({
+      reviews: [{ candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: longRationale }],
+    }, 1);
+
+    expect(rows[0].rationale.length).toBeGreaterThan(240);
+    expect(rows[0].rationale).toContain(ending);
+  });
+
   it("flags declared regional, printing, and variant conflicts before AI uncertainty can hide them", () => {
     const reviews = buildDeclaredIdentityReviews(
       [
