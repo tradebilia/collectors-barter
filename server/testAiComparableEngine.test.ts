@@ -34,6 +34,16 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(saleFromDifferentCompany.identityRelationship).toBe('same_object_different_state');
     expect(saleFromDifferentCompany.valuationRelationship).toBe('grade_adjacent_comparable');
     expect(saleFromDifferentCompany.exclusionReason).toContain('certification-adjacent');
+    expect(saleFromDifferentCompany.admissionCode).toBe('SECONDARY_EVIDENCE');
+  });
+
+  it('labels comparable admission decisions with stable reason codes', () => {
+    const exact = scoreComparable(target, sale(target.title, 1200, '2026-09-01'));
+    const wrongNumber = scoreComparable(target, sale('1996 Topps Kobe Bryant #99 PSA 10', 1200, '2026-09-01'));
+    const missingIdentity = scoreComparable({ ...target, itemDetails: JSON.stringify({}) }, sale(target.title, 1200, '2026-09-01'));
+    expect(exact.admissionCode).toBe('USED_DIRECT');
+    expect(wrongNumber.admissionCode).toBe('REJECTED_IDENTITY');
+    expect(missingIdentity.admissionCode).toBe('CONTEXT_ONLY');
   });
 
   it('matches PCGS coin prefixes as part of the grade identity', () => {

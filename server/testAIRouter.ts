@@ -1034,7 +1034,8 @@ export const testAIRouter = router({
         // Build bounded complementary eBay query tiers. Direct eBay search can
         // rank abbreviated titles, exact-grade phrases, and provider-less forms
         // differently, so one broad query can miss valid fixed-price listings.
-        // Union every tier first, then apply deterministic identity filters.
+        // Fetch the exact tier first, then add relaxed tiers only until the
+        // cumulative deterministic eligible-match target is reached.
         const targetGrade = extractGradeFromQuery(query);
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
@@ -1044,65 +1045,59 @@ export const testAIRouter = router({
         const exactCandidateQuery = buildEbayBrowseQuery(exactQuery, {
           preserveGrade: true,
         }) || exactQuery;
+        const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
+        const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
+        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
+        const targetNumber = issueNumber || cardNumber;
+        const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
+        const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
+        const targetIsGraded = Boolean(
+          (cert && !/^(?:raw|ungraded|none|n\/a)$/i.test(cert.trim())) || grade,
+        );
+        const filterEbayCandidates = (summaries: any[]) => {
+          const byYear = filterTestAiListingsByYear(summaries, targetYear);
+          const byNumber = filterListingsByNumber(byYear, targetNumber, {
+            allowMissingNumber: input.category === 'sports_cards',
+          });
+          const byPlayer = filterListingsByPlayer(byNumber, playerName);
+          const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
+          const byTargetGradingState = filterListingsByTargetGradingState(bySport, targetIsGraded);
+          const filteredSummaries = filterListingsByGrade(byTargetGradingState, targetGrade, input.category, cert)
+            .sort((a: any, b: any) => Number(a.__tradebiliaQueryTier ?? 0) - Number(b.__tradebiliaQueryTier ?? 0));
+          return { byYear, byNumber, bySport, byTargetGradingState, filteredSummaries };
+        };
         const exactPages = await fetchEbayExactTierPages(exactCandidateQuery, token);
         const exactResults = exactPages.flatMap((page) => page.items)
           .map((item: any) => ({ ...item, __tradebiliaQueryTier: 0 }));
-        // Do not assume that a non-empty first API page is complete. Only use
-        // broader query tiers when the exact query's paginated result set still
-        // has fewer than the display target. This keeps exact matches ahead of
-        // relaxed matches and aligns retrieval more closely with eBay's web UI.
-        const fallbackQueries = exactResults.length >= EBAY_ACTIVE_DISPLAY_TARGET
-          ? []
-          : boundedSearchQueries.slice(1);
-        const fallbackResults = await Promise.all(
-          fallbackQueries.map(async (candidate, index) => {
-            const candidateQuery = buildEbayBrowseQuery(candidate, {
-              preserveGrade: true,
-            });
-            const results = await fetchEbayListings(
-              candidateQuery || candidate,
-              token,
-              EBAY_ACTIVE_RESULTS_PER_TIER,
-            );
-            return results.map((item: any) => ({ ...item, __tradebiliaQueryTier: index + 1 }));
-          }),
-        );
-        const queryResults = [exactResults, ...fallbackResults];
+        const queryResults: any[][] = [exactResults];
         const fetchedByQuery = new Map<string, any>();
-        for (const candidateResults of queryResults) {
-          candidateResults.forEach((item: any) => {
-            const key = String(item.itemId ?? item.itemWebUrl ?? item.title ?? fetchedByQuery.size);
-            fetchedByQuery.set(key, item);
-          });
+        const addResults = (items: any[]) => items.forEach((item: any) => {
+          const key = String(item.itemId ?? item.itemWebUrl ?? item.title ?? fetchedByQuery.size);
+          fetchedByQuery.set(key, item);
+        });
+        addResults(exactResults);
+        let exactSummaries = await enrichEbayAuctionDetails([...fetchedByQuery.values()], token);
+        let eligibility = filterEbayCandidates(exactSummaries);
+        const fallbackQueries: string[] = [];
+        for (let index = 1; index < boundedSearchQueries.length && eligibility.filteredSummaries.length < EBAY_ACTIVE_DISPLAY_TARGET; index += 1) {
+          const candidate = boundedSearchQueries[index];
+          const candidateQuery = buildEbayBrowseQuery(candidate, { preserveGrade: true });
+          const results = (await fetchEbayListings(candidateQuery || candidate, token, EBAY_ACTIVE_RESULTS_PER_TIER))
+            .map((item: any) => ({ ...item, __tradebiliaQueryTier: index }));
+          fallbackQueries.push(candidate);
+          queryResults.push(results);
+          addResults(results);
+          exactSummaries = await enrichEbayAuctionDetails([...fetchedByQuery.values()], token);
+          eligibility = filterEbayCandidates(exactSummaries);
         }
         // Query tiers are complementary: a non-empty precise page does not
         // establish retrieval completeness. Union every bounded tier before
         // objective identity filtering and label the resulting coverage.
-        const summaries = await enrichEbayAuctionDetails([...fetchedByQuery.values()], token);
+        const summaries = exactSummaries;
         console.log(`[eBay Search] Fetch Query: "${boundedSearchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
-        const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
-        const byYear = filterTestAiListingsByYear(summaries, targetYear);
+        const { byYear, byNumber, bySport, byTargetGradingState, filteredSummaries } = eligibility;
         console.log(`[eBay Search] After year filter: ${byYear.length} results (target year: ${targetYear || 'none'})`);
-        // For comics: also filter by issue number
-        const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        // For sports cards: also filter by card number
-        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
-        const targetNumber = issueNumber || cardNumber;
-        const byNumber = filterListingsByNumber(byYear, targetNumber, {
-          allowMissingNumber: input.category === 'sports_cards',
-        });
         console.log(`[eBay Search] After number filter: ${byNumber.length} results (target: ${targetNumber})`);
-        // For sports cards: also filter by player name to exclude wrong players
-        const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
-        const byPlayer = filterListingsByPlayer(byNumber, playerName);
-        const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
-        const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const targetIsGraded = Boolean(
-          (cert && !/^(?:raw|ungraded|none|n\/a)$/i.test(cert.trim())) || grade,
-        );
-        const byTargetGradingState = filterListingsByTargetGradingState(bySport, targetIsGraded);
-        const filteredSummaries = filterListingsByGrade(byTargetGradingState, targetGrade, input.category, cert)
-          .sort((a: any, b: any) => Number(a.__tradebiliaQueryTier ?? 0) - Number(b.__tradebiliaQueryTier ?? 0));
         console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging

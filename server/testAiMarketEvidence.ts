@@ -6,7 +6,7 @@ import { verifyCanonicalObservation } from './testAiCanonicalObservation';
  * to promote an observation into valuation evidence. This module is the
  * server-side admission decision used immediately before snapshot creation.
  */
-const COMPLETED_SALE_SOURCE_DEFAULTS: Record<string, { priceBasis: NonNullable<MarketSale['priceBasis']>; statusBasis: string }> = {
+export const COMPLETED_SALE_SOURCE_DEFAULTS: Record<string, { priceBasis: NonNullable<MarketSale['priceBasis']>; statusBasis: string }> = {
   sold_comps: { priceBasis: 'sold', statusBasis: 'Sold-Comps completed-sale endpoint' },
   '130point': { priceBasis: 'sold', statusBasis: '130point completed-sale endpoint' },
   the_card_api: { priceBasis: 'sold', statusBasis: 'The Card API completed-sale endpoint' },

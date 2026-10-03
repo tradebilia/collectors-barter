@@ -124,6 +124,8 @@ export interface ComparableMatch {
   visualReviewRationale?: string | null;
   evidenceDisposition?: string | null;
   evidenceReasons?: string[] | null;
+  /** Stable machine-readable reason for direct analyzer admission or exclusion. */
+  admissionCode?: 'USED_DIRECT' | 'OMITTED_BY_CAP' | 'SECONDARY_EVIDENCE' | 'CONTEXT_ONLY' | 'REVIEW_REQUIRED' | 'REJECTED_IDENTITY';
   duplicateOf?: string;
 }
 
@@ -1845,6 +1847,15 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
             : boundedScore < 48
             ? 'identity evidence is incomplete and requires review'
             : 'insufficient comparable evidence';
+  const admissionCode: ComparableMatch['admissionCode'] = accepted
+    ? 'USED_DIRECT'
+    : materialGradeConflict || materialCompanyConflict
+      ? 'SECONDARY_EVIDENCE'
+      : classification === 'rejected'
+        ? (categoryNeedsReview || visualMismatch ? 'REVIEW_REQUIRED' : 'REJECTED_IDENTITY')
+        : classification === 'contextual'
+          ? 'CONTEXT_ONLY'
+          : 'REVIEW_REQUIRED';
   return {
     title: title || 'Untitled comparable',
     price: Number.isFinite(price) ? price : 0,
@@ -1882,6 +1893,7 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     visualReviewRationale: sale.visualReviewRationale ?? null,
     evidenceDisposition: sale.evidenceDisposition ?? 'valuation_eligible',
     evidenceReasons: sale.evidenceReasons ?? null,
+    admissionCode,
   };
 }
 
@@ -1904,6 +1916,7 @@ export function buildMarketProfile(
         ...match,
         accepted: false,
         exclusionReason: 'omitted from the bounded valuation set after source-balanced selection',
+        admissionCode: 'OMITTED_BY_CAP' as const,
       };
     }
     return match;

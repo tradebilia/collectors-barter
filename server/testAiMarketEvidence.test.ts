@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildMarketProfile } from './testAiComparableEngine';
-import { normalizeAnalysisMarketSales, normalizeAnalysisMarketSale } from './testAiMarketEvidence';
+import { COMPLETED_SALE_SOURCE_DEFAULTS, normalizeAnalysisMarketSales, normalizeAnalysisMarketSale } from './testAiMarketEvidence';
 import { sealCanonicalObservation } from './testAiCanonicalObservation';
 
 const now = new Date('2026-09-28T12:00:00.000Z');
@@ -39,6 +39,16 @@ function normalizeSales(inputs: ReturnType<typeof sale>[]) {
 }
 
 describe('server-owned analysis market evidence normalization', () => {
+  it('keeps an explicit completed-sale status and price-basis contract for every valuation-capable adapter', () => {
+    const expectedSources = ['sold_comps', '130point', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'pcgs_auction_results'];
+    for (const sourceId of expectedSources) {
+      const contract = COMPLETED_SALE_SOURCE_DEFAULTS[sourceId];
+      expect(contract, `${sourceId} must declare a completed-sale contract`).toBeDefined();
+      expect(['sold', 'realized', 'closed']).toContain(contract?.priceBasis);
+      expect(contract?.statusBasis.length).toBeGreaterThan(10);
+    }
+  });
+
   it('admits only a dated completed observation with a trusted sale basis', () => {
     const result = normalizeSale(sale());
     expect(result.valuationEligible).toBe(true);
