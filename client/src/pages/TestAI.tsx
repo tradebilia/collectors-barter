@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatGrade, formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
@@ -1973,7 +1973,7 @@ function factualFields(data: any, source: 'tcgdex' | 'rawg' | 'igdb' | 'wikidata
   };
 }
 
-function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, pcgsAuctionData, oneThirtyPointData, onSummaryChange }: {
+function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, onSummaryChange }: {
   item: SelectedItem;
   marketItem: SelectedItem;
   side: 'left' | 'right';
@@ -1989,8 +1989,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   pristineAuctionData: any;
   collectAuctionData: any;
   siriusSportsAuctionData: any;
+  comicConnectData: any;
   pcgsAuctionData: any;
   oneThirtyPointData: any;
+  specialistObservations?: EvidenceSourceObservation[];
   onSummaryChange?: (summary: NormalizedEvidenceSummary) => void;
 }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -2197,6 +2199,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         message: comicBookRealmQuery.data?.messages?.join(' ') ?? null,
       });
     }
+    if (enabledSources.has('comicconnect')) {
+      const records = [...(comicConnectData?.sales ?? []), ...(comicConnectData?.context ?? [])];
+      const completed = records.filter((record: any) => record.completed === true || record.saleStatus === 'completed');
+      const submitted = completed.filter((record: any) => record.identityMatched && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) && Number(record.price) > 0);
+      add({ id: 'comicconnect', label: 'ComicConnect Sold Archive', kind: completed.length ? 'market_completed' : 'market_historical', role: submitted.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(comicConnectData), market: { completedSaleCount: completed.length, analyzerSubmittedSaleCount: submitted.length, analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: submitted.filter((record: any) => record.timeWindow === 'current_12_months').length, historicalTrendSaleCount: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').length, currentValuePrices: submitted.filter((record: any) => record.timeWindow === 'current_12_months').map((record: any) => Number(record.price)), historicalTrendPrices: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').map((record: any) => Number(record.price)) }, message: comicConnectData?.messages?.join(' ') ?? null });
+    }
     if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
     if (enabledSources.has('pricecharting')) {
       const priceData = priceChartingQuery.data ?? priceChartingCoinQuery.data ?? priceChartingVideoGameQuery.data ?? priceChartingSlugQuery.data;
@@ -2241,8 +2249,8 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const dated = auctions.filter((auction: any) => Number.isFinite(Date.parse(String(auction.date ?? ''))) && auction.price != null);
       add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, historicalSaleCount: auctions.length - dated.length, undatedSaleCount: auctions.filter((auction: any) => !auction.date).length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
-    return normalizeTestAiEvidence(item, observations);
-  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, pcgsAuctionData, oneThirtyPointData, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
+    return normalizeTestAiEvidence(item, [...observations, ...(specialistObservations ?? [])]);
+  }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
     onSummaryChange?.(summary);
@@ -2452,7 +2460,7 @@ function ComicBookRealmSection({
     </div>
   );
 }
-function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right' }) {
+function SandboxSpecialistSection({ source, item, side, onEvidenceObservation }: { source: SandboxSpecialistSource; item: SelectedItem; side: 'left' | 'right'; onEvidenceObservation?: (observation: EvidenceSourceObservation) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const automatic = source.searchContract === 'automatic_title_search';
   const locatorRequired = source.searchContract === 'public_locator_required';
@@ -2486,7 +2494,30 @@ function SandboxSpecialistSection({ source, item, side }: { source: SandboxSpeci
     { enabled: enabled && !blocked, retry: false },
   );
   const data = lookup.data;
-  const records = [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, data?.recordCap ?? 12);
+  const records = useMemo(() => [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, data?.recordCap ?? 12), [data]);
+  useEffect(() => {
+    const completed = records.filter((record: any) => record.completed === true || record.sold === true || /completed|closed|sold/i.test(String(record.saleStatus ?? record.status ?? '')));
+    const submitted = records.filter((record: any) => record.valuationEligible === true && Number.isFinite(Number(record.price ?? record.finalPrice)) && Number(record.price ?? record.finalPrice) > 0);
+    const recent = submitted.filter((record: any) => { const time = Date.parse(String(record.date ?? '')); return Number.isFinite(time) && Date.now() - time <= 365 * 86_400_000; });
+    const historical = submitted.filter((record: any) => !recent.includes(record));
+    onEvidenceObservation?.({
+      id: source.id,
+      label: source.label,
+      kind: completed.length ? 'market_completed' : 'market_historical',
+      role: submitted.length ? 'valuation_candidate' : 'historical_context',
+      status: evidenceStatus(data),
+      market: {
+        completedSaleCount: completed.length,
+        analyzerSubmittedSaleCount: submitted.length,
+        analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price ?? record.finalPrice)),
+        currentValueSaleCount: recent.length,
+        historicalTrendSaleCount: historical.length,
+        currentValuePrices: recent.map((record: any) => Number(record.price ?? record.finalPrice)),
+        historicalTrendPrices: historical.map((record: any) => Number(record.price ?? record.finalPrice)),
+      },
+      message: data?.messages?.join(' ') ?? null,
+    });
+  }, [data, records, source.id, source.label, onEvidenceObservation]);
   const formatPrice = (value: number | null | undefined) => value == null ? 'No realized price' : `$${Math.round(value).toLocaleString()}`;
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
@@ -3387,6 +3418,10 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
   oneThirtyPointData: any;
   onEvidenceSummary?: (summary: NormalizedEvidenceSummary) => void;
 }) {
+  const [specialistObservations, setSpecialistObservations] = useState<Record<string, EvidenceSourceObservation>>({});
+  const onSpecialistObservation = useCallback((observation: EvidenceSourceObservation) => {
+    setSpecialistObservations((current) => ({ ...current, [observation.id]: observation }));
+  }, []);
   if (!item) return (
     <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">
       Select {side === 'left' ? 'Item A' : 'Item B'} to see data
@@ -3410,7 +3445,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={Object.values(specialistObservations)} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} />
@@ -3456,7 +3491,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('comic_book_realm') && <ComicBookRealmSection item={queryItem} side={side} />}
       {enabledSources.has('pwcc') && <PwccSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('gocollect') && <PlaceholderSection sourceId="gocollect" side={side} />}
-      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} />)}
+      {SANDBOX_SPECIALIST_SOURCES.filter((source) => source.id !== 'comicconnect' && source.id !== 'comic_book_realm' && enabledSources.has(source.id)).map((source) => <SandboxSpecialistSection key={source.id} source={source} item={queryItem} side={side} onEvidenceObservation={onSpecialistObservation} />)}
     </div>
   );
 }

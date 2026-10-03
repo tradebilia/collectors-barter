@@ -354,7 +354,9 @@ function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string
     return `${source.label}: submitted-price summary — ${formatGroup('current-value', currentPrices ?? [])}; ${formatGroup('historical-trend', historicalPrices ?? [])}.`;
   }
   const prices = (source.market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0).sort((a, b) => a - b);
-  if (!prices.length && source.market?.analyzerSubmittedSaleCount == null) return null;
+  if (!prices.length && source.market?.analyzerSubmittedSaleCount == null) {
+    return source.market ? `${source.label}: submitted-price summary — 0 sales · no prices submitted to analyzer.` : null;
+  }
   if (!prices.length) return `${source.label}: submitted-price summary — 0 sales · no prices submitted to analyzer.`;
   const total = prices.reduce((sum, price) => sum + price, 0);
   const median = prices.length % 2 === 1 ? prices[Math.floor(prices.length / 2)] : (prices[prices.length / 2 - 1] + prices[prices.length / 2]) / 2;
