@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   EBAY_ACTIVE_QUERY_TIER_LIMIT,
   EBAY_ACTIVE_RESULTS_PER_TIER,
+  computeMetrics,
 } from "./testAIRouter";
 import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
 
@@ -20,6 +21,15 @@ function procedureSource(name: string, nextMarker: string): string {
 }
 
 describe("Test AI eBay active-listing responsiveness", () => {
+  it("reports auction bid fields without treating them as completed-sale evidence", () => {
+    const metrics = computeMetrics([
+      { id: 'fixed-1', price: { value: '100' }, buyingOptions: ['FIXED_PRICE'] },
+      { id: 'auction-1', price: { value: '150' }, buyingOptions: ['AUCTION'], bidCount: 4, uniqueBidderCount: 2 },
+    ]);
+    expect(metrics).toMatchObject({ auctionCount: 1, bidCountKnown: 1, totalBidCount: 4, uniqueBidderCountKnown: 1, totalUniqueBidderCount: 2 });
+    expect(metrics?.count).toBe(2);
+  });
+
   it("keeps complementary retrieval bounded and concurrent", () => {
     expect(EBAY_ACTIVE_QUERY_TIER_LIMIT).toBe(6);
     expect(EBAY_ACTIVE_RESULTS_PER_TIER).toBe(40);
@@ -32,6 +42,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).toContain("__tradebiliaQueryTier");
     expect(section).toContain("await Promise.all(");
     expect(section).toContain("EBAY_ACTIVE_RESULTS_PER_TIER");
+    expect(routerSource).toContain("buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D");
+    expect(routerSource).toContain("fieldgroups=COMPACT");
+    expect(routerSource).toContain("uniqueBidderCount");
     expect(section).not.toContain("fetchEbayListings(candidateQuery || candidate, token, 100)");
   });
 
@@ -92,6 +105,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("Full-market asking context before image filtering");
     expect(pageSource).toContain("accepted visual matches update this asking-price context");
     expect(pageSource).toContain("No accepted visual matches have usable prices");
+    expect(pageSource).toContain("Auction activity:");
+    expect(pageSource).toContain("unique bidders");
   });
   it("keeps the first visual pass bounded and preserves the remaining candidates", () => {
     expect(visualSource).toContain("VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT");

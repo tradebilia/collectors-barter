@@ -811,7 +811,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
         <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p>
         {displayData?.debug?.executedQueries?.length > 1 && <div className="mt-1 space-y-0.5 text-[9px] text-cyan-200/70"><p className="font-semibold uppercase tracking-wide">Executed query tiers</p>{displayData.debug.executedQueries.map((executedQuery: string, index: number) => <p key={`${executedQuery}-${index}`} className="break-words font-mono">{index + 1}. "{executedQuery}"</p>)}</div>}
       </div>
-      <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · {showingVisualMatchMetrics ? 'Visual-match-only asking-price metrics' : 'Full-market asking-price context'}</p>
+      <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
       {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
@@ -832,6 +832,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
             ))}
           </div>
           {visibleMetrics.confidenceReason && <p className="rounded border border-slate-700/50 bg-slate-950/35 px-2 py-1.5 text-[9px] leading-snug text-slate-300"><strong className="text-slate-100">Confidence reason:</strong> {visibleMetrics.confidenceReason}</p>}
+          {(visibleMetrics.auctionCount > 0 || visibleMetrics.bidCountKnown > 0 || visibleMetrics.uniqueBidderCountKnown > 0) && <p className="rounded border border-violet-700/30 bg-violet-950/20 px-2 py-1.5 text-[9px] leading-snug text-violet-200"><strong className="text-violet-100">Auction activity:</strong> {visibleMetrics.auctionCount ?? 0} auction listing{visibleMetrics.auctionCount === 1 ? '' : 's'} · {visibleMetrics.bidCountKnown ? `${visibleMetrics.totalBidCount} total reported bids across ${visibleMetrics.bidCountKnown} listing${visibleMetrics.bidCountKnown === 1 ? '' : 's'}` : 'bid totals unavailable'} · {visibleMetrics.uniqueBidderCountKnown ? `${visibleMetrics.totalUniqueBidderCount} reported unique bidders across ${visibleMetrics.uniqueBidderCountKnown} listing${visibleMetrics.uniqueBidderCountKnown === 1 ? '' : 's'}` : 'unique-bidder totals unavailable'} (per-auction counts; not de-duplicated across listings).</p>}
         </div>
       )}
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
@@ -849,7 +850,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
                 {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
                 <div className="min-w-0">
                   <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
-                  <p className="text-[10px] text-gray-500">{l.condition} · {l.seller}</p>
+                  <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
                   {l.visualReviewStatus === 'mismatch' && <p className="mt-0.5 flex items-start gap-1 text-[9px] leading-snug text-red-300"><span className="shrink-0 font-bold" aria-label="Image mismatch">✕</span><span><strong>Image mismatch:</strong> {l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</span></p>}
                 </div>
               </div>

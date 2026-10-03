@@ -97,7 +97,7 @@ async function getEbayAppToken(): Promise<EbayAppTokenResult> {
 
 async function fetchEbayListings(query: string, token: string, limit = 25) {
   const res = await fetch(
-    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&filter=buyingOptions%3A%7BFIXED_PRICE%7D`,
+    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&filter=buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D`,
     {
       headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
       signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
@@ -106,6 +106,47 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
   const data = await res.json().catch(() => null) as any;
   if (!res.ok) throw new Error(`eBay Browse lookup returned HTTP ${res.status}`);
   return data.itemSummaries ?? [];
+}
+
+async function fetchEbayAuctionDetails(itemId: string, token: string) {
+  const res = await fetch(
+    `https://api.ebay.com/buy/browse/v1/item/${encodeURIComponent(itemId)}?fieldgroups=COMPACT`,
+    {
+      headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
+      signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
+    },
+  );
+  if (!res.ok) return null;
+  const data = await res.json().catch(() => null) as any;
+  return data && typeof data === 'object'
+    ? {
+        bidCount: Number.isFinite(Number(data.bidCount)) ? Number(data.bidCount) : null,
+        uniqueBidderCount: Number.isFinite(Number(data.uniqueBidderCount)) ? Number(data.uniqueBidderCount) : null,
+        currentBidPrice: data.currentBidPrice ?? null,
+        minimumPriceToBid: data.minimumPriceToBid ?? null,
+        reservePriceMet: data.reservePriceMet ?? null,
+      }
+    : null;
+}
+
+async function enrichEbayAuctionDetails(items: any[], token: string) {
+  const auctionItems = items
+    .filter((item) => Array.isArray(item?.buyingOptions) && item.buyingOptions.includes('AUCTION') && item.itemId)
+    .slice(0, 40);
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < auctionItems.length) {
+      const item = auctionItems[cursor++];
+      try {
+        const details = await fetchEbayAuctionDetails(String(item.itemId), token);
+        if (details) Object.assign(item, details);
+      } catch {
+        // Bid metadata is supplementary. Keep the listing when getItem is unavailable.
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(6, auctionItems.length) }, () => worker()));
+  return items;
 }
 
 // NOTE: eBay sold/completed history requires the eBay Finding API (separate from Browse API).
@@ -523,7 +564,20 @@ export function computeMetrics(summaries: any[]) {
   const outlierNote = outliersExcluded
     ? ` ${outliersExcluded} extreme price${outliersExcluded === 1 ? ' was' : 's were'} excluded by the IQR outlier rule.`
     : '';
-  return { avg, median, min, max, spreadPct, count, confidence, confidenceReason: `${confidenceReason}${outlierNote}`, rawPriceCount: prices.length, outliersExcluded };
+  const auctionRows = summaries.filter((item: any) => Array.isArray(item?.buyingOptions) && item.buyingOptions.includes('AUCTION'));
+  const knownBidCounts = auctionRows.map((item: any) => Number(item.bidCount)).filter((value: number) => Number.isFinite(value) && value >= 0);
+  const knownUniqueBidderCounts = auctionRows.map((item: any) => Number(item.uniqueBidderCount)).filter((value: number) => Number.isFinite(value) && value >= 0);
+  return {
+    avg, median, min, max, spreadPct, count, confidence,
+    confidenceReason: `${confidenceReason}${outlierNote}`,
+    rawPriceCount: prices.length,
+    outliersExcluded,
+    auctionCount: auctionRows.length,
+    bidCountKnown: knownBidCounts.length,
+    totalBidCount: knownBidCounts.length ? knownBidCounts.reduce((sum: number, value: number) => sum + value, 0) : null,
+    uniqueBidderCountKnown: knownUniqueBidderCounts.length,
+    totalUniqueBidderCount: knownUniqueBidderCounts.length ? knownUniqueBidderCounts.reduce((sum: number, value: number) => sum + value, 0) : null,
+  };
 }
 
 /**
@@ -975,7 +1029,7 @@ export const testAIRouter = router({
         // Query tiers are complementary: a non-empty precise page does not
         // establish retrieval completeness. Union every bounded tier before
         // objective identity filtering and label the resulting coverage.
-        const summaries = [...fetchedByQuery.values()];
+        const summaries = await enrichEbayAuctionDetails([...fetchedByQuery.values()], token);
         console.log(`[eBay Search] Fetch Query: "${boundedSearchQueries.join(' | ')}", Filter Grade: ${targetGrade}, Total Results: ${summaries.length}`);
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
         const byYear = filterTestAiListingsByYear(summaries, targetYear);
@@ -1051,6 +1105,10 @@ export const testAIRouter = router({
             itemUrl: s.itemWebUrl,
             imageUrl: s.image?.imageUrl,
             listingType: s.buyingOptions?.[0],
+            bidCount: s.bidCount ?? null,
+            uniqueBidderCount: s.uniqueBidderCount ?? null,
+            currentBidPrice: s.currentBidPrice ?? null,
+            auctionEndDate: s.itemEndDate ?? null,
             // Preserve the visual filter result in the transport object used by
             // MarketplaceVisualReview; dropping these made the button appear to
             // do nothing even when the server had flagged a listing.
@@ -1067,6 +1125,10 @@ export const testAIRouter = router({
             itemUrl: s.itemWebUrl,
             imageUrl: s.image?.imageUrl,
             listingType: s.buyingOptions?.[0],
+            bidCount: s.bidCount ?? null,
+            uniqueBidderCount: s.uniqueBidderCount ?? null,
+            currentBidPrice: s.currentBidPrice ?? null,
+            auctionEndDate: s.itemEndDate ?? null,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
