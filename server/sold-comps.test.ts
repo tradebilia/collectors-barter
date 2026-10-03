@@ -31,6 +31,11 @@ describe('Sold-Comps API key validation', () => {
     ]);
   });
 
+  it('puts the precise query first when active retrieval preserves the grade', () => {
+    expect(buildSoldCompsQueryCandidates('Transformers Megatron G1 AFA 60.0', { preserveGrade: true })[0])
+      .toBe('Transformers Megatron G1 AFA 60.0');
+  });
+
   it('adds an article-omission alias for marketplace titles that omit words such as the', () => {
     const queries = buildSoldCompsQueryCandidates('Edge of the Spider-Verse #2 CGC 9.8');
 

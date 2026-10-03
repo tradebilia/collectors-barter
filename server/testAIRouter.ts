@@ -950,7 +950,7 @@ export const testAIRouter = router({
         const targetGrade = extractGradeFromQuery(query);
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
-          : buildSoldCompsQueryCandidates(query);
+          : buildSoldCompsQueryCandidates(query, { preserveGrade: true });
         const boundedSearchQueries = searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT);
         const queryResults = await Promise.all(
           boundedSearchQueries.map(async (candidate) => {
