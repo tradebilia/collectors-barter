@@ -212,7 +212,7 @@ export function buildSoldCompsQueryCandidates(query: string, options?: { preserv
 }
 
 // Filter listings to match the grade from the search query
-export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null, category?: string): any[] {
+export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null, category?: string, certificationCompany?: string): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
 
   return summaries.filter((item: any) => {
@@ -235,6 +235,13 @@ export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGr
 
     if (typeof targetGrade === 'string') {
       return typeof itemGrade === 'string' && itemGrade.toUpperCase() === targetGrade.toUpperCase();
+    }
+
+    // AFA listings commonly use Q60/Q75 while stored item fields use 60.0/75.0.
+    // These are the same numeric AFA score, not a different grade.
+    if (typeof targetGrade === 'number' && /^AFA$/i.test(certificationCompany ?? '') && typeof itemGrade === 'string') {
+      const afaNumericGrade = itemGrade.match(/^[QC]?(\d+(?:\.\d+)?)$/i)?.[1];
+      if (afaNumericGrade) return Math.round(Number(afaNumericGrade) * 10) === Math.round(targetGrade * 10);
     }
 
     if (typeof itemGrade !== 'number') return false;
@@ -986,7 +993,7 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const filteredSummaries = filterListingsByGrade(bySport, targetGrade, input.category);
+        const filteredSummaries = filterListingsByGrade(bySport, targetGrade, input.category, cert);
         console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
@@ -1027,6 +1034,7 @@ export const testAIRouter = router({
             afterDeclaredIdentityFilter: declaredIdentityFilter.listings.length,
             preVisualExcludedCount: declaredIdentityFilter.removedCount,
             targetGrade,
+            executedQueries: boundedSearchQueries,
             queryTierCount: boundedSearchQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },

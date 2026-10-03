@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildSportsCardTestAiQueries, filterTestAiListingsBySport } from "../shared/testAiCriteria";
-import { buildEbayBrowseQuery, filterListingsByNumber } from "./testAIRouter";
+import { buildEbayBrowseQuery, filterListingsByGrade, filterListingsByNumber } from "./testAIRouter";
 
 describe("Test AI sports-card eBay query candidates", () => {
   it("preserves the target certification grade in precise sports-card Browse searches", () => {
@@ -91,5 +91,14 @@ describe("Test AI sports-card eBay query candidates", () => {
     expect(queries).toContain("1989 Upper Deck Ken Griffey Jr 1 PSA 10");
     expect(queries).toContain("1989 Upper Deck Ken Griffey Jr PSA 10");
     expect(queries).toContain("Upper Deck Ken Griffey Jr PSA 10");
+  });
+
+  it("treats AFA Q60 and AFA 60.0 as the same numeric grade", () => {
+    const listings = [
+      { title: "Rare 1984 Hasbro Transformers G1 Megatron AFA Graded Q60 MIB" },
+      { title: "Transformers Megatron AFA Q75" },
+    ];
+
+    expect(filterListingsByGrade(listings, 60, "vintage_toys", "AFA")).toEqual([listings[0]]);
   });
 });

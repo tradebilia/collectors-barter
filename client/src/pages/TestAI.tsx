@@ -809,6 +809,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
         <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({queryStatus})</span></p>
         <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p>
+        {displayData?.debug?.executedQueries?.length > 1 && <div className="mt-1 space-y-0.5 text-[9px] text-cyan-200/70"><p className="font-semibold uppercase tracking-wide">Executed query tiers</p>{displayData.debug.executedQueries.map((executedQuery: string, index: number) => <p key={`${executedQuery}-${index}`} className="break-words font-mono">{index + 1}. "{executedQuery}"</p>)}</div>}
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price listings · {showingVisualMatchMetrics ? 'Visual-match-only asking-price metrics' : 'Full-market asking-price context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
