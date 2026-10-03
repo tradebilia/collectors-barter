@@ -1097,7 +1097,9 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const targetIsGraded = Boolean(cert || grade);
+        const targetIsGraded = Boolean(
+          (cert && !/^(?:raw|ungraded|none|n\/a)$/i.test(cert.trim())) || grade,
+        );
         const byTargetGradingState = filterListingsByTargetGradingState(bySport, targetIsGraded);
         const filteredSummaries = filterListingsByGrade(byTargetGradingState, targetGrade, input.category, cert)
           .sort((a: any, b: any) => Number(a.__tradebiliaQueryTier ?? 0) - Number(b.__tradebiliaQueryTier ?? 0));
