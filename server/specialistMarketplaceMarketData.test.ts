@@ -589,46 +589,6 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.price).toBeNull();
   });
 
-  it('verifies Auctionet search hits through bounded detail calls and keeps only recent records by default', async () => {
-    const recent = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const old = new Date(Date.now() - 800 * 24 * 60 * 60 * 1000).toISOString();
-    const searchPayload = { ok: true, data: { results: [
-      { item_id: 101, title: 'Pokemon Base Set Charizard', status: 'ended', is_sold: true, currency: 'USD', final_bid: 125, ends_at: recent, url: 'https://auctionet.com/en/101-charizard' },
-      { item_id: 102, title: 'Pokemon Base Set Charizard', status: 'ended', is_sold: true, currency: 'USD', final_bid: 150, ends_at: old, url: 'https://auctionet.com/en/102-charizard' },
-    ] } };
-    const detail = (id: number, date: string, price: number) => ({ ok: true, data: { item_id: id, title: 'Pokemon Base Set Charizard', status: 'ended', is_sold: true, currency: 'USD', final_bid: price, ends_at: date, url: `https://auctionet.com/en/${id}-charizard`, category: 'Pokemon' } });
-    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-      if (url.endsWith('/search')) return new Response(JSON.stringify(searchPayload), { status: 200 });
-      const body = JSON.parse(String(init?.body ?? '{}')) as { item_id?: number };
-      return new Response(JSON.stringify(body.item_id === 101 ? detail(101, recent, 125) : detail(102, old, 150)), { status: 200 });
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
-    const result = await lookupSpecialistMarketplace({ sourceId: 'auctionet', title: 'Pokemon Base Set Charizard', category: 'pokemon' });
-    expect(result.status).toBe('success');
-    expect(result.historyWindow).toBe('recent_12_months');
-    expect(result.sales).toHaveLength(1);
-    expect(result.sales[0]).toMatchObject({ lotId: '101', price: 125, completed: true });
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(result.reefApiAudit).toMatchObject({ apiCalls: 3, searchCalls: 1, detailCalls: 2, estimatedCredits: 3, creditBasis: 'one-credit-per-request' });
-  });
-
-  it('supports Auctionet historical window without treating detail failures as sales', async () => {
-    const old = new Date(Date.now() - 800 * 24 * 60 * 60 * 1000).toISOString();
-    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
-      if (url.endsWith('/search')) return new Response(JSON.stringify({ ok: true, data: { results: [{ item_id: 201, title: 'Pokemon Base Set Blastoise', status: 'ended', is_sold: true, currency: 'USD', final_bid: 200, ends_at: old }] } }), { status: 200 });
-      return new Response('Forbidden', { status: 403 });
-    });
-    vi.stubGlobal('fetch', fetchMock);
-
-    const result = await lookupSpecialistMarketplace({ sourceId: 'auctionet', title: 'Pokemon Base Set Blastoise', category: 'pokemon', historyWindow: 'historical' });
-    expect(result.status).toBe('success');
-    expect(result.historyWindow).toBe('historical');
-    expect(result.sales).toEqual([]);
-    expect(result.context[0]?.completed).toBe(false);
-    expect(result.context[0]?.exclusionReason).toMatch(/identity|completed-sale|USD|explicit sold/i);
-    expect(result.reefApiAudit).toMatchObject({ apiCalls: 2, searchCalls: 1, detailCalls: 1, estimatedCredits: 2 });
-  });
 });
 
 describe("Comic Book Realm CGC guide context adapter", () => {

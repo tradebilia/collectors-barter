@@ -2490,7 +2490,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
       certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined,
       itemDetails: item.itemDetails ?? undefined,
       sourceUrl: normalizedSourceUrl || undefined,
-      historyWindow: source.id === 'auctionet' || source.id.endsWith('_reef') ? historyWindow : undefined,
+      historyWindow: source.id.endsWith('_reef') ? historyWindow : undefined,
     },
     { enabled: enabled && !blocked, retry: false },
   );
@@ -2525,14 +2525,14 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
       <div className="flex items-center justify-between gap-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={lookup.isFetching} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
-      <p className="text-[9px] text-sky-200/80">Transport: {source.id === 'auctionet' || source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: context-only</p>
+      <p className="text-[9px] text-sky-200/80">Transport: {source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: context-only</p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
         <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>
         <p className="text-gray-300 text-[10px]">{source.searchInstruction}</p>
         <p className="text-gray-500 text-[9px]">{source.activationNote}</p>
         <a className="text-sky-400 text-[9px] underline break-all" href={source.sourceUrl} target="_blank" rel="noreferrer">Open source</a>
       </div>
-      {(source.id === 'auctionet' || source.id.endsWith('_reef')) && <label className="flex items-center justify-between gap-2 rounded border border-sky-700/30 bg-sky-950/20 px-2 py-1.5 text-[9px] text-sky-100">History window<select value={historyWindow} onChange={(event) => setHistoryWindow(event.target.value as typeof historyWindow)} className="rounded border border-sky-700/50 bg-slate-950 px-1.5 py-1 text-[9px] text-slate-100"><option value="recent_12_months">Recent · last 12 months</option><option value="historical">Historical · older than 12 months</option><option value="all">All returned dates</option></select></label>}
+      {(source.id.endsWith('_reef')) && <label className="flex items-center justify-between gap-2 rounded border border-sky-700/30 bg-sky-950/20 px-2 py-1.5 text-[9px] text-sky-100">History window<select value={historyWindow} onChange={(event) => setHistoryWindow(event.target.value as typeof historyWindow)} className="rounded border border-sky-700/50 bg-slate-950 px-1.5 py-1 text-[9px] text-slate-100"><option value="recent_12_months">Recent · last 12 months</option><option value="historical">Historical · older than 12 months</option><option value="all">All returned dates</option></select></label>}
       {data?.reefApiAudit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[9px] text-violet-100"><p className="font-semibold uppercase text-violet-300">ReefAPI usage for this run</p><p className="mt-0.5">API calls: {data.reefApiAudit.apiCalls} · Search calls: {data.reefApiAudit.searchCalls} · Detail calls: {data.reefApiAudit.detailCalls} · Estimated credits: {data.reefApiAudit.estimatedCredits}</p><p className="mt-0.5 text-violet-200/70">Estimate uses the documented one-credit-per-request basis; it is not a billing statement.</p></div>}
       {locatorRequired && <div className="space-y-1.5">
         <label className="text-[9px] text-gray-400">Public closed-auction, catalog, or lot URL</label>

@@ -44,7 +44,6 @@ type AdapterId =
   | 'stephen_album'
   | 'nate_sanders'
   | 'tcgplayer_reef'
-  | 'auctionet'
   | 'comic_book_realm'
   | 'coin_archives'
   | 'bertoia'
@@ -142,7 +141,6 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   stephen_album: { id: 'stephen_album', label: 'Stephen Album Rare Coins', version: '1.0.0', defaultOriginMarketplace: 'stephen_album', defaultPriceBasis: 'realized', completedStatusBasis: 'Stephen Album SOLD lot with hammer and buyer-premium separation' },
   nate_sanders: { id: 'nate_sanders', label: 'Nate D. Sanders Auctions', version: '1.0.0', defaultOriginMarketplace: 'nate_sanders', defaultPriceBasis: 'closed', completedStatusBasis: 'Nate D. Sanders closed lot with final price including buyer premium' },
   tcgplayer_reef: { id: 'tcgplayer_reef', label: 'TCGplayer via ReefAPI', version: '1.0.0', defaultOriginMarketplace: 'tcgplayer', defaultPriceBasis: 'sold', completedStatusBasis: 'TCGplayer latest-sale record returned by ReefAPI' },
-  auctionet: { id: 'auctionet', label: 'Auctionet', version: '1.0.0', defaultOriginMarketplace: 'auctionet', defaultPriceBasis: 'closed', completedStatusBasis: 'Auctionet ended search record with Hammered status and USD amount' },
   comic_book_realm: { id: 'comic_book_realm', label: 'Comic Book Realm CGC Analyzer', version: '1.0.0', defaultOriginMarketplace: 'comic_book_realm', defaultPriceBasis: 'unknown', completedStatusBasis: 'Aggregated CGC guide estimate; never an individual completed sale' },
   coin_archives: { id: 'coin_archives', label: 'CoinArchives', version: '1.0.0', defaultOriginMarketplace: 'coin_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'CoinArchives completed lot record' },
   bertoia: { id: 'bertoia', label: 'Bertoia Auctions', version: '1.0.0', defaultOriginMarketplace: 'bertoia', defaultPriceBasis: 'unknown', completedStatusBasis: 'Bertoia completed lot or catalog record' },
