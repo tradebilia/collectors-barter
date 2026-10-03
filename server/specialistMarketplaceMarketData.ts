@@ -316,6 +316,13 @@ function significantTokens(value: string): string[] {
   return [...new Set(normalize(value).split(' ').filter((token) => token.length >= 3 && !stopWords.has(token)))];
 }
 
+const SPORTS_CARD_VARIATION_TERMS = ['tiffany', 'traded', 'chrome', 'refractor', 'glossy', 'desert shield', 'error', 'uk mini', 'mini'] as const;
+
+function sportsCardVariation(value: string): string | null {
+  const normalized = normalize(value);
+  return SPORTS_CARD_VARIATION_TERMS.find((term) => normalized.includes(term)) ?? null;
+}
+
 function canonicalUrl(value: string): string | null {
   try {
     const url = new URL(value);
@@ -491,6 +498,13 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
   const sportsYearMatch = Boolean(sportsYear) && candidate.includes(normalize(sportsYear));
   const sportsSetMatch = Boolean(sportsSet) && significantTokens(sportsSet).every((token) => candidate.includes(token));
   const structuredSportsMatch = normalizedCategory === 'sports cards' && sportsPlayerMatch && sportsCardNumberMatch && (sportsYearMatch || sportsSetMatch);
+  const targetSportsVariation = normalizedCategory === 'sports cards'
+    ? sportsCardVariation([input.title, firstDetail(details, ['setName', 'set', 'cardSet']), firstDetail(details, ['variant', 'variation', 'parallel', 'insert', 'edition', 'productFormat'])].filter(Boolean).join(' '))
+    : null;
+  const candidateSportsVariation = normalizedCategory === 'sports cards' ? sportsCardVariation(`${title} ${description}`) : null;
+  const variationConflict = normalizedCategory === 'sports cards' && targetSportsVariation !== candidateSportsVariation
+    ? `Card variation conflicts with the selected item (${candidateSportsVariation ?? 'regular/base issue'} vs ${targetSportsVariation ?? 'regular/base issue'}).`
+    : null;
   // Platform, condition, media, and grading words are shared by many listings.
   // When the selected title has a distinctive long token, require that token rather
   // than allowing a different item through on generic overlap such as "Atari",
@@ -518,8 +532,10 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
   const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason)) ?? null;
   return {
     matchedTokens,
-    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict,
-    reason: normalizedCategory === 'sports cards' && !structuredSportsMatch
+    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict && !variationConflict,
+    reason: variationConflict
+      ? variationConflict
+      : normalizedCategory === 'sports cards' && !structuredSportsMatch
       ? 'Sports-card player, card number, and year/set identity fields did not match the Goldin title.'
       : !tokenMatch
       ? 'Title/details did not meet the deterministic identity-token threshold.'

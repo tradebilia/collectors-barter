@@ -340,6 +340,25 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.sales[0]).toMatchObject({ identityMatched: true, valuationEligible: true, price: 2580 });
   });
 
+  it('rejects a Goldin Tiffany parallel when the selected sports card is regular Topps', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ searchalgolia: { lots: [{
+      lot_id: 'goldin-mcgwire-tiffany',
+      meta_slug: '1985-topps-tiffany-401-mark-mcgwire-psa-10',
+      title: "1985 Topps Tiffany #401 Mark McGwire Rookie Card - PSA GEM MT 10",
+      status: 'Completed_Sold',
+      current_price: 12000,
+      buyer_premium: 20,
+      end_timestamp: '2026-09-26T00:00:00Z',
+    }] } }), { status: 200, headers: { 'content-type': 'application/json' } })));
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin', title: '1985 Topps #401 Mark McGwire Rookie Card PSA 10', category: 'sports_cards', grade: '10', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ year: '1985', manufacturer: 'Topps', setName: 'Topps', cardNumber: '401', player: 'Mark McGwire' }),
+    });
+    expect(result.sales).toHaveLength(0);
+    expect(result.context[0]).toMatchObject({ identityMatched: false, valuationEligible: false });
+    expect(result.context[0]?.exclusionReason).toMatch(/card variation conflicts.*tiffany/i);
+  });
+
   it('rejects a Goldin CGC Signature Series 9.6 when the selected comic is CGC 9.8', async () => {
     const comic = {
       sourceId: 'goldin' as const,
