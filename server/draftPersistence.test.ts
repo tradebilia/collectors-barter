@@ -28,5 +28,6 @@ describe("inventory draft persistence", () => {
   it("keeps existing draft photos compatible with later updates", () => {
     const router = read("server/routers.ts");
     expect(router).toContain("photos: z.array(uploadedImageSchema)");
+    expect(router).toContain("grade: z.union([z.string().max(50), z.number()]).optional()");
   });
 });

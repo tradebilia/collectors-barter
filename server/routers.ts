@@ -2071,7 +2071,9 @@ export const appRouter = router({
           category: z.enum(collectibleCategories),
           condition: z.enum(itemConditions),
           description: z.string(),
-          grade: z.number().optional(),
+          // Form grades are stored and submitted as strings, including values
+          // such as "9.6", "MS65", and "ungraded".
+          grade: z.union([z.string().max(50), z.number()]).optional(),
           graderCompany: z.string().optional(),
           certificationNumber: z.string().optional(),
           estimatedValue: z.number().optional(),

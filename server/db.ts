@@ -2380,7 +2380,7 @@ export async function updateDraft(
     draftId: number;
     title: string;
     category: (typeof collectibleCategories)[number];
-    grade?: number;
+    grade?: number | string;
     graderCompany?: string;
     certificationNumber?: string;
     estimatedValue?: number;
