@@ -93,6 +93,20 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.marketEvidencePriceSummaries).toEqual(['Sirius Sports Auctions: submitted-price summary — 0 sales · no prices submitted to analyzer.']);
   });
 
+  it('summarizes every selected source, including non-market sources', () => {
+    const summary = normalizeTestAiEvidence({ title: 'Charizard', category: 'pokemon' }, [
+      { id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 2, analyzerSubmittedSaleCount: 1, analyzerSubmittedPrices: [250] } },
+      { id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: 'success' },
+      { id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: 'not_found' },
+    ]);
+
+    expect(summary.selectedSourceSummaries).toEqual([
+      'Sold-Comps: 2 completed sales, 1 submitted to analyzer.',
+      'TCGdex: selected reference source; completed-sales and analyzer-price summary not applicable.',
+      'Parse.bot PSA: no record returned; 0 completed sales and 0 submitted to analyzer.',
+    ]);
+  });
+
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {
     const summary = normalizeTestAiEvidence({
       title: '1923 Peace Dollar',

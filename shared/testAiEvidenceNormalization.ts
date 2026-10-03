@@ -62,6 +62,7 @@ export type NormalizedEvidenceSummary = {
   reviewFlags: EvidenceReviewFlag[];
   marketEvidence: string[];
   marketEvidencePriceSummaries?: string[];
+  selectedSourceSummaries?: string[];
   guideAnchors: GuideValueAnchor[];
   sources: { id: string; label: string; kind: EvidenceSourceKind; role: EvidenceSourceRole; status: EvidenceSourceStatus; message?: string | null }[];
 };
@@ -341,6 +342,15 @@ function compactSubmittedPriceSummary(source: EvidenceSourceObservation): string
   return `${source.label}: submitted-price summary — ${prices.length} sale${prices.length === 1 ? '' : 's'} · average ${money(total / prices.length)} · median ${money(median)} · range ${money(prices[0])}–${money(prices[prices.length - 1])}.`;
 }
 
+function compactSelectedSourceSummary(source: EvidenceSourceObservation): string {
+  if (source.status === 'error') return `${source.label}: unavailable${source.message ? ` — ${source.message}` : '.'}`;
+  if (source.status === 'not_found') return `${source.label}: no record returned; 0 completed sales and 0 submitted to analyzer.`;
+  if (source.market) {
+    return compactMarketSummary(source) ?? `${source.label}: 0 completed sales, 0 submitted to analyzer.`;
+  }
+  return `${source.label}: selected ${source.kind.replace(/_/g, ' ')} source; completed-sales and analyzer-price summary not applicable.`;
+}
+
 export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: EvidenceSourceObservation[]): NormalizedEvidenceSummary {
   const category = normalizeCategory(input.category);
   const listingValues = getListingValues(input);
@@ -400,6 +410,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
 
   const marketEvidence = sources.map(compactMarketSummary).filter((entry): entry is string => Boolean(entry));
   const marketEvidencePriceSummaries = sources.map(compactSubmittedPriceSummary).filter((entry): entry is string => Boolean(entry));
+  const selectedSourceSummaries = sources.map(compactSelectedSourceSummary);
   const evidenceSufficiency = buildP0EvidenceSufficiency({
     completedSaleCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.completedSaleCount ?? 0) : 0), 0),
     askingListingCount: sources.reduce((count, source) => count + (source.status === 'success' ? Number(source.market?.currentListingCount ?? 0) : 0), 0),
@@ -415,6 +426,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
     reviewFlags,
     marketEvidence,
     marketEvidencePriceSummaries,
+    selectedSourceSummaries,
     guideAnchors,
     sources: sources.map(({ id, label, kind, role, status, message }) => ({ id, label, kind, role: role ?? evidenceRoleForSourceKind(kind), status, message })),
   };
