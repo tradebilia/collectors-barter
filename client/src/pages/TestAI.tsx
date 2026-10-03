@@ -403,6 +403,7 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'comics:comic_book_realm': 'match',
   'comics:comicconnect': 'match',
   'comics:goldin': 'match',
+  'sports cards:goldin': 'match',
   'sports cards:the_card_api': 'match',
 };
 
