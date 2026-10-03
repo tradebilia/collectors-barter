@@ -112,7 +112,6 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   stephen_album: { hosts: ['sarc.auction', 'www.sarc.auction'], linkPattern: /(?:\/auctionlist\.aspx\?dv=2|_as\d+(?:_p\d+)?$|_i\d+$)/i, recordCap: 12 },
   nate_sanders: { hosts: ['natedsanders.com', 'www.natedsanders.com'], linkPattern: /\/(?:catalog\.aspx|[^/]+-LOT\d+\.aspx)/i, recordCap: 12 },
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
-  catawiki_reef: { hosts: ['api.reefapi.com', 'www.catawiki.com'], linkPattern: /(?:api\.reefapi\.com\/catawiki\/v1|www\.catawiki\.com\/en\/l\/\d+)/i, recordCap: 12 },
   auctionet: { hosts: ['api.reefapi.com'], linkPattern: /api\.reefapi\.com\/auctionet\/v1/i, recordCap: 12 },
   comic_book_realm: { hosts: ['comicbookrealm.com', 'www.comicbookrealm.com'], linkPattern: /\/cgc-analyzer\/(?:search-results\/[^/?#]+|comic\/id\/\d+(?:\/[^/?#]+)?)\/?/i, recordCap: 30 },
 };
@@ -124,7 +123,6 @@ const STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT = 'https://www.sarc.auction/auct
 const REEF_API_BASE = 'https://api.reefapi.com';
 const TCGPLAYER_SEARCH_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/search`;
 const TCGPLAYER_SALES_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/product/sales`;
-const CATAWIKI_SEARCH_ENDPOINT = `${REEF_API_BASE}/catawiki/v1/search`;
 const AUCTIONET_SEARCH_ENDPOINT = `${REEF_API_BASE}/auctionet/v1/search`;
 const COMIC_BOOK_REALM_CGC_ANALYZER_BASE = 'https://comicbookrealm.com/cgc-analyzer/';
 const COMIC_BOOK_REALM_CGC_SEARCH_BASE = 'https://comicbookrealm.com/cgc-analyzer/search-results/';
@@ -713,9 +711,6 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
   }
   if (input.sourceId === 'tcgplayer_reef' && source.searchContract === 'automatic_title_search') {
     return { url: TCGPLAYER_SEARCH_ENDPOINT, error: null };
-  }
-  if (input.sourceId === 'catawiki_reef' && source.searchContract === 'automatic_title_search') {
-    return { url: CATAWIKI_SEARCH_ENDPOINT, error: null };
   }
   if (input.sourceId === 'auctionet' && source.searchContract === 'automatic_title_search') {
     const query = text(input.title).slice(0, 180);
@@ -1322,7 +1317,7 @@ function applyHistoryWindow<T extends { date: string | null }>(records: T[], his
   });
 }
 
-function reefBase(sourceId: 'tcgplayer_reef' | 'catawiki_reef', input: SpecialistMarketplaceLookupInput, requestUrl: string) {
+function reefBase(sourceId: 'tcgplayer_reef', input: SpecialistMarketplaceLookupInput, requestUrl: string) {
   const source = getSandboxSpecialistSource(sourceId)!;
   return {
     source: sourceId,
@@ -1369,10 +1364,9 @@ async function reefAuctionetDetail(lot: Record<string, unknown>, audit: ReefApiA
 
 type TcgSearchData = { results?: Array<Record<string, unknown>> };
 type TcgSalesData = { product?: Record<string, unknown>; sales?: Array<Record<string, unknown>> };
-type CataSearchData = { lots?: Array<Record<string, unknown>> };
 
 function reefRecord(
-  sourceId: 'tcgplayer_reef' | 'catawiki_reef',
+  sourceId: 'tcgplayer_reef',
   input: SpecialistMarketplaceLookupInput,
   fields: { title: string; description?: string; lotId?: string | null; url?: string | null; imageUrl?: string | null; date?: string | null; price?: number | null; currency?: string | null; completed: boolean; grade?: string | null; certificationCompany?: string | null; detail: string },
 ): SpecialistMarketplaceRecord {
@@ -1447,30 +1441,6 @@ async function lookupTcgplayerReef(input: SpecialistMarketplaceLookupInput): Pro
   }
 }
 
-async function lookupCatawikiReef(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
-  const empty = reefBase('catawiki_reef', input, CATAWIKI_SEARCH_ENDPOINT);
-  if (!empty.query) return { ...empty, status: 'setup_required', messages: ['Catawiki search requires an item title.'] };
-  try {
-    const searched = await reefPost<CataSearchData>(CATAWIKI_SEARCH_ENDPOINT, { query: empty.query, currency: 'USD', per_page: empty.recordCap, page: 1, status: 'closed' }, empty.reefApiAudit, 'search');
-    const records = applyHistoryWindow((searched.lots ?? []).slice(0, empty.recordCap).map((lot) => reefRecord('catawiki_reef', input, {
-      title: text(lot.title),
-      description: text(lot.subtitle),
-      lotId: text(lot.lot_id) || null,
-      url: text(lot.url) || null,
-      imageUrl: text(lot.image) || null,
-      date: text(lot.end_time) || null,
-      price: reefNumber(lot.sold_price),
-      currency: text(lot.currency),
-      completed: ['closed', 'sold', 'ended'].includes(text(lot.status).toLowerCase()) && Boolean(lot.is_sold) && Boolean(reefNumber(lot.sold_price)),
-      detail: ['open', 'open_now'].includes(text(lot.status).toLowerCase()) ? 'Provider returned an open/current-bid lot; it is not completed-sale evidence.' : 'Provider did not return an explicit sold lot with a positive sold_price.',
-    })), empty.historyWindow);
-    const sales = records.filter(record => record.completed && record.identityMatched);
-    return { ...empty, status: 'success', sales, context: records.filter(record => !record.completed || !record.identityMatched), messages: [`Catawiki via ReefAPI returned ${records.length} bounded lot records in the ${empty.historyWindow.replace(/_/g, ' ')} window; ${sales.length} had explicit USD sold prices and passed identity checks. Open/current-bid lots were retained only as context. All results remain context-only.`] };
-  } catch (error) {
-    return { ...empty, status: 'error', messages: [error instanceof Error ? error.message : 'Catawiki ReefAPI lookup failed; no retry was attempted.'] };
-  }
-}
-
 async function lookupAuctionet(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const historyWindow = input.historyWindow ?? 'recent_12_months';
   const empty = { source: 'auctionet' as const, label: getSandboxSpecialistSource('auctionet')!.label, searchContract: 'automatic_title_search' as const, query: text(input.title), sales: [] as SpecialistMarketplaceRecord[], context: [] as SpecialistMarketplaceRecord[], requestUrl: AUCTIONET_SEARCH_ENDPOINT, recordCap: SOURCE_RULES.auctionet!.recordCap, historyWindow, reefApiAudit: newReefApiAudit() };
@@ -1516,7 +1486,6 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (input.sourceId === 'weiss') return lookupWeissPublicCompletedLots(input);
   if (input.sourceId === 'stephen_album') return lookupStephenAlbum(input);
   if (input.sourceId === 'tcgplayer_reef') return lookupTcgplayerReef(input);
-  if (input.sourceId === 'catawiki_reef') return lookupCatawikiReef(input);
   if (input.sourceId === 'auctionet') return lookupAuctionet(input);
   if (input.sourceId === 'comic_book_realm') {
     try {

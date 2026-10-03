@@ -6,7 +6,6 @@
 - Authentication: `x-api-key` header to `https://api.reefapi.com`.
 - Envelope: `{ ok, data, meta, error }`.
 - Calls are read-only POST requests; failed/blocked calls are not charged according to the provider documentation.
-- Required credential smoke test: `POST /catawiki/v1/categories` with `{ level: 1, language: "en" }` passed in `server/reefApiSecret.test.ts`.
 
 ## TCGplayer
 
@@ -20,18 +19,6 @@ Source: https://reefapi.com/tcgplayer-api
 - Product detail also exposes market price by SKU/condition/printing, latest sales, and listing counts.
 - Tradebilia adapter plan: one bounded search, followed by bounded product/detail calls for matched products; retain only provider-confirmed sales with positive USD price, sale timestamp, condition/printing metadata, and deterministic identity matching. Results remain source context-only and never directly change canonical valuation.
 - Important limitation: sales are limited to the latest five per product, so this is recent-sale evidence, not a full historical archive.
-
-## Catawiki
-
-Source: https://reefapi.com/catawiki-api
-
-- Base API: `https://api.reefapi.com/catawiki/v1`.
-- Endpoints: `search`, `product/detail`, `lot/bids`, `auction/lots`, `category/products`, `categories`, `suggest`.
-- All listed endpoints cost 1 credit.
-- Search returns open lots; closed auction lots are obtained with `auction/lots` or `product/detail` using a lot/auction ID.
-- Closed lots distinguish `is_sold`, `sold_price`, reserve status, bid history, dates, auction IDs, lot IDs, title, URL, image, and currency.
-- Tradebilia adapter plan: bounded title search, then bounded detail/auction-lot retrieval only when a closed lot identifier is available; retain only `is_sold=true` and positive `sold_price` records with deterministic identity matching. Never treat current bid, estimate, or reserve-not-met lot as a completed sale.
-- Important limitation: the published keyword search is for open lots, so a closed-sale adapter requires a second bounded lookup path and must fail closed when no closed auction identifier is returned.
 
 ## Non-selected ReefAPI surfaces
 
