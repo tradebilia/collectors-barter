@@ -26,6 +26,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(section).toContain("searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT)");
     expect(section).toContain("buildSoldCompsQueryCandidates(query, { preserveGrade: true })");
+    expect(section).toContain("exactTierResultCount");
+    expect(section).toContain("exactTierFilteredCount");
+    expect(section).toContain("__tradebiliaQueryTier");
     expect(section).toContain("await Promise.all(");
     expect(section).toContain("EBAY_ACTIVE_RESULTS_PER_TIER");
     expect(section).not.toContain("fetchEbayListings(candidateQuery || candidate, token, 100)");

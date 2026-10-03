@@ -953,15 +953,16 @@ export const testAIRouter = router({
           : buildSoldCompsQueryCandidates(query, { preserveGrade: true });
         const boundedSearchQueries = searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT);
         const queryResults = await Promise.all(
-          boundedSearchQueries.map(async (candidate) => {
+          boundedSearchQueries.map(async (candidate, queryTier) => {
             const candidateQuery = buildEbayBrowseQuery(candidate, {
               preserveGrade: true,
             });
-            return fetchEbayListings(
+            const results = await fetchEbayListings(
               candidateQuery || candidate,
               token,
               EBAY_ACTIVE_RESULTS_PER_TIER,
             );
+            return results.map((item: any) => ({ ...item, __tradebiliaQueryTier: queryTier }));
           }),
         );
         const fetchedByQuery = new Map<string, any>();
@@ -993,7 +994,8 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const filteredSummaries = filterListingsByGrade(bySport, targetGrade, input.category, cert);
+        const filteredSummaries = filterListingsByGrade(bySport, targetGrade, input.category, cert)
+          .sort((a: any, b: any) => Number(a.__tradebiliaQueryTier ?? 0) - Number(b.__tradebiliaQueryTier ?? 0));
         console.log(`[eBay Search] After sport filter: ${bySport.length} results (target sport: ${targetSport || 'none'})`);
         console.log(`[eBay Search] After grade filter: ${filteredSummaries.length} results (target grade: ${targetGrade})`);
         // Log first 5 filtered results for debugging
@@ -1035,6 +1037,8 @@ export const testAIRouter = router({
             preVisualExcludedCount: declaredIdentityFilter.removedCount,
             targetGrade,
             executedQueries: boundedSearchQueries,
+            exactTierResultCount: summaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
+            exactTierFilteredCount: filteredSummaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
             queryTierCount: boundedSearchQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },
