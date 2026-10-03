@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   EBAY_ACTIVE_QUERY_TIER_LIMIT,
   EBAY_ACTIVE_RESULTS_PER_TIER,
+  EBAY_ACTIVE_EXACT_PAGE_LIMIT,
+  EBAY_ACTIVE_DISPLAY_TARGET,
   computeMetrics,
 } from "./testAIRouter";
 import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
@@ -30,19 +32,25 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(metrics?.count).toBe(2);
   });
 
-  it("keeps complementary retrieval bounded and concurrent", () => {
+  it("paginates the exact query before using complementary fallback tiers", () => {
     expect(EBAY_ACTIVE_QUERY_TIER_LIMIT).toBe(6);
     expect(EBAY_ACTIVE_RESULTS_PER_TIER).toBe(40);
+    expect(EBAY_ACTIVE_EXACT_PAGE_LIMIT).toBe(3);
+    expect(EBAY_ACTIVE_DISPLAY_TARGET).toBe(20);
 
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(section).toContain("searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT)");
     expect(section).toContain("buildSoldCompsQueryCandidates(query, { preserveGrade: true })");
+    expect(section).toContain("fetchEbayExactTierPages(exactCandidateQuery, token)");
+    expect(section).toContain("exactResults.length >= EBAY_ACTIVE_DISPLAY_TARGET");
+    expect(section).toContain("exactTierPageCount");
+    expect(section).toContain("exactTierUsedFallbacks");
     expect(section).toContain("exactTierResultCount");
     expect(section).toContain("exactTierFilteredCount");
     expect(section).toContain("__tradebiliaQueryTier");
-    expect(section).toContain("await Promise.all(");
     expect(section).toContain("EBAY_ACTIVE_RESULTS_PER_TIER");
     expect(routerSource).toContain("buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D");
+    expect(routerSource).toContain("offset=${offset}");
     expect(routerSource).toContain("fieldgroups=COMPACT");
     expect(routerSource).toContain("uniqueBidderCount");
     expect(section).not.toContain("fetchEbayListings(candidateQuery || candidate, token, 100)");

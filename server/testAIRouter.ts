@@ -52,6 +52,8 @@ const EBAY_BROWSE_TIMEOUT_MS = 8_000;
 // an optional AI image check cannot hold the basic market view hostage.
 export const EBAY_ACTIVE_QUERY_TIER_LIMIT = 6;
 export const EBAY_ACTIVE_RESULTS_PER_TIER = 40;
+export const EBAY_ACTIVE_EXACT_PAGE_LIMIT = 3;
+export const EBAY_ACTIVE_DISPLAY_TARGET = 20;
 
 type EbayAppTokenResult = {
   token: string | null;
@@ -95,9 +97,9 @@ async function getEbayAppToken(): Promise<EbayAppTokenResult> {
   }
 }
 
-async function fetchEbayListings(query: string, token: string, limit = 25) {
+async function fetchEbayListings(query: string, token: string, limit = 25, offset = 0) {
   const res = await fetch(
-    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&filter=buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D`,
+    `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&filter=buyingOptions%3A%7BFIXED_PRICE%7CAUCTION%7D`,
     {
       headers: { 'Authorization': `Bearer ${token}`, 'X-EBAY-C-MARKETPLACE-ID': 'EBAY_US' },
       signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS),
@@ -106,6 +108,20 @@ async function fetchEbayListings(query: string, token: string, limit = 25) {
   const data = await res.json().catch(() => null) as any;
   if (!res.ok) throw new Error(`eBay Browse lookup returned HTTP ${res.status}`);
   return data.itemSummaries ?? [];
+}
+
+async function fetchEbayExactTierPages(query: string, token: string) {
+  const pages: Array<{ items: any[]; offset: number }> = [];
+  for (let page = 0; page < EBAY_ACTIVE_EXACT_PAGE_LIMIT; page += 1) {
+    const offset = page * EBAY_ACTIVE_RESULTS_PER_TIER;
+    const items = await fetchEbayListings(query, token, EBAY_ACTIVE_RESULTS_PER_TIER, offset);
+    pages.push({ items, offset });
+    // Some provider responses are short pages even when a subsequent offset
+    // still contains listings. Stop only on an empty page or the explicit
+    // safety limit, not merely because page one has fewer than 40 results.
+    if (items.length === 0) break;
+  }
+  return pages;
 }
 
 async function fetchEbayAuctionDetails(itemId: string, token: string) {
@@ -1006,8 +1022,22 @@ export const testAIRouter = router({
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
           : buildSoldCompsQueryCandidates(query, { preserveGrade: true });
         const boundedSearchQueries = searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT);
-        const queryResults = await Promise.all(
-          boundedSearchQueries.map(async (candidate, queryTier) => {
+        const exactQuery = boundedSearchQueries[0] ?? query;
+        const exactCandidateQuery = buildEbayBrowseQuery(exactQuery, {
+          preserveGrade: true,
+        }) || exactQuery;
+        const exactPages = await fetchEbayExactTierPages(exactCandidateQuery, token);
+        const exactResults = exactPages.flatMap((page) => page.items)
+          .map((item: any) => ({ ...item, __tradebiliaQueryTier: 0 }));
+        // Do not assume that a non-empty first API page is complete. Only use
+        // broader query tiers when the exact query's paginated result set still
+        // has fewer than the display target. This keeps exact matches ahead of
+        // relaxed matches and aligns retrieval more closely with eBay's web UI.
+        const fallbackQueries = exactResults.length >= EBAY_ACTIVE_DISPLAY_TARGET
+          ? []
+          : boundedSearchQueries.slice(1);
+        const fallbackResults = await Promise.all(
+          fallbackQueries.map(async (candidate, index) => {
             const candidateQuery = buildEbayBrowseQuery(candidate, {
               preserveGrade: true,
             });
@@ -1016,9 +1046,10 @@ export const testAIRouter = router({
               token,
               EBAY_ACTIVE_RESULTS_PER_TIER,
             );
-            return results.map((item: any) => ({ ...item, __tradebiliaQueryTier: queryTier }));
+            return results.map((item: any) => ({ ...item, __tradebiliaQueryTier: index + 1 }));
           }),
         );
+        const queryResults = [exactResults, ...fallbackResults];
         const fetchedByQuery = new Map<string, any>();
         for (const candidateResults of queryResults) {
           candidateResults.forEach((item: any) => {
@@ -1090,10 +1121,13 @@ export const testAIRouter = router({
             afterDeclaredIdentityFilter: declaredIdentityFilter.listings.length,
             preVisualExcludedCount: declaredIdentityFilter.removedCount,
             targetGrade,
-            executedQueries: boundedSearchQueries,
+            executedQueries: [exactQuery, ...fallbackQueries],
+            exactTierPageCount: exactPages.length,
+            exactTierOffsets: exactPages.map((page) => page.offset),
+            exactTierUsedFallbacks: fallbackQueries.length > 0,
             exactTierResultCount: summaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
             exactTierFilteredCount: filteredSummaries.filter((item: any) => Number(item.__tradebiliaQueryTier) === 0).length,
-            queryTierCount: boundedSearchQueries.length,
+            queryTierCount: 1 + fallbackQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },
           visualReviewListings: visualActiveFilter ? displaySummaries.map((s: any) => ({
