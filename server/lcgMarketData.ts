@@ -1,5 +1,4 @@
 import { JSDOM } from 'jsdom';
-import { buildStructuredItemQuery } from '../shared/testAiCriteria';
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
 import { getSandboxSpecialistSource } from '../shared/sandboxSpecialistSources';
 import type { SpecialistMarketplaceLookupInput, SpecialistMarketplaceLookupResult, SpecialistMarketplaceRecord } from './specialistMarketplaceMarketData';
@@ -35,8 +34,17 @@ function significantTokens(value: string): string[] {
   return [...new Set(text(value).toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(token => token.length >= 3 && !['the', 'and', 'with', 'for', 'auction', 'auctions', 'graded', 'grade'].includes(token)))];
 }
 
-function structuredQuery(input: SpecialistMarketplaceLookupInput): string {
-  return buildStructuredItemQuery(input.category, input.itemDetails, [input.grade, input.certificationCompany]);
+function lcgSearchQuery(input: SpecialistMarketplaceLookupInput): string {
+  if (input.category !== 'vintage_toys') return '';
+  try {
+    const details = typeof input.itemDetails === 'string' ? JSON.parse(input.itemDetails) as Record<string, unknown> : input.itemDetails as Record<string, unknown> | undefined;
+    const characterName = [details?.toyNameCharacter, details?.characterName, details?.toyName, details?.name]
+      .map(value => text(value))
+      .find(Boolean);
+    return characterName ?? '';
+  } catch {
+    return '';
+  }
 }
 
 function recordFromAnchor(anchor: Element, input: SpecialistMarketplaceLookupInput, requestUrl: string, query: string): SpecialistMarketplaceRecord | null {
@@ -129,7 +137,7 @@ async function enrichInBatches(records: SpecialistMarketplaceRecord[]): Promise<
 
 export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource('lcg')!;
-  const query = structuredQuery(input);
+  const query = lcgSearchQuery(input);
   const base = { source: 'lcg' as const, label: source.label, searchContract: source.searchContract, query, sales: [] as SpecialistMarketplaceRecord[], context: [] as SpecialistMarketplaceRecord[], recordCap: LCG_MAX_RECORDS, historyWindow: input.historyWindow };
   if (!query) return { ...base, status: 'setup_required', requestUrl: LCG_GALLERY_URL, messages: ['LCG automatic search requires structured item fields; the free-form title was not used as a fallback.'] };
   const requestUrl = `${LCG_GALLERY_URL}?SearchText=${encodeURIComponent(query)}`;
