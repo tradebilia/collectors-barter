@@ -151,8 +151,9 @@ export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promis
       .filter((record): record is SpecialistMarketplaceRecord => Boolean(record) && !seen.has(record!.lotId ?? '') && Boolean(seen.add(record!.lotId ?? '')))
       .slice(0, LCG_MAX_RECORDS);
     const records = await enrichInBatches(galleryRecords);
-    const completedIdentityMatches = records.filter(record => record.completed && record.identityMatched);
-    return { ...base, status: 'success', requestUrl, sales: [], context: records, messages: [`LCG searched its public gallery first with structured fields (${query}), found ${galleryRecords.length} bounded lots, then checked each lot detail page for sold status, final price, closing date, premium wording, and images. ${completedIdentityMatches.length} records passed the preliminary identity/date/price checks but remain context-only pending source activation review.`] };
+    const matchedRecords = records.filter(record => record.identityMatched);
+    const completedIdentityMatches = matchedRecords.filter(record => record.completed);
+    return { ...base, status: 'success', requestUrl, sales: [], context: matchedRecords, messages: [`LCG searched its public gallery first with character/toy name (${query}), found ${galleryRecords.length} bounded lots, then checked each lot detail page. ${matchedRecords.length} matched the requested character/toy name and grade; ${records.length - matchedRecords.length} unrelated or incomplete lots were excluded from the main results. ${completedIdentityMatches.length} matched records have completed-sale facts and remain context-only pending source activation review.`] };
   } catch (error) {
     return { ...base, status: 'error', requestUrl, messages: [error instanceof Error && error.name === 'TimeoutError' ? 'LCG Auctions timed out; no retry was attempted.' : 'LCG Auctions could not be reached; no access workaround was attempted.'] };
   }

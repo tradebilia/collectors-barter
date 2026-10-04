@@ -8,12 +8,14 @@ describe('LCG Auctions adapter', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(`
       <html><body>
         <a href="/bids/bidplace.aspx?itemid=3221">1984 Transformers Megatron AFA 90</a>
+        <a href="/bids/bidplace.aspx?itemid=3222">2007 Apple iPhone MGA 9.8</a>
       </body></html>`, { status: 200, headers: { 'content-type': 'text/html' } }));
     const result = await lookupLcg({ sourceId: 'lcg', category: 'vintage_toys', title: 'ignored title', itemDetails: JSON.stringify({ brand: 'Hasbro', line: 'Transformers', toyName: 'Megatron', year: '1984' }), grade: '90', certificationCompany: 'AFA' });
     expect(decodeURIComponent(String(vi.mocked(fetch).mock.calls[0]?.[0]))).toContain('SearchText=Megatron');
     expect(decodeURIComponent(String(vi.mocked(fetch).mock.calls[0]?.[0]))).not.toContain('Hasbro Transformers 1984 90 AFA');
     expect(result.status).toBe('success');
     expect(result.sales).toHaveLength(0);
+    expect(result.context).toHaveLength(1);
     expect(result.context[0]?.lotId).toBe('3221');
     expect(result.context[0]?.valuationEligible).toBe(false);
   });
