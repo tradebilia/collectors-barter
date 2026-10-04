@@ -150,13 +150,14 @@ export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promis
       .map(anchor => recordFromAnchor(anchor, input, requestUrl, query))
       .filter((record): record is SpecialistMarketplaceRecord => Boolean(record) && !seen.has(record!.lotId ?? '') && Boolean(seen.add(record!.lotId ?? '')))
       .slice(0, LCG_MAX_RECORDS);
-    const records = await enrichInBatches(galleryRecords);
     const targetTokenCount = significantTokens(query).length;
+    const nameMatchedGalleryRecords = galleryRecords.filter(record => record.matchedTokens.length >= Math.min(2, targetTokenCount || 2));
+    const records = await enrichInBatches(nameMatchedGalleryRecords);
     const nameMatchedRecords = records.filter(record => record.matchedTokens.length >= Math.min(2, targetTokenCount || 2));
     const gradeMismatchRecords = nameMatchedRecords.filter(record => !record.identityMatched);
     const matchedRecords = records.filter(record => record.identityMatched);
     const completedIdentityMatches = matchedRecords.filter(record => record.completed);
-    return { ...base, status: 'success', requestUrl, sales: [], context: nameMatchedRecords, messages: [`LCG searched its public gallery first with character/toy name (${query}), found ${galleryRecords.length} bounded lots, then checked each lot detail page. ${nameMatchedRecords.length} matched the requested character/toy name; ${matchedRecords.length} also matched the target grade, while ${gradeMismatchRecords.length} character matches differed by grade or grading company. ${records.length - nameMatchedRecords.length} were unrelated or incomplete. All character-name matches are shown for review, but only the ${matchedRecords.length} full matches can be considered for valuation. ${completedIdentityMatches.length} full matches have completed-sale facts and remain context-only pending source activation review.`] };
+    return { ...base, status: 'success', requestUrl, sales: [], context: nameMatchedRecords, messages: [`LCG searched its public gallery first with character/toy name (${query}), found ${galleryRecords.length} bounded lots, and identified ${nameMatchedGalleryRecords.length} character-name candidates before fetching detail pages. It checked ${records.length} candidate detail pages. ${nameMatchedRecords.length} matched the requested character/toy name; ${matchedRecords.length} also matched the target grade, while ${gradeMismatchRecords.length} character matches differed by grade or grading company. ${galleryRecords.length - nameMatchedGalleryRecords.length + (records.length - nameMatchedRecords.length)} were unrelated or incomplete and were not expanded into detail requests. All character-name matches are shown for review, but only the ${matchedRecords.length} full matches can be considered for valuation. ${completedIdentityMatches.length} full matches have completed-sale facts and remain context-only pending source activation review.`] };
   } catch (error) {
     return { ...base, status: 'error', requestUrl, messages: [error instanceof Error && error.name === 'TimeoutError' ? 'LCG Auctions timed out; no retry was attempted.' : 'LCG Auctions could not be reached; no access workaround was attempted.'] };
   }
