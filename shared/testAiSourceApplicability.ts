@@ -58,7 +58,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'stephen_album', categories: ['coins'], requires: 'title', purpose: 'Bounded Stephen Album Rare Coins completed-lot context. Completed USD hammer records remain identity-filtered and outside valuation.' },
   { sourceId: 'nate_sanders', categories: ['sports cards', 'movies', 'music', 'autographs'], requires: 'title', purpose: 'Bounded Nate D. Sanders closed-lot context. Final prices include buyer premium and remain identity-filtered and outside valuation.' },
   { sourceId: 'tcgplayer_reef', categories: ['pokemon'], requires: 'title', purpose: 'Bounded TCGplayer recent-sale context through the authorized ReefAPI. Only provider-confirmed dated sales with positive USD prices are retained; active listings and guide prices remain outside valuation.' },
-  { sourceId: 'hakes', categories: ['disney pins', 'video games', 'vintage toys'], requires: 'title', purpose: 'Permission-pending Hake’s adapter for specialist collectible-auction research. Remote lookup is disabled until source authorization is recorded.' },
+  { sourceId: 'hakes', categories: ['comics', 'sports cards', 'vintage toys', 'video games', 'movies', 'music', 'autographs', 'disney pins', 'pokemon'], requires: 'title', purpose: 'Full Hake’s public catalog adapter for pop-culture collectible-auction research. Closed-lot records remain context-only until source activation and buyer-premium review are complete.' },
 ];
 
 function normalizeCategory(category: string): string { return category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '); }

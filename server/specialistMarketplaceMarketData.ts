@@ -9,6 +9,7 @@ import { numericGradesEquivalent } from '../shared/publicGradeValues';
 import { extractIdentityState, extractSignatureNames, identityStateConflicts } from './testAiIdentityState';
 import { ENV } from './_core/env';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { lookupHakes } from './hakesMarketData';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -113,6 +114,7 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   nate_sanders: { hosts: ['natedsanders.com', 'www.natedsanders.com'], linkPattern: /\/(?:catalog\.aspx|[^/]+-LOT\d+\.aspx)/i, recordCap: 12 },
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
   comic_book_realm: { hosts: ['comicbookrealm.com', 'www.comicbookrealm.com'], linkPattern: /\/cgc-analyzer\/(?:search-results\/[^/?#]+|comic\/id\/\d+(?:\/[^/?#]+)?)\/?/i, recordCap: 30 },
+  hakes: { hosts: ['hakes.com', 'www.hakes.com'], linkPattern: /\/auctions(?:\/past|\/hakes-auctions\/[^/?#]+(?:\/catalog)?|\/)?|\/online-auctions\/hakes-auctions\/[^/?#]+/i, recordCap: 24 },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
@@ -124,6 +126,7 @@ const TCGPLAYER_SEARCH_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/search`;
 const TCGPLAYER_SALES_ENDPOINT = `${REEF_API_BASE}/tcgplayer/v1/product/sales`;
 const COMIC_BOOK_REALM_CGC_ANALYZER_BASE = 'https://comicbookrealm.com/cgc-analyzer/';
 const COMIC_BOOK_REALM_CGC_SEARCH_BASE = 'https://comicbookrealm.com/cgc-analyzer/search-results/';
+const HAKES_PAST_AUCTIONS_URL = 'https://www.hakes.com/auctions/past';
 
 function comicBookRealmSearchQuery(input: SpecialistMarketplaceLookupInput): string {
   const details = parseDetails(input.itemDetails);
@@ -699,6 +702,9 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
   }
   if (input.sourceId === 'weiss' && source.searchContract === 'automatic_title_search') {
     return { url: WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT, error: null };
+  }
+  if (input.sourceId === 'hakes' && source.searchContract === 'automatic_title_search') {
+    return { url: HAKES_PAST_AUCTIONS_URL, error: null };
   }
   if (input.sourceId === 'stephen_album' && source.searchContract === 'automatic_title_search') {
     return { url: STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT, error: null };
@@ -1443,6 +1449,7 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (!request.url) return { ...empty, status: source.searchContract === 'public_contract_unverified' ? 'unsupported' : 'setup_required', messages: [request.error ?? source.searchInstruction] };
   if (input.sourceId === 'goldin') return text(input.sourceUrl) ? lookupGoldinPublicLot(input, request.url) : lookupGoldinPublicSearch(input);
   if (input.sourceId === 'weiss') return lookupWeissPublicCompletedLots(input);
+  if (input.sourceId === 'hakes') return lookupHakes(input);
   if (input.sourceId === 'stephen_album') return lookupStephenAlbum(input);
   if (input.sourceId === 'tcgplayer_reef') return lookupTcgplayerReef(input);
   if (input.sourceId === 'comic_book_realm') {
