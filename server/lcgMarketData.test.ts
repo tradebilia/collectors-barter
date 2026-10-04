@@ -44,6 +44,18 @@ describe('LCG Auctions adapter', () => {
     expect(record?.url).toContain('itemid=3221');
   });
 
+  it('reports a character match but grade mismatch instead of calling it unrelated', async () => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => new Response(
+      String(url).includes('/Lots/Gallery')
+        ? '<html><body><a href="/bids/bidplace.aspx?itemid=3221">1984 Transformers Megatron AFA 90</a></body></html>'
+        : '<html><body><div>SOLD FOR $161,457.60</div><div>End: 9/13/2026 5:00 PM EST</div></body></html>',
+      { status: 200 },
+    ));
+    const result = await lookupLcg({ sourceId: 'lcg', category: 'vintage_toys', title: 'ignored title', itemDetails: JSON.stringify({ toyName: 'Megatron' }), grade: '60', certificationCompany: 'AFA' });
+    expect(result.context).toHaveLength(0);
+    expect(result.messages[0]).toContain('matched the character/toy name but 1 failed the grade gate');
+  });
+
   it('uses a 100-lot cap and reports HTTP failures without bypassing protections', async () => {
     expect(LCG_MAX_RECORDS).toBe(100);
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('blocked', { status: 403 }));
