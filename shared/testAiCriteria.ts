@@ -70,7 +70,9 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
           ? ['releaseTitle', 'album', 'artist', 'performer', 'releaseYear', 'catalogNumber']
           : normalizedCategory === 'video_games'
             ? ['gameTitle', 'videoGameTitle', 'title', 'releaseYear', 'year', 'platform', 'console', 'system', 'upc', 'barcode']
-            : normalizedCategory === 'stamps'
+        : normalizedCategory === 'vintage_toys'
+          ? ['brand', 'manufacturer', 'line', 'franchise', 'toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName', 'setNumber', 'theme', 'toyForm', 'objectType', 'productType', 'version', 'variant', 'year']
+        : normalizedCategory === 'stamps'
               ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series']
               : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
   const gradingCompany = resolveTestAiGradingCompany(details);
