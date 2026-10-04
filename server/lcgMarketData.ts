@@ -5,7 +5,8 @@ import { getSandboxSpecialistSource } from '../shared/sandboxSpecialistSources';
 import type { SpecialistMarketplaceLookupInput, SpecialistMarketplaceLookupResult, SpecialistMarketplaceRecord } from './specialistMarketplaceMarketData';
 
 export const LCG_GALLERY_URL = 'https://auction.lcgauctions.com/Lots/Gallery';
-export const LCG_MAX_RECORDS = 12;
+export const LCG_MAX_RECORDS = 100;
+const LCG_DETAIL_CONCURRENCY = 8;
 
 function text(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, ' ').trim();
@@ -19,7 +20,7 @@ function parseAmount(value: string): number | null {
 }
 
 function extractDate(value: string): string | null {
-  const match = value.match(/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2},?\s+20\d{2}\b|\b20\d{2}[-/]\d{1,2}[-/]\d{1,2}\b/i)?.[0];
+  const match = value.match(/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\.?\s+\d{1,2},?\s+20\d{2}\b|\b20\d{2}[-/]\d{1,2}[-/]\d{1,2}\b|\b\d{1,2}\/\d{1,2}\/20\d{2}\b/i)?.[0];
   if (!match) return null;
   const parsed = Date.parse(match);
   return Number.isFinite(parsed) ? new Date(parsed).toISOString() : null;
@@ -54,7 +55,7 @@ function recordFromAnchor(anchor: Element, input: SpecialistMarketplaceLookupInp
   }
   const price = parseAmount(rowText.match(/sold\s+for[\s\S]{0,80}/i)?.[0] ?? rowText);
   const date = extractDate(rowText);
-  const completed = /\bsold\s+for\b/i.test(rowText) && price != null && date != null;
+  const completed = /sold\s+for\s+\$/i.test(rowText) && price != null && date != null;
   const targetTokens = significantTokens(query);
   const candidateTokens = significantTokens(title);
   const matchedTokens = targetTokens.filter(token => candidateTokens.includes(token));
@@ -62,17 +63,68 @@ function recordFromAnchor(anchor: Element, input: SpecialistMarketplaceLookupInp
   const candidateGrade = extractGrade(title);
   const gradeMatched = !targetGrade || (candidateGrade != null && numericGradesEquivalent(targetGrade, candidateGrade));
   const identityMatched = matchedTokens.length >= Math.min(2, targetTokens.length || 2) && gradeMatched;
-  const imageUrl = node?.querySelector('img')?.getAttribute('src') ? new URL(node.querySelector('img')!.getAttribute('src')!, requestUrl).toString() : null;
+  const imageElement = node?.querySelector('img');
+  const imageUrl = imageElement?.getAttribute('src') ? new URL(imageElement.getAttribute('src')!, requestUrl).toString() : null;
+  const detailUrl = new URL(href, requestUrl).toString();
   return {
     sourceId: 'lcg', provider: 'LCG Auctions', title, description: rowText.slice(0, 1200), lotId,
-    auctionName: 'LCG Auctions public gallery', url: new URL(href, requestUrl).toString(), imageUrl,
+    auctionName: 'LCG Auctions public gallery', url: detailUrl, imageUrl,
     saleStatus: completed ? 'completed' : 'unknown', completed, price, currency: price != null ? 'USD' : null, date,
     grade: candidateGrade, certificationCompany: title.match(/\b(AFA|MGA|CAS|CGA|WATA|VGA)\b/i)?.[1]?.toUpperCase() ?? null,
     priceBasis: completed ? 'closed' : 'unknown', buyerPremiumIncluded: null, winningBid: price, buyerPremiumPercentage: null,
     identityMatched, matchedTokens,
-    exclusionReason: !completed ? 'LCG did not expose a complete sold status, USD price, and sale date in the public gallery row.' : !identityMatched ? 'The lot did not meet the structured identity or grade gate.' : 'LCG records remain context-only pending source activation review.',
+    exclusionReason: !completed ? 'LCG lot detail did not expose a complete sold status, USD price, and sale-closing date.' : !identityMatched ? 'The lot did not meet the structured identity or grade gate.' : 'LCG records remain context-only pending source activation review.',
     valuationEligible: false,
   };
+}
+
+function applyDetailPage(record: SpecialistMarketplaceRecord, detailHtml: string): SpecialistMarketplaceRecord {
+  const document = new JSDOM(detailHtml).window.document;
+  const detailText = text(document.body?.textContent);
+  const soldMatch = detailText.match(/sold\s+for\s+\$\s*[\d,]+(?:\.\d{2})?/i);
+  const price = soldMatch ? parseAmount(soldMatch[0]) : record.price;
+  const date = extractDate((detailText.match(/(?:End|closed|auction closed)[^.!]{0,100}/i)?.[0] ?? '') + ' ' + detailText);
+  const completed = Boolean(soldMatch && price != null && date != null);
+  const premiumIncluded = /prices? shown include(?:s|d)? buyer(?:'s|s) premium/i.test(detailText);
+  const imageElement = document.querySelector('img[src]');
+  const detailImageSrc = imageElement?.getAttribute('src');
+  const imageUrl = detailImageSrc && record.url ? new URL(detailImageSrc, record.url).toString() : record.imageUrl;
+  const grade = extractGrade(record.title);
+  return {
+    ...record,
+    description: detailText.slice(0, 2400) || record.description,
+    imageUrl,
+    saleStatus: completed ? 'completed' : record.saleStatus,
+    completed,
+    price,
+    currency: price != null ? 'USD' : record.currency,
+    date,
+    priceBasis: completed ? 'closed' : record.priceBasis,
+    buyerPremiumIncluded: premiumIncluded || record.buyerPremiumIncluded,
+    winningBid: price ?? record.winningBid,
+    grade,
+    exclusionReason: !completed ? 'LCG lot detail did not expose a complete sold status, USD price, and sale-closing date.' : record.identityMatched ? 'LCG records remain context-only pending source activation review.' : 'The lot did not meet the structured identity or grade gate.',
+  };
+}
+
+async function enrichRecord(record: SpecialistMarketplaceRecord): Promise<SpecialistMarketplaceRecord> {
+  if (!record.url) return { ...record, exclusionReason: 'LCG lot detail URL was unavailable; the gallery record remained context-only.' };
+  try {
+    const response = await fetch(record.url, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only LCG Adapter/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(10_000) });
+    if (!response.ok) return { ...record, exclusionReason: `LCG lot detail returned HTTP ${response.status}; the lot remained context-only.` };
+    return applyDetailPage(record, await response.text());
+  } catch {
+    return { ...record, exclusionReason: 'LCG lot detail could not be retrieved; the gallery record remained context-only.' };
+  }
+}
+
+async function enrichInBatches(records: SpecialistMarketplaceRecord[]): Promise<SpecialistMarketplaceRecord[]> {
+  const enriched: SpecialistMarketplaceRecord[] = [];
+  for (let index = 0; index < records.length; index += LCG_DETAIL_CONCURRENCY) {
+    const batch = records.slice(index, index + LCG_DETAIL_CONCURRENCY);
+    enriched.push(...await Promise.all(batch.map(enrichRecord)));
+  }
+  return enriched;
 }
 
 export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
@@ -86,12 +138,13 @@ export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promis
     if (!response.ok) return { ...base, status: 'error', requestUrl, messages: [`LCG Auctions returned HTTP ${response.status}; no retry or access workaround was attempted.`] };
     const document = new JSDOM(await response.text(), { url: requestUrl }).window.document;
     const seen = new Set<string>();
-    const records = [...document.querySelectorAll('a[href*="/bids/bidplace.aspx?itemid="]')]
+    const galleryRecords = [...document.querySelectorAll('a[href*="/bids/bidplace.aspx?itemid="]')]
       .map(anchor => recordFromAnchor(anchor, input, requestUrl, query))
       .filter((record): record is SpecialistMarketplaceRecord => Boolean(record) && !seen.has(record!.lotId ?? '') && Boolean(seen.add(record!.lotId ?? '')))
       .slice(0, LCG_MAX_RECORDS);
-    const sales = records.filter(record => record.completed && record.identityMatched);
-    return { ...base, status: 'success', requestUrl, sales: [], context: records, messages: [`LCG searched its public gallery with structured fields (${query}), returned ${records.length} bounded lots, and retained all records as context-only pending permission and completed-sale contract review. ${sales.length} records passed the preliminary identity/date/price checks but were not sent to valuation.`] };
+    const records = await enrichInBatches(galleryRecords);
+    const completedIdentityMatches = records.filter(record => record.completed && record.identityMatched);
+    return { ...base, status: 'success', requestUrl, sales: [], context: records, messages: [`LCG searched its public gallery first with structured fields (${query}), found ${galleryRecords.length} bounded lots, then checked each lot detail page for sold status, final price, closing date, premium wording, and images. ${completedIdentityMatches.length} records passed the preliminary identity/date/price checks but remain context-only pending source activation review.`] };
   } catch (error) {
     return { ...base, status: 'error', requestUrl, messages: [error instanceof Error && error.name === 'TimeoutError' ? 'LCG Auctions timed out; no retry was attempted.' : 'LCG Auctions could not be reached; no access workaround was attempted.'] };
   }
