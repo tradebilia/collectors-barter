@@ -81,7 +81,7 @@ function recordFromAnchor(anchor: Element, input: SpecialistMarketplaceLookupInp
     grade: candidateGrade, certificationCompany: title.match(/\b(AFA|MGA|CAS|CGA|WATA|VGA)\b/i)?.[1]?.toUpperCase() ?? null,
     priceBasis: completed ? 'closed' : 'unknown', buyerPremiumIncluded: null, winningBid: price, buyerPremiumPercentage: null,
     identityMatched, matchedTokens,
-    exclusionReason: !completed ? 'LCG lot detail did not expose a complete sold status, USD price, and sale-closing date.' : !identityMatched ? 'The lot did not meet the structured identity or grade gate.' : 'LCG records remain context-only pending source activation review.',
+    exclusionReason: !gradeMatched ? `Character/toy name matched, but the candidate grade or grading company did not match the target (${input.certificationCompany ?? 'target grader'} ${input.grade ?? 'target grade'}).` : !completed ? 'LCG lot detail did not expose a complete sold status, USD price, and sale-closing date.' : !identityMatched ? 'The lot did not meet the structured character/toy-name gate.' : 'LCG records remain context-only pending source activation review.',
     valuationEligible: false,
   };
 }
@@ -111,7 +111,7 @@ function applyDetailPage(record: SpecialistMarketplaceRecord, detailHtml: string
     buyerPremiumIncluded: premiumIncluded || record.buyerPremiumIncluded,
     winningBid: price ?? record.winningBid,
     grade,
-    exclusionReason: !completed ? 'LCG lot detail did not expose a complete sold status, USD price, and sale-closing date.' : record.identityMatched ? 'LCG records remain context-only pending source activation review.' : 'The lot did not meet the structured identity or grade gate.',
+    exclusionReason: !record.identityMatched && record.exclusionReason?.includes('candidate grade') ? record.exclusionReason : !completed ? 'LCG lot detail did not expose a complete sold status, USD price, and sale-closing date.' : record.identityMatched ? 'LCG records remain context-only pending source activation review.' : record.exclusionReason ?? 'The lot did not meet the structured character/toy-name or grade gate.',
   };
 }
 
@@ -156,7 +156,7 @@ export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promis
     const gradeMismatchRecords = nameMatchedRecords.filter(record => !record.identityMatched);
     const matchedRecords = records.filter(record => record.identityMatched);
     const completedIdentityMatches = matchedRecords.filter(record => record.completed);
-    return { ...base, status: 'success', requestUrl, sales: [], context: matchedRecords, messages: [`LCG searched its public gallery first with character/toy name (${query}), found ${galleryRecords.length} bounded lots, then checked each lot detail page. ${matchedRecords.length} matched the requested character/toy name and grade; ${nameMatchedRecords.length} matched the character/toy name but ${gradeMismatchRecords.length} failed the grade gate; ${records.length - nameMatchedRecords.length} were unrelated or incomplete. Only the ${matchedRecords.length} full matches are shown. ${completedIdentityMatches.length} matched records have completed-sale facts and remain context-only pending source activation review.`] };
+    return { ...base, status: 'success', requestUrl, sales: [], context: nameMatchedRecords, messages: [`LCG searched its public gallery first with character/toy name (${query}), found ${galleryRecords.length} bounded lots, then checked each lot detail page. ${nameMatchedRecords.length} matched the requested character/toy name; ${matchedRecords.length} also matched the target grade, while ${gradeMismatchRecords.length} character matches differed by grade or grading company. ${records.length - nameMatchedRecords.length} were unrelated or incomplete. All character-name matches are shown for review, but only the ${matchedRecords.length} full matches can be considered for valuation. ${completedIdentityMatches.length} full matches have completed-sale facts and remain context-only pending source activation review.`] };
   } catch (error) {
     return { ...base, status: 'error', requestUrl, messages: [error instanceof Error && error.name === 'TimeoutError' ? 'LCG Auctions timed out; no retry was attempted.' : 'LCG Auctions could not be reached; no access workaround was attempted.'] };
   }

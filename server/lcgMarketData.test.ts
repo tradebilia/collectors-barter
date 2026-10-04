@@ -52,8 +52,9 @@ describe('LCG Auctions adapter', () => {
       { status: 200 },
     ));
     const result = await lookupLcg({ sourceId: 'lcg', category: 'vintage_toys', title: 'ignored title', itemDetails: JSON.stringify({ toyName: 'Megatron' }), grade: '60', certificationCompany: 'AFA' });
-    expect(result.context).toHaveLength(0);
-    expect(result.messages[0]).toContain('matched the character/toy name but 1 failed the grade gate');
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]?.exclusionReason).toContain('candidate grade or grading company did not match');
+    expect(result.messages[0]).toContain('1 character matches differed by grade or grading company');
   });
 
   it('uses a 100-lot cap and reports HTTP failures without bypassing protections', async () => {
