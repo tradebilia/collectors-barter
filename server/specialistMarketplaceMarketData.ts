@@ -10,6 +10,7 @@ import { extractIdentityState, extractSignatureNames, identityStateConflicts } f
 import { ENV } from './_core/env';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { lookupHakes } from './hakesMarketData';
+import { lookupLcg, LCG_GALLERY_URL, LCG_MAX_RECORDS } from './lcgMarketData';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -115,6 +116,7 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
   comic_book_realm: { hosts: ['comicbookrealm.com', 'www.comicbookrealm.com'], linkPattern: /\/cgc-analyzer\/(?:search-results\/[^/?#]+|comic\/id\/\d+(?:\/[^/?#]+)?)\/?/i, recordCap: 30 },
   hakes: { hosts: ['hakes.com', 'www.hakes.com'], linkPattern: /\/auctions(?:\/past|\/hakes-auctions\/[^/?#]+(?:\/catalog)?|\/)?|\/online-auctions\/hakes-auctions\/[^/?#]+/i, recordCap: 24 },
+  lcg: { hosts: ['auction.lcgauctions.com'], linkPattern: /\/Lots\/Gallery|\/bids\/bidplace\.aspx/i, recordCap: LCG_MAX_RECORDS },
 };
 
 const GOLDIN_PUBLIC_LOT_ENDPOINT = 'https://lot-retrieval-bidder.api.prod.goldin.com/api/meta_slug/';
@@ -705,6 +707,9 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
   }
   if (input.sourceId === 'hakes' && source.searchContract === 'automatic_title_search') {
     return { url: HAKES_PAST_AUCTIONS_URL, error: null };
+  }
+  if (input.sourceId === 'lcg' && source.searchContract === 'automatic_title_search') {
+    return { url: LCG_GALLERY_URL, error: null };
   }
   if (input.sourceId === 'stephen_album' && source.searchContract === 'automatic_title_search') {
     return { url: STEPHEN_ALBUM_COMPLETED_AUCTIONS_ENDPOINT, error: null };
@@ -1450,6 +1455,7 @@ export async function lookupSpecialistMarketplace(input: SpecialistMarketplaceLo
   if (input.sourceId === 'goldin') return text(input.sourceUrl) ? lookupGoldinPublicLot(input, request.url) : lookupGoldinPublicSearch(input);
   if (input.sourceId === 'weiss') return lookupWeissPublicCompletedLots(input);
   if (input.sourceId === 'hakes') return lookupHakes(input);
+  if (input.sourceId === 'lcg') return lookupLcg(input);
   if (input.sourceId === 'stephen_album') return lookupStephenAlbum(input);
   if (input.sourceId === 'tcgplayer_reef') return lookupTcgplayerReef(input);
   if (input.sourceId === 'comic_book_realm') {

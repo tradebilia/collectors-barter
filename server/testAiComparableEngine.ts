@@ -458,7 +458,7 @@ const KNOWN_SERVER_ADAPTERS = new Set([
   '130point', 'sold_comps', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'sirius_sports_auctions',
   'pcgs_auction_results', 'comicconnect', 'goldin', 'weiss', 'stephen_album', 'nate_sanders',
   'ngc', 'cng', 'coin_archives', 'hakes', 'morphy', 'theriaults', 'bertoia', 'rumsey',
-  'cherrystone', 'raritan', 'poster_auctions', 'bonhams', 'hipstamp', 'pricecharting',
+  'cherrystone', 'raritan', 'poster_auctions', 'bonhams', 'hipstamp', 'pricecharting', 'lcg',
 ]);
 
 const CATEGORY_EVIDENCE_THRESHOLDS: Record<string, Omit<CategoryEvidenceThresholds, 'category'>> = {

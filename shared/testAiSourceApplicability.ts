@@ -1,6 +1,6 @@
 import { isSandboxSiteBlockedSource } from './sandboxBlockedSources';
 
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'stephen_album' | 'nate_sanders' | 'tcgplayer_reef';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'lcg' | 'stephen_album' | 'nate_sanders' | 'tcgplayer_reef';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
@@ -59,6 +59,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'nate_sanders', categories: ['sports cards', 'movies', 'music', 'autographs'], requires: 'title', purpose: 'Bounded Nate D. Sanders closed-lot context. Final prices include buyer premium and remain identity-filtered and outside valuation.' },
   { sourceId: 'tcgplayer_reef', categories: ['pokemon'], requires: 'title', purpose: 'Bounded TCGplayer recent-sale context through the authorized ReefAPI. Only provider-confirmed dated sales with positive USD prices are retained; active listings and guide prices remain outside valuation.' },
   { sourceId: 'hakes', categories: ['comics', 'sports cards', 'vintage toys', 'video games', 'movies', 'music', 'autographs', 'disney pins', 'pokemon'], requires: 'title', purpose: 'Full Hake’s public catalog adapter for pop-culture collectible-auction research. Closed-lot records remain context-only until source activation and buyer-premium review are complete.' },
+  { sourceId: 'lcg', categories: ['vintage toys'], requires: 'title', purpose: 'Bounded LCG public-gallery context for Vintage Toys. Preliminary sold rows remain context-only until date, premium, permission, and source-activation review are complete.' },
 ];
 
 function normalizeCategory(category: string): string { return category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' '); }

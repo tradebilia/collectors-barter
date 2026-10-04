@@ -9,7 +9,7 @@ const SPECIALIST_PENDING_PROVIDER_IDS = [
   "specialist_bertoia", "specialist_morphy", "specialist_theriaults", "specialist_propstore",
   "specialist_poster_auctions", "specialist_bonhams", "specialist_comicconnect", "specialist_heritage",
   "specialist_university_archives", "specialist_swann", "specialist_rr_auction", "specialist_alexander_historical",
-  "specialist_goldin", "specialist_hakes",
+  "specialist_goldin", "specialist_hakes", "specialist_lcg",
 ] as const;
 
 const SPECIALIST_PROVIDER_ID_BY_SOURCE = {
@@ -18,7 +18,7 @@ const SPECIALIST_PROVIDER_ID_BY_SOURCE = {
   bertoia: "specialist_bertoia", morphy: "specialist_morphy", theriaults: "specialist_theriaults", propstore: "specialist_propstore",
   poster_auctions: "specialist_poster_auctions", bonhams: "specialist_bonhams", comicconnect: "specialist_comicconnect", heritage: "specialist_heritage",
   university_archives: "specialist_university_archives", swann: "specialist_swann", rr_auction: "specialist_rr_auction", alexander_historical: "specialist_alexander_historical",
-  goldin: "specialist_goldin", hakes: "specialist_hakes",
+  goldin: "specialist_goldin", hakes: "specialist_hakes", lcg: "specialist_lcg",
 } as const;
 
 export const API_PROVIDER_IDS = [

@@ -48,7 +48,8 @@ type AdapterId =
   | 'coin_archives'
   | 'bertoia'
   | 'heritage'
-  | 'hakes';
+  | 'hakes'
+  | 'lcg';
 
 export type VisualRequirement = 'not_required' | 'required';
 export type DuplicateStatus = 'unique' | 'exact_duplicate' | 'probable_duplicate' | 'possible_duplicate';
@@ -146,6 +147,7 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   bertoia: { id: 'bertoia', label: 'Bertoia Auctions', version: '1.0.0', defaultOriginMarketplace: 'bertoia', defaultPriceBasis: 'unknown', completedStatusBasis: 'Bertoia completed lot or catalog record' },
   heritage: { id: 'heritage', label: 'Heritage Auction Archives', version: '1.0.0', defaultOriginMarketplace: 'heritage', defaultPriceBasis: 'unknown', completedStatusBasis: 'Heritage completed lot result' },
   hakes: { id: 'hakes', label: "Hake's Auction Results", version: '1.0.0', defaultOriginMarketplace: 'hakes', defaultPriceBasis: 'unknown', completedStatusBasis: "Hake's completed lot result" },
+  lcg: { id: 'lcg', label: 'LCG Auctions', version: '1.0.0', defaultOriginMarketplace: 'lcg', defaultPriceBasis: 'unknown', completedStatusBasis: 'LCG public gallery sold lot result' },
 };
 
 export type CanonicalObservationFacts = {

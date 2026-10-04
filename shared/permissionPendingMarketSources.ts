@@ -20,7 +20,8 @@ export type PermissionPendingMarketSourceId =
   | 'rr_auction'
   | 'alexander_historical'
   | 'goldin'
-  | 'hakes';
+  | 'hakes'
+  | 'lcg';
 
 export type PermissionPendingMarketSource = {
   id: PermissionPendingMarketSourceId;
@@ -305,6 +306,18 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     liveTestStatus: 'partial',
     liveTestSummary: 'One legacy Disney-pin LotDetail was complete, but a different public completed pin route lacked a retrievable end date and stable canonical page; contract is inconsistent.',
     permissionNote: 'Awaiting written permission before automated collection or retained commercial use.',
+  },
+  {
+    id: 'lcg',
+    label: 'LCG Auctions',
+    categories: ['vintage_toys'],
+    sourceUrl: 'https://auction.lcgauctions.com/Lots/Gallery',
+    purpose: 'Vintage-toy auction gallery and realized-price context.',
+    priceBasis: 'unknown',
+    status: 'pending_permission',
+    liveTestStatus: 'verified',
+    liveTestSummary: 'Public gallery search returned lot titles, sold-for amounts, item links, and images; sale-date and premium semantics still require activation review.',
+    permissionNote: 'Awaiting written permission before automated collection or retained auction data use.',
   },
 ] as const;
 

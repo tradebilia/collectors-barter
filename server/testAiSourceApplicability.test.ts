@@ -55,6 +55,8 @@ describe('internal Test AI source-category applicability policy', () => {
 
     const gameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
     expect(gameIds).toEqual(expect.arrayContaining(['goldin', 'hakes']));
+    expect(getEligibleTestAiSources({ category: 'vintage_toys', hasTitle: true }).map((source) => source.sourceId)).toContain('lcg');
+    expect(gameIds).not.toContain('lcg');
     expect(gameIds).not.toContain('heritage');
     expect(gameIds).not.toContain('swann');
     const autographIds = getEligibleTestAiSources({ category: 'autographs', hasTitle: true }).map((source) => source.sourceId);
