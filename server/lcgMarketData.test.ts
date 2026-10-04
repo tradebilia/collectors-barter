@@ -62,6 +62,8 @@ describe('LCG Auctions adapter', () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('blocked', { status: 403 }));
     const result = await lookupLcg({ sourceId: 'lcg', category: 'vintage_toys', title: 'Toy', itemDetails: JSON.stringify({ brand: 'Hasbro', toyName: 'Toy' }) });
     expect(result.status).toBe('error');
+    expect(result.messages[0]).toContain('unavailable to the sandbox');
     expect(result.messages[0]).toContain('HTTP 403');
+    expect(result.messages[0]).toContain('not evidence that no matching lot exists');
   });
 });

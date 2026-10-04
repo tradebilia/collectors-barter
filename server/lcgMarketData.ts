@@ -143,7 +143,12 @@ export async function lookupLcg(input: SpecialistMarketplaceLookupInput): Promis
   const requestUrl = `${LCG_GALLERY_URL}?SearchText=${encodeURIComponent(query)}`;
   try {
     const response = await fetch(requestUrl, { headers: { Accept: 'text/html,application/xhtml+xml', 'User-Agent': 'Tradebilia Sandbox Read-Only LCG Adapter/1.0' }, redirect: 'follow', signal: AbortSignal.timeout(10_000) });
-    if (!response.ok) return { ...base, status: 'error', requestUrl, messages: [`LCG Auctions returned HTTP ${response.status}; no retry or access workaround was attempted.`] };
+    if (!response.ok) {
+      const message = response.status === 403
+        ? 'LCG Auctions is unavailable to the sandbox because the public endpoint returned HTTP 403 (access blocked, likely by Cloudflare); no retry or access workaround was attempted. This is not evidence that no matching lot exists.'
+        : `LCG Auctions returned HTTP ${response.status}; no retry or access workaround was attempted.`;
+      return { ...base, status: 'error', requestUrl, messages: [message] };
+    }
     const document = new JSDOM(await response.text(), { url: requestUrl }).window.document;
     const seen = new Set<string>();
     const galleryRecords = [...document.querySelectorAll('a[href*="/bids/bidplace.aspx?itemid="]')]
