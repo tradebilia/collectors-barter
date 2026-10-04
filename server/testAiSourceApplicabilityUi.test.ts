@@ -25,6 +25,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'sports cards:sirius_sports_auctions': 'match'");
     expect(source).toContain('border-green-400');
     expect(source).toContain('border-red-400');
+    expect(source).toContain("source.id === 'lcg'");
+    expect(source).toContain('403 error');
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {

@@ -492,6 +492,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
                   >
                     <span>{source.icon}</span>
                     <span>{source.label}</span>
+                    {source.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}
                     {isPermissionPending || isDeferred ? <span className="text-[9px] opacity-75">({pendingTestLabel})</span> : !isLive && <span className="text-[9px] opacity-60">(soon)</span>}
                   </button>
                 );
