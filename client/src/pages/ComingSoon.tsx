@@ -1,9 +1,9 @@
 import { FormEvent, useId, useState } from "react";
-import { Box, CircleDot, Coins, Disc3, Gamepad2, Music2, PenLine, Stamp, Tag, Tv } from "lucide-react";
+import { Box, CircleDot, Coins, Gamepad2, Music2, PenLine, Stamp, Tag, Tv } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { TradebiliaWheel } from "@/components/TradebiliaWheel";
 
-const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_ba8c631b.html";
+const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";
 
 const mobileCategories = [
   { label: "Sports Cards", Icon: CircleDot },
@@ -43,15 +43,9 @@ export default function ComingSoon() {
 
   return (
     <main className="min-h-[100svh] overflow-hidden bg-[#0b0705]" aria-label="Tradebilia Coming Soon">
-      {/* The supplied artwork remains the exact desktop experience. */}
-      <div className="relative mx-auto hidden aspect-[1815/867] w-full sm:block">
-        <iframe
-          src={SUPPLIED_COMING_SOON_HTML_URL}
-          title="Tradebilia Coming Soon"
-          className="pointer-events-none absolute inset-0 size-full border-0"
-          sandbox=""
-          aria-hidden="true"
-        />
+      {/* The supplied SVG artwork is rendered unchanged as the desktop visual layer. */}
+      <div className="relative mx-auto hidden aspect-[1810/869] w-full sm:block">
+        <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" aria-hidden="true" className="absolute inset-0 size-full object-contain" />
 
         <section className="absolute left-1/2 top-[65.5%] h-[5.6%] w-[27%] -translate-x-1/2 -translate-y-1/2" aria-label="Tradebilia launch email signup">
           {submitted ? (
@@ -83,12 +77,7 @@ export default function ComingSoon() {
       {/* Mobile keeps the desktop visual identity, but reflows its dense landscape composition into a readable vertical layout. */}
       <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden px-4 pb-5 pt-6 text-center text-[#f4efe4] sm:hidden" aria-label="Tradebilia mobile launch signup">
         <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden bg-[#0b0705]" aria-hidden="true">
-          <iframe
-            src={SUPPLIED_COMING_SOON_HTML_URL}
-            title=""
-            className="absolute left-1/2 top-0 h-full w-auto max-w-none -translate-x-1/2 opacity-45"
-            sandbox=""
-          />
+          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute left-1/2 top-0 h-full w-auto max-w-none -translate-x-1/2 opacity-45" />
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,7,5,0.88)_0%,rgba(11,7,5,0.64)_20%,rgba(11,7,5,0.68)_53%,rgba(11,7,5,0.94)_100%)]" />
         </div>
 
@@ -103,6 +92,7 @@ export default function ComingSoon() {
         </header>
 
         <div className="mx-auto mt-5 w-full max-w-[22rem]">
+          <p className="mb-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[#e3ab5e]">Notify Me</p>
           {submitted ? (
             <div role="status" aria-live="polite" className="border border-[#e3ab5e]/90 bg-[#0b0705]/85 px-3 py-3 text-sm font-medium uppercase tracking-[0.1em] text-[#e3ab5e]">
               {alreadySubscribed ? "You’re already on the launch list." : "You’re on the launch list."}
