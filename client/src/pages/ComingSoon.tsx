@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { TradebiliaWheel } from "@/components/TradebiliaWheel";
 
 const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";
+const SUPPLIED_BOTTOM_STRIP_URL = "/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png";
 
 const mobileCategories = [
   { label: "Sports Cards", Icon: CircleDot },
@@ -134,6 +135,10 @@ export default function ComingSoon() {
           <p className="mt-3 text-[0.59rem] leading-4 text-[#e3ab5e]/85">Discover rare finds&nbsp;&nbsp;•&nbsp;&nbsp;Trade with confidence&nbsp;&nbsp;•&nbsp;&nbsp;No trading fees&nbsp;&nbsp;•&nbsp;&nbsp;Trade across categories</p>
         </footer>
       </section>
+
+      <div className="mt-5 w-full overflow-hidden border-t border-[#e3ab5e]/20 bg-[#0b0705] px-3 py-2 sm:mt-6 sm:px-6 sm:py-3" aria-label="Tradebilia collector benefits">
+        <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto block h-auto w-full max-w-[1372px]" />
+      </div>
     </main>
   );
 }
