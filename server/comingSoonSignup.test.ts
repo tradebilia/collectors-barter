@@ -13,6 +13,7 @@ describe('Coming Soon exact supplied composition', () => {
     expect(page).toContain('aspect-[1810/869]');
     expect(page).toContain('top-[65.5%]');
     expect(page).toContain('Notify Me');
+    expect(page.indexOf('Built for collectors')).toBeLessThan(page.lastIndexOf('SUPPLIED_BOTTOM_STRIP_URL'));
     expect(page).toContain('subscribeMutation.mutate({ email })');
     expect(page).toContain('Please enter a valid email address.');
     expect(page).toContain('You’re on the launch list.');

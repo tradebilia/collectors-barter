@@ -132,13 +132,10 @@ export default function ComingSoon() {
 
         <footer className="mx-auto mt-5 w-full max-w-[22rem] pt-1">
           <p className="text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[#e3ab5e]">Built for collectors&nbsp;&nbsp;•&nbsp;&nbsp;By collectors</p>
+          <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto mt-3 block h-auto w-full" />
           <p className="mt-3 text-[0.59rem] leading-4 text-[#e3ab5e]/85">Discover rare finds&nbsp;&nbsp;•&nbsp;&nbsp;Trade with confidence&nbsp;&nbsp;•&nbsp;&nbsp;No trading fees&nbsp;&nbsp;•&nbsp;&nbsp;Trade across categories</p>
         </footer>
       </section>
-
-      <div className="mt-5 w-full overflow-hidden border-t border-[#e3ab5e]/20 bg-[#0b0705] px-3 py-2 sm:mt-6 sm:px-6 sm:py-3" aria-label="Tradebilia collector benefits">
-        <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto block h-auto w-full max-w-[1372px]" />
-      </div>
     </main>
   );
 }
