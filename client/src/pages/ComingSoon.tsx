@@ -78,8 +78,9 @@ export default function ComingSoon() {
       {/* Mobile keeps the desktop visual identity, but reflows its dense landscape composition into a readable vertical layout. */}
       <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden px-4 pb-8 pt-8 text-center text-[#f4efe4] sm:hidden" aria-label="Tradebilia mobile launch signup">
         <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden bg-[#0b0705]" aria-hidden="true">
-          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute inset-x-0 top-0 h-auto w-full opacity-30" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,7,5,0.62)_0%,rgba(11,7,5,0.82)_24%,rgba(11,7,5,0.96)_48%,rgba(11,7,5,1)_78%)]" />
+          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover object-center opacity-35 blur-[2px]" />
+          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute inset-x-0 top-0 h-auto w-full opacity-65" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,7,5,0.24)_0%,rgba(11,7,5,0.4)_28%,rgba(11,7,5,0.62)_58%,rgba(11,7,5,0.82)_86%,rgba(11,7,5,0.9)_100%)]" />
         </div>
 
         <header className="mx-auto w-full max-w-[22rem]">
