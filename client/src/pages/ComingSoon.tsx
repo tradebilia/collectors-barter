@@ -4,6 +4,15 @@ import { trpc } from "@/lib/trpc";
 
 const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";
 const SUPPLIED_BOTTOM_STRIP_URL = "/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png";
+const collectorPhrases = [
+  "Discover rare finds",
+  "Trade with confidence",
+  "No trading fees",
+  "Trade across categories",
+  "Build trust faster",
+  "Interactive trading platform",
+  "A.I. assisted trade evaluation",
+] as const;
 
 const mobileCategories = [
   { label: "Sports Cards", Icon: CircleDot },
@@ -74,6 +83,10 @@ export default function ComingSoon() {
         </section>
       </div>
 
+      <div className="hidden w-full bg-[#0b0705] px-4 py-3 sm:block" aria-label="Tradebilia collector benefits">
+        <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto block h-auto w-full max-w-[1372px]" />
+      </div>
+
       {/* Mobile uses one shallow crop of the supplied artwork, then a solid readable content panel. */}
       <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-[#0b0705] px-4 pb-8 pt-0 text-center text-[#f4efe4] sm:hidden" aria-label="Tradebilia mobile launch signup">
         <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden bg-[#0b0705]" aria-hidden="true">
@@ -127,7 +140,11 @@ export default function ComingSoon() {
 
           <footer className="mt-5 w-full pt-1">
             <p className="text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-[#e3ab5e]">Built for collectors&nbsp;&nbsp;•&nbsp;&nbsp;By collectors</p>
-            <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto mt-3 block h-[1.15rem] w-full object-fill" />
+            <div className="mx-auto mt-3 flex max-w-[20rem] flex-wrap justify-center gap-x-2 gap-y-1 border-t border-[#e3ab5e]/20 pt-2 text-[0.48rem] font-medium uppercase leading-[1.25] tracking-[0.09em] text-[#e3ab5e]/90" aria-label="Tradebilia collector benefits">
+              {collectorPhrases.map((phrase, index) => (
+                <span key={phrase} className="whitespace-nowrap">{phrase}{index < collectorPhrases.length - 1 ? " ◆" : ""}</span>
+              ))}
+            </div>
           </footer>
         </div>
       </section>
