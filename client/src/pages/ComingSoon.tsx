@@ -1,7 +1,6 @@
 import { FormEvent, useId, useState } from "react";
 import { Box, CircleDot, Coins, Gamepad2, Music2, PenLine, Stamp, Tag, Tv } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { TradebiliaWheel } from "@/components/TradebiliaWheel";
 
 const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";
 const SUPPLIED_BOTTOM_STRIP_URL = "/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png";
@@ -75,25 +74,20 @@ export default function ComingSoon() {
         </section>
       </div>
 
-      {/* Mobile keeps the desktop visual identity, but reflows its dense landscape composition into a readable vertical layout. */}
-      <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden px-4 pb-8 pt-8 text-center text-[#f4efe4] sm:hidden" aria-label="Tradebilia mobile launch signup">
+      {/* Mobile uses one shallow crop of the supplied artwork, then a solid readable content panel. */}
+      <section className="relative isolate flex min-h-[100svh] flex-col overflow-hidden bg-[#0b0705] px-4 pb-8 pt-0 text-center text-[#f4efe4] sm:hidden" aria-label="Tradebilia mobile launch signup">
         <div className="pointer-events-none absolute inset-0 -z-20 overflow-hidden bg-[#0b0705]" aria-hidden="true">
-          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover object-center opacity-35 blur-[2px]" />
-          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute inset-x-0 top-0 h-auto w-full opacity-65" />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(11,7,5,0.24)_0%,rgba(11,7,5,0.4)_28%,rgba(11,7,5,0.62)_58%,rgba(11,7,5,0.82)_86%,rgba(11,7,5,0.9)_100%)]" />
+          <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" className="absolute inset-x-0 top-0 h-auto w-full opacity-90" />
+          <div className="absolute inset-x-0 top-0 h-[15.5rem] bg-[linear-gradient(180deg,rgba(11,7,5,0.04)_0%,rgba(11,7,5,0.16)_52%,rgba(11,7,5,0.96)_100%)]" />
         </div>
 
-        <header className="mx-auto w-full max-w-[22rem]">
-          <div className="flex items-center justify-center gap-2.5 drop-shadow-[0_3px_8px_rgba(0,0,0,0.75)]">
-            <TradebiliaWheel className="h-12 w-12 shrink-0" />
-            <span className="h-12 w-px bg-white/90" aria-hidden="true" />
-            <h1 className="text-[1.75rem] font-semibold leading-none tracking-[0.03em] text-white">TRADEBILIA</h1>
-          </div>
-          <h2 className="mx-auto mt-5 max-w-[19rem] font-serif text-[2rem] leading-[1.05] text-white drop-shadow-[0_2px_7px_rgba(0,0,0,0.8)]">Why Buy or Sell<br />When You Can Trade?</h2>
-          <p className="mx-auto mt-3 max-w-[19rem] text-[0.8rem] leading-5 text-[#f4efe4]/95 drop-shadow-[0_2px_6px_rgba(0,0,0,0.9)]">Every collectible has a story. Tradebilia connects collectors so your collection can grow.</p>
+        <header className="h-[14.25rem] shrink-0" aria-label="Tradebilia mobile coming soon artwork">
+          <h1 className="sr-only">Tradebilia — Why Buy or Sell When You Can Trade?</h1>
         </header>
 
-        <div className="mx-auto mt-5 w-full max-w-[22rem]">
+        <div className="relative z-10 mx-auto w-full max-w-[22rem] rounded-sm border border-[#e3ab5e]/30 bg-[#0b0705]/90 px-3 pb-4 pt-3 shadow-[0_10px_28px_rgba(0,0,0,0.28)]">
+          <p className="text-[0.59rem] leading-4 text-[#f4efe4]/80">Every collectible has a story. Join the exchange when Tradebilia launches.</p>
+          <div className="mt-4">
           <p className="mb-2 text-[0.62rem] font-semibold uppercase tracking-[0.18em] text-[#e3ab5e]">Notify Me</p>
           {submitted ? (
             <div role="status" aria-live="polite" className="border border-[#e3ab5e]/90 bg-[#0b0705]/85 px-3 py-3 text-sm font-medium uppercase tracking-[0.1em] text-[#e3ab5e]">
@@ -118,23 +112,24 @@ export default function ComingSoon() {
             </form>
           )}
           {signupErrorMessage && <p role="alert" aria-live="polite" className="mt-2 text-center text-sm font-medium text-[#ffd5d5]">{signupErrorMessage}</p>}
-        </div>
-
-        <section className="mx-auto mt-6 w-full max-w-[22rem]" aria-label="Tradebilia collector categories">
-          <div className="grid grid-cols-5 gap-x-1 gap-y-3 border-y border-[#e3ab5e]/35 py-4">
-            {mobileCategories.map(({ label, Icon }) => (
-              <div key={label} className="flex min-w-0 flex-col items-center gap-1 text-[#e3ab5e]">
-                <Icon className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" />
-                <span className="text-[0.49rem] font-semibold leading-[1.1] uppercase tracking-[0.035em]">{label}</span>
-              </div>
-            ))}
           </div>
-        </section>
 
-        <footer className="mx-auto mt-5 w-full max-w-[22rem] pt-1">
-          <p className="text-[0.58rem] font-semibold uppercase tracking-[0.22em] text-[#e3ab5e]">Built for collectors&nbsp;&nbsp;•&nbsp;&nbsp;By collectors</p>
-          <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto mt-3 block h-[1.15rem] w-full object-fill sm:h-auto" />
-        </footer>
+          <section className="mt-5 w-full" aria-label="Tradebilia collector categories">
+            <div className="grid grid-cols-5 gap-x-1 gap-y-3 border-y border-[#e3ab5e]/35 py-4">
+              {mobileCategories.map(({ label, Icon }) => (
+                <div key={label} className="flex min-w-0 flex-col items-center gap-1 text-[#e3ab5e]">
+                  <Icon className="h-4 w-4" strokeWidth={1.6} aria-hidden="true" />
+                  <span className="text-[0.49rem] font-semibold leading-[1.1] uppercase tracking-[0.035em]">{label}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <footer className="mt-5 w-full pt-1">
+            <p className="text-[0.58rem] font-semibold uppercase tracking-[0.18em] text-[#e3ab5e]">Built for collectors&nbsp;&nbsp;•&nbsp;&nbsp;By collectors</p>
+            <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="mx-auto mt-3 block h-[1.15rem] w-full object-fill" />
+          </footer>
+        </div>
       </section>
     </main>
   );
