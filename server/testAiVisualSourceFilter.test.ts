@@ -196,6 +196,14 @@ describe("visual source filter", () => {
     expect(source).toContain("target is graded and the candidate is visibly raw");
   });
 
+  it("ignores unique certificate IDs when visually comparing graded coins", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain('category === "coins" && isGraded');
+    expect(source).toContain("certificate IDs/numbers are unique to each individual coin");
+    expect(source).toContain("never mark a coin mismatch because the visible certificate ID differs");
+    expect(source).toContain("never require the IDs to match");
+  });
+
   it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
     const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
     expect(pageSource).toContain("formatVisualReviewPrice");
