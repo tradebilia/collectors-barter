@@ -13,6 +13,9 @@ describe('Coming Soon exact supplied composition', () => {
     expect(page).toContain('aspect-[1810/869]');
     expect(page).toContain('top-[65.5%]');
     expect(page).toContain('Notify Me');
+    expect(page).toContain('h-auto w-full opacity-30');
+    expect(page).toContain('h-[1.15rem] w-full object-fill');
+    expect(page).not.toContain('h-full w-auto max-w-none -translate-x-1/2 opacity-45');
     expect(page.indexOf('Built for collectors')).toBeLessThan(page.lastIndexOf('SUPPLIED_BOTTOM_STRIP_URL'));
     expect(page).toContain('subscribeMutation.mutate({ email })');
     expect(page).toContain('Please enter a valid email address.');
