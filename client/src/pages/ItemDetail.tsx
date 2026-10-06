@@ -311,7 +311,7 @@ export default function ItemDetail() {
 
         <CategoryBar />
 
-        <section className="relative px-4 pt-4 pb-10 lg:px-8">
+        <section className="relative px-3 pt-4 pb-10 sm:px-4 lg:px-8">
           <div className="relative">
           {/* Back button — sits at the very left edge, outside the centered grid */}
           <div className="mb-4">
@@ -390,9 +390,9 @@ export default function ItemDetail() {
             </div>
 
             <div className="pt-2">
-              <div className="rounded-[2rem] border border-white/10 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm">
-                <div className="flex items-center justify-between">
-                  <Badge className="rounded-full border border-gray-300 bg-gray-100 px-4 py-2 text-[0.7rem] uppercase tracking-[0.25em] text-gray-700 hover:bg-gray-200">
+              <div className="min-w-0 rounded-[1.5rem] border border-white/10 bg-white p-4 shadow-[0_40px_90px_rgba(0,0,0,0.28)] backdrop-blur-sm sm:rounded-[2rem] sm:p-8">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <Badge className="max-w-full whitespace-normal rounded-full border border-gray-300 bg-gray-100 px-3 py-2 text-[0.62rem] uppercase tracking-[0.16em] text-gray-700 hover:bg-gray-200 sm:px-4 sm:text-[0.7rem] sm:tracking-[0.25em]">
                     {getTradebiliaCategoryLabel(listing.category)}
                   </Badge>
                   <div className="text-right">
@@ -400,52 +400,52 @@ export default function ItemDetail() {
                     <p className="mt-1 text-lg font-semibold text-gray-900">#{listing.id}</p>
                   </div>
                 </div>
-                <h1 className="title-lining-nums mt-6 text-5xl font-semibold leading-[1.05] tracking-tight text-gray-900">{listing.title}</h1>
-                <div className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2">
+                <h1 className="title-lining-nums mt-5 break-words text-3xl font-semibold leading-[1.08] tracking-tight text-gray-900 [overflow-wrap:anywhere] sm:mt-6 sm:text-5xl sm:leading-[1.05]">{listing.title}</h1>
+                <div className="mt-5 grid min-w-0 gap-4 text-base text-gray-700 sm:mt-6 sm:grid-cols-2 sm:text-lg">
                   {listing.certificationCompany && (
                     <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Grading Company</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
+                      <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">Grading Company</p>
+                      <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
                     </div>
                   )}
                   {displayGrade ? (
                     <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">{String(displayGrade).match(/^[A-Z]{1,8}-?\d/) ? 'Grade' : 'Numerical Grade'}</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{formatGrade(displayGrade)}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">{String(displayGrade).match(/^[A-Z]{1,8}-?\d/) ? 'Grade' : 'Numerical Grade'}</p>
+                        <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{formatGrade(displayGrade)}</p>
                     </div>
                   ) : listing.condition ? (
                     <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Condition</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{formatPublicFieldValue(listing.condition)}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">Condition</p>
+                        <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{formatPublicFieldValue(listing.condition)}</p>
                     </div>
                   ) : null}
                   {listing.estimatedValue && (
                     <div>
-                      <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Estimated Value</p>
-                      <p className="mt-2 text-sm font-medium text-gray-500">{formatItemValue(listing.estimatedValue)}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">Estimated Value</p>
+                        <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{formatItemValue(listing.estimatedValue)}</p>
                     </div>
                   )}
                   <div>
-                    <p className="text-base font-bold uppercase tracking-[0.25em] text-gray-800">Listed</p>
-                    <p className="mt-2 text-sm font-medium text-gray-500">{new Date(listing.createdAt).toLocaleDateString()}</p>
+                    <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">Listed</p>
+                    <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{new Date(listing.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
 
                 <Separator className="my-8 bg-gray-200" />
 
-                <div className="flex flex-wrap items-center justify-between gap-5">
+                <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
                   <Link href={`/profile/${listing.ownerId}`} className="flex items-center gap-4 hover:opacity-80 transition">
                     <Avatar className="h-14 w-14 border border-gray-300 cursor-pointer">
                       <AvatarImage src={listing.ownerProfile.avatarUrl ?? undefined} alt={listing.ownerProfile.displayName} />
                       <AvatarFallback className="bg-gray-200 text-gray-900">{initials(listing.ownerProfile.displayName)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="text-3xl font-medium text-gray-900">{listing.ownerProfile.displayName}</p>
+                      <p className="break-words text-xl font-medium text-gray-900 [overflow-wrap:anywhere] sm:text-3xl">{listing.ownerProfile.displayName}</p>
                       <p className="mt-1 text-sm text-gray-500">Collector profile</p>
                     </div>
                   </Link>
-                  <div className="text-right">
-                    <div className="flex items-center justify-end gap-2 text-emerald-600">
+                  <div className="text-left sm:text-right">
+                    <div className="flex items-center justify-start gap-2 text-emerald-600 sm:justify-end">
                       <Star className="h-5 w-5 fill-current" />
                       <span className="text-2xl font-semibold">{listing.ownerRating.averageRating.toFixed(1)}</span>
                     </div>
@@ -456,8 +456,8 @@ export default function ItemDetail() {
 
                 {/* Verified Platforms */}
                {(listing.ownerProfile.merchantVerified || listing.ownerProfile.ebayVerified || listing.ownerProfile.facebookVerified || listing.ownerProfile.linkedinVerified || listing.ownerProfile.etsyVerified || listing.ownerProfile.whatnotReference) && (
-                 <div className="flex items-center gap-2 mt-4">
-                   <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Verified on:</span>
+                 <div className="mt-4 flex flex-wrap items-center gap-2">
+                   <span className="w-full text-xs font-semibold uppercase tracking-wider text-gray-400 sm:w-auto">Verified on:</span>
                     {listing.ownerProfile.merchantVerified && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
                         <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
@@ -496,8 +496,8 @@ export default function ItemDetail() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-3 mt-4">
-                  <span className="text-lg font-medium text-gray-700">Member Status:</span>
+                <div className="mt-4 flex flex-wrap items-center gap-2 sm:gap-3">
+                  <span className="text-base font-medium text-gray-700 sm:text-lg">Member Status:</span>
                   <OnlineIndicator sellerId={listing.ownerId} size="large" />
                 </div>
 
@@ -506,7 +506,7 @@ export default function ItemDetail() {
                     onClick={startTradeProposal} 
                     disabled={createProposalMutation.isPending || isOwnListing || hasActiveTradeForListing}
                     title={isOwnListing ? "You cannot message or trade with your own item" : hasActiveTradeForListing ? "A trade proposal for this item is already in progress. Continue it from Trade Hub." : !isAuthenticated ? "Sign in to propose a trade" : "Start a trade proposal"}
-                    className={`h-12 rounded-[1rem] text-sm font-semibold text-white ${
+                    className={`h-auto min-h-12 rounded-[1rem] px-3 py-3 text-xs font-semibold leading-tight text-white whitespace-normal sm:h-12 sm:px-4 sm:py-0 sm:text-sm sm:whitespace-nowrap ${
                       createProposalMutation.isSuccess || hasActiveTradeForListing
                         ? 'bg-yellow-600 hover:bg-yellow-700 cursor-default' 
                         : 'bg-teal-600 hover:bg-teal-700'
@@ -515,14 +515,14 @@ export default function ItemDetail() {
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     {isOwnListing ? 'Your Listing' : !isAuthenticated ? 'Sign in to trade' : hasActiveTradeForListing || createProposalMutation.isSuccess ? 'Negotiating in Process' : createProposalMutation.isPending ? 'Sending...' : 'Trade Proposal'}
                   </Button>
-                  <Button onClick={startMessageOwner} disabled={isOwnListing} title={isOwnListing ? "You cannot message your own item" : !isAuthenticated ? "Sign in to message the owner" : "Message owner"} className="h-12 rounded-[1rem] bg-blue-600 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300">
+                  <Button onClick={startMessageOwner} disabled={isOwnListing} title={isOwnListing ? "You cannot message your own item" : !isAuthenticated ? "Sign in to message the owner" : "Message owner"} className="h-auto min-h-12 rounded-[1rem] px-3 py-3 text-xs font-semibold leading-tight text-white whitespace-normal bg-blue-600 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:h-12 sm:px-4 sm:py-0 sm:text-sm sm:whitespace-nowrap">
                     <MessageCircleMore className="mr-0.5 h-4 w-4" />
                     {isOwnListing ? 'Your Listing' : !isAuthenticated ? 'Sign in to message' : 'Message Owner'}
                   </Button>
                   <Button 
                     onClick={toggleWatchlist} 
                     variant="secondary" 
-                    className={`h-12 rounded-[1rem] text-xs font-semibold whitespace-nowrap ${
+                    className={`h-auto min-h-12 rounded-[1rem] px-3 py-3 text-xs font-semibold leading-tight whitespace-normal sm:h-12 sm:px-4 sm:py-0 sm:whitespace-nowrap ${
                       listing.ownerId === user?.id 
                         ? "bg-gray-100 text-gray-400 cursor-not-allowed hover:bg-gray-100" 
                         : "bg-gray-200 text-gray-900 hover:bg-gray-300"
@@ -687,37 +687,21 @@ export default function ItemDetail() {
               // NOTE: Description, Shipping, and Additional Notes are rendered
               // as their own separate section cards below this table — not here.
 
-              // Group into rows of 4
-              const rows: { label: string; value: string }[][] = [];
-              for (let i = 0; i < allFields.length; i += 4) {
-                rows.push(allFields.slice(i, i + 4));
-              }
-
               return (
-                <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+                <div className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                   <div className="px-6 py-4 border-b border-gray-200 bg-white">
                     <p className="text-lg font-bold uppercase tracking-widest text-gray-900">Details</p>
                   </div>
-                  <table className="w-full text-sm">
-                    <tbody>
-                      {rows.map((row, rowIdx) => (
-                        <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                          {row.map((field, colIdx) => (
-                            <td key={colIdx} className="px-5 py-3.5 border-r border-gray-100 last:border-r-0 w-1/4 align-top">
-                              <span className="block text-base font-bold uppercase tracking-wider text-gray-800 mb-1">
-                                {field.label}
-                              </span>
-                              <span className="block text-sm font-medium text-gray-500 break-words">{field.value}</span>
-                            </td>
-                          ))}
-                          {/* Pad short last row to maintain column alignment */}
-                          {row.length < 4 && Array.from({ length: 4 - row.length }).map((_, i) => (
-                            <td key={`pad-${i}`} className={`w-1/4 border-r border-gray-100 last:border-r-0 ${rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`} />
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                  <div className="grid grid-cols-2 text-sm sm:grid-cols-4">
+                    {allFields.map((field, index) => (
+                      <div key={`${field.label}-${index}`} className="min-w-0 border-b border-r border-gray-100 px-3 py-3.5 odd:bg-white even:bg-gray-50 sm:px-5">
+                        <span className="block break-words text-xs font-bold uppercase tracking-[0.08em] text-gray-800 [overflow-wrap:anywhere] sm:mb-1 sm:text-base sm:tracking-wider">
+                          {field.label}
+                        </span>
+                        <span className="mt-1 block break-words text-sm font-medium leading-5 text-gray-500 [overflow-wrap:anywhere] sm:mt-0">{field.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })()}
@@ -729,7 +713,7 @@ export default function ItemDetail() {
                   <p className="text-lg font-bold uppercase tracking-widest text-gray-900">Description</p>
                 </div>
                 <div className="px-6 py-5">
-                  <p className="text-base leading-7 text-gray-700 whitespace-pre-wrap">{listing.description}</p>
+                  <p className="break-words text-base leading-7 text-gray-700 whitespace-pre-wrap [overflow-wrap:anywhere]">{listing.description}</p>
                 </div>
               </div>
             )}
@@ -755,17 +739,17 @@ export default function ItemDetail() {
                   <p className="text-lg font-bold uppercase tracking-widest text-gray-900">Additional Notes</p>
                 </div>
                 <div className="px-6 py-5">
-                  <p className="text-base leading-7 text-gray-700">{String(listing.itemDetails.additional_notes)}</p>
+                  <p className="break-words text-base leading-7 text-gray-700 [overflow-wrap:anywhere]">{String(listing.itemDetails.additional_notes)}</p>
                 </div>
               </div>
             )}
 
             {/* Similar Items Section — shown only for closely comparable listings. */}
-            {similarListings.length > 0 && <div className="rounded-[2rem] border border-gray-200 bg-white p-8 shadow-[0_40px_90px_rgba(0,0,0,0.08)]">
-              <div className="flex items-center justify-between gap-4 mb-8">
+            {similarListings.length > 0 && <div className="min-w-0 rounded-[1.5rem] border border-gray-200 bg-white p-4 shadow-[0_40px_90px_rgba(0,0,0,0.08)] sm:rounded-[2rem] sm:p-8">
+              <div className="mb-6 flex items-center justify-between gap-4 sm:mb-8">
                 <div>
                   <p className="text-sm uppercase tracking-[0.3em] text-gray-500">Similar Items</p>
-                  <h2 className="mt-4 text-4xl font-semibold tracking-tight text-gray-900">More like this</h2>
+                  <h2 className="mt-3 break-words text-3xl font-semibold tracking-tight text-gray-900 sm:mt-4 sm:text-4xl">More like this</h2>
                 </div>
               </div>
               <ScrollArea className="w-full">
