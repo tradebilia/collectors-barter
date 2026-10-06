@@ -2032,7 +2032,7 @@ export const testAIRouter = router({
     }),
   // Official PCGS Auction Prices Realized lookup — administrator-only and read-only.
   getPcgsAuctionData: protectedProcedure
-    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.') }))
+    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.'), historyQueryVersion: z.literal(2).default(2) }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupPcgsAuctionResults(input.certNumber);
