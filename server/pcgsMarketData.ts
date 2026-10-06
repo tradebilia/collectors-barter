@@ -69,6 +69,60 @@ function parseGradeNumber(grade: unknown): { gradeNo: number; plusGrade: boolean
   return Number.isInteger(gradeNo) ? { gradeNo, plusGrade: Boolean(match[2]) } : null;
 }
 
+async function lookupPcgsPublicViewAllHistory(pcgsNo: string, token?: string) {
+  const body = new URLSearchParams({
+    draw: '1',
+    start: '0',
+    length: String(PCGS_MAX_AUCTION_RECORDS),
+    'searchModel.CACOnly': 'false',
+    'searchModel.SuffixId': '',
+    'searchModel.GradeStart': '',
+    'searchModel.GradeEnd': '',
+    'searchModel.PCGSOnly': 'false',
+    'searchModel.YearFrom': '1900',
+    'searchModel.MonthFrom': '1',
+    'searchModel.YearTo': String(new Date().getUTCFullYear()),
+    'searchModel.MonthTo': String(new Date().getUTCMonth() + 1),
+    'searchModel.SpecNo': pcgsNo,
+    'searchModel.ExcludeEbay': 'false',
+  });
+  const response = await fetch('https://www.pcgs.com/auctionprices/loaddetails', {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+      'User-Agent': 'Mozilla/5.0 Tradebilia read-only market research',
+      'X-Requested-With': 'XMLHttpRequest',
+      Referer: `https://www.pcgs.com/auctionprices/details/${encodeURIComponent(pcgsNo)}`,
+      ...(token ? { Authorization: `bearer ${token}` } : {}),
+    },
+    body,
+    signal: AbortSignal.timeout(PCGS_REQUEST_TIMEOUT_MS),
+  });
+  const payload = asObject(await response.json().catch(() => null));
+  if (!response.ok) return { status: response.status, auctions: [] as PcgsAuctionRecord[] };
+  const rows = Array.isArray(payload.data) ? payload.data : [];
+  const auctions = rows.map((row: unknown): PcgsAuctionRecord => {
+    const entry = asObject(row);
+    const itemUrl = entry.SEOLotTitle && entry.SpecNo && entry.ItemIDString
+      ? `https://www.pcgs.com/auctionprices/item/${entry.SEOLotTitle}/${entry.SpecNo}/${entry.ItemIDString}`
+      : null;
+    return {
+      service: entry.GradingServiceName ?? null,
+      date: entry.FormattedSaleDate ?? null,
+      auctioneer: entry.AuctionFirmName ?? null,
+      lotNo: entry.LotNumber == null || entry.LotNumber === '' ? null : Number(entry.LotNumber),
+      lotNumV2: entry.LotNumber ?? null,
+      saleName: entry.AuctionSaleName ?? entry.DisplayTitle ?? null,
+      certNo: entry.CertNo ?? null,
+      price: positiveNumberOrNull(entry.Price),
+      isCAC: null,
+      auctionLotUrl: itemUrl,
+    };
+  }).filter((auction: PcgsAuctionRecord) => auction.price != null);
+  return { status: response.status, auctions };
+}
+
 async function fetchPcgsJson(url: string, token: string): Promise<{ response: Response; payload: Record<string, any> }> {
   const response = await fetch(url, {
     headers: { Authorization: `bearer ${token}` },
@@ -154,7 +208,7 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
 
     let record = certApr.payload;
     let auctions = mapAuctionRecords(record.Auctions);
-    let historyScope: 'certificate' | 'pcgs_number_grade' = 'certificate';
+    let historyScope: 'certificate' | 'pcgs_number_grade' | 'pcgs_public_view_all' = 'certificate';
 
     // PCGS cert pages expose a View All link that switches from the individual
     // cert to the item’s PCGS number. Use the same broader item/grade history
@@ -177,13 +231,21 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
       }
     }
 
+    if (!auctions.length && certPayloadError !== 'not_found' && record.PCGSNo) {
+      const publicHistory = await lookupPcgsPublicViewAllHistory(String(record.PCGSNo), token);
+      if (publicHistory.auctions.length) {
+        auctions = publicHistory.auctions;
+        historyScope = 'pcgs_public_view_all';
+      }
+    }
+
     if (certPayloadError === 'not_found' && !auctions.length) return normalizedNotFound(normalizedCertNumber, 'No PCGS auction results were found for this certification or its PCGS item history.');
 
     return {
       certNumber: normalizedCertNumber,
       status: 'success' as const,
       message: auctions.length
-        ? `PCGS returned ${auctions.length} item-level auction result${auctions.length === 1 ? '' : 's'}${historyScope === 'pcgs_number_grade' ? ' from the PCGS View All history' : ''}.`
+        ? `PCGS returned ${auctions.length} item-level auction result${auctions.length === 1 ? '' : 's'}${historyScope !== 'certificate' ? ' from the PCGS View All history' : ''}.`
         : 'No PCGS auction results were found for this certification or its PCGS item history.',
       data: {
         pcgsNo: record.PCGSNo ?? null,
