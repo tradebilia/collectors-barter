@@ -3746,11 +3746,11 @@ export default function TestAI() {
   );
   const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: leftItem?.certId || '', historyQueryVersion: 2 },
-    { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), refetchOnMount: 'always', staleTime: 0 },
+    { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
   const rightPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: rightItem?.certId || '', historyQueryVersion: 2 },
-    { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), refetchOnMount: 'always', staleTime: 0 },
+    { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(

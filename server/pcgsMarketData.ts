@@ -13,10 +13,31 @@ export type PcgsAuctionRecord = {
   auctionLotUrl: string | null;
 };
 
+type PcgsAuctionData = {
+  pcgsNo: string | number | null;
+  certNo: string | number | null;
+  name: string | null;
+  grade: string | null;
+  year: string | number | null;
+  denomination: string | null;
+  historyScope: 'certificate' | 'pcgs_number_grade' | 'pcgs_public_view_all';
+  viewAllUrl: string | null;
+  auctions: PcgsAuctionRecord[];
+};
+
+type PcgsAuctionLookupResult =
+  | { certNumber: string; status: 'success'; message: string; data: PcgsAuctionData }
+  | { certNumber: string; status: 'not_found'; message: string; data: null }
+  | { certNumber: string; status: 'error'; message: string; data: null };
+
 import { classifyApiFailure, recordApiFailure } from './apiHealth';
 
 const PCGS_REQUEST_TIMEOUT_MS = 15_000;
 const PCGS_MAX_AUCTION_RECORDS = 100;
+const PCGS_AUCTION_CACHE_TTL_MS = 10 * 60 * 1000;
+
+const pcgsAuctionCache = new Map<string, { expiresAt: number; result: PcgsAuctionLookupResult }>();
+const pcgsAuctionInFlight = new Map<string, Promise<PcgsAuctionLookupResult>>();
 
 function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
@@ -191,12 +212,23 @@ export async function lookupPcgsCertification(certNumber: string, env: PcgsEnv =
   }
 }
 
-export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv = process.env) {
+export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv = process.env): Promise<PcgsAuctionLookupResult> {
   const normalizedCertNumber = certNumber.trim();
   const token = env.PCGS_API_TOKEN;
   if (!token) return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS API token not configured', data: null };
 
-  try {
+  // Cache only live server lookups. Tests pass an explicit env object and must
+  // remain isolated; live browser remounts should reuse a successful result.
+  const useCache = env === process.env;
+  if (useCache) {
+    const cached = pcgsAuctionCache.get(normalizedCertNumber);
+    if (cached && cached.expiresAt > Date.now()) return cached.result;
+    const existing = pcgsAuctionInFlight.get(normalizedCertNumber);
+    if (existing) return existing;
+  }
+
+  const lookup = (async (): Promise<PcgsAuctionLookupResult> => {
+   try {
     const certUrl = `https://api.pcgs.com/publicapi/coindetail/GetAPRByCertNo/${encodeURIComponent(normalizedCertNumber)}`;
     const certApr = await fetchPcgsJson(certUrl, token);
     if (!certApr.response.ok) {
@@ -259,9 +291,21 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
         auctions,
       },
     };
-  } catch (error) {
+   } catch (error) {
     const message = error instanceof Error ? error.message : 'PCGS auction request failed';
     await recordApiFailure({ provider: 'PCGS', operation: 'auction_prices_realized_lookup', failureClass: classifyApiFailure({ message }), safeMessage: 'PCGS auction prices realized lookup is temporarily unavailable.' });
     return { certNumber: normalizedCertNumber, status: 'error' as const, message: 'PCGS auction results could not be reached. Try again shortly.', data: null };
+   }
+  })();
+  if (!useCache) return lookup;
+  pcgsAuctionInFlight.set(normalizedCertNumber, lookup);
+  try {
+    const result = await lookup;
+    if (result.status === 'success' && result.data?.auctions?.length) {
+      pcgsAuctionCache.set(normalizedCertNumber, { expiresAt: Date.now() + PCGS_AUCTION_CACHE_TTL_MS, result });
+    }
+    return result;
+  } finally {
+    pcgsAuctionInFlight.delete(normalizedCertNumber);
   }
 }
