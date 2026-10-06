@@ -1375,10 +1375,11 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
       )}
       <div className="space-y-2 rounded bg-gray-900/40 p-2">
         <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — completed sales</p>
-        <p className="text-[9px] text-gray-500">Certification-matched PCGS auction history. Records are valuation candidates only after Tradebilia date, price, duplicate, currency, and evidence gates.</p>
+        <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All link to the broader PCGS-number item history when needed. Records are valuation candidates only after Tradebilia date, price, duplicate, currency, and evidence gates.</p>
+        {auctionData?.data?.viewAllUrl && <a href={auctionData.data.viewAllUrl} target="_blank" rel="noreferrer" className="inline-flex text-[10px] font-semibold text-blue-300 hover:underline">Open PCGS View All item sales history ↗</a>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
-        {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">No auction results were returned for this certification.</p>}
+        {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">No detailed sales rows were returned by the PCGS API for this certificate. Use the View All item-history link above to review PCGS’s current item page.</p>}
         {auctionData?.data?.auctions?.map((auction: any, index: number) => (
           <div key={`${auction.date}-${auction.lotNumV2 || auction.lotNo || index}`} className="border-b border-gray-700/30 pb-2 last:border-0 last:pb-0">
             <div className="flex items-start justify-between gap-2">

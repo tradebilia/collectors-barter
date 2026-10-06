@@ -8,6 +8,10 @@ afterEach(() => {
   global.fetch = originalFetch;
 });
 
+function okJson(payload: unknown) {
+  return { ok: true, status: 200, json: async () => payload };
+}
+
 describe('PCGS certification adapter', () => {
   it('uses the documented CoinFacts-by-cert endpoint with a bearer token and maps safe certification fields', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
@@ -51,6 +55,23 @@ describe('PCGS certification adapter', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('does not display a provider zero as a meaningful guide value', async () => {
+    global.fetch = vi.fn().mockResolvedValue(okJson({
+      IsValidRequest: true,
+      ServerMessage: 'Request successful',
+      PCGSNo: '973314',
+      CertNo: '51095404',
+      Name: '2025 $1 Silver Eagle First Strike 1 of 2025',
+      Grade: 'MS70',
+      PriceGuideValue: 0,
+    })) as typeof fetch;
+
+    const result = await lookupPcgsCertification('51095404', { PCGS_API_TOKEN: 'configured-token' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.priceGuideValue).toBeNull();
+  });
+
   it('uses the documented Auction Prices Realized-by-cert endpoint and maps auction fields', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -69,11 +90,35 @@ describe('PCGS certification adapter', () => {
     const result = await lookupPcgsAuctionResults('25651776', { PCGS_API_TOKEN: 'configured-token' });
 
     expect(result.status).toBe('success');
+    expect(result.data?.viewAllUrl).toBe('https://www.pcgs.com/auctionprices/search/98836/true');
     expect(result.data?.auctions[0]).toMatchObject({ auctioneer: 'Heritage Auctions', price: 1800, isCAC: true });
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/coindetail/GetAPRByCertNo/25651776'),
       expect.objectContaining({ headers: { Authorization: 'bearer configured-token' } }),
     );
+  });
+
+  it('follows the PCGS certificate page View All behavior when cert history is empty', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '973314', CertNo: '51095404', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '973314', CertNo: '51095404', Grade: 'MS70', Name: '2025 Silver Eagle' }))
+      .mockResolvedValueOnce(okJson({
+        IsValidRequest: true,
+        ServerMessage: 'Request successful',
+        PCGSNo: '973314',
+        Grade: 'MS70',
+        Auctions: [{ Service: 'PCGS', Date: '2025-02-09', Auctioneer: 'eBay', LotNo: 1, SaleName: '2025 Silver Eagle', Price: 330 }],
+      }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsAuctionResults('51095404', { PCGS_API_TOKEN: 'configured-token' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.historyScope).toBe('pcgs_number_grade');
+    expect(result.data?.viewAllUrl).toBe('https://www.pcgs.com/auctionprices/search/973314/true');
+    expect(result.data?.auctions).toHaveLength(1);
+    expect(fetchMock.mock.calls[2][0]).toContain('/coindetail/GetAPRByGrade?PCGSNo=973314&GradeNo=70&PlusGrade=false&NumberOfRecords=100');
+    expect(result.message).toContain('View All history');
   });
 
   it('accepts alphanumeric PCGS coin grades such as MS65', () => {
