@@ -1376,6 +1376,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
       <div className="space-y-2 rounded bg-gray-900/40 p-2">
         <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — completed sales</p>
         <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All link to the broader PCGS-number item history when needed. Records are valuation candidates only after Tradebilia date, price, duplicate, currency, and evidence gates.</p>
+        {auctionData?.status === 'success' && <p className="rounded border border-emerald-700/30 bg-emerald-900/10 px-2 py-1 text-[10px] text-emerald-300">{auctionData.data?.auctions?.length ?? 0} historical sale{auctionData.data?.auctions?.length === 1 ? '' : 's'} loaded{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}.</p>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
         {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">PCGS did not return detailed historical sale rows for this item.</p>}
@@ -3742,11 +3743,11 @@ export default function TestAI() {
   );
   const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || '') },
+    { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), refetchOnMount: 'always', staleTime: 0 },
   );
   const rightPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || '') },
+    { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), refetchOnMount: 'always', staleTime: 0 },
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
