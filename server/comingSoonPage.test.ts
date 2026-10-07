@@ -9,17 +9,16 @@ const adminSource = fs.readFileSync(path.join(projectRoot, "client/src/pages/Adm
 
 describe("Coming Soon experience", () => {
   it("keeps the supplied desktop composition intact while providing a responsive mobile launch experience including Music", () => {
-    expect(pageSource).toContain('const SUPPLIED_COMING_SOON_HTML_URL = "/manus-storage/tradebilia_coming_soon_exact_ba8c631b.html";');
-    expect(pageSource).toContain('className="relative mx-auto hidden aspect-[1815/867] w-full sm:block"');
-    expect(pageSource).toContain("<iframe");
-    expect(pageSource).toContain("src={SUPPLIED_COMING_SOON_HTML_URL}");
+    expect(pageSource).toContain('const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";');
+    expect(pageSource).toContain('className="relative mx-auto hidden aspect-[1810/869] w-full sm:block"');
+    expect(pageSource).toContain('src={SUPPLIED_COMING_SOON_SVG_URL}');
+    expect(pageSource).toContain('object-contain');
     expect(pageSource).toContain('aria-label="Tradebilia launch email signup"');
     expect(pageSource).toContain("const mobileCategories = [");
     expect(pageSource).toContain('{ label: "Music", Icon: Music2 }');
     expect(pageSource).toContain('aria-label="Tradebilia mobile launch signup"');
     expect(pageSource).toContain("grid grid-cols-5");
-    expect(pageSource).toContain('sandbox=""');
-    expect(pageSource).not.toContain("object-cover");
+    expect(pageSource).not.toContain("<iframe");
     expect(pageSource).not.toContain("tradebilia_final_transparent-Notagline");
   });
 

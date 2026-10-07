@@ -7,7 +7,7 @@ describe("item-detail category surface", () => {
   it("uses one page-level Vintage Toys background rather than restarting it before details", () => {
     expect(source).toContain("bg-[linear-gradient(180deg,#454342_0%,#c8c8c2_100%)] text-[#1e1d1a]");
     expect(source).toContain('<div className={`min-h-screen ${pageBackgroundClass}`}>');
-    expect(source).toContain('<section className="relative px-4 pt-4 pb-10 lg:px-8">');
+    expect(source).toContain('<section className="relative px-3 pt-4 pb-10 sm:px-4 lg:px-8">');
     expect(source).not.toContain('px-4 pt-4 pb-10 lg:px-8 relative ${getItemDetailPageClassName(listing.category)}');
   });
 });

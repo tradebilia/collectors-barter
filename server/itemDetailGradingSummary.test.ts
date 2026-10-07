@@ -5,7 +5,7 @@ const source = readFileSync(new URL("../client/src/pages/ItemDetail.tsx", import
 
 describe("item-detail grading summary", () => {
   it("places Grading Company before Numerical Grade in the two-column summary", () => {
-    const summaryStart = source.indexOf('className="mt-6 grid gap-4 text-lg text-gray-700 sm:grid-cols-2"');
+    const summaryStart = source.indexOf('className="mt-5 grid min-w-0 gap-4 text-base text-gray-700 sm:mt-6 sm:grid-cols-2 sm:text-lg"');
     const summaryEnd = source.indexOf('<Separator className="my-8 bg-gray-200"', summaryStart);
     const summary = source.slice(summaryStart, summaryEnd);
 

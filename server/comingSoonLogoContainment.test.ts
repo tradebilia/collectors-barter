@@ -5,16 +5,17 @@ const source = readFileSync(new URL("../client/src/pages/ComingSoon.tsx", import
 
 describe("Coming Soon responsive layout", () => {
   it("retains the supplied artwork and compact overlay form on desktop", () => {
-    expect(source).toContain("SUPPLIED_COMING_SOON_HTML_URL");
-    expect(source).toContain('hidden aspect-[1815/867] w-full sm:block');
+    expect(source).toContain('const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";');
+    expect(source).toContain('hidden aspect-[1810/869] w-full sm:block');
+    expect(source).toContain('src={SUPPLIED_COMING_SOON_SVG_URL}');
     expect(source).toContain('top-[65.5%] h-[5.6%] w-[27%]');
     expect(source).toContain('id={`${emailId}-desktop`}');
   });
 
   it("reflows the distinctive desktop visual language for mobile", () => {
     expect(source).toContain('aria-label="Tradebilia mobile launch signup"');
-    expect(source).toContain("<TradebiliaWheel");
-    expect(source).toContain("TRADEBILIA");
+    expect(source).toContain('className="h-[14.25rem] shrink-0"');
+    expect(source).toContain('Tradebilia — Why Buy or Sell When You Can Trade?');
     expect(source).toContain("Why Buy or Sell");
     expect(source).toContain("When You Can Trade?");
     expect(source).toContain("mobileCategories.map");

@@ -11,7 +11,7 @@ export function resolveTestAiManufacturer(itemDetails: unknown): string {
 export function resolveTestAiGradingCompany(itemDetails: unknown, fallback = ''): string {
   const details = parseTestAiDetails(itemDetails);
   const direct = fallback.trim() || detailText(details, ['gradingCompany', 'certificationCompany']);
-  if (direct.toLowerCase() !== 'other') return direct;
+  if (direct && direct.toLowerCase() !== 'other') return direct;
   return detailText(details, ['customGradingCompany', 'customCertificationCompany']) || direct;
 }
 
