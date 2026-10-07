@@ -121,6 +121,54 @@ describe('PCGS certification adapter', () => {
     expect(result.message).toContain('View All history');
   });
 
+  it('uses the secondary key only after a certification request times out', async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('The operation timed out'))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '98836', CertNo: '25651776', Name: '1921 Peace Dollar' }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsCertification('25651776', {
+      PCGS_API_TOKEN: 'primary-token',
+      PCGS_API_TOKEN_SECONDARY: 'secondary-token',
+    });
+
+    expect(result.status).toBe('success');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer primary-token' } }));
+    expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer secondary-token' } }));
+  });
+
+  it('uses the secondary key only after an Auction Prices Realized request times out', async () => {
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new Error('The operation timed out'))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '98836', CertNo: '25651776', Auctions: [{ Service: 'PCGS', Date: '2024-02-01', Auctioneer: 'Heritage Auctions', Price: 1800 }] }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsAuctionResults('25651776', {
+      PCGS_API_TOKEN: 'primary-token',
+      PCGS_API_TOKEN_SECONDARY: 'secondary-token',
+    });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.auctions).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer primary-token' } }));
+    expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer secondary-token' } }));
+  });
+
+  it.each([401, 403, 429, 500])('does not use the secondary key for an HTTP %s response', async (status) => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, status, json: async () => ({ ServerMessage: 'provider failure' }) });
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsCertification('25651776', {
+      PCGS_API_TOKEN: 'primary-token',
+      PCGS_API_TOKEN_SECONDARY: 'secondary-token',
+    });
+
+    expect(result.status).toBe('error');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('accepts alphanumeric PCGS coin grades such as MS65', () => {
     expect(isValidGradeForCompany('PCGS', 'MS65')).toBe(true);
     expect(isValidGradeForCompany('PCGS', 'MS65+')).toBe(true);

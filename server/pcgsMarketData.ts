@@ -90,7 +90,7 @@ function parseGradeNumber(grade: unknown): { gradeNo: number; plusGrade: boolean
   return Number.isInteger(gradeNo) ? { gradeNo, plusGrade: Boolean(match[2]) } : null;
 }
 
-async function lookupPcgsPublicViewAllHistory(pcgsNo: string, token?: string) {
+async function requestPcgsPublicViewAllHistory(pcgsNo: string, token: string) {
   const body = new URLSearchParams({
     draw: '1',
     start: '0',
@@ -115,7 +115,7 @@ async function lookupPcgsPublicViewAllHistory(pcgsNo: string, token?: string) {
       'User-Agent': 'Mozilla/5.0 Tradebilia read-only market research',
       'X-Requested-With': 'XMLHttpRequest',
       Referer: `https://www.pcgs.com/auctionprices/details/${encodeURIComponent(pcgsNo)}`,
-      ...(token ? { Authorization: `bearer ${token}` } : {}),
+      Authorization: `bearer ${token}`,
     },
     body,
     signal: AbortSignal.timeout(PCGS_REQUEST_TIMEOUT_MS),
@@ -144,6 +144,18 @@ async function lookupPcgsPublicViewAllHistory(pcgsNo: string, token?: string) {
   return { status: response.status, auctions };
 }
 
+async function lookupPcgsPublicViewAllHistory(pcgsNo: string, env: PcgsEnv) {
+  const primaryToken = env.PCGS_API_TOKEN;
+  if (!primaryToken) throw new Error('PCGS API token not configured');
+  try {
+    return await requestPcgsPublicViewAllHistory(pcgsNo, primaryToken);
+  } catch (error) {
+    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
+    if (!secondaryToken || secondaryToken === primaryToken || !isPcgsTimeoutError(error)) throw error;
+    return requestPcgsPublicViewAllHistory(pcgsNo, secondaryToken);
+  }
+}
+
 async function fetchPcgsJson(url: string, token: string): Promise<{ response: Response; payload: Record<string, any> }> {
   const response = await fetch(url, {
     headers: { Authorization: `bearer ${token}` },
@@ -151,6 +163,24 @@ async function fetchPcgsJson(url: string, token: string): Promise<{ response: Re
   });
   const payload = asObject(await response.json().catch(() => null));
   return { response, payload };
+}
+
+function isPcgsTimeoutError(error: unknown): boolean {
+  const name = error instanceof Error ? error.name : '';
+  const message = error instanceof Error ? error.message : String(error ?? '');
+  return name === 'TimeoutError' || /(?:timed?\s*out|timeout)/i.test(message);
+}
+
+async function fetchPcgsJsonWithTimeoutFallback(url: string, env: PcgsEnv): Promise<{ response: Response; payload: Record<string, any> }> {
+  const primaryToken = env.PCGS_API_TOKEN;
+  if (!primaryToken) throw new Error('PCGS API token not configured');
+  try {
+    return await fetchPcgsJson(url, primaryToken);
+  } catch (error) {
+    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
+    if (!secondaryToken || secondaryToken === primaryToken || !isPcgsTimeoutError(error)) throw error;
+    return fetchPcgsJson(url, secondaryToken);
+  }
 }
 
 function providerPayloadError(payload: Record<string, any>): 'invalid' | 'not_found' | null {
@@ -172,7 +202,7 @@ export async function lookupPcgsCertification(certNumber: string, env: PcgsEnv =
 
   try {
     const url = `https://api.pcgs.com/publicapi/coindetail/GetCoinFactsByCertNo/${encodeURIComponent(normalizedCertNumber)}?retrieveAllData=true`;
-    const { response, payload: record } = await fetchPcgsJson(url, token);
+    const { response, payload: record } = await fetchPcgsJsonWithTimeoutFallback(url, env);
     if (!response.ok) {
       await recordApiFailure({ provider: 'PCGS', operation: 'certification_lookup', failureClass: classifyApiFailure({ statusCode: response.status }), statusCode: response.status, safeMessage: 'PCGS certification lookup was rejected by the provider.' });
       return { certNumber: normalizedCertNumber, status: 'error' as const, message: pcgsErrorMessage(response.status), data: null };
@@ -230,7 +260,7 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
   const lookup = (async (): Promise<PcgsAuctionLookupResult> => {
    try {
     const certUrl = `https://api.pcgs.com/publicapi/coindetail/GetAPRByCertNo/${encodeURIComponent(normalizedCertNumber)}`;
-    const certApr = await fetchPcgsJson(certUrl, token);
+    const certApr = await fetchPcgsJsonWithTimeoutFallback(certUrl, env);
     if (!certApr.response.ok) {
       await recordApiFailure({ provider: 'PCGS', operation: 'auction_prices_realized_lookup', failureClass: classifyApiFailure({ statusCode: certApr.response.status }), statusCode: certApr.response.status, safeMessage: 'PCGS auction prices realized lookup was rejected by the provider.' });
       return { certNumber: normalizedCertNumber, status: 'error' as const, message: pcgsErrorMessage(certApr.response.status), data: null };
@@ -247,13 +277,13 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
     // when the individual certification has no sales.
     if (!auctions.length && certPayloadError !== 'not_found') {
       const factsUrl = `https://api.pcgs.com/publicapi/coindetail/GetCoinFactsByCertNo/${encodeURIComponent(normalizedCertNumber)}?retrieveAllData=true`;
-      const facts = await fetchPcgsJson(factsUrl, token);
+      const facts = await fetchPcgsJsonWithTimeoutFallback(factsUrl, env);
       if (facts.response.ok && !providerPayloadError(facts.payload)) {
         const pcgsNo = facts.payload.PCGSNo;
         const grade = parseGradeNumber(facts.payload.Grade);
         if (pcgsNo && grade) {
           const gradeUrl = `https://api.pcgs.com/publicapi/coindetail/GetAPRByGrade?PCGSNo=${encodeURIComponent(String(pcgsNo))}&GradeNo=${grade.gradeNo}&PlusGrade=${grade.plusGrade ? 'true' : 'false'}&NumberOfRecords=${PCGS_MAX_AUCTION_RECORDS}`;
-          const itemApr = await fetchPcgsJson(gradeUrl, token);
+          const itemApr = await fetchPcgsJsonWithTimeoutFallback(gradeUrl, env);
           if (itemApr.response.ok && !providerPayloadError(itemApr.payload)) {
             record = itemApr.payload;
             auctions = mapAuctionRecords(record.Auctions);
@@ -264,7 +294,7 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
     }
 
     if (!auctions.length && certPayloadError !== 'not_found' && record.PCGSNo) {
-      const publicHistory = await lookupPcgsPublicViewAllHistory(String(record.PCGSNo), token);
+      const publicHistory = await lookupPcgsPublicViewAllHistory(String(record.PCGSNo), env);
       if (publicHistory.auctions.length) {
         auctions = publicHistory.auctions;
         historyScope = 'pcgs_public_view_all';
