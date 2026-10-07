@@ -156,7 +156,24 @@ describe('PCGS certification adapter', () => {
     expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer secondary-token' } }));
   });
 
-  it.each([401, 403, 429, 500])('does not use the secondary key for an HTTP %s response', async (status) => {
+  it('uses the secondary key after a certification HTTP 429 rate-limit response', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 429, json: async () => ({ ServerMessage: 'rate limit' }) })
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '98836', CertNo: '25651776', Name: '1921 Peace Dollar' }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsCertification('25651776', {
+      PCGS_API_TOKEN: 'primary-token',
+      PCGS_API_TOKEN_SECONDARY: 'secondary-token',
+    });
+
+    expect(result.status).toBe('success');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer primary-token' } }));
+    expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer secondary-token' } }));
+  });
+
+  it.each([401, 403, 500])('does not use the secondary key for an HTTP %s response', async (status) => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status, json: async () => ({ ServerMessage: 'provider failure' }) });
     global.fetch = fetchMock as typeof fetch;
 

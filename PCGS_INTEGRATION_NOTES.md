@@ -18,7 +18,7 @@ For banknote certification numbers, the Swagger catalog also documents:
 GET /banknotedetail/GetBanknoteByCertNo?certNo={certNo}
 ```
 
-The Test AI adapter must remain administrator-only and read-only. It uses `PCGS_API_TOKEN` as the primary server-side credential. An optional `PCGS_API_TOKEN_SECONDARY` may be configured as a separate server-side credential, but it is used only when an individual primary request exceeds the transport timeout; it is not a fallback for HTTP 401/403/429, 5xx responses, invalid requests, empty results, or ordinary provider responses. No token value belongs in source, client code, logs, or documentation.
+The Test AI adapter must remain administrator-only and read-only. It uses `PCGS_API_TOKEN` as the primary server-side credential. An optional `PCGS_API_TOKEN_SECONDARY` may be configured as a separate server-side credential, but it is used only when an individual primary request times out or returns HTTP 429 rate limiting; it is not a fallback for HTTP 401/403, 5xx responses, invalid requests, empty results, or ordinary provider responses. Only one secondary attempt is made per request. No token value belongs in source, client code, logs, or documentation.
 
 ## Error Handling
 

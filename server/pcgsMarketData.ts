@@ -148,7 +148,11 @@ async function lookupPcgsPublicViewAllHistory(pcgsNo: string, env: PcgsEnv) {
   const primaryToken = env.PCGS_API_TOKEN;
   if (!primaryToken) throw new Error('PCGS API token not configured');
   try {
-    return await requestPcgsPublicViewAllHistory(pcgsNo, primaryToken);
+    const primaryResult = await requestPcgsPublicViewAllHistory(pcgsNo, primaryToken);
+    if (primaryResult.status !== 429) return primaryResult;
+    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
+    if (!secondaryToken || secondaryToken === primaryToken) return primaryResult;
+    return requestPcgsPublicViewAllHistory(pcgsNo, secondaryToken);
   } catch (error) {
     const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
     if (!secondaryToken || secondaryToken === primaryToken || !isPcgsTimeoutError(error)) throw error;
@@ -171,11 +175,19 @@ function isPcgsTimeoutError(error: unknown): boolean {
   return name === 'TimeoutError' || /(?:timed?\s*out|timeout)/i.test(message);
 }
 
+function isPcgsRateLimitResponse(response: Response): boolean {
+  return response.status === 429;
+}
+
 async function fetchPcgsJsonWithTimeoutFallback(url: string, env: PcgsEnv): Promise<{ response: Response; payload: Record<string, any> }> {
   const primaryToken = env.PCGS_API_TOKEN;
   if (!primaryToken) throw new Error('PCGS API token not configured');
   try {
-    return await fetchPcgsJson(url, primaryToken);
+    const primaryResult = await fetchPcgsJson(url, primaryToken);
+    if (!isPcgsRateLimitResponse(primaryResult.response)) return primaryResult;
+    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
+    if (!secondaryToken || secondaryToken === primaryToken) return primaryResult;
+    return fetchPcgsJson(url, secondaryToken);
   } catch (error) {
     const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
     if (!secondaryToken || secondaryToken === primaryToken || !isPcgsTimeoutError(error)) throw error;
