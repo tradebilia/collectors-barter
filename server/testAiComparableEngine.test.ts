@@ -55,10 +55,18 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       itemDetails: JSON.stringify({ year: '1921', denomination: '$1', mint: 'Philadelphia' }),
     };
     const exact = scoreComparable(coinTarget, sale('1921 Peace Dollar PCGS MS65 CAC', 1500, '2026-09-01'));
+    const literalDollar = scoreComparable({
+      ...coinTarget,
+      title: '2025 $1 Silver Eagle First Strike PCGS MS70',
+      grade: 'MS70',
+      itemDetails: JSON.stringify({ year: '2025', denomination: '$1' }),
+    }, sale('2025 $1 Silver Eagle First Strike PCGS MS70', 67, '2026-09-01'));
     const wrongClass = scoreComparable(coinTarget, sale('1921 Peace Dollar PCGS PR65', 2200, '2026-09-01'));
     const wrongNumber = scoreComparable(coinTarget, sale('1921 Peace Dollar PCGS MS64', 600, '2026-09-01'));
 
     expect(exact.accepted).toBe(true);
+    expect(literalDollar.accepted).toBe(true);
+    expect(literalDollar.categoryIdentity.confirmedFields).toContain('Denomination');
     expect(exact.reasons).toContain('PCGS coin grade matches');
     expect(wrongClass.accepted).toBe(false);
     expect(wrongClass.valuationRelationship).toBe('grade_adjacent_comparable');

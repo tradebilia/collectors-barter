@@ -38,6 +38,27 @@ function normalizeSales(inputs: ReturnType<typeof sale>[]) {
   return normalizeAnalysisMarketSales(inputs, now, { signingKey });
 }
 
+function pcgsSale(overrides: Record<string, unknown> = {}) {
+  const observation = {
+    title: '2025 Silver Eagle MS70',
+    price: 67,
+    currency: 'USD',
+    date: '2026-09-01T00:00:00.000Z',
+    marketplace: 'eBay',
+    originMarketplace: 'eBay',
+    sourceId: 'pcgs_auction_results',
+    sourceLabel: 'PCGS Auction Prices Realized',
+    saleId: 'pcgs-ebay-fixture',
+    saleStatus: 'completed' as const,
+    completedStatusBasis: 'PCGS auction-prices-realized endpoint',
+    priceBasis: 'sold' as const,
+    buyerPremium: 'unknown' as const,
+    ...overrides,
+  };
+  const sealed = sealCanonicalObservation('pcgs_auction_results', observation, { acquiredAt: now, signingKey });
+  return { ...observation, provenanceToken: sealed.provenanceToken };
+}
+
 describe('server-owned analysis market evidence normalization', () => {
   it('keeps an explicit completed-sale status and price-basis contract for every valuation-capable adapter', () => {
     const expectedSources = ['sold_comps', '130point', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'pcgs_auction_results'];
@@ -58,6 +79,31 @@ describe('server-owned analysis market evidence normalization', () => {
       recency: 'recent',
       evidenceDisposition: 'valuation_eligible',
     });
+  });
+
+  it('admits a signed PCGS eBay final price while preserving the PCGS adapter provenance', () => {
+    const result = normalizeAnalysisMarketSale(pcgsSale(), now, { signingKey, category: 'coins' });
+    expect(result.valuationEligible).toBe(true);
+    expect(result.sale).toMatchObject({
+      sourceId: 'pcgs_auction_results',
+      sourceAdapter: 'pcgs_auction_results',
+      originMarketplace: 'ebay',
+      priceBasis: 'sold',
+      evidenceDisposition: 'valuation_eligible',
+    });
+  });
+
+  it('keeps a signed PCGS auction result as context when buyer-premium inclusion is not known', () => {
+    const result = normalizeAnalysisMarketSale(pcgsSale({
+      saleId: 'pcgs-auction-fixture',
+      marketplace: 'Heritage Auctions',
+      originMarketplace: 'Heritage Auctions',
+      priceBasis: 'realized',
+      buyerPremium: 'unknown',
+    }), now, { signingKey, category: 'coins' });
+    expect(result.valuationEligible).toBe(false);
+    expect(result.sale.evidenceDisposition).toBe('context_only');
+    expect(result.reasons.join(' ')).toContain('buyer premium is not confirmed included');
   });
 
   it('does not trust a client valuation label when status, date, or price basis cannot support it', () => {

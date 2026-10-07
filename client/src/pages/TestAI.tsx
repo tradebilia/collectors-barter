@@ -1341,6 +1341,19 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
     { certNumber: item.certId || '' },
     { enabled: !!item.certId && item.gradingCompany === 'PCGS' },
   );
+  const auctions = auctionData?.data?.auctions ?? [];
+  const analyzerCandidates = auctions.filter((auction: any) =>
+    auction?.provenanceToken
+    && auction?.saleStatus === 'completed'
+    && auction?.currency === 'USD'
+    && auction?.priceBasis === 'sold',
+  );
+  const targetAuctionGrade = String(auctionData?.data?.grade ?? data?.data?.grade ?? '').replace(/\s+/g, '').toUpperCase();
+  const exactGradeAnalyzerCandidates = analyzerCandidates.filter((auction: any) =>
+    targetAuctionGrade
+    && String(auction?.grade ?? '').replace(/\s+/g, '').toUpperCase() === targetAuctionGrade,
+  );
+  const auctionContextOnly = auctions.filter((auction: any) => !analyzerCandidates.includes(auction));
 
   if (!item.certId || item.gradingCompany !== 'PCGS') return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
@@ -1384,20 +1397,21 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
       )}
       <div className="space-y-2 rounded bg-gray-900/40 p-2">
         <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — completed sales</p>
-        <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All link to the broader PCGS-number item history when needed. Records are valuation candidates only after Tradebilia date, price, duplicate, currency, and evidence gates.</p>
-        {auctionData?.status === 'success' && <p className="rounded border border-emerald-700/30 bg-emerald-900/10 px-2 py-1 text-[10px] text-emerald-300">{auctionData.data?.auctions?.length ?? 0} historical sale{auctionData.data?.auctions?.length === 1 ? '' : 's'} loaded{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}.</p>}
+        <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All history when needed. Signed eBay final prices can enter the analyzer; auction rows without a disclosed all-in price remain visible as market context so hammer and buyer-premium totals are not mixed.</p>
+        {auctionData?.status === 'success' && <div className="space-y-1"><p className="rounded border border-emerald-700/30 bg-emerald-900/10 px-2 py-1 text-[10px] text-emerald-300">{auctions.length} historical sale{auctions.length === 1 ? '' : 's'} loaded{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}.</p><p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[9px] text-cyan-100">{exactGradeAnalyzerCandidates.length} signed eBay completed sale{exactGradeAnalyzerCandidates.length === 1 ? '' : 's'} match the target {targetAuctionGrade || 'certified'} grade and are analyzer candidates; {Math.max(0, analyzerCandidates.length - exactGradeAnalyzerCandidates.length)} signed different-grade record{analyzerCandidates.length - exactGradeAnalyzerCandidates.length === 1 ? '' : 's'} remain historical context.</p>{auctionContextOnly.length > 0 && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">{auctionContextOnly.length} auction record{auctionContextOnly.length === 1 ? '' : 's'} remain context pending all-in price confirmation.</p>}</div>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
         {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">PCGS did not return detailed historical sale rows for this item.</p>}
-        {auctionData?.data?.auctions?.map((auction: any, index: number) => (
+        {auctions.map((auction: any, index: number) => (
           <div key={`${auction.date}-${auction.lotNumV2 || auction.lotNo || index}`} className="border-b border-gray-700/30 pb-2 last:border-0 last:pb-0">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 {auction.auctionLotUrl ? <a href={auction.auctionLotUrl} target="_blank" rel="noreferrer" className="block truncate text-[10px] font-semibold text-blue-300 hover:underline">{auction.saleName || auction.auctioneer || 'PCGS auction lot'}</a> : <p className="truncate text-[10px] font-semibold text-white">{auction.saleName || auction.auctioneer || 'PCGS auction lot'}</p>}
-                <p className="text-[9px] text-gray-500">{[auction.date, auction.auctioneer, auction.lotNumV2 || (auction.lotNo != null ? `Lot ${auction.lotNo}` : null), auction.isCAC ? 'CAC' : null].filter(Boolean).join(' · ')}</p>
+                <p className="text-[9px] text-gray-500">{[auction.date, auction.auctioneer, auction.grade ? `${auction.service || 'PCGS'} ${auction.grade}` : auction.service, auction.lotNumV2 || (auction.lotNo != null ? `Lot ${auction.lotNo}` : null), auction.isCAC ? 'CAC' : null].filter(Boolean).join(' · ')}</p>
               </div>
               <p className="shrink-0 text-[11px] font-semibold text-emerald-300">{auction.price != null ? formatWholeDollar(auction.price) : 'Price N/A'}</p>
             </div>
+            <p className={`mt-1 text-[8px] font-semibold ${exactGradeAnalyzerCandidates.includes(auction) ? 'text-emerald-300' : 'text-amber-300'}`}>{exactGradeAnalyzerCandidates.includes(auction) ? 'Analyzer candidate — signed PCGS eBay completed-sale record at the target grade; final identity, recency, duplicate, and comparable gates still apply.' : analyzerCandidates.includes(auction) ? `Historical context — signed PCGS eBay completed sale at ${auction.grade || 'an unidentified'} grade; excluded from direct valuation when it differs from the target grade.` : 'Market context only — PCGS does not confirm buyer-premium treatment for this auction price.'}</p>
           </div>
         ))}
         {auctionData?.status === 'success' && <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[9px] text-gray-300">All returned auction fields</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[8px] text-gray-400">{JSON.stringify(auctionData.data, null, 2)}</pre></details>}
@@ -2293,12 +2307,18 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
       const auctions = pcgsAuctionData?.data?.auctions ?? [];
       const dated = auctions.filter((auction: any) => Number.isFinite(Date.parse(String(auction.date ?? ''))) && Number(auction.price) > 0);
+      const analyzerCandidates = dated.filter((auction: any) => auction?.provenanceToken && auction?.saleStatus === 'completed' && auction?.currency === 'USD' && auction?.priceBasis === 'sold');
+      const targetAuctionGrade = String(pcgsAuctionData?.data?.grade ?? pcgsQuery.data?.data?.grade ?? '').replace(/\s+/g, '').toUpperCase();
+      const exactGradeAnalyzerCandidates = analyzerCandidates.filter((auction: any) => targetAuctionGrade && String(auction?.grade ?? '').replace(/\s+/g, '').toUpperCase() === targetAuctionGrade);
       const currentValue = dated.filter((auction: any) => Date.now() - Date.parse(String(auction.date)) <= 365 * 86_400_000);
       const historicalTrend = dated.filter((auction: any) => !currentValue.includes(auction));
       const undated = auctions.filter((auction: any) => !Number.isFinite(Date.parse(String(auction.date ?? ''))) || !(Number(auction.price) > 0));
-      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: dated.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, analyzerSubmittedSaleCount: dated.length, analyzerSubmittedPrices: dated.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: undated.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
+      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: exactGradeAnalyzerCandidates.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, analyzerSubmittedSaleCount: exactGradeAnalyzerCandidates.length, analyzerSubmittedPrices: exactGradeAnalyzerCandidates.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: undated.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
-    return normalizeTestAiEvidence(item, [...observations, ...(specialistObservations ?? [])]);
+    // Certificate-mode PCGS items receive verified year/denomination/grade
+    // from CoinFacts in marketItem. Use that identity for readiness so the UI
+    // and the final analyzer evaluate the same target fields.
+    return normalizeTestAiEvidence(marketItem, [...observations, ...(specialistObservations ?? [])]);
   }, [item, enabledSources, ebayData, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, theCardApiData, cardsightAiData, lelandsData, pristineAuctionData, collectAuctionData, siriusSportsAuctionData, comicConnectData, pcgsAuctionData, oneThirtyPointData, specialistObservations, pwccQuery.data, comicBookRealmQuery.data, tcgdexQuery.data, priceChartingQuery.data, priceChartingCoinQuery.data, priceChartingVideoGameQuery.data, priceChartingSlugQuery.data, priceChartingMoversQuery.data, discogsSearchCriteria.isMusic, discogsQuery.data, discogsCandidates, selectedDiscogsReleaseId, rawgQuery.data, igdbQuery.data, smithsonianQuery.data, wikidataQueryResult.data, cgcQuery.data, psaQuery.data, bgsQuery.data, sgcQuery.data, pcgsQuery.data]);
 
   useEffect(() => {
@@ -2825,9 +2845,11 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
 }
 
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
-function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
+function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysisItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
   rightItem: SelectedItem;
+  leftAnalysisItem?: SelectedItem | null;
+  rightAnalysisItem?: SelectedItem | null;
   leftEbayData: any;
   rightEbayData: any;
   leftSources: Set<SourceId>;
@@ -2864,6 +2886,11 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
   const [useVisualFieldCompletion, setUseVisualFieldCompletion] = useState(true);
   const [cashAmount, setCashAmount] = useState('');
   const [cashPaidBy, setCashPaidBy] = useState<'item_a' | 'item_b'>('item_a');
+  // Certificate-mode items start with only a certification number. When
+  // CoinFacts has provided the coin identity, the analyzer must score against
+  // that verified identity rather than the temporary certificate placeholder.
+  const effectiveLeftItem = leftAnalysisItem ?? leftItem;
+  const effectiveRightItem = rightAnalysisItem ?? rightItem;
   const marketNewsQuery = trpc.testAI.getMarketNews.useQuery(
     {
       leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, itemDetails: leftItem.itemDetails },
@@ -2957,7 +2984,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       leftHasPristineAuction ? (leftPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
       leftHasCollectAuction ? (leftCollectAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'collect_auction', sourceLabel: 'Collect Auctions', marketplace: 'Collect Auctions', priceBasis: 'realized' })) : [],
       leftHasSiriusSportsAuctions ? (leftSiriusSportsAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'sirius_sports_auctions', sourceLabel: 'Sirius Sports Auctions', marketplace: 'Sirius Sports Auctions', priceBasis: 'realized' })) : [],
-      leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: leftPcgsAuctionData?.data?.name ?? leftItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleStatus: 'completed', completedStatusBasis: 'PCGS View All completed auction record', priceBasis: 'realized', saleId: `${sale.certNo || leftPcgsAuctionData?.data?.certNo || leftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
+      leftHasPcgsAuction ? (leftPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ ...sale, title: sale.title ?? leftPcgsAuctionData?.data?.name ?? effectiveLeftItem.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.date, marketplace: sale.marketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', originMarketplace: sale.originMarketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleStatus: sale.saleStatus ?? 'completed', completedStatusBasis: sale.completedStatusBasis ?? 'PCGS View All completed auction record', priceBasis: sale.priceBasis ?? 'realized', saleId: sale.saleId ?? `${sale.certNo || leftPcgsAuctionData?.data?.certNo || effectiveLeftItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.url ?? sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
       leftHasComicConnect ? (leftComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
       leftGoldinSales.map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'Goldin Auction Results', originMarketplace: 'Goldin', sourceId: 'goldin', sourceAdapter: 'goldin', sourceLabel: 'Goldin Auction Results', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'Goldin Completed_Sold record' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown' }, { sourceId: 'goldin', sourceLabel: 'Goldin Auction Results', marketplace: 'Goldin', priceBasis: 'sold' })),
       leftHasSoldComps ? (leftSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.saleId ?? sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed', completedStatusBasis: 'Sold-Comps completed-sale endpoint', priceBasis: 'sold', visualReviewStatus: sale.visualReviewStatus, visualReviewRationale: sale.visualReviewRationale, evidenceDisposition: sale.evidenceDisposition, evidenceReasons: sale.evidenceReasons }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
@@ -2970,15 +2997,15 @@ function AIAnalysisSection({ leftItem, rightItem, leftEbayData, rightEbayData, l
       rightHasPristineAuction ? (rightPristineAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'pristine_auction', sourceLabel: 'Pristine Auction', marketplace: 'Pristine Auction', priceBasis: 'realized' })) : [],
       rightHasCollectAuction ? (rightCollectAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'collect_auction', sourceLabel: 'Collect Auctions', marketplace: 'Collect Auctions', priceBasis: 'realized' })) : [],
       rightHasSiriusSportsAuctions ? (rightSiriusSportsAuctionData?.sales ?? []).map((sale: any) => normalizeComparableSale(sale, { sourceId: 'sirius_sports_auctions', sourceLabel: 'Sirius Sports Auctions', marketplace: 'Sirius Sports Auctions', priceBasis: 'realized' })) : [],
-      rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ title: rightPcgsAuctionData?.data?.name ?? rightItem.title, price: sale.price, currency: 'USD', date: sale.date, marketplace: sale.auctioneer || sale.service || 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleStatus: 'completed', completedStatusBasis: 'PCGS View All completed auction record', priceBasis: 'realized', saleId: `${sale.certNo || rightPcgsAuctionData?.data?.certNo || rightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
+      rightHasPcgsAuction ? (rightPcgsAuctionData?.data?.auctions ?? []).map((sale: any) => normalizeComparableSale({ ...sale, title: sale.title ?? rightPcgsAuctionData?.data?.name ?? effectiveRightItem.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.date, marketplace: sale.marketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', originMarketplace: sale.originMarketplace ?? sale.auctioneer ?? sale.service ?? 'PCGS Auction Prices Realized', recency: !sale.date ? 'undated' : (Date.now() >= Date.parse(String(sale.date)) && Date.now() - Date.parse(String(sale.date)) <= 365 * 86_400_000 ? 'recent' : 'historical'), saleStatus: sale.saleStatus ?? 'completed', completedStatusBasis: sale.completedStatusBasis ?? 'PCGS View All completed auction record', priceBasis: sale.priceBasis ?? 'realized', saleId: sale.saleId ?? `${sale.certNo || rightPcgsAuctionData?.data?.certNo || effectiveRightItem.certId}-${sale.lotNumV2 || sale.lotNo || sale.date}`, url: sale.url ?? sale.auctionLotUrl }, { sourceId: 'pcgs_auction_results', sourceLabel: 'PCGS Auction Prices Realized', priceBasis: 'realized' })) : [],
       rightHasComicConnect ? (rightComicConnectData?.sales ?? []).map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'ComicConnect Sold Archive', originMarketplace: 'ComicConnect', sourceId: 'comicconnect', sourceAdapter: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'ComicConnect sold archive completed flag' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : sale.buyerPremiumIncluded === false ? 'excluded' : 'unknown' }, { sourceId: 'comicconnect', sourceLabel: 'ComicConnect Sold Archive', marketplace: 'ComicConnect', priceBasis: 'sold' })) : [],
       rightGoldinSales.map((sale: any) => normalizeComparableSale({ ...sale, marketplace: 'Goldin Auction Results', originMarketplace: 'Goldin', sourceId: 'goldin', sourceAdapter: 'goldin', sourceLabel: 'Goldin Auction Results', saleStatus: sale.completed ? 'completed' : 'unknown', completedStatusBasis: sale.completed ? 'Goldin Completed_Sold record' : null, priceBasis: sale.completed ? 'sold' : 'unknown', evidenceDisposition: sale.valuationEligible ? 'valuation_eligible' : 'context_only', evidenceReasons: sale.exclusionReason ? [sale.exclusionReason] : null, buyerPremium: sale.buyerPremiumIncluded === true ? 'included' : 'unknown' }, { sourceId: 'goldin', sourceLabel: 'Goldin Auction Results', marketplace: 'Goldin', priceBasis: 'sold' })),
       rightHasSoldComps ? (rightSoldCompsData?.listings ?? []).map((sale: any) => normalizeComparableSale({ title: sale.title, price: sale.price, currency: sale.currency ?? 'USD', date: sale.endedAt, marketplace: 'eBay Sold-Comps', saleId: sale.saleId ?? sale.itemId ?? sale.itemWebUrl ?? sale.itemUrl, url: sale.itemUrl ?? sale.itemWebUrl, saleStatus: 'completed', completedStatusBasis: 'Sold-Comps completed-sale endpoint', priceBasis: 'sold', visualReviewStatus: sale.visualReviewStatus, visualReviewRationale: sale.visualReviewRationale, evidenceDisposition: sale.evidenceDisposition, evidenceReasons: sale.evidenceReasons }, { sourceId: 'sold_comps', sourceLabel: 'eBay Sold-Comps', priceBasis: 'sold' })) : [],
     ]);
     const parsedCashAmount = Number(cashAmount);
     analyzeMutation.mutate({
-      leftItem: { title: leftItem.title, category: leftItem.category, itemType: leftItem.itemType, grade: leftItem.grade, condition: leftItem.condition, estimatedValue: leftItem.estimatedValue, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails, imageUrl: useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined },
-      rightItem: { title: rightItem.title, category: rightItem.category, itemType: rightItem.itemType, grade: rightItem.grade, condition: rightItem.condition, estimatedValue: rightItem.estimatedValue, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails, imageUrl: useImageAnalyzer ? rightItem.primaryPhotoUrl : undefined },
+      leftItem: { title: effectiveLeftItem.title, category: effectiveLeftItem.category, itemType: effectiveLeftItem.itemType, grade: effectiveLeftItem.grade, condition: effectiveLeftItem.condition, estimatedValue: effectiveLeftItem.estimatedValue, certificationCompany: effectiveLeftItem.certificationCompany ?? undefined, itemDetails: effectiveLeftItem.itemDetails, imageUrl: useImageAnalyzer ? effectiveLeftItem.primaryPhotoUrl : undefined },
+      rightItem: { title: effectiveRightItem.title, category: effectiveRightItem.category, itemType: effectiveRightItem.itemType, grade: effectiveRightItem.grade, condition: effectiveRightItem.condition, estimatedValue: effectiveRightItem.estimatedValue, certificationCompany: effectiveRightItem.certificationCompany ?? undefined, itemDetails: effectiveRightItem.itemDetails, imageUrl: useImageAnalyzer ? effectiveRightItem.primaryPhotoUrl : undefined },
       useImageAnalyzer,
       useVisualFieldCompletion: useImageAnalyzer && useVisualFieldCompletion,
       leftEbayMetrics: leftHasEbay ? (leftEbayData?.metrics ?? null) : null,
@@ -3623,19 +3650,57 @@ export default function TestAI() {
     { certNumber: rightItem?.certId || '' },
     { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'CGC' && rightItem?.category === 'comics' }
   );
+  // PCGS certificate lookup supplies the verified coin identity needed for
+  // downstream source queries and comparable scoring. It is intentionally
+  // separate from the PCGS source panel query so cert-mode items work before
+  // the user expands any particular panel.
+  const leftPcgsCoinFactsQuery = trpc.testAI.getPcgsData.useQuery(
+    { certNumber: leftItem?.certId || '' },
+    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'PCGS' && leftItem?.category === 'coins' },
+  );
+  const rightPcgsCoinFactsQuery = trpc.testAI.getPcgsData.useQuery(
+    { certNumber: rightItem?.certId || '' },
+    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'PCGS' && rightItem?.category === 'coins' },
+  );
 
   // Build an effective item for Sold-Comps/eBay queries:
   // If it's a cert-mode item AND Parse.bot returned card data, synthesize a searchable item.
   // Otherwise fall back to the item as-is (inventory mode).
-  function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any, cgcData: any): SelectedItem | null {
+  function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any, cgcData: any, pcgsData: any): SelectedItem | null {
     if (!item) return null;
+    const company = item.gradingCompany;
+    const isPcgsCoin = company === 'PCGS' && item.category === 'coins';
     // Only a CGC comic needs the comics certificate response to synthesize its
     // search identity. A CGC-certified movie, toy, game, or other inventory
     // item already has a usable title/format/grade and must not be blocked.
-    if (item.category !== 'unknown' && !(item.certId && item.gradingCompany === 'CGC' && item.category === 'comics')) return item;
+    if (item.category !== 'unknown' && !isPcgsCoin && !(item.certId && company === 'CGC' && item.category === 'comics')) return item;
 
     // Choose data source based on grading company
-    const company = item.gradingCompany;
+    if (isPcgsCoin) {
+      const coin = pcgsData?.data;
+      // Retain an already-entered inventory identity while CoinFacts is still
+      // loading or unavailable. A verified CoinFacts response replaces only
+      // search and analyzer identity; no listing data is written.
+      if (!coin) return item;
+      const grade = String(coin.grade ?? '').trim() || undefined;
+      const coinName = String(coin.name ?? '').trim() || [coin.year, coin.denomination, coin.variety].filter(Boolean).join(' ');
+      const query = [coinName, 'PCGS', grade].filter(Boolean).join(' ');
+      return {
+        ...item,
+        title: query || item.title,
+        category: 'coins',
+        grade,
+        certificationCompany: 'PCGS',
+        itemDetails: JSON.stringify({
+          ...testAiDetails(item),
+          year: coin.year ?? testAiDetails(item).year,
+          denomination: coin.denomination ?? testAiDetails(item).denomination,
+          variety: coin.variety ?? testAiDetails(item).variety,
+          pcgsNo: coin.pcgsNo ?? testAiDetails(item).pcgsNo,
+          certificateNumber: coin.certNo ?? item.certId,
+        }),
+      };
+    }
 
     if (company === 'PSA') {
       const card = psaData?.data?.data;
@@ -3677,13 +3742,13 @@ export default function TestAI() {
       return { ...item, title: query || item.title, category: 'cert_direct', grade, certificationCompany: 'CGC', itemDetails: JSON.stringify({ comicTitle: comic.title, issueNumber: comic.issueNumber, publisher: comic.publisher, variant: comic.variant, year: comic.year }) };
     }
 
-    // For other grading companies (PCGS, NGC, etc.) there is no cert search synthesis yet.
+    // For other grading companies (NGC, etc.) there is no cert search synthesis yet.
     return null;
 
   }
 
-  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery, leftBeckettQuery, leftCgcQuery);
-  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery, rightCgcQuery);
+  const leftSearchItem = buildSearchableItem(leftItem, leftPSAQuery, leftBeckettQuery, leftCgcQuery, leftPcgsCoinFactsQuery.data);
+  const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery, rightCgcQuery, rightPcgsCoinFactsQuery.data);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
@@ -3784,11 +3849,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('comicconnect') }
   );
   const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
-    { certNumber: leftItem?.certId || '', historyQueryVersion: 2 },
+    { certNumber: leftItem?.certId || '', historyQueryVersion: 3 },
     { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
   const rightPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
-    { certNumber: rightItem?.certId || '', historyQueryVersion: 2 },
+    { certNumber: rightItem?.certId || '', historyQueryVersion: 3 },
     { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
 
@@ -3860,6 +3925,8 @@ export default function TestAI() {
           <AIAnalysisSection
             leftItem={leftItem}
             rightItem={rightItem}
+            leftAnalysisItem={leftSearchItem}
+            rightAnalysisItem={rightSearchItem}
             leftEbayData={leftEbayQuery.data}
             rightEbayData={rightEbayQuery.data}
              leftSources={leftSources}

@@ -2033,20 +2033,30 @@ export const testAIRouter = router({
     }),
   // Official PCGS Auction Prices Realized lookup — administrator-only and read-only.
   getPcgsAuctionData: protectedProcedure
-    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.'), historyQueryVersion: z.literal(2).default(2) }))
+    .input(z.object({ certNumber: z.string().trim().regex(/^\d{7,8}$/, 'Enter a 7- or 8-digit PCGS certification number.'), historyQueryVersion: z.literal(3).default(3) }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupPcgsAuctionResults(input.certNumber);
       if (!result.data) return result;
       const auctions = result.data.auctions.map((auction) => ({
         ...auction,
-        title: result.data?.name ?? 'PCGS auction result',
+        // View All may mix grades. Carry the row’s displayed service/grade in
+        // the canonical title so the comparable engine can reject MS69 rows
+        // when the certified target is MS70.
+        title: [result.data?.name, auction.service, auction.grade].filter(Boolean).join(' ') || 'PCGS auction result',
         saleId: `${auction.certNo ?? result.data?.certNo ?? input.certNumber}-${auction.lotNumV2 ?? auction.lotNo ?? auction.date ?? 'unknown'}`,
         url: auction.auctionLotUrl ?? null,
-        currency: (auction as any).currency ?? null,
+        // PCGS View All displays USD prices. Preserve the actual sale venue so
+        // the analyzer can distinguish an eBay final price from a venue whose
+        // buyer-premium treatment is not disclosed in the PCGS table.
+        marketplace: auction.auctioneer ?? 'PCGS Auction Prices Realized',
+        originMarketplace: auction.auctioneer ?? 'PCGS Auction Prices Realized',
+        currency: 'USD' as const,
         saleStatus: auction.price != null ? 'completed' as const : 'unknown' as const,
         completedStatusBasis: auction.price != null ? 'PCGS auction-prices-realized endpoint' : null,
-        priceBasis: 'realized' as const,
+        priceBasis: /\bebay\b/i.test(String(auction.auctioneer ?? '')) ? 'sold' as const : 'realized' as const,
+        buyerPremium: 'unknown' as const,
+        saleForm: /\bebay\b/i.test(String(auction.auctioneer ?? '')) ? 'marketplace_sold_listing' : 'auction_prices_realized',
       }));
       return {
         ...result,

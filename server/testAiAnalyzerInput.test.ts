@@ -19,7 +19,7 @@ describe('Test AI analyzer input compatibility', () => {
     expect(routerSource).toContain('useImageAnalyzer: z.boolean().optional().default(true)');
     expect(routerSource).toContain('useImageAnalyzer && isSafeVisionImageUrl(item.imageUrl)');
     expect(clientSource).toContain('Use image analyzer');
-    expect(clientSource).toContain('useImageAnalyzer ? leftItem.primaryPhotoUrl : undefined');
+    expect(clientSource).toContain('useImageAnalyzer ? effectiveLeftItem.primaryPhotoUrl : undefined');
   });
 
   it('requires structured visual output and surfaces provider availability for evaluation', () => {
@@ -89,6 +89,18 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain("priceBasis: 'sold'");
     expect(clientSource).toContain("completedStatusBasis: 'Sold-Comps completed-sale endpoint'");
     expect(clientSource).toContain('balanceSaleGroups');
+  });
+
+  it('preserves signed PCGS eBay sales and CoinFacts coin identity through the analyzer path', () => {
+    expect(routerSource).toContain("attachCanonicalProvenance('pcgs_auction_results'");
+    expect(routerSource).toContain("priceBasis: /\\bebay\\b/i.test(String(auction.auctioneer ?? '')) ? 'sold' as const : 'realized' as const");
+    expect(routerSource).toContain("currency: 'USD' as const");
+    expect(clientSource).toContain("title: sale.title ?? leftPcgsAuctionData?.data?.name ?? effectiveLeftItem.title");
+    expect(clientSource).toContain("title: sale.title ?? rightPcgsAuctionData?.data?.name ?? effectiveRightItem.title");
+    expect(clientSource).toContain('leftAnalysisItem={leftSearchItem}');
+    expect(clientSource).toContain('rightAnalysisItem={rightSearchItem}');
+    expect(clientSource).toContain("const isPcgsCoin = company === 'PCGS' && item.category === 'coins'");
+    expect(clientSource).toContain("certificationCompany: 'PCGS'");
   });
 
   it('passes material evidence conflicts as a deterministic identity gate', () => {

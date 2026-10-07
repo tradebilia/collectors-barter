@@ -121,6 +121,34 @@ describe('PCGS certification adapter', () => {
     expect(result.message).toContain('View All history');
   });
 
+  it('preserves the displayed grade on each public View All row for exact-grade comparison', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '973314', CertNo: '51095404', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '973314', CertNo: '51095404', Grade: 'MS70', Name: '2025 $1 Silver Eagle', Year: 2025, Denomination: '$1' }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '973314', Grade: 'MS70', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({
+        data: [{
+          GradingServiceName: 'PCGS',
+          DisplayGrade: 'MS70',
+          FormattedSaleDate: 'Mar-2025',
+          AuctionFirmName: 'eBay',
+          AuctionSaleName: 'eBay Sales',
+          LotNumber: '396362566778',
+          ItemIDString: '396362566778',
+          SEOLotTitle: '2025-1-silver-eagle-first-strike',
+          SpecNo: '973314',
+          Price: 67,
+        }],
+      }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsAuctionResults('51095404', { PCGS_API_TOKEN: 'configured-token' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.historyScope).toBe('pcgs_public_view_all');
+    expect(result.data?.auctions[0]).toMatchObject({ service: 'PCGS', grade: 'MS70', price: 67 });
+  });
+
   it('uses the secondary key only after a certification request times out', async () => {
     const fetchMock = vi.fn()
       .mockRejectedValueOnce(new Error('The operation timed out'))

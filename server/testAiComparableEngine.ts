@@ -710,6 +710,11 @@ function coinDenominationMatches(title: string, denomination: string | null): bo
   const normalizedTitle = normalizedIdentityText(title);
   const normalizedDenomination = normalizedIdentityText(denomination);
   if (!normalizedDenomination) return false;
+  // PCGS View All commonly renders a face value literally (for example,
+  // "2025 $1 Silver Eagle") instead of spelling out "dollar". Preserve the
+  // explicit symbol match before punctuation is normalized away.
+  const literalDollar = String(denomination ?? '').trim().match(/^\$(\d+(?:\.\d+)?)$/);
+  if (literalDollar && new RegExp(`\\$\\s*${literalDollar[1]}\\b`).test(title)) return true;
   const numericFaceValue = /^\$?\d+(?:c|¢)?$/i.test(String(denomination ?? '').trim());
   if (!numericFaceValue && normalizedTitle.includes(normalizedDenomination)) return true;
   const aliases: Record<string, string[]> = {

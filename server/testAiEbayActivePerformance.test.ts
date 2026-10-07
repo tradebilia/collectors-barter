@@ -102,8 +102,9 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("does not block a CGC-certified movie from starting active marketplace searches", () => {
-    expect(pageSource).toContain("item.certId && item.gradingCompany === 'CGC' && item.category === 'comics'");
-    expect(pageSource).toContain("A CGC-certified movie, toy, game, or other inventory");
+    expect(pageSource).toContain("item.certId && company === 'CGC' && item.category === 'comics'");
+    expect(pageSource).toContain("Only a CGC comic needs the comics certificate response");
+    expect(pageSource).toContain("item already has a usable title/format/grade and must not be blocked");
     expect(pageSource).toContain("[movieTitle, format, item.certificationCompany, item.grade, item.condition]");
   });
 

@@ -2,6 +2,8 @@ type PcgsEnv = Record<string, string | undefined>;
 
 export type PcgsAuctionRecord = {
   service: string | null;
+  /** Grade shown on the PCGS sale row; View All may contain multiple grades. */
+  grade: string | null;
   date: string | null;
   auctioneer: string | null;
   lotNo: number | null;
@@ -69,6 +71,7 @@ function mapAuctionRecords(value: unknown): PcgsAuctionRecord[] {
     const entry = asObject(auction);
     return {
       service: entry.Service ?? null,
+      grade: entry.Grade ?? entry.DisplayGrade ?? entry.GradeDescription ?? null,
       date: entry.Date ?? null,
       auctioneer: entry.Auctioneer ?? null,
       lotNo: numberOrNull(entry.LotNo),
@@ -130,6 +133,7 @@ async function requestPcgsPublicViewAllHistory(pcgsNo: string, token: string) {
       : null;
     return {
       service: entry.GradingServiceName ?? null,
+      grade: entry.DisplayGrade ?? entry.Grade ?? entry.GradeDescription ?? null,
       date: entry.FormattedSaleDate ?? null,
       auctioneer: entry.AuctionFirmName ?? null,
       lotNo: entry.LotNumber == null || entry.LotNumber === '' ? null : Number(entry.LotNumber),
@@ -291,6 +295,19 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
       const factsUrl = `https://api.pcgs.com/publicapi/coindetail/GetCoinFactsByCertNo/${encodeURIComponent(normalizedCertNumber)}?retrieveAllData=true`;
       const facts = await fetchPcgsJsonWithTimeoutFallback(factsUrl, env);
       if (facts.response.ok && !providerPayloadError(facts.payload)) {
+        // APR responses can omit the item identity fields that CoinFacts
+        // supplies. Preserve those facts for the canonical row title and
+        // public View All fallback rather than sending an anonymous price into
+        // the analyzer.
+        record = {
+          ...record,
+          PCGSNo: record.PCGSNo ?? facts.payload.PCGSNo,
+          CertNo: record.CertNo ?? facts.payload.CertNo,
+          Name: record.Name ?? facts.payload.Name ?? facts.payload.CoinName,
+          Grade: record.Grade ?? facts.payload.Grade ?? facts.payload.GradeDescription,
+          Year: record.Year ?? facts.payload.Year,
+          Denomination: record.Denomination ?? facts.payload.Denomination,
+        };
         const pcgsNo = facts.payload.PCGSNo;
         const grade = parseGradeNumber(facts.payload.Grade);
         if (pcgsNo && grade) {
