@@ -11,6 +11,7 @@ import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
 import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
+import { lookupNumistaCoin } from './numistaMetadata';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { lookupTcgDexCatalog } from './tcgdexMetadata';
@@ -2054,6 +2055,18 @@ export const testAIRouter = router({
           auctions: attachCanonicalProvenance('pcgs_auction_results', auctions, { query: input.certNumber }),
         },
       };
+    }),
+
+  // Numista structured coin-catalog lookup — administrator-only and read-only.
+  getNumistaCoinData: protectedProcedure
+    .input(z.object({
+      category: z.string().trim().min(1).max(80),
+      title: z.string().trim().max(240).optional(),
+      itemDetails: z.string().max(8_000).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupNumistaCoin(input);
     }),
 
   // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.
