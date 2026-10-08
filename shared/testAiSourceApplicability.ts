@@ -7,7 +7,7 @@ export type SourceEligibilityContext = { category: string; gradingCompany?: stri
 export type SourceApplicability = {
   sourceId: TestAiSourceId;
   categories: '*' | string[];
-  requires?: 'title' | 'CGC certificate' | 'PSA certificate' | 'BGS certificate' | 'SGC certificate' | 'PCGS certificate';
+  requires?: 'title' | 'CGC certificate' | 'PSA certificate' | 'BGS certificate' | 'SGC certificate' | 'PCGS certificate' | 'NGC certificate';
   purpose: string;
   historicalLimit?: string;
 };
@@ -40,7 +40,7 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'igdb', categories: ['video games'], requires: 'title', purpose: 'Commercially approved IGDB factual video-game catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
   { sourceId: 'rawg', categories: ['video games'], requires: 'title', purpose: 'User-approved RAWG factual video-game catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
   { sourceId: 'discogs', categories: ['music'], requires: 'title', purpose: 'Discogs release and catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
-  { sourceId: 'ngc', categories: ['coins'], requires: 'title', purpose: 'Bounded NGC Auction Central public-result context. A public NGC coin-result locator is required; no valuation admission.' },
+  { sourceId: 'ngc', categories: ['coins'], requires: 'NGC certificate', purpose: 'Official NGC public certification lookup using certificate number plus numeric grade. Provider security blocks are reported transparently; no valuation admission.' },
   { sourceId: 'coin_archives', categories: ['coins'], requires: 'title', purpose: 'Permission-pending CoinArchives adapter for ancient/world coin auction research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'cng', categories: ['coins'], requires: 'title', purpose: 'Permission-pending CNG Past Auctions adapter for ancient/world coin research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'rumsey', categories: ['stamps'], requires: 'title', purpose: 'Permission-pending Rumsey adapter for philatelic auction research. Remote lookup is disabled until source authorization is recorded.' },

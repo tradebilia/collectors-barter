@@ -219,12 +219,12 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
   },
   ngc: {
     id: 'ngc',
-    label: 'NGC',
+    label: 'NGC Cert Lookup',
     group: 'Grading',
     icon: '🪙',
     provides: ['item_details', 'cert_info', 'population_report'],
-    status: 'placeholder' as const,
-    description: 'Coin/currency cert details, grade, population data',
+    status: 'live' as const,
+    description: 'Official NGC public certification lookup using certificate number plus numeric grade; provider security blocks are reported transparently',
   },
   cbcs: {
     id: 'cbcs',
@@ -3480,6 +3480,48 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
+function NgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const storedGrade = String(item.grade ?? '').trim();
+  const numericGrade = normalizeNgcGradeForDisplay(storedGrade);
+  const { data, isLoading } = trpc.testAI.getNgcData.useQuery(
+    { certNumber: item.certId || '', grade: storedGrade },
+    { enabled: !!item.certId && item.gradingCompany === 'NGC' && !!storedGrade },
+  );
+  if (!item.certId || item.gradingCompany !== 'NGC') return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
+      <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 NGC Cert Lookup</p>
+      <p className="text-gray-500 text-[10px]">Enter an NGC certification number and grade. For MS69, NGC receives certificate plus numeric grade 69.</p>
+    </div>
+  );
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 NGC Certification Lookup</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <MarketplaceQueryBanner item={item} query={`certificate=${item.certId}&grade=${numericGrade}`} isLoading={isLoading} />
+      <p className="text-gray-500 text-[10px]">NGC receives the certificate number and numeric grade only; MS69 is sent as 69.</p>
+      {!storedGrade && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">A grade is required before NGC can run the lookup.</p>}
+      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+      {data?.status === 'success' && data.data && (
+        <div className="space-y-2 rounded bg-gray-900/40 p-2">
+          <p className="text-[12px] font-semibold text-white">{data.data.title || 'NGC certified coin'}</p>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div><p className="text-[9px] uppercase text-gray-500">Certificate</p><p className="font-semibold text-white">{data.data.certificationNumber}</p></div>
+            <div><p className="text-[9px] uppercase text-gray-500">Grade sent</p><p className="font-bold text-cyan-300">{data.numericGrade}</p></div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+function normalizeNgcGradeForDisplay(value: string): string {
+  const match = value.match(/(\d{1,2})(?:\.0)?/);
+  return match ? String(Number(match[1])) : value.trim();
+}
+
 function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
@@ -3575,6 +3617,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('bgs') && <BeckettSection item={item} side={side} />}
       {enabledSources.has('sgc') && <SgcSection item={item} side={side} />}
       {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} auctionData={pcgsAuctionData} auctionLoading={pcgsAuctionLoading} />}
+      {enabledSources.has('ngc') && <NgcSection item={item} side={side} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('tcgdex') && <TcgDexSection item={item} side={side} />}

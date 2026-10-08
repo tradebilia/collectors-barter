@@ -11,6 +11,7 @@ import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
 import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
+import { lookupNgcCertification } from './ngcCertification';
 import { lookupNumistaCoin } from './numistaMetadata';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
@@ -2030,6 +2031,13 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupPcgsCertification(input.certNumber);
+    }),
+  // Official NGC public certification lookup — administrator-only and read-only.
+  getNgcData: protectedProcedure
+    .input(z.object({ certNumber: z.string().trim().min(5).max(20), grade: z.string().trim().min(1).max(30) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupNgcCertification(input.certNumber, input.grade);
     }),
   // Official PCGS Auction Prices Realized lookup — administrator-only and read-only.
   getPcgsAuctionData: protectedProcedure
