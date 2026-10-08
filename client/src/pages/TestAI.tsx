@@ -2277,7 +2277,33 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const undatedSaleCount = completedCandidates.filter((sale: any) => !Number.isFinite(Date.parse(String(sale.date ?? '')))).length;
       add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, currentValueSaleCount: currentValueSales.length, historicalTrendSaleCount: historicalTrendSales.length, currentValuePrices: currentValueSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalTrendPrices: historicalTrendSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
     }
-    if (enabledSources.has('sold_comps')) add({ id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: evidenceStatus(soldCompsData), market: { completedSaleCount: soldCompsData?.listings?.length ?? 0 }, message: soldCompsData?.error ?? null });
+    if (enabledSources.has('sold_comps')) {
+      const listings = soldCompsData?.listings ?? [];
+      const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+      const currentValue = accepted.filter((listing: any) => {
+        const timestamp = Date.parse(String(listing.endedAt ?? ''));
+        return Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp <= 365 * 86_400_000;
+      });
+      const historicalTrend = accepted.filter((listing: any) => !currentValue.includes(listing));
+      add({
+        id: 'sold_comps',
+        label: 'Sold-Comps',
+        kind: 'market_completed',
+        role: accepted.length ? 'valuation_candidate' : 'historical_context',
+        status: evidenceStatus(soldCompsData),
+        market: {
+          completedSaleCount: listings.length,
+          analyzerSubmittedSaleCount: Number(soldCompsData?.audit?.valuationEligible ?? accepted.length),
+          analyzerSubmittedPrices: accepted.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
+          currentValueSaleCount: currentValue.length,
+          historicalTrendSaleCount: historicalTrend.length,
+          currentValuePrices: currentValue.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
+          historicalTrendPrices: historicalTrend.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
+          undatedSaleCount: listings.filter((listing: any) => !Number.isFinite(Date.parse(String(listing.endedAt ?? '')))).length,
+        },
+        message: soldCompsData?.error ?? null,
+      });
+    }
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];
       const recentCompletedCount = sales.filter((sale: any) => sale.recency === 'recent').length;
