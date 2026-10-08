@@ -9,7 +9,7 @@ import { getLoginUrl } from "@/const";
 import { OnlineIndicator } from "./OnlineIndicator";
 import { formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
-import { hasPublicGradeValue } from "@shared/publicGradeValues";
+import { hasPublicGradeValue, resolvePublicGradeValue } from "@shared/publicGradeValues";
 
 interface CarouselItem {
   id: number;
@@ -73,7 +73,8 @@ export function RecentlyAddedCarousel({
   };
 
   const getGradeOrConditionPresentation = (item: CarouselItem) => {
-    const hasGrade = hasPublicGradeValue(item.grade);
+    const displayGrade = resolvePublicGradeValue(item.grade, item.title, item.category);
+    const hasGrade = hasPublicGradeValue(displayGrade);
     if (!hasGrade) {
       const condition = item.conditionLabel?.trim() || "Ungraded";
       return {
@@ -82,7 +83,7 @@ export function RecentlyAddedCarousel({
       };
     }
     const company = getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany);
-    const grade = formatGrade(item.grade!);
+    const grade = formatGrade(displayGrade!);
     return { text: `${company} ${grade}`, title: `${company} ${grade}` };
   };
 

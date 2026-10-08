@@ -32,7 +32,7 @@ import { getTradebiliaCategoryTheme, getTradebiliaCategoryLabel, formatGrade, fo
 import { getCategoryHeroTreatment } from "@/lib/categoryHeroTreatment";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { formatPublicFieldValue } from "@shared/publicFieldValues";
-import { hasPublicGradeValue, recoverPcgsCoinGradeFromTitle } from "@shared/publicGradeValues";
+import { hasPublicGradeValue, recoverPcgsCoinGradeFromTitle, resolvePublicGradeValue } from "@shared/publicGradeValues";
 
 const getItemDetailPageClassName = (category: string): string => {
   // For item detail pages, use the content portion of the category page gradient
@@ -764,10 +764,10 @@ export default function ItemDetail() {
                         <h3 className="min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight">{item.title}</h3>
                         <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]">
                           <div>
-                            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{hasPublicGradeValue(item.grade) ? "Grade" : "Condition"}</p>
+                            <p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] opacity-80">{hasPublicGradeValue(resolvePublicGradeValue(item.grade, item.title, item.category)) ? "Grade" : "Condition"}</p>
                             <p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">
-                              {hasPublicGradeValue(item.grade)
-                                ? `${getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)} ${formatGrade(item.grade)}`
+                              {hasPublicGradeValue(resolvePublicGradeValue(item.grade, item.title, item.category))
+                                ? `${getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany)} ${formatGrade(resolvePublicGradeValue(item.grade, item.title, item.category))}`
                                 : item.conditionLabel}
                             </p>
                           </div>

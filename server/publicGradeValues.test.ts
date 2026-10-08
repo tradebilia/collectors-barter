@@ -5,7 +5,9 @@ import {
   normalizeNumericGrade,
   normalizePcgsCoinGrade,
   numericGradesEquivalent,
+  recoverCoinGradeFromTitle,
   recoverPcgsCoinGradeFromTitle,
+  resolvePublicGradeValue,
 } from "../shared/publicGradeValues";
 
 describe("public grade formatting", () => {
@@ -40,6 +42,12 @@ describe("public grade formatting", () => {
     expect(hasPublicGradeValue("ungraded")).toBe(false);
     expect(hasPublicGradeValue("raw")).toBe(false);
     expect(hasPublicGradeValue("0")).toBe(false);
+  });
+
+  it("recovers a missing coin grade from a recognizable title label", () => {
+    expect(recoverCoinGradeFromTitle("2026 American Eagle S$1 MS69", "coins")).toBe("MS69");
+    expect(resolvePublicGradeValue(null, "2015-W American Silver Eagle PCGS PR70", "coins")).toBe("PR70");
+    expect(resolvePublicGradeValue(null, "Raw 2026 American Eagle", "coins")).toBeNull();
   });
 
   it("preserves valid PCGS coin labels for storage and recovers legacy title labels", () => {

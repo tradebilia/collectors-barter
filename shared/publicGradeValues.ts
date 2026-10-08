@@ -33,6 +33,22 @@ export function hasPublicGradeValue(value: string | number | null | undefined): 
   return /\d/.test(normalized) && Boolean(formatPublicGradeValue(value));
 }
 
+/** Recover a recognizable graded-coin label from a title when legacy data lost its grade field. */
+export function recoverCoinGradeFromTitle(title: string | null | undefined, category: string | null | undefined): string | null {
+  if (category !== "coins") return null;
+  const match = String(title ?? "").match(/\b(?:MS|PR|SP|AU|XF|EF|VF|F|G|VG|AG|FR|PO|BN|RB|RD)\s*\d{1,3}\+?\b/i);
+  return match?.[0]?.replace(/\s+/g, "").toUpperCase() ?? null;
+}
+
+/** Resolve the public grade, recovering legacy coin grades from the listing title when necessary. */
+export function resolvePublicGradeValue(
+  value: string | number | null | undefined,
+  title: string | null | undefined,
+  category: string | null | undefined,
+): string | number | null | undefined {
+  return hasPublicGradeValue(value) ? value : recoverCoinGradeFromTitle(title, category);
+}
+
 /** Canonical numeric grade for cross-market identity gates; non-numeric labels remain source-specific. */
 export function normalizeNumericGrade(value: string | number | null | undefined): string | null {
   if (value === null || value === undefined) return null;
