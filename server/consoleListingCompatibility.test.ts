@@ -26,8 +26,8 @@ describe("Video Games Console listing compatibility", () => {
 
   it("rejects display-only grade suffixes before submission with clear guidance", () => {
     const source = readFileSync(new URL("../client/src/hooks/useAddInventoryForm.ts", import.meta.url), "utf8");
-    expect(source).toContain("const validGrade = allowsPcgsCoinGrade");
-    expect(source).toContain("isPcgsAlphanumericGrade(normalizedGrade)");
+    expect(source).toContain("const validGrade = allowsAlphanumericCoinGrade");
+    expect(source).toContain("isAlphanumericCoinGrade(normalizedGrade)");
     expect(source).toContain("do not include + or other symbols");
   });
 

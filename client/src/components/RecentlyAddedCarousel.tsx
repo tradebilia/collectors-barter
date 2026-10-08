@@ -9,6 +9,7 @@ import { getLoginUrl } from "@/const";
 import { OnlineIndicator } from "./OnlineIndicator";
 import { formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { hasPublicGradeValue } from "@shared/publicGradeValues";
 
 interface CarouselItem {
   id: number;
@@ -72,7 +73,7 @@ export function RecentlyAddedCarousel({
   };
 
   const getGradeOrConditionPresentation = (item: CarouselItem) => {
-    const hasGrade = Boolean(item.grade && Number(item.grade) > 0);
+    const hasGrade = hasPublicGradeValue(item.grade);
     if (!hasGrade) {
       const condition = item.conditionLabel?.trim() || "Ungraded";
       return {

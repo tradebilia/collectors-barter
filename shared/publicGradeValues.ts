@@ -24,6 +24,15 @@ export function formatPublicGradeValue(value: string | number | null | undefined
   return (Math.round((numericValue + Number.EPSILON) * 10) / 10).toString();
 }
 
+/** Whether a stored grade should be shown instead of the item's condition. */
+export function hasPublicGradeValue(value: string | number | null | undefined): boolean {
+  if (value === null || value === undefined) return false;
+  const normalized = String(value).trim().toLowerCase();
+  if (!normalized || normalized === "ungraded" || normalized === "raw" || normalized === "none" || normalized === "n/a") return false;
+  if (/^\d+(?:\.\d+)?$/.test(normalized)) return Number(normalized) > 0;
+  return /\d/.test(normalized) && Boolean(formatPublicGradeValue(value));
+}
+
 /** Canonical numeric grade for cross-market identity gates; non-numeric labels remain source-specific. */
 export function normalizeNumericGrade(value: string | number | null | undefined): string | null {
   if (value === null || value === undefined) return null;

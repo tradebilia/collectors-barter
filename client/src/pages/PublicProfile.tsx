@@ -30,6 +30,7 @@ import { Link } from "wouter";
 import { resolveTradebiliaListingImage } from "@/lib/listingImages";
 import { tradebiliaConditionOptions, formatGrade, formatItemValue } from "@/lib/tradebilia";
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
+import { hasPublicGradeValue } from "@shared/publicGradeValues";
 import { EbayFeedbackPreview } from "@/components/EbayFeedbackPreview";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -853,7 +854,7 @@ export default function PublicProfile() {
                 <div className="divide-y divide-slate-100">
                   {recentListings.map((listing: any) => {
                     const conditionLabel = tradebiliaConditionOptions.find((c: any) => c.value === listing.condition)?.label || listing.condition;
-                    const hasGrade = listing.grade && parseFloat(String(listing.grade)) > 0;
+                    const hasGrade = hasPublicGradeValue(listing.grade);
                     return (
                       <div key={listing.id} className="flex gap-4 p-4 hover:bg-slate-50 transition-colors">
                         <Link href={`/listings/${listing.id}`}>

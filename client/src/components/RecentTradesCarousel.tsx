@@ -4,6 +4,7 @@ import { buildTradeShowcaseExchange, type TradeShowcaseItem, type TradeShowcaseP
 import { getDisplayedGradingCompany } from "@/lib/gradingDisplay";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatGrade, formatItemValue } from "@/lib/tradebilia";
+import { hasPublicGradeValue } from "@shared/publicGradeValues";
 
 type RecentTrade = TradeShowcaseTrade & {
   id: number;
@@ -21,8 +22,7 @@ function formatEstimatedValue(value: TradeShowcaseItem["estimatedValue"] | Recen
 }
 
 function getGradePresentation(item: TradeShowcaseItem) {
-  const numericGrade = Number(item.grade);
-  if (!Number.isFinite(numericGrade) || numericGrade <= 0) return null;
+  if (!hasPublicGradeValue(item.grade)) return null;
   const formattedGrade = formatGrade(item.grade);
   return { company: getDisplayedGradingCompany(item.certificationCompany, item.customGradingCompany), grade: formattedGrade };
 }

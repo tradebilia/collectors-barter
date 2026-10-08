@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   formatPublicGradeValue,
+  hasPublicGradeValue,
   normalizeNumericGrade,
   normalizePcgsCoinGrade,
   numericGradesEquivalent,
@@ -31,6 +32,14 @@ describe("public grade formatting", () => {
     expect(formatPublicGradeValue("MS65")).toBe("MS-65");
     expect(formatPublicGradeValue("MS65+")).toBe("MS-65+");
     expect(formatPublicGradeValue("MS-65")).toBe("MS-65");
+  });
+
+  it("recognizes alphanumeric coin grades as grades instead of conditions", () => {
+    expect(hasPublicGradeValue("MS69")).toBe(true);
+    expect(hasPublicGradeValue("AU58")).toBe(true);
+    expect(hasPublicGradeValue("ungraded")).toBe(false);
+    expect(hasPublicGradeValue("raw")).toBe(false);
+    expect(hasPublicGradeValue("0")).toBe(false);
   });
 
   it("preserves valid PCGS coin labels for storage and recovers legacy title labels", () => {
