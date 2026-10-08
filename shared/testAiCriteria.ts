@@ -72,6 +72,8 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
             ? ['gameTitle', 'videoGameTitle', 'title', 'releaseYear', 'year', 'platform', 'console', 'system', 'upc', 'barcode']
         : normalizedCategory === 'vintage_toys'
           ? ['brand', 'manufacturer', 'line', 'franchise', 'toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName', 'setNumber', 'theme', 'toyForm', 'objectType', 'productType', 'version', 'variant', 'year']
+        : normalizedCategory === 'coins'
+          ? ['year', 'denomination', 'series', 'coinSeries', 'name', 'subject', 'mintMark', 'mint', 'country', 'variety', 'designation']
         : normalizedCategory === 'stamps'
               ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series']
               : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];

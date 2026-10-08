@@ -269,10 +269,13 @@ export default function ItemDetail() {
   }
 
   const storedGrade = String(listing.grade ?? '').trim();
-  const displayGrade = storedGrade && storedGrade !== 'ungraded' && Number.isFinite(Number(storedGrade)) && Number(storedGrade) > 0
-    ? storedGrade
-    : recoverPcgsCoinGradeFromTitle(listing.title, listing.category, listing.certificationCompany);
-  const isGradedListing = Boolean(displayGrade);
+  const itemDetailsGrade = listing.itemDetails?.grade == null ? '' : String(listing.itemDetails.grade).trim();
+  const displayGrade = resolvePublicGradeValue(
+    hasPublicGradeValue(storedGrade) ? storedGrade : itemDetailsGrade,
+    listing.title,
+    listing.category,
+  ) ?? recoverPcgsCoinGradeFromTitle(listing.title, listing.category, listing.certificationCompany);
+  const isGradedListing = Boolean(displayGrade) || Boolean(listing.certificationCompany);
 
   const categoryTheme = listing ? getTradebiliaCategoryTheme(listing.category) : null;
   const heroTreatment = listing ? getCategoryHeroTreatment(listing.category) : getCategoryHeroTreatment();
@@ -408,10 +411,10 @@ export default function ItemDetail() {
                       <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{getDisplayedGradingCompany(listing.certificationCompany, listing.itemDetails?.customGradingCompany)}</p>
                     </div>
                   )}
-                  {displayGrade ? (
+                  {displayGrade || isGradedListing ? (
                     <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">{String(displayGrade).match(/^[A-Z]{1,8}-?\d/) ? 'Grade' : 'Numerical Grade'}</p>
-                        <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{formatGrade(displayGrade)}</p>
+                        <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-800 sm:text-base sm:tracking-[0.25em]">{displayGrade && String(displayGrade).match(/^[A-Z]{1,8}-?\d/) ? 'Grade' : 'Numerical Grade'}</p>
+                        <p className="mt-1 break-words text-sm font-medium text-gray-500 [overflow-wrap:anywhere] sm:mt-2">{displayGrade ? formatGrade(displayGrade) : 'Not recorded'}</p>
                     </div>
                   ) : listing.condition ? (
                     <div>

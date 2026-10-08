@@ -28,6 +28,15 @@ describe('Test AI manufacturer criteria', () => {
     expect(buildStructuredItemQuery('sports_cards', JSON.stringify({ year: '1989' }))).toBe('1989');
   });
 
+  it('builds a structured coin query for NGC Census searches', () => {
+    const query = buildStructuredItemQuery('coins', { year: '2026', denomination: '$1', series: 'American Eagle', mintMark: 'W', designation: 'MS' });
+    expect(query).toContain('2026');
+    expect(query).toContain('$1');
+    expect(query).toContain('American Eagle');
+    expect(query).toContain('W');
+    expect(query).toContain('MS');
+  });
+
   it('replaces Other with the custom grading-company field', () => {
     const details = { gradingCompany: 'Other', customGradingCompany: 'KSA' };
     expect(resolveTestAiGradingCompany(details, 'Other')).toBe('KSA');

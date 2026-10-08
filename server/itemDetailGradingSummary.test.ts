@@ -18,4 +18,11 @@ describe("item-detail grading summary", () => {
     expect(source).toContain("recoverPcgsCoinGradeFromTitle(listing.title, listing.category, listing.certificationCompany)");
     expect(source).toContain("if (displayGrade) allFields.push({ label: String(displayGrade)");
   });
+
+  it("uses shared alphanumeric grade resolution for NGC and keeps graded items out of Condition fallback", () => {
+    expect(source).toContain("resolvePublicGradeValue(");
+    expect(source).toContain("const itemDetailsGrade = listing.itemDetails?.grade");
+    expect(source).toContain("const isGradedListing = Boolean(displayGrade) || Boolean(listing.certificationCompany)");
+    expect(source).toContain("{displayGrade || isGradedListing ? (");
+  });
 });
