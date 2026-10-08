@@ -3,7 +3,6 @@ import { Box, CircleDot, Coins, Gamepad2, Music2, PenLine, Stamp, Tag, Tv } from
 import { trpc } from "@/lib/trpc";
 
 const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";
-const SUPPLIED_BOTTOM_STRIP_URL = "/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png";
 const collectorPhrases = [
   "Discover rare finds",
   "Trade with confidence",
@@ -55,7 +54,11 @@ export default function ComingSoon() {
       {/* The supplied SVG artwork is rendered unchanged as the desktop visual layer. */}
       <div className="relative mx-auto hidden aspect-[1810/869] w-full sm:block">
         <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" aria-hidden="true" className="absolute inset-0 size-full object-contain" />
-        <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="absolute left-1/2 top-[96%] z-10 block h-auto w-full -translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute left-1/2 top-[96%] z-10 flex w-max max-w-[98%] -translate-x-1/2 -translate-y-1/2 justify-center whitespace-nowrap text-center text-[clamp(7.5px,0.56cqw,10.5px)] font-medium uppercase tracking-[0.13em] text-[#e3ab5e]/80" aria-label="Tradebilia collector benefits">
+          {collectorPhrases.map((phrase, index) => (
+            <span key={`desktop-${phrase}`} className="whitespace-nowrap">{phrase}{index < collectorPhrases.length - 1 ? <span className="mx-2 text-[#e3ab5e]/50">◆</span> : null}</span>
+          ))}
+        </div>
 
         <section className="absolute left-1/2 top-[65.5%] h-[5.6%] w-[27%] -translate-x-1/2 -translate-y-1/2" aria-label="Tradebilia launch email signup">
           {submitted ? (

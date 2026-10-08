@@ -7,12 +7,14 @@ describe('Coming Soon exact supplied composition', () => {
     const page = readFileSync(resolve(process.cwd(), 'client/src/pages/ComingSoon.tsx'), 'utf8');
 
     expect(page).toContain('/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg');
-    expect(page).toContain('/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png');
+    expect(page).not.toContain('/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png');
     expect(page).toContain('pointer-events-none');
     expect(page).toContain('aria-label="Tradebilia launch email signup"');
     expect(page).toContain('aspect-[1810/869]');
     expect(page).toContain('top-[96%]');
-    expect(page).toContain('absolute left-1/2 top-[96%] z-10');
+    expect(page).toContain('absolute left-1/2 top-[96%] z-10 flex');
+    expect(page).toContain('text-[#e3ab5e]/80');
+    expect(page).toContain('key={`desktop-${phrase}`}');
     expect(page).toContain('top-[65.5%]');
     expect(page).toContain('Notify Me');
     expect(page).toContain('h-auto w-full opacity-90');
@@ -29,7 +31,8 @@ describe('Coming Soon exact supplied composition', () => {
     expect(page).not.toContain('h-full w-full scale-105 object-cover object-center opacity-35');
     expect(page).not.toContain('h-auto w-full opacity-65');
     expect(page).not.toContain('h-full w-auto max-w-none -translate-x-1/2 opacity-45');
-    expect(page.lastIndexOf('Built for collectors')).toBeLessThan(page.indexOf('collectorPhrases.map'));
+    expect(page.indexOf('key={`desktop-${phrase}`}')).toBeLessThan(page.indexOf('aria-label="Tradebilia launch email signup"'));
+    expect(page.lastIndexOf('Built for collectors')).toBeLessThan(page.lastIndexOf('collectorPhrases.map'));
     expect(page).toContain('subscribeMutation.mutate({ email })');
     expect(page).toContain('Please enter a valid email address.');
     expect(page).toContain('You’re on the launch list.');
