@@ -7,7 +7,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { FieldDefinition, CollectibleCategory, COMMON_FIELDS } from '@/lib/formFieldDefinitions';
 import { ALL_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsComplete';
 import { REMAINING_FIELD_DEFINITIONS } from '@/lib/fieldDefinitionsRemaining';
-import { isPcgsAlphanumericGrade } from '@shared/gradingCompanyConfig';
+import { isAlphanumericCoinGrade } from '@shared/gradingCompanyConfig';
 
 const ALL_DEFINITIONS: Record<string, Record<string, FieldDefinition[]>> = {
   ...ALL_FIELD_DEFINITIONS,
@@ -400,17 +400,17 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
           newErrors[field.name] = `${field.label} is required`;
         }
 
-        const allowsPcgsCoinGrade = field.name === 'grade'
+        const allowsAlphanumericCoinGrade = field.name === 'grade'
           && formData.category === 'coins'
-          && String(formData.gradingCompany || '').trim().toUpperCase() === 'PCGS';
+          && String(formData.isGraded || '').trim().toLowerCase() === 'yes';
         if (field.name === 'grade' && value !== undefined && value !== null && value !== '') {
           const normalizedGrade = String(value).trim();
-          const validGrade = allowsPcgsCoinGrade
-            ? (/^\d+(?:\.\d+)?$/.test(normalizedGrade) || isPcgsAlphanumericGrade(normalizedGrade))
+          const validGrade = allowsAlphanumericCoinGrade
+            ? (/^\d+(?:\.\d+)?$/.test(normalizedGrade) || isAlphanumericCoinGrade(normalizedGrade))
             : /^\d+(?:\.\d+)?$/.test(normalizedGrade);
           if (!validGrade) {
-            newErrors[field.name] = allowsPcgsCoinGrade
-              ? 'Enter a numeric grade or PCGS coin label such as MS65 or MS65+.'
+            newErrors[field.name] = allowsAlphanumericCoinGrade
+              ? 'Enter a numeric grade or coin label such as MS69, AU58, or MS65+.'
               : 'Enter a numeric grade only (for example, 80 or 9.5); do not include + or other symbols.';
           }
         }

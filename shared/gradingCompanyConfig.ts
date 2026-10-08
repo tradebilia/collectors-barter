@@ -683,14 +683,17 @@ export function getGradingCompanyByName(name: string): GradingCompanyConfig | un
 /**
  * Validate if a grade is valid for a specific grading company
  */
-export function isPcgsAlphanumericGrade(grade: string): boolean {
+export function isAlphanumericCoinGrade(grade: string): boolean {
   return /^[A-Za-z]{1,8}\s*\d{1,3}(?:\+)?(?:\s*[A-Za-z]{1,12})?$/i.test(grade.trim());
 }
+
+// Backward-compatible alias for existing PCGS-specific callers.
+export const isPcgsAlphanumericGrade = isAlphanumericCoinGrade;
 
 export function isValidGradeForCompany(companyName: string, grade: string): boolean {
   const company = getGradingCompanyByName(companyName);
   if (!company) return false;
-  if (company.name === "PCGS" && isPcgsAlphanumericGrade(grade)) {
+  if (company.categories.includes("coins") && isAlphanumericCoinGrade(grade)) {
     return true;
   }
   return company.validGrades.includes(grade);
