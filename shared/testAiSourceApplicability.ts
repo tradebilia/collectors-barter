@@ -1,13 +1,13 @@
 import { isSandboxSiteBlockedSource } from './sandboxBlockedSources';
 
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'numista' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'ngc_census' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'lcg' | 'stephen_album' | 'nate_sanders' | 'tcgplayer_reef';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'numista' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'coin_archives' | 'cng' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'lcg' | 'stephen_album' | 'nate_sanders' | 'tcgplayer_reef';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
 export type SourceApplicability = {
   sourceId: TestAiSourceId;
   categories: '*' | string[];
-  requires?: 'title' | 'CGC certificate' | 'PSA certificate' | 'BGS certificate' | 'SGC certificate' | 'PCGS certificate' | 'NGC certificate' | 'NGC grading';
+  requires?: 'title' | 'CGC certificate' | 'PSA certificate' | 'BGS certificate' | 'SGC certificate' | 'PCGS certificate' | 'NGC certificate';
   purpose: string;
   historicalLimit?: string;
 };
@@ -41,7 +41,6 @@ export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'rawg', categories: ['video games'], requires: 'title', purpose: 'User-approved RAWG factual video-game catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
   { sourceId: 'discogs', categories: ['music'], requires: 'title', purpose: 'Discogs release and catalog metadata only; never valuation, authentication, grading, certification, or ownership evidence.' },
   { sourceId: 'ngc', categories: ['coins'], requires: 'NGC certificate', purpose: 'Official NGC public certification lookup using certificate number plus numeric grade. Provider security blocks are reported transparently; no valuation admission.' },
-  { sourceId: 'ngc_census', categories: ['coins'], requires: 'NGC grading', purpose: 'Apify-backed NGC Census population context for NGC-graded Coins only. Population data does not verify an individual certificate or establish value.' },
   { sourceId: 'coin_archives', categories: ['coins'], requires: 'title', purpose: 'Permission-pending CoinArchives adapter for ancient/world coin auction research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'cng', categories: ['coins'], requires: 'title', purpose: 'Permission-pending CNG Past Auctions adapter for ancient/world coin research. Remote lookup is disabled until source authorization is recorded.' },
   { sourceId: 'rumsey', categories: ['stamps'], requires: 'title', purpose: 'Permission-pending Rumsey adapter for philatelic auction research. Remote lookup is disabled until source authorization is recorded.' },
@@ -68,7 +67,6 @@ function normalizeCategory(category: string): string { return category.trim().to
 function certificateRequirementMet(requirement: SourceApplicability['requires'], company: string | null | undefined): boolean {
   if (!requirement || requirement === 'title') return true;
   const normalizedCompany = (company ?? '').trim().toUpperCase().replace(/\s+(COMICS|CARDS)$/, '');
-  if (requirement === 'NGC grading') return normalizedCompany === 'NGC';
   return requirement.replace(' certificate', '').toUpperCase() === normalizedCompany;
 }
 

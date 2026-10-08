@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { buildNgcCensusCriteria, buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
@@ -225,15 +225,6 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     provides: ['item_details', 'cert_info', 'population_report'],
     status: 'live' as const,
     description: 'Official NGC public certification lookup using certificate number plus numeric grade; provider security blocks are reported transparently',
-  },
-  ngc_census: {
-    id: 'ngc_census',
-    label: 'NGC Census (via Apify)',
-    group: 'Grading',
-    icon: '🪙',
-    provides: ['population_report'],
-    status: 'live' as const,
-    description: 'NGC population totals and grade breakdowns through Apify; population context only, not certificate verification or valuation',
   },
   cbcs: {
     id: 'cbcs',
@@ -3489,24 +3480,6 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
-function NgcCensusPanel({ item }: { item: SelectedItem }) {
-  const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
-  const censusCriteria = useMemo(
-    () => buildNgcCensusCriteria(item.itemDetails, item.grade, gradingCompany),
-    [item.itemDetails, item.grade, gradingCompany],
-  );
-  const censusQuery = trpc.testAI.getNgcCensusData.useQuery(
-    { criteria: censusCriteria ?? { searchTerms: 'No criteria', keywords: 'No criteria', designation: 'MS', denomination: '' }, gradingCompany },
-    { enabled: !!censusCriteria && item.category === 'coins' && gradingCompany.toUpperCase() === 'NGC' },
-  );
-  return <div className="space-y-2 rounded border border-violet-700/30 bg-violet-950/20 p-2">
-    <div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase text-violet-200">NGC Census Population (via Apify)</p>{censusQuery.isLoading && <Spinner className="w-3 h-3" />}</div>
-    <p className="text-[9px] text-gray-500">NGC-graded coins only. Population context does not verify an individual certificate or set value. Search criteria: <span className="text-violet-200">{censusCriteria?.searchTerms || 'No complete NGC coin criteria supplied'}</span></p>
-    {censusQuery.data?.status === 'error' && <p className="text-[10px] text-red-300">{censusQuery.data.message}</p>}
-    {censusQuery.data?.status === 'success' && !censusQuery.data.items.length && <p className="text-[10px] text-gray-400">No matching NGC census rows returned.</p>}
-    {censusQuery.data?.items.slice(0, 5).map((row: any, index: number) => <div key={`${row.populationId ?? row.coinId ?? index}`} className="rounded bg-gray-900/50 p-2 text-[10px]"><p className="font-semibold text-white">{row.displayName || row.coinSeriesName || 'NGC census record'}</p><p className="text-gray-400">Total population: <strong className="text-violet-200">{row.populationTotal ?? 'N/A'}</strong>{row.designation ? ` · ${row.designation}` : ''}</p>{row.gradeBreakdown && <p className="mt-1 break-words text-gray-500">{Object.entries(row.gradeBreakdown).slice(0, 8).map(([grade, count]) => `${grade}: ${count}`).join(' · ')}</p>}</div>)}
-  </div>;
-}
 
 function NgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
@@ -3544,13 +3517,6 @@ function NgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
       )}
     </div>
   );
-}
-function NgcCensusSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
-  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  return <div className="space-y-3 rounded-lg border border-gray-700/20 bg-gray-800/30 p-3">
-    <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 NGC Census (via Apify)</p>
-    <NgcCensusPanel item={item} />
-  </div>;
 }
 
 function normalizeNgcGradeForDisplay(value: string): string {
@@ -3654,7 +3620,6 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('sgc') && <SgcSection item={item} side={side} />}
       {enabledSources.has('pcgs') && <PcgsSection item={item} side={side} auctionData={pcgsAuctionData} auctionLoading={pcgsAuctionLoading} />}
       {enabledSources.has('ngc') && <NgcSection item={item} side={side} />}
-      {enabledSources.has('ngc_census') && <NgcCensusSection item={item} side={side} />}
       {enabledSources.has('pricecharting') && <PriceChartingSection item={item} side={side} />}
       {enabledSources.has('one_thirty_point') && <OneThirtyPointSection item={searchItem ?? item} side={side} />}
       {enabledSources.has('tcgdex') && <TcgDexSection item={item} side={side} />}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildNgcCensusQuery, buildSportsCardTestAiCriteria, buildStructuredItemQuery, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildStructuredItemQuery, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '../shared/testAiCriteria';
 
 describe('Test AI manufacturer criteria', () => {
   it('uses Custom Manufacturer rather than the Other placeholder', () => {
@@ -28,23 +28,13 @@ describe('Test AI manufacturer criteria', () => {
     expect(buildStructuredItemQuery('sports_cards', JSON.stringify({ year: '1989' }))).toBe('1989');
   });
 
-  it('builds a structured coin query for NGC Census searches', () => {
+  it('builds a structured coin query from stored coin fields', () => {
     const query = buildStructuredItemQuery('coins', { year: '2026', denomination: '$1', series: 'American Eagle', mintMark: 'W', designation: 'MS' });
     expect(query).toContain('2026');
     expect(query).toContain('$1');
     expect(query).toContain('American Eagle');
     expect(query).toContain('W');
     expect(query).toContain('MS');
-  });
-
-  it('builds the exact NGC Census query format and strips the numeric grade', () => {
-    expect(buildNgcCensusQuery({
-      year: '2025', variety: 'American Eagle', composition: 'Silver', country: 'United States', denomination: '1',
-    }, 'MS-69', 'NGC')).toBe('2025 American Eagle S$1 MS');
-  });
-
-  it('does not build an NGC Census query for a non-NGC coin', () => {
-    expect(buildNgcCensusQuery({ year: '2025', variety: 'American Eagle', composition: 'Silver', country: 'United States', denomination: '1' }, 'MS-69', 'PCGS')).toBe('');
   });
 
   it('replaces Other with the custom grading-company field', () => {

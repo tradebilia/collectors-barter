@@ -14,8 +14,6 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'stamps', hasTitle: true }).map((source) => source.sourceId)).toEqual(expect.arrayContaining(['ebay_active', 'sold_comps', 'smithsonian']));
     expect(getEligibleTestAiSources({ category: 'movies', hasTitle: true }).map((source) => source.sourceId)).toContain('wikidata');
     expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'PCGS', hasTitle: true }).map((source) => source.sourceId)).toContain('pcgs');
-    expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'NGC', hasTitle: true }).map((source) => source.sourceId)).toContain('ngc_census');
-    expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'PCGS', hasTitle: true }).map((source) => source.sourceId)).not.toContain('ngc_census');
     expect(getEligibleTestAiSources({ category: 'coins', gradingCompany: 'PCGS', hasTitle: true }).map((source) => source.sourceId)).toContain('pricecharting');
     const videoGameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
     expect(videoGameIds).toContain('igdb');
@@ -45,7 +43,7 @@ describe('internal Test AI source-category applicability policy', () => {
 
   it('shows active specialist sources in their researched categories while making Goldin and Weiss automatic context searches available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', gradingCompany: 'NGC', hasTitle: true }).map((source) => source.sourceId);
-    expect(coinIds).toEqual(expect.arrayContaining(['ngc_census', 'coin_archives', 'cng']));
+    expect(coinIds).toEqual(expect.arrayContaining(['coin_archives', 'cng']));
     expect(coinIds).not.toContain('heritage');
     expect(coinIds).not.toContain('rumsey');
 
