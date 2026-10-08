@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeListingGrade, normalizeListingGradeForStorage } from "./db";
 
 describe("Video Games Console listing compatibility", () => {
-  it("normalizes display-only grade suffixes before decimal persistence", () => {
+  it("normalizes legacy numeric grades and ungraded values", () => {
     expect(normalizeListingGrade("80+")).toBe("80");
     expect(normalizeListingGrade("9.5")).toBe("9.5");
     expect(normalizeListingGrade("ungraded")).toBe("0");
@@ -11,9 +11,9 @@ describe("Video Games Console listing compatibility", () => {
     expect(normalizeListingGrade("Gem Mint")).toBe("0");
   });
 
-  it("stores the numeric portion of an alphanumeric PCGS coin grade", () => {
-    expect(normalizeListingGradeForStorage("MS65", "coins", "PCGS")).toBe("65");
-    expect(normalizeListingGradeForStorage("MS65+", "coins", "PCGS")).toBe("65");
+  it("stores the complete alphanumeric coin grade", () => {
+    expect(normalizeListingGradeForStorage("MS65", "coins", "PCGS")).toBe("MS65");
+    expect(normalizeListingGradeForStorage("MS65+", "coins", "PCGS")).toBe("MS65+");
     expect(normalizeListingGradeForStorage("85", "coins", "NGC")).toBe("85");
   });
 

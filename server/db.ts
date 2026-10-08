@@ -42,6 +42,7 @@ import { fetchWhatnotReference, type WhatnotReference } from "./whatnotReference
 import { buildPayPalComparisonProfile, type PayPalComparisonProfile, type PayPalIdentityReference } from "./paypalIdentity";
 import { selectSimilarListings } from "../shared/similarListings";
 import { normalizePcgsCoinGrade, recoverPcgsCoinGradeFromTitle } from "../shared/publicGradeValues";
+import { isAlphanumericCoinGrade } from "../shared/gradingCompanyConfig";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -51,10 +52,7 @@ export function normalizeListingEstimatedValue(value?: number | null): number | 
   return Math.max(1, Number(value));
 }
 
-/**
- * listings.grade is a numeric DECIMAL column. Collector-facing grade inputs
- * may include a display suffix such as "80+"; persist only the numeric part.
- */
+/** Normalize submitted grades while preserving validated alphanumeric coin labels. */
 export function normalizeListingGrade(
   value?: string | number | null,
   category?: string,
@@ -63,28 +61,21 @@ export function normalizeListingGrade(
   if (value === undefined || value === null) return '0';
   const trimmed = String(value).trim();
   if (!trimmed || trimmed.toLowerCase() === 'ungraded' || trimmed.toLowerCase() === 'raw') return '0';
-  if (category === 'coins' && certificationCompany?.trim().toUpperCase() === 'PCGS') {
-    return normalizePcgsCoinGrade(trimmed) ?? '0';
+  if (category === 'coins') {
+    if (certificationCompany?.trim().toUpperCase() === 'PCGS') return normalizePcgsCoinGrade(trimmed) ?? '0';
+    if (isAlphanumericCoinGrade(trimmed)) return trimmed.replace(/\s+/g, '').toUpperCase();
   }
   const numericMatch = trimmed.match(/^\d+(?:\.\d+)?/);
   return numericMatch ? numericMatch[0] : '0';
 }
 
-/**
- * listings.grade is a DECIMAL column. PCGS coin labels such as MS65 are kept
- * in the title/display recovery path, while only their numeric grade is
- * written to the legacy numeric column.
- */
+/** Return the canonical grade string stored by the listings table. */
 export function normalizeListingGradeForStorage(
   value?: string | number | null,
   category?: string,
   certificationCompany?: string,
 ): string {
-  const normalized = normalizeListingGrade(value, category, certificationCompany);
-  if (category === 'coins' && certificationCompany?.trim().toUpperCase() === 'PCGS') {
-    return normalized.match(/\d+(?:\.\d+)?/)?.[0] ?? '0';
-  }
-  return normalized;
+  return normalizeListingGrade(value, category, certificationCompany);
 }
 
 let _db: ReturnType<typeof drizzle> | null = null;

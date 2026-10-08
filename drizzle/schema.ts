@@ -299,7 +299,7 @@ export const listings = mysqlTable("listings", {
 	title: varchar({ length: 160 }).notNull(),
 	category: mysqlEnum(['comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','music','autographs','disney_pins']).notNull(),
 	condition: mysqlEnum(['mint','near_mint','excellent','very_good','good','fair','poor']).notNull(),
-	grade: decimal({ precision: 5, scale: 2 }).default('0').notNull(),
+	grade: varchar({ length: 50 }).default('0').notNull(),
 	certificationCompany: varchar({ length: 50 }),
 	estimatedValue: decimal({ precision: 12, scale: 2 }),
 	description: text().notNull(),
