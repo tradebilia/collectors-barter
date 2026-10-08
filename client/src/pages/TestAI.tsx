@@ -428,15 +428,18 @@ function formatCoverageCategory(category: string): string {
 }
 
 function SourceCoverageTracker() {
-  const pendingIds = useMemo<Set<string>>(() => new Set(SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter').map((source) => source.id)), []);
   const categories = useMemo(() => SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {
-    const activeSources = TEST_AI_SOURCE_APPLICABILITY.filter((source) => {
+    const applicableSources = TEST_AI_SOURCE_APPLICABILITY.filter((source) => {
       const applies = source.categories === '*' || source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category);
-      return applies && !pendingIds.has(source.sourceId) && !isSandboxSiteBlockedSource(source.sourceId);
+      return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
-    const pendingSources = SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category));
-    return { category, activeSources, pendingSources };
-  }), [pendingIds]);
+    const activeSources = applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
+    const pendingSourceIds = Array.from(new Set([
+      ...applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match').map((source) => source.sourceId),
+      ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
+    ]));
+    return { category, activeSources, pendingSourceIds };
+  }), []);
 
   const sourceLabel = (sourceId: string, fallback: string) => DATA_SOURCES[sourceId]?.label ?? PERMISSION_PENDING_SOURCE_REGISTRY[sourceId]?.label ?? SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === sourceId)?.label ?? fallback;
 
@@ -455,16 +458,16 @@ function SourceCoverageTracker() {
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Source coverage tracker</p>
       <h2 id="source-coverage-heading" className="mt-1 text-xl font-bold text-white">Which sources apply to each category?</h2>
-      <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. “Matched” means a source-test result is recorded; “Active” means it is currently listed as applicable but has not yet been marked matched.</p>
+      <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. The matching section is reserved for confirmed test matches; every other applicable source is listed as pending until it is confirmed.</p>
     </div>
     <div className="grid gap-5 xl:grid-cols-2">
       <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/10 p-4">
-        <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-emerald-200">Current matching sources</h3><p className="mt-1 text-[11px] text-slate-500">Live or currently applicable sources, grouped by category.</p></div><span className="rounded-full bg-emerald-900/40 px-2 py-1 text-[10px] font-bold text-emerald-300">{TEST_AI_SOURCE_APPLICABILITY.filter((source) => !pendingIds.has(source.sourceId)).length} registered</span></div>
-        <div className="space-y-4">{categories.map(({ category, activeSources }) => <div key={`active-${category}`}><h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-300">{formatCoverageCategory(category)}</h4><div className="grid gap-2 sm:grid-cols-2">{activeSources.length ? activeSources.map((source) => sourcePill(source.sourceId, category, false)) : <p className="text-[11px] text-slate-500">No current source is registered.</p>}</div></div>)}</div>
+        <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-emerald-200">Current matching sources</h3><p className="mt-1 text-[11px] text-slate-500">Only sources with a confirmed matching test result appear here.</p></div><span className="rounded-full bg-emerald-900/40 px-2 py-1 text-[10px] font-bold text-emerald-300">{categories.reduce((total, entry) => total + entry.activeSources.length, 0)} matched</span></div>
+        <div className="space-y-4">{categories.map(({ category, activeSources }) => <div key={`active-${category}`}><h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-300">{formatCoverageCategory(category)}</h4><div className="grid gap-2 sm:grid-cols-2">{activeSources.length ? activeSources.map((source) => sourcePill(source.sourceId, category, false)) : <p className="text-[11px] text-slate-500">No confirmed matching source yet.</p>}</div></div>)}</div>
       </div>
       <div className="rounded-xl border border-amber-800/50 bg-amber-950/10 p-4">
-        <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-amber-200">Pending sources to check</h3><p className="mt-1 text-[11px] text-slate-500">Sources that still need adapter, permission, contract, or evidence review.</p></div><span className="rounded-full bg-amber-900/40 px-2 py-1 text-[10px] font-bold text-amber-300">{SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter').length} pending</span></div>
-        <div className="space-y-4">{categories.map(({ category, pendingSources }) => <div key={`pending-${category}`}><h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-300">{formatCoverageCategory(category)}</h4><div className="grid gap-2 sm:grid-cols-2">{pendingSources.length ? pendingSources.map((source) => sourcePill(source.id, category, true)) : <p className="text-[11px] text-slate-500">No pending source is registered.</p>}</div></div>)}</div>
+        <div className="mb-4 flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-amber-200">Pending sources to check</h3><p className="mt-1 text-[11px] text-slate-500">Includes active sources without a confirmed match plus sources still needing adapter, permission, contract, or evidence review.</p></div><span className="rounded-full bg-amber-900/40 px-2 py-1 text-[10px] font-bold text-amber-300">{new Set(categories.flatMap((entry) => entry.pendingSourceIds)).size} pending</span></div>
+        <div className="space-y-4">{categories.map(({ category, pendingSourceIds }) => <div key={`pending-${category}`}><h4 className="mb-2 text-xs font-bold uppercase tracking-wider text-slate-300">{formatCoverageCategory(category)}</h4><div className="grid gap-2 sm:grid-cols-2">{pendingSourceIds.length ? pendingSourceIds.map((sourceId) => sourcePill(sourceId, category, true)) : <p className="text-[11px] text-slate-500">No pending source is registered.</p>}</div></div>)}</div>
       </div>
     </div>
   </section>;
