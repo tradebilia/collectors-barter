@@ -1,4 +1,5 @@
 import { ENV } from './_core/env';
+import type { NgcCensusCriteria } from '../shared/testAiCriteria';
 
 type ApifyRunResult<T> = { status: 'success'; items: T[]; message: string } | { status: 'error'; items: T[]; message: string };
 
@@ -48,11 +49,28 @@ export type NgcCensusRecord = {
   populationTotal?: number; gradeBreakdown?: Record<string, number>; sourceUrl?: string; scrapedAt?: string;
 };
 
-export function lookupNgcCensus(keywords: string, gradingCompany: string): Promise<ApifyRunResult<NgcCensusRecord>> {
+export async function lookupNgcCensus(criteria: NgcCensusCriteria, gradingCompany: string): Promise<ApifyRunResult<NgcCensusRecord>> {
   if (gradingCompany.trim().toUpperCase() !== 'NGC') {
-    return Promise.resolve({ status: 'error', items: [], message: 'NGC Census is only available for coins graded by NGC.' });
+    return { status: 'error', items: [], message: 'NGC Census is only available for coins graded by NGC.' };
   }
-  return runApifyActor<NgcCensusRecord>('crawlerbros/ngc-coin-census-scraper', {
-    mode: 'searchCoinSeries', keywords: keywords.trim().slice(0, 160), includeGradeBreakdown: true, maxItems: 5,
+  const result = await runApifyActor<NgcCensusRecord>('crawlerbros/ngc-coin-census-scraper', {
+    mode: 'searchCoinSeries',
+    keywords: criteria.keywords,
+    ...(criteria.yearFrom ? { yearFrom: criteria.yearFrom, yearTo: criteria.yearTo ?? criteria.yearFrom } : {}),
+    designation: criteria.designation,
+    includeGradeBreakdown: true,
+    maxItems: 100,
   });
+  if (result.status !== 'success') return result;
+
+  const expectedDenomination = criteria.denomination.replace(/\s+/g, '').toUpperCase();
+  const filteredItems = result.items.filter((row) => {
+    const rowYear = Number(row.numericYear ?? String(row.year ?? '').match(/\d{4}/)?.[0]);
+    const rowDenomination = String(row.denomination ?? '').replace(/\s+/g, '').toUpperCase();
+    const rowDesignation = String(row.designation ?? '').trim().toUpperCase();
+    return (!criteria.yearFrom || rowYear === criteria.yearFrom)
+      && (!expectedDenomination || rowDenomination === expectedDenomination)
+      && (!criteria.designation || rowDesignation === criteria.designation.toUpperCase());
+  });
+  return { ...result, items: filteredItems, message: `Apify actor returned ${filteredItems.length} matching NGC Census record${filteredItems.length === 1 ? '' : 's'}.` };
 }

@@ -55,10 +55,19 @@ function detailText(details: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
-/** Builds the exact NGC Census search format from a graded coin's structured fields. */
-export function buildNgcCensusQuery(itemDetails: unknown, grade: unknown, gradingCompany: unknown): string {
+export type NgcCensusCriteria = {
+  searchTerms: string;
+  keywords: string;
+  yearFrom?: number;
+  yearTo?: number;
+  designation: string;
+  denomination: string;
+};
+
+/** Builds the exact displayed NGC Census criteria and the actor-compatible filters. */
+export function buildNgcCensusCriteria(itemDetails: unknown, grade: unknown, gradingCompany: unknown): NgcCensusCriteria | null {
   const details = parseTestAiDetails(itemDetails);
-  if (String(gradingCompany ?? '').trim().toUpperCase() !== 'NGC') return '';
+  if (String(gradingCompany ?? '').trim().toUpperCase() !== 'NGC') return null;
 
   const value = (keys: string[]) => detailText(details, keys);
   const year = value(['year']);
@@ -71,12 +80,21 @@ export function buildNgcCensusQuery(itemDetails: unknown, grade: unknown, gradin
     ? `$${denominationAmount}`
     : denominationAmount;
   const gradeLetters = String(grade ?? '').trim().match(/^[A-Za-z]+/)?.[0]?.toUpperCase() ?? '';
-
-  return [year, variety, `${composition}${denomination}`, gradeLetters]
+  const numericYear = /^\d{4}$/.test(year) ? Number(year) : undefined;
+  const keywords = variety || value(['series', 'coinSeries', 'name']);
+  const searchTerms = [year, variety, `${composition}${denomination}`, gradeLetters]
     .filter(Boolean)
     .join(' ')
     .slice(0, 160)
     .trim();
+
+  if (!searchTerms || !keywords || !gradeLetters) return null;
+  return { searchTerms, keywords, yearFrom: numericYear, yearTo: numericYear, designation: gradeLetters, denomination };
+}
+
+/** Builds the exact NGC Census search format from a graded coin's structured fields. */
+export function buildNgcCensusQuery(itemDetails: unknown, grade: unknown, gradingCompany: unknown): string {
+  return buildNgcCensusCriteria(itemDetails, grade, gradingCompany)?.searchTerms ?? '';
 }
 
 /** Builds an ordered, title-independent identity term list for request previews and adapters. */
