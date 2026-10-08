@@ -7,7 +7,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildNgcCensusQuery, buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
@@ -3490,18 +3490,18 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
 function NgcCensusPanel({ item }: { item: SelectedItem }) {
-  const censusKeywords = useMemo(() => {
-    const structured = buildStructuredItemQuery('coins', item.itemDetails, [], item.itemType);
-    const title = item.title.replace(/\bNGC\s+(?:cert(?:ification)?\s*)?#?\s*[A-Z0-9-]+\b/ig, '').trim();
-    return [...new Set([structured, title].filter(Boolean))].join(' ').slice(0, 160);
-  }, [item.itemDetails, item.itemType, item.title]);
+  const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
+  const censusKeywords = useMemo(
+    () => buildNgcCensusQuery(item.itemDetails, item.grade, gradingCompany),
+    [item.itemDetails, item.grade, gradingCompany],
+  );
   const censusQuery = trpc.testAI.getNgcCensusData.useQuery(
-    { keywords: censusKeywords },
-    { enabled: !!censusKeywords && item.category === 'coins' },
+    { keywords: censusKeywords, gradingCompany },
+    { enabled: !!censusKeywords && item.category === 'coins' && gradingCompany.toUpperCase() === 'NGC' },
   );
   return <div className="space-y-2 rounded border border-violet-700/30 bg-violet-950/20 p-2">
     <div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase text-violet-200">NGC Census Population (via Apify)</p>{censusQuery.isLoading && <Spinner className="w-3 h-3" />}</div>
-    <p className="text-[9px] text-gray-500">Population context only; it does not verify an individual certificate or set value. Search: <span className="text-violet-200">{censusKeywords || 'No coin identity fields supplied'}</span></p>
+    <p className="text-[9px] text-gray-500">NGC-graded coins only. Population context does not verify an individual certificate or set value. Search: <span className="text-violet-200">{censusKeywords || 'No complete NGC coin criteria supplied'}</span></p>
     {censusQuery.data?.status === 'error' && <p className="text-[10px] text-red-300">{censusQuery.data.message}</p>}
     {censusQuery.data?.status === 'success' && !censusQuery.data.items.length && <p className="text-[10px] text-gray-400">No matching NGC census rows returned.</p>}
     {censusQuery.data?.items.slice(0, 5).map((row: any, index: number) => <div key={`${row.populationId ?? row.coinId ?? index}`} className="rounded bg-gray-900/50 p-2 text-[10px]"><p className="font-semibold text-white">{row.displayName || row.coinSeriesName || 'NGC census record'}</p><p className="text-gray-400">Total population: <strong className="text-violet-200">{row.populationTotal ?? 'N/A'}</strong>{row.designation ? ` · ${row.designation}` : ''}</p>{row.gradeBreakdown && <p className="mt-1 break-words text-gray-500">{Object.entries(row.gradeBreakdown).slice(0, 8).map(([grade, count]) => `${grade}: ${count}`).join(' · ')}</p>}</div>)}

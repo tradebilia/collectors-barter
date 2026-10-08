@@ -55,6 +55,30 @@ function detailText(details: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
+/** Builds the exact NGC Census search format from a graded coin's structured fields. */
+export function buildNgcCensusQuery(itemDetails: unknown, grade: unknown, gradingCompany: unknown): string {
+  const details = parseTestAiDetails(itemDetails);
+  if (String(gradingCompany ?? '').trim().toUpperCase() !== 'NGC') return '';
+
+  const value = (keys: string[]) => detailText(details, keys);
+  const year = value(['year']);
+  const variety = value(['variety']);
+  const composition = value(['composition', 'metal', 'material']).charAt(0).toUpperCase();
+  const country = value(['country', 'issuer']);
+  const denominationRaw = value(['denomination']);
+  const denominationAmount = denominationRaw.replace(/^\s*(?:US\$|USD|\$)\s*/i, '').trim();
+  const denomination = country.toLowerCase() === 'united states' && denominationAmount
+    ? `$${denominationAmount}`
+    : denominationAmount;
+  const gradeLetters = String(grade ?? '').trim().match(/^[A-Za-z]+/)?.[0]?.toUpperCase() ?? '';
+
+  return [year, variety, `${composition}${denomination}`, gradeLetters]
+    .filter(Boolean)
+    .join(' ')
+    .slice(0, 160)
+    .trim();
+}
+
 /** Builds an ordered, title-independent identity term list for request previews and adapters. */
 export function buildStructuredItemQuery(category: string, itemDetails: unknown, extra: Array<string | null | undefined> = [], itemType = ''): string {
   const details = parseTestAiDetails(itemDetails);

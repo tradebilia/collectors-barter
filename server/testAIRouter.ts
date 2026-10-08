@@ -2042,10 +2042,10 @@ export const testAIRouter = router({
     }),
   // Apify-backed NGC Coin Census population context — administrator-only and bounded.
   getNgcCensusData: protectedProcedure
-    .input(z.object({ keywords: z.string().trim().min(2).max(160) }))
+    .input(z.object({ keywords: z.string().trim().min(2).max(160), gradingCompany: z.string().trim().min(1).max(40) }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupNgcCensus(input.keywords);
+      return lookupNgcCensus(input.keywords, input.gradingCompany);
     }),
   // Official PCGS Auction Prices Realized lookup — administrator-only and read-only.
   getPcgsAuctionData: protectedProcedure

@@ -48,7 +48,10 @@ export type NgcCensusRecord = {
   populationTotal?: number; gradeBreakdown?: Record<string, number>; sourceUrl?: string; scrapedAt?: string;
 };
 
-export function lookupNgcCensus(keywords: string): Promise<ApifyRunResult<NgcCensusRecord>> {
+export function lookupNgcCensus(keywords: string, gradingCompany: string): Promise<ApifyRunResult<NgcCensusRecord>> {
+  if (gradingCompany.trim().toUpperCase() !== 'NGC') {
+    return Promise.resolve({ status: 'error', items: [], message: 'NGC Census is only available for coins graded by NGC.' });
+  }
   return runApifyActor<NgcCensusRecord>('crawlerbros/ngc-coin-census-scraper', {
     mode: 'searchCoinSeries', keywords: keywords.trim().slice(0, 160), includeGradeBreakdown: true, maxItems: 5,
   });
