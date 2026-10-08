@@ -44,7 +44,6 @@ describe('internal Test AI source-category applicability policy', () => {
   it('shows active specialist sources in their researched categories while making Goldin and Weiss automatic context searches available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', hasTitle: true }).map((source) => source.sourceId);
     expect(coinIds).toEqual(expect.arrayContaining(['ngc', 'coin_archives', 'cng']));
-    expect(coinIds).not.toContain('greatcollections');
     expect(coinIds).not.toContain('heritage');
     expect(coinIds).not.toContain('rumsey');
 
@@ -60,7 +59,7 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(gameIds).not.toContain('heritage');
     expect(gameIds).not.toContain('swann');
     const autographIds = getEligibleTestAiSources({ category: 'autographs', hasTitle: true }).map((source) => source.sourceId);
-    for (const removed of ['greatcollections', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'heritage']) expect(autographIds).not.toContain(removed);
+    for (const removed of ['university_archives', 'swann', 'rr_auction', 'alexander_historical', 'heritage']) expect(autographIds).not.toContain(removed);
 
     for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
       const sourceIds = getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId);

@@ -12,6 +12,7 @@ import { lookupDhlTracking } from "./dhlTracking";
 import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { lookupNgcCertification } from './ngcCertification';
+import { lookupNgcCensus } from './apifyCoinSources';
 import { lookupNumistaCoin } from './numistaMetadata';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
@@ -2038,6 +2039,13 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupNgcCertification(input.certNumber, input.grade);
+    }),
+  // Apify-backed NGC Coin Census population context — administrator-only and bounded.
+  getNgcCensusData: protectedProcedure
+    .input(z.object({ keywords: z.string().trim().min(2).max(160) }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupNgcCensus(input.keywords);
     }),
   // Official PCGS Auction Prices Realized lookup — administrator-only and read-only.
   getPcgsAuctionData: protectedProcedure

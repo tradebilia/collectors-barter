@@ -2,7 +2,6 @@ export type PermissionPendingMarketSourceId =
   | 'ngc'
   | 'coin_archives'
   | 'cng'
-  | 'greatcollections'
   | 'rumsey'
   | 'cherrystone'
   | 'raritan'
@@ -78,18 +77,6 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     liveTestStatus: 'verified',
     liveTestSummary: 'Two distinct public CNG LOT_ID pages returned explicit Sold For status, identifiers, date, USD price, grade, and buyer-fee wording.',
     permissionNote: 'Awaiting a commercial data-use agreement before any remote retrieval.',
-  },
-  {
-    id: 'greatcollections',
-    label: 'GreatCollections Archive',
-    categories: ['coins'],
-    sourceUrl: 'https://www.greatcollections.com/Auction-Archive/top',
-    purpose: 'Certified-coin auction archive research.',
-    priceBasis: 'unknown',
-    status: 'deferred',
-    liveTestStatus: 'deferred',
-    liveTestSummary: 'Deferred by owner: public item pages gate final price behind Join and the sandbox CAPTCHA/browser path is unavailable. Prior findings are retained for future review.',
-    permissionNote: 'Deferred by owner. Do not test, use login, attempt CAPTCHA, or introduce a remote lookup unless the owner reactivates this source.',
   },
   {
     id: 'rumsey',

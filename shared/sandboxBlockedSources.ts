@@ -5,7 +5,6 @@
  * must not remain selectable while its access contract is unavailable.
  */
 export const SANDBOX_SITE_BLOCKED_SOURCE_IDS = [
-  'greatcollections',
   'heritage',
   'university_archives',
   'swann',

@@ -3480,6 +3480,20 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
 }
 
 // ─── Data Column ─────────────────────────────────────────────────────────────
+function NgcCensusPanel({ item }: { item: SelectedItem }) {
+  const censusQuery = trpc.testAI.getNgcCensusData.useQuery(
+    { keywords: item.title },
+    { enabled: !!item.title && item.category === 'coins' },
+  );
+  return <div className="space-y-2 rounded border border-violet-700/30 bg-violet-950/20 p-2">
+    <div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase text-violet-200">NGC Census Population (via Apify)</p>{censusQuery.isLoading && <Spinner className="w-3 h-3" />}</div>
+    <p className="text-[9px] text-gray-500">Population context only; it does not verify an individual certificate or set value.</p>
+    {censusQuery.data?.status === 'error' && <p className="text-[10px] text-red-300">{censusQuery.data.message}</p>}
+    {censusQuery.data?.status === 'success' && !censusQuery.data.items.length && <p className="text-[10px] text-gray-400">No matching NGC census rows returned.</p>}
+    {censusQuery.data?.items.slice(0, 5).map((row: any, index: number) => <div key={`${row.populationId ?? row.coinId ?? index}`} className="rounded bg-gray-900/50 p-2 text-[10px]"><p className="font-semibold text-white">{row.displayName || row.coinSeriesName || 'NGC census record'}</p><p className="text-gray-400">Total population: <strong className="text-violet-200">{row.populationTotal ?? 'N/A'}</strong>{row.designation ? ` · ${row.designation}` : ''}</p>{row.gradeBreakdown && <p className="mt-1 break-words text-gray-500">{Object.entries(row.gradeBreakdown).slice(0, 8).map(([grade, count]) => `${grade}: ${count}`).join(' · ')}</p>}</div>)}
+  </div>;
+}
+
 function NgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const storedGrade = String(item.grade ?? '').trim();
@@ -3488,10 +3502,15 @@ function NgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
     { certNumber: item.certId || '', grade: storedGrade },
     { enabled: !!item.certId && item.gradingCompany === 'NGC' && !!storedGrade },
   );
+  const censusQuery = trpc.testAI.getNgcCensusData.useQuery(
+    { keywords: item.title },
+    { enabled: !!item.title && item.gradingCompany === 'NGC' },
+  );
   if (!item.certId || item.gradingCompany !== 'NGC') return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
       <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 NGC Cert Lookup</p>
-      <p className="text-gray-500 text-[10px]">Enter an NGC certification number and grade. For MS69, NGC receives certificate plus numeric grade 69.</p>
+      <p className="text-gray-500 text-[10px]">Enter an NGC certification number and grade for individual verification. For MS69, NGC receives certificate plus numeric grade 69.</p>
+      {item.category === 'coins' && <NgcCensusPanel item={item} />}
     </div>
   );
   return (
@@ -3514,6 +3533,13 @@ function NgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
           </div>
         </div>
       )}
+      <div className="space-y-2 rounded border border-violet-700/30 bg-violet-950/20 p-2">
+        <div className="flex items-center justify-between"><p className="text-[10px] font-bold uppercase text-violet-200">NGC Census Population (via Apify)</p>{censusQuery.isLoading && <Spinner className="w-3 h-3" />}</div>
+        <p className="text-[9px] text-gray-500">Population context only; it does not verify this individual certificate or set value.</p>
+        {censusQuery.data?.status === 'error' && <p className="text-[10px] text-red-300">{censusQuery.data.message}</p>}
+        {censusQuery.data?.status === 'success' && !censusQuery.data.items.length && <p className="text-[10px] text-gray-400">No matching NGC census rows returned.</p>}
+        {censusQuery.data?.items.slice(0, 5).map((row: any, index: number) => <div key={`${row.populationId ?? row.coinId ?? index}`} className="rounded bg-gray-900/50 p-2 text-[10px]"><p className="font-semibold text-white">{row.displayName || row.coinSeriesName || 'NGC census record'}</p><p className="text-gray-400">Total population: <strong className="text-violet-200">{row.populationTotal ?? 'N/A'}</strong>{row.designation ? ` · ${row.designation}` : ''}</p>{row.gradeBreakdown && <p className="mt-1 break-words text-gray-500">{Object.entries(row.gradeBreakdown).slice(0, 8).map(([grade, count]) => `${grade}: ${count}`).join(' · ')}</p>}</div>)}
+      </div>
     </div>
   );
 }

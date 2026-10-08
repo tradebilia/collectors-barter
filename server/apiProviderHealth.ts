@@ -4,7 +4,7 @@ import { getMarketNewsFeedRegistry } from "./marketNewsFeeds";
 import { PERMISSION_PENDING_MARKET_SOURCES, type PermissionPendingMarketSource } from "../shared/permissionPendingMarketSources";
 
 const SPECIALIST_PENDING_PROVIDER_IDS = [
-  "specialist_ngc", "specialist_coin_archives", "specialist_cng", "specialist_greatcollections",
+  "specialist_ngc", "specialist_coin_archives", "specialist_cng",
   "specialist_rumsey", "specialist_cherrystone", "specialist_raritan", "specialist_omega_auctions",
   "specialist_bertoia", "specialist_morphy", "specialist_theriaults", "specialist_propstore",
   "specialist_poster_auctions", "specialist_bonhams", "specialist_comicconnect", "specialist_heritage",
@@ -13,7 +13,7 @@ const SPECIALIST_PENDING_PROVIDER_IDS = [
 ] as const;
 
 const SPECIALIST_PROVIDER_ID_BY_SOURCE = {
-  ngc: "specialist_ngc", coin_archives: "specialist_coin_archives", cng: "specialist_cng", greatcollections: "specialist_greatcollections",
+  ngc: "specialist_ngc", coin_archives: "specialist_coin_archives", cng: "specialist_cng",
   rumsey: "specialist_rumsey", cherrystone: "specialist_cherrystone", raritan: "specialist_raritan", omega_auctions: "specialist_omega_auctions",
   bertoia: "specialist_bertoia", morphy: "specialist_morphy", theriaults: "specialist_theriaults", propstore: "specialist_propstore",
   poster_auctions: "specialist_poster_auctions", bonhams: "specialist_bonhams", comicconnect: "specialist_comicconnect", heritage: "specialist_heritage",
