@@ -3,6 +3,7 @@ import { Box, CircleDot, Coins, Gamepad2, Music2, PenLine, Stamp, Tag, Tv } from
 import { trpc } from "@/lib/trpc";
 
 const SUPPLIED_COMING_SOON_SVG_URL = "/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg";
+const SUPPLIED_BOTTOM_STRIP_URL = "/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png";
 const collectorPhrases = [
   "Discover rare finds",
   "Trade with confidence",
@@ -54,6 +55,7 @@ export default function ComingSoon() {
       {/* The supplied SVG artwork is rendered unchanged as the desktop visual layer. */}
       <div className="relative mx-auto hidden aspect-[1810/869] w-full sm:block">
         <img src={SUPPLIED_COMING_SOON_SVG_URL} alt="" aria-hidden="true" className="absolute inset-0 size-full object-contain" />
+        <img src={SUPPLIED_BOTTOM_STRIP_URL} alt="Discover rare finds. Trade with confidence. No trading fees. Trade across categories. Build trust faster. Interactive trading platform. A.I. assisted trade evaluation." className="absolute left-1/2 top-[96%] z-10 block h-auto w-full -translate-x-1/2 -translate-y-1/2" />
 
         <section className="absolute left-1/2 top-[65.5%] h-[5.6%] w-[27%] -translate-x-1/2 -translate-y-1/2" aria-label="Tradebilia launch email signup">
           {submitted ? (

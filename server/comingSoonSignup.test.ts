@@ -7,10 +7,12 @@ describe('Coming Soon exact supplied composition', () => {
     const page = readFileSync(resolve(process.cwd(), 'client/src/pages/ComingSoon.tsx'), 'utf8');
 
     expect(page).toContain('/manus-storage/Tradebilia_Hero_Logo_Fully_Opaque_Large_fc0f5b5b.svg');
-    expect(page).not.toContain('/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png');
+    expect(page).toContain('/manus-storage/pasted_file_wvBASJ_image_bce6bd30.png');
     expect(page).toContain('pointer-events-none');
     expect(page).toContain('aria-label="Tradebilia launch email signup"');
     expect(page).toContain('aspect-[1810/869]');
+    expect(page).toContain('top-[96%]');
+    expect(page).toContain('absolute left-1/2 top-[96%] z-10');
     expect(page).toContain('top-[65.5%]');
     expect(page).toContain('Notify Me');
     expect(page).toContain('h-auto w-full opacity-90');
