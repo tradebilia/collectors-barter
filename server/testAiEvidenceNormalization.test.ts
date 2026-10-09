@@ -144,6 +144,19 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.marketEvidence).toHaveLength(0);
   });
 
+  it('treats a US coin denomination of 1 as 1 Dollar and accepts a containing Numista year range', () => {
+    const summary = normalizeTestAiEvidence({
+      title: '2026 Morgan Dollar',
+      category: 'coins',
+      itemDetails: { country: 'United States', denomination: '1', year: '2026' },
+    }, [
+      { id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', status: 'success', fields: { country: 'United States', denomination: '1 Dollar', year: '2021-2026' } },
+    ]);
+
+    expect(summary.alignedSources[0]?.fields).toEqual(expect.arrayContaining(['Denomination', 'Year']));
+    expect(summary.reviewFlags).toHaveLength(0);
+  });
+
   it('reports unavailable specialist evidence as coverage rather than a false negative conclusion', () => {
     const summary = normalizeTestAiEvidence({ title: 'Transformers Megatron G1', category: 'vintage_toys', itemDetails: { brand: 'Hasbro', toyName: 'Megatron', year: '1984' } }, [
       { id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 3 } },

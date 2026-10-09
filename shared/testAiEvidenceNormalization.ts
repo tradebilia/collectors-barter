@@ -218,6 +218,33 @@ function equivalent(left: string, right: string): boolean {
   return normalized(left) === normalized(right);
 }
 
+function normalizeCoinDenomination(value: string): string {
+  return normalized(value)
+    .replace(/\b(us|u s|united states)\b/g, '')
+    .replace(/\b(dollars?|doll|usd)\b/g, '')
+    .replace(/\$\s*/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function coinYearIncludes(sourceYear: string, listingYear: string): boolean {
+  const target = Number(listingYear);
+  if (!Number.isInteger(target)) return false;
+  const range = sourceYear.match(/\b(\d{4})\s*[-–]\s*(\d{4})\b/);
+  if (range) return target >= Number(range[1]) && target <= Number(range[2]);
+  return false;
+}
+
+function fieldEquivalent(category: string, key: string, listingValue: string, sourceValue: string): boolean {
+  if (category === 'coins' && key === 'denomination') {
+    const left = normalizeCoinDenomination(listingValue);
+    const right = normalizeCoinDenomination(sourceValue);
+    if (left && right && left === right) return true;
+  }
+  if (category === 'coins' && key === 'year' && coinYearIncludes(sourceValue, listingValue)) return true;
+  return equivalent(listingValue, sourceValue);
+}
+
 function platformIncludes(platforms: string, platform: string): boolean {
   const expected = normalized(platform);
   const aliases: Record<string, string[]> = {
@@ -455,7 +482,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
       if (key === 'platform') {
         if (platformIncludes(sourceValue, listingValue)) alignedFields.push(FIELD_LABELS[key]);
         else reviewFlags.push({ kind: 'material', sourceId: source.id, sourceLabel: source.label, field: FIELD_LABELS[key], message: `${source.label} does not list the selected ${FIELD_LABELS[key].toLowerCase()} “${listingValue}”. Review platform and edition before comparing market data.` });
-      } else if (equivalent(listingValue, sourceValue)) {
+      } else if (fieldEquivalent(category, key, listingValue, sourceValue)) {
         alignedFields.push(FIELD_LABELS[key] ?? key);
       } else {
         reviewFlags.push({ kind: 'material', sourceId: source.id, sourceLabel: source.label, field: FIELD_LABELS[key] ?? key, message: `${source.label} reports ${FIELD_LABELS[key] ?? key} “${sourceValue}” while the listing records “${listingValue}”. Review before treating records as comparable.` });
