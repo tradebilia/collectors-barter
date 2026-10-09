@@ -299,6 +299,35 @@ describe('bounded specialist marketplace adapters', () => {
     expect(requestUrl).toContain('%7Cauction_completes_at%3A-1');
   });
 
+  it('preserves an alphanumeric coin grade so an identical Weiss PCGS MS65 lot matches', async () => {
+    const response = new Response(JSON.stringify({
+      total_count: 1,
+      data: [{
+        id: 48137400,
+        auction_id: 1803422,
+        number: '174',
+        name: '1903 Morgan Dollar PCGS MS65',
+        description_html: '1903 United States Morgan Dollar, PCGS MS65.',
+        is_completed: true,
+        leading_bid_amount_cents: 21000,
+        auction: { id: 1803422, name: 'September Coins', is_completed: true, completes_at: 1788998400, currency_code: 'USD' },
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    Object.defineProperty(response, 'url', { value: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots' });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'weiss',
+      title: '1903 Morgan Dollar PCGS MS65',
+      category: 'coins',
+      grade: 'MS65',
+      certificationCompany: 'PCGS',
+      itemDetails: JSON.stringify({ year: '1903', denomination: '1' }),
+    });
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({ grade: 'MS65', certificationCompany: 'PCGS', identityMatched: true });
+    expect(result.context).toHaveLength(0);
+  });
+
   it('reports Weiss HTTP 403 without retrying or displaying a synthetic result', async () => {
     const fetchMock = vi.fn(async () => new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/plain' } }));
     vi.stubGlobal('fetch', fetchMock);

@@ -418,6 +418,8 @@ function extractDate(value: string): string | null {
 function extractGrade(value: string): string | null {
   const match = value.match(/\b(?:NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\s*(?:graded?\s*)?([A-Z]{0,8}\s*\d{1,3}(?:\.\d+)?(?:\+|\s*(?:CAMEO|DCAM|UCAM))?)/i);
   if (match?.[1]) {
+    const gradeLabel = match[1].replace(/\s+/g, '').toUpperCase();
+    if (/^(?:MS|PR|PF|SP|AU|XF|EF|VF|F|G|VG|AG|FR|PO|BN|RB|RD)\d{1,3}(?:\.\d+)?(?:\+|CAMEO|DCAM|UCAM)?$/.test(gradeLabel)) return gradeLabel;
     const numericGrade = match[1].match(/\d{1,3}(?:\.\d+)?/)?.[0];
     if (numericGrade) return numericGrade;
   }
