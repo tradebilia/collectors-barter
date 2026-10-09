@@ -36,6 +36,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("const SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS = new Set(['ngc'])");
     expect(source).toContain('!SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id)');
     expect(source).toContain('SANDBOX_SPECIALIST_SOURCES');
+    expect(source).toContain("source.id !== 'ngc' && !isSandboxSiteBlockedSource(source.id)");
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
