@@ -1413,6 +1413,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
     && String(auction?.grade ?? '').replace(/\s+/g, '').toUpperCase() === targetAuctionGrade,
   );
   const auctionContextOnly = auctions.filter((auction: any) => !analyzerCandidates.includes(auction));
+  const historicalRowsLabel = `${auctions.length} historical sale${auctions.length === 1 ? '' : 's'} loaded`;
 
   if (!item.certId || item.gradingCompany !== 'PCGS') return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
@@ -1454,13 +1455,17 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
           )}
         </div>
       )}
-      <div className="space-y-2 rounded bg-gray-900/40 p-2">
-        <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — completed sales</p>
+      <div id={`pcgs-history-${side}`} className="space-y-2 rounded bg-gray-900/40 p-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — historical sales</p>
+          {auctions.length > 0 && <a href={`#pcgs-history-rows-${side}`} className="text-[9px] font-semibold text-cyan-300 underline underline-offset-2">Jump to loaded rows</a>}
+        </div>
         <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All history when needed. Signed eBay final prices can enter the analyzer; auction rows without a disclosed all-in price remain visible as market context so hammer and buyer-premium totals are not mixed.</p>
-        {auctionData?.status === 'success' && <div className="space-y-1"><p className="rounded border border-emerald-700/30 bg-emerald-900/10 px-2 py-1 text-[10px] text-emerald-300">{auctions.length} historical sale{auctions.length === 1 ? '' : 's'} loaded{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}.</p><p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[9px] text-cyan-100">{exactGradeAnalyzerCandidates.length} signed eBay completed sale{exactGradeAnalyzerCandidates.length === 1 ? '' : 's'} match the target {targetAuctionGrade || 'certified'} grade and are analyzer candidates; {Math.max(0, analyzerCandidates.length - exactGradeAnalyzerCandidates.length)} signed different-grade record{analyzerCandidates.length - exactGradeAnalyzerCandidates.length === 1 ? '' : 's'} remain historical context.</p>{auctionContextOnly.length > 0 && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">{auctionContextOnly.length} auction record{auctionContextOnly.length === 1 ? '' : 's'} remain context pending all-in price confirmation.</p>}</div>}
+        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-3 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Valuation candidates</p><p className="font-bold text-cyan-200">{exactGradeAnalyzerCandidates.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">The rows are loaded and shown below. Context-only rows are not lost; they are excluded from direct valuation because PCGS does not confirm the buyer-premium/all-in treatment, or the row lacks the signed eBay evidence and exact target-grade evidence required by the analyzer.</p></div>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
         {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">PCGS did not return detailed historical sale rows for this item.</p>}
+        <div id={`pcgs-history-rows-${side}`} className="space-y-2">
         {auctions.map((auction: any, index: number) => (
           <div key={`${auction.date}-${auction.lotNumV2 || auction.lotNo || index}`} className="border-b border-gray-700/30 pb-2 last:border-0 last:pb-0">
             <div className="flex items-start justify-between gap-2">
@@ -1473,6 +1478,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
             <p className={`mt-1 text-[8px] font-semibold ${exactGradeAnalyzerCandidates.includes(auction) ? 'text-emerald-300' : 'text-amber-300'}`}>{exactGradeAnalyzerCandidates.includes(auction) ? 'Analyzer candidate — signed PCGS eBay completed-sale record at the target grade; final identity, recency, duplicate, and comparable gates still apply.' : analyzerCandidates.includes(auction) ? `Historical context — signed PCGS eBay completed sale at ${auction.grade || 'an unidentified'} grade; excluded from direct valuation when it differs from the target grade.` : 'Market context only — PCGS does not confirm buyer-premium treatment for this auction price.'}</p>
           </div>
         ))}
+        </div>
         {auctionData?.status === 'success' && <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[9px] text-gray-300">All returned auction fields</summary><pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[8px] text-gray-400">{JSON.stringify(auctionData.data, null, 2)}</pre></details>}
       </div>
     </div>

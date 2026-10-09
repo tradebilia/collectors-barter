@@ -152,6 +152,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Context only');
   });
 
+  it('makes PCGS historical rows visible without loosening conservative valuation rules', () => {
+    expect(source).toContain('historicalRowsLabel');
+    expect(source).toContain('Jump to loaded rows');
+    expect(source).toContain('Valuation candidates');
+    expect(source).toContain('The rows are loaded and shown below. Context-only rows are not lost');
+    expect(source).toContain('id={`pcgs-history-rows-${side}`}');
+  });
+
   it('exposes full Cardsight pricing, population, marketplace, and time-series details for review', () => {
     expect(source).toContain('Full pricing details');
     expect(source).toContain('Pricing time series');
