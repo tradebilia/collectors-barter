@@ -149,6 +149,37 @@ describe('PCGS certification adapter', () => {
     expect(result.data?.auctions[0]).toMatchObject({ service: 'PCGS', grade: 'MS70', price: 67 });
   });
 
+  it('still follows View All when the grade-history response omits the PCGS item number', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '536910', CertNo: '57208479', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '536910', CertNo: '57208479', Grade: 'PR70DCAM', Name: '2015-W $1 Silver Eagle, DCAM' }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({
+        data: [{
+          GradingServiceName: 'PCGS',
+          DisplayGrade: 'PR70DCAM',
+          FormattedSaleDate: 'Sep-2024',
+          AuctionFirmName: 'eBay',
+          AuctionSaleName: 'eBay Sales',
+          LotNumber: '266987999184',
+          ItemIDString: '266987999184',
+          SEOLotTitle: '2015-w-1-silver-eagle-dcam',
+          SpecNo: '536910',
+          Price: 81,
+        }],
+      }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsAuctionResults('57208479', { PCGS_API_TOKEN: 'configured-token' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.historyScope).toBe('pcgs_public_view_all');
+    expect(result.data?.pcgsNo).toBe('536910');
+    expect(result.data?.auctions).toHaveLength(1);
+    expect(fetchMock.mock.calls[3][0]).toBe('https://www.pcgs.com/auctionprices/loaddetails');
+    expect(String(fetchMock.mock.calls[3][1]?.body)).toContain('searchModel.SpecNo=536910');
+  });
+
   it('uses the secondary key only after a certification request times out', async () => {
     const fetchMock = vi.fn()
       .mockRejectedValueOnce(new Error('The operation timed out'))

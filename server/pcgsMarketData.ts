@@ -87,7 +87,11 @@ function mapAuctionRecords(value: unknown): PcgsAuctionRecord[] {
 
 function parseGradeNumber(grade: unknown): { gradeNo: number; plusGrade: boolean } | null {
   const text = String(grade ?? '').trim();
-  const match = text.match(/(\d{1,2})(?:\.0)?\s*(\+)?$/);
+  // PCGS labels may include a designation after the numeric grade, e.g.
+  // PR70DCAM or MS70RD. The grade field is already provider-labelled, so
+  // extract the first 1–2 digit numeric grade rather than requiring it at the
+  // end of the string.
+  const match = text.match(/(\d{1,2})(?:\.0)?\s*(\+)?/);
   if (!match) return null;
   const gradeNo = Number(match[1]);
   return Number.isInteger(gradeNo) ? { gradeNo, plusGrade: Boolean(match[2]) } : null;
@@ -314,7 +318,18 @@ export async function lookupPcgsAuctionResults(certNumber: string, env: PcgsEnv 
           const gradeUrl = `https://api.pcgs.com/publicapi/coindetail/GetAPRByGrade?PCGSNo=${encodeURIComponent(String(pcgsNo))}&GradeNo=${grade.gradeNo}&PlusGrade=${grade.plusGrade ? 'true' : 'false'}&NumberOfRecords=${PCGS_MAX_AUCTION_RECORDS}`;
           const itemApr = await fetchPcgsJsonWithTimeoutFallback(gradeUrl, env);
           if (itemApr.response.ok && !providerPayloadError(itemApr.payload)) {
-            record = itemApr.payload;
+            // GetAPRByGrade responses do not always repeat the item identity.
+            // Preserve CoinFacts identity so the final public View All fallback
+            // cannot be skipped merely because this response omitted PCGSNo.
+            record = {
+              ...itemApr.payload,
+              PCGSNo: itemApr.payload.PCGSNo ?? pcgsNo,
+              CertNo: itemApr.payload.CertNo ?? facts.payload.CertNo ?? normalizedCertNumber,
+              Name: itemApr.payload.Name ?? facts.payload.Name ?? facts.payload.CoinName,
+              Grade: itemApr.payload.Grade ?? facts.payload.Grade ?? facts.payload.GradeDescription,
+              Year: itemApr.payload.Year ?? facts.payload.Year,
+              Denomination: itemApr.payload.Denomination ?? facts.payload.Denomination,
+            };
             auctions = mapAuctionRecords(record.Auctions);
             historyScope = 'pcgs_number_grade';
           }
