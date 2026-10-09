@@ -416,6 +416,7 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'sports cards:the_card_api': 'match',
   'sports cards:sirius_sports_auctions': 'match',
   'coins:sold_comps': 'match',
+  'coins:ebay_active': 'match',
 };
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;

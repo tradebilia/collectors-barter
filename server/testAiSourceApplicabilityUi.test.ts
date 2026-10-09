@@ -22,6 +22,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'comics:comicconnect': 'match'");
     expect(source).toContain("'comics:goldin': 'match'");
     expect(source).toContain("'coins:sold_comps': 'match'");
+    expect(source).toContain("'coins:ebay_active': 'match'");
     expect(source).toContain("'sports cards:goldin': 'match'");
     expect(source).toContain("'sports cards:sirius_sports_auctions': 'match'");
     expect(source).toContain('border-green-400');
