@@ -601,11 +601,16 @@ export default function AddInventory() {
                           const colSpan = fieldConfig?.colSpan || 'half';
                           const colSpanClass = getColSpanClass(colSpan, requiredColumns);
                           const fieldValue = formData[field.name as keyof typeof formData];
-                          const isPcgsCoinGrade = field.name === 'grade'
-                            && formData.category === 'coins'
+                          const isCoinGrade = field.name === 'grade' && formData.category === 'coins';
+                          const isPcgsCoinGrade = isCoinGrade
                             && String(formData.gradingCompany || '').trim().toUpperCase() === 'PCGS';
-                          const renderedField = isPcgsCoinGrade
-                            ? { ...field, inputType: 'text' as const, notes: 'Enter a PCGS label such as MS65 or MS65+' }
+                          const renderedField = isCoinGrade
+                            ? {
+                                ...field,
+                                inputType: 'text' as const,
+                                maxLength: 8,
+                                notes: isPcgsCoinGrade ? 'Enter a PCGS label such as MS65 or MS65+' : field.notes,
+                              }
                             : field;
                           
                           return (

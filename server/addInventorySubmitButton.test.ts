@@ -37,4 +37,10 @@ describe('Add Inventory submit action', () => {
     expect(source).toContain('{ enabled: isDraftMode && draftId !== null }');
     expect(source).not.toContain('{ draftId: draftId || 0 }');
   });
+
+  it('gives coin Grade fields room for eight-character labels without changing other categories', () => {
+    expect(source).toContain("const isCoinGrade = field.name === 'grade' && formData.category === 'coins';");
+    expect(source).toContain('maxLength: 8');
+    expect(source).toContain('const renderedField = isCoinGrade');
+  });
 });
