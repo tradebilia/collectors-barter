@@ -244,7 +244,7 @@ describe('bounded specialist marketplace adapters', () => {
     }
   });
 
-  it('runs one capped public Weiss completed-lot search, preserves final hammer bids, and retains non-completed rows as context-only', async () => {
+  it('runs one capped public Weiss completed-lot search, admits matched hammer bids, and retains non-completed rows as context-only', async () => {
     const response = new Response(JSON.stringify({
       total_count: 2,
       data: [{
@@ -284,13 +284,13 @@ describe('bounded specialist marketplace adapters', () => {
       buyerPremiumIncluded: false,
       buyerPremiumPercentage: null,
       currency: 'USD',
-      priceBasis: 'realized',
+      priceBasis: 'closed',
       url: 'https://weiss.auction/auctions/1803422/lots/48137391',
-      valuationEligible: false,
+      valuationEligible: true,
     });
     expect(result.context).toHaveLength(1);
     expect(result.context[0]).toMatchObject({ completed: false, price: null, valuationEligible: false });
-    expect(result.messages.join(' ')).toMatch(/final hammer bids; buyer premium is not added/i);
+    expect(result.messages.join(' ')).toMatch(/passed deterministic completed-sale and identity checks and are valuation candidates/i);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const requestUrl = String(fetchMock.mock.calls[0]?.[0]);
     expect(requestUrl).toContain('page_number=1');
@@ -324,7 +324,7 @@ describe('bounded specialist marketplace adapters', () => {
       itemDetails: JSON.stringify({ year: '1903', denomination: '1' }),
     });
     expect(result.sales).toHaveLength(1);
-    expect(result.sales[0]).toMatchObject({ grade: 'MS65', certificationCompany: 'PCGS', identityMatched: true });
+    expect(result.sales[0]).toMatchObject({ grade: 'MS65', certificationCompany: 'PCGS', identityMatched: true, valuationEligible: true });
     expect(result.context).toHaveLength(0);
   });
 

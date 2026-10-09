@@ -975,7 +975,7 @@ function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput,
       date,
       grade,
       certificationCompany,
-      priceBasis: completed ? 'realized' : 'unknown',
+      priceBasis: completed ? 'closed' : 'unknown',
       buyerPremiumIncluded: completed ? false : null,
       winningBid: completed ? winningBid : null,
       buyerPremiumPercentage: null,
@@ -985,8 +985,8 @@ function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput,
         ? 'The public Weiss result did not provide completed lot and auction flags, completed date, positive final leading bid, and explicit USD currency together.'
         : !identity.matched
           ? identity.reason ?? 'Identity could not be confirmed.'
-          : 'Context-only pending source-specific signed-admission validation.',
-      valuationEligible: false,
+          : null,
+      valuationEligible: completed && identity.matched,
     };
     return record;
   });
@@ -996,7 +996,7 @@ function parseWeissPublicSearchResponse(input: SpecialistMarketplaceLookupInput,
     status: 'success',
     sales,
     context: records.filter((record) => !record.completed || !record.identityMatched),
-    messages: [`Weiss ran one public completed-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale and identity checks. Displayed prices are the returned final hammer bids; buyer premium is not added. All records remain context-only and cannot affect valuation or the final AI conclusion.`],
+    messages: [`Weiss ran one public completed-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale and identity checks and are valuation candidates. Displayed prices are the returned final hammer bids; buyer premium is not added. Incomplete or identity-mismatched records remain context-only and cannot affect valuation.`],
   };
 }
 

@@ -61,7 +61,7 @@ function pcgsSale(overrides: Record<string, unknown> = {}) {
 
 describe('server-owned analysis market evidence normalization', () => {
   it('keeps an explicit completed-sale status and price-basis contract for every valuation-capable adapter', () => {
-    const expectedSources = ['sold_comps', '130point', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'pcgs_auction_results'];
+    const expectedSources = ['sold_comps', '130point', 'the_card_api', 'cardsight_ai', 'lelands', 'pristine_auction', 'collect_auction', 'sirius_sports_auctions', 'pcgs_auction_results', 'weiss'];
     for (const sourceId of expectedSources) {
       const contract = COMPLETED_SALE_SOURCE_DEFAULTS[sourceId];
       expect(contract, `${sourceId} must declare a completed-sale contract`).toBeDefined();
