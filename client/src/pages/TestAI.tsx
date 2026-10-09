@@ -204,9 +204,9 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     label: 'PCGS CoinFacts',
     group: 'Grading',
     icon: '🪙',
-    provides: ['item_details', 'cert_info', 'population_report', 'current_prices'],
+    provides: ['item_details', 'cert_info', 'population_report', 'current_prices', 'historic_prices'],
     status: 'live' as const,
-    description: 'Official PCGS certification, population, price-guide context, images, and certification-matched Auction Prices Realized',
+    description: 'Official PCGS certification, population report, guide value, images, and certification-matched historical Auction Prices Realized; qualifying dated sale rows can support analyzer valuation',
   },
   numista: {
     id: 'numista',
