@@ -232,6 +232,34 @@ describe('PCGS certification adapter', () => {
     expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer secondary-token' } }));
   });
 
+  it('alternates the starting credential for consecutive live certification requests', async () => {
+    const previousPrimary = process.env.PCGS_API_TOKEN;
+    const previousSecondary = process.env.PCGS_API_TOKEN_SECONDARY;
+    process.env.PCGS_API_TOKEN = 'round-robin-primary';
+    process.env.PCGS_API_TOKEN_SECONDARY = 'round-robin-secondary';
+    const fetchMock = vi.fn().mockResolvedValue(okJson({
+      IsValidRequest: true,
+      ServerMessage: 'Request successful',
+      PCGSNo: '98836',
+      CertNo: 'round-robin-cert',
+      Name: 'Round Robin Test Coin',
+    }));
+    global.fetch = fetchMock as typeof fetch;
+
+    try {
+      await lookupPcgsCertification('round-robin-cert-1');
+      await lookupPcgsCertification('round-robin-cert-2');
+
+      expect(fetchMock.mock.calls[0][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer round-robin-primary' } }));
+      expect(fetchMock.mock.calls[1][1]).toEqual(expect.objectContaining({ headers: { Authorization: 'bearer round-robin-secondary' } }));
+    } finally {
+      if (previousPrimary === undefined) delete process.env.PCGS_API_TOKEN;
+      else process.env.PCGS_API_TOKEN = previousPrimary;
+      if (previousSecondary === undefined) delete process.env.PCGS_API_TOKEN_SECONDARY;
+      else process.env.PCGS_API_TOKEN_SECONDARY = previousSecondary;
+    }
+  });
+
   it.each([401, 403, 500])('does not use the secondary key for an HTTP %s response', async (status) => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: false, status, json: async () => ({ ServerMessage: 'provider failure' }) });
     global.fetch = fetchMock as typeof fetch;

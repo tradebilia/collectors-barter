@@ -41,6 +41,23 @@ const PCGS_AUCTION_CACHE_TTL_MS = 10 * 60 * 1000;
 const pcgsAuctionCache = new Map<string, { expiresAt: number; result: PcgsAuctionLookupResult }>();
 const pcgsAuctionInFlight = new Map<string, Promise<PcgsAuctionLookupResult>>();
 
+// Live requests alternate their starting credential so normal traffic is
+// distributed across both PCGS keys. Explicit env objects used by tests keep
+// the primary-first order so those tests remain deterministic.
+let nextLiveCredentialIndex = 0;
+
+function pcgsCredentialOrder(env: PcgsEnv): string[] {
+  const primaryToken = env.PCGS_API_TOKEN;
+  const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
+  if (!primaryToken) return [];
+  if (!secondaryToken || secondaryToken === primaryToken) return [primaryToken];
+
+  const tokens = [primaryToken, secondaryToken];
+  const startIndex = env === process.env ? nextLiveCredentialIndex : 0;
+  if (env === process.env) nextLiveCredentialIndex = (nextLiveCredentialIndex + 1) % tokens.length;
+  return [tokens[startIndex], tokens[(startIndex + 1) % tokens.length]];
+}
+
 function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
 }
@@ -153,18 +170,15 @@ async function requestPcgsPublicViewAllHistory(pcgsNo: string, token: string) {
 }
 
 async function lookupPcgsPublicViewAllHistory(pcgsNo: string, env: PcgsEnv) {
-  const primaryToken = env.PCGS_API_TOKEN;
-  if (!primaryToken) throw new Error('PCGS API token not configured');
+  const tokens = pcgsCredentialOrder(env);
+  if (!tokens.length) throw new Error('PCGS API token not configured');
   try {
-    const primaryResult = await requestPcgsPublicViewAllHistory(pcgsNo, primaryToken);
-    if (primaryResult.status !== 429) return primaryResult;
-    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
-    if (!secondaryToken || secondaryToken === primaryToken) return primaryResult;
-    return requestPcgsPublicViewAllHistory(pcgsNo, secondaryToken);
+    const firstResult = await requestPcgsPublicViewAllHistory(pcgsNo, tokens[0]);
+    if (firstResult.status !== 429 || !tokens[1]) return firstResult;
+    return requestPcgsPublicViewAllHistory(pcgsNo, tokens[1]);
   } catch (error) {
-    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
-    if (!secondaryToken || secondaryToken === primaryToken || !isPcgsTimeoutError(error)) throw error;
-    return requestPcgsPublicViewAllHistory(pcgsNo, secondaryToken);
+    if (!tokens[1] || !isPcgsTimeoutError(error)) throw error;
+    return requestPcgsPublicViewAllHistory(pcgsNo, tokens[1]);
   }
 }
 
@@ -188,18 +202,15 @@ function isPcgsRateLimitResponse(response: Response): boolean {
 }
 
 async function fetchPcgsJsonWithTimeoutFallback(url: string, env: PcgsEnv): Promise<{ response: Response; payload: Record<string, any> }> {
-  const primaryToken = env.PCGS_API_TOKEN;
-  if (!primaryToken) throw new Error('PCGS API token not configured');
+  const tokens = pcgsCredentialOrder(env);
+  if (!tokens.length) throw new Error('PCGS API token not configured');
   try {
-    const primaryResult = await fetchPcgsJson(url, primaryToken);
-    if (!isPcgsRateLimitResponse(primaryResult.response)) return primaryResult;
-    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
-    if (!secondaryToken || secondaryToken === primaryToken) return primaryResult;
-    return fetchPcgsJson(url, secondaryToken);
+    const firstResult = await fetchPcgsJson(url, tokens[0]);
+    if (!isPcgsRateLimitResponse(firstResult.response) || !tokens[1]) return firstResult;
+    return fetchPcgsJson(url, tokens[1]);
   } catch (error) {
-    const secondaryToken = env.PCGS_API_TOKEN_SECONDARY;
-    if (!secondaryToken || secondaryToken === primaryToken || !isPcgsTimeoutError(error)) throw error;
-    return fetchPcgsJson(url, secondaryToken);
+    if (!tokens[1] || !isPcgsTimeoutError(error)) throw error;
+    return fetchPcgsJson(url, tokens[1]);
   }
 }
 
