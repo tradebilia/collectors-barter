@@ -418,6 +418,7 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'coins:sold_comps': 'match',
   'coins:ebay_active': 'match',
   'coins:goldin': 'match',
+  'coins:weiss': 'match',
 };
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
