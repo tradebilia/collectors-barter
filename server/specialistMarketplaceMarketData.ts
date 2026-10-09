@@ -437,9 +437,10 @@ function extractCertificationCompany(value: string): string | null {
 function extractCertificationNumber(value: string, company: string | null): string | null {
   if (!company) return null;
   const escapedCompany = company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const labeled = value.match(new RegExp(`\\b(?:${escapedCompany})\\s*(?:cert(?:ification)?(?:\\s*(?:number|no\\.?|#))?|#)\\s*[:#]?\\s*(\\d{6,12})\\b`, 'i'))?.[1];
+  const identifier = '(\\d{6,12}(?:-\\d{1,4})?)';
+  const labeled = value.match(new RegExp(`\\b(?:${escapedCompany})\\s*(?:cert(?:ification)?(?:\\s*(?:number|no\\.?|#))?|#)\\s*[:#]?\\s*${identifier}\\b`, 'i'))?.[1];
   if (labeled) return labeled;
-  return value.match(/\b(?:cert(?:ification)?(?:\s*(?:number|no\.?|#))?|cert\.?)[\s:#-]*(\d{6,12})\b/i)?.[1] ?? null;
+  return value.match(/\b(?:cert(?:ification)?(?:\s*(?:number|no\.?|#))?|cert\.?)\s*[:#-]*(\d{6,12}(?:-\d{1,4})?)\b/i)?.[1] ?? null;
 }
 
 function extractLotId(value: string, url: string | null): string | null {
@@ -1024,7 +1025,7 @@ async function enrichGoldinSearchRecords(input: SpecialistMarketplaceLookupInput
     const combined = `${detail.title} ${detail.description}`.trim();
     const company = extractCertificationCompany(combined);
     const certNumber = extractCertificationNumber(combined, company);
-    const gradeSource = combined.replace(/\b(?:cert(?:ification)?(?:\s*(?:number|no\.?|#))?|cert\.?)[\s:#-]*\d{6,12}\b/gi, '');
+    const gradeSource = combined.replace(/\b(?:cert(?:ification)?(?:\s*(?:number|no\.?|#))?|cert\.?)\s*[:#-]*\d{6,12}(?:-\d{1,4})?\b/gi, '');
     let verifiedGrade: string | null = null;
     let verifiedName: string | null = null;
     if (input.category === 'coins' && company === 'PCGS' && certNumber) {
@@ -1037,10 +1038,10 @@ async function enrichGoldinSearchRecords(input: SpecialistMarketplaceLookupInput
     }
     const title = detail.title || record.title;
     const description = detail.description || record.description;
-    const pcgsCoinGrade = input.category === 'coins' && company === 'PCGS'
+    const coinGrade = input.category === 'coins' && (company === 'PCGS' || company === 'NGC')
       ? gradeSource.match(/\b(?:grade(?:d)?\s*)?(MS|PR|PF|AU|XF|EF|VF|F|G|PO|AG|FR|BU|SP)\s*(\d{1,3}(?:\.\d+)?\+?)/i)
       : null;
-    const grade = verifiedGrade || (pcgsCoinGrade ? `${pcgsCoinGrade[1].toUpperCase()}${pcgsCoinGrade[2]}` : null) || extractGrade(gradeSource) || record.grade;
+    const grade = verifiedGrade || (coinGrade ? `${coinGrade[1].toUpperCase()}${coinGrade[2]}` : null) || extractGrade(gradeSource) || record.grade;
     const certificationCompany = company || record.certificationCompany;
     const identity = identityReview(input, title, `${description || ''} ${verifiedName || ''}`, grade, certificationCompany);
     const normalizedInputGrade = normalize(input.grade ?? '').replace(/\s+/g, '');

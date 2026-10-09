@@ -159,6 +159,29 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.messages.join(' ')).toMatch(/opened 1 public lot-detail page/i);
   });
 
+  it('preserves a dashed NGC certificate number and does not treat its suffix as the grade', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [{
+        lot_id: 'goldin-ngc-dashed-cert', meta_slug: '1888-morgan-ngc-ms66-dashed-cert',
+        title: 'U.S. 1888 Morgan $1 Silver - MS66 NGC', status: 'Completed_Sold', current_price: 500,
+        buyer_premium: 22, end_timestamp: '2026-04-01T00:00:00Z',
+      }] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ lot: {
+        title: 'U.S. 1888 Morgan $1 Silver - MS66 NGC',
+        description: 'NGC certification number 8698198-098; graded MS66.',
+      } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin', title: '1888 Morgan $1 Silver', category: 'coins', grade: 'MS66', certificationCompany: 'NGC',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '1', year: '1888', variety: 'Morgan' }),
+    });
+
+    const enrichedRecord = [...result.sales, ...result.context].find((record) => record.certificateNumber === '8698198-098');
+    expect(enrichedRecord).toMatchObject({ grade: 'MS66', certificationCompany: 'NGC', description: expect.stringContaining('8698198-098') });
+    expect(enrichedRecord?.exclusionReason ?? '').not.toMatch(/001|098/);
+  });
+
   it('adds all recorded comic signers to the strict Goldin query before signer-free fallbacks', () => {
     const input = {
       sourceId: 'goldin' as const,
