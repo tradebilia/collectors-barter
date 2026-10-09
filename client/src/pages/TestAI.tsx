@@ -213,9 +213,9 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     label: 'Numista Coin Catalog',
     group: 'Reference',
     icon: '🪙',
-    provides: ['item_details'],
+    provides: ['item_details', 'current_prices'],
     status: 'live' as const,
-    description: 'Structured Numista coin identification, issuer, denomination, year, composition, and design metadata — no catalogue prices or valuation evidence',
+    description: 'Structured Numista coin identification plus exact-grade Greysheet catalogue guide values; guide values are secondary evidence capped at 25% and are never completed sales',
   },
   ngc: {
     id: 'ngc',
@@ -2011,15 +2011,16 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
     category: item.category,
     title: item.title,
     itemDetails: item.itemDetails ?? undefined,
+    grade: item.grade ?? undefined,
   }, { enabled: supported && !!item.title, retry: false });
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Coin items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
     <MarketplaceQueryBanner item={item} query={data?.data?.query ?? null} isLoading={isLoading} />
-    <p className="text-gray-500 text-[10px]">Structured-field Numista catalogue metadata · issuer, year, denomination, composition, and design reference only · no catalogue prices or sales enter valuation</p>
+    <p className="text-gray-500 text-[10px]">Structured-field Numista metadata plus exact-grade Greysheet catalogue guide value · guide evidence is capped at 25% and never treated as a completed sale</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
-    {data?.status === 'success' && data.data && <div className="flex gap-3 rounded bg-gray-900/40 p-2">{data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-20 rounded border border-gray-700/40 object-cover" />}<div className="min-w-0 flex-1 space-y-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}</div></div>}
+    {data?.status === 'success' && data.data && <div className="flex gap-3 rounded bg-gray-900/40 p-2">{data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-20 rounded border border-gray-700/40 object-cover" />}<div className="min-w-0 flex-1 space-y-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.guideValue && <div className="rounded border border-sky-700/40 bg-sky-950/25 p-2 text-[10px]"><p className="font-semibold uppercase text-sky-300">Catalogue guide value · secondary evidence</p><p className="mt-1 text-gray-200">{data.data.guideGrade} · {data.data.guideCurrency} {Number(data.data.guideValue).toLocaleString()} · {data.data.guideSource ?? 'Numista catalogue'}</p><p className="mt-1 text-gray-500">Exact grade match only. Maximum analyzer influence: 25%. This is not a sale and does not increase completed-sale counts.</p></div>}{Array.isArray(data.data.guidePrices) && data.data.guidePrices.length > 0 && <details className="rounded border border-gray-700/30 p-2 text-[10px]"><summary className="cursor-pointer text-gray-400">All returned catalogue grades ({data.data.guidePrices.length})</summary><div className="mt-1 grid grid-cols-2 gap-1">{data.data.guidePrices.map((price: any) => <span key={`${price.grade}-${price.currency}`} className="text-gray-300">{price.grade}: {price.currency} {Number(price.value).toLocaleString()}</span>)}</div></details>}{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}</div></div>}
   </div>;
 }
 
@@ -2190,7 +2191,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     itemDetails: item.itemDetails ?? undefined,
   }, { enabled: enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsSearchCriteria.releaseTitle.length >= 2 });
   const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
-  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
+  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined, grade: item.grade ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
   const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
   const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });
@@ -2393,7 +2394,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
     if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
     if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
-    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', status: evidenceStatus(numistaQuery.data), fields: factualFields(numistaQuery.data, 'numista'), message: numistaQuery.data?.message ?? null });
+    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_candidate' : 'reference_context', status: evidenceStatus(numistaQuery.data), fields: { ...factualFields(numistaQuery.data, 'numista'), guideValue: numistaQuery.data?.data?.guideValue, guideGrade: numistaQuery.data?.data?.guideGrade, guideRecordedSales: 0, guideTotalRecordedSales: 0 }, message: numistaQuery.data?.message ?? null });
     if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataQueryResult.data), fields: factualFields(wikidataQueryResult.data, 'wikidata'), message: wikidataQueryResult.data?.message ?? null });
     if (enabledSources.has('cgc')) add({ id: 'cgc', label: 'Parse.bot CGC Comics', kind: 'certification', status: evidenceStatus(cgcQuery.data), fields: { title: cgcQuery.data?.data?.title, issueNumber: cgcQuery.data?.data?.issueNumber, year: cgcQuery.data?.data?.year, publisher: cgcQuery.data?.data?.publisher, certificationCompany: 'CGC', grade: cgcQuery.data?.data?.grade, labelCategory: cgcQuery.data?.data?.labelCategory }, message: cgcQuery.data?.message ?? null });
     if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });

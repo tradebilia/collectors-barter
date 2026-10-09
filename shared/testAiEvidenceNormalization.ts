@@ -426,7 +426,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
 
   for (const source of sources) {
     const guideValue = Number(source.fields?.guideValue);
-    if (source.status === 'success' && source.id === 'comic_book_realm' && Number.isFinite(guideValue) && guideValue > 0) {
+    if (source.status === 'success' && (source.id === 'comic_book_realm' || source.id === 'numista') && Number.isFinite(guideValue) && guideValue > 0) {
       guideAnchors.push({
         sourceId: source.id,
         sourceLabel: source.label,

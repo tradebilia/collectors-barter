@@ -1908,7 +1908,7 @@ export function buildMarketProfile(
   aggregateMetrics?: { median?: number; min?: number; max?: number; count?: number; confidence?: ConfidenceLevel } | null,
   now = new Date(),
   identityGate?: ComparableIdentityGate | null,
-  guideAnchor?: { value: number; grade?: string | null; recordedSales?: number | null; lastSaleDate?: string | null } | null,
+  guideAnchor?: { sourceId?: string | null; sourceLabel?: string | null; value: number; grade?: string | null; recordedSales?: number | null; lastSaleDate?: string | null } | null,
 ): MarketProfile {
   const nowMs = now.getTime();
   const selection = selectBalancedComparableSales(target, sales, now, MAX_VALUATION_COMPARABLES);
@@ -2014,12 +2014,14 @@ export function buildMarketProfile(
   const weightedValue = weightedDenominator > 0 ? Math.round(filtered.reduce((sum, { match }) => sum + match.price * match.weight, 0) / weightedDenominator) : null;
   const primaryValue = median !== null ? Math.round(median) : null;
   const guideAnchorValue = guideAnchor && Number.isFinite(guideAnchor.value) && guideAnchor.value > 0 ? Math.round(guideAnchor.value) : null;
-  // Guide estimates are not dated sales. They receive a capped secondary
-  // weight based only on the amount of accepted sale evidence: 5% with a
-  // well-supported sample, 10% with a preliminary 3–4-sale sample, and 15%
-  // when one or two sales are present. They never raise evidence quality or
-  // satisfy the completed-sale thresholds on their own.
-  const guideAnchorWeightPct = guideAnchorValue === null ? 0 : accepted.length >= 5 ? 5 : accepted.length >= 3 ? 10 : accepted.length > 0 ? 15 : 0;
+  // Guide estimates are not dated sales. Numista/Greysheet receives a
+  // separately capped secondary weight: 10% with five or more accepted sales,
+  // 15% with three or four, and at most 25% with one or two. It never raises
+  // evidence quality or satisfies completed-sale thresholds on its own.
+  const isNumistaGuide = guideAnchor?.sourceId === 'numista';
+  const guideAnchorWeightPct = guideAnchorValue === null ? 0 : isNumistaGuide
+    ? accepted.length >= 5 ? 10 : accepted.length >= 3 ? 15 : accepted.length > 0 ? 25 : 0
+    : accepted.length >= 5 ? 5 : accepted.length >= 3 ? 10 : accepted.length > 0 ? 15 : 0;
   const guideAdjustedValue = primaryValue !== null && guideAnchorWeightPct > 0
     ? Math.round(primaryValue * (1 - guideAnchorWeightPct / 100) + guideAnchorValue! * (guideAnchorWeightPct / 100))
     : primaryValue;
@@ -2061,7 +2063,7 @@ export function buildMarketProfile(
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
-  if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The exact-grade Comic Book Realm guide anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% as secondary context; it was not treated as a dated sale.`);
+  if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The exact-grade ${guideAnchor?.sourceLabel ?? (isNumistaGuide ? 'Numista/Greysheet' : 'guide')} anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% as secondary context; it was not treated as a dated sale.`);
   if (guideAnchorValue !== null && guideAnchorWeightPct === 0) valuationWarnings.push(`The exact-grade guide anchor of $${guideAnchorValue.toLocaleString()} was retained in the audit but did not change the value because no accepted completed-sale sample exists.`);
   if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
   if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);

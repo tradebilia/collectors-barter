@@ -100,6 +100,8 @@ export function buildAnalysisSnapshot(input: {
     input.now ?? new Date(),
     input.identityGate,
     input.evidenceSummary?.guideAnchors?.[0] ? {
+      sourceId: input.evidenceSummary.guideAnchors[0].sourceId,
+      sourceLabel: input.evidenceSummary.guideAnchors[0].sourceLabel,
       value: input.evidenceSummary.guideAnchors[0].value,
       grade: input.evidenceSummary.guideAnchors[0].grade,
       recordedSales: input.evidenceSummary.guideAnchors[0].recordedSales,

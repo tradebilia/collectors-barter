@@ -36,6 +36,16 @@ type NumistaTypeDetail = NumistaTypeSummary & {
   type?: { name?: string };
 };
 
+type NumistaIssue = {
+  id?: number;
+  year?: number;
+  gregorian_year?: number;
+  comment?: string;
+  mint_letter?: string;
+};
+
+type NumistaPrice = { grade?: string; price?: number | string };
+
 type NumistaLookup = {
   status: 'success' | 'not_found' | 'error';
   message?: string;
@@ -47,12 +57,19 @@ type NumistaLookup = {
     query: string;
     matchNote: string;
     facts: NumistaFact[];
+    guideValue?: number | null;
+    guideCurrency?: string | null;
+    guideGrade?: string | null;
+    guideSource?: string | null;
+    guideIssueId?: number | null;
+    guidePrices?: Array<{ grade: string; value: number; currency: string }>;
   };
 };
 
 const NUMISTA_API_BASE = 'https://api.numista.com/api/v3';
 const NUMISTA_TIMEOUT_MS = 10_000;
 const NUMISTA_CANDIDATE_LIMIT = 6;
+const NUMISTA_ISSUE_LIMIT = 80;
 
 function text(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
@@ -89,6 +106,7 @@ export function buildNumistaSearchCriteria(category: string, itemDetails: unknow
   denomination: string;
   mintMark: string;
   variety: string;
+  grade: string;
 } {
   const details = parseTestAiDetails(itemDetails);
   const country = firstDetail(details, ['country', 'issuingCountry', 'issuer']);
@@ -98,9 +116,31 @@ export function buildNumistaSearchCriteria(category: string, itemDetails: unknow
   const variety = firstDetail(details, ['variety', 'coinType', 'series', 'design', 'type']);
   const metal = firstDetail(details, ['metal', 'composition']);
   const coinName = firstDetail(details, ['coinName', 'name', 'title', 'series']);
+  const grade = firstDetail(details, ['grade', 'condition', 'certifiedGrade']);
   const structuredParts = [country, denomination, coinName, variety, metal, mintMark].filter(Boolean);
   const query = [...new Set(structuredParts)].join(' ').slice(0, 180).trim() || fallbackTitle.trim().slice(0, 180);
-  return { query, year, country, denomination, mintMark, variety };
+  return { query, year, country, denomination, mintMark, variety, grade };
+}
+
+function normalizeGuideGrade(value: unknown): string {
+  return text(value).toUpperCase().replace(/[\s-]+/g, '').replace(/[^A-Z0-9]/g, '');
+}
+
+function parsePositivePrice(value: unknown): number | null {
+  const parsed = typeof value === 'number' ? value : Number(String(value ?? '').replace(/[^0-9.\-]/g, ''));
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function gradeMatches(targetGrade: string, catalogueGrade: string): boolean {
+  const target = normalizeGuideGrade(targetGrade);
+  const candidate = normalizeGuideGrade(catalogueGrade);
+  return Boolean(target && candidate && target === candidate);
+}
+
+function issueMatchesCriteria(issue: NumistaIssue, criteria: ReturnType<typeof buildNumistaSearchCriteria>): boolean {
+  if (!criteria.year) return true;
+  const year = Number(criteria.year);
+  return [issue.year, issue.gregorian_year].some((value) => Number.isFinite(Number(value)) && Number(value) === year);
 }
 
 function providerHeaders(apiKey: string, clientName: string, clientId: string, token?: string): Record<string, string> {
@@ -186,12 +226,38 @@ function detailFacts(detail: NumistaTypeDetail): NumistaFact[] {
   return facts;
 }
 
+async function loadGuidePrices(
+  typeId: number,
+  criteria: ReturnType<typeof buildNumistaSearchCriteria>,
+  headers: Record<string, string>,
+  fetchImpl: FetchLike,
+): Promise<{ issueId: number | null; prices: Array<{ grade: string; value: number; currency: string }>; error?: string }> {
+  if (!criteria.year) return { issueId: null, prices: [] };
+  const issues = await fetchJson(`${NUMISTA_API_BASE}/types/${encodeURIComponent(String(typeId))}/issues`, headers, fetchImpl);
+  if (!issues.ok) return { issueId: null, prices: [], error: formatProviderError('Numista', issues.status, issues.data) };
+  const issue = (Array.isArray(issues.data) ? issues.data : [])
+    .filter((candidate): candidate is NumistaIssue => Boolean(candidate && typeof candidate === 'object'))
+    .filter((candidate) => issueMatchesCriteria(candidate, criteria))
+    .slice(0, NUMISTA_ISSUE_LIMIT)[0];
+  if (!issue?.id) return { issueId: null, prices: [] };
+
+  const priceResult = await fetchJson(`${NUMISTA_API_BASE}/types/${encodeURIComponent(String(typeId))}/issues/${encodeURIComponent(String(issue.id))}/prices`, headers, fetchImpl);
+  if (!priceResult.ok) return { issueId: Number(issue.id), prices: [], error: formatProviderError('Numista', priceResult.status, priceResult.data) };
+  const currency = text(priceResult.data?.currency) || 'EUR';
+  const rawPrices = (Array.isArray(priceResult.data?.prices) ? priceResult.data.prices : []) as NumistaPrice[];
+  const prices = rawPrices
+    .map((row: NumistaPrice) => ({ grade: text(row.grade), value: parsePositivePrice(row.price), currency }))
+    .filter((row): row is { grade: string; value: number; currency: string } => Boolean(row.grade && row.value));
+  return { issueId: Number(issue.id), prices };
+}
+
 /**
- * Returns Numista catalogue metadata only. It intentionally excludes prices,
- * sale history, valuation, authenticity, and ownership claims.
+ * Returns Numista catalogue metadata plus an exact-grade catalogue guide value
+ * when the selected issue exposes one. These are not completed sales and are
+ * admitted to the analyzer only through its capped secondary-guide contract.
  */
 export async function lookupNumistaCoin(
-  input: { category: string; title?: string; itemDetails?: unknown },
+  input: { category: string; title?: string; itemDetails?: unknown; grade?: string },
   fetchImpl: FetchLike = fetch,
   env: NumistaEnv = process.env,
 ): Promise<NumistaLookup> {
@@ -204,7 +270,8 @@ export async function lookupNumistaCoin(
   if (!apiKey || !clientId || !clientName) {
     return { status: 'error', message: 'Numista coin reference is not configured with secure API credentials.' };
   }
-  const criteria = buildNumistaSearchCriteria(input.category, input.itemDetails, input.title ?? '');
+    const parsedCriteria = buildNumistaSearchCriteria(input.category, input.itemDetails, input.title ?? '');
+    const criteria = { ...parsedCriteria, grade: text(input.grade) || parsedCriteria.grade };
   if (!criteria.query && !criteria.year) {
     return { status: 'error', message: 'Enter structured coin fields such as country, denomination, year, mint mark, or variety before requesting Numista.' };
   }
@@ -232,6 +299,8 @@ export async function lookupNumistaCoin(
     const usableDetails = details.filter((detail): detail is NumistaTypeDetail => Boolean(detail?.id && detail.title));
     const selected = [...usableDetails].sort((a, b) => scoreDetail(b, criteria) - scoreDetail(a, criteria))[0];
     if (!selected || !selected.id || !selected.title) return { status: 'not_found', message: 'Numista returned candidate types, but no usable coin detail record could be read.' };
+    const guide = await loadGuidePrices(Number(selected.id), criteria, providerHeaders(apiKey, clientName, clientId, auth.token!), fetchImpl);
+    const exactGuide = criteria.grade ? guide.prices.find((price) => gradeMatches(criteria.grade, price.grade)) ?? null : null;
     const queryDescription = [criteria.query, criteria.year ? `year=${criteria.year}` : ''].filter(Boolean).join(' · ');
     return {
       status: 'success',
@@ -241,8 +310,18 @@ export async function lookupNumistaCoin(
         sourceUrl: text(selected.url) || `https://en.numista.com/catalogue/index.php?mode=types&id=${selected.id}`,
         imageUrl: text(selected.obverse?.picture) || text(selected.obverse?.thumbnail) || text(selected.obverse_thumbnail) || null,
         query: queryDescription,
-        matchNote: 'Structured-field Numista catalogue match. This is identification/reference metadata only; Numista catalogue records do not enter Tradebilia valuation as completed sales.',
+        matchNote: exactGuide
+          ? `Structured-field Numista catalogue match. Exact grade ${exactGuide.grade} has a ${exactGuide.currency} ${exactGuide.value.toLocaleString()} catalogue guide value from Greysheet; it is secondary guide evidence, not a completed sale.`
+          : guide.error
+            ? `Structured-field Numista catalogue match. Catalogue guide prices could not be read: ${guide.error}`
+            : 'Structured-field Numista catalogue match. No exact selected grade/value pair was returned; catalogue records do not enter Tradebilia valuation as completed sales.',
         facts: detailFacts(selected),
+        guideValue: exactGuide?.value ?? null,
+        guideCurrency: exactGuide?.currency ?? null,
+        guideGrade: exactGuide?.grade ?? null,
+        guideSource: exactGuide ? 'Greysheet via Numista' : null,
+        guideIssueId: guide.issueId,
+        guidePrices: guide.prices,
       },
     };
   } catch {

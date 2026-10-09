@@ -2081,6 +2081,7 @@ export const testAIRouter = router({
       category: z.string().trim().min(1).max(80),
       title: z.string().trim().max(240).optional(),
       itemDetails: z.string().max(8_000).optional(),
+      grade: z.string().trim().max(50).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
