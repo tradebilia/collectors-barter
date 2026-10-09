@@ -422,6 +422,10 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
 
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
 
+// Sources intentionally omitted from this manual coverage list. This does
+// not remove them from the sandbox source registry or alter their lookup code.
+const SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS = new Set(['ngc']);
+
 function normalizeCoverageCategory(category: string): string {
   return category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
 }
@@ -437,9 +441,9 @@ function SourceCoverageTracker() {
       return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
     const activeSources = applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
-    const pendingSourceIds = Array.from(new Set([
+      const pendingSourceIds = Array.from(new Set([
       ...applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match').map((source) => source.sourceId),
-      ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
+      ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
     ]));
     return { category, activeSources, pendingSourceIds };
   }), []);

@@ -32,6 +32,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('403 error');
   });
 
+  it('omits NGC Auction Central from the pending coverage tracker without removing the source registry', () => {
+    expect(source).toContain("const SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS = new Set(['ngc'])");
+    expect(source).toContain('!SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id)');
+    expect(source).toContain('SANDBOX_SPECIALIST_SOURCES');
+  });
+
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
     expect(source).toContain("label: 'TCGdex Pokémon Catalog'");
     expect(source).toContain("status: 'live' as const");
