@@ -127,11 +127,36 @@ describe('bounded specialist marketplace adapters', () => {
       itemDetails: JSON.stringify({ comicTitle: 'X-Men', issueNumber: '137', publicationYear: '1980' }),
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string).search.keyword).toBe('X-Men 137 1980');
     expect(result.sales).toHaveLength(1);
     expect(result.query).toBe('X-Men 137 1980 CGC 9.8 → X-Men 137 1980');
     expect(result.messages.join(' ')).toMatch(/checked 2 bounded query variants/i);
+  });
+
+  it('opens Goldin lot details and extracts a PCGS certificate number from the description', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [{
+        lot_id: 'goldin-morgan-cert', meta_slug: '1896-morgan-dollar-pcgs-ms63-detail',
+        title: 'U.S. 1896 Morgan $1 Silver Coin', status: 'Completed_Sold', current_price: 80,
+        buyer_premium: 22, end_timestamp: '2026-04-01T00:00:00Z',
+      }] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ lot: {
+        title: 'U.S. 1896 Morgan $1 Silver Coin',
+        description: 'PCGS-certified coin, certification number 12345678, grade MS63.',
+      } }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ CertNo: '12345678', Name: '1896 Morgan Dollar', Grade: 'MS63' }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin', title: 'U.S. 1896 Morgan $1 Silver', category: 'coins', grade: 'MS63', certificationCompany: 'PCGS',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '1', year: '1896', variety: 'Morgan' }),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const enrichedRecord = [...result.sales, ...result.context].find((record) => record.certificateNumber === '12345678');
+    expect(enrichedRecord).toMatchObject({ grade: 'MS63', certificationCompany: 'PCGS', description: expect.stringContaining('certification number') });
+    expect(result.messages.join(' ')).toMatch(/opened 1 public lot-detail page/i);
   });
 
   it('adds all recorded comic signers to the strict Goldin query before signer-free fallbacks', () => {

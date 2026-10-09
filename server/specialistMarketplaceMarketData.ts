@@ -11,6 +11,7 @@ import { ENV } from './_core/env';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { lookupHakes } from './hakesMarketData';
 import { lookupLcg, LCG_GALLERY_URL, LCG_MAX_RECORDS } from './lcgMarketData';
+import { lookupPcgsCertification } from './pcgsMarketData';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -41,6 +42,7 @@ export type SpecialistMarketplaceRecord = {
   date: string | null;
   grade: string | null;
   certificationCompany: string | null;
+  certificateNumber?: string | null;
   priceBasis: 'realized' | 'closed' | 'unknown';
   buyerPremiumIncluded: boolean | null;
   winningBid: number | null;
@@ -430,6 +432,14 @@ function extractGrade(value: string): string | null {
 
 function extractCertificationCompany(value: string): string | null {
   return value.match(/\b(NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\b/i)?.[1]?.toUpperCase() ?? null;
+}
+
+function extractCertificationNumber(value: string, company: string | null): string | null {
+  if (!company) return null;
+  const escapedCompany = company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const labeled = value.match(new RegExp(`\\b(?:${escapedCompany})\\s*(?:cert(?:ification)?(?:\\s*(?:number|no\\.?|#))?|#)\\s*[:#]?\\s*(\\d{6,12})\\b`, 'i'))?.[1];
+  if (labeled) return labeled;
+  return value.match(/\b(?:cert(?:ification)?(?:\s*(?:number|no\.?|#))?|cert\.?)[\s:#-]*(\d{6,12})\b/i)?.[1] ?? null;
 }
 
 function extractLotId(value: string, url: string | null): string | null {
@@ -983,7 +993,82 @@ function publicGoldinRecordUrl(value: unknown): string | null {
     : null;
 }
 
-function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput, payload: GoldinPublicSearchResponse): SpecialistMarketplaceLookupResult {
+async function fetchGoldinPublicLotDetail(url: string): Promise<{ title: string; description: string } | null> {
+  const slug = publicGoldinLotSlug(url);
+  if (!slug) return null;
+  try {
+    const response = await fetch(`${GOLDIN_PUBLIC_LOT_ENDPOINT}${encodeURIComponent(slug)}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'Tradebilia Sandbox Read-Only Specialist Adapter/1.0' },
+      redirect: 'error',
+      signal: AbortSignal.timeout(SPECIALIST_MARKETPLACE_TIMEOUT_MS),
+    });
+    if (!response.ok || !/json/i.test(response.headers.get('content-type') ?? '')) return null;
+    const payload = await response.json() as GoldinPublicLotResponse;
+    return {
+      title: text(payload.lot?.title),
+      description: text(payload.lot?.description),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function enrichGoldinSearchRecords(input: SpecialistMarketplaceLookupInput, records: SpecialistMarketplaceRecord[]): Promise<{ records: SpecialistMarketplaceRecord[]; detailCount: number; pcgsCount: number }> {
+  let detailCount = 0;
+  let pcgsCount = 0;
+  const enriched = await Promise.all(records.map(async (record) => {
+    if (!record.url) return record;
+    const detail = await fetchGoldinPublicLotDetail(record.url);
+    if (!detail) return record;
+    detailCount += 1;
+    const combined = `${detail.title} ${detail.description}`.trim();
+    const company = extractCertificationCompany(combined);
+    const certNumber = extractCertificationNumber(combined, company);
+    const gradeSource = combined.replace(/\b(?:cert(?:ification)?(?:\s*(?:number|no\.?|#))?|cert\.?)[\s:#-]*\d{6,12}\b/gi, '');
+    let verifiedGrade: string | null = null;
+    let verifiedName: string | null = null;
+    if (input.category === 'coins' && company === 'PCGS' && certNumber) {
+      const pcgs = await lookupPcgsCertification(certNumber);
+      if (pcgs.status === 'success' && pcgs.data) {
+        pcgsCount += 1;
+        verifiedGrade = text(pcgs.data.grade) || null;
+        verifiedName = text(pcgs.data.name) || null;
+      }
+    }
+    const title = detail.title || record.title;
+    const description = detail.description || record.description;
+    const pcgsCoinGrade = input.category === 'coins' && company === 'PCGS'
+      ? gradeSource.match(/\b(?:grade(?:d)?\s*)?(MS|PR|PF|AU|XF|EF|VF|F|G|PO|AG|FR|BU|SP)\s*(\d{1,3}(?:\.\d+)?\+?)/i)
+      : null;
+    const grade = verifiedGrade || (pcgsCoinGrade ? `${pcgsCoinGrade[1].toUpperCase()}${pcgsCoinGrade[2]}` : null) || extractGrade(gradeSource) || record.grade;
+    const certificationCompany = company || record.certificationCompany;
+    const identity = identityReview(input, title, `${description || ''} ${verifiedName || ''}`, grade, certificationCompany);
+    const normalizedInputGrade = normalize(input.grade ?? '').replace(/\s+/g, '');
+    const normalizedCandidateGrade = normalize(grade ?? '').replace(/\s+/g, '');
+    const gradeCompatible = Boolean(input.grade && grade && (
+      numericGradesEquivalent(input.grade, grade) || normalizedInputGrade === normalizedCandidateGrade
+    ));
+    const gradeConflict = input.grade && grade && !gradeCompatible
+      ? `Grade conflicts with the selected item (${grade} vs ${input.grade}).`
+      : null;
+    return {
+      ...record,
+      title,
+      description: description || null,
+      grade,
+      certificationCompany,
+      certificateNumber: certNumber,
+      identityMatched: identity.matched && !gradeConflict,
+      matchedTokens: identity.matchedTokens,
+      exclusionReason: gradeConflict || (!identity.matched ? identity.reason ?? 'Identity could not be confirmed.' : record.exclusionReason),
+      valuationEligible: Boolean(record.completed && record.date && record.price != null && record.price > 0 && identity.matched && !gradeConflict),
+      ...(verifiedName ? { auctionName: record.auctionName || `PCGS verified: ${verifiedName}` } : {}),
+    } satisfies SpecialistMarketplaceRecord;
+  }));
+  return { records: enriched, detailCount, pcgsCount };
+}
+
+async function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput, payload: GoldinPublicSearchResponse): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource('goldin')!;
   const lots = Array.isArray(payload.searchalgolia?.lots) ? payload.searchalgolia!.lots.slice(0, SOURCE_RULES.goldin!.recordCap) : [];
   const base = {
@@ -1045,13 +1130,15 @@ function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLookupInput
       valuationEligible,
     } satisfies SpecialistMarketplaceRecord;
   });
-  const sales = records.filter((record) => record.completed && record.identityMatched);
+  const enrichment = await enrichGoldinSearchRecords(input, records);
+  const enrichedRecords = enrichment.records;
+  const sales = enrichedRecords.filter((record) => record.completed && record.identityMatched);
   return {
     ...base,
     status: 'success',
     sales,
-    context: records.filter((record) => !record.completed || !record.identityMatched),
-    messages: [`Goldin ran one anonymous public sold-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. ${sales.length} passed deterministic completed-sale, dated-price, identity, and admission checks. Goldin’s returned dollar winning bids were combined with the returned buyer-premium percentage for the all-in analyzer price. Non-qualifying records remain context-only.`],
+    context: enrichedRecords.filter((record) => !record.completed || !record.identityMatched),
+    messages: [`Goldin ran one anonymous public sold-lot title search capped at ${base.recordCap} candidates and received ${lots.length}. It opened ${enrichment.detailCount} public lot-detail pages for descriptions and certification text${enrichment.pcgsCount ? ` and verified ${enrichment.pcgsCount} PCGS certificate${enrichment.pcgsCount === 1 ? '' : 's'}` : ''}. ${sales.length} passed deterministic completed-sale, dated-price, identity, and admission checks. Goldin’s returned dollar winning bids were combined with the returned buyer-premium percentage for the all-in analyzer price. Non-qualifying records remain context-only.`],
   };
 }
 
@@ -1174,7 +1261,7 @@ async function lookupGoldinPublicSearch(input: SpecialistMarketplaceLookupInput)
       const payload = await response.json() as GoldinPublicSearchResponse;
       const returnedLots = Array.isArray(payload.searchalgolia?.lots) ? payload.searchalgolia!.lots : [];
       if (returnedLots.length === 0 && index < queries.length - 1) continue;
-      const parsed = parseGoldinPublicSearchResponse(input, payload);
+      const parsed = await parseGoldinPublicSearchResponse(input, payload);
       return {
         ...parsed,
         query: queries.slice(0, index + 1).join(' → '),
