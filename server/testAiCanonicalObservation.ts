@@ -41,7 +41,6 @@ type AdapterId =
   | 'alexander_historical'
   | 'goldin'
   | 'weiss'
-  | 'stephen_album'
   | 'nate_sanders'
   | 'tcgplayer_reef'
   | 'comic_book_realm'
@@ -139,7 +138,6 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   alexander_historical: { id: 'alexander_historical', label: 'Alexander Historical Auctions', version: '1.0.0', defaultOriginMarketplace: 'alexander_historical', defaultPriceBasis: 'unknown', completedStatusBasis: 'Alexander Historical completed lot' },
   goldin: { id: 'goldin', label: 'Goldin Video Game Auctions', version: '1.0.0', defaultOriginMarketplace: 'goldin', defaultPriceBasis: 'unknown', completedStatusBasis: 'Goldin Lot Sold record' },
   weiss: { id: 'weiss', label: 'Weiss Auctions', version: '1.0.0', defaultOriginMarketplace: 'weiss', defaultPriceBasis: 'realized', completedStatusBasis: 'Weiss completed-webcast final leading bid' },
-  stephen_album: { id: 'stephen_album', label: 'Stephen Album Rare Coins', version: '1.0.0', defaultOriginMarketplace: 'stephen_album', defaultPriceBasis: 'realized', completedStatusBasis: 'Stephen Album SOLD lot with hammer and buyer-premium separation' },
   nate_sanders: { id: 'nate_sanders', label: 'Nate D. Sanders Auctions', version: '1.0.0', defaultOriginMarketplace: 'nate_sanders', defaultPriceBasis: 'closed', completedStatusBasis: 'Nate D. Sanders closed lot with final price including buyer premium' },
   tcgplayer_reef: { id: 'tcgplayer_reef', label: 'TCGplayer via ReefAPI', version: '1.0.0', defaultOriginMarketplace: 'tcgplayer', defaultPriceBasis: 'sold', completedStatusBasis: 'TCGplayer latest-sale record returned by ReefAPI' },
   comic_book_realm: { id: 'comic_book_realm', label: 'Comic Book Realm CGC Analyzer', version: '1.0.0', defaultOriginMarketplace: 'comic_book_realm', defaultPriceBasis: 'unknown', completedStatusBasis: 'Aggregated CGC guide estimate; never an individual completed sale' },

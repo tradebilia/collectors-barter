@@ -3,11 +3,11 @@ import { SANDBOX_SPECIALIST_SOURCES, getSandboxSpecialistSource, isSandboxSpecia
 import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalObservation } from './testAiCanonicalObservation';
 
 describe('sandbox specialist source activation', () => {
-  it('activates the 15 displayed test sources and excludes HTTP 403-blocked or unapproved sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(20);
+  it('activates the registered test sources and excludes HTTP 403-blocked or unapproved sources', () => {
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(19);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('omega_auctions');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('propstore');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'lcg', 'coin_archives', 'weiss', 'stephen_album', 'nate_sanders', 'tcgplayer_reef']));
+    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'lcg', 'coin_archives', 'weiss', 'nate_sanders', 'tcgplayer_reef']));
     for (const removed of ['university_archives', 'swann', 'heritage', 'rr_auction', 'alexander_historical']) {
       expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain(removed);
       expect(getSandboxSpecialistSource(removed)).toBeNull();
