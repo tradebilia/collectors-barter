@@ -434,6 +434,10 @@ function extractCertificationCompany(value: string): string | null {
   return value.match(/\b(NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\b/i)?.[1]?.toUpperCase() ?? null;
 }
 
+function extractCoinYears(value: string): string[] {
+  return [...value.matchAll(/\b((?:17|18|19|20)\d{2})\b/g)].map((match) => match[1]);
+}
+
 function extractCertificationNumber(value: string, company: string | null): string | null {
   if (!company) return null;
   const escapedCompany = company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -542,11 +546,18 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
     normalize(input.category).replace(/_/g, ' ') === 'comics',
   );
   const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason)) ?? null;
+  const targetCoinYear = normalizedCategory === 'coins' ? text(details.year) : '';
+  const candidateCoinYears = normalizedCategory === 'coins' ? extractCoinYears(title) : [];
+  const coinYearConflict = targetCoinYear && candidateCoinYears.length > 0 && !candidateCoinYears.includes(targetCoinYear)
+    ? `Year conflicts with the selected coin (${candidateCoinYears.join(', ')} vs ${targetCoinYear}).`
+    : null;
   return {
     matchedTokens,
-    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict && !variationConflict,
+    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict && !variationConflict && !coinYearConflict,
     reason: variationConflict
       ? variationConflict
+      : coinYearConflict
+      ? coinYearConflict
       : normalizedCategory === 'sports cards' && !structuredSportsMatch
       ? 'Sports-card player, card number, and year/set identity fields did not match the Goldin title.'
       : !tokenMatch

@@ -182,6 +182,29 @@ describe('bounded specialist marketplace adapters', () => {
     expect(enrichedRecord?.exclusionReason ?? '').not.toMatch(/001|098/);
   });
 
+  it('rejects a different coin year even when Morgan, denomination, grader, and grade match', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ searchalgolia: { lots: [{
+        lot_id: 'goldin-wrong-year', meta_slug: '1881-cc-morgan-ngc-ms66',
+        title: 'U.S. 1881-CC Morgan $1 Silver - MS66 NGC', status: 'Completed_Sold', current_price: 2500,
+        buyer_premium: 22, end_timestamp: '2026-04-01T00:00:00Z',
+      }] } }), { status: 200, headers: { 'content-type': 'application/json' } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ lot: {
+        title: 'U.S. 1881-CC Morgan $1 Silver - MS66 NGC',
+        description: 'NGC certification number 8698198-098; graded MS66.',
+      } }), { status: 200, headers: { 'content-type': 'application/json' } }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'goldin', title: '1888 Morgan $1 Silver', category: 'coins', grade: 'MS66', certificationCompany: 'NGC',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '1', year: '1888', variety: 'Morgan' }),
+    });
+
+    const candidate = [...result.sales, ...result.context][0];
+    expect(candidate).toMatchObject({ identityMatched: false, valuationEligible: false });
+    expect(candidate?.exclusionReason).toMatch(/year conflicts/i);
+  });
+
   it('adds all recorded comic signers to the strict Goldin query before signer-free fallbacks', () => {
     const input = {
       sourceId: 'goldin' as const,
