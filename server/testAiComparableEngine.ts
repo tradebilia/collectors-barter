@@ -196,6 +196,7 @@ export interface MarketProfile {
   guideAnchorValue: number | null;
   guideAnchorWeightPct: number;
   guideAdjustedValue: number | null;
+  guideProvisional: boolean;
   /** Kept as a recency-sensitive diagnostic; never the primary valuation center. */
   weightedValue: number | null;
   median: number | null;
@@ -2013,16 +2014,15 @@ export function buildMarketProfile(
   }, 0);
   const weightedValue = weightedDenominator > 0 ? Math.round(filtered.reduce((sum, { match }) => sum + match.price * match.weight, 0) / weightedDenominator) : null;
   const primaryValue = median !== null ? Math.round(median) : null;
-  // Numista catalogue values are visible in the sandbox for reference, but
-  // never influence a Tradebilia analyzer value. This server-side guard holds
-  // even if a caller bypasses evidence normalization.
-  const valuationGuideAnchor = guideAnchor?.sourceId === 'numista' ? null : guideAnchor;
+  const valuationGuideAnchor = guideAnchor ?? null;
   const guideAnchorValue = valuationGuideAnchor && Number.isFinite(valuationGuideAnchor.value) && valuationGuideAnchor.value > 0 ? Math.round(valuationGuideAnchor.value) : null;
   const guideMatchDescription = valuationGuideAnchor?.matchType === 'mapped' ? 'mapped-grade-band' : 'exact-grade';
-  const guideAnchorWeightPct = guideAnchorValue === null ? 0
-    : accepted.length >= 5 ? 5 : accepted.length >= 3 ? 10 : accepted.length > 0 ? 15 : 0;
-  const guideAdjustedValue = primaryValue !== null && guideAnchorWeightPct > 0
-    ? Math.round(primaryValue * (1 - guideAnchorWeightPct / 100) + guideAnchorValue! * (guideAnchorWeightPct / 100))
+  const guideAnchorWeightPct = guideAnchorValue === null ? 0 : 25;
+  const guideProvisional = guideAnchorValue !== null && primaryValue === null;
+  const guideAdjustedValue = guideAnchorValue !== null
+    ? primaryValue !== null
+      ? Math.round(primaryValue * 0.75 + guideAnchorValue * 0.25)
+      : guideAnchorValue
     : primaryValue;
   const minimum = filtered.length ? Math.round(Math.min(...filtered.map(({ match }) => match.price))) : null;
   const maximum = filtered.length ? Math.round(Math.max(...filtered.map(({ match }) => match.price))) : null;
@@ -2062,8 +2062,8 @@ export function buildMarketProfile(
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
-  if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% as secondary context; it was not treated as a dated sale.`);
-  if (guideAnchorValue !== null && guideAnchorWeightPct === 0) valuationWarnings.push(`The ${guideMatchDescription} guide anchor of $${guideAnchorValue.toLocaleString()} was retained in the audit but did not change the value because no accepted completed-sale sample exists.`);
+  if (guideAnchorValue !== null && guideProvisional) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} estimate of $${guideAnchorValue.toLocaleString()} is the provisional analyzer value because no accepted completed-sale baseline exists; it is not market-supported.`);
+  else if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% to the analyzer blend (75% accepted market value + 25% guide); it was not treated as a dated sale.`);
   if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
   if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);
   if (selectedAcceptedWithAge.length > 0 && selectedAcceptedWithAge.length < 5) valuationWarnings.push('IQR outlier filtering was not applied because fewer than five selected completed sales are available.');
@@ -2115,6 +2115,7 @@ export function buildMarketProfile(
     guideAnchorValue,
     guideAnchorWeightPct,
     guideAdjustedValue,
+    guideProvisional,
     weightedValue,
     median: primaryValue ?? aggregateMetrics?.median ?? null,
     minimum,

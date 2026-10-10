@@ -157,7 +157,7 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.reviewFlags).toHaveLength(0);
   });
 
-  it('retains a documented Numista grade-band mapping as reference context without an analyzer guide anchor', () => {
+  it('retains a documented Numista grade-band mapping as a weighted analyzer guide anchor', () => {
     const summary = normalizeTestAiEvidence({
       title: '1903 Morgan Dollar PCGS MS65',
       category: 'coins',
@@ -175,11 +175,11 @@ describe('normalizeTestAiEvidence', () => {
       },
     }]);
 
-    expect(summary.guideAnchors).toEqual([]);
+    expect(summary.guideAnchors).toEqual([expect.objectContaining({ sourceId: 'numista', value: 430, matchType: 'mapped' })]);
     expect(summary.reviewFlags).toEqual(expect.arrayContaining([expect.objectContaining({
-      kind: 'context', sourceId: 'numista', message: expect.stringContaining('excluded from Tradebilia analyzer valuation'),
+      kind: 'context', sourceId: 'numista', message: expect.stringContaining('enters the analyzer as a secondary guide anchor at 25%'),
     })]));
-    expect(formatTestAiEvidenceForAnalysis(summary, 'ITEM A')).toContain('No grade-specific guide anchor returned.');
+    expect(formatTestAiEvidenceForAnalysis(summary, 'ITEM A')).toContain('Numista Coin Catalog');
   });
 
   it('reports unavailable specialist evidence as coverage rather than a false negative conclusion', () => {

@@ -83,6 +83,9 @@ export type EvidenceSourceDecision = {
   historicalTrend: number;
   context: number;
   acceptedPrices: number[];
+  treatment: 'valuation_candidate' | 'valuation_guide' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
+  analyzerWeightPct: number | null;
+  treatmentReason: string;
   message?: string | null;
 };
 
@@ -426,6 +429,29 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
   const undated = Number(market?.undatedSaleCount ?? 0);
   const currentListings = Number(market?.currentListingCount ?? 0);
   const context = market ? Math.max(0, currentListings + completed - accepted - currentValue - historicalTrend + undated) : 0;
+  const hasGuideValue = source.status === 'success' && Number.isFinite(Number(source.fields?.guideValue)) && Number(source.fields?.guideValue) > 0;
+  const treatment = source.status === 'error' || source.status === 'not_found'
+    ? 'unavailable'
+    : hasGuideValue && source.id === 'numista'
+      ? 'valuation_guide'
+      : accepted > 0
+        ? 'valuation_candidate'
+        : historicalTrend > 0
+          ? 'historical_trend'
+          : source.kind === 'certification'
+            ? 'certification_context'
+            : 'context_only';
+  const treatmentReason = treatment === 'valuation_guide'
+    ? 'USD catalogue estimate enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale.'
+    : treatment === 'valuation_candidate'
+      ? 'Completed, identity-compatible sale candidates are sent to the analyzer; final comparable gates determine inclusion and sale-level weight.'
+      : treatment === 'historical_trend'
+        ? 'Retained for historical movement only; excluded from current valuation.'
+        : treatment === 'certification_context'
+          ? 'Certification or population evidence supports identity/grading review; it contributes 0% to valuation.'
+          : treatment === 'unavailable'
+            ? 'No usable result was returned; it contributes 0%.'
+            : 'Reference, asking-price, or otherwise non-sale evidence; it contributes 0% to valuation.';
   return {
     id: source.id,
     label: source.label,
@@ -437,6 +463,9 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
     historicalTrend,
     context,
     acceptedPrices: (market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0),
+    treatment,
+    analyzerWeightPct: treatment === 'valuation_guide' ? 25 : null,
+    treatmentReason,
     message: source.message,
   };
 }
@@ -469,11 +498,22 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
       });
     }
     if (source.status === 'success' && source.id === 'numista' && Number.isFinite(guideValue) && guideValue > 0) {
+      guideAnchors.push({
+        sourceId: source.id,
+        sourceLabel: source.label,
+        grade: text(source.fields?.guideGrade),
+        selectedGrade: text(source.fields?.guideSelectedGrade) || text(source.fields?.guideGrade),
+        matchType: text(source.fields?.guideMatchType) === 'mapped' ? 'mapped' : 'exact',
+        value: guideValue,
+        recordedSales: 0,
+        lastSaleDate: null,
+        totalRecordedSales: 0,
+      });
       reviewFlags.push({
         kind: 'context',
         sourceId: source.id,
         sourceLabel: source.label,
-        message: `${source.label} returned a USD catalogue estimate. It is displayed as reference context only and is excluded from Tradebilia analyzer valuation.`,
+        message: `${source.label} returned a USD catalogue estimate. It enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale and remains separately classified from sale evidence.`,
       });
     }
     if (source.status === 'error') {

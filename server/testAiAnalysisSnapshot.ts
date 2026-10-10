@@ -93,7 +93,7 @@ export function buildAnalysisSnapshot(input: {
   now?: Date;
 }): AnalysisSnapshot {
   const sales = input.sales ?? [];
-  const valuationGuideAnchor = input.evidenceSummary?.guideAnchors?.find((anchor) => anchor.sourceId !== 'numista');
+  const valuationGuideAnchor = input.evidenceSummary?.guideAnchors?.[0] ?? null;
   const profile = buildMarketProfile(
     input.target,
     sales,

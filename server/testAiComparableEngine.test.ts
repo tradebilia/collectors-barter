@@ -92,25 +92,38 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1200, '2026-08-01'),
     ], null, new Date('2026-09-22T00:00:00Z'), null, { value: 2000, grade: '10', recordedSales: 140 });
     expect(profile.guideAnchorValue).toBe(2000);
-    expect(profile.guideAnchorWeightPct).toBe(10);
-    expect(profile.guideAdjustedValue).toBe(1190);
-    expect(profile.primaryValue).toBe(1190);
+    expect(profile.guideAnchorWeightPct).toBe(25);
+    expect(profile.guideAdjustedValue).toBe(1325);
+    expect(profile.primaryValue).toBe(1325);
+    expect(profile.guideProvisional).toBe(false);
     expect(profile.authoritativeSaleCount).toBe(3);
-    expect(profile.valuationWarnings.join(' ')).toMatch(/guide anchor of \$2,000 contributed 10% as secondary context/i);
+    expect(profile.valuationWarnings.join(' ')).toMatch(/guide anchor of \$2,000 contributed 25% to the analyzer blend/i);
   });
 
-  it('excludes a mapped-grade Numista reference estimate from valuation even when passed directly', () => {
+  it('admits a mapped-grade Numista estimate at 25% without changing sale counts', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),
     ], null, new Date('2026-09-22T00:00:00Z'), null, {
       sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0,
     });
-    expect(profile.guideAnchorValue).toBeNull();
-    expect(profile.guideAnchorWeightPct).toBe(0);
-    expect(profile.guideAdjustedValue).toBe(1000);
-    expect(profile.primaryValue).toBe(1000);
+    expect(profile.guideAnchorValue).toBe(2000);
+    expect(profile.guideAnchorWeightPct).toBe(25);
+    expect(profile.guideAdjustedValue).toBe(1250);
+    expect(profile.primaryValue).toBe(1250);
+    expect(profile.guideProvisional).toBe(false);
     expect(profile.authoritativeSaleCount).toBe(1);
-    expect(profile.valuationWarnings.join(' ')).not.toContain('Numista Coin Catalog');
+    expect(profile.valuationWarnings.join(' ')).toContain('Numista Coin Catalog');
+  });
+
+  it('uses Numista as a clearly provisional value when no accepted sale baseline exists', () => {
+    const profile = buildMarketProfile(target, [], null, new Date('2026-09-22'), null, {
+      sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0,
+    });
+    expect(profile.guideAdjustedValue).toBe(2000);
+    expect(profile.guideAnchorWeightPct).toBe(25);
+    expect(profile.guideProvisional).toBe(true);
+    expect(profile.marketRange.supported).toBe(false);
+    expect(profile.valuationWarnings.join(' ')).toContain('provisional analyzer value');
   });
 
   it('does not manufacture a verified value from active-only aggregate context', () => {

@@ -28,6 +28,7 @@ export type TestAiP0Identity = {
 
 export type EvidenceSourceRole =
   | 'valuation_candidate'
+  | 'valuation_guide'
   | 'asking_price_context'
   | 'historical_context'
   | 'certification_context'

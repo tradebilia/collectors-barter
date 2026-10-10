@@ -99,7 +99,7 @@ describe('Analyzer 2.9 unified analysis snapshot', () => {
     expect(profile.valuationWarnings.join(' ')).toContain('Material identity evidence conflict');
   });
 
-  it('excludes a legacy Numista guide anchor from the server-side snapshot valuation handoff', () => {
+  it('passes a Numista guide anchor through the server-side snapshot valuation handoff', () => {
     const evidence = normalizeTestAiEvidence(griffey, []);
     evidence.guideAnchors = [{
       sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', grade: 'UNC', selectedGrade: 'MS65', matchType: 'mapped',
@@ -112,9 +112,10 @@ describe('Analyzer 2.9 unified analysis snapshot', () => {
       now,
     });
 
-    expect(snapshot.profile.guideAnchorValue).toBeNull();
-    expect(snapshot.profile.guideAnchorWeightPct).toBe(0);
-    expect(snapshot.profile.primaryValue).toBe(100);
+    expect(snapshot.profile.guideAnchorValue).toBe(2_000);
+    expect(snapshot.profile.guideAnchorWeightPct).toBe(25);
+    expect(snapshot.profile.primaryValue).toBe(575);
+    expect(snapshot.profile.guideProvisional).toBe(false);
   });
 
   it('withholds cash guidance until each side meets the three-sale preliminary range floor', () => {

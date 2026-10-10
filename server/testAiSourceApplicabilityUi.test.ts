@@ -168,11 +168,10 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('id={`pcgs-history-rows-${side}`}');
   });
 
-  it('keeps Numista catalogue estimates as reference-only evidence', () => {
-    expect(source).toContain("id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: 'reference_context'");
-    expect(source).toContain('Catalogue estimate · reference only');
-    expect(source).toContain('does not enter analyzer valuation or completed-sale counts');
-    expect(source).not.toContain("role: numistaQuery.data?.data?.guideValue ? 'valuation_candidate'");
+  it('shows Numista catalogue estimates as a weighted guide input while preserving sale classification', () => {
+    expect(source).toContain("id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context'");
+    expect(source).toContain('configured guide weight');
+    expect(source).toContain('treatmentReason');
   });
 
   it('exposes full Cardsight pricing, population, marketplace, and time-series details for review', () => {

@@ -448,8 +448,8 @@ export async function lookupNumistaCoin(
         query: queryDescription,
         matchNote: guideMatch
           ? guideMatch.matchType === 'exact'
-            ? `Structured-field Numista catalogue match. Exact Numista grade ${guideMatch.price.grade} has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it is reference context only and is excluded from analyzer valuation.`
-            : `Structured-field Numista catalogue match. Selected grade ${guideMatch.selectedGrade} maps to Numista's ${guideMatch.price.grade} grade band, which has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it is reference context only and is excluded from analyzer valuation.`
+            ? `Structured-field Numista catalogue match. Exact Numista grade ${guideMatch.price.grade} has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it enters the analyzer as a 25% secondary guide anchor and is not a completed sale.`
+            : `Structured-field Numista catalogue match. Selected grade ${guideMatch.selectedGrade} maps to Numista's ${guideMatch.price.grade} grade band, which has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it enters the analyzer as a 25% secondary guide anchor and is not a completed sale.`
           : guide.error
             ? `Structured-field Numista catalogue match. Catalogue guide prices could not be read: ${guide.error}`
             : 'Structured-field Numista catalogue match. No direct or approved mapped grade-band value was returned; catalogue records do not enter Tradebilia valuation as completed sales.',
