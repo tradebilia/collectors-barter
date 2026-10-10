@@ -157,6 +157,30 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.reviewFlags).toHaveLength(0);
   });
 
+  it('preserves a documented Numista grade-band mapping as secondary guide evidence', () => {
+    const summary = normalizeTestAiEvidence({
+      title: '1903 Morgan Dollar PCGS MS65',
+      category: 'coins',
+      grade: 'MS65',
+      certificationCompany: 'PCGS',
+      itemDetails: { country: 'United States', denomination: '$1', year: '1903' },
+    }, [{
+      id: 'numista',
+      label: 'Numista Coin Catalog',
+      kind: 'reference',
+      status: 'success',
+      fields: {
+        country: 'United States', denomination: '1 Dollar', year: '1878-1921',
+        guideValue: 430, guideGrade: 'UNC', guideSelectedGrade: 'MS65', guideMatchType: 'mapped',
+      },
+    }]);
+
+    expect(summary.guideAnchors).toEqual([expect.objectContaining({
+      sourceId: 'numista', grade: 'UNC', selectedGrade: 'MS65', matchType: 'mapped', value: 430,
+    })]);
+    expect(formatTestAiEvidenceForAnalysis(summary, 'ITEM A')).toContain('selected MS65 mapped to grade band UNC');
+  });
+
   it('reports unavailable specialist evidence as coverage rather than a false negative conclusion', () => {
     const summary = normalizeTestAiEvidence({ title: 'Transformers Megatron G1', category: 'vintage_toys', itemDetails: { brand: 'Hasbro', toyName: 'Megatron', year: '1984' } }, [
       { id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 3 } },

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildNumistaSearchCriteria, lookupNumistaCoin } from './numistaMetadata';
+import { buildNumistaSearchCriteria, lookupNumistaCoin, mapNumistaGradeToCatalogueBand } from './numistaMetadata';
 
 describe('Numista coin metadata adapter', () => {
   const env = {
@@ -24,7 +24,21 @@ describe('Numista coin metadata adapter', () => {
     expect(criteria.year).toBe('1921');
   });
 
-  it('returns enriched factual metadata and excludes pricing fields', async () => {
+  it.each([
+    ['AG3', 'G'], ['G4', 'G'], ['G6', 'G'], ['VG8', 'VG'], ['VG10', 'VG'], ['F12', 'F'], ['F15', 'F'],
+    ['VF20', 'VF'], ['VF25', 'VF'], ['VF30', 'VF'], ['VF35', 'VF'], ['XF40', 'XF'], ['XF45', 'XF'],
+    ['AU50', 'AU'], ['AU53', 'AU'], ['AU55', 'AU'], ['AU58', 'AU'], ['MS60', 'UNC'], ['MS61', 'UNC'],
+    ['MS62', 'UNC'], ['MS63', 'UNC'], ['MS64', 'UNC'], ['MS65', 'UNC'], ['MS66', 'UNC'], ['MS67', 'UNC'],
+  ])('maps the owner-approved certified grade %s to the Numista %s band', (grade, expectedBand) => {
+    expect(mapNumistaGradeToCatalogueBand(grade)).toBe(expectedBand);
+  });
+
+  it('does not invent a Numista grade association outside the approved list', () => {
+    expect(mapNumistaGradeToCatalogueBand('MS68')).toBeNull();
+    expect(mapNumistaGradeToCatalogueBand('PR70')).toBeNull();
+  });
+
+  it('returns enriched factual metadata and an exact Numista catalogue grade', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token', expires_in: 3600 }) })
       .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ count: 1, types: [{ id: 123, title: '1921 Peace Dollar', issuer: { name: 'United States' }, min_year: 1921, max_year: 1921, category: 'coin' }] }) })
@@ -64,8 +78,12 @@ describe('Numista coin metadata adapter', () => {
     expect(result.data?.guideValue).toBe(250);
     expect(result.data?.guideGrade).toBe('MS65');
     expect(result.data?.guideCurrency).toBe('USD');
+    expect(result.data?.guideMatchType).toBe('exact');
+    expect(result.data?.guideSelectedGrade).toBe('MS65');
+    expect(result.data?.guideSource).toBe('Numista catalogue estimate');
     expect(result.data?.guidePrices).toHaveLength(2);
     expect(result.data?.matchNote).toContain('secondary guide evidence');
+    expect(result.data?.matchNote).not.toContain('Greysheet');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('q=');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('year=1921');
     expect(String(fetchMock.mock.calls[1]?.[0])).not.toContain('PCGS');
@@ -82,6 +100,27 @@ describe('Numista coin metadata adapter', () => {
     expect(result.status).toBe('success');
     expect(result.data?.guideValue).toBeNull();
     expect(result.data?.guideGrade).toBeNull();
+  });
+
+  it('uses the approved MS65-to-UNC association only when Numista returns the UNC band', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ types: [{ id: 123, title: '1921 Peace Dollar', min_year: 1921, max_year: 1921 }] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 123, title: '1921 Peace Dollar', url: 'https://example.com/type', min_year: 1921, max_year: 1921 }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 456, year: 1921 }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'UNC', price: 180 }] }) });
+    const result = await lookupNumistaCoin({ category: 'coins', title: '1921 Peace Dollar PCGS MS65', grade: 'MS65', itemDetails: JSON.stringify({ year: '1921' }) }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({
+      guideValue: 180,
+      guideCurrency: 'USD',
+      guideGrade: 'UNC',
+      guideSelectedGrade: 'MS65',
+      guideMatchType: 'mapped',
+      guideSource: 'Numista catalogue estimate',
+    });
+    expect(result.data?.matchNote).toContain('maps to Numista');
   });
 
   it('returns a clear configuration error without secure credentials', async () => {

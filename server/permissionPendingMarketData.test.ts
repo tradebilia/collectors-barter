@@ -100,8 +100,11 @@ describe('permission-pending market-source adapters', () => {
     expect(status.message).toMatch(/not applicable/i);
   });
 
-  it('keeps every registered pending source mapped to each of its researched categories', () => {
-    for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'pending_permission' && candidate.id !== 'propstore' && !isSandboxSiteBlockedSource(candidate.id))) {
+  it('keeps every visible pending source mapped to each of its researched categories', () => {
+    // NGC Auction Central is retained only as an internal permission audit record.
+    // The owner removed it from the visible pending sandbox sources because its
+    // source ID collides with official NGC certificate verification.
+    for (const source of PERMISSION_PENDING_MARKET_SOURCES.filter((candidate) => candidate.status === 'pending_permission' && candidate.id !== 'propstore' && candidate.id !== 'ngc' && !isSandboxSiteBlockedSource(candidate.id))) {
       const sourceId = source.id;
       for (const category of source.categories) {
         const eligibleIds = getEligibleTestAiSources({
@@ -167,7 +170,7 @@ describe('permission-pending market-source adapters', () => {
       verified: 16,
       partial: 3,
       no_completed_item: 1,
-      deferred: 3,
+      deferred: 2,
     });
   });
 });

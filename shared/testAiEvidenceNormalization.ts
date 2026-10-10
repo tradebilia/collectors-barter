@@ -90,6 +90,8 @@ export type GuideValueAnchor = {
   sourceId: string;
   sourceLabel: string;
   grade: string;
+  selectedGrade?: string;
+  matchType?: 'exact' | 'mapped';
   value: number;
   recordedSales: number | null;
   lastSaleDate: string | null;
@@ -458,6 +460,8 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         sourceId: source.id,
         sourceLabel: source.label,
         grade: text(source.fields?.guideGrade),
+        selectedGrade: text(source.fields?.guideSelectedGrade) || text(source.fields?.guideGrade),
+        matchType: text(source.fields?.guideMatchType) === 'mapped' ? 'mapped' : 'exact',
         value: guideValue,
         recordedSales: Number.isFinite(Number(source.fields?.guideRecordedSales)) ? Number(source.fields?.guideRecordedSales) : null,
         lastSaleDate: text(source.fields?.guideLastSaleDate) || null,
@@ -528,7 +532,7 @@ export function formatTestAiEvidenceForAnalysis(summary: NormalizedEvidenceSumma
     ? summary.alignedSources.map((source) => `${source.label}: ${source.fields.join(', ')}`).join('; ')
     : 'No specialist field alignment established.';
   const market = summary.marketEvidence.length ? summary.marketEvidence.join(' ') : 'No classified market evidence returned.';
-  const guides = summary.guideAnchors.length ? summary.guideAnchors.map((anchor) => `${anchor.sourceLabel}: exact grade ${anchor.grade || 'unknown'} guide anchor $${anchor.value.toLocaleString()}${anchor.recordedSales !== null ? ` with ${anchor.recordedSales} recorded sales` : ''}.`).join(' ') : 'No grade-specific guide anchor returned.';
+  const guides = summary.guideAnchors.length ? summary.guideAnchors.map((anchor) => `${anchor.sourceLabel}: ${anchor.matchType === 'mapped' ? `selected ${anchor.selectedGrade || 'unknown'} mapped to grade band ${anchor.grade || 'unknown'}` : `exact grade ${anchor.grade || 'unknown'}`} guide anchor $${anchor.value.toLocaleString()}${anchor.recordedSales !== null ? ` with ${anchor.recordedSales} recorded sales` : ''}.`).join(' ') : 'No grade-specific guide anchor returned.';
   const flags = summary.reviewFlags.length ? summary.reviewFlags.map((flag) => flag.message).join(' ') : 'No material identity discrepancy was detected from the selected source fields.';
   const readiness = summary.identityReadiness.missingCriticalFields.length
     ? `Identity readiness: ${summary.identityReadiness.readiness}; missing critical identifiers: ${summary.identityReadiness.missingCriticalFields.join(', ')}.`
@@ -542,6 +546,6 @@ Review flags: ${flags}
 ${readiness}
 ${sufficiency}
 Guide-value anchors: ${guides}
-Rule: Dated completed sales remain primary evidence. A validated exact-grade guide anchor may influence the deterministic value only through the server-capped secondary weighting contract; it is never treated as a dated sale. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this validated guide-anchor contract, and do not use historical or undated records as current-value averages.`;
+Rule: Dated completed sales remain primary evidence. A validated direct-grade or documented mapped-grade-band guide anchor may influence the deterministic value only through the server-capped secondary weighting contract; it is never treated as a dated sale. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this validated guide-anchor contract, and do not use historical or undated records as current-value averages.`;
 }
 import { resolveTestAiGradingCompany } from './testAiCriteria';

@@ -104,6 +104,7 @@ export function buildAnalysisSnapshot(input: {
       sourceLabel: input.evidenceSummary.guideAnchors[0].sourceLabel,
       value: input.evidenceSummary.guideAnchors[0].value,
       grade: input.evidenceSummary.guideAnchors[0].grade,
+      matchType: input.evidenceSummary.guideAnchors[0].matchType,
       recordedSales: input.evidenceSummary.guideAnchors[0].recordedSales,
       lastSaleDate: input.evidenceSummary.guideAnchors[0].lastSaleDate,
     } : null,
