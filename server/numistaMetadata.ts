@@ -78,6 +78,7 @@ const NUMISTA_API_BASE = 'https://api.numista.com/api/v3';
 const NUMISTA_TIMEOUT_MS = 10_000;
 const NUMISTA_CANDIDATE_LIMIT = 6;
 const NUMISTA_ISSUE_LIMIT = 80;
+const NUMISTA_GUIDE_CURRENCY = 'USD';
 
 function text(value: unknown): string {
   return typeof value === 'string' || typeof value === 'number' ? String(value).trim() : '';
@@ -136,7 +137,7 @@ function normalizeGuideGrade(value: unknown): string {
 
 function parsePositivePrice(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : Number(String(value ?? '').replace(/[^0-9.\-]/g, ''));
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : null;
 }
 
 function gradeMatches(targetGrade: string, catalogueGrade: string): boolean {
@@ -298,9 +299,14 @@ async function loadGuidePrices(
     .slice(0, NUMISTA_ISSUE_LIMIT)[0];
   if (!issue?.id) return { issueId: null, prices: [] };
 
-  const priceResult = await fetchJson(`${NUMISTA_API_BASE}/types/${encodeURIComponent(String(typeId))}/issues/${encodeURIComponent(String(issue.id))}/prices`, headers, fetchImpl);
+  const priceUrl = new URL(`${NUMISTA_API_BASE}/types/${encodeURIComponent(String(typeId))}/issues/${encodeURIComponent(String(issue.id))}/prices`);
+  priceUrl.searchParams.set('currency', NUMISTA_GUIDE_CURRENCY);
+  const priceResult = await fetchJson(priceUrl.toString(), headers, fetchImpl);
   if (!priceResult.ok) return { issueId: Number(issue.id), prices: [], error: formatProviderError('Numista', priceResult.status, priceResult.data) };
-  const currency = text(priceResult.data?.currency) || 'EUR';
+  const currency = text(priceResult.data?.currency).toUpperCase();
+  if (currency !== NUMISTA_GUIDE_CURRENCY) {
+    return { issueId: Number(issue.id), prices: [], error: 'Numista did not return a USD catalogue estimate for this issue.' };
+  }
   const rawPrices = (Array.isArray(priceResult.data?.prices) ? priceResult.data.prices : []) as NumistaPrice[];
   const prices = rawPrices
     .map((row: NumistaPrice) => ({ grade: text(row.grade).toUpperCase(), value: parsePositivePrice(row.price), currency }))

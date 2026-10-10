@@ -215,7 +215,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     icon: '🪙',
     provides: ['item_details', 'current_prices'],
     status: 'live' as const,
-    description: 'Structured Numista coin identification plus direct-grade or approved mapped-grade-band catalogue estimates; guide values are capped at 25% and are never completed sales',
+    description: 'Structured Numista coin identification plus USD direct-grade or approved mapped-grade-band catalogue estimates; guide values are capped at 25% and are never completed sales',
   },
   ngc: {
     id: 'ngc',
@@ -2018,7 +2018,7 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
   return <div className="space-y-3 rounded-lg border border-gray-700/20 bg-gray-800/30 p-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p>{isLoading && <Spinner className="h-3 w-3" />}</div>
     <MarketplaceQueryBanner item={item} query={data?.data?.query ?? null} isLoading={isLoading} />
-    <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or approved mapped grade-band catalogue estimate. It is capped at 25% and never treated as a completed sale.</p>
+    <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or approved mapped grade-band catalogue estimate in USD only. It is capped at 25% and never treated as a completed sale.</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
     {data?.status === 'success' && data.data && <div className="flex min-w-0 gap-3 rounded bg-gray-900/40 p-2">
