@@ -194,6 +194,7 @@ function gradeMatches(targetGrade: string, catalogueGrade: string): boolean {
 // associations for using a Numista value only as a clearly labeled secondary
 // guide anchor. Grades absent from this list intentionally do not map.
 const NUMISTA_GRADE_BANDS: Readonly<Record<string, string>> = {
+  VERYGOOD: 'VG',
   AG3: 'G',
   G4: 'G',
   G6: 'G',
@@ -239,9 +240,23 @@ function findGuideMatch(
 }
 
 function issueMatchesCriteria(issue: NumistaIssue, criteria: ReturnType<typeof buildNumistaSearchCriteria>): boolean {
-  if (!criteria.year) return true;
-  const year = Number(criteria.year);
-  return [issue.year, issue.gregorian_year].some((value) => Number.isFinite(Number(value)) && Number(value) === year);
+  const yearMatches = !criteria.year || [issue.year, issue.gregorian_year]
+    .some((value) => Number.isFinite(Number(value)) && Number(value) === Number(criteria.year));
+  if (!yearMatches) return false;
+
+  const requestedMint = normalizeNumistaMintMark(criteria.mintMark);
+  return !requestedMint || normalizeNumistaMintMark(text(issue.mint_letter)) === requestedMint;
+}
+
+function normalizeNumistaMintMark(value: string): string {
+  const mint = normalized(value);
+  if (!mint || mint === 'philadelphia' || mint === 'no mint mark') return '';
+  if (mint === 'carson city' || mint === 'cc') return 'CC';
+  if (mint === 'new orleans' || mint === 'o') return 'O';
+  if (mint === 'san francisco' || mint === 's') return 'S';
+  if (mint === 'denver' || mint === 'd') return 'D';
+  if (mint === 'west point' || mint === 'w') return 'W';
+  return text(value).toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
 
 function providerHeaders(apiKey: string, clientName: string, clientId: string, token?: string): Record<string, string> {

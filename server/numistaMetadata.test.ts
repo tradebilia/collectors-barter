@@ -63,12 +63,32 @@ describe('Numista coin metadata adapter', () => {
   });
 
   it.each([
-    ['AG3', 'G'], ['G4', 'G'], ['G6', 'G'], ['VG8', 'VG'], ['VG10', 'VG'], ['F12', 'F'], ['F15', 'F'],
+    ['very_good', 'VG'], ['AG3', 'G'], ['G4', 'G'], ['G6', 'G'], ['VG8', 'VG'], ['VG10', 'VG'], ['F12', 'F'], ['F15', 'F'],
     ['VF20', 'VF'], ['VF25', 'VF'], ['VF30', 'VF'], ['VF35', 'VF'], ['XF40', 'XF'], ['XF45', 'XF'],
     ['AU50', 'AU'], ['AU53', 'AU'], ['AU55', 'AU'], ['AU58', 'AU'], ['MS60', 'UNC'], ['MS61', 'UNC'],
     ['MS62', 'UNC'], ['MS63', 'UNC'], ['MS64', 'UNC'], ['MS65', 'UNC'], ['MS66', 'UNC'], ['MS67', 'UNC'],
   ])('maps the owner-approved certified grade %s to the Numista %s band', (grade, expectedBand) => {
     expect(mapNumistaGradeToCatalogueBand(grade)).toBe(expectedBand);
+  });
+
+  it('uses the Carson City issue rather than the generic issue for a CC Morgan Dollar', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ types: [{ id: 1492, title: '1 Dollar Morgan Dollar', issuer: { name: 'United States' }, min_year: 1878, max_year: 1921 }] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 1492, title: '1 Dollar Morgan Dollar', value: { text: '1 Dollar' }, issuer: { name: 'United States' }, min_year: 1878, max_year: 1921 }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 48538, year: 1890 }, { id: 27247, year: 1890, mint_letter: 'CC' }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'VG', price: 140 }] }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1890 CC Morgan Dollar',
+      grade: 'very_good',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '1', year: '1890', coinName: 'Morgan Dollar', mintMark: 'Carson City' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({ guideIssueId: 27247, guideGrade: 'VG', guideValue: 140, guideMatchType: 'mapped' });
+    expect(String(fetchMock.mock.calls[4]?.[0])).toContain('/issues/27247/prices');
   });
 
   it('does not invent a Numista grade association outside the approved list', () => {
