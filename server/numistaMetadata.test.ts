@@ -18,10 +18,48 @@ describe('Numista coin metadata adapter', () => {
       metal: 'Silver',
     }), '1921 S Peace Dollar PCGS MS65');
     expect(criteria.query).toContain('United States');
-    expect(criteria.query).toContain('$1');
+    expect(criteria.query).toContain('1 Dollar');
     expect(criteria.query).toContain('Peace Dollar');
     expect(criteria.query).not.toContain('PCGS');
     expect(criteria.year).toBe('1921');
+  });
+
+  it('canonicalizes United States numeric face values so $1 cannot be searched as a dime', () => {
+    const dollar = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'United States', denomination: '1', year: '1890', coinName: 'Morgan Dollar' }));
+    const dime = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'United States', denomination: '.10', year: '1890', coinName: 'Seated Liberty' }));
+
+    expect(dollar.denomination).toBe('1 Dollar');
+    expect(dollar.query).toContain('1 Dollar');
+    expect(dime.denomination).toBe('1 Dime');
+    expect(dime.query).toContain('1 Dime');
+  });
+
+  it('rejects a returned Numista dime when the United States listing face value is $1', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        types: [
+          { id: 10, title: '1 Dime Seated Liberty Dime', issuer: { name: 'United States' }, min_year: 1875, max_year: 1891 },
+          { id: 20, title: '1 Dollar Morgan Dollar', issuer: { name: 'United States' }, min_year: 1878, max_year: 1921 },
+        ],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 10, title: '1 Dime Seated Liberty Dime', value: { text: '1 Dime' }, issuer: { name: 'United States' }, min_year: 1875, max_year: 1891 }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 20, title: '1 Dollar Morgan Dollar', value: { text: '1 Dollar' }, issuer: { name: 'United States' }, min_year: 1878, max_year: 1921 }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 456, year: 1890 }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'UNC', price: 110 }] }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1890 Carson City Morgan PCGS MS66',
+      grade: 'MS66',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '1', year: '1890', coinName: 'Morgan Dollar', mintMark: 'Carson City' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('success');
+    expect(result.data?.title).toBe('1 Dollar Morgan Dollar');
+    expect(result.data?.facts).toEqual(expect.arrayContaining([{ label: 'Value', value: '1 Dollar' }]));
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('1+Dollar');
+    expect(String(fetchMock.mock.calls[1]?.[0])).not.toContain('1+Dime');
   });
 
   it.each([

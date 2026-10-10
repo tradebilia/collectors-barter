@@ -104,6 +104,49 @@ function validYear(value: string): string {
   return /^(?:17|18|19|20)\d{2}$/.test(value) ? value : '';
 }
 
+function isUnitedStates(value: string): boolean {
+  const country = normalized(value);
+  return country === 'united states' || country === 'united states of america' || country === 'usa' || country === 'us';
+}
+
+function canonicalUnitedStatesDenomination(value: string): string {
+  const source = text(value);
+  const words = normalized(source);
+  if (!source) return '';
+  if (/\bdime(?:s)?\b/.test(words)) return '1 Dime';
+
+  const centMatch = words.match(/^(\d+)\s*(?:cent|cents)$/);
+  if (centMatch) {
+    const cents = Number(centMatch[1]);
+    if (cents === 10) return '1 Dime';
+    return `${cents} ${cents === 1 ? 'Cent' : 'Cents'}`;
+  }
+
+  const dollarMatch = words.match(/^(?:usd\s*)?(\d+(?:\.\d+)?)\s*(?:dollar|dollars|usd)$/);
+  const numericSource = source.replace(/[$,\s]/g, '');
+  const dollars = dollarMatch ? Number(dollarMatch[1]) : Number(numericSource);
+  if (!Number.isFinite(dollars) || dollars <= 0) return source;
+
+  const cents = Math.round(dollars * 100);
+  if (cents < 100) {
+    if (cents === 10) return '1 Dime';
+    return `${cents} ${cents === 1 ? 'Cent' : 'Cents'}`;
+  }
+  const wholeDollars = cents / 100;
+  return `${wholeDollars} ${wholeDollars === 1 ? 'Dollar' : 'Dollars'}`;
+}
+
+function canonicalNumistaDenomination(country: string, denomination: string): string {
+  return isUnitedStates(country) ? canonicalUnitedStatesDenomination(denomination) : text(denomination);
+}
+
+function denominationMatchesNumistaDetail(country: string, requested: string, returned: string): boolean {
+  if (!requested) return true;
+  const expected = canonicalNumistaDenomination(country, requested);
+  const actual = canonicalNumistaDenomination(country, returned);
+  return Boolean(expected && actual && normalized(expected) === normalized(actual));
+}
+
 /**
  * Builds a title-independent Numista query from the structured coin fields.
  * The title is only a last-resort fallback for sparse legacy records.
@@ -119,7 +162,7 @@ export function buildNumistaSearchCriteria(category: string, itemDetails: unknow
 } {
   const details = parseTestAiDetails(itemDetails);
   const country = firstDetail(details, ['country', 'issuingCountry', 'issuer']);
-  const denomination = firstDetail(details, ['denomination', 'faceValue', 'value']);
+  const denomination = canonicalNumistaDenomination(country, firstDetail(details, ['denomination', 'faceValue', 'value']));
   const year = validYear(firstDetail(details, ['year', 'issueYear', 'mintYear']));
   const mintMark = firstDetail(details, ['mintMark', 'mint', 'mintmark']);
   const variety = firstDetail(details, ['variety', 'coinType', 'series', 'design', 'type']);
@@ -361,7 +404,11 @@ export async function lookupNumistaCoin(
       return result.ok && result.data && typeof result.data === 'object' ? result.data as NumistaTypeDetail : null;
     }));
     const usableDetails = details.filter((detail): detail is NumistaTypeDetail => Boolean(detail?.id && detail.title));
-    const selected = [...usableDetails].sort((a, b) => scoreDetail(b, criteria) - scoreDetail(a, criteria))[0];
+    const denominationMatchedDetails = usableDetails.filter((detail) => denominationMatchesNumistaDetail(criteria.country, criteria.denomination, text(detail.value?.text)));
+    if (!denominationMatchedDetails.length) {
+      return { status: 'not_found', message: `Numista returned catalogue candidates, but none matched the requested denomination ${criteria.denomination || '(not supplied)'}.` };
+    }
+    const selected = [...denominationMatchedDetails].sort((a, b) => scoreDetail(b, criteria) - scoreDetail(a, criteria))[0];
     if (!selected || !selected.id || !selected.title) return { status: 'not_found', message: 'Numista returned candidate types, but no usable coin detail record could be read.' };
     const guide = await loadGuidePrices(Number(selected.id), criteria, providerHeaders(apiKey, clientName, clientId, auth.token!), fetchImpl);
     const guideMatch = criteria.grade ? findGuideMatch(criteria.grade, guide.prices) : null;
