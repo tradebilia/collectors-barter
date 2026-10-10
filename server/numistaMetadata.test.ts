@@ -200,6 +200,24 @@ describe('Numista coin metadata adapter', () => {
     expect(result.data?.matchNote).toContain('maps to Numista');
   });
 
+  it('falls back from an ungraded inventory sentinel to the condition for catalogue matching', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ types: [{ id: 1492, title: '1 Dollar Morgan Dollar', issuer: { name: 'United States' }, min_year: 1878, max_year: 1921 }] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 1492, title: '1 Dollar Morgan Dollar', value: { text: '1 Dollar' }, issuer: { name: 'United States' }, min_year: 1878, max_year: 1921 }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 27247, year: 1890, mint_letter: 'CC' }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'VG', price: 135.48 }] }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1890 CC Morgan Dollar',
+      grade: 'ungraded',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '1', year: '1890', coinName: 'Morgan Dollar', mintMark: 'Carson City', condition: 'very_good' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.data).toMatchObject({ guideIssueId: 27247, guideValue: 135.48, guideGrade: 'VG', guideSelectedGrade: 'VERYGOOD', guideMatchType: 'mapped' });
+  });
+
   it('returns a clear configuration error without secure credentials', async () => {
     const result = await lookupNumistaCoin({ category: 'coins', title: 'Morgan Dollar', itemDetails: '{}' }, vi.fn() as typeof fetch, {});
     expect(result).toMatchObject({ status: 'error' });

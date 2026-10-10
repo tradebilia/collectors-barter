@@ -178,6 +178,11 @@ function normalizeGuideGrade(value: unknown): string {
   return text(value).toUpperCase().replace(/[\s-]+/g, '').replace(/[^A-Z0-9]/g, '');
 }
 
+function usableNumistaGrade(value: unknown): string {
+  const grade = text(value);
+  return /^(?:ungraded|not[\s_-]*graded|none|n\/a)$/i.test(grade) ? '' : grade;
+}
+
 function parsePositivePrice(value: unknown): number | null {
   const parsed = typeof value === 'number' ? value : Number(String(value ?? '').replace(/[^0-9.\-]/g, ''));
   return Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 100) / 100 : null;
@@ -394,7 +399,11 @@ export async function lookupNumistaCoin(
     return { status: 'error', message: 'Numista coin reference is not configured with secure API credentials.' };
   }
     const parsedCriteria = buildNumistaSearchCriteria(input.category, input.itemDetails, input.title ?? '');
-    const criteria = { ...parsedCriteria, grade: text(input.grade) || parsedCriteria.grade };
+    // Inventory records commonly store an ungraded coin with a separate
+    // condition such as very_good. Treat the sentinel as empty so the
+    // condition-derived grade can still map to Numista's catalogue band.
+    const inputGrade = usableNumistaGrade(input.grade);
+    const criteria = { ...parsedCriteria, grade: inputGrade || usableNumistaGrade(parsedCriteria.grade) };
   if (!criteria.query && !criteria.year) {
     return { status: 'error', message: 'Enter structured coin fields such as country, denomination, year, mint mark, or variety before requesting Numista.' };
   }
