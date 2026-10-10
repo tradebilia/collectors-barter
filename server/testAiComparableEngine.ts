@@ -2013,15 +2013,13 @@ export function buildMarketProfile(
   }, 0);
   const weightedValue = weightedDenominator > 0 ? Math.round(filtered.reduce((sum, { match }) => sum + match.price * match.weight, 0) / weightedDenominator) : null;
   const primaryValue = median !== null ? Math.round(median) : null;
-  const guideAnchorValue = guideAnchor && Number.isFinite(guideAnchor.value) && guideAnchor.value > 0 ? Math.round(guideAnchor.value) : null;
-  // Guide estimates are not dated sales. Numista receives a
-  // separately capped secondary weight: 10% with five or more accepted sales,
-  // 15% with three or four, and at most 25% with one or two. It never raises
-  // evidence quality or satisfies completed-sale thresholds on its own.
-  const isNumistaGuide = guideAnchor?.sourceId === 'numista';
-  const guideMatchDescription = guideAnchor?.matchType === 'mapped' ? 'mapped-grade-band' : 'exact-grade';
-  const guideAnchorWeightPct = guideAnchorValue === null ? 0 : isNumistaGuide
-    ? accepted.length >= 5 ? 10 : accepted.length >= 3 ? 15 : accepted.length > 0 ? 25 : 0
+  // Numista catalogue values are visible in the sandbox for reference, but
+  // never influence a Tradebilia analyzer value. This server-side guard holds
+  // even if a caller bypasses evidence normalization.
+  const valuationGuideAnchor = guideAnchor?.sourceId === 'numista' ? null : guideAnchor;
+  const guideAnchorValue = valuationGuideAnchor && Number.isFinite(valuationGuideAnchor.value) && valuationGuideAnchor.value > 0 ? Math.round(valuationGuideAnchor.value) : null;
+  const guideMatchDescription = valuationGuideAnchor?.matchType === 'mapped' ? 'mapped-grade-band' : 'exact-grade';
+  const guideAnchorWeightPct = guideAnchorValue === null ? 0
     : accepted.length >= 5 ? 5 : accepted.length >= 3 ? 10 : accepted.length > 0 ? 15 : 0;
   const guideAdjustedValue = primaryValue !== null && guideAnchorWeightPct > 0
     ? Math.round(primaryValue * (1 - guideAnchorWeightPct / 100) + guideAnchorValue! * (guideAnchorWeightPct / 100))
@@ -2064,7 +2062,7 @@ export function buildMarketProfile(
   if (identityReadiness !== 'ready') missingInformation.push(`critical identifiers (${buildTestAiP0Identity(target).missingCriticalFields.join(', ')})`);
   const valuationWarnings: string[] = [];
   if (aggregateMetrics && accepted.length === 0 && (aggregateMetrics.count ?? 0) > 0) valuationWarnings.push('Aggregate market data exists, but no individual comparable titles were available for identity matching.');
-  if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The ${guideMatchDescription} ${guideAnchor?.sourceLabel ?? (isNumistaGuide ? 'Numista catalogue' : 'guide')} anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% as secondary context; it was not treated as a dated sale.`);
+  if (guideAnchorValue !== null && guideAnchorWeightPct > 0) valuationWarnings.push(`The ${guideMatchDescription} ${valuationGuideAnchor?.sourceLabel ?? 'guide'} anchor of $${guideAnchorValue.toLocaleString()} contributed ${guideAnchorWeightPct}% as secondary context; it was not treated as a dated sale.`);
   if (guideAnchorValue !== null && guideAnchorWeightPct === 0) valuationWarnings.push(`The ${guideMatchDescription} guide anchor of $${guideAnchorValue.toLocaleString()} was retained in the audit but did not change the value because no accepted completed-sale sample exists.`);
   if (spreadPct !== null && spreadPct > categoryEvidenceThresholds.maximumSpreadPct) valuationWarnings.push(`Authoritative comparable prices exceed the ${categoryEvidenceThresholds.maximumSpreadPct}% ${categoryEvidenceThresholds.category} spread threshold.`);
   if (accepted.length < categoryEvidenceThresholds.minimumSelectedSales) valuationWarnings.push(`Fewer than ${categoryEvidenceThresholds.minimumSelectedSales} accepted completed sales are available for ${categoryEvidenceThresholds.category}; treat the range as preliminary review evidence.`);

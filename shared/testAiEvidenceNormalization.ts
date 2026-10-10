@@ -455,7 +455,7 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
 
   for (const source of sources) {
     const guideValue = Number(source.fields?.guideValue);
-    if (source.status === 'success' && (source.id === 'comic_book_realm' || source.id === 'numista') && Number.isFinite(guideValue) && guideValue > 0) {
+    if (source.status === 'success' && source.id === 'comic_book_realm' && Number.isFinite(guideValue) && guideValue > 0) {
       guideAnchors.push({
         sourceId: source.id,
         sourceLabel: source.label,
@@ -466,6 +466,14 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         recordedSales: Number.isFinite(Number(source.fields?.guideRecordedSales)) ? Number(source.fields?.guideRecordedSales) : null,
         lastSaleDate: text(source.fields?.guideLastSaleDate) || null,
         totalRecordedSales: Number.isFinite(Number(source.fields?.guideTotalRecordedSales)) ? Number(source.fields?.guideTotalRecordedSales) : null,
+      });
+    }
+    if (source.status === 'success' && source.id === 'numista' && Number.isFinite(guideValue) && guideValue > 0) {
+      reviewFlags.push({
+        kind: 'context',
+        sourceId: source.id,
+        sourceLabel: source.label,
+        message: `${source.label} returned a USD catalogue estimate. It is displayed as reference context only and is excluded from Tradebilia analyzer valuation.`,
       });
     }
     if (source.status === 'error') {

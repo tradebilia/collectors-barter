@@ -191,8 +191,9 @@ function gradeMatches(targetGrade: string, catalogueGrade: string): boolean {
 
 // Numista exposes broad G/VG/F/VF/XF/AU/UNC price bands, while certified
 // listings can contain a numeric Sheldon grade. These are the owner-approved
-// associations for using a Numista value only as a clearly labeled secondary
-// guide anchor. Grades absent from this list intentionally do not map.
+// associations for displaying a clearly labeled Numista reference estimate.
+// The estimate never enters Tradebilia analyzer valuation. Grades absent from
+// this list intentionally do not map.
 const NUMISTA_GRADE_BANDS: Readonly<Record<string, string>> = {
   VERYGOOD: 'VG',
   AG3: 'G',
@@ -375,8 +376,8 @@ async function loadGuidePrices(
 /**
  * Returns Numista catalogue metadata plus a direct or owner-approved
  * grade-band-mapped catalogue estimate when the selected issue exposes one.
- * These are not completed sales and are admitted only through the capped
- * secondary-guide contract.
+ * These are not completed sales or analyzer inputs; they are displayed only
+ * as source-attributed reference context.
  */
 export async function lookupNumistaCoin(
   input: { category: string; title?: string; itemDetails?: unknown; grade?: string },
@@ -438,8 +439,8 @@ export async function lookupNumistaCoin(
         query: queryDescription,
         matchNote: guideMatch
           ? guideMatch.matchType === 'exact'
-            ? `Structured-field Numista catalogue match. Exact Numista grade ${guideMatch.price.grade} has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it is secondary guide evidence, not a completed sale.`
-            : `Structured-field Numista catalogue match. Selected grade ${guideMatch.selectedGrade} maps to Numista's ${guideMatch.price.grade} grade band, which has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it is secondary guide evidence, not a completed sale.`
+            ? `Structured-field Numista catalogue match. Exact Numista grade ${guideMatch.price.grade} has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it is reference context only and is excluded from analyzer valuation.`
+            : `Structured-field Numista catalogue match. Selected grade ${guideMatch.selectedGrade} maps to Numista's ${guideMatch.price.grade} grade band, which has a ${guideMatch.price.currency} ${guideMatch.price.value.toLocaleString()} catalogue estimate; it is reference context only and is excluded from analyzer valuation.`
           : guide.error
             ? `Structured-field Numista catalogue match. Catalogue guide prices could not be read: ${guide.error}`
             : 'Structured-field Numista catalogue match. No direct or approved mapped grade-band value was returned; catalogue records do not enter Tradebilia valuation as completed sales.',

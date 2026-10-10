@@ -99,6 +99,24 @@ describe('Analyzer 2.9 unified analysis snapshot', () => {
     expect(profile.valuationWarnings.join(' ')).toContain('Material identity evidence conflict');
   });
 
+  it('excludes a legacy Numista guide anchor from the server-side snapshot valuation handoff', () => {
+    const evidence = normalizeTestAiEvidence(griffey, []);
+    evidence.guideAnchors = [{
+      sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', grade: 'UNC', selectedGrade: 'MS65', matchType: 'mapped',
+      value: 2_000, recordedSales: null, lastSaleDate: null, totalRecordedSales: null,
+    }];
+    const snapshot = buildAnalysisSnapshot({
+      target: griffey,
+      sales: [sale({ saleId: 'numista-legacy', price: 100 })],
+      evidenceSummary: evidence,
+      now,
+    });
+
+    expect(snapshot.profile.guideAnchorValue).toBeNull();
+    expect(snapshot.profile.guideAnchorWeightPct).toBe(0);
+    expect(snapshot.profile.primaryValue).toBe(100);
+  });
+
   it('withholds cash guidance until each side meets the three-sale preliminary range floor', () => {
     const left = buildMarketProfile(griffey, [sale({ saleId: 'l1', price: 90 }), sale({ saleId: 'l2', price: 110 })], null, now);
     const right = buildMarketProfile(griffey, [sale({ saleId: 'r1', price: 170 }), sale({ saleId: 'r2', price: 190 })], null, now);

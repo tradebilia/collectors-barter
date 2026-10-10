@@ -93,20 +93,21 @@ export function buildAnalysisSnapshot(input: {
   now?: Date;
 }): AnalysisSnapshot {
   const sales = input.sales ?? [];
+  const valuationGuideAnchor = input.evidenceSummary?.guideAnchors?.find((anchor) => anchor.sourceId !== 'numista');
   const profile = buildMarketProfile(
     input.target,
     sales,
     input.aggregateMetrics,
     input.now ?? new Date(),
     input.identityGate,
-    input.evidenceSummary?.guideAnchors?.[0] ? {
-      sourceId: input.evidenceSummary.guideAnchors[0].sourceId,
-      sourceLabel: input.evidenceSummary.guideAnchors[0].sourceLabel,
-      value: input.evidenceSummary.guideAnchors[0].value,
-      grade: input.evidenceSummary.guideAnchors[0].grade,
-      matchType: input.evidenceSummary.guideAnchors[0].matchType,
-      recordedSales: input.evidenceSummary.guideAnchors[0].recordedSales,
-      lastSaleDate: input.evidenceSummary.guideAnchors[0].lastSaleDate,
+    valuationGuideAnchor ? {
+      sourceId: valuationGuideAnchor.sourceId,
+      sourceLabel: valuationGuideAnchor.sourceLabel,
+      value: valuationGuideAnchor.value,
+      grade: valuationGuideAnchor.grade,
+      matchType: valuationGuideAnchor.matchType,
+      recordedSales: valuationGuideAnchor.recordedSales,
+      lastSaleDate: valuationGuideAnchor.lastSaleDate,
     } : null,
   );
   const summary = input.evidenceSummary;

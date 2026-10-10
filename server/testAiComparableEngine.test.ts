@@ -99,17 +99,18 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(profile.valuationWarnings.join(' ')).toMatch(/guide anchor of \$2,000 contributed 10% as secondary context/i);
   });
 
-  it('caps a mapped-grade Numista guide anchor at 25% with sparse sale evidence', () => {
+  it('excludes a mapped-grade Numista reference estimate from valuation even when passed directly', () => {
     const profile = buildMarketProfile(target, [
       sale('1996 Topps Kobe Bryant #138 PSA 10', 1000, '2026-09-15'),
     ], null, new Date('2026-09-22T00:00:00Z'), null, {
       sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', value: 2000, grade: 'UNC', matchType: 'mapped', recordedSales: 0,
     });
-    expect(profile.guideAnchorWeightPct).toBe(25);
-    expect(profile.guideAdjustedValue).toBe(1250);
+    expect(profile.guideAnchorValue).toBeNull();
+    expect(profile.guideAnchorWeightPct).toBe(0);
+    expect(profile.guideAdjustedValue).toBe(1000);
+    expect(profile.primaryValue).toBe(1000);
     expect(profile.authoritativeSaleCount).toBe(1);
-    expect(profile.valuationWarnings.join(' ')).toContain('mapped-grade-band');
-    expect(profile.valuationWarnings.join(' ')).toMatch(/Numista Coin Catalog.*25% as secondary context/i);
+    expect(profile.valuationWarnings.join(' ')).not.toContain('Numista Coin Catalog');
   });
 
   it('does not manufacture a verified value from active-only aggregate context', () => {

@@ -140,7 +140,8 @@ describe('Numista coin metadata adapter', () => {
     expect(result.data?.guideSelectedGrade).toBe('MS65');
     expect(result.data?.guideSource).toBe('Numista catalogue estimate');
     expect(result.data?.guidePrices).toHaveLength(2);
-    expect(result.data?.matchNote).toContain('secondary guide evidence');
+    expect(result.data?.matchNote).toContain('reference context only');
+    expect(result.data?.matchNote).toContain('excluded from analyzer valuation');
     expect(result.data?.matchNote).not.toContain('Greysheet');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('q=');
     expect(String(fetchMock.mock.calls[1]?.[0])).toContain('year=1921');

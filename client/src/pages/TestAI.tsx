@@ -213,9 +213,9 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     label: 'Numista Coin Catalog',
     group: 'Reference',
     icon: '🪙',
-    provides: ['item_details', 'current_prices'],
+    provides: ['item_details'],
     status: 'live' as const,
-    description: 'Structured Numista coin identification plus USD direct-grade or approved mapped-grade-band catalogue estimates; guide values are capped at 25% and are never completed sales',
+    description: 'Structured Numista coin identification plus USD direct-grade or approved mapped-grade-band catalogue estimates; values are reference-only and never enter analyzer valuation',
   },
   ngc: {
     id: 'ngc',
@@ -2018,7 +2018,7 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
   return <div className="space-y-3 rounded-lg border border-gray-700/20 bg-gray-800/30 p-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p>{isLoading && <Spinner className="h-3 w-3" />}</div>
     <MarketplaceQueryBanner item={item} query={data?.data?.query ?? null} isLoading={isLoading} />
-    <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or approved mapped grade-band catalogue estimate in USD only. It is capped at 25% and never treated as a completed sale.</p>
+    <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or approved mapped grade-band catalogue estimate in USD only. It is reference context only: it does not enter analyzer valuation or completed-sale counts.</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
     {data?.status === 'success' && data.data && <div className="flex min-w-0 gap-3 rounded bg-gray-900/40 p-2">
@@ -2027,9 +2027,9 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
         <a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a>
         <p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>
         {data.data.guideValue && <div className="rounded border border-sky-700/40 bg-sky-950/25 p-2 text-[10px]">
-          <p className="font-semibold uppercase text-sky-300">Catalogue estimate · secondary evidence</p>
+          <p className="font-semibold uppercase text-sky-300">Catalogue estimate · reference only</p>
           <p className="mt-1 text-gray-200">{guideIsMapped ? <>Selected {data.data.guideSelectedGrade} → Numista {data.data.guideGrade}</> : <>Direct Numista grade {data.data.guideGrade}</>} · {data.data.guideCurrency} {Number(data.data.guideValue).toLocaleString()}</p>
-          <p className="mt-1 text-gray-500">{data.data.guideSource ?? 'Numista catalogue estimate'}. {guideIsMapped ? 'This is a documented coarse-grade association, not an exact certified-grade value. ' : ''}Maximum analyzer influence: 25%. It is not a sale and does not increase completed-sale counts.</p>
+          <p className="mt-1 text-gray-500">{data.data.guideSource ?? 'Numista catalogue estimate'}. {guideIsMapped ? 'This is a documented coarse-grade association, not an exact certified-grade value. ' : ''}It is not a sale and does not enter Tradebilia analyzer valuation or completed-sale counts.</p>
         </div>}
         {Array.isArray(data.data.guidePrices) && data.data.guidePrices.length > 0 && <details className="rounded border border-gray-700/30 p-2 text-[10px]"><summary className="cursor-pointer text-gray-400">All returned catalogue grades ({data.data.guidePrices.length})</summary><div className="mt-1 grid grid-cols-2 gap-1">{data.data.guidePrices.map((price: any) => <span key={`${price.grade}-${price.currency}`} className="text-gray-300">{price.grade}: {price.currency} {Number(price.value).toLocaleString()}</span>)}</div></details>}
         {data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}
@@ -2408,7 +2408,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('rawg')) add({ id: 'rawg', label: 'RAWG', kind: 'reference', status: evidenceStatus(rawgQuery.data), fields: factualFields(rawgQuery.data, 'rawg'), message: rawgQuery.data?.message ?? null });
     if (enabledSources.has('igdb')) add({ id: 'igdb', label: 'IGDB', kind: 'reference', status: evidenceStatus(igdbQuery.data), fields: factualFields(igdbQuery.data, 'igdb'), message: igdbQuery.data?.message ?? null });
     if (enabledSources.has('smithsonian')) add({ id: 'smithsonian', label: 'Smithsonian', kind: 'reference', status: evidenceStatus(smithsonianQuery.data), fields: factualFields(smithsonianQuery.data, 'smithsonian'), message: smithsonianQuery.data?.message ?? null });
-    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_candidate' : 'reference_context', status: evidenceStatus(numistaQuery.data), fields: { ...factualFields(numistaQuery.data, 'numista'), guideValue: numistaQuery.data?.data?.guideValue, guideGrade: numistaQuery.data?.data?.guideGrade, guideSelectedGrade: numistaQuery.data?.data?.guideSelectedGrade, guideMatchType: numistaQuery.data?.data?.guideMatchType, guideRecordedSales: 0, guideTotalRecordedSales: 0 }, message: numistaQuery.data?.message ?? null });
+    if (enabledSources.has('numista')) add({ id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: 'reference_context', status: evidenceStatus(numistaQuery.data), fields: { ...factualFields(numistaQuery.data, 'numista'), guideValue: numistaQuery.data?.data?.guideValue, guideGrade: numistaQuery.data?.data?.guideGrade, guideSelectedGrade: numistaQuery.data?.data?.guideSelectedGrade, guideMatchType: numistaQuery.data?.data?.guideMatchType, guideRecordedSales: 0, guideTotalRecordedSales: 0 }, message: numistaQuery.data?.message ?? null });
     if (enabledSources.has('wikidata')) add({ id: 'wikidata', label: 'Wikidata', kind: 'reference', status: evidenceStatus(wikidataQueryResult.data), fields: factualFields(wikidataQueryResult.data, 'wikidata'), message: wikidataQueryResult.data?.message ?? null });
     if (enabledSources.has('cgc')) add({ id: 'cgc', label: 'Parse.bot CGC Comics', kind: 'certification', status: evidenceStatus(cgcQuery.data), fields: { title: cgcQuery.data?.data?.title, issueNumber: cgcQuery.data?.data?.issueNumber, year: cgcQuery.data?.data?.year, publisher: cgcQuery.data?.data?.publisher, certificationCompany: 'CGC', grade: cgcQuery.data?.data?.grade, labelCategory: cgcQuery.data?.data?.labelCategory }, message: cgcQuery.data?.message ?? null });
     if (enabledSources.has('psa')) add({ id: 'psa', label: 'Parse.bot PSA', kind: 'certification', status: evidenceStatus(psaQuery.data), fields: { title: psaQuery.data?.data?.cardTitle, player: psaQuery.data?.data?.subject, year: psaQuery.data?.data?.year, manufacturer: psaQuery.data?.data?.brand, cardNumber: psaQuery.data?.data?.cardNumber, certificationCompany: 'PSA', grade: psaQuery.data?.data?.grade }, message: psaQuery.data?.message ?? null });
