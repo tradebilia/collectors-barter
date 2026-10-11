@@ -165,6 +165,24 @@ function numericDenomination(value: string): number | null {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
+function isBullionWeightDenomination(value: string): boolean {
+  return /^\d+(?:\.\d+)?\s*(?:onza(?:s)?|ounce(?:s)?|oz|gram(?:s)?|g)\b/i.test(text(value));
+}
+
+function isPatternDetail(detail: NumistaTypeDetail): boolean {
+  const objectType = normalized(detail.object_type?.name ?? detail.type?.name);
+  const title = normalized(detail.title);
+  return objectType.includes('pattern') || title.includes('pattern');
+}
+
+function bullionWeightMatchesNumistaDetail(requested: string, detail: NumistaTypeDetail): boolean {
+  if (!isBullionWeightDenomination(requested) || isPatternDetail(detail)) return false;
+  const expected = normalized(requested);
+  const returnedValue = normalized(text(detail.value?.text));
+  const returnedTitle = normalized(detail.title);
+  return returnedValue === expected || returnedTitle.startsWith(expected);
+}
+
 function returnedCurrencyDenomination(value: string, currency: unknown): number | null {
   const returned = text(value);
   const currencyName = normalized(numistaCurrencyName(currency));
@@ -183,6 +201,12 @@ function denominationMatchesNumistaDetail(country: string, requested: string, de
   const returned = text(detail.value?.text);
   const actual = canonicalNumistaDenomination(country, returned);
   if (expected && actual && normalized(expected) === normalized(actual)) return true;
+
+  // Bullion entries such as Mexico's Libertad can be catalogue types without
+  // a face-value object. Accept a declared weight denomination only when the
+  // type title begins with that exact weight and Numista does not label it as
+  // a pattern. This avoids turning a bare numeric "1" into a bullion match.
+  if (bullionWeightMatchesNumistaDetail(expected, detail)) return true;
 
   // Inventory sometimes stores only a numeric face value for non-U.S. coins.
   // Accept that narrow representation only when Numista's returned denomination
@@ -227,7 +251,7 @@ function normalizeGuideGrade(value: unknown): string {
 
 function usableNumistaGrade(value: unknown): string {
   const grade = text(value);
-  return /^(?:ungraded|not[\s_-]*graded|none|n\/a)$/i.test(grade) ? '' : grade;
+  return /^(?:ungraded|not[\s_-]*graded|none|n\/a|0+(?:\.0+)?)$/i.test(grade) ? '' : grade;
 }
 
 function parsePositivePrice(value: unknown): number | null {
@@ -446,7 +470,7 @@ async function loadGuidePrices(
  * capped 25% secondary guide anchor, with provisional status when sales are absent.
  */
 export async function lookupNumistaCoin(
-  input: { category: string; title?: string; itemDetails?: unknown; grade?: string },
+  input: { category: string; title?: string; itemDetails?: unknown; grade?: string; condition?: string },
   fetchImpl: FetchLike = fetch,
   env: NumistaEnv = process.env,
 ): Promise<NumistaLookup> {
@@ -464,7 +488,7 @@ export async function lookupNumistaCoin(
     // condition such as very_good. Treat the sentinel as empty so the
     // condition-derived grade can still map to Numista's catalogue band.
     const inputGrade = usableNumistaGrade(input.grade);
-    const criteria = { ...parsedCriteria, grade: inputGrade || usableNumistaGrade(parsedCriteria.grade) };
+    const criteria = { ...parsedCriteria, grade: inputGrade || usableNumistaGrade(input.condition) || usableNumistaGrade(parsedCriteria.grade) };
   if (!criteria.query && !criteria.year) {
     return { status: 'error', message: 'Enter structured coin fields such as country, denomination, year, mint mark, or variety before requesting Numista.' };
   }

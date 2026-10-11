@@ -6,6 +6,7 @@ export type CoinVisualFallbackStatus =
   | 'not_needed'
   | 'image_unavailable'
   | 'provider_unavailable'
+  | 'provider_response_unusable'
   | 'low_confidence'
   | 'manual_review_required'
   | 'unresolved'
@@ -186,11 +187,30 @@ export const COIN_VISUAL_FALLBACK_RESPONSE_FORMAT = {
   },
 };
 
+const COIN_VISUAL_FALLBACK_ATTEMPTS = [
+  // Gemini Flash is the project's verified image-first structured-output path.
+  // It is tried first so a normal lookup uses one vision request.
+  {
+    model: 'gemini-3-flash-preview',
+    response_format: COIN_VISUAL_FALLBACK_RESPONSE_FORMAT,
+    maxTokens: 1300,
+  },
+  // Keep a bounded compatible fallback for a temporary provider/model failure.
+  // GPT needs minimal reasoning here so its output budget remains available for
+  // the small JSON candidate rather than internal reasoning.
+  {
+    model: 'gpt-5-mini',
+    response_format: { type: 'json_object' as const },
+    maxCompletionTokens: 1300,
+    reasoning: { effort: 'minimal' },
+  },
+] as const;
+
 export function buildCoinVisualFallbackPrompt(input: CoinVisualFallbackInput): string {
   const details = detailsObject(input.itemDetails);
   return `You are a cautious coin visual-identification fallback. Inspect only what can be seen in the supplied coin image. Do not appraise, authenticate, estimate value, invent an unseen date/mint/denomination, or treat a metal weight as a face value. Produce a candidate only, not a confirmed identity; Numista must confirm every candidate.
 
-Tradebilia input convention: for United States listings, a denomination input of "1" means 1 Dollar and ".10" or "0.10" means 1 Dime. Do not override a clear supplied field. If the image appears to disagree with a clear supplied country, denomination, year, mint, or type, explain the disagreement in conflictsWithStructuredData and leave that field candidate-only.
+Tradebilia input convention: for United States listings, a denomination input of "1" means 1 Dollar and ".10" or "0.10" means 1 Dime. For every other country, a bare numeric denomination such as "1" is ambiguous—not a clear denomination—and a visible unit such as "1 Peso" or "1 Onza" may clarify it. Do not report that non-U.S. numeric-to-unit clarification as a conflict. Do not override any other clear supplied field. If the image appears to disagree with a clear supplied country, denomination, year, mint, or type, explain the disagreement in conflictsWithStructuredData and leave that field candidate-only.
 
 For denomination, always include the unit, for example "1 Peso", "1 Dime", "1/2 Dollar", or "1 Onza". Do not return a number alone. For bullion, distinguish bullion_with_face_value from bullion_weight_only and preserve the weight unit in denomination. Use high confidence only for direct visible text/marks; use medium only for a strong design-based candidate with a visible supporting clue; otherwise use low. Place only short, observable details in visibleIdentifiers.
 
@@ -291,6 +311,16 @@ function applyVisualCandidate(input: CoinVisualFallbackInput, candidate: CoinVis
   };
 }
 
+function hasUsableCandidateIdentity(candidate: CoinVisualCandidate | null): candidate is CoinVisualCandidate {
+  return Boolean(candidate && (
+    candidate.country
+    || candidate.denomination
+    || candidate.year
+    || candidate.mintMark
+    || candidate.variety
+  ));
+}
+
 export async function resolveCoinVisualFallback(
   input: CoinVisualFallbackInput,
   llm: VisualLlm = invokeLLM,
@@ -309,49 +339,44 @@ export async function resolveCoinVisualFallback(
     };
   }
 
-  try {
-    const response = await llm({
-      model: 'gpt-5-mini',
-      messages: [{
-        role: 'user',
-        content: [
-          { type: 'text', text: buildCoinVisualFallbackPrompt(input) },
-          { type: 'image_url', image_url: { url: input.imageUrl, detail: 'high' } } as ImageContent,
-        ],
-      }],
-      response_format: COIN_VISUAL_FALLBACK_RESPONSE_FORMAT,
-      maxCompletionTokens: 1300,
-      temperature: 0,
-    });
-    const candidate = parseCoinVisualCandidate(extractResponseText(response.choices[0]?.message?.content));
-    if (!candidate) {
-      return {
-        report: {
-          status: 'provider_unavailable',
-          trigger: 'The structured Numista lookup did not produce a safe catalogue match.',
-          message: 'The visual provider did not return a usable structured candidate. The listing remains metadata-only.',
-          appliedFields: [],
-          preservedFields: [],
-          replacedAmbiguousFields: [],
-          missingRequiredFields: [],
-        },
-      };
+  const messages = [{
+    role: 'user' as const,
+    content: [
+      { type: 'text' as const, text: buildCoinVisualFallbackPrompt(input) },
+      { type: 'image_url' as const, image_url: { url: input.imageUrl, detail: 'high' } } as ImageContent,
+    ],
+  }];
+  let providerResponded = false;
+  let lastError: unknown;
+
+  for (const attempt of COIN_VISUAL_FALLBACK_ATTEMPTS) {
+    try {
+      const response = await llm({ ...attempt, messages, temperature: 0 });
+      providerResponded = true;
+      const candidate = parseCoinVisualCandidate(extractResponseText(response.choices[0]?.message?.content));
+      if (hasUsableCandidateIdentity(candidate)) return applyVisualCandidate(input, candidate);
+      lastError = new Error('The vision model returned no usable structured coin identity');
+    } catch (error) {
+      lastError = error;
     }
-    return applyVisualCandidate(input, candidate);
-  } catch (error) {
-    console.warn('[Test AI] Numista visual fallback unavailable:', error instanceof Error ? error.message : 'unknown error');
-    return {
-      report: {
-        status: 'provider_unavailable',
-        trigger: 'The structured Numista lookup did not produce a safe catalogue match.',
-        message: 'The visual provider request was unavailable. The listing remains metadata-only.',
-        appliedFields: [],
-        preservedFields: [],
-        replacedAmbiguousFields: [],
-        missingRequiredFields: [],
-      },
-    };
   }
+
+  if (!providerResponded && lastError instanceof Error) {
+    console.warn('[Test AI] Numista visual fallback unavailable:', lastError.message);
+  }
+  return {
+    report: {
+      status: providerResponded ? 'provider_response_unusable' : 'provider_unavailable',
+      trigger: 'The structured Numista lookup did not produce a safe catalogue match.',
+      message: providerResponded
+        ? 'The visual provider responded, but none of its compatible retries produced a usable structured coin identity. The listing remains metadata-only.'
+        : 'The visual provider could not complete a compatible image-identification retry. The listing remains metadata-only.',
+      appliedFields: [],
+      preservedFields: [],
+      replacedAmbiguousFields: [],
+      missingRequiredFields: [],
+    },
+  };
 }
 
 export function shouldAttemptCoinVisualFallback(result: { status: string; message?: string }): boolean {
@@ -371,8 +396,8 @@ export function visualFallbackNotNeededReport(): CoinVisualFallbackReport {
 }
 
 export async function recoverNumistaWithVisualFallback(
-  input: { category: string; title?: string; itemDetails?: string; grade?: string; imageUrl?: string },
-  lookup: (request: { category: string; title?: string; itemDetails?: string; grade?: string }) => Promise<NumistaLookup>,
+  input: { category: string; title?: string; itemDetails?: string; grade?: string; condition?: string; imageUrl?: string },
+  lookup: (request: { category: string; title?: string; itemDetails?: string; grade?: string; condition?: string }) => Promise<NumistaLookup>,
   resolveFallback: (request: CoinVisualFallbackInput) => Promise<CoinVisualFallbackResolution> = resolveCoinVisualFallback,
 ): Promise<NumistaLookup & { visualFallback: CoinVisualFallbackReport }> {
   const structuredResult = await lookup(input);

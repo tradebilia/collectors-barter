@@ -2012,6 +2012,7 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
     title: item.title,
     itemDetails: item.itemDetails ?? undefined,
     grade: item.grade ?? undefined,
+    condition: item.condition ?? undefined,
     imageUrl: item.primaryPhotoUrl ?? undefined,
   }, { enabled: supported && !!item.title, retry: false });
   const guideIsMapped = data?.data?.guideMatchType === 'mapped';
@@ -2215,7 +2216,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     itemDetails: item.itemDetails ?? undefined,
   }, { enabled: enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsSearchCriteria.releaseTitle.length >= 2 });
   const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
-  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined, grade: item.grade ?? undefined, imageUrl: item.primaryPhotoUrl ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
+  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined, grade: item.grade ?? undefined, condition: item.condition ?? undefined, imageUrl: item.primaryPhotoUrl ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
   const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
   const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });

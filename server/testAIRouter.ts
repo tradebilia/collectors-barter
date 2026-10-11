@@ -2083,6 +2083,7 @@ export const testAIRouter = router({
       title: z.string().trim().max(240).optional(),
       itemDetails: z.string().max(8_000).optional(),
       grade: z.string().trim().max(50).optional(),
+      condition: z.string().trim().max(50).optional(),
       imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {

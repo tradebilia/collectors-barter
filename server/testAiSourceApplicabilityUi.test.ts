@@ -178,6 +178,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Visual identity fallback');
     expect(source).toContain('Image evidence never creates a value, changes the saved listing, or bypasses Numista confirmation.');
     expect(source).toContain('imageUrl: item.primaryPhotoUrl ?? undefined');
+    expect(source).toContain('condition: item.condition ?? undefined');
   });
 
   it('exposes full Cardsight pricing, population, marketplace, and time-series details for review', () => {

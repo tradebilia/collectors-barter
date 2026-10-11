@@ -37,6 +37,8 @@ describe('Numista visual identity fallback', () => {
 
     expect(prompt).toContain('"1" means 1 Dollar');
     expect(prompt).toContain('".10" or "0.10" means 1 Dime');
+    expect(prompt).toContain('a bare numeric denomination such as "1" is ambiguous');
+    expect(prompt).toContain('may clarify it');
     expect(prompt).toContain('Numista must confirm every candidate');
     expect(prompt).toContain('Do not appraise');
   });
@@ -65,6 +67,45 @@ describe('Numista visual identity fallback', () => {
     const details = JSON.parse(result.itemDetails ?? '{}');
     expect(details).toMatchObject({ country: 'Mexico', denomination: '1 Peso', year: '1982', mintMark: 'Mexican Mint' });
     expect(llm).toHaveBeenCalledOnce();
+  });
+
+  it('uses the verified image-first provider and retries a blank structured response once', async () => {
+    const blankCandidate = {
+      ...candidate,
+      country: '', denomination: '', year: '', mintMark: '', variety: '', metal: '',
+      visibleIdentifiers: [], confidence: 'low',
+    };
+    const llm = vi.fn()
+      .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify(blankCandidate) } }] })
+      .mockResolvedValueOnce({ choices: [{ message: { content: JSON.stringify(candidate) } }] });
+
+    const result = await resolveCoinVisualFallback({
+      title: '1982 Mexican coin',
+      itemDetails: JSON.stringify({ country: 'Mexico', denomination: '1', year: '1982' }),
+      imageUrl: 'https://example.com/mexico-coin.jpg',
+    }, llm as any);
+
+    expect(result.report.status).toBe('candidate_ready');
+    expect(llm).toHaveBeenCalledTimes(2);
+    expect(llm.mock.calls[0][0]).toMatchObject({ model: 'gemini-3-flash-preview', maxTokens: 1300 });
+    expect(llm.mock.calls[1][0]).toMatchObject({ model: 'gpt-5-mini', response_format: { type: 'json_object' }, reasoning: { effort: 'minimal' } });
+  });
+
+  it('distinguishes an unusable provider response from an unavailable provider', async () => {
+    const blankCandidate = {
+      ...candidate,
+      country: '', denomination: '', year: '', mintMark: '', variety: '', metal: '',
+      visibleIdentifiers: [], confidence: 'low',
+    };
+    const llm = vi.fn().mockResolvedValue({ choices: [{ message: { content: JSON.stringify(blankCandidate) } }] });
+
+    const result = await resolveCoinVisualFallback({
+      title: '1982 Mexican coin', itemDetails: '{}', imageUrl: 'https://example.com/mexico-coin.jpg',
+    }, llm as any);
+
+    expect(result.report.status).toBe('provider_response_unusable');
+    expect(result.report.message).toContain('responded');
+    expect(llm).toHaveBeenCalledTimes(2);
   });
 
   it('never overwrites a clear United States face value with an image candidate', async () => {

@@ -158,6 +158,39 @@ describe('Numista coin metadata adapter', () => {
     expect(result.message).toContain('none matched the requested denomination 1');
   });
 
+  it('matches an explicit bullion weight to the standard Libertad while excluding same-year patterns', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        types: [
+          { id: 347875, title: '1 Onza Libertad Pattern', issuer: { name: 'Mexico' }, min_year: 1982, max_year: 1982 },
+          { id: 14465, title: '1 Onza Libertad', issuer: { name: 'Mexico' }, min_year: 1982, max_year: 1995 },
+        ],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        id: 347875, title: '1 Onza Libertad Pattern', issuer: { name: 'Mexico' }, min_year: 1982, max_year: 1982,
+        object_type: { name: 'Patterns' }, value: { currency: { name: 'Peso' } }, mints: [{ name: 'Mexican Mint' }],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        id: 14465, title: '1 Onza Libertad', issuer: { name: 'Mexico' }, min_year: 1982, max_year: 1995,
+        object_type: { name: 'Non-circulating coins' }, mints: [{ name: 'Mexican Mint' }],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 8801, year: 1982, mint_letter: 'Mo' }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'UNC', price: 99.5 }] }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1982 Mo Mexico 1 oz .999 Silver Libertad Coin 1 Onza Silver BU',
+      grade: '0.00',
+      condition: 'near_mint',
+      itemDetails: JSON.stringify({ country: 'Mexico', denomination: '1 Onza', year: '1982', mintMark: 'Mexican Mint', variety: 'Libertad', composition: 'silver' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({ id: 14465, title: '1 Onza Libertad', guideIssueId: 8801, guideValue: 99.5, guideGrade: 'UNC', guideSelectedGrade: 'NEARMINT', guideMatchType: 'mapped' });
+    expect(String(fetchMock.mock.calls[4]?.[0])).toContain('/types/14465/issues');
+  });
+
   it.each([
     ['very_good', 'VG'], ['AG3', 'G'], ['G4', 'G'], ['G6', 'G'], ['VG8', 'VG'], ['VG10', 'VG'], ['F12', 'F'], ['F15', 'F'],
     ['VF20', 'VF'], ['VF25', 'VF'], ['VF30', 'VF'], ['VF35', 'VF'], ['XF40', 'XF'], ['XF45', 'XF'],
