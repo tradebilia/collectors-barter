@@ -4,12 +4,14 @@ import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalOb
 
 describe('sandbox specialist source activation', () => {
   it('activates the registered test sources and excludes HTTP 403-blocked or unapproved sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(18);
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(17);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('cng');
     expect(getSandboxSpecialistSource('cng')).toBeNull();
+    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('coin_archives');
+    expect(getSandboxSpecialistSource('coin_archives')).toBeNull();
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('omega_auctions');
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('propstore');
-    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'lcg', 'coin_archives', 'weiss', 'nate_sanders', 'tcgplayer_reef']));
+    expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).toEqual(expect.arrayContaining(['bertoia', 'hakes', 'lcg', 'weiss', 'nate_sanders', 'tcgplayer_reef']));
     for (const removed of ['university_archives', 'swann', 'heritage', 'rr_auction', 'alexander_historical']) {
       expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain(removed);
       expect(getSandboxSpecialistSource(removed)).toBeNull();

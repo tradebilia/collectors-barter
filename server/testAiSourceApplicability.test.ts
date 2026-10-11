@@ -43,7 +43,7 @@ describe('internal Test AI source-category applicability policy', () => {
 
   it('shows active specialist sources in their researched categories while making Goldin and Weiss automatic context searches available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', gradingCompany: 'NGC', hasTitle: true }).map((source) => source.sourceId);
-    expect(coinIds).toContain('coin_archives');
+    expect(coinIds).not.toContain('coin_archives');
     expect(coinIds).not.toContain('cng');
     expect(coinIds).not.toContain('heritage');
     expect(coinIds).not.toContain('rumsey');

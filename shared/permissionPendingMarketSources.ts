@@ -1,6 +1,5 @@
 export type PermissionPendingMarketSourceId =
   | 'ngc'
-  | 'coin_archives'
   | 'rumsey'
   | 'cherrystone'
   | 'raritan'
@@ -52,18 +51,6 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     liveTestStatus: 'verified',
     liveTestSummary: 'Two distinct NGC UCIDs publicly returned Prices Realized identity, date, USD price, grade, and stated price basis.',
     permissionNote: 'Awaiting written permission for any automated or retained auction-record use.',
-  },
-  {
-    id: 'coin_archives',
-    label: 'CoinArchives',
-    categories: ['coins'],
-    sourceUrl: 'https://www.coinarchives.com/faq.php',
-    purpose: 'Ancient and world-coin auction catalog and hammer-price context.',
-    priceBasis: 'hammer',
-    status: 'pending_permission',
-    liveTestStatus: 'no_completed_item',
-    liveTestSummary: 'Public archive is auction-level and CoinArchives Pro gates individual completed-lot data; no public completed item contract was available.',
-    permissionNote: 'Awaiting written permission for automated lookup or record retention.',
   },
   {
     id: 'rumsey',

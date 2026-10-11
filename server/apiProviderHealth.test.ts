@@ -50,6 +50,7 @@ describe("Admin API provider health registry", () => {
     }
 
     expect(overview.map((provider) => provider.id)).not.toContain('specialist_cng');
+    expect(overview.map((provider) => provider.id)).not.toContain('specialist_coin_archives');
 
   });
 
