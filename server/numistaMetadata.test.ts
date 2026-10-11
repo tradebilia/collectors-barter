@@ -37,6 +37,18 @@ describe('Numista coin metadata adapter', () => {
     expect(halfDollar.query).toContain('1/2 Dollar');
   });
 
+  it('preserves explicit non-US currency and bullion units without inventing a unit for bare numbers', () => {
+    const peso = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'Mexico', denomination: '1 peso', year: '1982' }));
+    const nuevoPeso = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'Mexico', denomination: '20 nuevos pesos', year: '1993' }));
+    const bullion = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'Mexico', denomination: '1 oz', year: '1982' }));
+    const bare = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'Mexico', denomination: '1', year: '1982' }));
+
+    expect(peso.denomination).toBe('1 Peso');
+    expect(nuevoPeso.denomination).toBe('20 Nuevo Peso');
+    expect(bullion.denomination).toBe('1 Onza');
+    expect(bare.denomination).toBe('1');
+  });
+
   it('matches Numista’s half-dollar detail when the listing stores 50c', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })

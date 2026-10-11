@@ -148,7 +148,28 @@ function canonicalUnitedStatesDenomination(value: string): string {
 }
 
 function canonicalNumistaDenomination(country: string, denomination: string): string {
-  return isUnitedStates(country) ? canonicalUnitedStatesDenomination(denomination) : text(denomination);
+  if (isUnitedStates(country)) return canonicalUnitedStatesDenomination(denomination);
+
+  // For non-U.S. issuers, preserve the unit instead of treating a bare number
+  // as a universal currency. Peso/new-peso and bullion-weight eras can overlap;
+  // a bare number therefore remains unresolved until Numista confirms the
+  // returned currency and type.
+  const source = text(denomination);
+  const words = normalized(source);
+  if (!source) return '';
+  if (/^\d+(?:\.\d+)?\s*(?:peso|pesos)$/.test(words)) {
+    const amount = words.match(/^\d+(?:\.\d+)?/)?.[0] ?? '';
+    return `${amount} Peso`;
+  }
+  if (/^\d+(?:\.\d+)?\s*(?:nuevo\s+peso|nuevos\s+pesos)$/.test(words)) {
+    const amount = words.match(/^\d+(?:\.\d+)?/)?.[0] ?? '';
+    return `${amount} Nuevo Peso`;
+  }
+  if (/^\d+(?:\.\d+)?\s*(?:onza|onzas|ounce|ounces|oz)$/.test(words)) {
+    const amount = words.match(/^\d+(?:\.\d+)?/)?.[0] ?? '';
+    return `${amount} Onza`;
+  }
+  return source;
 }
 
 function numistaCurrencyName(value: unknown): string {
