@@ -20,6 +20,10 @@
 
 ## Approved PCGS Auction Prices Realized policy
 
+## Owner-requested source removal — October 11, 2026
+
+**CNG Past Auctions has been removed from the active Test AI sandbox.** It is no longer selectable, applicable to Coins, queryable through the specialist router, registered as a canonical adapter, or included in provider-health checks. Historical research/audit notes remain unchanged for recordkeeping only; they are not active source configuration.
+
 The owner explicitly approved this Trade Analyzer behavior:
 
 1. **Certificate-first identity:** For a PCGS-graded coin, use its PCGS certificate number first. CoinFacts confirms the certified item and retrieves the certificate-level Auction Prices Realized history before any broader item history is considered.

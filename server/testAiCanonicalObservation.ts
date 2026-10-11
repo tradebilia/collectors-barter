@@ -26,7 +26,6 @@ type AdapterId =
   | 'pcgs_auction_results'
   | '130point'
   | 'ngc'
-  | 'cng'
   | 'rumsey'
   | 'cherrystone'
   | 'raritan'
@@ -123,7 +122,6 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
     completedStatusBasis: '130point completed-sale search result',
   },
   ngc: { id: 'ngc', label: 'NGC Auction Central', version: '1.0.0', defaultOriginMarketplace: 'ngc', defaultPriceBasis: 'closed', completedStatusBasis: 'NGC Prices Realized context' },
-  cng: { id: 'cng', label: 'CNG Past Auctions', version: '1.0.0', defaultOriginMarketplace: 'cng', defaultPriceBasis: 'closed', completedStatusBasis: 'CNG individually explicit Sold For lot' },
   rumsey: { id: 'rumsey', label: 'Rumsey Auction Results', version: '1.0.0', defaultOriginMarketplace: 'rumsey', defaultPriceBasis: 'closed', completedStatusBasis: 'Rumsey Prices Realized lot join' },
   cherrystone: { id: 'cherrystone', label: 'Cherrystone Realizations', version: '1.0.0', defaultOriginMarketplace: 'cherrystone', defaultPriceBasis: 'unknown', completedStatusBasis: 'Cherrystone Price Realized result' },
   raritan: { id: 'raritan', label: 'Raritan Past Auctions', version: '1.0.0', defaultOriginMarketplace: 'raritan', defaultPriceBasis: 'closed', completedStatusBasis: 'Raritan Prices Realized auction table' },

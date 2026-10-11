@@ -103,7 +103,6 @@ export const SPECIALIST_MARKETPLACE_TIMEOUT_MS = 10_000;
 
 const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   ngc: { hosts: ['ngccoin.com', 'www.ngccoin.com'], linkPattern: /\/auction-central\/us\/.+\/auctions\//i, recordCap: 6 },
-  cng: { hosts: ['cngcoins.com', 'www.cngcoins.com'], linkPattern: /(?:PastAuction|Lot)\.aspx/i, recordCap: 8 },
   rumsey: { hosts: ['rumseyauctions.com', 'www.rumseyauctions.com'], linkPattern: /\/(?:auctions\/lot|pr\/sale|search)\//i, recordCap: 8 },
   cherrystone: { hosts: ['cherrystoneauctions.com', 'www.cherrystoneauctions.com'], linkPattern: /\/_auction\/(?:pr|results)\.asp/i, recordCap: 8 },
   morphy: { hosts: ['auctions.morphyauctions.com', 'morphyauctions.com', 'www.morphyauctions.com'], linkPattern: /(?:LOT\d+\.aspx|past-auctions)/i, recordCap: 8 },

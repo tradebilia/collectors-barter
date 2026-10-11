@@ -43,7 +43,8 @@ describe('internal Test AI source-category applicability policy', () => {
 
   it('shows active specialist sources in their researched categories while making Goldin and Weiss automatic context searches available everywhere', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', gradingCompany: 'NGC', hasTitle: true }).map((source) => source.sourceId);
-    expect(coinIds).toEqual(expect.arrayContaining(['coin_archives', 'cng']));
+    expect(coinIds).toContain('coin_archives');
+    expect(coinIds).not.toContain('cng');
     expect(coinIds).not.toContain('heritage');
     expect(coinIds).not.toContain('rumsey');
 
@@ -82,6 +83,8 @@ describe('internal Test AI source-category applicability policy', () => {
 
   it('keeps Comic Book Realm configured for automatic title searching', () => {
     expect(SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === 'comic_book_realm')?.searchContract).toBe('automatic_title_search');
+    expect(SANDBOX_SPECIALIST_SOURCES.some((source) => source.id === 'cng')).toBe(false);
+    expect(TEST_AI_SOURCE_APPLICABILITY.some((source) => source.sourceId === 'cng')).toBe(false);
   });
 
   it('does not associate Nate D. Sanders with Comics', () => {

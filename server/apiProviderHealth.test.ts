@@ -49,11 +49,8 @@ describe("Admin API provider health registry", () => {
       });
     }
 
-    const fetchImpl = vi.fn();
-    const result = await runApiProviderHealthCheck("specialist_cng", { env: {}, fetchImpl: fetchImpl as any });
-    expect(result).toMatchObject({ status: "permission_pending", canTest: false, canTestInBatch: false, validationStatus: "verified" });
-    expect(fetchImpl).not.toHaveBeenCalled();
-    expect(getBatchEligibleApiProviderIds({})).not.toContain("specialist_cng");
+    expect(overview.map((provider) => provider.id)).not.toContain('specialist_cng');
+
   });
 
   it("recognizes the legacy Sold-Comps secret alias used by the current adapter", () => {

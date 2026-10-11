@@ -1,6 +1,5 @@
 export type SandboxSpecialistSourceId =
   | 'ngc'
-  | 'cng'
   | 'rumsey'
   | 'cherrystone'
   | 'raritan'
@@ -54,7 +53,6 @@ export type SandboxSpecialistSource = {
  */
 export const SANDBOX_SPECIALIST_SOURCES: readonly SandboxSpecialistSource[] = [
   { id: 'ngc', label: 'NGC Auction Central', categories: ['coins'], sourceUrl: 'https://www.ngccoin.com/auction-central/us/', currencyPolicy: 'usd_inferred_us_route', priceBasis: 'including_buyers_premium', evidenceMode: 'context_only_until_adapter', searchContract: 'public_locator_required', searchInstruction: 'Paste a public NGC Auction Central coin-result URL (the verified route includes the NGC Universal ID).', activationNote: 'One bounded public result page is parsed; no generic keyword endpoint was verified.' },
-  { id: 'cng', label: 'CNG Past Auctions', categories: ['coins'], sourceUrl: 'https://www.cngcoins.com/PastAuction.aspx?AUCTION_ID=238&BACK_URL=%2F', currencyPolicy: 'usd_inferred_us_route', priceBasis: 'hammer', evidenceMode: 'context_only_until_adapter', searchContract: 'public_locator_required', searchInstruction: 'Paste a public CNG PastAuction or Lot URL. Only explicit realized lots are retained.', activationNote: 'Auction/lot routes are public; no invented free-text query is used.' },
   { id: 'rumsey', label: 'Rumsey Auction Results', categories: ['stamps'], sourceUrl: 'https://www.rumseyauctions.com/auctions', currencyPolicy: 'usd_symbol_context', priceBasis: 'hammer', evidenceMode: 'context_only_until_adapter', searchContract: 'public_locator_required', searchInstruction: 'Paste a public Rumsey completed lot or allowlisted sale-results URL.', activationNote: 'Completed lot pages expose description, estimates, and realized price.' },
   { id: 'cherrystone', label: 'Cherrystone Realizations', categories: ['stamps'], sourceUrl: 'https://www.cherrystoneauctions.com/_auction/pr.asp', currencyPolicy: 'usd_symbol_context', priceBasis: 'unknown', evidenceMode: 'context_only_until_adapter', searchContract: 'public_locator_required', searchInstruction: 'Paste a public Cherrystone realization or lot URL with a known auction ID.', activationNote: 'Public realization and lot pages are bounded; price basis remains source-attributed.' },
   { id: 'raritan', label: 'Raritan Past Auctions', categories: ['stamps'], sourceUrl: 'https://www.raritanstamps.com/PastAuc/', currencyPolicy: 'currency_unresolved', priceBasis: 'hammer', evidenceMode: 'context_only_until_adapter', searchContract: 'price_table_locator_required', searchInstruction: 'A public PR{auction}.php result table can be read only with an exact lot locator; it does not contain enough title data for a general title search.', activationNote: 'No canonical per-lot route was verified, so title-only search remains unavailable.' },

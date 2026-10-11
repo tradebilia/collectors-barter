@@ -1,7 +1,6 @@
 export type PermissionPendingMarketSourceId =
   | 'ngc'
   | 'coin_archives'
-  | 'cng'
   | 'rumsey'
   | 'cherrystone'
   | 'raritan'
@@ -65,18 +64,6 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     liveTestStatus: 'no_completed_item',
     liveTestSummary: 'Public archive is auction-level and CoinArchives Pro gates individual completed-lot data; no public completed item contract was available.',
     permissionNote: 'Awaiting written permission for automated lookup or record retention.',
-  },
-  {
-    id: 'cng',
-    label: 'CNG Past Auctions',
-    categories: ['coins'],
-    sourceUrl: 'https://www.cngcoins.com/PastAuction.aspx?AUCTION_ID=238&BACK_URL=%2F',
-    purpose: 'Ancient and world-coin primary auction records.',
-    priceBasis: 'unknown',
-    status: 'pending_permission',
-    liveTestStatus: 'verified',
-    liveTestSummary: 'Two distinct public CNG LOT_ID pages returned explicit Sold For status, identifiers, date, USD price, grade, and buyer-fee wording.',
-    permissionNote: 'Awaiting a commercial data-use agreement before any remote retrieval.',
   },
   {
     id: 'rumsey',
