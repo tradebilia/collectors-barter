@@ -9,11 +9,11 @@
 
 ## Current verified baseline
 
-- P0 implementation checkpoint: `6648f1a2` (later documentation-only checkpoints retain this implementation unchanged)
-- GitHub `main`: `6648f1a23ec7df1a38edbe5805f697421138af3c`
+- P0 implementation checkpoint: `6648f1a2` (later work retains this implementation unchanged)
+- GitHub repository: `tradebilia/collectors-barter`, branch `main` — fetch first for the exact current SHA
 - Public domains: `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space`
-- Full validation: 319 Vitest files / 1,446 tests passed; TypeScript and production build passed.
-- Production dependency audit: no high or critical findings.
+- Latest functional policy: signed, exact-grade PCGS Auction Prices Realized rows within 365 days are current-value candidates; older exact-grade PCGS rows are historical trend only; incomplete, non-USD, undated, and grade-mismatched rows are context only.
+- Latest validation: 319 Vitest files / 1,449 tests passed; TypeScript and production build passed; dependency audit has no high or critical findings.
 - Shared database baseline: 3 users, 3 profiles, 48 listings, 74 listing photos, 1 inquiry reply, 6 trade proposals.
 
 ## Critical safety rules
@@ -22,6 +22,7 @@
 - Do not execute `drizzle/0024_p0_music_category_schema.sql`. It is a reviewed pending artifact, not an approved database change.
 - Do not run migrations, seed scripts, or destructive scripts without Rich’s explicit approval for that exact operation.
 - Never print or commit raw credentials, database URLs, encryption/JWT keys, OAuth tokens, or `.project-config.json`.
+- PCGS current-value rows use the provider’s realized amount **as reported**; buyer-premium treatment is not disclosed. Preserve this caveat and never relabel it as an all-in price.
 
 ## Synchronization policy
 

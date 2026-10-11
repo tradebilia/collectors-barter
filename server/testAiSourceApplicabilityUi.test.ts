@@ -160,12 +160,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Context only');
   });
 
-  it('makes PCGS historical rows visible without loosening conservative valuation rules', () => {
+  it('separates PCGS current-value candidates from historical trend rows', () => {
     expect(source).toContain('historicalRowsLabel');
     expect(source).toContain('Jump to loaded rows');
-    expect(source).toContain('Valuation candidates');
-    expect(source).toContain('The rows are loaded and shown below. Context-only rows are not lost');
-    expect(source).toContain('id={`pcgs-history-rows-${side}`}');
+    expect(source).toContain('Current-value candidates');
+    expect(source).toContain('Historical trend');
+    expect(source).toContain('Older exact-grade rows are retained for trend only');
+    expect(source).toContain('Only an exact-grade, signed PCGS row dated within 365 days is submitted');
+    expect(source).toContain('id={`pcgs-history-rows-${side}`');
   });
 
   it('shows Numista catalogue estimates as a weighted guide input while preserving sale classification', () => {

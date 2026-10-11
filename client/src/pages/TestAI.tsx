@@ -1399,6 +1399,29 @@ function SgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
   );
 }
 
+const PCGS_CURRENT_VALUE_WINDOW_MS = 365 * 86_400_000;
+
+function isPcgsCurrentWindow(date: unknown): boolean {
+  const parsed = Date.parse(String(date ?? ''));
+  return Number.isFinite(parsed) && parsed <= Date.now() && Date.now() - parsed <= PCGS_CURRENT_VALUE_WINDOW_MS;
+}
+
+function normalizedPcgsAuctionGrade(value: unknown): string {
+  return String(value ?? '').replace(/\s+/g, '').toUpperCase();
+}
+
+function isExactGradePcgsAuction(auction: any, targetGrade: string): boolean {
+  return Boolean(
+    auction?.provenanceToken
+    && auction?.saleStatus === 'completed'
+    && auction?.currency === 'USD'
+    && Number(auction?.price) > 0
+    && auction?.evidenceDisposition !== 'context_only'
+    && targetGrade
+    && normalizedPcgsAuctionGrade(auction?.grade) === targetGrade,
+  );
+}
+
 function PcgsSection({ item, side, auctionData, auctionLoading }: { item: SelectedItem; side: 'left' | 'right'; auctionData?: any; auctionLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getPcgsData.useQuery(
@@ -1406,18 +1429,11 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
     { enabled: !!item.certId && item.gradingCompany === 'PCGS' },
   );
   const auctions = auctionData?.data?.auctions ?? [];
-  const analyzerCandidates = auctions.filter((auction: any) =>
-    auction?.provenanceToken
-    && auction?.saleStatus === 'completed'
-    && auction?.currency === 'USD'
-    && auction?.priceBasis === 'sold',
-  );
-  const targetAuctionGrade = String(auctionData?.data?.grade ?? data?.data?.grade ?? '').replace(/\s+/g, '').toUpperCase();
-  const exactGradeAnalyzerCandidates = analyzerCandidates.filter((auction: any) =>
-    targetAuctionGrade
-    && String(auction?.grade ?? '').replace(/\s+/g, '').toUpperCase() === targetAuctionGrade,
-  );
-  const auctionContextOnly = auctions.filter((auction: any) => !analyzerCandidates.includes(auction));
+  const targetAuctionGrade = normalizedPcgsAuctionGrade(auctionData?.data?.grade ?? data?.data?.grade);
+  const exactGradeRows = auctions.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade));
+  const currentValueCandidates = exactGradeRows.filter((auction: any) => isPcgsCurrentWindow(auction.date));
+  const historicalTrendRows = exactGradeRows.filter((auction: any) => !isPcgsCurrentWindow(auction.date));
+  const auctionContextOnly = auctions.filter((auction: any) => !currentValueCandidates.includes(auction) && !historicalTrendRows.includes(auction));
   const historicalRowsLabel = `${auctions.length} historical sale${auctions.length === 1 ? '' : 's'} loaded`;
 
   if (!item.certId || item.gradingCompany !== 'PCGS') return (
@@ -1462,11 +1478,11 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
       )}
       <div id={`pcgs-history-${side}`} className="space-y-2 rounded bg-gray-900/40 p-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — historical sales</p>
+          <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — current value and historical trend</p>
           {auctions.length > 0 && <a href={`#pcgs-history-rows-${side}`} className="text-[9px] font-semibold text-cyan-300 underline underline-offset-2">Jump to loaded rows</a>}
         </div>
-        <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All history when needed. Signed eBay final prices can enter the analyzer; auction rows without a disclosed all-in price remain visible as market context so hammer and buyer-premium totals are not mixed.</p>
-        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-3 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Valuation candidates</p><p className="font-bold text-cyan-200">{exactGradeAnalyzerCandidates.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">The rows are loaded and shown below. Context-only rows are not lost; they are excluded from direct valuation because PCGS does not confirm the buyer-premium/all-in treatment, or the row lacks the signed eBay evidence and exact target-grade evidence required by the analyzer.</p></div>}
+        <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All history when needed. Exact-grade rows dated within the last 365 days are current-value candidates. Exact-grade older rows are historical trend only. PCGS buyer-premium treatment is not disclosed, so the reported amount is labeled as realized-price-as-reported.</p>
+        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-4 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Current-value candidates</p><p className="font-bold text-cyan-200">{currentValueCandidates.length}</p></div><div><p className="uppercase text-gray-500">Historical trend</p><p className="font-bold text-violet-200">{historicalTrendRows.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">Only an exact-grade, signed PCGS row dated within 365 days is submitted as a current-value candidate. Older exact-grade rows are retained for trend only; mismatched, undated, or incomplete rows remain context only.</p></div>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
         {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">PCGS did not return detailed historical sale rows for this item.</p>}
@@ -1480,7 +1496,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
               </div>
               <p className="shrink-0 text-[11px] font-semibold text-emerald-300">{auction.price != null ? formatWholeDollar(auction.price) : 'Price N/A'}</p>
             </div>
-            <p className={`mt-1 text-[8px] font-semibold ${exactGradeAnalyzerCandidates.includes(auction) ? 'text-emerald-300' : 'text-amber-300'}`}>{exactGradeAnalyzerCandidates.includes(auction) ? 'Analyzer candidate — signed PCGS eBay completed-sale record at the target grade; final identity, recency, duplicate, and comparable gates still apply.' : analyzerCandidates.includes(auction) ? `Historical context — signed PCGS eBay completed sale at ${auction.grade || 'an unidentified'} grade; excluded from direct valuation when it differs from the target grade.` : 'Market context only — PCGS does not confirm buyer-premium treatment for this auction price.'}</p>
+            <p className={`mt-1 text-[8px] font-semibold ${currentValueCandidates.includes(auction) ? 'text-emerald-300' : historicalTrendRows.includes(auction) ? 'text-violet-300' : 'text-amber-300'}`}>{currentValueCandidates.includes(auction) ? 'Current-value candidate — signed PCGS Auction Prices Realized row at the exact certified grade and dated within 365 days. The reported realized amount is used as reported; buyer-premium treatment is not disclosed.' : historicalTrendRows.includes(auction) ? 'Historical trend only — exact certified grade, but older than 365 days; it cannot establish current value.' : 'Context only — the row is undated, incomplete, non-USD, or does not match the certified target grade.'}</p>
           </div>
         ))}
         </div>
@@ -2429,13 +2445,12 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
       const auctions = pcgsAuctionData?.data?.auctions ?? [];
       const dated = auctions.filter((auction: any) => Number.isFinite(Date.parse(String(auction.date ?? ''))) && Number(auction.price) > 0);
-      const analyzerCandidates = dated.filter((auction: any) => auction?.provenanceToken && auction?.saleStatus === 'completed' && auction?.currency === 'USD' && auction?.priceBasis === 'sold');
-      const targetAuctionGrade = String(pcgsAuctionData?.data?.grade ?? pcgsQuery.data?.data?.grade ?? '').replace(/\s+/g, '').toUpperCase();
-      const exactGradeAnalyzerCandidates = analyzerCandidates.filter((auction: any) => targetAuctionGrade && String(auction?.grade ?? '').replace(/\s+/g, '').toUpperCase() === targetAuctionGrade);
-      const currentValue = dated.filter((auction: any) => Date.now() - Date.parse(String(auction.date)) <= 365 * 86_400_000);
-      const historicalTrend = dated.filter((auction: any) => !currentValue.includes(auction));
+      const targetAuctionGrade = normalizedPcgsAuctionGrade(pcgsAuctionData?.data?.grade ?? pcgsQuery.data?.data?.grade);
+      const exactGradeRows = dated.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade));
+      const currentValue = exactGradeRows.filter((auction: any) => isPcgsCurrentWindow(auction.date));
+      const historicalTrend = exactGradeRows.filter((auction: any) => !isPcgsCurrentWindow(auction.date));
       const undated = auctions.filter((auction: any) => !Number.isFinite(Date.parse(String(auction.date ?? ''))) || !(Number(auction.price) > 0));
-      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: exactGradeAnalyzerCandidates.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, analyzerSubmittedSaleCount: exactGradeAnalyzerCandidates.length, analyzerSubmittedPrices: exactGradeAnalyzerCandidates.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: undated.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
+      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: undated.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     // Certificate-mode PCGS items receive verified year/denomination/grade
     // from CoinFacts in marketItem. Use that identity for readiness so the UI

@@ -99,7 +99,15 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   const trustedInput = verification.verified ? verification.sale : input;
   const sourceId = sourceKey(trustedInput.sourceId || trustedInput.marketplace);
   const sourceDefault = COMPLETED_SALE_SOURCE_DEFAULTS[sourceId];
-  const dateInfo = normalizedDate(trustedInput.date, nowMs, options);
+  // PCGS Auction Prices Realized has an intentionally narrower policy than the
+  // general illiquid-market extension. Exact-grade PCGS rows older than one
+  // year are useful for movement/trend context, but never become a current
+  // value merely because no newer sale is available.
+  const isPcgsAuctionResult = sourceId === 'pcgs_auction_results';
+  const dateInfo = normalizedDate(trustedInput.date, nowMs, {
+    ...options,
+    allowIlliquidExtension: Boolean(options?.allowIlliquidExtension && !isPcgsAuctionResult),
+  });
   const price = Number(trustedInput.price);
   const currency = knownCurrency(trustedInput.currency);
   const declaredStatus = trustedInput.saleStatus;
@@ -113,6 +121,13 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   const buyerPremium = trustedInput.buyerPremium === 'included' || trustedInput.buyerPremium === 'excluded'
     ? trustedInput.buyerPremium
     : 'unknown';
+  // PCGS reports an auction realized amount but does not expose the buyer-
+  // premium convention in this endpoint. The owner-approved policy permits a
+  // signed, exact-grade PCGS row only in the current 365-day window, while
+  // retaining the price-as-reported caveat in its evidence reasons.
+  const pcgsRecentReportedPrice = isPcgsAuctionResult
+    && resolvedPriceBasis === 'realized'
+    && dateInfo.recency === 'recent';
   const visualReviewStatus = normalizedVisualStatus(trustedInput.visualReviewStatus);
   const visualRequirement = trustedInput.visualRequirement === 'required' ? 'required' : 'not_required';
   const inputReasons = Array.isArray(trustedInput.evidenceReasons) ? trustedInput.evidenceReasons.map((reason) => safeText(reason, 300)).filter((reason): reason is string => Boolean(reason)) : [];
@@ -128,7 +143,8 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
   else if (currency !== 'USD') reasons.push(`unsupported currency ${currency}; retained as context only`);
   if (saleStatus !== 'completed') reasons.push(saleStatus === 'active' ? 'active asking listing is not a completed sale' : 'completed-sale status is not verifiable for this source');
   if (resolvedPriceBasis === 'unknown') reasons.push('price basis is not verifiable as sold, closed, or realized');
-  if (resolvedPriceBasis === 'realized' && buyerPremium !== 'included') reasons.push('auction buyer premium is not confirmed included in the realized price; retained as context only');
+  if (resolvedPriceBasis === 'realized' && buyerPremium !== 'included' && !pcgsRecentReportedPrice) reasons.push('auction buyer premium is not confirmed included in the realized price; retained as context only');
+  if (pcgsRecentReportedPrice && buyerPremium !== 'included') reasons.push('PCGS reports this recent auction amount as realized; buyer-premium treatment is not disclosed and the amount is used as reported');
   if (dateInfo.recency === 'undated') reasons.push('sale date is missing, invalid, or future-dated');
   if (dateInfo.recency === 'historical') reasons.push('sale date is older than one year');
   if (dateInfo.recency === 'extended') reasons.push('sale date is older than one year and is admitted only under the labeled illiquid-market extension policy');
@@ -143,7 +159,7 @@ export function normalizeAnalysisMarketSale(input: MarketSale, now = new Date(),
     && currency === 'USD'
     && saleStatus === 'completed'
     && resolvedPriceBasis !== 'unknown'
-    && (resolvedPriceBasis !== 'realized' || buyerPremium === 'included')
+    && (resolvedPriceBasis !== 'realized' || buyerPremium === 'included' || pcgsRecentReportedPrice)
     && (dateInfo.recency === 'recent' || dateInfo.recency === 'extended')
     && visualReviewStatus !== 'mismatch'
     && (visualRequirement !== 'required' || visualReviewStatus === 'match' || visualReviewStatus === 'rough_match');

@@ -91,16 +91,21 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain('balanceSaleGroups');
   });
 
-  it('preserves signed PCGS eBay sales and CoinFacts coin identity through the analyzer path', () => {
+  it('preserves signed PCGS exact-grade sales and CoinFacts coin identity through the analyzer path', () => {
     expect(routerSource).toContain("attachCanonicalProvenance('pcgs_auction_results'");
     expect(routerSource).toContain("priceBasis: /\\bebay\\b/i.test(String(auction.auctioneer ?? '')) ? 'sold' as const : 'realized' as const");
+    expect(routerSource).toContain("evidenceDisposition: exactTargetGrade ? 'valuation_eligible' as const : 'context_only' as const");
     expect(routerSource).toContain("currency: 'USD' as const");
     expect(clientSource).toContain("title: sale.title ?? leftPcgsAuctionData?.data?.name ?? effectiveLeftItem.title");
     expect(clientSource).toContain("title: sale.title ?? rightPcgsAuctionData?.data?.name ?? effectiveRightItem.title");
+    expect(clientSource).toContain('PCGS_CURRENT_VALUE_WINDOW_MS');
+    expect(clientSource).toContain('Historical trend only — exact certified grade, but older than 365 days');
     expect(clientSource).toContain('leftAnalysisItem={leftSearchItem}');
     expect(clientSource).toContain('rightAnalysisItem={rightSearchItem}');
     expect(clientSource).toContain("const isPcgsCoin = company === 'PCGS' && item.category === 'coins'");
     expect(clientSource).toContain("certificationCompany: 'PCGS'");
+    expect(routerSource).toContain("sale.recency === 'historical' || sale.recency === 'extended'");
+    expect(routerSource).toContain("formatHistoricalTrendContext('ITEM A', historicalTrendSales(normalizedLeftSales))");
   });
 
   it('passes material evidence conflicts as a deterministic identity gate', () => {

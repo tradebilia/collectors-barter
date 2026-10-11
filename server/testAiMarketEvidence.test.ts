@@ -93,7 +93,7 @@ describe('server-owned analysis market evidence normalization', () => {
     });
   });
 
-  it('keeps a signed PCGS auction result as context when buyer-premium inclusion is not known', () => {
+  it('admits a signed recent PCGS exact-grade auction amount as reported while recording the premium caveat', () => {
     const result = normalizeAnalysisMarketSale(pcgsSale({
       saleId: 'pcgs-auction-fixture',
       marketplace: 'Heritage Auctions',
@@ -101,9 +101,38 @@ describe('server-owned analysis market evidence normalization', () => {
       priceBasis: 'realized',
       buyerPremium: 'unknown',
     }), now, { signingKey, category: 'coins' });
+    expect(result.valuationEligible).toBe(true);
+    expect(result.sale.evidenceDisposition).toBe('valuation_eligible');
+    expect(result.reasons.join(' ')).toContain('buyer-premium treatment is not disclosed');
+  });
+
+  it('keeps a signed PCGS exact-grade auction older than one year as historical trend only', () => {
+    const result = normalizeAnalysisMarketSale(pcgsSale({
+      saleId: 'pcgs-historical-auction-fixture',
+      marketplace: 'Heritage Auctions',
+      originMarketplace: 'Heritage Auctions',
+      priceBasis: 'realized',
+      buyerPremium: 'unknown',
+      date: '2025-09-27T00:00:00.000Z',
+    }), now, { signingKey, category: 'coins', allowIlliquidExtension: true });
+    expect(result.valuationEligible).toBe(false);
+    expect(result.sale).toMatchObject({ recency: 'historical', evidenceDisposition: 'context_only' });
+    expect(result.reasons.join(' ')).toContain('older than one year');
+  });
+
+  it('does not allow a server-classified PCGS grade mismatch to become a current-value candidate', () => {
+    const result = normalizeAnalysisMarketSale(pcgsSale({
+      saleId: 'pcgs-grade-mismatch-fixture',
+      marketplace: 'Heritage Auctions',
+      originMarketplace: 'Heritage Auctions',
+      priceBasis: 'realized',
+      buyerPremium: 'unknown',
+      evidenceDisposition: 'context_only',
+      evidenceReasons: ['PCGS row grade MS64 does not match the certified target grade MS65.'],
+    }), now, { signingKey, category: 'coins' });
     expect(result.valuationEligible).toBe(false);
     expect(result.sale.evidenceDisposition).toBe('context_only');
-    expect(result.reasons.join(' ')).toContain('buyer premium is not confirmed included');
+    expect(result.reasons.join(' ')).toContain('grade MS64 does not match');
   });
 
   it('does not trust a client valuation label when status, date, or price basis cannot support it', () => {

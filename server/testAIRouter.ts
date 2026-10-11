@@ -58,6 +58,10 @@ export const EBAY_ACTIVE_RESULTS_PER_TIER = 40;
 export const EBAY_ACTIVE_EXACT_PAGE_LIMIT = 3;
 export const EBAY_ACTIVE_DISPLAY_TARGET = 20;
 
+function normalizedPcgsAuctionGrade(value: unknown): string {
+  return String(value ?? '').replace(/\s+/g, '').toUpperCase();
+}
+
 type EbayAppTokenResult = {
   token: string | null;
   error: string | null;
@@ -2047,7 +2051,10 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupPcgsAuctionResults(input.certNumber);
       if (!result.data) return result;
-      const auctions = result.data.auctions.map((auction) => ({
+      const targetAuctionGrade = normalizedPcgsAuctionGrade(result.data.grade);
+      const auctions = result.data.auctions.map((auction) => {
+        const exactTargetGrade = Boolean(targetAuctionGrade && normalizedPcgsAuctionGrade(auction.grade) === targetAuctionGrade);
+        return {
         ...auction,
         // View All may mix grades. Carry the row’s displayed service/grade in
         // the canonical title so the comparable engine can reject MS69 rows
@@ -2066,7 +2073,16 @@ export const testAIRouter = router({
         priceBasis: /\bebay\b/i.test(String(auction.auctioneer ?? '')) ? 'sold' as const : 'realized' as const,
         buyerPremium: 'unknown' as const,
         saleForm: /\bebay\b/i.test(String(auction.auctioneer ?? '')) ? 'marketplace_sold_listing' : 'auction_prices_realized',
-      }));
+        // Establish exact-grade status before the facts are signed. A browser
+        // cannot promote a PCGS View All row for another grade into valuation.
+        evidenceDisposition: exactTargetGrade ? 'valuation_eligible' as const : 'context_only' as const,
+        evidenceReasons: exactTargetGrade
+          ? ['PCGS row reports the exact certified target grade.']
+          : [targetAuctionGrade
+            ? `PCGS row grade ${auction.grade || 'unavailable'} does not match the certified target grade ${result.data.grade}.`
+            : 'PCGS certified target grade is unavailable; auction row is retained as context only.'],
+        };
+      });
       return {
         ...result,
         data: {
@@ -2628,8 +2644,6 @@ export const testAIRouter = router({
 
       const leftLine = formatItemLine(analysisLeftItem, leftEbayMetrics, leftHipstampMetrics, leftSoldCompsMetrics);
       const rightLine = formatItemLine(analysisRightItem, rightEbayMetrics, rightHipstampMetrics, rightSoldCompsMetrics);
-      const leftTrendContext = formatHistoricalTrendContext('ITEM A', leftHistoricalTrendSales);
-      const rightTrendContext = formatHistoricalTrendContext('ITEM B', rightHistoricalTrendSales);
       const leftEvidenceContext = formatTestAiEvidenceForAnalysis(leftEvidenceSummary, 'ITEM A');
       const rightEvidenceContext = formatTestAiEvidenceForAnalysis(rightEvidenceSummary, 'ITEM B');
       const visualEvidenceContext = visualReview.itemA || visualReview.itemB
@@ -2652,6 +2666,12 @@ export const testAIRouter = router({
       // decision before any record can reach deterministic valuation.
       const normalizedLeftSales = normalizeAnalysisMarketSales((leftHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisLeftItem.category });
       const normalizedRightSales = normalizeAnalysisMarketSales((rightHistoricalTrendSales ?? []) as MarketSale[], analysisNow, { category: analysisRightItem.category });
+      // Keep the narrative trend input strictly aligned with the server's
+      // recency classification. In particular, PCGS rows older than one year
+      // belong here; recent PCGS rows are current-value candidates instead.
+      const historicalTrendSales = (sales: MarketSale[]) => sales.filter((sale) => sale.recency === 'historical' || sale.recency === 'extended');
+      const leftTrendContext = formatHistoricalTrendContext('ITEM A', historicalTrendSales(normalizedLeftSales));
+      const rightTrendContext = formatHistoricalTrendContext('ITEM B', historicalTrendSales(normalizedRightSales));
       const leftAnalysisSnapshot = buildAnalysisSnapshot({
         target: analysisLeftItem as ComparableTarget,
         sales: normalizedLeftSales,
