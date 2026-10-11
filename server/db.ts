@@ -330,128 +330,6 @@ export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   return _db;
 }
 
-let tradeShowcaseVotesTableReady: Promise<void> | null = null;
-let userReportsTableReady: Promise<void> | null = null;
-let supportTicketsTableReady: Promise<void> | null = null;
-let musicCategoryReady: Promise<void> | null = null;
-
-export async function ensureMusicCategory() {
-  if (!musicCategoryReady) {
-    musicCategoryReady = (async () => {
-      const db = await requireDb();
-      // Legacy databases predate Music. Preserve all existing values and append it.
-      await db.execute(sql`ALTER TABLE listings MODIFY COLUMN category ENUM('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','music') NOT NULL`);
-      await db.execute(sql`ALTER TABLE conventions MODIFY COLUMN category ENUM('comics','sports_cards','vintage_toys','video_games','stamps','coins','pokemon','movies','autographs','disney_pins','all','music') NOT NULL DEFAULT 'all'`);
-    })().catch((error) => {
-      musicCategoryReady = null;
-      throw error;
-    });
-  }
-  return musicCategoryReady;
-}
-
-export async function ensureUserReportsTable() {
-  if (!userReportsTableReady) {
-    userReportsTableReady = (async () => {
-      const db = await requireDb();
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS userReports (
-        id INT AUTO_INCREMENT NOT NULL,
-        reportId VARCHAR(20) NOT NULL,
-        reportedUserId INT NOT NULL,
-        reporterUserId INT NOT NULL,
-        reason VARCHAR(100) NOT NULL,
-        description TEXT NOT NULL,
-        evidence TEXT,
-        status ENUM('pending','reviewed','dismissed','action_taken','reviewing','resolved') NOT NULL DEFAULT 'pending',
-        adminNotes TEXT,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        reviewedAt TIMESTAMP NULL,
-        reviewedBy INT NULL,
-        PRIMARY KEY (id),
-        UNIQUE KEY userReports_reportId_unique (reportId),
-        KEY userReports_reportedUserId_idx (reportedUserId),
-        KEY userReports_reporterUserId_idx (reporterUserId),
-        KEY userReports_status_idx (status),
-        KEY userReports_createdAt_idx (createdAt)
-      )`);
-      await db.execute(sql`ALTER TABLE userReports MODIFY COLUMN status ENUM('pending','reviewed','dismissed','action_taken','reviewing','resolved') NOT NULL DEFAULT 'pending'`);
-    })().catch((error) => {
-      userReportsTableReady = null;
-      throw error;
-    });
-  }
-  return userReportsTableReady;
-}
-
-export async function ensureSupportTicketsTable() {
-  if (!supportTicketsTableReady) {
-    supportTicketsTableReady = (async () => {
-      const db = await requireDb();
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS supportTickets (
-        id INT AUTO_INCREMENT NOT NULL,
-        ticketId VARCHAR(20) NOT NULL,
-        userId INT NULL,
-        submittedByName VARCHAR(100) NULL,
-        submittedByEmail VARCHAR(320) NULL,
-        subject VARCHAR(255) NOT NULL,
-        message TEXT NOT NULL,
-        category ENUM('general','listing','trade','account','billing','bug','other') NOT NULL DEFAULT 'general',
-        priority ENUM('low','medium','high','urgent') NOT NULL DEFAULT 'medium',
-        status ENUM('open','in_progress','resolved','closed') NOT NULL DEFAULT 'open',
-        adminNotes TEXT NULL,
-        assignedAdminId INT NULL,
-        resolvedAt TIMESTAMP NULL,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
-        UNIQUE KEY supportTickets_ticketId_unique (ticketId),
-        KEY supportTickets_userId_idx (userId),
-        KEY supportTickets_status_idx (status),
-        KEY supportTickets_createdAt_idx (createdAt)
-      )`);
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS supportTicketReplies (
-        id INT AUTO_INCREMENT NOT NULL,
-        ticketId INT NOT NULL,
-        senderId INT NOT NULL,
-        message TEXT NOT NULL,
-        isAdminReply TINYINT NOT NULL DEFAULT 0,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        PRIMARY KEY (id),
-        KEY supportTicketReplies_ticket_idx (ticketId),
-        KEY supportTicketReplies_sender_idx (senderId)
-      )`);
-    })().catch((error) => {
-      supportTicketsTableReady = null;
-      throw error;
-    });
-  }
-  return supportTicketsTableReady;
-}
-
-export async function ensureTradeShowcaseVotesTable() {
-  if (!tradeShowcaseVotesTableReady) {
-    tradeShowcaseVotesTableReady = (async () => {
-      const db = await requireDb();
-      await db.execute(sql`CREATE TABLE IF NOT EXISTS tradeShowcaseVotes (
-        id INT AUTO_INCREMENT NOT NULL,
-        proposalId INT NOT NULL,
-        voterId INT NOT NULL,
-        vote ENUM('good','bad') NOT NULL,
-        createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE KEY tradeShowcaseVotes_proposal_voter_unique (proposalId, voterId),
-        KEY tradeShowcaseVotes_proposal_idx (proposalId),
-        KEY tradeShowcaseVotes_voter_idx (voterId)
-      )`);
-    })().catch((error) => {
-      tradeShowcaseVotesTableReady = null;
-      throw error;
-    });
-  }
-  return tradeShowcaseVotesTableReady;
-}
-
 function getInsertId(result: any) {
   // Drizzle ORM with MySQL returns an array with ResultSetHeader
   // Extract insertId from the first element if it's an array
@@ -3027,7 +2905,6 @@ export async function createListing(
 ) {
     const db = await requireDb();
   await ensureUserProfileRecord(user);
-  if (input.category === 'music') await ensureMusicCategory();
   const insertResult = await db.insert(listings).values({
     ownerId: user.id,
     title: input.title.trim(),

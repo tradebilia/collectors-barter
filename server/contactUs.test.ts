@@ -15,14 +15,14 @@ describe("Contact Us flow", () => {
     expect(contactSource).toContain('className="resize-none border-slate-200 bg-white text-slate-900 placeholder:text-slate-500"');
   });
 
-  it("bootstraps the support-ticket tables before public submission and admin retrieval", () => {
-    expect(dbSource).toContain("export async function ensureSupportTicketsTable()");
-    expect(dbSource).toContain("CREATE TABLE IF NOT EXISTS supportTickets");
-    expect(dbSource).toContain("CREATE TABLE IF NOT EXISTS supportTicketReplies");
-    expect(routerSource).toContain("await ensureSupportTicketsTable();");
+  it("requires the reviewed support-ticket migration before public submission and admin retrieval", () => {
+    expect(dbSource).not.toContain("ensureSupportTicketsTable");
+    expect(dbSource).not.toContain("CREATE TABLE IF NOT EXISTS supportTickets");
+    expect(routerSource).not.toContain("ensureSupportTicketsTable");
     expect(routerSource).toContain("INSERT INTO supportTickets");
     expect(routerSource).toContain("SELECT st.*");
     expect(migrationSource).toContain("CREATE TABLE IF NOT EXISTS supportTickets");
+    expect(migrationSource).toContain("CREATE TABLE IF NOT EXISTS supportTicketReplies");
   });
 
   it("returns a ticket reference after storing the Contact Us submission", () => {

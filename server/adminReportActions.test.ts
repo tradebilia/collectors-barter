@@ -5,6 +5,7 @@ import path from "node:path";
 const root = process.cwd();
 const db = fs.readFileSync(path.join(root, "server/db.ts"), "utf8");
 const router = fs.readFileSync(path.join(root, "server/routers.ts"), "utf8");
+const migration = fs.readFileSync(path.join(root, "drizzle/0022_user_reports_status_compat.sql"), "utf8");
 const admin = fs.readFileSync(path.join(root, "client/src/pages/AdminDashboard.tsx"), "utf8");
 
 describe("admin report actions", () => {
@@ -29,8 +30,10 @@ describe("admin report actions", () => {
     expect(admin).toContain("toast.success(`Report marked as");
     expect(admin).toContain("toast.error(message)");
     expect(router).toContain("updateReportStatus");
-    expect(router).toContain("await ensureUserReportsTable();");
-    expect(db).toContain("ALTER TABLE userReports MODIFY COLUMN status ENUM('pending','reviewed','dismissed','action_taken','reviewing','resolved')");
+    expect(router).not.toContain("ensureUserReportsTable");
+    expect(db).not.toContain("ALTER TABLE userReports MODIFY COLUMN status");
+    expect(migration).toContain("ALTER TABLE userReports");
+    expect(migration).toContain("'reviewing', 'resolved'");
   });
 });
 

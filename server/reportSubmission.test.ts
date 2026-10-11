@@ -9,8 +9,7 @@ const routerSource = readFileSync(resolve(__dirname, "routers.ts"), "utf8");
 
 describe("Report a Member submission contract", () => {
   it("uses the report ID and required report fields without relying on a missing database default", () => {
-    expect(dbSource).toContain("export async function ensureUserReportsTable()");
-    expect(dbSource).toContain("CREATE TABLE IF NOT EXISTS userReports");
+    expect(dbSource).not.toContain("ensureUserReportsTable");
     expect(dbSource).toContain("const reportId = await generateReportId();");
     expect(dbSource).toContain("reportId,");
     expect(dbSource).toContain("reporterId, reportedUserId, category, description, evidence, status");
@@ -21,7 +20,7 @@ describe("Report a Member submission contract", () => {
     expect(schemaSource).toContain("reportId: varchar({ length: 20 }).notNull()");
   });
 
-  it("creates the missing runtime table additively with the required auto-increment and uniqueness contract", () => {
+  it("keeps the additive user-report table definition in a reviewed migration artifact", () => {
     expect(migrationSource).toContain("CREATE TABLE IF NOT EXISTS `userReports`");
     expect(migrationSource).toContain("`id` int AUTO_INCREMENT NOT NULL");
     expect(migrationSource).toContain("UNIQUE KEY `userReports_reportId_unique` (`reportId`)");
@@ -29,9 +28,9 @@ describe("Report a Member submission contract", () => {
     expect(migrationSource).not.toMatch(/\bDROP\s+TABLE\b|\bDELETE\s+FROM\b|\bTRUNCATE\b/i);
   });
 
-  it("keeps the protected submitReport path bound to the safe helper and attachment ownership check", () => {
+  it("keeps the protected submitReport path bound to attachment ownership without issuing schema SQL", () => {
     expect(routerSource).toContain("submitReport: protectedProcedure");
-    expect(routerSource).toContain("await ensureUserReportsTable();");
+    expect(routerSource).not.toContain("ensureUserReportsTable");
     expect(routerSource).toContain("ownsReportAttachment(ctx.user.id, attachment)");
     expect(routerSource).toContain("return submitUserReport({");
   });

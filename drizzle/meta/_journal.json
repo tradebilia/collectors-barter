@@ -169,6 +169,13 @@
       "when": 1791463873228,
       "tag": "0023_salty_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1791746181831,
+      "tag": "0024_p0_music_category_schema",
+      "breakpoints": true
     }
   ]
 }

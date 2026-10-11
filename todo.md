@@ -2080,3 +2080,7 @@
 - [x] Enlarge the Whatnot logo on the public profile Whatnot Reference card to match the visual scale of the LinkedIn and Etsy verified-account logos.
 - [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.
 - [x] Create a recovery checkpoint and credential-safe full backup commit, then push the current project state to the selected GitHub repository. Recovery checkpoint `6babe5b0`; backup branch `backup/tradebilia-recovery-2026-09-17-0240-edt` was verified on GitHub without overwriting divergent `main`.
+
+- [x] P0 remediation: remove all request-time schema creation and alteration from Tradebilia runtime code, preserving only reviewed Drizzle migration artifacts; do not apply migrations to the shared database.
+- [x] P0 remediation: upgrade and lock audited high/critical production dependency paths, then validate the application and production bundle.
+- [x] P0 remediation: add regression coverage proving request paths cannot issue schema-definition SQL, then checkpoint and synchronize only after full validation.

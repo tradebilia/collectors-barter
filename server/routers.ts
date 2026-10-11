@@ -6,7 +6,7 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSocialPromotionFacts } from "@shared/socialPromotionFacts";
 import { getTradeAlertVisualHints } from "@shared/tradeAlertThemes";
 import { getTestedComicWorldScenePrompt, isProviderSceneSafetyRejection } from "./imageSceneRecovery";
-import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime, ensureTradeShowcaseVotesTable, ensureUserReportsTable, ensureSupportTicketsTable } from "./db";
+import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
 import {
   createListing,
@@ -2288,7 +2288,6 @@ export const appRouter = router({
         if (input.attachments.some((attachment) => !ownsReportAttachment(ctx.user.id, attachment))) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'An evidence attachment does not belong to your report.' });
         }
-        await ensureUserReportsTable();
         const reporter = await getTradebiliaContactIdentity({ id: ctx.user.id, name: ctx.user.name });
         return submitUserReport({
           reportedUserId: input.reportedUserId,
@@ -3482,7 +3481,6 @@ export const appRouter = router({
       }),
     getOperationsSnapshot: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      await ensureSupportTicketsTable();
       const db = await requireDb();
       const [queueRows] = await db.execute(sql`
         SELECT
@@ -3910,7 +3908,6 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-        await ensureUserReportsTable();
         await updateReportStatus({
           reportId: input.reportId,
           status: input.status,
@@ -4251,7 +4248,6 @@ export const appRouter = router({
     // Support Tickets
     getAllTickets: protectedProcedure.input(z.object({ includeArchived: z.boolean().optional() }).optional()).query(async ({ ctx, input }) => {
       if (ctx.user?.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      await ensureSupportTicketsTable();
       const db = await requireDb();
       const [rows] = await db.execute(
         sql`SELECT st.*, u.username, u.displayName, u.email,
@@ -4433,7 +4429,6 @@ export const appRouter = router({
         if (!isRecoveryRequestAllowed(`public-contact:${clientAddress}`, Date.now(), 3)) {
           throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Please wait before sending another message." });
         }
-        await ensureSupportTicketsTable();
         const db = await requireDb();
         const ticketId = 'TKT-' + Date.now().toString(36).toUpperCase();
         const userId = ctx.user?.id;
@@ -4628,11 +4623,6 @@ export const appRouter = router({
       }).optional())
       .query(async ({ ctx, input }) => {
         const db = await requireDb();
-        try {
-          await ensureTradeShowcaseVotesTable();
-        } catch (error) {
-          console.warn("[TradeShowcase] Vote table bootstrap unavailable; votes remain disabled for this connection.", error instanceof Error ? error.message : error);
-        }
         const category = input?.category;
         const sortBy = input?.sortBy ?? 'recent';
         const limit = input?.limit ?? 20;
@@ -4775,7 +4765,6 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await requireDb();
-        await ensureTradeShowcaseVotesTable();
         await db.execute(sql`
           INSERT INTO tradeShowcaseVotes (proposalId, voterId, vote)
           VALUES (${input.proposalId}, ${ctx.user.id}, ${input.vote})

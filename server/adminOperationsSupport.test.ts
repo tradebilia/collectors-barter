@@ -7,8 +7,8 @@ const operationsSource = readFileSync(resolve(root, "client/src/components/Admin
 const routerSource = readFileSync(resolve(root, "server/routers.ts"), "utf8");
 
 describe("admin Operations support-ticket summary", () => {
-  it("exposes support-ticket counts and recent activity from the Operations snapshot", () => {
-    expect(routerSource).toContain("ensureSupportTicketsTable();");
+  it("exposes support-ticket counts and recent activity from the Operations snapshot without runtime schema setup", () => {
+    expect(routerSource).not.toContain("ensureSupportTicketsTable");
     expect(routerSource).toContain("openSupportTickets");
     expect(routerSource).toContain("totalSupportTickets");
     expect(routerSource).toContain("recentSupportRows");
@@ -25,4 +25,3 @@ describe("admin Operations support-ticket summary", () => {
     expect(operationsSource).toContain('onNavigate("tickets")');
   });
 });
-

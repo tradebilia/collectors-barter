@@ -20,14 +20,13 @@ describe("Traders Showcase voting contracts", () => {
     expect(migration).not.toContain("ALTER TABLE `tradeShowcaseVotes` ADD CONSTRAINT");
   });
 
-  it("returns real vote summaries and the current member vote from the Showcase query", () => {
+  it("uses the reviewed migration artifact rather than mutating schema while serving showcase requests", () => {
     const router = read("server/routers.ts");
-
     const db = read("server/db.ts");
 
-    expect(db).toContain("export async function ensureTradeShowcaseVotesTable");
-    expect(db).toContain("CREATE TABLE IF NOT EXISTS tradeShowcaseVotes");
-    expect(router).toContain("await ensureTradeShowcaseVotesTable()");
+    expect(db).not.toContain("ensureTradeShowcaseVotesTable");
+    expect(db).not.toContain("CREATE TABLE IF NOT EXISTS tradeShowcaseVotes");
+    expect(router).not.toContain("ensureTradeShowcaseVotesTable");
     expect(router).toContain("FROM tradeShowcaseVotes");
     expect(router).toContain("SUM(CASE WHEN vote = 'good' THEN 1 ELSE 0 END) AS goodVotes");
     expect(router).toContain("SUM(CASE WHEN vote = 'bad' THEN 1 ELSE 0 END) AS badVotes");

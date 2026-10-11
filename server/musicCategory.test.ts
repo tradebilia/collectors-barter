@@ -14,13 +14,23 @@ import { forumCategoryLabels, getForumSubcategories } from '../shared/forum';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+const read = (path: string) => readFileSync(resolve(process.cwd(), path), 'utf8');
+
 describe('Music category', () => {
-  it('bootstraps the legacy listings and conventions enums before Music persistence', () => {
-    const dbSource = readFileSync(resolve(process.cwd(), 'server/db.ts'), 'utf8');
-    expect(dbSource).toContain('export async function ensureMusicCategory()');
-    expect(dbSource).toContain("if (input.category === 'music') await ensureMusicCategory();");
-    expect(dbSource).toContain("'disney_pins','music') NOT NULL");
+  it('requires the reviewed migration artifact instead of altering legacy enums during listing creation', () => {
+    const dbSource = read('server/db.ts');
+    const schemaSource = read('drizzle/schema.ts');
+    const migrationSource = read('drizzle/0024_p0_music_category_schema.sql');
+
+    expect(dbSource).not.toContain('ensureMusicCategory');
+    expect(dbSource).not.toContain('ALTER TABLE listings MODIFY COLUMN category');
+    expect(schemaSource).toContain("'movies','music','autographs','disney_pins']).notNull()");
+    expect(schemaSource).toContain("'movies','music','autographs','disney_pins','all']).default('all').notNull()");
+    expect(migrationSource).toMatch(/ALTER TABLE `listings`\s+MODIFY COLUMN `category`/);
+    expect(migrationSource).toMatch(/ALTER TABLE `conventions`\s+MODIFY COLUMN `category`/);
+    expect(migrationSource).not.toMatch(/\bDROP\s+TABLE\b|\bDELETE\s+FROM\b|\bTRUNCATE\b/i);
   });
+
   it('registers Music as a first-class marketplace category with a unique visual theme', () => {
     expect(tradebiliaCategories).toContainEqual({ value: 'music', label: 'Music' });
     expect(getTradebiliaCategoryTheme('music')).toMatchObject({
@@ -69,9 +79,9 @@ describe('Music category', () => {
   });
 
   it('uses the supplied hero asset and Music-specific filters on the category page', () => {
-    const source = readFileSync(resolve(process.cwd(), 'client/src/pages/CategoryPage.tsx'), 'utf8');
+    const source = read('client/src/pages/CategoryPage.tsx');
     expect(source).toContain('music-headphones-white-rgba_12aa8a48.png');
-    expect(source).toContain("music: [");
+    expect(source).toContain('music: [');
     expect(source).toContain('Record Label');
     expect(source).toContain('musicFormatOptions');
   });
