@@ -115,16 +115,13 @@ describe("handoff documentation safeguards", () => {
     expect(isolation).toContain("create Phase B1 staging project");
   });
 
-  it("provides one current-project handoff that pauses migration and names the next bug", () => {
-    expect(currentProjectHandoff).toContain("Do **not** create a public replacement website");
-    expect(currentProjectHandoff).toContain("Separate-project migration | **Paused.**");
+  it("provides one current-project handoff that records P0 completion and preserves migration safeguards", () => {
+    expect(currentProjectHandoff).toContain("P0 remediation completed");
+    expect(currentProjectHandoff).toContain("Do not apply migrations");
+    expect(currentProjectHandoff).toContain("P1 performance and maintainability");
     expect(currentProjectHandoff).toContain("existing custom database");
-    expect(currentProjectHandoff).toContain("/home/ubuntu/tradebilia-clone");
-    expect(currentProjectHandoff).toContain("separate **development-only** WebDev project");
-    expect(currentProjectHandoff).toContain("last verified baseline was 3 users");
-    expect(currentProjectHandoff).toContain("TRADEBILIA_STAGING_MODE=1");
-    expect(currentProjectHandoff).toContain("read-only database connection and count validation");
-    expect(currentProjectHandoff).toContain("sendInquiryReply");
-    expect(currentProjectHandoff).toContain("sender receives an unread-message alert");
+    expect(currentProjectHandoff).toContain("read-only database baseline");
+    expect(quickStart).toContain("Do not create the replacement project yet");
+    expect(quickStart).toContain("complete writable staging snapshot");
   });
 });
