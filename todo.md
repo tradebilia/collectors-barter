@@ -2086,3 +2086,4 @@
 - [x] P0 remediation: add regression coverage proving request paths cannot issue schema-definition SQL, then checkpoint and synchronize only after full validation.
 
 - [x] PCGS evidence-ledger consistency: replace duplicated browser grade/date checks with a shared server-approved bucket contract so the Evidence Review and PCGS panel report identical current-value, historical-trend, and context counts. No database writes or migrations.
+- [x] PCGS compact-date repair: normalize dated `MM-YYYY` and named month-year auction labels for canonical evidence timing while preserving the original provider label for display; verified live certificate rows now classify as current value or historical trend rather than context-only.

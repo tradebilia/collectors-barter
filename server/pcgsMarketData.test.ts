@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
+import { lookupPcgsAuctionResults, lookupPcgsCertification, normalizePcgsAuctionDate } from './pcgsMarketData';
 import { isValidGradeForCompany } from '../shared/gradingCompanyConfig';
 
 const originalFetch = global.fetch;
@@ -13,6 +13,19 @@ function okJson(payload: unknown) {
 }
 
 describe('PCGS certification adapter', () => {
+  it('normalizes PCGS compact month/year sale labels while preserving the display label', () => {
+    expect(normalizePcgsAuctionDate('10-2009')).toEqual({
+      date: '2009-10-01T00:00:00.000Z',
+      displayDate: '10-2009',
+      datePrecision: 'month',
+    });
+    expect(normalizePcgsAuctionDate('Mar-2025')).toEqual({
+      date: '2025-03-01T00:00:00.000Z',
+      displayDate: 'Mar-2025',
+      datePrecision: 'month',
+    });
+  });
+
   it('uses the documented CoinFacts-by-cert endpoint with a bearer token and maps safe certification fields', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

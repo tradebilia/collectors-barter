@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | PCGS Auction Prices Realized Evidence Review / provider-panel ledger alignment, documented below |
-| Latest validation | 320 Vitest files passed; 1,451 tests passed; 6 tests skipped. TypeScript, production build, `git diff --check`, and runtime-schema scan passed. |
+| Latest functional change | PCGS compact-date normalization repair: dated `MM-YYYY` auction rows now enter current-value or historical-trend buckets correctly, documented below |
+| Latest validation | 320 Vitest files passed; 1,453 tests passed; 6 tests skipped. TypeScript, production build, `git diff --check`, live PCGS verification, and runtime-schema scan passed. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
 ## Approved PCGS Auction Prices Realized policy
@@ -25,6 +25,7 @@ The owner explicitly approved this Trade Analyzer behavior:
 5. **Server enforcement:** Exact-grade disposition is assigned before PCGS auction observations are signed. Browser code cannot promote a grade-mismatched row. The analysis narrative receives only server-classified historical rows for trend discussion.
 6. **Shared classification:** `shared/testAiPcgsAuctionBuckets.ts` consumes the signed disposition rather than re-evaluating grade scope in the browser. This keeps the PCGS provider panel and Evidence Review in the same current-value, historical-trend, and context bucket.
 7. **Sandbox transparency:** The PCGS panel and source ledger display separate counts for **Current-value candidates**, **Historical trend**, and **Context only** from that same shared bucket.
+8. **PCGS compact dates:** PCGS returns some valid auction dates as month/year labels such as `10-2009` or `Mar-2025`. The adapter converts these only for internal evidence timing to the first UTC day of that month, keeps the original provider label for display, and marks the date as month-precision. This prevents valid dated PCGS rows from being misclassified as undated/context-only.
 
 ## P0 remediation completed
 

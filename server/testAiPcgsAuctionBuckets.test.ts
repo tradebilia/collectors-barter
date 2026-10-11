@@ -72,4 +72,18 @@ describe('bucketPcgsAuctionRows', () => {
     expect(buckets.historicalTrendRows).toHaveLength(0);
     expect(buckets.contextOnlyRows).toHaveLength(1);
   });
+
+  it('places a server-normalized PCGS month-only date in historical trend rather than context', () => {
+    const buckets = bucketPcgsAuctionRows([{
+      provenanceToken: 'signed-month-only',
+      saleStatus: 'completed',
+      currency: 'USD',
+      price: 219,
+      date: '2009-10-01T00:00:00.000Z',
+      evidenceDisposition: 'valuation_eligible',
+    }], now);
+
+    expect(buckets.historicalTrendRows).toHaveLength(1);
+    expect(buckets.contextOnlyRows).toHaveLength(0);
+  });
 });

@@ -4,7 +4,12 @@ export type PcgsAuctionRecord = {
   service: string | null;
   /** Grade shown on the PCGS sale row; View All may contain multiple grades. */
   grade: string | null;
+  /** Canonical UTC date for evidence sealing and the analyzer. */
   date: string | null;
+  /** Exact provider label retained for the Test AI display. */
+  displayDate: string | null;
+  /** PCGS often returns a month/year rather than a full sale day. */
+  datePrecision: 'day' | 'month' | null;
   auctioneer: string | null;
   lotNo: number | null;
   lotNumV2: string | null;
@@ -73,6 +78,64 @@ function positiveNumberOrNull(value: unknown): number | null {
   return parsed != null && parsed > 0 ? parsed : null;
 }
 
+const PCGS_MONTH_NAMES: Record<string, number> = {
+  jan: 0, january: 0,
+  feb: 1, february: 1,
+  mar: 2, march: 2,
+  apr: 3, april: 3,
+  may: 4,
+  jun: 5, june: 5,
+  jul: 6, july: 6,
+  aug: 7, august: 7,
+  sep: 8, sept: 8, september: 8,
+  oct: 9, october: 9,
+  nov: 10, november: 10,
+  dec: 11, december: 11,
+};
+
+function isoUtcDate(year: number, monthIndex: number, day: number): string | null {
+  const timestamp = Date.UTC(year, monthIndex, day);
+  const date = new Date(timestamp);
+  return date.getUTCFullYear() === year && date.getUTCMonth() === monthIndex && date.getUTCDate() === day
+    ? date.toISOString()
+    : null;
+}
+
+/**
+ * PCGS APR returns both full sale dates and compact month/year labels such as
+ * "10-2009" and "Mar-2025". Browser Date.parse rejects the numeric compact
+ * form, which previously made genuine dated PCGS rows look undated. Month-only
+ * labels are anchored to their first UTC day for deterministic historical
+ * trend ordering; the original label remains available as displayDate.
+ */
+export function normalizePcgsAuctionDate(value: unknown): { date: string | null; displayDate: string | null; datePrecision: 'day' | 'month' | null } {
+  const displayDate = value == null ? null : String(value).trim() || null;
+  if (!displayDate) return { date: null, displayDate: null, datePrecision: null };
+
+  const isoDay = displayDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoDay) {
+    const date = isoUtcDate(Number(isoDay[1]), Number(isoDay[2]) - 1, Number(isoDay[3]));
+    return { date, displayDate, datePrecision: date ? 'day' : null };
+  }
+
+  const numericMonth = displayDate.match(/^(0?[1-9]|1[0-2])[-/](\d{4})$/);
+  if (numericMonth) {
+    const date = isoUtcDate(Number(numericMonth[2]), Number(numericMonth[1]) - 1, 1);
+    return { date, displayDate, datePrecision: date ? 'month' : null };
+  }
+
+  const namedMonth = displayDate.match(/^([a-z]+)[-\s/]+(\d{4})$/i);
+  if (namedMonth) {
+    const monthIndex = PCGS_MONTH_NAMES[namedMonth[1].toLowerCase()];
+    const date = monthIndex === undefined ? null : isoUtcDate(Number(namedMonth[2]), monthIndex, 1);
+    return { date, displayDate, datePrecision: date ? 'month' : null };
+  }
+
+  const timestamp = Date.parse(displayDate);
+  if (!Number.isFinite(timestamp)) return { date: null, displayDate, datePrecision: null };
+  return { date: new Date(timestamp).toISOString(), displayDate, datePrecision: 'day' };
+}
+
 function pcgsErrorMessage(status: number): string {
   if (status === 401 || status === 403 || status >= 500) {
     return 'PCGS credentials are not authorized or the PCGS service is temporarily unavailable.';
@@ -86,10 +149,11 @@ function mapAuctionRecords(value: unknown): PcgsAuctionRecord[] {
   const records = Array.isArray(value) ? value : [];
   return records.slice(0, PCGS_MAX_AUCTION_RECORDS).map((auction: unknown): PcgsAuctionRecord => {
     const entry = asObject(auction);
+    const date = normalizePcgsAuctionDate(entry.Date);
     return {
       service: entry.Service ?? null,
       grade: entry.Grade ?? entry.DisplayGrade ?? entry.GradeDescription ?? null,
-      date: entry.Date ?? null,
+      ...date,
       auctioneer: entry.Auctioneer ?? null,
       lotNo: numberOrNull(entry.LotNo),
       lotNumV2: entry.LotNumV2 ?? null,
@@ -149,13 +213,14 @@ async function requestPcgsPublicViewAllHistory(pcgsNo: string, token: string) {
   const rows = Array.isArray(payload.data) ? payload.data : [];
   const auctions = rows.map((row: unknown): PcgsAuctionRecord => {
     const entry = asObject(row);
+    const date = normalizePcgsAuctionDate(entry.FormattedSaleDate);
     const itemUrl = entry.SEOLotTitle && entry.SpecNo && entry.ItemIDString
       ? `https://www.pcgs.com/auctionprices/item/${entry.SEOLotTitle}/${entry.SpecNo}/${entry.ItemIDString}`
       : null;
     return {
       service: entry.GradingServiceName ?? null,
       grade: entry.DisplayGrade ?? entry.Grade ?? entry.GradeDescription ?? null,
-      date: entry.FormattedSaleDate ?? null,
+      ...date,
       auctioneer: entry.AuctionFirmName ?? null,
       lotNo: entry.LotNumber == null || entry.LotNumber === '' ? null : Number(entry.LotNumber),
       lotNumV2: entry.LotNumber ?? null,

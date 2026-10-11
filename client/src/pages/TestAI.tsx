@@ -1469,7 +1469,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 {auction.auctionLotUrl ? <a href={auction.auctionLotUrl} target="_blank" rel="noreferrer" className="block truncate text-[10px] font-semibold text-blue-300 hover:underline">{auction.saleName || auction.auctioneer || 'PCGS auction lot'}</a> : <p className="truncate text-[10px] font-semibold text-white">{auction.saleName || auction.auctioneer || 'PCGS auction lot'}</p>}
-                <p className="text-[9px] text-gray-500">{[auction.date, auction.auctioneer, auction.grade ? `${auction.service || 'PCGS'} ${auction.grade}` : auction.service, auction.lotNumV2 || (auction.lotNo != null ? `Lot ${auction.lotNo}` : null), auction.isCAC ? 'CAC' : null].filter(Boolean).join(' · ')}</p>
+                <p className="text-[9px] text-gray-500">{[auction.displayDate ?? auction.date, auction.auctioneer, auction.grade ? `${auction.service || 'PCGS'} ${auction.grade}` : auction.service, auction.lotNumV2 || (auction.lotNo != null ? `Lot ${auction.lotNo}` : null), auction.isCAC ? 'CAC' : null].filter(Boolean).join(' · ')}</p>
               </div>
               <p className="shrink-0 text-[11px] font-semibold text-emerald-300">{auction.price != null ? formatWholeDollar(auction.price) : 'Price N/A'}</p>
             </div>
