@@ -114,10 +114,20 @@ function canonicalUnitedStatesDenomination(value: string): string {
   const words = normalized(source);
   if (!source) return '';
   if (/\bdime(?:s)?\b/.test(words)) return '1 Dime';
+  if (/(?:half\s+dollar|1\/2\s*dollar)/.test(words) || source.includes('½')) return '1/2 Dollar';
 
   const centMatch = words.match(/^(\d+)\s*(?:cent|cents)$/);
   if (centMatch) {
     const cents = Number(centMatch[1]);
+    if (cents === 50) return '1/2 Dollar';
+    if (cents === 10) return '1 Dime';
+    return `${cents} ${cents === 1 ? 'Cent' : 'Cents'}`;
+  }
+
+  const compactCentMatch = words.match(/^(\d+)c$/);
+  if (compactCentMatch) {
+    const cents = Number(compactCentMatch[1]);
+    if (cents === 50) return '1/2 Dollar';
     if (cents === 10) return '1 Dime';
     return `${cents} ${cents === 1 ? 'Cent' : 'Cents'}`;
   }

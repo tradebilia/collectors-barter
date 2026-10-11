@@ -27,11 +27,34 @@ describe('Numista coin metadata adapter', () => {
   it('canonicalizes United States numeric face values so $1 cannot be searched as a dime', () => {
     const dollar = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'United States', denomination: '1', year: '1890', coinName: 'Morgan Dollar' }));
     const dime = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'United States', denomination: '.10', year: '1890', coinName: 'Seated Liberty' }));
+    const halfDollar = buildNumistaSearchCriteria('coins', JSON.stringify({ country: 'United States', denomination: '50c', year: '1945', variety: 'Walking Liberty' }));
 
     expect(dollar.denomination).toBe('1 Dollar');
     expect(dollar.query).toContain('1 Dollar');
     expect(dime.denomination).toBe('1 Dime');
     expect(dime.query).toContain('1 Dime');
+    expect(halfDollar.denomination).toBe('1/2 Dollar');
+    expect(halfDollar.query).toContain('1/2 Dollar');
+  });
+
+  it('matches Numista’s half-dollar detail when the listing stores 50c', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ types: [{ id: 4455, title: '½ Dollar Walking Liberty Half Dollar', issuer: { name: 'United States' }, min_year: 1916, max_year: 1947 }] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ id: 4455, title: '½ Dollar Walking Liberty Half Dollar', value: { text: '½ Dollar' }, issuer: { name: 'United States' }, min_year: 1916, max_year: 1947 }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 23348, year: 1945, mint_letter: 'S' }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'UNC', price: 220 }] }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1945-S Walking Liberty Half Dollar PCGS MS65',
+      grade: 'MS65',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '50c', year: '1945', variety: 'Walking Liberty', metal: 'Silver', mintMark: 'S' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({ title: '½ Dollar Walking Liberty Half Dollar', guideIssueId: 23348, guideValue: 220, guideGrade: 'UNC' });
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('1%2F2+Dollar');
   });
 
   it('rejects a returned Numista dime when the United States listing face value is $1', async () => {
