@@ -175,6 +175,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('does not count toward completed-sale totals');
     expect(source).toContain('configured guide weight');
     expect(source).toContain('treatmentReason');
+    expect(source).toContain('Visual identity fallback');
+    expect(source).toContain('Image evidence never creates a value, changes the saved listing, or bypasses Numista confirmation.');
+    expect(source).toContain('imageUrl: item.primaryPhotoUrl ?? undefined');
   });
 
   it('exposes full Cardsight pricing, population, marketplace, and time-series details for review', () => {

@@ -53,7 +53,7 @@ type NumistaGuideMatch = {
   selectedGrade: string;
 };
 
-type NumistaLookup = {
+export type NumistaLookup = {
   status: 'success' | 'not_found' | 'error';
   message?: string;
   data?: {

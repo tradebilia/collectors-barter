@@ -13,6 +13,7 @@ import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingC
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { lookupNgcCertification } from './ngcCertification';
 import { lookupNumistaCoin } from './numistaMetadata';
+import { recoverNumistaWithVisualFallback } from './testAiCoinVisualFallback';
 import { lookupWikidataMetadata } from './wikidataMetadata';
 import { lookupSmithsonianStampReference } from './smithsonianMetadata';
 import { lookupTcgDexCatalog } from './tcgdexMetadata';
@@ -2082,10 +2083,11 @@ export const testAIRouter = router({
       title: z.string().trim().max(240).optional(),
       itemDetails: z.string().max(8_000).optional(),
       grade: z.string().trim().max(50).optional(),
+      imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupNumistaCoin(input);
+      return recoverNumistaWithVisualFallback(input, lookupNumistaCoin);
     }),
 
   // Parse.bot PriceCharting Pokémon market data — administrator-only and read-only.

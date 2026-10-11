@@ -215,7 +215,7 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     icon: '🪙',
     provides: ['item_details'],
     status: 'live' as const,
-    description: 'Structured Numista coin identification plus USD direct-grade or approved mapped-grade-band catalogue estimates; values are reference-only and never enter analyzer valuation',
+    description: 'Structured Numista coin identification plus USD direct-grade or approved mapped-grade-band catalogue estimates; validated values enter the analyzer only as a capped 25% guide and never as completed sales',
   },
   ngc: {
     id: 'ngc',
@@ -2012,8 +2012,10 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
     title: item.title,
     itemDetails: item.itemDetails ?? undefined,
     grade: item.grade ?? undefined,
+    imageUrl: item.primaryPhotoUrl ?? undefined,
   }, { enabled: supported && !!item.title, retry: false });
   const guideIsMapped = data?.data?.guideMatchType === 'mapped';
+  const visualFallbackIdentifiers = data?.visualFallback?.candidate?.visibleIdentifiers ?? [];
   if (!supported) return <div className="bg-gray-800/30 rounded-lg border border-dashed border-gray-700/40 p-3 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Coin items only.</p></div>;
   return <div className="space-y-3 rounded-lg border border-gray-700/20 bg-gray-800/30 p-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🪙 Numista Coin Catalog</p>{isLoading && <Spinner className="h-3 w-3" />}</div>
@@ -2021,6 +2023,14 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
     <p className="text-[10px] text-gray-500">Structured Numista metadata plus a direct or approved mapped grade-band catalogue estimate in USD only. A validated estimate enters the analyzer as a secondary guide anchor at a maximum 25% weight; it is never a completed sale and never counts toward completed-sale totals.</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
+    {data?.visualFallback && data.visualFallback.status !== 'not_needed' && <div className={`rounded border p-2 text-[10px] ${data.visualFallback.status === 'confirmed_by_numista' ? 'border-violet-700/40 bg-violet-950/25 text-violet-100' : data.visualFallback.status === 'manual_review_required' || data.visualFallback.status === 'candidate_not_confirmed' ? 'border-amber-700/40 bg-amber-950/25 text-amber-100' : 'border-slate-700/50 bg-slate-950/30 text-slate-200'}`}>
+      <p className="font-semibold uppercase tracking-wide">Visual identity fallback · {String(data.visualFallback.status).replace(/_/g, ' ')}</p>
+      <p className="mt-1">{data.visualFallback.message}</p>
+      {visualFallbackIdentifiers.length > 0 && <p className="mt-1 text-slate-300">Visible evidence: {visualFallbackIdentifiers.join(' · ')}</p>}
+      {data.visualFallback.appliedFields?.length > 0 && <p className="mt-1 text-slate-300">Temporary query fields: {data.visualFallback.appliedFields.join(', ')}{data.visualFallback.replacedAmbiguousFields?.length ? ` · clarified ambiguous ${data.visualFallback.replacedAmbiguousFields.join(', ')}` : ''}.</p>}
+      {data.visualFallback.missingRequiredFields?.length > 0 && <p className="mt-1 text-amber-200">Needed for retry: {data.visualFallback.missingRequiredFields.join(', ')}.</p>}
+      <p className="mt-1 text-slate-400">Image evidence never creates a value, changes the saved listing, or bypasses Numista confirmation.</p>
+    </div>}
     {data?.status === 'success' && data.data && <div className="flex min-w-0 gap-3 rounded bg-gray-900/40 p-2">
       {data.data.imageUrl && <img src={data.data.imageUrl} alt="" className="h-20 w-20 shrink-0 rounded border border-gray-700/40 object-cover" />}
       <div className="min-w-0 flex-1 space-y-2">
@@ -2205,7 +2215,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     itemDetails: item.itemDetails ?? undefined,
   }, { enabled: enabledSources.has('discogs') && discogsSearchCriteria.isMusic && discogsSearchCriteria.releaseTitle.length >= 2 });
   const smithsonianQuery = trpc.testAI.getSmithsonianStampReference.useQuery({ query: item.title }, { enabled: enabledSources.has('smithsonian') && item.category === 'stamps' && !!item.title });
-  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined, grade: item.grade ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
+  const numistaQuery = trpc.testAI.getNumistaCoinData.useQuery({ category: item.category, title: item.title, itemDetails: item.itemDetails ?? undefined, grade: item.grade ?? undefined, imageUrl: item.primaryPhotoUrl ?? undefined }, { enabled: enabledSources.has('numista') && item.category === 'coins' && !!item.title, retry: false });
   const wikidataQueryResult = trpc.testAI.getWikidataMetadata.useQuery({ query: wikidataQuery, category: wikidataCategory }, { enabled: enabledSources.has('wikidata') && (item.category === 'movies' || item.category === 'autographs') && !!wikidataQuery });
   const psaQuery = trpc.testAI.getPSAData.useQuery({ certNumber }, { enabled: enabledSources.has('psa') && !!certNumber });
   const bgsQuery = trpc.testAI.getBeckettData.useQuery({ certNumber }, { enabled: enabledSources.has('bgs') && !!certNumber });
