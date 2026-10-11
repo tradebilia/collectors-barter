@@ -14,6 +14,10 @@
 | Latest validation | 320 Vitest files passed; 1,454 tests passed; 6 tests skipped. TypeScript, production build, `git diff --check`, PCGS provider-stage verification, and runtime-schema scan passed. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
+## Coverage tracker confirmation — October 11, 2026
+
+**Coins — Numista Coin Catalog** is confirmed as a **Match** in the Test AI source coverage tracker. It remains a read-only Numista catalog/reference integration: validated USD catalogue estimates may enter the analyzer only as a capped 25% secondary guide anchor, never as completed-sale evidence.
+
 ## Approved PCGS Auction Prices Realized policy
 
 The owner explicitly approved this Trade Analyzer behavior:
