@@ -94,7 +94,8 @@ describe('Test AI analyzer input compatibility', () => {
   it('preserves signed PCGS exact-grade sales and CoinFacts coin identity through the analyzer path', () => {
     expect(routerSource).toContain("attachCanonicalProvenance('pcgs_auction_results'");
     expect(routerSource).toContain("priceBasis: /\\bebay\\b/i.test(String(auction.auctioneer ?? '')) ? 'sold' as const : 'realized' as const");
-    expect(routerSource).toContain("evidenceDisposition: exactTargetGrade ? 'valuation_eligible' as const : 'context_only' as const");
+    expect(routerSource).toContain("evidenceDisposition: exactTargetGrade || inheritedTargetGrade ? 'valuation_eligible' as const : 'context_only' as const");
+    expect(routerSource).toContain('PCGS history is scoped to the confirmed target grade');
     expect(routerSource).toContain("currency: 'USD' as const");
     expect(clientSource).toContain("title: sale.title ?? leftPcgsAuctionData?.data?.name ?? effectiveLeftItem.title");
     expect(clientSource).toContain("title: sale.title ?? rightPcgsAuctionData?.data?.name ?? effectiveRightItem.title");

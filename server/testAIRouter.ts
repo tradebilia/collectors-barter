@@ -2052,8 +2052,11 @@ export const testAIRouter = router({
       const result = await lookupPcgsAuctionResults(input.certNumber);
       if (!result.data) return result;
       const targetAuctionGrade = normalizedPcgsAuctionGrade(result.data.grade);
+      const targetScopedHistory = Boolean(targetAuctionGrade && result.data.historyScope);
       const auctions = result.data.auctions.map((auction) => {
-        const exactTargetGrade = Boolean(targetAuctionGrade && normalizedPcgsAuctionGrade(auction.grade) === targetAuctionGrade);
+        const rowGrade = normalizedPcgsAuctionGrade(auction.grade);
+        const exactTargetGrade = Boolean(targetAuctionGrade && rowGrade === targetAuctionGrade);
+        const inheritedTargetGrade = Boolean(targetScopedHistory && !rowGrade);
         return {
         ...auction,
         // View All may mix grades. Carry the row’s displayed service/grade in
@@ -2073,11 +2076,17 @@ export const testAIRouter = router({
         priceBasis: /\bebay\b/i.test(String(auction.auctioneer ?? '')) ? 'sold' as const : 'realized' as const,
         buyerPremium: 'unknown' as const,
         saleForm: /\bebay\b/i.test(String(auction.auctioneer ?? '')) ? 'marketplace_sold_listing' : 'auction_prices_realized',
-        // Establish exact-grade status before the facts are signed. A browser
-        // cannot promote a PCGS View All row for another grade into valuation.
-        evidenceDisposition: exactTargetGrade ? 'valuation_eligible' as const : 'context_only' as const,
+        // PCGS CoinFacts has already confirmed the target grade. Certificate,
+        // grade-scoped, and the certificate-page View All history are scoped to
+        // that confirmed target; when a row omits its grade, inherit it rather
+        // than discarding an otherwise dated, validated PCGS sale. Explicitly
+        // different row grades still remain context-only.
+        evidenceDisposition: exactTargetGrade || inheritedTargetGrade ? 'valuation_eligible' as const : 'context_only' as const,
+        inheritedTargetGrade,
         evidenceReasons: exactTargetGrade
           ? ['PCGS row reports the exact certified target grade.']
+          : inheritedTargetGrade
+            ? [`PCGS history is scoped to the confirmed target grade ${result.data.grade}; the sale row does not repeat a grade, so the target grade is inherited.`]
           : [targetAuctionGrade
             ? `PCGS row grade ${auction.grade || 'unavailable'} does not match the certified target grade ${result.data.grade}.`
             : 'PCGS certified target grade is unavailable; auction row is retained as context only.'],

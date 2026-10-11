@@ -1410,7 +1410,7 @@ function normalizedPcgsAuctionGrade(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, '').toUpperCase();
 }
 
-function isExactGradePcgsAuction(auction: any, targetGrade: string): boolean {
+function isExactGradePcgsAuction(auction: any, targetGrade: string, historyScope?: string): boolean {
   return Boolean(
     auction?.provenanceToken
     && auction?.saleStatus === 'completed'
@@ -1418,7 +1418,8 @@ function isExactGradePcgsAuction(auction: any, targetGrade: string): boolean {
     && Number(auction?.price) > 0
     && auction?.evidenceDisposition !== 'context_only'
     && targetGrade
-    && normalizedPcgsAuctionGrade(auction?.grade) === targetGrade,
+    && (normalizedPcgsAuctionGrade(auction?.grade) === targetGrade
+      || (historyScope && !normalizedPcgsAuctionGrade(auction?.grade) && auction?.inheritedTargetGrade)),
   );
 }
 
@@ -1430,7 +1431,7 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
   );
   const auctions = auctionData?.data?.auctions ?? [];
   const targetAuctionGrade = normalizedPcgsAuctionGrade(auctionData?.data?.grade ?? data?.data?.grade);
-  const exactGradeRows = auctions.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade));
+  const exactGradeRows = auctions.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade, auctionData?.data?.historyScope));
   const currentValueCandidates = exactGradeRows.filter((auction: any) => isPcgsCurrentWindow(auction.date));
   const historicalTrendRows = exactGradeRows.filter((auction: any) => !isPcgsCurrentWindow(auction.date));
   const auctionContextOnly = auctions.filter((auction: any) => !currentValueCandidates.includes(auction) && !historicalTrendRows.includes(auction));
@@ -1481,8 +1482,8 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
           <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — current value and historical trend</p>
           {auctions.length > 0 && <a href={`#pcgs-history-rows-${side}`} className="text-[9px] font-semibold text-cyan-300 underline underline-offset-2">Jump to loaded rows</a>}
         </div>
-        <p className="text-[9px] text-gray-500">PCGS first checks this certificate, then follows the certificate page’s View All history when needed. Exact-grade rows dated within the last 365 days are current-value candidates. Exact-grade older rows are historical trend only. PCGS buyer-premium treatment is not disclosed, so the reported amount is labeled as realized-price-as-reported.</p>
-        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-4 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Current-value candidates</p><p className="font-bold text-cyan-200">{currentValueCandidates.length}</p></div><div><p className="uppercase text-gray-500">Historical trend</p><p className="font-bold text-violet-200">{historicalTrendRows.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">Only an exact-grade, signed PCGS row dated within 365 days is submitted as a current-value candidate. Older exact-grade rows are retained for trend only; mismatched, undated, or incomplete rows remain context only.</p></div>}
+        <p className="text-[9px] text-gray-500">PCGS first confirms the CoinFacts target, then uses its certificate or target-scoped auction history. Rows dated within the last 365 days are current-value candidates; older dated rows are historical trend only. If a scoped PCGS row omits its grade, the confirmed CoinFacts grade is inherited; an explicit different grade remains context-only. PCGS buyer-premium treatment is not disclosed, so the reported amount is labeled as realized-price-as-reported.</p>
+        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-4 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Current-value candidates</p><p className="font-bold text-cyan-200">{currentValueCandidates.length}</p></div><div><p className="uppercase text-gray-500">Historical trend</p><p className="font-bold text-violet-200">{historicalTrendRows.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">Only a signed, target-grade PCGS row dated within 365 days is submitted as a current-value candidate. Older target-grade rows are submitted as historical trend only; a missing row grade may inherit the confirmed CoinFacts grade when the history is target-scoped. Explicitly mismatched, undated, or incomplete rows remain context only.</p></div>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
         {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">PCGS did not return detailed historical sale rows for this item.</p>}
@@ -2446,7 +2447,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const auctions = pcgsAuctionData?.data?.auctions ?? [];
       const dated = auctions.filter((auction: any) => Number.isFinite(Date.parse(String(auction.date ?? ''))) && Number(auction.price) > 0);
       const targetAuctionGrade = normalizedPcgsAuctionGrade(pcgsAuctionData?.data?.grade ?? pcgsQuery.data?.data?.grade);
-      const exactGradeRows = dated.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade));
+      const exactGradeRows = dated.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade, pcgsAuctionData?.data?.historyScope));
       const currentValue = exactGradeRows.filter((auction: any) => isPcgsCurrentWindow(auction.date));
       const historicalTrend = exactGradeRows.filter((auction: any) => !isPcgsCurrentWindow(auction.date));
       const undated = auctions.filter((auction: any) => !Number.isFinite(Date.parse(String(auction.date ?? ''))) || !(Number(auction.price) > 0));
