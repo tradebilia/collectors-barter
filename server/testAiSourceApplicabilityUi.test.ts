@@ -170,6 +170,9 @@ describe('manual Test AI selector boundary', () => {
 
   it('shows Numista catalogue estimates as a weighted guide input while preserving sale classification', () => {
     expect(source).toContain("id: 'numista', label: 'Numista Coin Catalog', kind: 'reference', role: numistaQuery.data?.data?.guideValue ? 'valuation_guide' : 'reference_context'");
+    expect(source).toContain('enters the analyzer as a secondary guide anchor at a maximum 25% weight');
+    expect(source).toContain('Catalogue estimate · analyzer guide · max 25%');
+    expect(source).toContain('does not count toward completed-sale totals');
     expect(source).toContain('configured guide weight');
     expect(source).toContain('treatmentReason');
   });
