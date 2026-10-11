@@ -6,7 +6,7 @@
 
 | Boundary | Verified state |
 |---|---|
-| WebDev checkpoint | `6648f1a2` — P0 schema-boundary and dependency remediation |
+| P0 implementation checkpoint | `6648f1a2` — schema-boundary and dependency remediation; later documentation-only checkpoints retain this implementation unchanged |
 | GitHub | `tradebilia/collectors-barter` → `main` at commit `6648f1a23ec7df1a38edbe5805f697421138af3c` |
 | Isolated workspace | `/home/ubuntu/tradebilia-isolated-development`, clean after the checkpoint and GitHub push |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` received the checkpoint deployment successfully |

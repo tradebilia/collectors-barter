@@ -9,7 +9,7 @@
 
 ## Current verified baseline
 
-- WebDev checkpoint: `6648f1a2`
+- P0 implementation checkpoint: `6648f1a2` (later documentation-only checkpoints retain this implementation unchanged)
 - GitHub `main`: `6648f1a23ec7df1a38edbe5805f697421138af3c`
 - Public domains: `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space`
 - Full validation: 319 Vitest files / 1,446 tests passed; TypeScript and production build passed.
