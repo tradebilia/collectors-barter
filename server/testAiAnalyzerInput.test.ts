@@ -99,7 +99,8 @@ describe('Test AI analyzer input compatibility', () => {
     expect(routerSource).toContain("currency: 'USD' as const");
     expect(clientSource).toContain("title: sale.title ?? leftPcgsAuctionData?.data?.name ?? effectiveLeftItem.title");
     expect(clientSource).toContain("title: sale.title ?? rightPcgsAuctionData?.data?.name ?? effectiveRightItem.title");
-    expect(clientSource).toContain('PCGS_CURRENT_VALUE_WINDOW_MS');
+    expect(clientSource).toContain("import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets'");
+    expect(clientSource).toContain('bucketPcgsAuctionRows(auctions)');
     expect(clientSource).toContain('Historical trend only — exact certified grade, but older than 365 days');
     expect(clientSource).toContain('leftAnalysisItem={leftSearchItem}');
     expect(clientSource).toContain('rightAnalysisItem={rightSearchItem}');

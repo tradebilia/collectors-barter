@@ -165,9 +165,10 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Jump to loaded rows');
     expect(source).toContain('Current-value candidates');
     expect(source).toContain('Historical trend');
-    expect(source).toContain('older dated rows are historical trend only');
-    expect(source).toContain('Only a signed, target-grade PCGS row dated within 365 days is submitted');
-    expect(source).toContain('a missing row grade may inherit the confirmed CoinFacts grade');
+    expect(source).toContain('older approved rows are historical trend only');
+    expect(source).toContain('server-approved PCGS bucket');
+    expect(source).toContain("import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets'");
+    expect(source).toContain('bucketPcgsAuctionRows(auctions)');
     expect(source).toContain('id={`pcgs-history-rows-${side}`');
   });
 

@@ -2084,3 +2084,5 @@
 - [x] P0 remediation: remove all request-time schema creation and alteration from Tradebilia runtime code, preserving only reviewed Drizzle migration artifacts; do not apply migrations to the shared database.
 - [x] P0 remediation: upgrade and lock audited high/critical production dependency paths, then validate the application and production bundle.
 - [x] P0 remediation: add regression coverage proving request paths cannot issue schema-definition SQL, then checkpoint and synchronize only after full validation.
+
+- [x] PCGS evidence-ledger consistency: replace duplicated browser grade/date checks with a shared server-approved bucket contract so the Evidence Review and PCGS panel report identical current-value, historical-trend, and context counts. No database writes or migrations.

@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | Approved PCGS Auction Prices Realized current-value versus historical-trend policy, documented below |
-| Latest validation | 319 Vitest files passed; 1,449 tests passed; 6 tests skipped. TypeScript, production build, `git diff --check`, and runtime-schema scan passed. |
+| Latest functional change | PCGS Auction Prices Realized Evidence Review / provider-panel ledger alignment, documented below |
+| Latest validation | 320 Vitest files passed; 1,451 tests passed; 6 tests skipped. TypeScript, production build, `git diff --check`, and runtime-schema scan passed. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
 ## Approved PCGS Auction Prices Realized policy
@@ -23,7 +23,8 @@ The owner explicitly approved this Trade Analyzer behavior:
 3. **Context only:** A PCGS row is context only when it is undated, incomplete, non-USD, or not the exact certified target grade.
 4. **Price semantics:** PCGS reports a realized amount but does not disclose buyer-premium treatment in this endpoint. Recent, exact-grade candidates use that realized amount **as reported**; the analyzer/UI retain the buyer-premium caveat instead of claiming it is an all-in price.
 5. **Server enforcement:** Exact-grade disposition is assigned before PCGS auction observations are signed. Browser code cannot promote a grade-mismatched row. The analysis narrative receives only server-classified historical rows for trend discussion.
-6. **Sandbox transparency:** The PCGS panel and source ledger display separate counts for **Current-value candidates**, **Historical trend**, and **Context only**.
+6. **Shared classification:** `shared/testAiPcgsAuctionBuckets.ts` consumes the signed disposition rather than re-evaluating grade scope in the browser. This keeps the PCGS provider panel and Evidence Review in the same current-value, historical-trend, and context bucket.
+7. **Sandbox transparency:** The PCGS panel and source ledger display separate counts for **Current-value candidates**, **Historical trend**, and **Context only** from that same shared bucket.
 
 ## P0 remediation completed
 

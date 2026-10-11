@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
+import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
@@ -1399,30 +1400,6 @@ function SgcSection({ item, side }: { item: SelectedItem; side: 'left' | 'right'
   );
 }
 
-const PCGS_CURRENT_VALUE_WINDOW_MS = 365 * 86_400_000;
-
-function isPcgsCurrentWindow(date: unknown): boolean {
-  const parsed = Date.parse(String(date ?? ''));
-  return Number.isFinite(parsed) && parsed <= Date.now() && Date.now() - parsed <= PCGS_CURRENT_VALUE_WINDOW_MS;
-}
-
-function normalizedPcgsAuctionGrade(value: unknown): string {
-  return String(value ?? '').replace(/\s+/g, '').toUpperCase();
-}
-
-function isExactGradePcgsAuction(auction: any, targetGrade: string, historyScope?: string): boolean {
-  return Boolean(
-    auction?.provenanceToken
-    && auction?.saleStatus === 'completed'
-    && auction?.currency === 'USD'
-    && Number(auction?.price) > 0
-    && auction?.evidenceDisposition !== 'context_only'
-    && targetGrade
-    && (normalizedPcgsAuctionGrade(auction?.grade) === targetGrade
-      || (historyScope && !normalizedPcgsAuctionGrade(auction?.grade) && auction?.inheritedTargetGrade)),
-  );
-}
-
 function PcgsSection({ item, side, auctionData, auctionLoading }: { item: SelectedItem; side: 'left' | 'right'; auctionData?: any; auctionLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const { data, isLoading } = trpc.testAI.getPcgsData.useQuery(
@@ -1430,11 +1407,10 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
     { enabled: !!item.certId && item.gradingCompany === 'PCGS' },
   );
   const auctions = auctionData?.data?.auctions ?? [];
-  const targetAuctionGrade = normalizedPcgsAuctionGrade(auctionData?.data?.grade ?? data?.data?.grade);
-  const exactGradeRows = auctions.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade, auctionData?.data?.historyScope));
-  const currentValueCandidates = exactGradeRows.filter((auction: any) => isPcgsCurrentWindow(auction.date));
-  const historicalTrendRows = exactGradeRows.filter((auction: any) => !isPcgsCurrentWindow(auction.date));
-  const auctionContextOnly = auctions.filter((auction: any) => !currentValueCandidates.includes(auction) && !historicalTrendRows.includes(auction));
+  const pcgsAuctionBuckets = bucketPcgsAuctionRows(auctions);
+  const currentValueCandidates = pcgsAuctionBuckets.currentValueRows;
+  const historicalTrendRows = pcgsAuctionBuckets.historicalTrendRows;
+  const auctionContextOnly = pcgsAuctionBuckets.contextOnlyRows;
   const historicalRowsLabel = `${auctions.length} historical sale${auctions.length === 1 ? '' : 's'} loaded`;
 
   if (!item.certId || item.gradingCompany !== 'PCGS') return (
@@ -1482,8 +1458,8 @@ function PcgsSection({ item, side, auctionData, auctionLoading }: { item: Select
           <p className="text-[10px] font-semibold uppercase text-emerald-300">Auction Prices Realized — current value and historical trend</p>
           {auctions.length > 0 && <a href={`#pcgs-history-rows-${side}`} className="text-[9px] font-semibold text-cyan-300 underline underline-offset-2">Jump to loaded rows</a>}
         </div>
-        <p className="text-[9px] text-gray-500">PCGS first confirms the CoinFacts target, then uses its certificate or target-scoped auction history. Rows dated within the last 365 days are current-value candidates; older dated rows are historical trend only. If a scoped PCGS row omits its grade, the confirmed CoinFacts grade is inherited; an explicit different grade remains context-only. PCGS buyer-premium treatment is not disclosed, so the reported amount is labeled as realized-price-as-reported.</p>
-        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-4 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Current-value candidates</p><p className="font-bold text-cyan-200">{currentValueCandidates.length}</p></div><div><p className="uppercase text-gray-500">Historical trend</p><p className="font-bold text-violet-200">{historicalTrendRows.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">Only a signed, target-grade PCGS row dated within 365 days is submitted as a current-value candidate. Older target-grade rows are submitted as historical trend only; a missing row grade may inherit the confirmed CoinFacts grade when the history is target-scoped. Explicitly mismatched, undated, or incomplete rows remain context only.</p></div>}
+        <p className="text-[9px] text-gray-500">PCGS first confirms the CoinFacts target, then the server signs each certificate or target-scoped auction row before the browser displays it. Server-approved rows dated within the last 365 days are current-value candidates; older approved rows are historical trend only. A scoped PCGS row without a repeated grade can inherit the confirmed CoinFacts grade on the server; an explicit different grade remains context-only. PCGS buyer-premium treatment is not disclosed, so the reported amount is labeled as realized-price-as-reported.</p>
+        {auctionData?.status === 'success' && <div className="space-y-2 rounded border border-emerald-700/30 bg-emerald-900/10 p-2"><p className="text-[11px] font-bold text-emerald-200">{historicalRowsLabel}{auctionData.data?.historyScope === 'pcgs_public_view_all' ? ' from PCGS View All' : ''}</p><div className="grid grid-cols-4 gap-2 text-[9px]"><div><p className="uppercase text-gray-500">Loaded</p><p className="font-bold text-white">{auctions.length}</p></div><div><p className="uppercase text-gray-500">Current-value candidates</p><p className="font-bold text-cyan-200">{currentValueCandidates.length}</p></div><div><p className="uppercase text-gray-500">Historical trend</p><p className="font-bold text-violet-200">{historicalTrendRows.length}</p></div><div><p className="uppercase text-gray-500">Context only</p><p className="font-bold text-amber-200">{auctionContextOnly.length}</p></div></div><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[9px] text-amber-100">The panel and Evidence Review use the same server-approved PCGS bucket. Only a signed PCGS row dated within 365 days becomes a current-value candidate. Older approved rows are historical trend only; explicitly mismatched, undated, or incomplete rows remain context only.</p></div>}
         {auctionData?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{auctionData.message}</p>}
         {auctionData?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{auctionData.message}</p>}
         {auctionData?.status === 'success' && !auctionData.data?.auctions?.length && <p className="text-[10px] text-gray-500">PCGS did not return detailed historical sale rows for this item.</p>}
@@ -2445,13 +2421,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('pcgs')) {
       add({ id: 'pcgs', label: 'PCGS CoinFacts', kind: 'certification', status: evidenceStatus(pcgsQuery.data), fields: { title: pcgsQuery.data?.data?.name, year: pcgsQuery.data?.data?.year, denomination: pcgsQuery.data?.data?.denomination, variety: pcgsQuery.data?.data?.variety, certificationCompany: 'PCGS', grade: pcgsQuery.data?.data?.grade }, message: pcgsQuery.data?.message ?? null });
       const auctions = pcgsAuctionData?.data?.auctions ?? [];
-      const dated = auctions.filter((auction: any) => Number.isFinite(Date.parse(String(auction.date ?? ''))) && Number(auction.price) > 0);
-      const targetAuctionGrade = normalizedPcgsAuctionGrade(pcgsAuctionData?.data?.grade ?? pcgsQuery.data?.data?.grade);
-      const exactGradeRows = dated.filter((auction: any) => isExactGradePcgsAuction(auction, targetAuctionGrade, pcgsAuctionData?.data?.historyScope));
-      const currentValue = exactGradeRows.filter((auction: any) => isPcgsCurrentWindow(auction.date));
-      const historicalTrend = exactGradeRows.filter((auction: any) => !isPcgsCurrentWindow(auction.date));
-      const undated = auctions.filter((auction: any) => !Number.isFinite(Date.parse(String(auction.date ?? ''))) || !(Number(auction.price) > 0));
-      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: dated.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: dated.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: undated.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
+      const pcgsAuctionBuckets = bucketPcgsAuctionRows(auctions);
+      const currentValue = pcgsAuctionBuckets.currentValueRows;
+      const historicalTrend = pcgsAuctionBuckets.historicalTrendRows;
+      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: pcgsAuctionBuckets.datedCompletedRows.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: pcgsAuctionBuckets.datedCompletedRows.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: pcgsAuctionBuckets.undatedOrIncompleteRows.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     // Certificate-mode PCGS items receive verified year/denomination/grade
     // from CoinFacts in marketItem. Use that identity for readiness so the UI
