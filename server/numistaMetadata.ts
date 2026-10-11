@@ -22,7 +22,8 @@ type NumistaTypeDetail = NumistaTypeSummary & {
   url?: string;
   issuing_entity?: { name?: string };
   ruler?: Array<{ name?: string }>;
-  value?: { text?: string; numeric_value?: number; currency?: string };
+  value?: { text?: string; numeric_value?: number; currency?: string | { id?: number; name?: string; full_name?: string } };
+  mints?: Array<{ name?: string }>;
   composition?: { text?: string };
   size?: string;
   size2?: string;
@@ -150,11 +151,47 @@ function canonicalNumistaDenomination(country: string, denomination: string): st
   return isUnitedStates(country) ? canonicalUnitedStatesDenomination(denomination) : text(denomination);
 }
 
-function denominationMatchesNumistaDetail(country: string, requested: string, returned: string): boolean {
+function numistaCurrencyName(value: unknown): string {
+  if (typeof value === 'string' || typeof value === 'number') return text(value);
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return '';
+  const currency = value as Record<string, unknown>;
+  return text(currency.name) || text(currency.full_name);
+}
+
+function numericDenomination(value: string): number | null {
+  const match = text(value).match(/^\d+(?:\.\d+)?$/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function returnedCurrencyDenomination(value: string, currency: unknown): number | null {
+  const returned = text(value);
+  const currencyName = normalized(numistaCurrencyName(currency));
+  const match = returned.match(/^(\d+(?:\.\d+)?)\s+(.+)$/);
+  if (!match || !currencyName) return null;
+
+  const returnedUnit = normalized(match[2]);
+  if (!returnedUnit.includes(currencyName)) return null;
+  const parsed = Number(match[1]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function denominationMatchesNumistaDetail(country: string, requested: string, detail: NumistaTypeDetail): boolean {
   if (!requested) return true;
   const expected = canonicalNumistaDenomination(country, requested);
+  const returned = text(detail.value?.text);
   const actual = canonicalNumistaDenomination(country, returned);
-  return Boolean(expected && actual && normalized(expected) === normalized(actual));
+  if (expected && actual && normalized(expected) === normalized(actual)) return true;
+
+  // Inventory sometimes stores only a numeric face value for non-U.S. coins.
+  // Accept that narrow representation only when Numista's returned denomination
+  // explicitly uses the returned currency (for example, 1 -> 1 Peso). This
+  // deliberately leaves the U.S. $1-versus-dime safeguards exact.
+  if (isUnitedStates(country)) return false;
+  const requestedNumeric = numericDenomination(requested);
+  const returnedNumeric = returnedCurrencyDenomination(returned, detail.value?.currency);
+  return requestedNumeric !== null && returnedNumeric !== null && requestedNumeric === returnedNumeric;
 }
 
 /**
@@ -206,9 +243,9 @@ function gradeMatches(targetGrade: string, catalogueGrade: string): boolean {
 
 // Numista exposes broad G/VG/F/VF/XF/AU/UNC price bands, while certified
 // listings can contain a numeric Sheldon grade. These are the owner-approved
-// associations for displaying a clearly labeled Numista reference estimate.
-// The estimate never enters Tradebilia analyzer valuation. Grades absent from
-// this list intentionally do not map.
+// associations for displaying a clearly labeled Numista guide estimate. The
+// guide remains a capped 25% secondary analyzer anchor, never a completed sale.
+// Grades absent from this list intentionally do not map.
 const NUMISTA_GRADE_BANDS: Readonly<Record<string, string>> = {
   VERYGOOD: 'VG',
   AG3: 'G',
@@ -228,6 +265,7 @@ const NUMISTA_GRADE_BANDS: Readonly<Record<string, string>> = {
   AU53: 'AU',
   AU55: 'AU',
   AU58: 'AU',
+  NEARMINT: 'UNC',
   MS60: 'UNC',
   MS61: 'UNC',
   MS62: 'UNC',
@@ -255,13 +293,25 @@ function findGuideMatch(
   return mappedPrice ? { price: mappedPrice, matchType: 'mapped', selectedGrade: normalizedSelectedGrade } : null;
 }
 
-function issueMatchesCriteria(issue: NumistaIssue, criteria: ReturnType<typeof buildNumistaSearchCriteria>): boolean {
+function detailHasExclusiveRequestedMintFacility(detail: NumistaTypeDetail, requestedMint: string): boolean {
+  const requested = normalized(requestedMint);
+  const mints = detail.mints ?? [];
+  return Boolean(requested && mints.length === 1 && normalized(mints[0]?.name) === requested);
+}
+
+function issueMatchesCriteria(
+  issue: NumistaIssue,
+  criteria: ReturnType<typeof buildNumistaSearchCriteria>,
+  detail: NumistaTypeDetail,
+): boolean {
   const yearMatches = !criteria.year || [issue.year, issue.gregorian_year]
     .some((value) => Number.isFinite(Number(value)) && Number(value) === Number(criteria.year));
   if (!yearMatches) return false;
 
   const requestedMint = normalizeNumistaMintMark(criteria.mintMark);
-  return !requestedMint || normalizeNumistaMintMark(text(issue.mint_letter)) === requestedMint;
+  return !requestedMint
+    || normalizeNumistaMintMark(text(issue.mint_letter)) === requestedMint
+    || detailHasExclusiveRequestedMintFacility(detail, criteria.mintMark);
 }
 
 function normalizeNumistaMintMark(value: string): string {
@@ -361,6 +411,7 @@ function detailFacts(detail: NumistaTypeDetail): NumistaFact[] {
 async function loadGuidePrices(
   typeId: number,
   criteria: ReturnType<typeof buildNumistaSearchCriteria>,
+  detail: NumistaTypeDetail,
   headers: Record<string, string>,
   fetchImpl: FetchLike,
 ): Promise<{ issueId: number | null; prices: Array<{ grade: string; value: number; currency: string }>; error?: string }> {
@@ -369,7 +420,7 @@ async function loadGuidePrices(
   if (!issues.ok) return { issueId: null, prices: [], error: formatProviderError('Numista', issues.status, issues.data) };
   const issue = (Array.isArray(issues.data) ? issues.data : [])
     .filter((candidate): candidate is NumistaIssue => Boolean(candidate && typeof candidate === 'object'))
-    .filter((candidate) => issueMatchesCriteria(candidate, criteria))
+    .filter((candidate) => issueMatchesCriteria(candidate, criteria, detail))
     .slice(0, NUMISTA_ISSUE_LIMIT)[0];
   if (!issue?.id) return { issueId: null, prices: [] };
 
@@ -391,8 +442,8 @@ async function loadGuidePrices(
 /**
  * Returns Numista catalogue metadata plus a direct or owner-approved
  * grade-band-mapped catalogue estimate when the selected issue exposes one.
- * These are not completed sales or analyzer inputs; they are displayed only
- * as source-attributed reference context.
+ * The estimate is never a completed sale and enters the analyzer only as its
+ * capped 25% secondary guide anchor, with provisional status when sales are absent.
  */
 export async function lookupNumistaCoin(
   input: { category: string; title?: string; itemDetails?: unknown; grade?: string },
@@ -439,13 +490,13 @@ export async function lookupNumistaCoin(
       return result.ok && result.data && typeof result.data === 'object' ? result.data as NumistaTypeDetail : null;
     }));
     const usableDetails = details.filter((detail): detail is NumistaTypeDetail => Boolean(detail?.id && detail.title));
-    const denominationMatchedDetails = usableDetails.filter((detail) => denominationMatchesNumistaDetail(criteria.country, criteria.denomination, text(detail.value?.text)));
+    const denominationMatchedDetails = usableDetails.filter((detail) => denominationMatchesNumistaDetail(criteria.country, criteria.denomination, detail));
     if (!denominationMatchedDetails.length) {
       return { status: 'not_found', message: `Numista returned catalogue candidates, but none matched the requested denomination ${criteria.denomination || '(not supplied)'}.` };
     }
     const selected = [...denominationMatchedDetails].sort((a, b) => scoreDetail(b, criteria) - scoreDetail(a, criteria))[0];
     if (!selected || !selected.id || !selected.title) return { status: 'not_found', message: 'Numista returned candidate types, but no usable coin detail record could be read.' };
-    const guide = await loadGuidePrices(Number(selected.id), criteria, providerHeaders(apiKey, clientName, clientId, auth.token!), fetchImpl);
+    const guide = await loadGuidePrices(Number(selected.id), criteria, selected, providerHeaders(apiKey, clientName, clientId, auth.token!), fetchImpl);
     const guideMatch = criteria.grade ? findGuideMatch(criteria.grade, guide.prices) : null;
     const queryDescription = [criteria.query, criteria.year ? `year=${criteria.year}` : ''].filter(Boolean).join(' · ');
     return {

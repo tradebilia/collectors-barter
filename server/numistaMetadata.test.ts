@@ -85,6 +85,79 @@ describe('Numista coin metadata adapter', () => {
     expect(String(fetchMock.mock.calls[1]?.[0])).not.toContain('1+Dime');
   });
 
+  it('matches a numeric Mexican face value to Peso, uses the Mexican Mint facility, and maps Near Mint to UNC', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        types: [
+          { id: 1105, title: '1 Peso', issuer: { name: 'Mexico' }, min_year: 1970, max_year: 1983 },
+          { id: 1039, title: '1 Centesimo', issuer: { name: 'Panama' }, min_year: 1961, max_year: 1987 },
+        ],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        id: 1105,
+        title: '1 Peso',
+        issuer: { name: 'Mexico' },
+        min_year: 1970,
+        max_year: 1983,
+        value: { text: '1 Peso', currency: { name: 'Peso', full_name: 'Peso (1863-1992)' } },
+        mints: [{ name: 'Mexican Mint' }],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        id: 1039,
+        title: '1 Centesimo',
+        issuer: { name: 'Panama' },
+        min_year: 1961,
+        max_year: 1987,
+        value: { text: '1 Centesimo', currency: { name: 'Balboa', full_name: 'Balboa (1904-date)' } },
+        mints: [{ name: 'Mexican Mint' }],
+      }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ([{ id: 1982, year: 1982, mint_letter: 'Mo' }]) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ currency: 'USD', prices: [{ grade: 'UNC', price: 0.94 }] }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1982 Mexico 1 Peso',
+      grade: 'ungraded',
+      itemDetails: JSON.stringify({ country: 'Mexico', denomination: '1', year: '1982', mintMark: 'Mexican Mint', condition: 'near_mint' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('success');
+    expect(result.data).toMatchObject({
+      id: 1105,
+      title: '1 Peso',
+      guideIssueId: 1982,
+      guideValue: 0.94,
+      guideGrade: 'UNC',
+      guideSelectedGrade: 'NEARMINT',
+      guideMatchType: 'mapped',
+    });
+    expect(String(fetchMock.mock.calls[5]?.[0])).toContain('/issues/1982/prices');
+  });
+
+  it('does not treat a numeric denomination as a match for a non-currency unit', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ access_token: 'token' }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({ types: [{ id: 14465, title: '1 Onza Libertad', issuer: { name: 'Mexico' }, min_year: 1982, max_year: 1995 }] }) })
+      .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
+        id: 14465,
+        title: '1 Onza Libertad',
+        issuer: { name: 'Mexico' },
+        min_year: 1982,
+        max_year: 1995,
+        value: { text: '1 Onza', currency: { name: 'Peso' } },
+      }) });
+
+    const result = await lookupNumistaCoin({
+      category: 'coins',
+      title: '1982 Mexico 1',
+      itemDetails: JSON.stringify({ country: 'Mexico', denomination: '1', year: '1982' }),
+    }, fetchMock as typeof fetch, env);
+
+    expect(result.status).toBe('not_found');
+    expect(result.message).toContain('none matched the requested denomination 1');
+  });
+
   it.each([
     ['very_good', 'VG'], ['AG3', 'G'], ['G4', 'G'], ['G6', 'G'], ['VG8', 'VG'], ['VG10', 'VG'], ['F12', 'F'], ['F15', 'F'],
     ['VF20', 'VF'], ['VF25', 'VF'], ['VF30', 'VF'], ['VF35', 'VF'], ['XF40', 'XF'], ['XF45', 'XF'],
