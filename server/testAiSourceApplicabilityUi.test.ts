@@ -169,6 +169,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('server-approved PCGS bucket');
     expect(source).toContain("import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets'");
     expect(source).toContain('bucketPcgsAuctionRows(auctions)');
+    expect(source).toContain('historyQueryVersion: 5');
     expect(source).toContain('id={`pcgs-history-rows-${side}`');
   });
 

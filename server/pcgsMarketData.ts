@@ -239,8 +239,23 @@ async function lookupPcgsPublicViewAllHistory(pcgsNo: string, env: PcgsEnv) {
   if (!tokens.length) throw new Error('PCGS API token not configured');
   try {
     const firstResult = await requestPcgsPublicViewAllHistory(pcgsNo, tokens[0]);
-    if (firstResult.status !== 429 || !tokens[1]) return firstResult;
-    return requestPcgsPublicViewAllHistory(pcgsNo, tokens[1]);
+    if (!tokens[1]) return firstResult;
+    if (firstResult.status === 429) return requestPcgsPublicViewAllHistory(pcgsNo, tokens[1]);
+
+    // PCGS can return an HTTP-successful empty View All page for one
+    // credential even when the same item has history. Do one bounded retry
+    // with the alternate credential before reporting a genuine empty history.
+    // Preserve the original successful response if the retry fails or remains
+    // empty: this does not invent auction evidence.
+    if (firstResult.status === 200 && !firstResult.auctions.length) {
+      try {
+        const alternateResult = await requestPcgsPublicViewAllHistory(pcgsNo, tokens[1]);
+        return alternateResult.auctions.length ? alternateResult : firstResult;
+      } catch {
+        return firstResult;
+      }
+    }
+    return firstResult;
   } catch (error) {
     if (!tokens[1] || !isPcgsTimeoutError(error)) throw error;
     return requestPcgsPublicViewAllHistory(pcgsNo, tokens[1]);

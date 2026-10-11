@@ -193,6 +193,41 @@ describe('PCGS certification adapter', () => {
     expect(String(fetchMock.mock.calls[3][1]?.body)).toContain('searchModel.SpecNo=536910');
   });
 
+  it('retries an HTTP-successful but empty View All history with the alternate credential', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '536910', CertNo: '57208479', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', PCGSNo: '536910', CertNo: '57208479', Grade: 'PR70DCAM', Name: '2015-W $1 Silver Eagle, DCAM' }))
+      .mockResolvedValueOnce(okJson({ IsValidRequest: true, ServerMessage: 'Request successful', Auctions: [] }))
+      .mockResolvedValueOnce(okJson({ data: [] }))
+      .mockResolvedValueOnce(okJson({
+        data: [{
+          GradingServiceName: 'PCGS',
+          DisplayGrade: 'PR70DCAM',
+          FormattedSaleDate: 'Sep-2024',
+          AuctionFirmName: 'Heritage Auctions',
+          AuctionSaleName: 'Modern U.S. Coins Auction',
+          LotNumber: '50123',
+          ItemIDString: 'item-50123',
+          SEOLotTitle: '2015-w-1-silver-eagle-dcam',
+          SpecNo: '536910',
+          Price: 125,
+        }],
+      }));
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await lookupPcgsAuctionResults('57208479', {
+      PCGS_API_TOKEN: 'primary-token',
+      PCGS_API_TOKEN_SECONDARY: 'secondary-token',
+    });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.historyScope).toBe('pcgs_public_view_all');
+    expect(result.data?.auctions).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(5);
+    expect(fetchMock.mock.calls[3][1]).toEqual(expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'bearer primary-token' }) }));
+    expect(fetchMock.mock.calls[4][1]).toEqual(expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'bearer secondary-token' }) }));
+  });
+
   it('uses the secondary key only after a certification request times out', async () => {
     const fetchMock = vi.fn()
       .mockRejectedValueOnce(new Error('The operation timed out'))

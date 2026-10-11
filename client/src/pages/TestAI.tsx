@@ -4005,11 +4005,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('comicconnect') }
   );
   const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
-    { certNumber: leftItem?.certId || '', historyQueryVersion: 4 },
+    { certNumber: leftItem?.certId || '', historyQueryVersion: 5 },
     { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
   const rightPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
-    { certNumber: rightItem?.certId || '', historyQueryVersion: 4 },
+    { certNumber: rightItem?.certId || '', historyQueryVersion: 5 },
     { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
 

@@ -12,8 +12,8 @@
 - P0 implementation checkpoint: `6648f1a2` (later work retains this implementation unchanged)
 - GitHub repository: `tradebilia/collectors-barter`, branch `main` — fetch first for the exact current SHA
 - Public domains: `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space`
-- Latest functional policy: signed, exact-grade PCGS Auction Prices Realized rows within 365 days are current-value candidates; older exact-grade PCGS rows are historical trend only; incomplete, non-USD, undated, and grade-mismatched rows are context only. PCGS compact month/year labels such as `10-2009` are normalized internally for this timing split while their exact original label remains visible. The provider panel and Evidence Review both consume the same server-approved PCGS bucket utility.
-- Latest validation: 320 Vitest files / 1,453 tests passed; TypeScript and production build passed; dependency audit has no high or critical findings.
+- Latest functional policy: signed, exact-grade PCGS Auction Prices Realized rows within 365 days are current-value candidates; older exact-grade PCGS rows are historical trend only; incomplete, non-USD, undated, and grade-mismatched rows are context only. PCGS compact month/year labels such as `10-2009` are normalized internally for this timing split while their exact original label remains visible. The provider panel and Evidence Review both consume the same server-approved PCGS bucket utility. A View All history response that is HTTP-successful but empty is retried once with the alternate configured PCGS credential; an unsuccessful or still-empty retry preserves the empty result without inventing evidence. The client uses `historyQueryVersion: 5` to refresh older cached empty responses.
+- Latest validation: 320 Vitest files / 1,454 tests passed; TypeScript and production build passed; dependency audit has no high or critical findings.
 - Shared database baseline: 3 users, 3 profiles, 48 listings, 74 listing photos, 1 inquiry reply, 6 trade proposals.
 
 ## Critical safety rules
