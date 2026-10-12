@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification, parseErrorMessage } from './parseMarketData';
+import { buildPriceChartingCoinQuery, classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification, parseErrorMessage } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -49,29 +49,36 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/28d873f5-47d5-4c01-a275-e80c6b3fc610/search_sold_items?sort=BestMatch&limit=10&query=Michael%20Jordan%20rookie&marketplace=all');
   });
 
-  it('searches PriceCharting coins and follows the returned slugs to detail pricing', async () => {
+  it('builds PriceCharting coin queries strictly as year, optional mint mark, and variety', () => {
+    expect(buildPriceChartingCoinQuery({ year: '1903', variety: 'Morgan' })).toBe('1903 Morgan');
+    expect(buildPriceChartingCoinQuery({ year: '1903', mintMark: 's', variety: 'Morgan' })).toBe('1903 S Morgan');
+    expect(buildPriceChartingCoinQuery({ year: '1903', mintMark: 'San Francisco', variety: 'Morgan' })).toBe('1903 Morgan');
+  });
+
+  it('searches PriceCharting coins with the approved year-mint-variety contract and follows returned slugs to detail pricing', async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { coins: [{ name: '1909-S VDB Lincoln Cent', set_slug: 'lincoln-cents', coin_slug: '1909-s-vdb' }] } }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ data: { name: '1909-S VDB Lincoln Cent', mint: 'San Francisco', prices: { ungraded: 900, ms65: 12000 } } }) });
     global.fetch = fetchMock as typeof fetch;
-    const result = await lookupPriceChartingCoin('1909 S VDB', { PARSE_BOT_API_KEY: 'configured-key' });
+    const result = await lookupPriceChartingCoin({ year: '1909', mintMark: 'S', variety: 'VDB' }, { PARSE_BOT_API_KEY: 'configured-key' });
     expect(result.status).toBe('success');
     expect(result.data?.prices.ms65).toBe(12000);
     expect(fetchMock.mock.calls[0][0]).toContain('/search_coins?query=1909%20S%20VDB');
     expect(fetchMock.mock.calls[1][0]).toContain('/get_coin_detail?set_slug=lincoln-cents&coin_slug=1909-s-vdb');
   });
 
-  it('rejects a different year or material instead of accepting a fuzzy coin match', async () => {
-    expect(isPriceChartingCoinIdentityCompatible('1945 Walking Liberty Silver Half Dollar', '2016 W [GOLD] Walking Liberty Half Dollar')).toBe(false);
+  it('rejects conflicting years or mint marks instead of accepting a fuzzy coin match', async () => {
+    expect(isPriceChartingCoinIdentityCompatible({ year: '1945', variety: 'Walking Liberty' }, '2016 W [GOLD] Walking Liberty Half Dollar')).toBe(false);
+    expect(isPriceChartingCoinIdentityCompatible({ year: '1903', variety: 'Morgan' }, '1903 S Morgan Silver Dollar')).toBe(false);
 
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ data: { coins: [{ name: '2016 W [GOLD] Walking Liberty Half Dollar', set_slug: 'walking-liberty', coin_slug: '2016-w-gold' }] } }),
+      json: async () => ({ data: { coins: [{ name: '1945 S Walking Liberty Half Dollar', set_slug: 'walking-liberty', coin_slug: '1945-s' }] } }),
     });
     global.fetch = fetchMock as typeof fetch;
-    const result = await lookupPriceChartingCoin('1945 Walking Liberty Silver Half Dollar', { PARSE_BOT_API_KEY: 'configured-key' });
+    const result = await lookupPriceChartingCoin({ year: '1945', variety: 'Walking Liberty' }, { PARSE_BOT_API_KEY: 'configured-key' });
     expect(result.status).toBe('not_found');
-    expect(result.message).toContain('conflicting year, material, or denomination');
+    expect(result.message).toContain('conflicting year, variety, or mint mark');
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +115,7 @@ describe('Parse SGC and PriceCharting adapters', () => {
 
     expect((await lookupSgcCertification('0453727', {})).status).toBe('error');
     expect((await lookupPriceCharting('charizard', {})).status).toBe('error');
-    expect((await lookupPriceChartingCoin('1909', {})).status).toBe('error');
+    expect((await lookupPriceChartingCoin({ year: '1909', variety: 'VDB' }, {})).status).toBe('error');
     expect((await lookupPriceChartingVideoGame('045496630025', {})).status).toBe('error');
     expect((await lookupPriceChartingCardBySlugs('set', 'card', {})).status).toBe('error');
     expect((await lookupPriceChartingBigMovers({})).status).toBe('error');

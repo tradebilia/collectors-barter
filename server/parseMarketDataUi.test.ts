@@ -18,6 +18,13 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain("enabledSources.has('one_thirty_point') && <OneThirtyPointSection");
   });
 
+  it('builds PriceCharting coin requests from structured year, mint mark, and variety fields instead of the listing title', () => {
+    expect(testAiSource).toContain('function buildPriceChartingCoinInput(item: SelectedItem)');
+    expect(testAiSource).toContain('const priceChartingCoinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);');
+    expect(testAiSource).not.toContain('getPriceChartingCoinData.useQuery({ query: item.title }');
+    expect(testAiSource).toContain('Coin search used:');
+  });
+
   it('keeps all three provider panels explicitly read-only', () => {
     expect(testAiSource).toContain('Read-only cert details, grade, designation, and population data');
     expect(testAiSource).toContain('Read-only Pokémon card market prices by grade');

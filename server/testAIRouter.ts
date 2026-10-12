@@ -2124,10 +2124,14 @@ export const testAIRouter = router({
       return lookupPriceCharting(input.query);
     }),
   getPriceChartingCoinData: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240) }))
+    .input(z.object({
+      year: z.string().trim().regex(/^(?:17|18|19|20)\d{2}$/, 'Enter a four-digit coin year.'),
+      variety: z.string().trim().min(1).max(120),
+      mintMark: z.string().trim().regex(/^[A-Za-z]$/, 'Enter a one-letter mint mark.').optional(),
+    }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupPriceChartingCoin(input.query);
+      return lookupPriceChartingCoin(input);
     }),
   getPriceChartingVideoGameData: protectedProcedure
     .input(z.object({ upc: z.string().trim().regex(/^\d{8,14}$/, 'Enter an 8- to 14-digit video-game UPC/barcode.') }))
