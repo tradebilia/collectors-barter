@@ -5,6 +5,7 @@ const SGC_SCRAPER_ID = 'f63ad1cb-5b08-4e33-9ea8-573b416e936d';
 const PRICECHARTING_SCRAPER_ID = 'bbbbdc36-6d99-4a7a-8115-cf766b2497e3';
 const ONE_THIRTY_POINT_SCRAPER_ID = '28d873f5-47d5-4c01-a275-e80c6b3fc610';
 const PWCC_SCRAPER_ID = '6f75fc48-78a3-4fa4-a96a-937d35bf9385';
+const PRICECHARTING_REQUEST_TIMEOUT_MS = 15_000;
 
 type ParseEnv = Record<string, string | undefined>;
 
@@ -48,6 +49,16 @@ async function recordParseFailure(operation: string, status: number) {
 
 function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
+}
+
+async function fetchPriceCharting(url: string, init: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PRICECHARTING_REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 function normalizedCoinText(value: unknown): string {
@@ -187,7 +198,7 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
   if (!apiKey) return { query: normalizedQuery ?? '', status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
   if (!normalizedQuery) return { query: '', status: 'error' as const, message: 'PriceCharting coin searches require a four-digit year and a variety. An optional mint mark must be one letter.', data: null };
   try {
-    const response = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/search_coins?query=${encodeURIComponent(normalizedQuery)}`, { headers: { 'X-API-Key': apiKey } });
+    const response = await fetchPriceCharting(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/search_coins?query=${encodeURIComponent(normalizedQuery)}`, { headers: { 'X-API-Key': apiKey } });
     const payload = await response.json().catch(() => null);
     if (!response.ok) { await recordParseFailure('PriceCharting coin search', response.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse PriceCharting', payload), data: null }; }
     const result = asObject(asObject(payload).data ?? payload);
@@ -201,7 +212,7 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
         : 'No matching US coin was found in PriceCharting.';
       return { query: normalizedQuery, status: 'not_found' as const, message, data: null };
     }
-    const detailResponse = await fetch(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_coin_detail?set_slug=${encodeURIComponent(String(firstCoin.set_slug))}&coin_slug=${encodeURIComponent(String(firstCoin.coin_slug))}`, { headers: { 'X-API-Key': apiKey } });
+    const detailResponse = await fetchPriceCharting(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_coin_detail?set_slug=${encodeURIComponent(String(firstCoin.set_slug))}&coin_slug=${encodeURIComponent(String(firstCoin.coin_slug))}`, { headers: { 'X-API-Key': apiKey } });
     const detailPayload = await detailResponse.json().catch(() => null);
     if (!detailResponse.ok) { await recordParseFailure('PriceCharting coin detail', detailResponse.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(detailResponse.status, 'Parse PriceCharting', detailPayload), data: null }; }
     const coin = asObject(asObject(detailPayload).data ?? detailPayload);
@@ -210,7 +221,10 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
       return { query: normalizedQuery, status: 'not_found' as const, message: 'PriceCharting returned a coin with a conflicting year, variety, or mint mark; no value was accepted.', data: null };
     }
     return { query: normalizedQuery, status: 'success' as const, data: { name: coin.name ?? firstCoin.name ?? null, set: coin.set ?? firstCoin.set ?? null, year: coin.year ?? coin.release_date ?? null, mint: coin.mint ?? null, mintage: coin.mintage ?? coin.metadata?.mintage ?? null, url: coin.url ?? firstCoin.url ?? null, prices: asObject(coin.prices ?? firstCoin.prices), source: 'US coin price-guide context' } };
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup timed out after 15 seconds. No value was accepted; retry when the provider is responsive.', data: null };
+    }
     return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup could not be reached. Try again shortly.', data: null };
   }
 }
