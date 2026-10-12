@@ -29,6 +29,8 @@ type IgdbGame = {
   age_ratings?: Array<{ organization?: { name?: string }; rating_category?: { rating?: string } }>;
 };
 
+type IgdbPlatform = { id?: number; name?: string };
+
 const tokenCache = new Map<string, { value: string; expiresAt: number }>();
 
 function normalize(value: string): string {
@@ -50,6 +52,16 @@ function escapeApicalypse(value: string): string {
 function searchVariants(title: string): string[] {
   const punctuated = title.replace(/\b(Bros|Dr|Mr|Mrs|Ms|St)\b(?!\.)/g, '$1.');
   return [...new Set([title, punctuated])].filter((value) => value.length >= 2);
+}
+
+function platformSearchVariants(platform: string): string[] {
+  const normalized = normalize(platform);
+  const aliases: Record<string, string> = {
+    nes: 'Nintendo Entertainment System', snes: 'Super Nintendo Entertainment System', n64: 'Nintendo 64',
+    ps1: 'PlayStation', ps2: 'PlayStation 2', ps3: 'PlayStation 3', ps4: 'PlayStation 4', ps5: 'PlayStation 5',
+    xbox360: 'Xbox 360', xboxone: 'Xbox One', switch: 'Nintendo Switch',
+  };
+  return [...new Set([aliases[normalized] ?? platform.trim(), platform.trim()])].filter(Boolean);
 }
 
 function valueList(values: Array<{ name?: string }> | undefined): string | null {
@@ -125,10 +137,28 @@ export async function lookupIgdbGameMetadata(
 
     const fields = 'id,name,first_release_date,platforms.name,genres.name,game_modes.name,themes.name,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,age_ratings.organization.name,age_ratings.rating_category.rating';
     let payload: unknown = [];
+    let platformId: number | undefined;
+    if (options.platform) {
+      for (const platformTerm of platformSearchVariants(options.platform)) {
+        const platformQuery = `search "${escapeApicalypse(platformTerm)}"; fields id,name; limit 12;`;
+        const response = await fetchImpl('https://api.igdb.com/v4/platforms', {
+          method: 'POST',
+          headers: { Accept: 'application/json', 'Client-ID': clientId, Authorization: `Bearer ${accessToken}` },
+          body: platformQuery,
+          signal: AbortSignal.timeout(12_000),
+        });
+        const platformPayload = await response.json().catch(() => null) as IgdbPlatform[] | null;
+        if (!response.ok) return { status: 'error', message: formatProviderError('IGDB', response.status, platformPayload) };
+        const match = (Array.isArray(platformPayload) ? platformPayload : []).find((candidate) => platformMatches([{ name: candidate.name }], options.platform));
+        if (match?.id) { platformId = match.id; break; }
+      }
+      if (!platformId) return { status: 'not_found', message: `No IGDB platform matched ${options.platform}.` };
+    }
     const terms = searchVariants(lookupTitle);
     const primarySearchTerm = terms[terms.length - 1]!;
     const requestGames = async (searchTerm: string, mainReleasesOnly: boolean): Promise<{ status: 'error'; message: string } | null> => {
-      const query = `search "${escapeApicalypse(searchTerm)}"; fields ${fields};${mainReleasesOnly ? ' where category = 0 & version_parent = null;' : ''} limit 12;`;
+      const constraints = [platformId ? `platforms = (${platformId})` : null, mainReleasesOnly ? 'category = 0 & version_parent = null' : null].filter(Boolean).join(' & ');
+      const query = `search "${escapeApicalypse(searchTerm)}"; fields ${fields};${constraints ? ` where ${constraints};` : ''} limit 12;`;
       const response = await fetchImpl('https://api.igdb.com/v4/games', {
         method: 'POST',
         headers: {
@@ -152,14 +182,9 @@ export async function lookupIgdbGameMetadata(
     if (!Array.isArray(payload) || !payload.length) return { status: 'not_found', message: 'No matching IGDB game record was found.' };
 
     const candidates = payload as IgdbGame[];
-    const constrainedCandidates = candidates.filter((candidate) => {
-      const releaseYearMatches = !options.releaseYear || (candidate.first_release_date && new Date(candidate.first_release_date * 1_000).getUTCFullYear() === options.releaseYear);
-      const platformMatchesInput = !options.platform || platformMatches(candidate.platforms, options.platform);
-      return releaseYearMatches && platformMatchesInput;
-    });
-    if ((options.releaseYear || options.platform) && !constrainedCandidates.length) {
-      const constraints = [options.releaseYear ? `release year ${options.releaseYear}` : null, options.platform ? `platform ${options.platform}` : null].filter(Boolean).join(' and ');
-      return { status: 'not_found', message: `No IGDB record matched the title with the specified ${constraints}.` };
+    const constrainedCandidates = candidates.filter((candidate) => !options.platform || platformMatches(candidate.platforms, options.platform));
+    if (options.platform && !constrainedCandidates.length) {
+      return { status: 'not_found', message: `No IGDB record matched the title with the specified platform ${options.platform}.` };
     }
     const game = [...(constrainedCandidates.length ? constrainedCandidates : candidates)].sort((a, b) => scoreGame(b, lookupTitle, options.releaseYear, options.platform) - scoreGame(a, lookupTitle, options.releaseYear, options.platform))[0];
     if (!game?.id || !game.name) return { status: 'not_found', message: 'No usable IGDB game record was found.' };
@@ -182,16 +207,18 @@ export async function lookupIgdbGameMetadata(
     add('Age ratings', ageRatings || null);
 
     const exactName = normalize(game.name) === normalize(lookupTitle);
-    const yearMatches = Boolean(options.releaseYear && releaseYear === options.releaseYear);
     const platformMatchesInput = platformMatches(game.platforms, options.platform);
-    const matchParts = [exactName ? 'title' : 'title similarity', yearMatches ? 'release year' : null, platformMatchesInput ? 'platform' : null].filter(Boolean);
+    const yearNote = options.releaseYear && releaseYear && releaseYear !== options.releaseYear
+      ? ` IGDB primary release year is ${releaseYear}; stored listing year is ${options.releaseYear}, which may reflect regional release timing.`
+      : '';
+    const matchParts = [exactName ? 'title' : 'title similarity', platformMatchesInput ? 'platform' : null].filter(Boolean);
     return {
       status: 'success',
       data: {
         id: game.id,
         title: game.name,
         sourceUrl: `https://www.igdb.com/games/${game.id}`,
-        matchNote: `Matched by ${matchParts.join(', ')}. Confirm the exact release, platform, and edition before using a separate market source.`,
+        matchNote: `Matched by ${matchParts.join(', ')}.${yearNote} Confirm the exact release, platform, and edition before using a separate market source.`,
         facts,
       },
     };

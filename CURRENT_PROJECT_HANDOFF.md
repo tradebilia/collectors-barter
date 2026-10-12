@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | PriceCharting exact-grade, sale-derived coin-guide policy remains unchanged; coin lookups have a 30-second timeout, no automatic retries, fresh-on-mount query behavior, and a visible manual retry. Timeout messages now identify whether the stall occurred during `search_coins` response headers/body or `get_coin_detail` response headers/body. |
-| Latest validation | Focused PriceCharting tests 22/22 passed; deterministic validation is rerun after the phase-diagnostic update; TypeScript, production build, `git diff --check`, and production audit remain required before checkpointing. |
+| Latest functional change | IGDB Video Game Catalog lookups use saved Game Title + Platform as blocking criteria; release year is non-blocking regional context. PriceCharting exact-grade, sale-derived coin-guide policy remains unchanged. |
+| Latest validation | IGDB focused tests 5/5 passed; deterministic validation 307 files / 1,451 tests passed with external credential probes excluded; TypeScript, production build, `git diff --check`, and production audit passed. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
 ## Coverage tracker confirmation — October 11, 2026
@@ -85,6 +85,10 @@ The isolated development project uses the existing custom database. Treat every 
 ### PSA grade normalization exception — October 12, 2026
 
 PSA whole-number normalization remains in force for Sports Cards. For Video Games only, PSA half-point grades are preserved in Sold-Comps and Test AI query previews: `7.5` remains `7.5` instead of becoming `8`. The server and shared client helper both receive the item category so this exception cannot broaden to PSA Sports Cards or unrelated categories.
+
+### IGDB Video Game Catalog criteria — October 12, 2026
+
+IGDB lookups now use the saved **Game Title** and **Platform** as the blocking identity criteria. The server resolves the platform through IGDB and includes its platform ID in the games query. The saved release year remains reference context only because IGDB's primary release year can reflect a different regional release; a title/platform match is accepted with an explicit year-difference note. IGDB remains read-only factual metadata and never contributes valuation, grading, certification, or stored data.
 
 Move to **P1 performance and maintainability** only after discussing the specific scope. The first candidate is splitting the oversized Test AI and Admin Dashboard frontend chunks, then addressing unbounded result-fetch patterns identified by the code-quality audit.
 
