@@ -75,7 +75,7 @@ describe('Parse SGC and PriceCharting adapters', () => {
     const result = await lookupPriceChartingCoin({ year: '1903', variety: 'Morgan' }, { PARSE_BOT_API_KEY: 'configured-key' });
 
     expect(result.status).toBe('error');
-    expect(result.message).toContain('timed out after 15 seconds');
+    expect(result.message).toContain('timed out after 30 seconds');
   });
 
   it('rejects conflicting years or mint marks instead of accepting a fuzzy coin match', async () => {

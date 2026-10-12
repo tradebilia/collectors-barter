@@ -5,7 +5,7 @@ const SGC_SCRAPER_ID = 'f63ad1cb-5b08-4e33-9ea8-573b416e936d';
 const PRICECHARTING_SCRAPER_ID = 'bbbbdc36-6d99-4a7a-8115-cf766b2497e3';
 const ONE_THIRTY_POINT_SCRAPER_ID = '28d873f5-47d5-4c01-a275-e80c6b3fc610';
 const PWCC_SCRAPER_ID = '6f75fc48-78a3-4fa4-a96a-937d35bf9385';
-const PRICECHARTING_REQUEST_TIMEOUT_MS = 15_000;
+const PRICECHARTING_REQUEST_TIMEOUT_MS = 30_000;
 
 type ParseEnv = Record<string, string | undefined>;
 
@@ -223,7 +223,7 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
     return { query: normalizedQuery, status: 'success' as const, data: { name: coin.name ?? firstCoin.name ?? null, set: coin.set ?? firstCoin.set ?? null, year: coin.year ?? coin.release_date ?? null, mint: coin.mint ?? null, mintage: coin.mintage ?? coin.metadata?.mintage ?? null, url: coin.url ?? firstCoin.url ?? null, prices: asObject(coin.prices ?? firstCoin.prices), source: 'US coin price-guide context' } };
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup timed out after 15 seconds. No value was accepted; retry when the provider is responsive.', data: null };
+      return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup timed out after 30 seconds. No value was accepted; retry when the provider is responsive.', data: null };
     }
     return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup could not be reached. Try again shortly.', data: null };
   }
