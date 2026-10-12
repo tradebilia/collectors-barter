@@ -77,6 +77,41 @@ export function normalizeVisualSourceReviews(
     );
 }
 
+function isComicMetadata(metadata: string): boolean {
+  return metadata.match(/(?:^|;)\s*category=([^;]*)/i)?.[1]?.trim().toLowerCase() === "comics";
+}
+
+export function conservativeComicVisualReviews(
+  reviews: VisualSourceReview[],
+  listings: VisualSourceCandidate[],
+  targetMetadata: string,
+): VisualSourceReview[] {
+  if (!isComicMetadata(targetMetadata)) return reviews;
+  return reviews.map((review) => {
+    const candidateTitle = String(listings[review.candidateIndex]?.title ?? "");
+    const rationale = review.rationale;
+    const uncertainImage = /\b(?:low[- ]resolution|blurry|unclear|obscured|not visible|cannot (?:see|read)|can't (?:see|read)|appears raw|looks raw)\b/i.test(rationale);
+    const candidateDeclaresGrade = /\b(?:cgc|cbcs|pgx|psa|graded|9\.\d|10\.0)\b/i.test(candidateTitle);
+    if (review.verdict === "mismatch" && uncertainImage && candidateDeclaresGrade) {
+      return {
+        ...review,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale: `${rationale} Because the candidate metadata declares a graded comic but the image is unclear, this is downgraded to unreadable/manual review rather than a definitive mismatch.`,
+      };
+    }
+    if ((review.verdict === "match" || review.verdict === "rough_match") && !/\b(?:exact(?:ly)?|same issue|issue number matches|cover art corresponds|identical cover)\b/i.test(rationale)) {
+      return {
+        ...review,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale: `${rationale} The model did not provide sufficient exact-issue or cover-art confirmation; retained for manual review rather than accepted as a visual match.`,
+      };
+    }
+    return review;
+  });
+}
+
 export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
   listings: T[],
   reviews: VisualSourceReview[],
@@ -369,7 +404,11 @@ export async function filterVisualSourceCandidates<
     if (!completedBatches && reviewQueue.length) {
       throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     }
-    const uniqueReviews = reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index);
+    const uniqueReviews = conservativeComicVisualReviews(
+      reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
+      candidates.map((candidate) => candidate.item),
+      args.targetMetadata,
+    );
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
     const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
     // Never leave an image appearing implicitly accepted because a provider omitted

@@ -5,6 +5,7 @@ import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
   buildDeclaredIdentityReviews,
+  conservativeComicVisualReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
   VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT,
@@ -50,6 +51,22 @@ describe("visual source filter", () => {
       evidenceDisposition: "warning_review",
     });
     expect(result.removedCount).toBe(0);
+  });
+
+  it("downgrades broad comic visual matches when exact issue or cover evidence is absent", () => {
+    const result = conservativeComicVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "Same Star Wars characters and CGC holder." },
+    ], [{ title: "Star Wars #1 CGC 9.8" }], "title=Star Wars #1; category=comics");
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("exact-issue or cover-art confirmation");
+  });
+
+  it("downgrades an unclear graded-comic mismatch to manual review when metadata declares a grade", () => {
+    const result = conservativeComicVisualReviews([
+      { candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: "The low-resolution image appears raw and the holder is not visible." },
+    ], [{ title: "X-Men #137 CGC 9.8 Newsstand" }], "title=X-Men #137; category=comics");
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("rather than a definitive mismatch");
   });
 
   it("preserves long visual explanations instead of cutting them off at 240 characters", () => {
