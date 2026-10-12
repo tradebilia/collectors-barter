@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | PriceCharting exact-grade, sale-derived coin-guide policy: one positive exact certified-grade result may become the preferred capped 25% secondary guide anchor; it never creates sale rows/counts and cannot stack with Numista. |
-| Latest validation | 302 deterministic Vitest files / 1,440 tests passed (external credential probes excluded); TypeScript, production build, `git diff --check`, runtime-schema scan, and literal-secret diff scan passed. |
+| Latest functional change | PriceCharting exact-grade, sale-derived coin-guide policy remains unchanged; coin lookups now have a 15-second server timeout, no automatic retries, fresh-on-mount query behavior, and a visible manual retry so stale 401s cannot remain indefinitely. |
+| Latest validation | 306 deterministic Vitest files / 1,446 tests passed (external credential probes excluded); focused PriceCharting tests 21/21 passed; TypeScript, production build, `git diff --check`, and production audit passed with two low findings. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
 ## Coverage tracker confirmation — October 11, 2026
