@@ -1,2 +1,2096 @@
+# Project TODO
 
+- [x] Clone `tradebilia/collectors-barter` into `/home/ubuntu/tradebilia-clone` and install locked dependencies.
+- [x] Configure `CUSTOM_DATABASE_URL` only through secure project secret settings and set `TRADEBILIA_STAGING_MODE=1`.
+- [x] Validate the shared database with read-only count queries before any write-capable activity.
+- [x] Replace the currently incorrect secure database connection through project settings and repeat the read-only baseline validation.
+- [x] Inspect `sendInquiryReply` and the existing test architecture for the sender-alert defect.
+- [x] Correct inquiry unread-state behavior so only the reply recipient is alerted.
+- [x] Add a focused Vitest regression test for sender and recipient unread-state handling.
+- [x] Update the production inquiry unread-alert query to use participant-specific read state and verify the full reply-to-alert path.
+- [x] Run applicable Vitest tests and TypeScript checks, targeting the established 91/91 baseline.
+- [x] Document that credential-dependent and non-staging integration checks were intentionally not run because `TRADEBILIA_STAGING_MODE=1` and external credentials are absent in this approved isolated environment.
+- [x] Review the commit for credentials and prohibited files, then push only the fix and regression test to `main`.
+- [x] Report database-write status, validation counts, test results, and the pushed commit.
+- [x] Replace the isolated WebDev scaffold with the committed Tradebilia repository application while excluding credentials, Git metadata, dependencies, migrations, and seed scripts.
+- [x] Restart and verify that the temporary development homepage renders the real Tradebilia application without publishing or attaching a production domain.
+- [x] Map the supplied hero background files to the homepage and category hero sections with broken links.
+- [x] Upload the supplied hero assets to durable project storage and replace broken image/title references.
+- [x] Verify the corrected homepage and affected category heroes in the deployed development site.
+- [x] Map the supplied category title artwork to its corresponding hero sections.
+- [x] Upload the supplied title graphics and restore the matching hero title images.
+- [x] Verify restored title graphics and existing backgrounds across all supplied category pages.
+- [x] Map the supplied remaining page-title graphics and shared logo to their intended application pages.
+- [x] Upload the remaining title/logo files to durable project storage and replace broken references.
+- [x] Verify the restored page headings and shared Tradebilia logo on all affected routes.
+- [x] Document destinations for supplied Inbox, Trade Request, Trade History, and Ratings and Review artwork that lack standalone hero routes.
+- [x] Complete shared-logo and page-title reference repairs left incomplete by the partial update.
+- [x] Correct the Traders Showcase hero background so the restored title artwork has sufficient contrast.
+- [x] Apply the supplied transparent Tradebilia logo as the homepage hero title graphic.
+- [x] Verify the homepage hero title graphic is responsive and readable on desktop and mobile.
+- [x] Catalog missing application secrets and preserve `TRADEBILIA_STAGING_MODE=1` during restoration.
+- [x] Securely store the user-supplied credential values in project settings without printing or committing them.
+- [x] Validate configuration presence locally and verify Resend through an explicitly read-only authentication probe without sending email or other writes.
+- [x] Store the supplied API and OAuth credentials in secure project settings without writing them to source control.
+- [x] Trace and remove any static top-bar logo overrides so all shared navigation uses `AnimatedLogoSmall70.tsx`.
+- [x] Verify the shared animated navigation mark on the live homepage while preserving the static hero title.
+- [x] Restore the animated category-cycling Tradebilia top-bar mark while keeping the static homepage hero title.
+- [x] Verify the top-bar logo cycles through category words and remains legible at desktop and mobile widths.
+- [x] Correct the mobile top-bar overlap caused by the restored animated logo.
+- [x] Prevent the mobile search action from colliding with the sign-in control.
+- [x] Determine that no controlled Resend email test is needed because the credential is a valid send-only key and the read-only endpoint correctly rejects it.
+- [x] Match the compact prior-session AnimatedLogoSmall70 geometry and top-bar placement from the supplied reference.
+- [x] Verify the compact animated logo remains legible and unobstructed at desktop and mobile widths.
+- [x] Restore the exact original `AnimatedLogoSmall70.tsx` inline SVG contract and full-width desktop TopBar container specified by the user.
+- [x] Verify the restored original animated-logo implementation compiles without altering the static homepage hero title.
+- [x] Compare the verified WebDev preview with `tradebilia.manus.space` and identify the deployment-version mismatch.
+- [x] Align the live domain with the verified animated-logo project version and verify the production result.
+- [x] Directly verify that `tradebilia.manus.space` advances beyond the initial BILIA label and therefore serves the animated logo implementation.
+- [x] Trace why reading a message does not clear the flashing letter-icon alert.
+- [x] Apply the unread-count cache invalidation after opening a direct thread and marking an inquiry as read.
+- [x] Run the focused unread-alert regression test and verify the flashing Messages alert clears after the message is read.
+- [x] Place the unread-alert regression test in the configured `server/**/*.test.ts` discovery path.
+- [x] Apply participant-specific inquiry read state in `server/db.ts` so the inquiry list no longer relies on the legacy shared flag.
+- [x] Apply the direct-message thread query fallback from profile display name to account name before generic collector text.
+- [x] Run the sender-name regression test and TypeScript validation.
+- [x] Validate direct-message recipient labels resolve profile display names first through the thread and message-payload implementation plus focused regression coverage; no retained live direct-message thread was available for a separate browser rendering check.
+- [x] Validate direct-message recipient labels use Administrator rather than generic collector fallback whenever the profile display name is available.
+- [x] Update the item-inquiry sender query to fall back from profile display name to the sender account name.
+- [x] Run the item-inquiry sender-name regression test and TypeScript validation.
+- [x] Complete the account-name fallback in the `getInquiriesByUser` query and mapped inquiry result.
+- [x] Verify the live recipient inbox displays Administrator for the admin-sent item inquiry.
+- [x] Inspect administrator identity fields read-only to identify the authoritative display name for inquiry sender labels.
+- [x] Treat `Collector {id}` as a generic placeholder so it cannot override an available account name.
+- [x] Use display names as the authoritative sender label for all item-inquiry and direct-message communications.
+- [x] Verify the live recipient inquiry inbox displays the sender’s profile display name rather than an account name or generic fallback.
+- [x] Complete the profile display-name join and fallback in `getInquiriesByUser`.
+- [x] Inspect active and deleted inquiry data paths for stale sender names, missing identity fields, or client-side fallback rendering.
+- [x] Correct display-name resolution consistently across all inquiry inbox states.
+- [x] Validate unified sender-label resolution with focused tests and TypeScript.
+- [x] Identify the authoritative stored display-name source for existing inquiry sender ID 30002 through read-only inspection.
+- [x] Run a read-only application-database identity inspection for sender ID 30002.
+- [x] Force the deleted-inquiry client query to refetch server-resolved sender labels on mount and focus.
+- [x] Apply the profile-display-name-first sender resolver to inquiry reply and direct-message message payloads.
+- [x] Validate active, deleted, and reply/thread display-name paths through participant-aware rendering, payload resolution, focused tests, and available live deleted-inquiry evidence.
+- [x] Resolve recipient profile display names for sent active and deleted inquiry rows so sender-side labels never render as an undefined collector placeholder.
+- [x] Use the participant-aware counterpart label in an opened inquiry so outgoing threads show the recipient’s profile display name.
+- [x] Copy the supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal logos to durable web asset storage without altering their brand artwork.
+- [x] Replace broken Profile page Integration-tab logo references with the supplied eBay, Facebook, LinkedIn, Whatnot, and PayPal assets.
+- [x] Verify the Integration tab renders all supplied provider logos without broken image links at desktop and mobile widths.
+- [x] Verify the recipient-side Messages UI after an authorized deployment while signed in as the recipient account.
+- [x] Verify the authenticated Profile Integrations tab at a mobile viewport width.
+- [x] Recheck live deployment propagation for recipient counterpart fields on the older sent deleted-inquiry row.
+- [x] Use a changing deleted-inquiry query input when the folder is opened so a browser-cached pre-deployment response cannot persist after a deployment.
+- [x] Prevent connection labels and controls from overlapping the supplied provider logos on the mobile Profile Integrations cards.
+- [x] Publish the user-approved Messages and Profile Integrations update from this development workspace.
+- [x] Analyze the current item-inquiry sender-side presentation and define clear sent-versus-received semantics.
+- [x] Design explicit list and detail indicators for inquiries sent by the signed-in user versus inquiries received.
+- [x] Present the recommended item-inquiry direction model for user approval before implementation.
+- [x] Add sent-versus-received direction data to inquiry list and detail view models.
+- [x] Add a unified Item Inquiries subfilter for All, Received, and Sent inquiries.
+- [x] Render To/From counterpart labels, Sent/Received badges, and participant-aware detail headings for item inquiries.
+- [x] Add regression coverage for item-inquiry direction and user-facing direction copy.
+- [x] Verify the revised item-inquiry direction experience in development and live recipient/sender views.
+- [x] Remove the duplicate Sent status badge from outgoing item-inquiry cards while retaining a clear sent-direction label.
+- [x] Remove the duplicate Sent status badge from outgoing item-inquiry cards while retaining a clear sent-direction label.
+- [x] Publish the approved item-inquiry direction update and verify both sender and recipient live views.
+- [x] Verify the live sender view shows To, one Sent badge, and Inquiry to for an outgoing item inquiry.
+- [x] Verify the live recipient view shows From, Received, and Inquiry from for the corresponding incoming item inquiry.
+- [x] Identify the user-uploaded Barry Sanders replacement image and the single broken listing photo record.
+- [x] Confirm the already uploaded Barry Sanders replacement image is durably accessible for web use.
+- [x] Update only the identified broken Barry Sanders photo reference without deleting other listing photos.
+- [x] Verify the repaired Barry Sanders image renders in development and live listing views.
+- [x] Update only the inaccessible legacy photo record to the existing accessible Barry Sanders image, preserving both photo rows and all other listing data.
+- [x] Defer the broader third-party credential inventory and validation at the user’s direction after migration completion was confirmed.
+- [x] Defer the broader third-party credential inventory and validation at the user’s direction after migration completion was confirmed.
+- [x] Defer the broader third-party credential inventory and validation at the user’s direction after migration completion was confirmed.
+- [x] Document the deferred external credential-validation scope without exposing secret values.
+- [x] Inspect the Git repository state and define a credential-safe commit scope for completed Tradebilia work.
+- [x] Run validation checks and review staged changes for errors, secrets, generated files, and one-time utilities.
+- [x] Commit the approved clean project changes and push them to `tradebilia/collectors-barter`.
+- [x] Confirm the local branch and GitHub remote are synchronized after the push.
+- [x] Replace environment-bound OAuth and Sold-Comps test assumptions so the GitHub checkout validates without stored credentials or live external requests.
+- [x] Remove the trailing whitespace found by Git validation from the synchronized eBay integration component.
+- [x] Inventory all configured provider credentials and select the least invasive valid check for each.
+- [x] Validate direct data-provider and service credentials without exposing any secret values; documented provider authorization failures remain for PSA and OpenAI.
+- [x] Run controlled Resend email and Twilio SMS tests after obtaining a destination email address and phone number.
+- [x] Exercise eBay, Facebook, and LinkedIn OAuth authorization-start checks; full provider consent remains optional because third-party login cannot be embedded in the WebDev preview.
+- [x] Record provider-by-provider validation outcomes and required follow-up without exposing credentials.
+- [x] Confirm the WebDev-preview limitation for third-party OAuth sign-in and enable the available user-visible browser handoff for future account-consent steps.
+- [x] Configure provider redirect URIs under the user-directed live mode; staging safeguards were permanently disabled rather than temporarily overridden.
+- [x] Disable `TRADEBILIA_STAGING_MODE` permanently at the user’s direction and verify the live integration setting is active.
+- [x] Configure the Facebook and LinkedIn live callback URI variables needed for OAuth completion.
+- [x] Update obsolete integration test expectations that still require staging mode to remain enabled.
+- [x] Remove the obsolete handoff-document test dependency on a file absent from the managed project root.
+- [x] Inspect the direct-message thread lookup that fails when admin sends the first message to rtavani.
+- [x] Correct the nullable `itemId` thread lookup so first-time direct-message conversations can be created.
+- [x] Add regression coverage for creating a first direct message without an item reference.
+- [x] Verify the repaired admin-to-rtavani direct-message flow in development and live views.
+- [x] Verify the repaired admin-to-rtavani direct-message send flow end-to-end in the development preview without a database error.
+- [x] Send one approved development-verification direct message from Admin to Rtavani and verify its created conversation state.
+- [x] Document both development and live sender-side direct-message send verification results.
+- [x] Compare deployed legacy database table columns with messaging and related data-access paths for incompatible assumptions.
+- [x] Assess and document any additional schema mismatches with likely runtime impact, without changing unaffected code.
+- [x] Supply explicit `lastMessageAt` and `createdAt` values when creating legacy direct-message threads without database defaults.
+- [x] Add regression coverage for direct-message thread creation against the legacy no-default timestamp shape.
+- [x] Add a router-level legacy-schema regression test proving a first direct message creates one thread and one message without referencing `itemId`.
+- [x] Add a router-level legacy-schema regression test proving a second direct message reuses the same participant thread.
+- [x] Replace the ORM thread insert that expands the absent `itemId` column with an explicit legacy-compatible SQL insert.
+- [x] Add regression coverage proving the thread insert names only columns that exist in the deployed legacy table.
+- [x] Map direct-message latest-sender payloads to signed-in-user direction for list and detail views.
+- [x] Add To/From counterpart labels and Sent/Received status treatment to direct-message list cards.
+- [x] Add participant-aware direct-message detail headings and explanatory sent/received copy.
+- [x] Add regression coverage and verify direct-message direction in development and live views.
+- [x] Define and obtain approval for one consistent counterpart-first hierarchy across direct-message and item-inquiry cards.
+- [x] Reorder direct-message cards to show To/From counterpart and direction before context, subject, preview, and timestamp.
+- [x] Verify the reordered direct-message card matches the item-inquiry hierarchy in development and live views.
+- [x] Locate the broken direct-message notification email logo reference and replace it with the durable Tradebilia logo URL.
+- [x] Verify the email-logo URL is publicly accessible to external email clients and covered by a notification-template regression test.
+- [x] Add All, Sent, and Received subfilters to the Direct Messages folder using latest-message direction.
+- [x] Verify the direct-message subfilters isolate outgoing and incoming conversations without changing the unified list default.
+- [x] Review Direct Messages and Item Inquiries from both sender and recipient perspectives for clarity, trust, and conversion friction.
+- [x] Produce a prioritized messaging-experience improvement roadmap focused on collector retention and repeat engagement.
+- [x] Document the successful live Admin-to-Rtavani direct-message send verification explicitly in the validation record.
+- [x] Isolate the verified real incoming Rtavani reply with the live Direct Messages Received filter while retaining All as the unified default.
+- [x] Trace and replace the direct-message reply lookup that still selects the absent legacy `itemId` column.
+- [x] Add regression coverage for a recipient reply against the participant-only legacy thread schema.
+- [x] Verify the complete live Admin-to-Rtavani direct-message send-and-reply flow after the lookup repair.
+- [x] Create the “Items to address when starting a new session” migration handoff document with issues, safeguards, and a startup checklist.
+- [x] Locate and remove the existing Member Directory button from its current interface location.
+- [x] Add Member Directory to the main homepage left-side panel using the existing panel navigation pattern.
+- [x] Verify the relocated Member Directory entry on desktop and mobile homepage layouts.
+- [x] Reflow the homepage Subscriber Tools panel at mobile widths so Member Directory and all navigation remain usable without horizontal overflow.
+- [x] Review the current authentication/session implementation for simultaneous-device behavior.
+- [x] Evaluate single-session, device-management, and risk-based session-control options for collectors.
+- [x] Present a recommended session policy and phased implementation plan for approval.
+- [x] Reassess Tradebilia’s session threat model, token lifetime, revocation gaps, and sensitive marketplace actions.
+- [x] Compare authoritative session-management guidance and relevant consumer-platform device-session practices.
+- [x] Evaluate strict single-session, device-aware, and risk-based controls against Tradebilia requirements.
+- [x] Deliver a definitive session policy recommendation with non-negotiable implementation guardrails.
+- [x] Locate the standalone Verified Merchants homepage action and Member Directory verification discovery path.
+- [x] Remove the duplicate Verified Merchants homepage action while retaining Member Directory access.
+- [x] Verify verification discovery remains available through Member Directory and homepage navigation remains responsive.
+- [x] Map the shared top bar, homepage hero background, and supplied Member Directory title artwork to the Member Directory page.
+- [x] Publish the supplied MemberDirectory.webp artwork to durable project storage and reference it from the page hero.
+- [x] Add the shared top bar and main-homepage-style hero section to the Member Directory page without changing directory filters or member actions.
+- [x] Verify the updated Member Directory hero and navigation at desktop and mobile widths.
+- [x] Identify and correct the Member Directory route mismatch so homepage navigation reaches the styled directory page.
+- [x] Trace why editing an unsent counteroffer changes the negotiation turn status before submission.
+- [x] Preserve the current responder status while a counteroffer draft is edited but not submitted.
+- [x] Update the negotiation turn only after a counteroffer is explicitly submitted.
+- [x] Add regression coverage for draft edits versus submitted counteroffers.
+- [x] Verify the corrected Admin/Rtavani trade negotiation flow in development and live views.
+- [x] Trace why historical Trade Room timeline activity does not load.
+- [x] Restore historical timeline activity loading without changing trade data.
+- [x] Add regression coverage and verify the repaired timeline in development and live views.
+- [x] Trace the incorrect Confirm-step Administrator contact name and review re-submission path.
+- [x] Render Rich Tavani as the authoritative Administrator contact name in the Confirm step.
+- [x] Block a participant from submitting more than one review for the same trade.
+- [x] Add regression coverage and verify Confirm-step names and one-review enforcement in development and live views.
+- [x] Audit timeline actor-name sources, trade receipt data, and shipment-date state.
+- [x] Use authoritative display names for Trade Room timeline actors.
+- [x] Add a participant-authorized downloadable Trade Room receipt.
+- [x] Confirm the shipment reminder delivery channel and timing policy.
+- [x] Implement idempotent shipment-date reminders without changing existing trade data.
+- [x] Add regression coverage and validate timeline labels, receipts, and shipment reminders in development and production.
+- [x] Send one shipping reminder 48 hours before each participant's deadline and one daily overdue reminder until that participant submits tracking.
+- [x] Activate the deployed daily shipment-reminder schedule and verify its safe idempotent behavior.
+- [x] Audit the current carrier selection, tracking-link, and tracking-number workflow.
+- [x] Define the no-key in-room tracking experience and future secure live-status provider boundary.
+- [x] Defer carrier-aware direct tracking presentation changes until a tracking-service credential is available, at the user's direction.
+- [x] Defer tracking-experience regression coverage until live tracking integration is implemented.
+- [x] Defer secure in-room carrier event and delivery-status tracking until the user provides a tracking-service API credential; official carrier links remain available.
+- [x] Review the existing Report a Member page and provide targeted improvement recommendations without changing its behavior.
+- [x] Audit current report storage, report access, evidence fields, and Trade Room issue-entry points.
+- [x] Persist submitted report context and secure evidence attachments without a database migration.
+- [x] Add a private My Reports status view for report submitters.
+- [x] Add a Trade Room Report a Trade Issue entry point with prefilled participant and trade context.
+- [x] Add regression coverage and validate evidence, report-status, and Trade Room issue workflows.
+- [x] Restore the original Report a User hero artwork and layout without changing reporting features.
+- [x] Validate the restored Report a User hero in development and production.
+- [x] Restore high-contrast field labels on the Report a User form.
+- [x] Verify Report a User field-label readability in development and production.
+- [x] Default Contact email to the signed-in account email after profile data finishes loading.
+- [x] Verify the Contact email default remains account-based and user-editable.
+- [x] Replace the Report a User hero title with the supplied Report a Member artwork.
+- [x] Verify Contact email defaults to the signed-in account email and remains editable on the updated page.
+- [x] Remove the top-bar search control from the Report a Member page only.
+- [x] Verify the Report a Member page retains navigation while omitting search in development and production.
+- [x] Replace the Report a Member hero title with the newly supplied wider artwork.
+- [x] Validate the supplied wider Report a Member title in development and production.
+- [x] Increase the Report a Member hero title scale to align with the main-page hero.
+- [x] Validate the enlarged Report a Member title in development and production.
+- [x] Trace why Report a Member Contact email can retain a prior member’s email after an account change.
+- [x] Synchronize Contact email with the current authenticated account while retaining manual edit support.
+- [x] Add regression coverage and validate current-account Contact email behavior in development and production.
+- [x] Audit all member-facing uses of authentication email versus saved Tradebilia profile contact email.
+- [x] Add one authoritative Tradebilia profile contact identity source for client and server workflows.
+- [x] Replace authentication-email fallbacks in Report a Member, Referral Request, Profile, setup, settings, navigation, moderation, and notification records.
+- [x] Add regression coverage and validate saved Tradebilia contact-email precedence across member-facing workflows.
+- [x] Audit completed-trade ownership data for the Traders Showcase.
+- [x] Show each showcased item with its original owner, a trade-direction arrow, and its receiving member.
+- [x] Remove public total-deal value from Traders Showcase cards.
+- [x] Add regression coverage and validate the revised Traders Showcase in development and production.
+- [x] Present each Traders Showcase ownership transfer in one left-to-right horizontal line: original owner, item, then receiving member.
+- [x] Add regression coverage and validate the horizontal Traders Showcase flow in development and production.
+- [x] Consolidate all items from both trade members into one trade-level horizontal exchange line.
+- [x] Add regression coverage and validate the consolidated Traders Showcase exchange layout in development and production.
+- [x] Display complete item titles in consolidated Traders Showcase exchange rows.
+- [x] Enlarge the central exchange arrows and remove redundant Trading member labels.
+- [x] Add regression coverage and validate the refined Showcase exchange layout in development and production.
+- [x] Audit Member Directory data, filters, profile links, access behavior, and responsive layout.
+- [x] Verify Member Directory functionality in development and production.
+- [x] Document prioritized Member Directory gaps and improvement recommendations without changing behavior unless a defect is found.
+- [x] Stop Member Directory region filtering and display from using private street-address data.
+- [x] Implement truthful member standing filters instead of the nonfunctional hardcoded Verified label.
+- [x] Route Member Directory messaging through the persisted direct-message workflow.
+- [x] Add direct public-profile navigation from Member Directory cards and rankings.
+- [x] Add regression coverage and validate privacy, filters, profile links, and messaging in development and production.
+- [x] Make Member ID search and Offer Trade work against the actual directory response data.
+- [x] Remove misleading browser-local online presence from the public Member Directory until live presence is server-backed.
+- [x] Avoid duplicating the spotlight member in the main search-result grid.
+- [x] Complete the resumed Member Directory correction, validation, and recommendations review.
+- [x] Prevent the no-results message from appearing when the only matching member is already displayed in the spotlight.
+- [x] Add an accessible drag-and-drop evidence attachment zone to the Report a User form while retaining browse-file upload.
+- [x] Correct the shared top-bar animated logo scale so it matches the established visual size across pages.
+- [x] Add regression coverage and validate Report a User uploads and top-bar logo sizing in development and production.
+- [x] Redesign Member Directory search results so an intentional member ID or exact-name search leads clearly to the matching public profile, pending approval.
+- [x] Redesign the Member Directory into a deliberate multi-criteria discovery tool with member, location, collection, standing, and value-oriented filtering, pending approval.
+- [x] Create and review a visual mockup of the proposed multi-criteria Member Directory before implementation.
+- [x] Audit existing profile, listing, review, trade, and verification fields for approved privacy-safe directory filters.
+- [x] Add deliberate Search and Clear actions, exact-match profile routing, approved filters, and approved sort controls to Member Directory.
+- [x] Rebuild Member Directory results as profile-first collector cards and make rankings secondary to discovery.
+- [x] Add regression coverage and validate the redesigned Member Directory in development and production.
+- [x] Replace the Member Directory single-category dropdown with multi-select collection categories.
+- [x] Replace the Member Standing filter with an explicit Verified Merchant toggle.
+- [x] Add regression coverage and validate the revised Member Directory category and merchant filters in development and production.
+- [x] Add Select all and Clear categories controls to the Member Directory category filter.
+- [x] Display active Member Directory filter chips above results with one-click removal and a Clear all action.
+- [x] Add an accessible explanation of what the Verified Merchant toggle means.
+- [x] Add regression coverage and validate the Member Directory filter usability refinements in development and production.
+- [x] Design a privacy-safe proximity filter using only coarse member location and a visitor-selected distance range, pending approval.
+- [x] Remove collapsible Member Directory filters and the Members/Rankings toggle, pending approval.
+- [x] Change Member Directory filters to update results immediately after a deliberate control selection, pending approval.
+- [x] Add approved additional directory filters and regression coverage, pending approval.
+- [x] Replace Member Directory lookup guidance with username-first language, pending approval of the broader refinement.
+- [x] Add a privacy-safe server-side distance filter that uses stored coarse location coordinates without exposing home addresses.
+- [x] Replace collapsible Member Directory controls with an always-visible filter layout and remove the Members/Rankings toggle.
+- [x] Update discrete Member Directory filters immediately while retaining deliberate username Search or Enter behavior.
+- [x] Add approved discovery filters, including minimum review count and nearest-distance sorting when available.
+- [x] Add regression coverage and validate the enhanced Member Directory privacy and filtering behavior in development and production.
+- [x] Replace Member ID text on Member Directory result cards with the member’s username.
+- [x] Add a read-only carrier and tracking-number test section below Test AI sold-item tools.
+- [x] Surface configured carrier tracking results without changing trade or shipment data.
+- [x] Add regression coverage and validate the Test AI carrier tracking section in development and production.
+- [x] Securely configure the USPS tracking credential for read-only Test AI lookup.
+- [x] Build and validate the USPS-first tracking test section below sold-item AI testing.
+- [x] Securely configure the USPS consumer key and consumer secret for the server-side tracking lookup.
+- [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
+- [x] Correct the USPS tracking request and error presentation, then validate the reported tracking number in development and production.
+- [x] Diagnose the USPS Tracking v3r2 failure for a verified valid tracking number without logging private data or credentials.
+- [x] Supersede USPS MID/IP Agreement authorization work after the user declined the paid USPS Tracking API service.
+- [x] Supersede USPS third-party service-provider enrollment work after the user declined the paid USPS Tracking API service.
+- [x] Add an official USPS.com tracking-link fallback for member-supplied tracking numbers.
+- [x] Implement the approved official USPS.com tracking-link fallback while keeping direct USPS API tracking dormant.
+- [x] Keep the paid USPS API disabled by user decision and use only official USPS.com tracking links unless the user later changes the policy.
+- [x] Define and implement the approved compliant no-cost USPS tracking experience while retaining the authorized API option for later.
+- [x] Mark the prior valid-USPS-number API retest as not applicable while the paid API remains disabled by user decision.
+- [x] Provide the verified USPS service-provider access request instructions for third-party Tracking API use.
+- [x] Audit USPS self-service product enrollment, claims refresh, and Business Portal permission steps for any missing Tracking API activation requirement.
+- [x] Compare the USPS API catalog’s Tracking offering with current access-control and enrollment instructions.
+- [x] Reconcile the supplied USPS Tracking endpoint guidance with the current third-party authorization requirement.
+- [x] Provide a plain-language explanation of USPS public tracking versus third-party Tracking API access controls.
+- [x] Evaluate the supplied USPS Track & Confirm page for a viable current API or tracking alternative.
+- [x] Conduct a primary-source deep review of Business Portal, Business Customer Gateway, and merchant-platform alternatives to USPS email-based MID authorization.
+- [x] Clarify USPS Tracking API access requirements by relationship to the sender MID.
+- [x] Provide the exact USPS provider-access onboarding steps for Tradebilia’s third-party package tracking use case.
+- [x] Research legitimate GitHub-based multi-carrier tracking libraries and determine whether any free token-only option supports Tradebilia’s use case.
+- [x] Reassess the current USPS Tracking v3r2 documentation for any access detail that changes the third-party tracking conclusion.
+- [x] Define and reserve a production UPS OAuth callback route that Tradebilia can handle before UPS credentials are configured.
+- [x] Verify the UPS-specific OAuth redirect URI requirement and register the matching Tradebilia callback contract.
+- [x] Complete a primary-source USPS review of Tracking API MID/IP Agreement access requirements and alternative activation paths.
+- [x] Securely configure the UPS Client ID and Client Secret for server-side OAuth and tracking tests.
+- [x] Correct and validate the UPS production callback route before completing carrier authorization.
+- [x] Add a read-only UPS tracking test to Test AI without changing Tradebilia shipment or trade data.
+- [x] Verify the UPS tracking integration with official no-shipment or sandbox-safe checks before a real tracking number is available.
+- [x] Securely configure and validate the supplied FedEx API key and secret for read-only tracking.
+- [x] Add FedEx and DHL carrier selections and server-side Test AI tracking adapters with no shipment or trade writes.
+- [x] Clearly present DHL as awaiting secure credentials while keeping the Test AI carrier interface ready.
+- [x] Securely configure and validate the supplied DHL API key and secret for read-only tracking.
+- [x] Activate the DHL Test AI carrier lookup without shipment, trade, or notification writes.
+- [x] Add regression coverage and validate DHL tracking in development and production.
+- [x] Add regression coverage and validate the FedEx/DHL carrier-tracking expansion in development and production.
+- [x] Evaluate compliant no-fee alternatives to paid USPS Tracking API access and document why public-site scraping is not used.
+- [x] Research and evaluate legitimate multi-carrier tracking providers that offer a current free API allowance for Tradebilia.
+- [x] Conduct a broad official-source, GitHub, Reddit, and independent-source review of legitimate free or low-volume multi-carrier tracking options.
+- [x] Record user-confirmed live FedEx tracking success in the carrier validation record.
+- [x] Audit existing launch routing, animated-logo assets, and the live database for a safe pre-live email-subscriber storage path without schema migrations.
+- [x] Build a responsive Tradebilia Coming Soon splash screen using the existing spinning logo and clear pre-live messaging.
+- [x] Implement consent-based email-updates signup with duplicate-safe validation and no outbound email sends.
+- [x] Add regression coverage and visually verify the splash and email signup on desktop and mobile.
+- [x] Commit, push, and publish the validated Coming Soon experience.
+- [x] Add a clearly labeled Coming Soon Preview link to the Admin Dashboard and verify its access path.
+- [x] Run and record a final read-only Resend Contacts API credential validation after the Coming Soon workflow is complete.
+- [x] Use the existing category-cycling AnimatedLogoSmall70 component as the primary Coming Soon splash logo rather than a static wheel.
+- [x] Enlarge the Coming Soon animated logo by approximately 2× while preserving the full-width rotating category labels without clipping.
+- [x] Remove the requested top utility copy and bottom email-use disclaimer from the Coming Soon page.
+- [x] Add regression coverage and visually validate the refined Coming Soon layout on desktop and mobile.
+- [x] Commit, push, and publish the validated Coming Soon refinement.
+- [x] Reuse the main homepage hero background on the Coming Soon page and center an oversized animated Tradebilia mark without clipping rotating labels.
+- [x] Add an admin-only Pre-Launch Email workspace showing opted-in Coming Soon recipients from Resend Contacts.
+- [x] Add a Pre-Launch Email composer that prepares a branded status update and requires explicit confirmation before any recipient delivery.
+- [x] Add regression coverage and visually validate the revised Coming Soon hero and the Admin Pre-Launch Email workspace.
+- [x] Commit, push, and publish the validated Pre-Launch Email and Coming Soon enhancement.
+- [x] Increase both animated Tradebilia SVG wordmark text elements to 125 units while preserving the required viewBox and aspect-ratio contract.
+- [x] Reposition and verify the rotating category label so every label remains distinct from TRADE and visible at responsive breakpoints.
+- [x] Add regression coverage and visually validate the 125-unit wordmark across shared layouts.
+- [x] Commit, push, and publish the validated 125-unit animated wordmark change.
+- [x] Correct the Coming Soon hero background sizing so the reused homepage image preserves its intended proportions instead of appearing stretched.
+- [x] Revalidate the 125-unit wordmark and hero presentation at desktop and mobile breakpoints after the background correction.
+- [x] Commit, push, and publish the validated proportion-preserving hero refinement.
+- [x] Investigate and resolve the report that the Coming Soon page still appears unchanged despite the 125-unit wordmark update.
+- [x] Remove the reused homepage hero background from the Coming Soon page.
+- [x] Reposition the 125-unit animated SVG so the visible Tradebilia wordmark is centered rather than offset.
+- [x] Add regression coverage and visually verify the simplified Coming Soon presentation on desktop and mobile.
+- [x] Commit, push, and publish the validated background removal and wordmark alignment refinement.
+- [x] Create five distinct visual mockups for the Coming Soon redesign, each showing an animated-logo placement and email signup concept.
+- [x] Create and deliver five additional distinct visual mockups, bringing the Coming Soon comparison set to ten directions.
+- [x] Present all ten visual directions and obtain the user’s selection before replacing the current implementation.
+- [x] Deliver the initial five generated visual mockups as viewable attachments after resolving the initial attachment-path failure.
+- [x] Implement the selected Modern Auction House visual direction with warm paper styling, fine rules, centered animated SVG, and a focused signup bar.
+- [x] Preserve consent-based Resend signup behavior and add the selected reference’s category strip using Tradebilia-relevant collecting categories.
+- [x] Commit, push, and publish the validated selected Modern Auction House design.
+- [x] Define and implement a complete new Coming Soon page visual system while preserving the animated Tradebilia SVG and the consent-based email signup flow.
+- [x] Preserve a responsive animated-logo presentation and simplify the signup path for the redesigned pre-launch experience.
+- [x] Add regression coverage and visually validate the redesigned Coming Soon page at desktop and mobile breakpoints.
+- [x] Commit, push, and publish the validated Coming Soon page redesign.
+- [x] Show all six collector categories clearly in the Coming Soon page category strip at every responsive breakpoint.
+- [x] Change the top positioning line to “The Collectors Trading Exchange.”
+- [x] Enlarge the animated Tradebilia logo and make the spinning wheel proportionate to the wordmark, matching the main-homepage relationship.
+- [x] Add clear Coming Soon copy that emphasizes a more organized way for collectors to trade.
+- [x] Add regression coverage, visually validate desktop and mobile, then commit, push, and publish the refined page.
+- [x] Diagnose the recurring mismatch between saved Coming Soon checkpoints and the standard public Tradebilia URL.
+- [x] Verify the standard public Coming Soon URL serves the current published layout without cache-busting parameters and document the reliable release path.
+- [x] Create and deliver ten additional visual mockups that are distinct from all earlier Coming Soon directions.
+- [x] Present the expanded set for selection before changing the current published Modern Auction House page; keep the existing page unchanged until the user selects a direction.
+- [x] Create and deliver twenty additional professional, classic Coming Soon visual mockups distinct from all earlier directions.
+- [x] Present the twenty professional, classic directions for selection before changing the current published page; keep the existing page unchanged until the user selects a direction.
+- [x] Create and deliver a new category-complete mockup set grounded in the current Tradebilia website look, including all ten live collection categories.
+- [x] Present the current-site-aligned mockups for selection before changing the published page; keep the existing page unchanged until the user selects a direction.
+- [x] Create and deliver twenty additional professional mockups grounded in the current Tradebilia visual system and all ten live collection categories.
+- [x] Present this additional current-site-aligned set for selection before changing the published page; keep the existing page unchanged until the user selects a direction.
+- [x] Create and deliver a focused set of simplistic, highly professional Coming Soon mockups with a clear animated-logo and signup hierarchy.
+- [x] Present the minimal professional directions for selection before changing the published page; keep the existing page unchanged until the user selects a direction.
+- [x] Create and deliver minimal professional Coming Soon mockups that show all ten Tradebilia collection categories as a prominent, balanced visual rail or grid.
+- [x] Present the category-prominent directions for selection before changing the published page; keep the existing page unchanged until the user selects a direction.
+- [x] Fix the Trade Room Step 6 responsive layout so Tracking cannot overlap Download Trade Receipt and Report a Trade at zoomed or narrow desktop widths.
+- [x] Add regression coverage and visually verify the Step 6 action/tracking layout across desktop, zoomed desktop, and mobile widths.
+- [x] Commit, push, and publish the validated Trade Room responsive layout fix.
+- [x] Diagnose why the Test AI Sold Comps key-backed lookup fails without exposing the configured credential.
+- [x] Correct the Sold Comps provider request or UI integration if required and retain safe, actionable error feedback.
+- [x] Add regression coverage, validate the repaired Sold Comps lookup, then commit, push, and publish the fix.
+- [x] Inspect the existing Parse PSA/BGS Test AI workflow and validate the SGC API contract without exposing the Parse credential.
+- [x] Add a secure read-only Parse SGC option to Test AI alongside PSA and BGS.
+- [x] Add regression coverage, validate the SGC lookup in Test AI, then commit, push, and publish the integration.
+- [x] Confirm Parse’s PriceCharting API contract without exposing the Parse credential.
+- [x] Add a secure read-only Parse PriceCharting lookup to Test AI alongside SGC, PSA, and BGS.
+- [x] Add regression coverage, validate the PriceCharting lookup, then commit, push, and publish the combined provider expansion.
+- [x] Confirm Parse’s 130point API contract without exposing the Parse credential.
+- [x] Add a secure read-only Parse 130point sales-lookup option to Test AI alongside SGC, PriceCharting, PSA, and BGS.
+- [x] Add regression coverage, validate the 130point lookup, then commit, push, and publish the combined provider expansion.
+- [x] Confirm the official PCGS certification API contract and existing placeholder behavior without exposing the stored token.
+- [x] Add a secure read-only PCGS lookup to Test AI using the existing project token.
+- [x] Add regression coverage, validate the PCGS lookup, then commit, push, and publish the integration.
+- [x] Diagnose and correct the deployment-wide published-site 500 response, then verify the standard public URL.
+- [x] Restore the verified August 15 GitHub-synchronized source baseline and validate it with TypeScript plus the full regression suite.
+- [x] Rebuild and validate the parser-safe, administrator-only Wikidata Test AI provider on the verified baseline.
+- [x] Rebuild and validate the administrator-only Smithsonian Stamp Reference provider with safe Postal Museum relevance filtering.
+- [x] Rebuild and validate recent-versus-historical 130point sale presentation and trend-only AI analyzer context.
+- [x] Rebuild and validate the administrator-only PWCC / Fanatics Collect completed-sales provider with recency safeguards.
+- [x] Rebuild and document the internal source-category applicability policy while preserving manual Test AI source selection.
+- [x] Commit, push, and verify all recovered post-sync Test AI work on the canonical GitHub branch.
+- [x] Audit every completed post-baseline task against the restored source and recovery manifest, then rebuild and verify any remaining missing work before proceeding.
+- [x] When Manufacturer is Other, use the listing’s Custom Manufacturer value in Test AI criteria and every source-query construction path.
+- [x] Diagnose the Twilio Verify HTTP 451 response through read-only configuration and service-access checks without sending SMS or changing credentials.
+- [x] Identify the collection categories still lacking a category-specific API that would materially improve Test AI analysis beyond general marketplace data.
+- [x] Diagnose and correct the missing eBay verification badge for the Administrator on item-detail pages.
+- [x] Correct the malformed item-detail eBay verification badge so the full recognizable logo renders at an appropriate size.
+- [x] Add a reliable item-year constraint to Test AI eBay active-listing queries when year metadata exists, preventing incorrect title-and-grade matches.
+- [x] Complete and document a current audit of genuinely no-cost, commercially suitable Test AI sources, separating Parse.bot, open data, paid services, restricted APIs, and approval-only providers.
+- [x] Add TCGdex as a manual, read-only Test AI Pokémon catalog source for identification metadata only.
+- [x] Prepare a disabled RAWG Test AI provider path; activate it only after a server-side RAWG key is supplied and current commercial-use terms are confirmed in writing.
+- [x] Add provider-specific regression coverage, validate the active TCGdex user flow, then commit, push, publish, and verify the standard public URL.
+- [x] Verify the current IGDB commercial-use terms and Twitch OAuth credential requirements before enabling any IGDB API call for Tradebilia; user confirmed commercial approval.
+- [x] Add IGDB only if commercial use is expressly permitted and required server-side Twitch credentials are securely supplied; it is now an administrator-only factual Video Game source.
+- [x] Securely configure the supplied Twitch Client ID and Client Secret, validate a read-only IGDB response, and add the approved factual Video Game metadata source with regression coverage.
+- [x] Perform a comprehensive source, documentation, validation, canonical-GitHub, and checkpoint reconciliation; commit and push any verified missing backup files.
+- [x] Assess Cloudflare R2 as a durable storage option for Tradebilia item images, avatars, hero assets, and titles; document current limits, migration scope, risks, and a decision-ready recommendation before any implementation.
+- [x] Compare GoDaddy’s current storage offerings with Cloudflare R2 for Tradebilia’s durable media-storage requirements and document the recommended path before any storage implementation.
+- [x] Prepare a least-privilege Cloudflare R2 API token for `tradebilia-public-media` only; do not upload, migrate, or change any existing media URLs until separate implementation approval.
+- [x] Securely receive and perform a non-writing validation of the replacement `tradebilia-public-media` R2 credential; the token exposed in chat has been revoked and must never be used.
+- [x] Confirm the `media.tradebilia.com` public hostname is active for the future public-media bucket, without uploading or moving any media.
+- [x] Audit and propose the reversible new-upload-only R2 adapter; do not change upload behavior, database records, or existing media URLs until the user explicitly approves implementation.
+- [x] Route new listing-photo and avatar uploads to `tradebilia-public-media`, then migrate every retrievable existing public listing photo and avatar with verified source-to-R2 handling, reversible database URL updates, and no deletion of legacy objects during this release; 28 records migrated and 3 original sources remain unchanged because their legacy delivery returns HTTP 403.
+- [x] Preserve private report evidence and existing static-asset URLs outside the public-media migration; do not use the public bucket or public hostname for either class of asset.
+- [x] Upload and verify the user-supplied Star Wars #1 listing image and ktavani Islanders avatar in R2; leave the Collector 2 avatar unchanged by explicit user direction.
+- [x] Identify and report the exact public listing and profile pages associated with the three unavailable legacy media records before recovery work begins.
+- [x] Audit and remove the obsolete Collector 2 profile only if it has no active account or dependent records that must be retained; verify its public route is removed afterward.
+- [x] Verify the newly submitted rtavani listing stores and renders its image through `media.tradebilia.com`.
+- [x] Perform a fresh read-only audit of all public listing-photo and avatar URLs to confirm Cloudflare R2 coverage and identify any retained legacy exception.
+- [x] Inventory all application image-reference classes and report which remain outside Cloudflare R2 by design or migration status.
+- [x] Inventory and propose a safe phased Cloudflare R2 migration for public static hero/title/logo assets, generated public assets, and approved third-party brand assets; retain private evidence outside this scope.
+- [x] Securely receive and validate the created `tradebilia-static`-only R2 credential, then migrate approved public static assets in verified reversible batches; retain private evidence outside this scope.
+- [x] Perform a comprehensive code and configuration audit of all Cloudflare R2 public-media, static-asset, and private-evidence paths without exposing credentials or changing data.
+- [x] Verify every public/static URL reference, upload path, rollback path, authorization boundary, and private-evidence safeguard; correct only confirmed omissions with regression coverage.
+- [x] Run repeated TypeScript, full-test, credential-safe storage, source-integrity, and deployed-standard-domain checks for the completed Cloudflare storage implementation.
+- [x] Document the final Cloudflare storage audit, synchronize all verified updates to canonical GitHub, and create a release checkpoint after confirming clean status.
+- [x] Define a credential-safe, administrator-only Cloudflare storage health summary covering public-media records, static-asset references, private-evidence boundaries, and representative public URL availability.
+- [x] Implement the read-only health-report procedure and Admin Dashboard interface without exposing object keys, credentials, or private report evidence.
+- [x] Add regression coverage and validate authorization, aggregate health results, source integrity, and responsive administrator rendering.
+- [x] Document the report’s scope and limitations, run full validation, publish the completed report, and synchronize GitHub.
+- [x] Audit all current Tradebilia image locations and report which are Cloudflare-hosted, deliberately private, third-party remote, or otherwise outside Cloudflare without modifying any media.
+- [x] Retrieve checksum-verifiable exact copies of the seven currently referenced Public Profile brand-logo files without substituting artwork variants.
+- [x] Upload the approved exact Public Profile brand-logo copies to `assets.tradebilia.com`, replace only the matching external references, and preserve current dimensions and alt labels.
+- [x] Add regression coverage, verify the Profile page in development and on the standard public domain, document the completed migration, and synchronize GitHub.
+- [x] Perform a read-only current-state verification of all persisted Tradebilia image-bearing records and report any active Cloudflare, protected S3, legacy, or external-storage locations without modifying files or data.
+- [x] Review the existing RAWG provider gate and record the user’s written commercial-use confirmation for Test AI activation.
+- [x] Securely receive the RAWG API key through project settings and validate that the server can access it without exposing it in source, logs, or the client.
+- [x] Activate and live-validate the administrator-only RAWG Video Game catalog source, preserving manual Test AI source selection and strict metadata matching.
+- [x] Run regression checks, document the RAWG activation, publish the verified implementation, and synchronize GitHub.
+- [x] Define the Test AI evidence-normalization scope, measurable quality criteria, and restore baseline for a keep-or-rollback decision; do not change Trade Room behavior.
+- [x] Inventory actual Test AI provider response shapes and category identity fields, then establish documented category-aware normalization rules and quality fixtures.
+- [x] Implement a deterministic, administrator-only Test AI evidence-normalization summary that preserves original provider facts, separates reference metadata from market evidence, and flags conflicts without automatic valuation.
+- [x] Conduct a thorough category-by-category automated and live quality review against current behavior, retaining the improvement only if accuracy and clarity demonstrably improve.
+- [x] Document the decision and evidence, run full validation, publish the accepted outcome or restore the baseline, and synchronize GitHub.
+- [x] Add a concise administrator-facing Evidence Review legend that distinguishes material review flags from contextual differences without changing provider results, analysis behavior, or adding analyst notes.
+- [x] Compare the current RAWG Test AI display with available RAWG catalog metadata and recommend only useful additional factual fields; do not change the integration without approval.
+- [x] Audit every Tradebilia avatar renderer and identify any use of cropping image-fit behavior, including Traders Showcase, cards, messages, trade views, profiles, and navigation.
+- [x] Apply a consistent non-cropping avatar presentation pattern that keeps the full uploaded image visible without changing avatar-container dimensions or the correct Public Profile presentation.
+- [x] Add regression coverage and visually test representative authenticated and public avatar views at desktop and mobile widths, then publish and synchronize the verified correction.
+- [x] Audit the Trade Hub completed-trade preview data and render the actual items exchanged by each member rather than only the original requested item, with regression and visual validation.
+- [x] Refine Completed Trade Hub preview copy by removing “Items actually swapped,” showing the total item count, and replacing technical direction wording with a clear mutual-exchange label; add regression and release validation.
+- [x] Conduct a no-change product, UX, and implementation audit of account sign-up, homepage carousel, category filtering, and core member flows; distinguish verified defects from enhancement opportunities.
+- [x] Perform representative public and authenticated flow checks, document prioritized findings with scope and rationale, and synchronize the audit record to GitHub without altering functionality.
+- [x] Trace the Create Account to authenticated multi-step Account Setup handoff and document the existing profile-save contract without creating test accounts or changing live data.
+- [x] Repair Account Setup completion so it saves required profile data to the already authenticated new account rather than invoking account creation a second time.
+- [x] Preserve mandatory phone verification and terms acceptance at final setup completion through client and server validation, while retaining optional account connections and current setup steps.
+- [x] Add regression coverage for single-account creation, authenticated setup completion, required setup safeguards, and error paths; validate without creating unintended production accounts.
+- [x] Document, publish, verify, and synchronize the approved account-flow repair.
+- [x] Audit existing password-reset tokens, verified-contact persistence, email/SMS delivery, and recovery UI contracts without migrations, seed data, or user-record changes.
+- [x] Remove security questions from Account Setup and require verified email and phone contact methods for account recovery while retaining the current four-step onboarding structure.
+- [x] Implement secure verified email and phone recovery paths with bounded, expiring, single-use proof; do not expose whether an account exists to unauthenticated callers.
+- [x] Add regression coverage for recovery request, verification, expiration, one-time use, rate limiting, and setup requirements; validate without sending live recovery messages or changing real accounts.
+- [x] Document, publish, verify, and synchronize the approved recovery upgrade.
+- [x] Audit Category Page listing, filter, sort, per-page, and page-state contracts without changing listing data or category membership.
+- [x] Implement real Category Page result slicing, accurate total and range labels, working page controls, and safe page reset when a submitted filter, sort, category, or per-page setting changes.
+- [x] Add regression coverage and visually validate unfiltered and filtered pagination at desktop and mobile widths while preserving the existing category design and Sports Cards item sizing.
+- [x] Document, publish, verify, and synchronize the approved Category Page pagination repair.
+- [x] Audit the legacy Profile Completion route, destinations, navigation references, and current save behavior without changing account data.
+- [x] Retire the legacy Profile Completion route through safe redirects to the authoritative Account Setup or Profile path, without adding account writes.
+- [x] Add regression coverage, validate public and authenticated route behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the existing privacy-safe member-location coordinates, town data, Category Page feed payload, and nearest-sort behavior without changing location records.
+- [x] Implement truthful privacy-safe Category Page Location: Nearest First sorting from the signed-in viewer’s saved coarse location to each listing owner’s saved coarse location, with an honest fallback when location is unavailable.
+- [x] Assess whether Category Pages should display a privacy-safe approximate distance on each listing, and present the recommended label policy before implementing it; labels remain unimplemented pending separate approval of the approximate-only policy.
+- [x] Add a privacy-safe distance dropdown filter to every Category Page, submitted only through the existing Search or Enter action, with honest sign-in and saved-town fallback behavior.
+- [x] Add regression coverage, validate signed-out and signed-in nearest-sort behavior without changing member location data, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the shared top-bar search input, submit handling, and destination behavior without changing search functionality; the bar navigates to `/search?q=…`, but the Search Results page fails to retain the URL query and therefore returns no results.
+- [x] Audit the existing marketplace search procedure, listing fields, current Search Results page, and all-category result requirements without changing listing data.
+- [x] Repair the top-bar search query handoff and server-backed all-category listing retrieval using the full set of item fields captured during listing creation.
+- [x] Refine the unified Search Results page with truthful cross-category result cards, broad filters, clear empty/error states, and direct item-detail navigation.
+- [x] Keep the unified Search Results page aligned with the existing Category Page visual system, shared top bar, filter treatment, listing-card sizing, category labels, and responsive behavior.
+- [x] Add regression coverage, validate global search from the top bar without changing listing data, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the existing global Search Results hero, category-page hero proportions, animated SVG constraints, and static-asset delivery path without changing shared hero behavior.
+- [x] Create a Tradebilia-compatible all-category collectible collage background for global Search Results, avoiding text and preserving a centered safe area for the animated SVG.
+- [x] Replace the global Search Results solid-color hero background with the approved collage asset and use the existing animated Tradebilia SVG as the focal point without changing category-page heroes.
+- [x] Add regression coverage, validate desktop and mobile global-search hero rendering, publish, verify the standard domain, and synchronize GitHub.
+- [x] Generate and present several distinct all-category global Search Results collage hero alternatives; preserve the current live hero until the user selects a replacement.
+- [x] Integrate only the user-selected global Search Results collage hero, then validate desktop/mobile rendering, publish, verify the standard domain, and synchronize GitHub.
+- [x] Generate and present ten warm archival-study global Search Results hero alternatives that visibly incorporate all Tradebilia collection categories; preserve the current live hero until the user selects a replacement.
+- [x] Integrate the user-selected Option 4 Restoration Workbench hero background into global Search Results while preserving the animated Tradebilia SVG and existing layout.
+- [x] Audit and repair blank global-search behavior so an empty query displays all active listings without applying a keyword filter.
+- [x] Add regression coverage, validate blank and keyword global-search behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit every category’s required and optional item-entry fields against its Category Page filter coverage, then document verified functional and usability gaps without changing filters.
+- [x] Assess the current Tradebilia product for launch-critical capability gaps, verified defects, operational dependencies, and high-value enhancements without changing functionality.
+- [x] Add the confirmed high-value Category Page filters while retaining submitted Search/Enter activation and leaving the mobile layout unchanged.
+- [x] Remove the homepage Shipping Supplies placeholder and replace the public Member Growth value with Calculating without changing homepage background, hero size, or statistic-bubble layout.
+- [x] Add regression coverage, validate the expanded filters and homepage cleanup, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit every Trade Room step for verified functional flaws, unclear handoffs, safety gaps, and usability improvements without changing trade behavior.
+- [x] Make Trade Room counteroffer item replacement and mutual confirmation atomic and retry-safe without changing trade terms, participant authorization, or existing reminder behavior.
+- [x] Enforce ownership and active-listing validation for every counteroffer item before replacement, within the same atomic Trade Room update.
+- [x] Add regression coverage for transaction boundaries and safe retry behavior, validate the hardened flow, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add an explicit authenticated Trade Room action to mark a reported trade as disputed with audit logging, participant notice, and no mobile-layout change.
+- [x] Add administrator resolution notes to the report-review interface and preserve those notes in the authorized report workflow without changing mobile layout.
+- [x] Add regression coverage, validate the Trade Room reporting and admin-review improvements, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add privacy-safe approximate distance bands to Category Page listing cards for signed-in members with saved towns, without exposing exact mileage, coordinates, addresses, or mobile-layout changes.
+- [x] Add regression coverage, validate distance-band rendering and fallback behavior, publish, verify the standard domain, and synchronize GitHub.
+- [x] Synchronize the missing tracked `server/r2StaticCredentials.test.ts` file to canonical GitHub, then verify both clean workspaces have identical tracked content.
+- [x] Audit high-impact mobile member journeys for verified layout and interaction defects, then document a prioritized repair plan before changing responsive interfaces.
+- [x] Replace fixed mobile discovery sidebars with a shared mobile-only filter drawer for Category Pages and Member Directory while retaining existing desktop sidebars and explicit Search/Enter behavior; Global Search retained its already-responsive stacked filters.
+- [x] Repair mobile Conventions rendering, compact mobile homepage utility/ranking presentation, and add mobile category-bar scroll affordance without changing desktop layouts, hero dimensions, or statistics bubbles.
+- [x] Add desktop-regression and mobile-layout coverage, verify each affected public journey at both widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit mobile readiness of remaining account, sign-up, account setup, inventory, listing management, Trade Room, Messages, reports, and settings journeys; document authenticated testing limits and required repairs before declaring sitewide mobile readiness.
+- [x] Repair Inventory/My Listings, Trade Hub/Trade Room, and Messages with mobile-only responsive layouts while preserving their current desktop sidebars, grids, and workflow behavior.
+- [x] Repair Account Settings, referral, Report a Member, public profile, Account Setup, and Add Inventory mobile presentation with mobile-only responsive rules while preserving desktop layouts.
+- [x] Add authenticated-flow mobile and desktop regression coverage, validate active routes and form accessibility boundaries, publish, verify the standard domain, and synchronize GitHub.
+- [x] Diagnose and repair the reported mobile sign-in failure while preserving desktop sign-in behavior and authenticated routing.
+- [x] Add regression coverage, validate mobile and desktop sign-in entry points, publish, verify the standard domain, and synchronize GitHub.
+- [x] Diagnose and repair the confirmed mobile sign-in form submission failure, including visible success or error feedback and authenticated-state transition.
+- [x] Add regression coverage, validate mobile and desktop credential submission, publish, verify the standard domain, and synchronize GitHub.
+- [x] Repair the Add Inventory photo-upload section overlap on mobile only while preserving all desktop form geometry and upload behavior.
+- [x] Normalize mobile hero typography for Comics and Autographs and correct the Vintage Toys and Video Games mobile hero-title presentation without changing desktop category heroes.
+- [x] Add regression coverage, validate affected pages at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Remove the homepage Member Growth metric while preserving the remaining homepage statistics and responsive layout.
+- [x] Add regression coverage, validate homepage mobile and desktop statistics, publish, verify the standard domain, and synchronize GitHub.
+- [x] Research IPQS verification capabilities and recommend a privacy-conscious, risk-based new-user screening policy, including the value and limitations of email-age signals.
+- [x] Define the technical implementation blueprint for privacy-conscious IPQS new-user screening without deploying the integration.
+- [x] Assess whether estimated email-age information should appear on public profiles and recommend an accurate, privacy-conscious trust-signal design.
+- [x] Assess and define a proposed admin-approval gate for accounts with an IPQS email-history estimate under one year, without implementing it yet.
+- [x] Implement IPQS email-history screening at registration: accounts estimated under one year remain pending administrator approval after normal Account Setup and verified email/phone completion.
+- [x] Add server-side marketplace-action restrictions, an administrator approval queue, member status messaging, regression coverage, security validation, publishing, live verification, and GitHub synchronization for the IPQS approval workflow.
+- [x] Add an administrator-only API Health tab that records external API failures without secrets, classifies quota/rate-limit/auth/configuration/timeout/upstream causes, and surfaces actionable provider status.
+- [x] Restore the missing right-side authenticated action icons in the mobile top bar while preserving desktop header layout and behavior.
+- [x] Shorten the mobile-only top-bar search field to reserve clear right-side space for authenticated actions without changing desktop search dimensions.
+- [x] Add regression coverage, validate authenticated top-bar behavior at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Audit the current Coming Soon page and prepare new professional design directions without changing the published page until a direction is selected.
+- [x] Build a temporary mobile-friendly comparison page for the Coming Soon visual directions without changing the live Coming Soon page.
+- [x] Prepare five additional Restoration Workbench Coming Soon mockups using the exact Tradebilia wheel logo before selecting a final live design.
+- [x] Replace the live Coming Soon page visual treatment with the selected Restoration Workbench direction while preserving the existing consent-based signup behavior.
+- [x] Use the exact inline Tradebilia wheel-and-wordmark component in the selected Restoration Workbench Coming Soon page rather than any generated logo treatment.
+- [x] Validate the selected Coming Soon design at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Rebuild the Coming Soon page to match the supplied Restoration Workbench reference: a full collector workbench surrounding a central aged-parchment composition, with the exact Tradebilia logo and existing signup behavior preserved.
+- [x] Validate reference alignment at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Enrich the Restoration Workbench Coming Soon background with a fuller, balanced multi-object representation of every Tradebilia category while preserving the clean central parchment signup area.
+- [x] Validate category representation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Replace the Coming Soon parchment-center wordmark with the supplied final transparent Tradebilia logo while preserving clear mobile and desktop rendering.
+- [x] Replace the Global Search hero logo treatment with the supplied final transparent Tradebilia logo without changing its cross-category search functionality or layout.
+- [x] Match the Global Search hero logo scale to the established homepage presentation while preserving the hero background, height, category-bar position, and search behavior.
+- [x] Restore the animated Tradebilia logo within the enriched Coming Soon parchment composition while preserving the signup behavior and responsive layout.
+- [x] Remove description excerpts from category and Global Search listing cards so uncontrolled member text cannot disrupt result-card layouts.
+- [x] Add existing privacy-safe approximate distance labels to Global Search listing cards and validate card behavior at mobile and desktop widths.
+- [x] Add an Explore All entry as the first shared category-bar tab, linking to Global Search and reflecting an active state on the all-category page without changing existing category navigation.
+- [x] Replace the Global Search static logo title with the shared animated Tradebilia logo while preserving background, category-bar placement, search behavior, and responsive layout.
+- [x] Correct Global Search animated-logo clipping and align the spinning wheel, divider, and title on a shared vertical centerline without changing hero height, background, category bar, or search behavior.
+- [x] Rebuild the Global Search animated title to use the homepage’s visual proportions and fixed wordmark metrics, preventing rotation from changing font size, baseline, divider spacing, or wheel-to-title balance.
+- [x] Validate stable Global Search animation geometry at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Apply the Global Search fixed-metric animated-title configuration to the Coming Soon parchment logo so rotation never changes font size, baseline, divider spacing, or wheel balance.
+- [x] Validate the stabilized Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Enlarge the Global Search animated title by 50px and dynamically center the entire active lockup—including wheel, divider, Trade, and category label—as one unit on every rotation.
+- [x] Validate the enlarged dynamically centered Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Replace the teal Global Search hero haze with a neutral contrast overlay that preserves the natural archival wallpaper colors and text readability.
+- [x] Reduce the Global Search animated title by 25px and proportionally resize its spinning wheel and divider while preserving whole-lockup centering and hero layout.
+- [x] Validate the resized Global Search title at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Match the Global Search spinning-wheel diameter and divider height to the actual rendered 135px title cap-height while preserving whole-lockup centering.
+- [x] Validate the corrected Global Search proportions at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Slightly thicken the Global Search animated wheel and divider line while preserving the measured cap-height, centered lockup geometry, and rotation behavior.
+- [x] Apply the same wheel and divider weight refinement to the Coming Soon animated parchment logo without changing its workbench composition or signup behavior.
+- [x] Align the Global Search category bar to the same direct-below-hero boundary and vertical placement used by individual category pages without changing search filters or result behavior.
+- [x] Validate the revised Global Search lockup weight at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Enlarge the Coming Soon animated logo by 25px and apply the whole-lockup centering used by Global Search.
+- [x] Validate the enlarged centered Coming Soon logo at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Rebuild the Coming Soon animated logo from the homepage proportion reference with a 25px larger wordmark and a wheel deliberately larger than the title letter height.
+- [x] Validate the rebuilt Coming Soon animated-logo proportions at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Rework the Coming Soon category-label placement so all category names are fully visible on the page at mobile and desktop widths.
+- [x] Repair the Coming Soon animated-logo bounds so every rotating category word remains fully visible without clipping.
+- [x] Separate the Coming Soon wheel from its divider and make the wheel visibly larger than the adjacent title letters.
+- [x] Validate the corrected Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Remove the white item-associated category captions from the Coming Soon workbench background while preserving the surrounding collectible objects.
+- [x] Increase the Coming Soon animated wordmark, wheel, and divider by 25px while centering the wheel vertically with the letterforms.
+- [x] Center the enlarged animated lockup between the parchment top and The Collectors Trading Exchange text, and remove the Collector's Workbench utility label.
+- [x] Reposition the Coming Soon email field and Notify me button together within the parchment without overlapping surrounding workbench objects.
+- [x] Validate the revised Coming Soon parchment composition at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Correct the animated BILIA handoff so TRADEBILIA forms with continuous normal letter spacing while retaining a slight gap before category words.
+- [x] Move the Coming Soon exchange text, headline, supporting copy, category grid, and signup upward so the email controls remain clear of the parchment pegs.
+- [x] Replace the Coming Soon supporting line with stronger collector-focused copy.
+- [x] Replace the workbench background with a caption-free graded-collectibles composition covering every category, including graded VHS/DVD movie items and a recognizable famous-person autograph presentation.
+- [x] Validate the refined Coming Soon animation and composition at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Restore a smaller, realistic central parchment with collectible objects placed around all outer workbench borders.
+- [x] Mix selected ungraded pieces with professional-grade cases and use recognizable real movie and toy collectibles in the surrounding scene.
+- [x] Show the actual VHS cassette—not merely its outer case—as the professionally graded movie collectible.
+- [x] Arrange all surrounding collectible objects with a naturally scattered, irregular workbench composition rather than a symmetrical layout.
+- [x] Preserve the corrected animated-logo treatment and validate the restored workbench at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Widen the existing central parchment so the animated Tradebilia lockup clears the corner holders without changing the page layout.
+- [x] Remove the inaccurate graded-VHS cassette from the existing scattered workbench asset without regenerating the page or altering the corrected animated logo.
+- [x] Validate the targeted workbench correction at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add vertical room to the Coming Soon parchment composition so rotating category-word states no longer crowd adjacent content.
+- [x] Darken the Coming Soon animated category names so they remain distinct and readable over the parchment background.
+- [x] Validate the revised Coming Soon animation at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Widen the existing Coming Soon parchment enough to keep the long Trade Sports Cards lockup clear of its corner holders without changing the page layout.
+- [x] Align the Coming Soon spinning-wheel segment colors with the darker palette used by the animated category names.
+- [x] Document the licensing-safe path for replacing generated workbench props with real collectible photography, including the existing non-authentic Star Wars-style item.
+- [x] Validate the matched wheel and category palette at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Increase the centered Coming Soon animated logo by 25px while retaining its wider-parchment clearance and matched dark wheel palette.
+- [x] Validate the enlarged Coming Soon lockup at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Widen the current Coming Soon parchment enough to keep the enlarged TRADE SPORTS CARDS state clear of all corner holders.
+- [x] Expand the Coming Soon animated-logo viewing bounds so the enlarged long category state is fully visible without clipping.
+- [x] Validate the wider parchment and expanded long-label bounds at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Restore the visibly 196px Coming Soon animated lockup scale after the expanded viewBox made it appear smaller.
+- [x] Retain the extra-wide parchment and sufficient long Sports Cards clearance without reintroducing clipping or holder overlap.
+- [x] Validate the restored visible logo scale and long-label clearance at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Expand the Coming Soon animated-logo canvas to 3000 units while applying scale compensation that preserves the current visible 196px lockup size.
+- [x] Validate the compensated 3000-wide canvas keeps long category labels clear at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Expand the Coming Soon rendered visual canvas so the existing font, wheel, and divider remain at their original visible size while the wider SVG provides long-label clearance.
+- [x] Validate the expanded-canvas original-size lockup shows long category labels without clipping at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Add a small gap between the Coming Soon category divider and email signup row so the input is not touching the line above it.
+- [x] Verify the Coming Soon email input, consent checkbox, and Notify me behavior without submitting or altering a subscriber record.
+- [x] Validate the refined signup spacing at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Diagnose the live Coming Soon launch-update contact-save failure without exposing submitted addresses or credentials.
+- [x] Repair the failing contact-save integration and add regression coverage for the root cause.
+- [x] Validate the repaired signup flow with privacy-safe checks, publish, verify the standard domain, and synchronize GitHub.
+- [x] Keep the Coming Soon heading, category divider, signup controls, and parchment content fixed when an error message is displayed.
+- [x] Replace raw server validation payloads with a concise friendly email-validation message in the Coming Soon signup form.
+- [x] Capture and classify the sanitized live Resend Contacts provider rejection behind the persistent Coming Soon signup failure.
+- [x] Correct the production contact-write path for the identified provider rejection and add targeted regression coverage.
+- [x] Validate the corrected public signup behavior with privacy-safe checks, publish, verify the standard domain, and synchronize GitHub.
+- [x] Retry a rejected metadata-bearing Resend contact write once with the required email and unsubscribed fields only, without sending mail or exposing contact data.
+- [x] Record only sanitized provider status and error classification when the live contact-write path still fails.
+- [x] Capture the live production signup request-path status and sanitized provider diagnostics after the persistent failure.
+- [x] Compare the production and development Resend Contacts integration behavior to identify the confirmed root cause.
+- [x] Repair the confirmed persistent signup root cause, validate the public flow, and synchronize GitHub.
+- [x] Retry the persistent minimal contact-write failure against the authenticated Resend account's existing audience without exposing audience or contact data.
+- [x] Anchor the Coming Soon successful-signup confirmation within the existing signup area so it does not move the logo, heading, or category content.
+- [x] Validate empty, error, and successful signup states at mobile and desktop widths, publish, verify the standard domain, and synchronize GitHub.
+- [x] Trace why a successful Coming Soon signup is absent from the Admin Pre-Launch Email recipient list without exposing contact data.
+- [x] Align the public signup write destination with the Admin Pre-Launch Email recipient source and add regression coverage.
+- [x] Validate the synchronized public signup and admin recipient visibility, publish, verify both routes, and synchronize GitHub.
+- [x] Add successful Coming Soon contacts to the existing Tradebilia Pre-Launch Updates Resend segment and list admin recipients from that segment rather than custom properties.
+- [x] Inventory all route, page, action, notification, email, and admin workflows for the whole-site reliability audit.
+- [x] Audit route wiring, interactive buttons/forms, and client-to-server action contracts for confirmed failures or dead paths.
+- [x] Audit email, Admin, notification, and external-provider integration behavior without exposing credentials or customer data.
+- [x] Run automated reliability checks, inspect runtime evidence, and fix confirmed high-confidence defects with regression coverage.
+- [x] Deliver a prioritized evidence-based reliability report with unresolved limitations and actionable next steps.
+- [x] Implement the confirmed audit findings after the user approves their remediation scope and destructive-account/lifecycle policy decisions.
+- [x] Re-verify each reliability-audit finding against current source, tests, and user-visible action contracts before changing behavior.
+- [x] Correct only confirmed safe defects with targeted regression coverage, while documenting any account-deletion or lifecycle policy decisions that require explicit approval.
+- [x] Re-run full reliability validation and update the audit report with verified, refuted, and deferred outcomes.
+- [x] Run a second independent deep dive across route reachability, authorization, data integrity, UI state accuracy, notifications, email, and provider failure handling.
+- [x] Re-verify all second-pass candidate findings and classify them as confirmed, refuted, or intentionally deferred.
+- [x] Deliver a plain-language second-pass findings report with a recommended fix order and no unapproved behavior changes.
+- [x] Repair all safe P0 privacy and authorization findings from the second-pass report with focused regression coverage.
+- [x] Repair all safe P1 broken routes, legacy verification behavior, and misleading cache-action behavior.
+- [x] Implement safe recommended operational hardening for API Health coverage, pre-launch enrollment, and owner-alert delivery where no product-policy decision is required.
+- [x] Preserve and document deferred policy decisions for per-user message/inquiry deletion, account closure, email retry policy, and rich-draft data-model expansion.
+- [x] Run a third independent whole-site audit after remediation and report any newly confirmed flaws in plain language.
+- [x] Restrict counterpart-inventory access, middleman workflow updates, and voting-link generation to participants in the specified trade.
+- [x] Make draft deletion transactionally remove child photo records before the parent draft record without altering live data.
+- [x] Correct metadata-cache staleness evaluation so source-specific cache durations are honored.
+- [x] Make eBay acquisition honor its declared timeout and bounded retry configuration without changing provider query semantics.
+- [x] Document the third-pass deferred design decisions: post-password-change session revocation, dedicated draft-photo storage, report-evidence retention, and owner-notification fallback policy.
+- [x] Conduct the user-requested comprehensive read-only codebase, architecture, security, database, API, workflow, collectible-data, valuation, frontend, performance, deployment, and testing audit without modifying application behavior or data.
+- [x] Deliver the complete evidence-based audit report, prioritized remediation plan, and Top 20 pre-launch fixes; wait for approval before implementing any recommendation.
+- [x] Restrict private report-evidence presigning and delivery to the reporting member or an administrator while retaining public listing/avatar media access.
+- [x] Add one-time state validation to eBay, Facebook, and LinkedIn account-linking authorization callbacks.
+- [x] Require payment-verification callers and payees to be the two participants in the specified trade proposal before any provider call or write.
+- [x] Restrict pending convention submission retrieval to administrators and add focused regression coverage for all approved high-severity repairs.
+- [x] Bind every item inquiry recipient to the selected listing owner and mark only successfully delivered referral emails as sent.
+- [x] Enforce forum locks at the reply write boundary and revoke existing sessions after password change or recovery without adding or expanding multi-factor authentication.
+- [x] Make Test AI valuation summaries reject unsupported currencies and deduplicate repeated sale evidence before metrics are calculated.
+- [x] Extend API Health failure telemetry and bounded safe retries to approved external read-only provider paths.
+- [x] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the approved next remediation batch.
+- [x] Add safe owner-scoped listing-photo deletion/reordering controls and semantic cover-photo interaction without changing listing data models.
+- [x] Improve accessible keyboard behavior and labels for country selection and shared search controls.
+- [x] Document the lower-priority decisions for shared caching, review visibility deadlines, real-time updates, migration governance, and independent inquiry retention without a schema migration.
+- [x] Add focused coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the approved lower-priority batch.
+- [x] Conduct a fresh read-only whole-application double-check across completed repairs, security, workflows, integrations, frontend behavior, tests, and release state; report only verified findings before any new implementation.
+- [x] Make inquiry empty-trash and expired-draft cleanup transactionally child-safe without a schema migration.
+- [x] Remove duplicate sign-in modal mounting and add accessible dialog, focus, and country-selector keyboard semantics.
+- [x] Add safe public authentication/API throttling and application-level prevention of PayPal transaction reuse across proposals without a schema migration.
+- [x] Extend external provider timeout, retry, and sanitized API Health handling across the remaining approved provider paths.
+- [x] Add focused regression coverage and complete validation, documentation, GitHub synchronization, checkpointing, and public release verification for the seven verified repairs.
+- [x] Hide redundant category labels on category-specific result cards while retaining category labels on the global results page.
+- [x] Reserve a consistent two-line title area so all result-card detail panels align below item titles regardless of title wrapping.
+- [x] Add regression coverage, validate responsive category/global layouts, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Standardize every category grid card so its title starts immediately below the image divider while a consistent fixed title area aligns the details panel.
+- [x] Add regression coverage, validate the all-category spacing standard on desktop and mobile, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Remove image-bottom divider lines from all category grid cards while retaining title and details-panel alignment.
+- [x] Add regression coverage, validate the adjusted category-card layout, checkpoint, synchronize GitHub, and verify the public release.
+- [x] Run one normal-path read-only custom-database connection retry and provide a sanitized diagnostic result for Manus support without changing credentials or data.
+- [x] Identify the earliest reliable evidence of when Tradebilia began using the custom TiDB database, without exposing credentials or changing project data.
+- [x] Determine whether preserved Tradebilia records document a future Stripe integration and fee-based marketplace model, distinguishing confirmed plans from exploratory discussion.
+- [x] Inspect uploaded Manus task backup archives read-only for recoverable Tradebilia database data, schema, or configuration metadata; do not restore or expose credentials.
+- [x] Collect Rich's new user-owned TiDB Cloud fallback connection in a separate check-only secure setting and run only a read-only connection health query without switching Tradebilia.
+- [x] Document the agreed future Tradebilia Membership, Stripe billing, unpaid-member access rules, and Verification & Forwarding Service plan for later implementation; do not code or change database behavior yet.
+- [x] Increase the Member Directory hero section title size by 25px without affecting other page hero titles.
+- [x] Run a check-only TiDB gateway02 host test using the existing custom database details in memory only, with secure TLS and only a read-only SELECT 1 query.
+- [x] Retry the current custom Tradebilia database connection with one read-only SELECT 1 health check without changing secrets, site configuration, or data.
+- [x] Restore the approved Tradebilia Membership foundation that is missing from the active WebDev checkpoint, then prepare Stripe test-mode configuration with Free Launch, live charges, and payment enforcement kept inactive.
+- [x] Complete the approved Membership migration investigation against the actual custom TiDB runtime database after schema tooling was confirmed to target the separate managed project database; read-only runtime inspection confirmed the approved membership foundation already exists, so no additional custom-database migration was applied.
+- [x] Restore and validate the approved Membership source in WebDev against the existing custom TiDB foundation, including the member Membership tab and read-only Admin Billing monitor, with Free Launch and all payment controls inactive.
+- [x] Configure Stripe Dashboard test mode first: create the Tradebilia Membership $1 monthly and $10 annual test prices, prepare a signed test webhook, and document the secure test credentials needed before connecting WebDev.
+- [x] Recreate the Tradebilia Membership $1 monthly and $10 annual test prices in the newly claimed Manus-linked Stripe sandbox because the earlier Price IDs belong to a separate Stripe test account.
+- [x] Create and securely validate the Tradebilia Membership $1 monthly and $10 annual recurring Price IDs in the Manus-linked Stripe sandbox using a read-only Stripe API test.
+- [x] Register the deployed `/api/stripe/webhook` endpoint with the Manus-linked Stripe sandbox, securely validate its signing secret, and verify a test event while payment enforcement remains inactive.
+- [x] Resolve or route around the current Stripe-versus-project authentication-context blocker before connecting the project to Rich’s Stripe test account; preserve the existing test product and do not alter Tradebilia sign-in.
+- [x] Implement an approval-gated test Checkout and customer-portal flow for the configured Membership prices, then validate a test subscription without enabling live payments or member restrictions.
+- [x] Implement the approved test-only Stripe Checkout and customer-portal flow for Tradebilia Membership, including verified sandbox webhook status updates and disabled-by-default member billing controls; keep Free Launch, live payments, and member restrictions inactive.
+- [x] Synchronize the reviewed Stripe test-mode preparation and future checkout implementation to GitHub after validation, preserving the canonical repository history. The reviewed code was merged without replacing richer canonical Membership administration, then normally pushed as `0d45ce25`; the paired recovery manifest was pushed as `004704f1`.
+- [x] Resolve the custom TiDB membership-table mismatch discovered during Stripe sandbox Checkout verification; read-only case-corrected inspection confirmed the complete mixed-case runtime membership foundation, including `userMemberships`, so no custom-TiDB migration or data write was needed.
+- [x] Diagnose and repair the embedded WebDev preview sign-in flow where valid custom credentials are accepted but the browser does not establish a session, without changing the working live-domain login behavior.
+- [x] Replace the insufficient cached-query refresh fallback with an immediate embedded-preview auth-state update and durable session fallback after accepted custom sign-in.
+- [x] Reproduce the persistent embedded WebDev preview sign-in failure directly and inspect its actual session and authentication-query behavior before making further changes.
+- [x] Repair the embedded-preview case where an accepted sign-in closes without error but the Top Bar still renders the signed-out Sign In control.
+- [x] Replace repeated iframe session fallbacks with a reliable embedded WebDev Preview authentication bridge or explicit preview-session experience, while keeping live sign-in unchanged.
+- [x] Determine and document the supported authenticated WebDev testing path after repeated embedded Preview session persistence failures; apply a secure preview-host cookie policy that leaves live-domain authentication unchanged.
+- [x] Diagnose and repair the WebDev-preview no-items database incident, activity-status query failures for user IDs 60003 and 30002, and temporary server-unreachable response using read-only checks first; do not switch databases or modify marketplace data. The secure custom connection was revalidated, the runtime was restarted, and the restored marketplace data returned.
+- [x] Verify the administrator’s completed monthly and annual Stripe sandbox Checkout records read-only, confirm Free Launch safeguards remain active, and obtain approval before any sandbox portal cancellation or subscription change. Three processed sandbox Checkout event sets were confirmed; the latest annual record is active with both period timestamps. The test portal remains available, but no cancellation or change was requested or performed.
+- [x] Verify and correct the missing current-period timestamp mapping for the active administrator sandbox membership without modifying either sandbox subscription, Free Launch settings, or payment enforcement. Stripe’s test API exposes current-period fields on the subscription item; the mapping was corrected and the existing annual sandbox record was repaired, with both period fields re-verified.
+- [x] Change approved Tradebilia Membership Stripe sandbox Checkout launch from a separate window to same-tab navigation; retain the customer portal’s separate-tab behavior and all test-only, Free Launch, and no-enforcement safeguards.
+- [x] Prevent a member from starting a duplicate monthly or annual Tradebilia Membership Checkout while any active, trialing, past-due, or incomplete local Stripe subscription is already associated with that member; enforce this on the server and communicate it clearly in the administrator sandbox UI. A controlled duplicate request was blocked before a new Checkout session could be created. The reviewed canonical implementation is `d87a453b`, with recovery-manifest update `cc7dcead`.
+- [x] Add administrator-only sorting controls to the Admin Billing monitor for Membership status and billing term, with no change to membership access, billing records, or Stripe behavior.
+- [x] Display both Tradebilia profile names—requestor and recipient—on each Admin Trades row without changing trade records, participant authorization, or existing administrator controls.
+- [x] Show the current Media Storage usage alongside the applicable storage capacity limit in the administrator storage tab when the platform exposes that limit; otherwise clearly direct administrators to the plan settings where it is available, without changing plans or stored media. The read-only report measured 78,380,697 bytes across the two Tradebilia R2 buckets (0.78% of the 10 GB-month Standard free allowance); R2 bucket capacity is unlimited and Cloudflare dashboard remains authoritative for account-wide billing usage.
+- [x] Add a homepage Recent Trades section below Recently Added that rotates the ten newest completed trades every five seconds, displaying both public Tradebilia display names and every exchanged item without navigation buttons or trade-data changes. The real-data read-only check found one completed two-item exchange; desktop and mobile layout, reduced-motion behavior, and fade-out/fade-in timing were validated.
+- [x] Refine the Recent Trades carousel to match the Recently Added heading style, remove its activity tagline and completed/date header, and align both sides’ exchanged items closest to the center arrows while preserving all completed-trade content and timing behavior. Desktop and mobile visual checks confirmed the simpler integrated presentation; canonical GitHub commit `a27a9d25` contains the refinement.
+- [x] Modestly enlarge the Recent Trades exchange presentation while preserving the existing heading hierarchy, centered item-to-arrow alignment, five-second fade, all-item data, and responsive behavior. Desktop and mobile visual checks, focused tests, TypeScript, production build, and canonical GitHub commit `dbe7d86e` passed.
+- [x] Perform a read-only administrator-area coverage review for important missing operational, billing, moderation, storage, reliability, and launch-readiness information; report prioritized recommendations before making any new changes. The review found a verified shipment-reminder schedule 404 and recommends repairing it with an Operations Health card first, then an Admin Action Queue and Active Trade Lifecycle Monitor; all other recommendations remain approval-only.
+- [x] Repair the deployed daily shipment-reminder schedule only after checkpointing the corrected route, and add an administrator Operations Health card for database, schedule, and recent external API status without creating new schedules or notifications. The existing enabled job was refreshed in place at its mounted `/api/scheduled/tradeReminders` callback and now has a future next-run timestamp; no new schedule or notification was created.
+- [x] Add an administrator Action Queue that consolidates existing pending approvals, unverified merchants, pending reports/flags, open/urgent tickets, disputed trades, and overdue trade milestones as counts with safe deep links.
+- [x] Add an Active Trade Lifecycle Monitor with read-only status, participant names, deadline, tracking, receipt, and dispute visibility; retain all existing participant authorization and trade actions.
+- [x] Add read-only launch-health and future-membership-readiness summaries without enabling Free Launch removal, payment enforcement, Stripe live mode, or member restrictions.
+- [x] Add a privacy-safe administrator audit trail using existing custom-TiDB capability where possible, with a minimal non-destructive schema addition only if required after read-only preflight. The additive `adminActivityLog` table stores only administrator ID, generic action, generic target reference, safe summary, and timestamp; a controlled support-metrics export recorded and displayed its audit event.
+- [x] Add administrator-only, explicitly scoped CSV exports for operational listings, trades, member status, and support metrics with no payment details, credentials, or raw provider payloads.
+- [x] Complete regression coverage, full validation, normal GitHub synchronization, and paired WebDev checkpointing for the approved administrator operations recommendations. Forty-six focused tests, non-watch TypeScript, production build, whitespace review, custom-TiDB runtime contract checks, and the restored future shipment-reminder run passed; canonical code commit `af0fbbc9` and documentation commit `9c3c77f4` were normally pushed, with managed implementation checkpoint `70942380`.
+- [x] Create a dedicated How Tradebilia Works page and a homepage-bottom link that accurately explains profile setup, inventory, discovery, offers, negotiation, Trade Room, shipping/tracking, mutual confirmation, reviews, and safety reporting without changing marketplace behavior or presenting future paid services as active. Desktop/mobile visual checks, focused route/content tests, TypeScript, production build, and canonical GitHub commit `e3eb6638` passed.
+- [x] Enhance How Tradebilia Works with a clear illustrated current-process flow, a concise factual FAQ, and a shared top-navigation entry without changing trading, Membership, or future-service behavior. Desktop/mobile visual checks, focused tests, TypeScript, production build, and canonical GitHub commit `b8c3ca51` passed.
+- [x] Add a clearly labeled Trade Room walkthrough based on existing current-process states, a concise practical safety checklist, and a public trading glossary to How Tradebilia Works without fabricating member data or changing any marketplace workflow. Desktop/mobile visual checks, focused tests, TypeScript, production build, and canonical GitHub commit `7f997819` passed.
+- [x] Replace the illustrated-only Trade Room walkthrough with clearly labeled fictional sample screenshots using invented collectors and collectibles; retain the safety checklist and glossary, and do not show or create real trade, member, shipping, contact, or payment data. Three generated guide screenshots use the fictional Avery Cole and Morgan Reed example and repeat the illustrative label; focused tests, TypeScript, production build, desktop/mobile review, and canonical GitHub commit `63ccdd5d` passed.
+- [x] Remove How It Works from the collectible category bar while retaining all category links and the existing homepage-bottom/footer link to the public guide page. Homepage and guide visual checks, focused tests, TypeScript, production build, and canonical GitHub commit `758b83ba` passed.
+- [x] Replace generated Trade Room mockups with privacy-safe development-only captures of the actual Trade Room interface using existing fictional listings and an invented collector identity; do not create or alter real trade, member, inventory, shipping, contact, payment, or live-site data. Three captures were rendered from a non-persisted guide route, verified at desktop/mobile widths, uploaded as durable static assets, and referenced by the public guide; focused tests, TypeScript, production build, whitespace review, and canonical GitHub commit `d7bd683a` passed.
+- [x] Correct the repeated Trade Room guide screenshot defect by rendering, capturing, and verifying three visually distinct development-only Review, Confirmation, and Completion interface states before replacing the public guide assets. The repair was superseded by the complete six-stage capture sequence, which includes and verifies all three required corrected states.
+- [x] Expand the public Trade Room guide to show privacy-safe development-only screenshots for every current stage—Propose, Negotiate, Review, Shipping, Confirm, and Complete—using only existing fictional listings and invented identities with no record persistence. All six unique captures were individually reviewed, uploaded as durable assets, integrated at desktop/mobile widths, tested, and normally pushed in canonical GitHub commit `9374a0e8`.
+- [x] Conduct a full evidence-based, read-only code audit across the client, server, database contracts, authentication/authorization, scheduled work, storage, Stripe sandbox boundaries, external integrations, tests, runtime logs, and deployment behavior; report only reproducible bugs and prioritized risks before making any changes. Findings and evidence are recorded in `WHOLE_CODE_AUDIT_REPORT_2026-08-27.md`; no application, database, schedule, Stripe, secret, integration, or live-behavior changes were made.
+- [x] Repair the reachable Manus OAuth sign-in state flow so every `getLoginUrl` caller establishes and validates a one-time state cookie using the existing live-safe cookie policy, with focused regression coverage. The new server-owned `/api/oauth/start` flow sets the short-lived HttpOnly nonce, uses request-aware cookie options, and is covered by live-domain, embedded-preview, and missing-cookie tests plus a non-authenticating 302/cookie smoke check.
+- [x] Restore the enabled daily shipment-reminder job’s delivery to the existing `/api/scheduled/tradeReminders` callback, verify one successful controlled run, and preserve job identity, notification policy, and idempotency. A read-only lifecycle preflight found zero pending cancellation/escalation/reminder actions; the existing job was refreshed in place, verified at HTTP 200 with zero changes, and returned to its original daily 14:00 UTC schedule under the same task identity.
+- [x] Configure a secure valid provider-token encryption key and add clear startup or integration guardrails so eBay, Facebook, and LinkedIn token persistence cannot fail silently, with no token-value disclosure or migration of provider records. A new secure AES-256-GCM key was configured through project settings, its format and local encryption round trip passed without disclosure, callbacks now fail closed before provider token exchange if encryption becomes unavailable, and all three provider cards show a clear temporary-unavailable message.
+- [x] Add narrowly scoped custom-TiDB uniqueness protections for usernames, one user profile per member, report IDs, and watchlist entries only after fresh read-only duplicate checks, a database backup/recovery review, and focused conflict-handling tests. All four preflight duplicate counts were zero; the dedicated `0010_p1_unique_integrity_indexes.sql` migration added the four unique indexes; post-migration TiDB metadata confirmed each as unique while the marketplace baseline remained 3 members, 16 active listings, and $147,530.
+- [x] Add the matching uniqueness safeguard for the mirrored favorites record created by the same watchlist action, after its own read-only duplicate preflight, so an already-saved item cannot fail during the dual-record update. The favorites preflight found zero duplicates, the matching unique index was added with the related integrity migration, and both mirrored inserts now use duplicate-safe no-op updates.
+- [x] Make Stripe sandbox Membership webhook processing retry-safe after a temporary failed event while retaining test-only operation, raw-body signature verification, terminal duplicate protection, Free Launch, and inactive payment enforcement. Failed provider-event rows now atomically return to `received` before reprocessing; received, processed, and ignored events remain terminal duplicates. Focused sandbox guard and retry tests pass with no Stripe API call, checkout, subscription, or payment-enforcement change.
+- [x] Bind PayPal payment verification to the locked proposal’s agreed cash amount, payer, payee, currency, and allowed trade state before any provider verification or payment-record write, with no sandbox/live charge change. The browser now submits only proposal ID and transaction ID; the server derives both participants and the positive agreed cash obligation from an accepted proposal before it calls PayPal or writes a payment record. Focused authorization/access-control tests and TypeScript passed without a PayPal call or charge.
+- [x] Apply server-side public-contact throttling, server-owned non-urgent anonymous priority, and explicit anonymous ticket attribution without changing legitimate contact-form messaging or administrator access. Anonymous submissions are limited to three per source address per 15 minutes, cannot select urgent/high priority, and now persist nullable account association with explicit name/email fields; the admin queue displays those fields safely. Custom-TiDB post-migration verification preserved the 3-member/16-active-listing baseline, and focused tests plus TypeScript passed.
+- [x] Produce and execute a controlled dependency-upgrade plan that prioritizes the reported production security advisories, avoids bulk automatic fixes, and runs regression validation after each compatible update batch. AWS SDK, Axios, tRPC, Drizzle, NanoID, Recharts, Express, and audited transitive dependencies were updated in reviewed batches; source compatibility changes were limited to Recharts v3 types and documented Express v5 wildcard routes. The final production audit reports 0 critical, 0 high, 0 moderate, and 0 low advisories.
+- [x] Move the existing package-manager patch and override settings from the ignored legacy manifest field into the supported workspace configuration before reinstalling dependencies, preserving the Wouter compatibility patch and Tailwind NanoID override. `pnpm-workspace.yaml` now carries the patch, allowed-build, and override configuration; focused configuration coverage passes.
+- [x] Remove the unreachable development-only Component Showcase and its AI chat component before removing the unused Streamdown dependency tree that accounts for most remaining Mermaid-related production advisories. The showcase route was confirmed absent before its unreferenced component files and Streamdown tree were removed; no public or authenticated route was changed.
+- [x] Replace the two brittle exact-string mobile layout tests with behavior-focused responsive contracts that verify visible Account Settings controls and authenticated top-bar actions without constraining implementation details. The revised responsive contracts verify phone-accessible Account Settings tab values, horizontal reachability, desktop grid behavior, phone search/actions/sign-out, and separate desktop authenticated controls; all eight focused tests pass.
+- [x] Tighten the scheduled accepted-trade cleanup query so a receipt-confirmation record is deleted only when the parent proposal remains eligible for automated cancellation, and add a regression case for an advanced trade. The handler now joins and filters the parent proposal as negotiating, deletes a confirmation only after its guarded cancellation affects a row, and reports only real cancellations; all 31 scheduled-route tests and TypeScript passed.
+- [x] Improve Sign Up and Trade Room accessibility with properly associated labels, accessible validation feedback, and a clear accessible label for the cash-dialog close control, preserving current desktop/mobile layout and trade behavior. Every Sign Up field now has an associated label, invalid-state/error/help relationship, and alert semantics; the Trade Room video-panel close control has an explicit accessible action name. The focused accessibility suite and TypeScript passed.
+- [x] Reduce the initial JavaScript payload with deliberate route/module splitting for infrequently used authenticated and administrator tools, then measure the resulting production build without removing active features. Inventory, Account Settings, Messages, Trade Hub/Room, Test AI, administrator, capture, and related authenticated routes are now lazy-loaded behind a shared accessible fallback; production build main JavaScript fell from 3,749,720 bytes to 1,790,690 bytes, a measured 52.2% reduction, with all features retained as separate on-demand chunks.
+- [x] Minimize browser-persisted authentication data to the preview-only display fields needed for the embedded-session fallback, add expiry and validation, and retain reliable logout cleanup and live-domain authentication behavior. Broad `localStorage` persistence was removed; only the already-minimal preview user may persist in `sessionStorage` for 30 minutes when embedded, guarded by shape/expiry validation and cleared at logout. Executable reload, expiry, and cleanup coverage passes.
+- [x] Replace the stale embedded-preview client test assertion that required direct `sessionStorage` access in `main.tsx` with an assertion for the maintained `getPreviewSessionToken` helper, then complete canonical validation. The corrected test verifies the secure helper bridge alongside the bounded preview-session behavior; canonical P0/P2 tests passed 50/50 with TypeScript, production build, and clean dependency audit.
+- [x] Conduct a second, deeper read-only whole-code audit after the P0–P2 remediation, covering source, custom-TiDB contracts, authorization, payment and external-provider boundaries, scheduled work, storage, tests, runtime behavior, regression risks, and the final deployment/synchronization state; reproduce findings before requesting approval for any fixes. Verified findings and safe remediation batches are documented in `SECOND_DEEP_AUDIT_REPORT_2026-08-27.md`; no product behavior, custom-TiDB data/schema, schedule, Stripe/provider state, or secrets were changed.
+- [x] Enforce saved profile visibility, inventory-value, and contact-request preferences across public profile, member search, inquiry, and direct-message paths; keep full addresses server-only for distance calculation and retain owner/administrator access as appropriate. Hidden profiles are excluded from public/member discovery except for their owner or an administrator; profile visibility is enforced at the public endpoint; hidden values are omitted from public cards; and opted-out recipients reject new threads/inquiries. Full addresses were already stripped before member-search responses and remain server-only for distance math. Focused privacy tests and TypeScript passed.
+- [x] Restore the accepted Review stage after mutual trade acceptance, retain item locks until the existing mutually confirmed Shipping transition, and make server-derived PayPal verification reachable only in the intended accepted cash-trade stage with full lifecycle regression coverage. Mutual acceptance now locks the agreed listings while retaining `accepted` Review status with no shipping deadline; the existing mutual Review confirmation starts Shipping and its deadline. Idempotent acceptance retries, server-derived positive-cash PayPal obligations, atomicity, and TypeScript all passed in focused regression tests without a trade or payment write.
+- [x] Investigate the canonical Pre-Launch Email build mismatch after comparing the deployed local router and preserving unrelated canonical router work. The server procedures were present in the deployed local router; the mismatch was an older canonical client component calling removed procedure names.
+- [x] Restore the already-deployed Pre-Launch Email client component into canonical GitHub so it calls the existing `getPreLaunchRecipients` and `sendPreLaunchUpdate` server contract, then rerun the normal canonical validation before commit. The restored component matches the deployed server contract; focused P0 tests, TypeScript, production build, and the dependency audit passed in the fresh canonical checkout.
+- [x] Resolve the existing duplicate trade-review pair with a documented deterministic retention rule, then add narrowly scoped custom-TiDB unique constraints and duplicate-safe server handling for one-time trade review, vote, receipt, tracking, note, proposal-item, and voting-link records after a fresh aggregate-only preflight. The single duplicate review row with the higher ID was removed while the oldest record was retained; all eight approved unique indexes were confirmed in TiDB, and post-migration verification found zero duplicate review groups while preserving 3 members, 16 active listings, and $147,530.
+- [x] Enforce trade participation before reading or writing private notes, and make mutual Review confirmation conditionally transition only an `accepted` proposal so the new confirmation uniqueness rule cannot turn a concurrent retry into a failed request or duplicate transition. Private-note access now requires participation; repeated confirmation is idempotent; only a still-accepted trade can advance; voting links now use cryptographic tokens; and duplicate review/vote writes return clear conflicts.
+- [x] Require tracking entries to belong to the submitting trade participant and to be part of the proposal, and allow receipt confirmation only after the trade is shipped, preventing early completion or unrelated listing tracking records. Tracking rejects accepted-stage submissions, duplicate listing IDs, and items outside the sender’s side of the trade; receipt confirmation rejects any non-shipped trade.
+- [x] Replace destructive shared direct-message and inquiry deletion with member-specific archive/hide behavior that preserves the other participant’s trade communication history and administrator review access, using an additive custom-TiDB migration and regression coverage. The reviewed five-statement `0013_p1_member_communication_archives.sql` migration added four nullable participant archive timestamps and mapped zero legacy shared inquiry deletions; no correspondence body was deleted. Active and archived inbox queries are participant-specific, archived records are readable but read-only in the member interface, new messages restore both inbox views, unread alerts exclude the caller's archive, and 7 combined P1 focused tests plus TypeScript passed while the custom-TiDB baseline remained 3 members, 16 active listings, and $147,530.
+- [x] Make scheduled receipt escalation conditionally update only still-eligible statuses and record a system escalation only after a successful state change, preventing a delayed job from overwriting a newer trade state or duplicating its event log. The mounted cron handler now rechecks eligible `accepted`/`shipped` state, aged tracking, and missing receipt inside its conditional update; it appends the administrator escalation event and increments its count only when that update affects one row. The controlled scheduled-route suite passed 32 tests, including a stale-candidate/advanced-trade no-op regression, with TypeScript passing; no job was run or reconfigured.
+- [x] Add consistently bounded timeout handling, temporary-failure classification, and safe regression coverage to the approved Resend email, Twilio, and PCGS external-request paths without changing credentials, provider policy, or sending messages. Each path now uses a 15-second abort signal, records only sanitized API Health metadata for transport/HTTP failures, and retains safe user-facing temporary-failure behavior. Deterministic Resend/Twilio/PCGS failure tests passed without provider calls, outbound messages, or database writes.
+- [x] Run required core configuration/startup validation before Express begins serving requests, while distinguishing optional provider integrations and preserving custom-TiDB precedence and preview-safe authentication behavior. Server boot now validates only core settings plus the same `CUSTOM_DATABASE_URL`-first runtime source used by `requireDb()`, performs the existing read-only connection check before Express is constructed, and leaves optional Resend/Twilio/PCGS settings non-blocking. Development-server logs confirmed both checks passed before listening.
+- [x] Review and repair only stale legacy canonical GitHub test contracts identified by the post-P1 full-suite run; preserve current approved product behavior, custom TiDB data/schema, Free Launch, Stripe sandbox-only settings, schedules, provider policy, and secrets unless a distinct defect is verified and separately approved. Six stale assertions in four canonical-only test files were updated to protect the current Free Launch listing-detail access, administrator participant display names, successful sequential referral marking, and opt-in pre-launch review/send contract. No application code, custom TiDB data/schema, provider action, Stripe setting, or schedule changed. The fresh canonical full suite passed 149 files / 461 tests with four intentional skips, plus TypeScript, production build, clean production dependency audit, and whitespace review.
+- [x] Review the remaining documented audit recommendations after the completed P0/P1 safeguards and canonical test-contract maintenance; distinguish resolved work from open risks and provide a prioritized, approval-ready next scope without changing application behavior, custom TiDB data/schema, payment configuration, schedules, provider policy, or secrets. The report now prioritizes a copy-only Privacy Policy correction (P2A), an explicit trusted-origin allowlist before any future live billing (P2B), preview OAuth guidance rather than insecure bearer propagation, incremental adoption of the existing `adminProcedure`, and a Stripe sandbox webhook comment correction. No functional, database, provider, schedule, payment, or secret change was made.
+- [x] Add the approved hybrid member account-closure workflow: automatically close an eligible account immediately after server-side checks confirm no active/pending/negotiating/accepted/shipping/shipped/frozen/disputed trade, unresolved report/trade issue, or protected hold; hide active listings and prevent further sign-in/activity without blindly erasing historical evidence; route only blocked requests to an administrator review queue. Persist one active request per member with status and decision audit; show the requester’s current status on the Profile page; add an administrator-only Account Closure Requests tab with a privacy-safe member audit covering trades, disputes/reports, active listings, membership status, and request history; align the Privacy Policy wording; add focused tests; apply only a reviewed additive custom-TiDB migration; validate and synchronize. The reviewed dedicated migration added two user-state columns and one request table with no destructive statement; postcheck confirmed zero closure requests/actions and preserved 3 members, 16 active listings, $147,530, 7 trade messages, and zero inquiries/direct messages/reports/complaints. Focused tests passed 8/8; full validation passed 147 files / 456 tests with four intentional skips, TypeScript, production build, clean production dependency audit, and whitespace review.
+
+- [x] Conduct a third whole-code, read-only security and reliability audit after the completed second-audit P0/P1 and hybrid account-closure work; inspect authorization, privacy, data integrity, payment/provider boundaries, scheduled work, error handling, and regression coverage; validate material findings without changing code, data, configuration, schedules, provider actions, or secrets; document prioritized approval-ready results. `THIRD_DEEP_AUDIT_REPORT_2026-08-27.md` records two P0 privacy/sign-in integration findings, five P1 security/reliability findings, and five P2 hardening/testing findings. No runtime application behavior, custom TiDB schema/data, payment setting, provider action, schedule, or secret changed during the audit. TypeScript, production build, production dependency audit, whitespace review, startup checks, and public route smoke passed; the full test run retained one environment-dependent IPQS credential-probe timeout.
+- [x] Enforce public visibility and immediate account-closure eligibility centrally across listing detail/similar listings, public listing enrichment, verified merchants, public completed-trade history, and seller-presence lookups; return neutral not-found/empty results for ineligible records while preserving necessary owner/admin access; add behavior-level regression coverage without altering marketplace data. `server/publicVisibility.ts` now centralizes public member eligibility; public listing feeds/details/similar/ranking cards, site aggregates, merchant discovery, completed-trade history/showcase, and presence endpoints are covered. Private owner inventory and watchlist formatting deliberately remain authorized. Focused tests plus the full 149-file/459-test suite passed; no marketplace record changed.
+- [x] Consolidate all public Tradebilia sign-in entry points onto the supported custom-authentication flow and retire user-facing routing to the incompatible legacy OAuth session path; retain existing provider OAuth connection callbacks, preserve closed/banned account protections, and add sign-in routing/session-contract coverage. Existing sign-in buttons now open the app-owned custom credential modal on the current route via `?signin=1`; no public control sends members to `/api/oauth/start`. Focused sign-in/session coverage, TypeScript, production build, dependency audit, whitespace review, startup checks, and visual modal smoke passed; provider OAuth callbacks remain protected and unchanged.
+- [x] Encode every member-controlled dynamic value in transactional email HTML and subject construction through one shared, tested helper; preserve the existing Tradebilia logo/template format, provider boundary, recipient policy, and no-send validation approach. Shared HTML/text and CR/LF-safe subject helpers now cover verification, direct-message/reply, trade proposal/state/shipping/feedback, and referral content at the Resend boundary. A mocked provider-payload regression confirms untrusted markup remains encoded and subjects cannot create a second header; no email was sent during implementation or validation.
+- [x] Make Pre-Launch broadcast submission idempotent across local timeout/retry uncertainty and make public launch-update signup staging-safe and locally rate-limited before any provider call; preserve production duplicate handling, explicit administrator review/send confirmation, custom TiDB data/schema, Free Launch, Stripe sandbox-only behavior, provider credentials, and no unapproved outbound sends during implementation. Reviewed migration `0015_p1_prelaunch_delivery_safety.sql` added a 10-column unique delivery ledger. Administrators retain one UUID delivery key across an explicit confirmed send/retry; confirmed results are reused while sending/uncertain outcomes never automatically resend. Public signup and administrative recipient retrieval/delivery are staging-blocked before any provider call, with a process-local normalized email/source limiter. Focused 22-test coverage plus the full 149-file/470-test suite, TypeScript, production build, clean dependency audit, and whitespace review passed. Final custom-TiDB postcheck confirmed zero delivery records and preserved 3 members, 16 active listings, $147,530, 7 trade messages, and zero inquiries/direct messages/reports/complaints.
+- [x] Harden the shared market-data service used by the controlled Test AI Sandbox and the future Trade AI Analyzer: require an authenticated Tradebilia member, preserve administrator access, allow only explicitly supported sources, bound query/source/cache parameters, enforce per-user and per-IP admission limits plus an overall request budget, preserve safe cache behavior, and add deterministic no-provider-call rejection/throttle tests without changing marketplace data, Free Launch, Stripe sandbox-only settings, or provider credentials. Shared routes now require a signed-in member, limit non-admin to 8 and administrator to 40 requests per minute with a 24-per-IP ceiling, allow only eBay, require one bounded identifier/search term, cap cache age and sale results, and propagate a 15-second cancellation budget through eBay retries. The separate administrator Test AI Sandbox remains unchanged. Focused tests passed 4/4; complete suite passed 150 files / 474 tests with four intended skips after a successful UPS retry, plus TypeScript, production build, clean audit, and whitespace review.
+- [x] Conduct a fourth whole-code, read-only P0-focused audit after the market-data hardening; independently inspect all remaining public entry points, authorization/privacy rules, account states, payment boundaries, scheduled work, provider behavior, error paths, and regression coverage; record verified findings without changing code, data, configuration, schedules, providers, payments, or secrets during the audit. `FOURTH_DEEP_AUDIT_REPORT_2026-08-28.md` confirms three P0 issues requiring approval: public completed-trade SQL interpolation and missing eligibility filtering, stale acceptance records after counterproposal terms change, and remaining top-rated public visibility bypass. It also records qualified P1/P2 follow-ups and rejects unsupported P0 candidates. Full 150-file/474-test validation, TypeScript, production build, dependency audit, whitespace review, secret-pattern scan, startup checks, and public smoke passed with no audit-time runtime, custom-TiDB, payment, provider, schedule, or secret change.
+- [x] Repair fourth-audit P0 public completed-trade safety: replace the free-form category raw SQL interpolation with parameterized conditions, retain the fixed enum sort order, and require both completed-trade participants to satisfy the shared public eligibility rule; apply the same shared rule to top-rated traders and add adversarial category/hidden/closed-member regression coverage without changing marketplace records. `favorites.getCompletedTrades` now accepts only the existing category enum and uses parameterized requested/offered category conditions; it and `getTopRatedTraders` use the shared eligibility helper. Focused P0 regression coverage plus the full 151-file/478-test suite, TypeScript, production build, dependency audit, whitespace, secret-pattern review, and startup checks passed with no marketplace record changed.
+- [x] Repair fourth-audit P0 trade consent integrity: inside the existing locked counterproposal transaction, invalidate accepted confirmation records whenever offered items or either cash term changes, log the reset, require both participants to accept the new terms, and add two-party sequence/race regression coverage without migration, provider, payment, schedule, or marketplace-data changes. The transaction now compares canonical item sets and cash totals while the proposal is locked, deletes both accepted records only when terms change, and writes an `acceptance_reset` audit event before the updated proposal event. A message-only counterproposal retains existing acceptance. Focused P0 coverage plus the complete 151-file/478-test validation passed; no database write was executed during implementation or tests.
+- [x] Conduct a final fifth whole-code read-only P0-focused audit after the fourth-audit repair; independently test all reachable public/authentication/authorization/privacy/trade/payment/provider/destructive-action boundaries, cross-check any candidate against current code and validation evidence, and document whether the P0 remediation cycle is closed without changing code, custom TiDB data/schema, provider or payment state, schedules, configuration, or secrets. `FIFTH_DEEP_AUDIT_REPORT_2026-08-28.md` rejects the investigated context, cookie, closure IDOR/state, Stripe, and remaining dynamic-SQL candidates as P0, but verifies one open P0: competing trade-acceptance transactions lock only their individual proposal and can both advance to accepted when sharing a listing. Full 151-file/478-test, TypeScript, production build, dependency audit, whitespace, secret-pattern, and runtime-log validation passed; no audit-time state changed.
+
+- [x] Close fifth-audit P0 competing trade-acceptance race: in mutual acceptance, lock all de-duplicated offered/requested listing rows in stable ID order, recheck their active state under the lock, use affected-row guarded listing updates, retain competitor cancellation only as a follow-up cleanup, return a neutral item-unavailable conflict to a losing concurrent proposal, and add deterministic competing-proposal concurrency regression coverage; do not migrate or change marketplace records. Mutual acceptance now de-duplicates and orders every offered/requested listing ID, locks all active rows before changing proposal status, marks the complete set traded through an affected-row guard, and returns a neutral item-unavailable conflict to a concurrent loser. Post-lock competitor cancellation remains non-authoritative cleanup. Focused fourth/fifth-audit and atomicity tests passed 8/8 with TypeScript; no custom-TiDB write was performed.
+- [x] Add member-selectable checkboxes and a confirmed Clear action to the administrator-only API Health tab, preserving health event data until the administrator explicitly selects and clears it; record the clear action in the administrator audit trail and add authorization/UI regression coverage. The completed control requires an administrator, accepts one through one hundred positive selected IDs, de-duplicates selections, deletes only those API-health records, and creates an administrator activity-log entry after the UI confirmation.
+- [x] Reconcile Admin Operations member-report, content-flag, and low-feedback safety counts with visible corresponding queues; eliminate the misleading combined Reports & Flags link without deleting any report or flag, and add a regression covering count-to-queue destinations. Operations now displays separately routed Member reports, Content flags, and Feedback safety counts; the Flagged workspace includes a pending low-feedback safety review queue with reviewed, dismissed, and action-taken outcomes.
+- [x] Add the approved administrator-only safe launch-control Fee Mode On/Off setting: default to Free Launch/Off; require the administrator’s current password plus an exact confirmation phrase to change state; record the setting and administrator audit entry without creating charges, enabling Stripe checkout, or enforcing paid access; show that a separate future launch-readiness/enforcement decision is still required; preserve existing membership records, Stripe sandbox-only configuration, and Free Launch behavior; add focused regression coverage. The completed control only records the launch-planning mode, persists `paymentEnforcementEnabled: 0`, and leaves checkout, card collection, and access enforcement unavailable.
+- [x] Remove the irrelevant top-bar search control from administrator pages while preserving public search, and make fictional Trade Room guide captures on How Tradebilia Works substantially larger with accessible click/keyboard enlargement; add responsive and accessibility coverage without altering public member/trade data. Admin now uses the shared top bar with search hidden only there; the public guide uses a larger two-column fictional gallery and a labelled keyboard-accessible capture dialog.
+- [x] Fix the administrator Feedback Safety count-to-queue mismatch: ensure every pending low-feedback safety record counted in Operations is visible and actionable in the Flagged workspace, with a regression for the observed one-count/empty-queue case; do not delete marketplace or member data during diagnosis or validation. Read-only diagnosis confirmed one pending feedback-safety row with no matching current user row; the queue now uses a left join and identifies it as an Archived member record, allowing an administrator to review or dismiss it without changing the underlying record automatically. Focused administrator tests passed 6/6, with TypeScript, production build, and whitespace review passing.
+- [x] Make every fictional Trade Room capture on How Tradebilia Works a single-column, near-full-width image with readable on-page detail, retaining its accessible enlargement dialog and development-only disclosure. The gallery now uses a near-full-width single-column layout, always displays the enlargement control, and eagerly loads all six fictional development captures. Desktop visual validation confirmed the complete readable capture sequence.
+- [x] Remove all inaccurate fictional Trade Room images and enlargement controls from How Tradebilia Works; retain the six stage titles and descriptions in a clear image-ready format for user-supplied actual Trade Room screenshots, without implying that a placeholder is a real capture. The inaccurate assets and dialog are removed; the guide now has six written Trade Room stages, each clearly marked Actual Trade Room screenshot to be added. Focused guide controls/tests passed 8/8, with TypeScript, production build, desktop visual review, and whitespace checks passing.
+- [x] Add an administrator-only Admin Guide tab that plainly explains every current admin tab: what it displays, its purpose, when to use it, and any important action or data-handling caution; preserve all current actions and data behavior and add guide/tab regression coverage. The completed accordion guide covers all 19 visible administrator workspaces plus the Test AI Sandbox and Coming Soon Preview shortcuts, including plain-language “what it does,” “when to use it,” and “before you act” guidance. Focused Admin Guide/Operations/control tests passed 9/9, with TypeScript, production build, unauthenticated access-boundary review, and whitespace checks passing.
+- [x] Perform a read-only, tab-by-tab administrator dashboard audit: verify intended functionality and authorization paths, identify safe consolidation opportunities and missing operational safeguards, and deliver a prioritized recommendation report without changing records, payments, providers, schedules, settings, or secrets. Completed `ADMIN_DASHBOARD_AUDIT_2026-08-28.md` covers all 20 visible dashboard tabs, including the Admin Guide, with a verified findings/consolidation/missing-capability assessment. Focused administrator regressions passed 6 files/13 tests; TypeScript, production build, and whitespace checks passed. No operational data or external action was initiated.
+- [x] Replace direct administrator deletion of user, trade, and ticket records with a retained-record, high-friction removal workflow: require a reason and exact confirmation phrase, use non-destructive hide/archive/close outcomes where supported, create an administrator audit entry, preserve trade/support/safety history, and keep an unimplemented exception-only purge out of ordinary UI controls; add focused regression coverage without running a migration or changing records. Permanent deletion endpoints and UI actions are disabled. Archive Member Account reuses the guarded closure flow; Archive Trade Record accepts only completed/declined/cancelled trades; Close & Retain Ticket keeps every reply. All require a 10-character reason and exact phrase, write an administrator activity entry, and remain reviewable through archived/retained filters. `ADMIN_RECORD_RETENTION_POLICY.md` documents the policy and the exception-only purge boundary.
+- [x] Add a read-only pending Closure Requests count and direct link to the existing Closure Requests administrator workspace in Operations, with regression coverage; do not alter any closure decision, account, or retained record. Operations now counts `pending_review` requests and routes the count to the existing protected account-closures tab; no closure action or record was changed.
+- [x] Diagnose and repair the broken LinkedIn image on the public Administrator profile with a resilient, accessible image fallback or durable permitted source; preserve profile and connection data, avoid external-provider writes, and add regression coverage. The stored LinkedIn OpenID Connect picture URL is rendered directly and can expire or be hotlink-blocked. The public card now uses a no-referrer image request and an accessible initials fallback on load failure, so it presents no broken-image icon; profile and connection data remain unchanged. Focused image tests passed 5/5, with TypeScript, production build, dependency audit, whitespace, and administrator-profile visual review passing.
+- [x] Display the available external-account connection date on each connected public-profile card (such as eBay, Facebook, and LinkedIn) in a clear, consistent, privacy-preserving format; preserve connection/profile data and existing visibility rules, and add regression coverage. Public profiles now project the existing Facebook connection date and render full “Connected Mon Day, Year” labels consistently on the eBay, Facebook, and LinkedIn cards when available. Focused connection-date and avatar/linkedin image tests passed 7/7, with TypeScript, production build, dependency audit, whitespace, and Administrator-profile visual review passing.
+- [x] Perform a read-only deep-dive assessment of the Paqq GitHub project for possible USPS package tracking in Tradebilia, covering repository provenance, licensing, maintenance, capabilities, security/compliance, integration fit, alternatives, and a recommendation; do not install, configure, contact providers, or change website/data settings. Completed `PAQQ_USPS_TRACKING_ASSESSMENT_2026-08-28.md` recommends against Paqq: it is a recently active but low-adoption, scraper-first Docker application with persistent browser state and background polling, which conflicts with USPS anti-scraping terms and Tradebilia’s current architecture. The report documents the existing official USPS helper and recommends the official outbound USPS link now, with a separate role/MID authorization design before any future in-site tracking.
+- [x] Enlarge exchanged-item presentation in the homepage Recent Trades section and display each item’s available condition or grade directly beneath its name with the stated listing value beside it; preserve the existing completed-trade data/animation behavior and add responsive UI regression coverage. The public completed-trade payload now carries stored listing condition and grade; Recent Trades prefers a real grade above zero and otherwise presents normalized condition beside the stated value beneath each item title. Cards now use larger 96–112px thumbnails. Full suite passed 157 files / 495 tests with 4 intentional skips and 1 skipped file; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Refine homepage Recent Trades metadata to show the stored grading company and grade together when both are present (for example, PSA 9), otherwise show normalized condition (for example, Mint), while retaining the stated listing value; preserve completed-trade behavior and add regression coverage. The public completed-trade payload now includes existing requested/offered certification companies. Recent Trades renders “PSA 10” when company and positive grade are available, falls back to “Grade 10” if the company is absent, and otherwise displays normalized condition beside the value. Full suite passed 156 files / 495 tests with 4 intentional skips and 1 skipped file; TypeScript, production build, dependency audit, whitespace, and homepage visual review passed.
+- [x] Rework homepage Recent Trades into the approved compact left-to-right trade summary, showing the source member, item metadata, clear directional arrows, receiving item metadata, and receiving member; retain truthful grade/company-or-condition/value data, completed-trade rotation, public eligibility, and item detail links, with responsive regression coverage. The completed layout shows From/To endpoints, sent item cards with grade/company-or-condition and value, a verified trade-complete center marker, explicit desktop right/left movement arrows, and a mobile bidirectional movement cue. Full suite passed 156 files / 495 tests with 4 intentional skips and 1 skipped file; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Rebuild Recent Trades to closely match the supplied compact horizontal reference: a thin single-card From → You Gave → green completed badge → You Received → To sequence, matching directional-arrow positions and a compact trade/date/value/verified footer; retain only truthful available Tradebilia data, item detail links, rotation, and responsive accessibility, with visual-contract regression coverage. Desktop visual review confirms the thin horizontal From/You Gave/completion/You Received/To sequence, directional arrows, and footer row closely match the supplied reference. Mobile review confirms an accessible stacked equivalent. Focused Recent Trades tests passed 5/5; complete non-provider suite passed 151 files / 490 tests with 3 intended skips. TypeScript, production build, dependency audit, and whitespace checks passed. The separate all-tests attempt did not finish while external credential probes were still running and produced no assertion failure; it was not treated as a substitute for the controlled non-provider suite.
+- [x] Replace the Recent Trades generic completion marker with the supplied green Trade Complete stamp icon, including durable asset upload, sizing, tests, visual verification, and canonical synchronization. The supplied 97×89 stamp is durably uploaded at `/manus-storage/trade-complete-stamp_e8860371.png`, rendered as the center completion marker, and covered by focused regression, TypeScript, production-build, dependency-audit, whitespace, and desktop/mobile visual checks.
+- [x] Rebuild Recent Trades as a wider ticket-style card: torn side edges, full member avatars, usernames, ratings, verification badges, dotted separators, direct item presentation, no You Gave/You Received labels, larger Trade Complete stamp, and responsive validation. The completed card now uses scalloped ticket edges, full non-cropped avatars, username-first labels, visible ratings, truthful connected-platform/Tradebilia verification badges, dotted separators around the item and stamp sections, direct item rows without bubbles or direction labels, a larger supplied stamp, and a wider responsive layout. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Refine Recent Trades ticket styling: tint the main surface to match the Trade Complete stamp, give the trade-ID footer a stronger contrasting shade, restore directional arrows, remove From/To labels, enlarge item imagery, and revalidate desktop/mobile presentation. The ticket uses a subtle green surface and distinct footer shade, functional previous/next arrows, no visible From/To labels, larger 96–112px item images, and responsive desktop/mobile presentation. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Diagnose and fix the homepage loading-spinner failure introduced or exposed after the Recent Trades refinements, then add regression coverage and revalidate the ticket card. The homepage-wide marketplace loading guard was removed so the full page no longer remains blank while one feed is slow; Recent Trades retains its own section-level loading state. The live preview now renders normally. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual verification passed.
+
+- [x] Remove the white background around the Recent Trades Trade Complete stamp so it blends seamlessly into the existing light-green ticket surface, then validate and synchronize the correction. Initial task entry completed as documented below.
+- [x] Remove the white background around the Recent Trades Trade Complete stamp so it blends seamlessly into the existing light-green ticket surface, then validate and synchronize the correction. The opaque source stamp was replaced with a durable transparent-background version at `/manus-storage/trade-complete-stamp-transparent_9ec4b748.png`; the ticket surface now remains uniform behind the stamp. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed.
+- [x] Create a standalone visual mockup based on the supplied wide Recent Trades ticket reference, preserving its composition, torn-ticket edges, member panels, item areas, centered Trade Complete mark, dotted separators, and footer structure. Generated the standalone concept asset at `/home/ubuntu/webdev-static-assets/recent-trades-ticket-mockup.png` with durable reserved URL `/manus-storage/recent-trades-ticket-mockup_2144c0cd.png`; the asset is a visual reference only and does not alter the live site.
+- [x] Apply the uploaded Recent Trades visual mockup’s same exact ticket format and style to the live homepage section, preserving truthful stored member/item data, functional arrows, and responsive accessibility; validate and synchronize the implementation. The live section now follows the reference’s wide shallow ticket structure with avatar-plus-identity member panels, ratings, truthful verification rows, dotted separators, direct larger item imagery, centered transparent Trade Complete mark, distinct footer, arrows, and full main-column width. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Make the Trade Complete logo’s white interior areas translucent so the Recent Trades ticket surface shows through, while preserving the stamp artwork, then upload, test, visually verify, and synchronize the corrected asset. Replaced the previous stamp with the durable `/manus-storage/trade-complete-stamp-translucent_3f4e25b7.png` asset, whose interior white areas are translucent and whose outer background is transparent. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed; the live ticket preview shows the background through the stamp.
+- [x] Implement the approved below-the-hero homepage refinement while keeping the hero, top bar, and centered Recently Added/Recent Trades headings unchanged; preserve a rollback point and validate the result. The Recently Added shelf now uses denser reference-inspired cards with tighter spacing, flatter corners, slightly shorter image areas, and compact typography; the hero, top bar, stats strip, and centered headings remain unchanged. The stable baseline was preserved in checkpoint `1bc26b2a`. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed.
+- [x] Make the Recently Added shelf visibly denser and more distinct from the previous version by showing more listings at once, while keeping the hero, top bar, stats strip, centered headings, and Recent Trades card unchanged; validate and synchronize the correction. The shelf now uses 126px/136px/146px responsive card widths, tighter 2px gaps, compact typography, and a shorter proportion so more listings are visible at once. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Apply the reference’s clearly different below-the-hero navy/purple color treatment to the approved homepage area, without changing the hero, top bar, stats strip, centered headings, or Recent Trades card; validate and synchronize the result. The below-hero shell now uses a clearer warm content canvas and dark navy-to-purple tools rail, with violet hover treatment; the protected hero, top bar, stats strip, centered headings, and Recent Trades card remain unchanged. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Extend the left collector-tools panel to run alongside the full homepage content height, matching the reference’s continuous sidebar treatment without changing the locked hero or top bar; validate and synchronize the layout. The sidebar now spans the full three-row public content grid on desktop through `md:row-span-3` and retains safe mobile stacking. Focused homepage regression, TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Apply the full reference-matched below-hero treatment now approved: continuous dark navy/purple left panel and visibly denser compact Recently Added shelf, while preserving the hero, top bar, stats strip, centered headings, and Recent Trades ticket; validate and synchronize the result. The live homepage now visibly follows the reference below the protected hero/top bar: continuous dark left rail, denser listing shelf, warm content canvas, preserved centered headings, existing Recent Trades ticket, and ranking panels. Canonical focused tests, TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual reviews passed.
+- [x] Increase the visible Recently Added carousel item size in the combined bar-refinement pass while retaining compact spacing and readable responsive behavior; validate and synchronize the change. Completed in the combined category/stat refinement: items use 150px/160px/172px responsive widths, larger image areas, and readable metadata; focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Update the homepage category bar and stats bar to match the uploaded reference while keeping the hero and existing top bar unchanged. The category bar now uses a compact icon-led navy treatment with preserved routes and active states; the stats strip now uses a deeper navy-to-purple gradient, brighter separators, compact white metrics, and full comma-formatted values. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Increase the visible Recently Added carousel item size in the combined bar-refinement pass while retaining compact spacing and readable responsive behavior; validate and synchronize the change. Items now use 150px/160px/172px responsive widths, larger readable image areas, and restored compact metadata sizing. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Remove the left and right end arrows from Recent Trades so automatic five-second fade rotation is the only navigation method; preserve the ticket layout and reduced-motion behavior, then test and synchronize the change. Removed the manual controls and retained five-second automatic rotation, fade transitions, cleanup timers, and reduced-motion handling. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Remove the pale background from the supplied Trade Complete seal, preserve the green artwork and proportions, and deliver a transparent-background PNG suitable for the Recent Trades card. Delivered `/home/ubuntu/webdev-static-assets/trade-complete-seal-transparent-final.png`, preserving the original 227×214 composition; validation confirms it is a true 8-bit RGBA PNG with transparent background pixels and no simulated checkerboard.
+- [x] Replace the live Recent Trades Trade Complete logo with the supplied transparent seal, preserve the automatic fade carousel and card proportions, then validate and synchronize the update. The live card now uses the supplied transparent seal asset at `/manus-storage/trade-complete-seal-blue-final_7bd19559.png`; automatic fade rotation and ticket proportions remain intact. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Refine the Recent Trades ticket outer ends with repeated perforation cut-ins matching the supplied reference, while preserving the supplied transparent seal, automatic fade-only behavior, and responsive layout; validate and synchronize the refinement. The ticket edges now use a stronger repeated radial perforation pattern on both outer ends, with the existing automatic fade-only behavior preserved. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Recolor the supplied transparent Trade Complete seal from green to a blue hue while preserving its wording, checkmark, transparency, shape, and proportions; integrate it with the perforated ticket refinement and validate the result. The seal is now rendered in a deep cobalt-blue hue, preserving the user-supplied artwork and true RGBA transparency; asset validation confirms 227×214 8-bit RGBA output. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Enlarge the items in the Recently Added carousel and the Recent Trades section for improved visibility while preserving the compact ticket structure, automatic fade rotation, and responsive behavior; validate and synchronize the change. Recently Added retains 150px/160px/172px responsive card widths, while Recent Trades now uses 160×112px item slots at base and 192×144px item slots on small screens, plus a larger completion seal. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Restyle the entire Recent Trades ticket with blue-only colors and no green accents; enlarge its font, avatars, usernames, and verification details; restore the earlier larger Recently Added carousel item sizing; preserve fade-only rotation, transparent blue seal, perforations, and locked upper regions; validate and synchronize. The ticket surface, footer, icons, rating, values, item backgrounds, member avatars, usernames, verification rows, and completion seal now use blue-toned UI colors with no remaining green UI classes; member and item details are larger, and Recently Added restores the earlier 150px/160px/172px responsive item sizing. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Correct Recent Trades display names, restore directional arrows showing item movement, remove white image backing in favor of the blue surface, enlarge carousel items, sharpen or recreate the blurry Trade Complete logo, and make the blue outline overlap the perforated ticket edges; preserve fade-only rotation and locked upper regions, then validate and synchronize. Recent Trades now prioritizes canonical display names, shows correctly oriented arrows, uses blue-toned image surfaces, restores larger carousel sizing, uses a validated true-alpha sharpened blue seal, and applies blue-over-perforation ticket outlines. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Correct the enlarged Recent Trades grid after visual review: prevent member-name and item-detail clipping, keep direction arrows aligned beside the item flow, and retain the larger imagery without overflow; add regression coverage and revalidate desktop/mobile. The final layout widens member tracks, keeps display names whole, stacks item details beneath their images, aligns arrows in dedicated columns, and retains larger imagery without overflow. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Correct Recent Trades to match the supplied ticket: remove the blue backing behind item images, restore frayed/perforated outer ends with the blue outline over them, keep item titles to the right of images, clean up the member panels, and simplify the swap arrows; preserve truthful data and fade-only rotation, then validate and synchronize. The item image surfaces are transparent and inherit the pale ticket canvas, titles/details sit to the right of images on desktop, member panels use balanced avatar/detail rows, arrows are simple and aligned, and the ticket ends expose repeated canvas-colored frayed cut-ins under a continuous blue outline. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Replace the smooth Recent Trades outer ends with clearly visible repeated perforations matching the supplied ticket and replace the blurry Trade Complete seal with a sharper high-resolution transparent asset; preserve the card data and fade-only rotation, then validate and synchronize. The completion mark is now a crisp inline blue vector with accessible title/description, and both outer ends use visibly repeated blue perforation rings; card data and fade-only rotation remain unchanged. Focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed.
+- [x] Replace the non-rendering vector Trade Complete seal with a browser-safe crisp raster asset and make the ticket’s repeated outer cut-ins visibly perforated at full-page scale, with the blue outline tracing over them; preserve the approved data, arrows, and fade behavior, then validate and synchronize. The failed external vector reference was replaced by a crisp inline SVG rendered directly in the card, and the edge pattern was strengthened to repeated 1.15rem blue perforation rings; focused homepage and movement tests passed 3/3; TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed.
+- [x] Replace the circular Recent Trades edge rings with sharp, repeated triangular ticket teeth that visibly point into the card on both ends; preserve the blue outline, ticket content, hero/top bar, centered headings, truthful data, arrows, and fade-only rotation, then validate, checkpoint, and synchronize GitHub. Replaced the circular rings with a browser-safe repeating SVG tooth pattern: left teeth point inward from the left edge and right teeth point inward from the right edge. Wide desktop visual verification confirms the intended triangular silhouette.
+- [x] Redo the Recent Trades Trade Complete seal so the word COMPLETED is upright and readable rather than upside down; preserve the blue-only seal, checkmark, triangular ticket teeth, card data, arrows, fade behavior, and locked homepage regions, then validate, checkpoint, and synchronize GitHub. Rebuilt the seal with centered horizontal SVG labels for TRADE and COMPLETED, removed the invertible text paths, enlarged both labels, and retained the checkmark and blue-only palette. The ticket ends now use sharp repeating left- and right-facing triangular teeth. Focused homepage test, TypeScript, production build, dependency audit, whitespace, and wide desktop visual checks passed.
+- [x] Remove the straight left and right border segments from Recent Trades so the triangular teeth define the actual outer ticket edges; integrate the supplied Trade Quality seal with a clean transparent background, preserve all other content and locked regions, then validate, checkpoint, and synchronize GitHub. The article now uses top/bottom borders only, the repeated triangular teeth define both side silhouettes, and the supplied Trade Quality seal is integrated from durable transparent storage. Full-page visual validation confirms no checkerboard artifact and no continuous vertical side border.
+- [x] Increase the spacing between each triangular tooth on both Recent Trades ticket ends so the teeth are clearly separated; preserve the actual tooth-defined outer edge, remove solid side borders, use the supplied Trade Quality seal, and validate, checkpoint, and synchronize GitHub. Tooth repetition was widened from 1.15rem to 1.8rem, leaving visible gaps between individual teeth; focused regression, TypeScript, production build, dependency audit, whitespace, and full-page desktop visual checks passed.
+- [x] Replace the Recent Trades logo with the newly supplied Trade Quality seal; remove all triangular side teeth, add a thicker continuous card border, enlarge and clarify bottom metadata text, and center each member-information block within its section while preserving truthful data, item layout, arrows, fade rotation, hero, top bar, and centered headings; validate, checkpoint, and synchronize GitHub. The new transparent Trade Quality seal is integrated, all side teeth are removed, the ticket uses a thicker continuous blue border, footer metadata is larger, and both member-information groups are centered. Focused regression, TypeScript, production build, dependency audit, whitespace, and full-page visual checks passed.
+- [x] Change the Recent Trades heading to black; recenter the homepage hero logo lockup as one measured unit with equal outside space from wheel start to final A; restore the homepage hero height and category-bar boundary to match category pages without changing hero artwork or top-bar behavior; validate, checkpoint, and synchronize GitHub. Recent Trades is now black, the visible hero lockup is shifted by the measured SVG-bound correction, and the homepage hero is restored to 400px so its category bar aligns with the category-page boundary. Desktop, mobile, and `/category/comics` visual checks passed; hero artwork and top-bar behavior remain unchanged.
+- [x] Increase the homepage hero logo rendering from max-w-5xl to approximately 12–18% larger while keeping the hero at 400px, preserving the measured visual centering and direct category-bar boundary, then validate, checkpoint, and synchronize GitHub. Increased the responsive maximum from max-w-5xl (1024px) to max-w-6xl (1152px), a 12.5% increase, while retaining the 400px hero, measured -6.5% visual centering correction, and immediate category bar. Focused regression, TypeScript, production build, dependency audit, whitespace, and desktop/mobile visual checks passed.
+- [x] Apply the same blue border treatment used by Recent Trades around each Recently Added carousel item, preserve horizontal scrolling, image navigation, item values, and current card spacing, then validate and save a reversible checkpoint for comparison. Each Recently Added card now uses `border-4 border-[#3974bb]` while retaining rounded corners, horizontal scrolling, image navigation, item values, and existing card spacing. Focused regression, TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed.
+- [x] Remove the experimental blue border from each Recently Added carousel card while keeping the thicker Recent Trades ticket border unchanged; preserve scrolling, image navigation, item values, and card spacing, then validate and checkpoint the borderless result. Recently Added cards are back to their lighter border treatment, while the single Recent Trades ticket retains its thicker blue border. Focused regression, TypeScript, production build, dependency audit, whitespace, and desktop visual checks passed.
+- [x] Add a clear responsive vertical gap between the public profile page category bar and the profile section start, preserving hero, top bar, category-bar styling, profile content, and page behavior; validate and checkpoint the fix. Added `mt-8` to the loaded and loading public-profile wrappers, creating a consistent 2rem gap below the category bar without changing the hero, top bar, category bar, or profile content. Focused profile regressions, TypeScript, production build, dependency audit, whitespace, and loaded Administrator desktop visual verification passed.
+- [x] Make the public-profile gap below the category bar unmistakable by replacing the unreliable visible margin treatment with explicit responsive top padding inside the content region; preserve profile layout and verify at the user’s wide viewport and mobile width, then checkpoint the correction. Replaced the outer `mt-8` treatment with explicit `pt-8` on the loaded and loading content regions, producing a visible 2rem gap. The loaded Administrator profile was verified at 1615px desktop and 390px mobile widths; focused profile tests, TypeScript, production build, dependency audit, and whitespace checks passed.
+- [x] Rework Recent Trades member/item detail hierarchy to match the supplied reference: align avatar, display name, and rating on one horizontal row; left-align verification rows beneath the avatar; emphasize grading company and grade with category-specific color treatment while preserving item values, truthful data, ticket border, seal, arrows, fade behavior, and protected homepage regions; validate and checkpoint. Member headers now place avatar, display name, and rating on one row, verification rows begin at the avatar-aligned left edge beneath them, and graded items show separate category-colored company and grade badges while retaining values and links. Focused Recent Trades regression, TypeScript, production build, dependency audit, whitespace, and full-page visual checks passed.
+- [x] Center each already-aligned Recent Trades member and item block within its designated column while preserving internal alignment and title-to-right item structure; combine grading company and grade into one category-colored highlight; preserve values, truthful data, seal, border, arrows, fade behavior, and protected regions; validate and checkpoint. Centered the complete member and item blocks using constrained `w-fit` wrappers while preserving internal alignment and the title-to-right structure. Combined each grading company and grade into one category-colored badge. Focused regression, TypeScript, production build, dependency audit, whitespace, and full-page visual checks passed.
+- [x] Replace the ambiguous Stamps icon with a recognizable stamp/postage symbol and replace the generic Disney Pins heart with a Mickey-style ears silhouette; preserve Autographs and all other category icons, navigation routes, active states, category-bar position, and protected page regions; validate and checkpoint. Stamps now uses the Lucide Stamp symbol, Disney Pins uses a dedicated Mickey-style ears SVG silhouette, and Autographs retains the PenLine icon. Focused navigation/layout regressions, TypeScript, production build, dependency audit, whitespace, and homepage/Stamps-page visual checks passed.
+- [x] Use a recognizable postage-stamp symbol for Stamps and a Pokémon character silhouette for Pokémon; revise Recent Trades so each member shows avatar left, display name to the right, rating directly beneath and aligned with the name, then verifications below; preserve other icons, item/title layout, values, routes, ticket behavior, and protected regions; validate and checkpoint. Stamps now uses a dedicated postage-stamp SVG, Pokémon uses a dedicated character silhouette SVG, and Recent Trades stacks rating below the display name while keeping it aligned to the name column and verifications below. Focused category/layout regressions, TypeScript, production build, dependency audit, whitespace, and full homepage visual checks passed.
+- [x] Correct Recent Trades rendering so the rating is visibly below the display name—not beside it—while the name/rating stack remains directly aligned with the avatar and verification rows remain below; strengthen the regression and validate the actual rendered ticket before checkpointing. The member markup now uses a separate block-level display name and `mt-1` rating row, with the rating left-aligned under the name and verification rows beneath; the full homepage screenshot confirmed the visual result. Focused regression, TypeScript, production build, dependency audit, whitespace, and full-page visual checks passed.
+- [x] Make each Recent Trades avatar image fill the maximum available avatar frame without cropping, stretching, or changing the original picture; remove unnecessary inner padding, preserve aspect ratio, and validate the rendered result before checkpointing. Removed the unnecessary inner padding while retaining `object-contain`, fixed dimensions, and the original image aspect ratio, allowing each source picture to use the maximum available frame without crop or distortion. Before-and-after homepage screenshots, focused regression, TypeScript, production build, dependency audit, and whitespace checks passed.
+- [x] Fill negative space inside Recent Trades avatar frames with a blurred enlarged version of the same source image behind the sharp, uncropped foreground; preserve the original picture, aspect ratio, frame shape, and card behavior, then validate and checkpoint the experiment. Added a clipped blurred enlarged copy of each same-source image behind the foreground avatar, then retained that layer beneath the validated object-fill foreground. The original source remains fully represented and the circular frame is filled without an empty background field. Focused regression, TypeScript, production build, dependency audit, whitespace, and after-state visual checks passed.
+- [x] Test a subtle controlled stretch on the sharp Recent Trades avatar foreground so it fills the frame more fully, preserve the blurred background and frame behavior, validate visual naturalness, and checkpoint the experiment for easy rollback. The sharp foreground now uses `object-fill` inside the fixed circular frame while the blurred source remains behind it; before-and-after screenshots show the negative space is filled, the original image remains intact, and the stretch is visually subtle. Focused regression, TypeScript, production build, dependency audit, and whitespace checks passed.
+- [x] Update homepage Recently Added cards to display whole-dollar values with comma separators and no cents; add one combined grading-company-and-grade badge below each item title; compact the title/details spacing so card height does not increase, while preserving horizontal scrolling, image navigation, truthful values, and existing card behavior; validate and checkpoint. Prices now use rounded comma-separated whole dollars such as `$125,000`, and each graded listing receives one compact category-colored company-plus-grade badge directly below its title. The existing 40px title/details block was retained so cards do not grow vertically. Focused regression, TypeScript, production build, dependency audit, whitespace, and full-page visual checks passed.
+
+- [x] Define and implement safe external cash-adjustment support for PayPal, Venmo, Cash App, and Zelle in Account Setup, Account Settings, and Trade Rooms, including per-method data validation, privacy controls, member verification/status wording, trade-specific payment-method selection, confirmation/audit handling, dispute-safe disclosures, and regression coverage; do not process, store, or guarantee external payments without explicit approved requirements. Added protected private method fields, per-method validation, an accepted-trade-only cash context, payee method selection, payer Sent and payee Received actions, dispute escalation, a shipping gate, masking, and direct-payment disclosures; no external transfer is initiated or guaranteed by Tradebilia.
+- [x] Implement the approved method policy: store PayPal email, Venmo username, Cash App $cashtag, and one Zelle email or U.S. mobile number privately; expose identifiers only to the two participants in an accepted cash trade; allow the payee to select an allowed method per trade; require payer Sent and payee Received confirmations; re-confirm cash terms after a payee identifier change; mask Zelle by default; keep admin identifiers masked unless an audited dispute reveal is required; add provider links/copy actions and direct-payment disclosures without processing or guaranteeing payments. Account Setup and Account Settings now offer private entry; accepted Trade Rooms disclose only a selected recipient destination to the payer; a changed destination resets pre-send terms but cannot overwrite a sent payment; Admin Billing lists masked records and requires a phrase-confirmed reveal that is recorded in the trade activity log.
+
+- [x] Standardize every member avatar rendering path with the approved layered treatment: blurred same-image background plus sharp foreground filling its frame, without dropping alt text, profile fallbacks, aspect-ratio safeguards, or performance controls; exclude listing images, provider logos, category icons, and other non-avatar media; add coverage, visually verify representative desktop/mobile routes, checkpoint, and synchronize GitHub. Updated the shared Avatar primitive used by nine consumer files plus every bespoke member-avatar renderer in Public Profile, Verified Merchants, Traders Showcase, and all Trade Room contexts. Sharp foregrounds use `object-fill`; blurred same-image backgrounds fill each clipped frame. Item photos, provider logos, and category graphics are unchanged. Focused avatar, homepage, and mobile-layout regressions passed 15/15; TypeScript, production build, production audit, and source diff whitespace checks passed. Desktop/mobile Public Profile, Verified Merchants, and full Traders Showcase screenshots were reviewed.
+
+- [x] Prevent a listing owner from messaging or proposing a trade to their own item on category and item-detail pages, including server-side authorization so UI hiding cannot be bypassed; add regression coverage. Category proposal controls now disable for an owner with an explanatory title, Item Detail disables its Trade Proposal and Message Owner actions for an owner, and existing server-side trade and direct-message guards continue to reject self-actions.
+- [x] Replace default-only trade-proposal creation with a dialog that allows a member to enter an optional personalized message before submitting from category cards or item-detail pages, while preserving current proposal validation and existing message history. Category dialogs now require a trimmed personalized note and reset it on close; Item Detail now opens a matching message dialog instead of sending a default sentence, requires a nonblank note, shows the 1,000-character limit, and preserves existing proposal API validation/history.
+- [x] Increase the category-card grade/detail typography where space permits and rename the visible Trust label to Trader Rating without changing the underlying truthful rating data; preserve card height and responsive behavior. Grade/condition copy now uses a larger bold 0.75rem presentation with a clearer 0.55rem label; both list and grid layouts label ratings as Trader Rating while preserving exact rating values and responsive cards.
+- [x] Review the supplied category-card reference and report focused visual improvement recommendations without fabricating reviews, ratings, or marketplace activity. Responsive visual review completed; recommendations will be delivered with the verified checkpoint.
+
+- [x] Apply the category-page self-action safeguards, personalized proposal dialog, larger grade presentation, and Trader Rating wording to Explore All; preserve current filters, navigation, listing data, and responsive behavior; add regression coverage. Explore All now uses an owner-aware Trade button, a required personalized-message dialog, existing server-side self-trade safeguards, the larger grade value, and Trader Rating terminology; existing filters and result links remain unchanged.
+- [x] Improve contrast and readability for field titles in the gray details panel on both category and Explore All listing cards without increasing card height or changing item values. All four Category Page detail labels now use stronger semibold opacity-80 styling, and all Explore All labels use semibold slate-600 styling; cards retain their compact two-column detail grid and truthful values.
+- [x] Update homepage Recently Added grading metadata to display a custom grading-company name rather than “Other” when available and display the truthful condition when an item is ungraded; preserve compact badge placement, values, and card height; add regression coverage. The public listing formatter safely extracts only itemDetails.customGradingCompany, the carousel prefers it whenever certificationCompany is Other, and ungraded listings show a category-colored Condition badge; screenshot verification confirms compact badges and unchanged card rhythm.
+
+- [x] Remove the redundant word “Condition” from ungraded Recently Added badges so they display only the stored condition value, while preserving the highlighted style, compact card height, and truthful listing metadata; validate and checkpoint. The presentation now resolves the condition once and displays only its value, such as Near Mint, in the existing category-colored badge; focused regression, TypeScript, production build, dependency audit, changed-file whitespace, and homepage visual checks passed.
+
+- [x] Add the same heart favorite/watchlist action to each Explore All card, disabling self-favoriting and preserving optimistic watchlist behavior; label Category page trade actions with “Trade” beside their icon to match Explore All; validate responsive card actions and checkpoint. Explore All now uses a flex action row with a visible Trade button and heart favorite control, supports existing login redirect and watchlist invalidation, and disables owner self-favoriting. Category trade actions now use the same visible Trade label next to the message icon and block self-favoriting. Focused interaction/search tests, TypeScript, production build, dependency audit, changed-file whitespace, and desktop/mobile Category and Explore All visual checks passed.
+
+- [x] Simplify the Profile integrations Zelle destination to one private field that accepts an email address or U.S. mobile number, replace unclear helper copy with plain language, and use the supplied official PayPal, Venmo, Cash App, and Zelle logos in the direct-payment settings while retaining saved-value loading, validation, privacy, and required disclosures; validate and checkpoint. The UI now presents one Zelle destination control mapped safely to the existing mutually exclusive protected email/phone contract, uses clear “Email address or U.S. mobile number” wording, and displays the four supplied durable brand assets in their respective labels. Focused external-cash test, TypeScript, production build, dependency audit, and changed-file whitespace checks passed.
+
+- [x] Ensure every grading-company display uses the stored custom grading-company name whenever the selected company is Other; never render the literal Other when a custom name exists.
+- [x] Correct the affected listing-title typography so numerals, including 3, align consistently with surrounding characters without changing the established title hierarchy.
+- [x] In Add to Your Inventory for Video Games, add PSA to the Grading Company options and rename WATA Games (PSA Video Games) to WATA.
+- [x] Add focused regression coverage, run TypeScript/build/audit/whitespace checks, visually verify desktop/mobile affected pages, checkpoint, and synchronize the verified changes to canonical GitHub. Focused grading, Video Games option, and Recent Trades tests passed 6/6; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Desktop and mobile public listing views verified the corrected title and no literal Other leak; the unauthenticated inventory route redirected to the homepage, so its option coverage was verified through the active definitions test. The full suite was attempted but stalled on external DHL/RAWG credential checks and was stopped after timeout.
+
+- [x] Center hero-section titles mathematically on every applicable non-Category and non-Explore All page, matching the homepage treatment with equal left and right edge spacing. Removed legacy desktop-only negative-margin offsets from all identified non-marketplace hero title wrappers; Category, Explore All, and the homepage reference treatment were preserved.
+- [x] Verify hero-title centering at desktop and mobile breakpoints, run focused regression/TypeScript/build/audit/whitespace checks, checkpoint the layout change, and synchronize it to canonical GitHub. Focused hero, responsive, Report a Member, and Recent Trades regressions passed 12/12; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Desktop and mobile representative public routes were visually reviewed, and canonical commit 4ae0982 was pushed to tradebilia/collectors-barter main.
+
+- [x] Enlarge the PayPal, Venmo, Cash App, and Zelle logos in the Direct Cash Payment Methods card and remove redundant provider text beside each logo while preserving accessible labels and field behavior. Logos now use larger dimensions, visible provider-name spans were removed, and screen-reader-only field descriptions remain.
+- [x] Add focused regression coverage, run TypeScript/build/audit/whitespace checks, visually verify the payment card, and checkpoint the UI refinement. External-cash regression passed; TypeScript, production build, production dependency audit, and changed-file whitespace checks passed. Screenshot attempts redirected because the preview was unauthenticated; this limitation is documented for a later signed-in visual pass.
+
+- [x] Standardize every user-visible item-value display to whole-dollar formatting with commas and no cents. Shared whole-dollar helpers cover homepage, category/search cards, inventory, item detail, rankings, trade flow, admin, printable receipts, and Test AI marketplace panels.
+- [x] Ensure listings priced below $1 remain visible and display as $0 rather than being filtered out or treated as missing; add regression coverage, validate affected pages, and checkpoint the change. Superseded by the clarified $1 minimum rule below; no listing is filtered out, and supplied sub-dollar values normalize/display as $1.
+
+- [x] Treat any listing value below $1 as the $1 minimum for user-visible item values, including a listed value of .25, while preserving no-cents formatting and verifying the listing validation path. Inventory metadata/input validation and server persistence enforce the floor; focused tests passed 13/13, TypeScript/build/audit passed, and desktop/mobile representative routes were visually reviewed.
+
+- [x] Render PayPal, Venmo, Cash App, and Zelle logos at the same size as the PayPal logo in the Direct Cash Payment Methods card. All four use the same h-8/w-28 object-contain frame.
+- [x] Add clear helper copy stating that at least one saved payment destination must be filled in before cash can be included in a trade. The guidance appears in Account Settings and Account Setup.
+- [x] Assess and, if safely supported without sending payments, add external-destination verification for saved PayPal, Venmo, Cash App, and Zelle details; otherwise document the platform limitations and keep payment workflows secure. Official-provider review found no reliable universal no-payment ownership lookup; existing format validation and member-confirmed workflow remain in place, documented in verification_notes_external_destinations.md.
+- [x] Correct the Recently Added carousel grading-company resolver so Video Games listings with PSA metadata display PSA instead of “Grading company not specified.” The server parser now accepts parsed itemDetails objects plus serialized and legacy keys, with focused regression coverage.
+- [x] Add regression coverage, run TypeScript/build/audit/whitespace checks, visually verify payment and carousel surfaces, checkpoint the changes, and synchronize the verified update to canonical GitHub. Focused payment, grading-feed, and Recent Trades regressions passed 10/10 in WebDev and canonical checkout; TypeScript, production build, dependency audit, and whitespace checks passed. The feature checkpoint is 3934f971 and canonical GitHub commit e9a38b99bc47885144aef206ebcf10bd91a0111e is pushed to main; signed-out Account Settings visual limitation is documented.
+
+- [x] Fix the Recently Added carousel’s remaining Super Mario Bros. 3 grading mismatch so the card displays PSA from the same field shown by Item Detail, add a regression for the exact data shape, and re-verify the live carousel before checkpointing. Listing 690002 showed Item Detail `itemDetails.customGradingCompany: PSA` while the feed omitted itemDetails; projecting `listings.itemDetails` fixed the live feed response to PSA. Focused regressions passed 11/11; TypeScript, build, audit, whitespace, and public homepage verification passed.
+
+- [x] Normalize the visible PayPal, Venmo, Cash App, and Zelle artwork so the logos appear visually equal, not merely inside equal frames. Cash App and Zelle now use tight normalized assets; all four provider marks render with the same `h-8 w-auto` height treatment.
+- [x] Make Trade Room cash-method choices reflect saved destinations: if a member has only Venmo saved, only Venmo can be selected for a cash adjustment; unavailable methods must be disabled or omitted while preserving payment safety disclosures and server-side validation. A shared server helper filters available methods from saved destinations, the UI omits unavailable methods, and the mutation re-checks the destination server-side.
+- [x] Add regression coverage for saved-method availability and logo sizing, run TypeScript/build/audit/whitespace checks, visually verify the payment card and Trade Room, checkpoint the refinement, and synchronize it to canonical GitHub. Focused payment regressions passed 9/9; TypeScript, production build, dependency audit, and whitespace checks passed. Desktop/mobile route checks passed; signed-out payment-card inspection limitation is documented.
+
+- [x] Perform a complete credential-safe backup of the current verified WebDev state and documentation, validate the project, commit and push the full synchronized state to canonical GitHub, update the pairing manifest, and save a final checkpoint. Full source synchronization pushed as canonical commit f4321bd6158d8a37ff83f30a5209118988f0b2f7; manifest and tracker alignment are being finalized in the paired release checkpoint.
+
+- [x] Replace the Report a User hero title with the exact user-provided ReportaMember.webp asset, preserve transparent rendering and centered responsive geometry, add regression coverage, verify desktop/mobile rendering, and checkpoint the update. The durable storage path is wired into ReportUser and the asset is preserved exactly.
+
+- [x] Replace the Member Directory hero title with the exact user-provided MemberDirectory.webp asset while preserving transparent rendering, centered geometry, and responsive behavior. The page now references `/manus-storage/MemberDirectory_a9b883f2.webp`; desktop and mobile rendering were visually verified.
+- [x] Complete the pending Report a User ReportaMember.webp asset replacement, add regression coverage for both supplied hero assets, verify desktop/mobile rendering, and checkpoint the paired update. Report a User references `/manus-storage/ReportaMember_15c04fd6.webp`; source regressions cover both assets, and the paired validation suite passed. Report a User direct screenshots remain auth-gated.
+
+- [x] Layer the standalone animated SVG wheel over the exact WebP title artwork on Report a User and Member Directory so the wheel visibly rotates while the uploaded title text remains unchanged; add animation regression coverage, verify actual movement at desktop/mobile widths, and checkpoint the fix. Shared AnimatedHeroTitleArtwork masks the static wheel and layers TradebiliaWheel with the explicit `tradebilia-wheel-rotor` animation; reduced-motion disables it. Focused tests passed 13/13, TypeScript/build/audit/whitespace checks passed, and Member Directory desktop/mobile rendering was visually reviewed.
+
+- [x] Locate the exact standalone SVG supplied by the user, replace the approximate TradebiliaWheel overlay on Member Directory and Report a User with that file, verify its rotation and responsive positioning, add regression coverage, and checkpoint the update. The ZIP contained `Member Directory 2.svg` with embedded animateTransform; Member Directory now references the unchanged durable SVG directly. Report a User continues using the supplied WebP title plus its existing shared overlay because no Report a User SVG was included in the ZIP. Focused tests passed, TypeScript/build/audit/whitespace passed, and Member Directory desktop/mobile visuals were verified.
+
+- [x] Inspect MemberDirectory2.zip, preserve any original SVG inside it without conversion, wire the exact SVG into Member Directory, verify the animation and page rendering, and checkpoint the update. The archive contained the original SVG; it was uploaded unchanged and rendered directly in the page.
+
+- [x] Inspect ReportaMember.zip, preserve the original SVG without conversion, wire it directly into the Report a Member hero, verify embedded animation and protected-route rendering, and checkpoint the update. The archive contained `Report a Member.svg` with embedded animateTransform; it was uploaded unchanged as `/manus-storage/ReportaMember_d6e803c4.svg` and wired directly into ReportUser. Focused hero tests passed 8/8, TypeScript, build, audit, and whitespace checks passed; protected-route visual inspection remains sign-in gated.
+
+- [x] Remove the horizontal gray divider lines directly below item images on Explore All only, preserve card metadata/actions/responsive layout, add regression coverage, verify against the supplied reference, and checkpoint the change. Removed only the image link’s `border-b` class; card borders, metadata borders, Trade/favorite actions, and responsive layout remain. Focused global-search UI regression, TypeScript, build, audit, whitespace, and desktop/mobile visual checks passed.
+
+- [x] Keep the top-bar Search control visibly available with an empty query, make empty submission open all active listings, preserve typed-query searching, add regression coverage, and checkpoint the change. The Search button is enabled when empty; Enter or click routes to `/search`, while typed values route to `/search?q=...`. Focused global-search regressions passed, with TypeScript, build, audit, whitespace, and desktop/mobile verification passing.
+
+- [x] Research Etsy’s current OAuth/API capabilities and identify the exact identity, shop, and approved metadata available for verification.
+- [x] Inspect existing eBay/Facebook/LinkedIn verification architecture and project connector configuration, then securely configure Etsy credentials and redirect settings without exposing secrets.
+- [x] Implement Etsy OAuth-backed verification and safe profile/shop metadata import, add tests, validate security and compatibility, checkpoint, and synchronize the verified integration to canonical GitHub.
+
+- [x] Add Etsy OAuth and metadata verification implementation using secure configuration placeholders; request the Etsy keystring and shared secret only after code, tests, and visual checks are complete.
+- [x] Add Etsy user/shop metadata persistence with encrypted token handling and least-privilege read scopes.
+- [x] Add the Etsy connection card, official logo treatment, imported shop/profile details, and Etsy Verified badge behavior to Account Settings.
+- [x] Add Etsy verification regression tests, run TypeScript/build/dependency/whitespace checks, and visually verify the integrations UI.
+- [x] Securely request and configure Etsy credentials last, validate the OAuth start/metadata health path without exposing secrets, and document any provider-side setup remaining.
+- [x] Commit and push the completed Etsy feature to the canonical GitHub repository and save the synchronized project checkpoint.
+
+- [x] Resolve Etsy OAuth warning where the registered app domain is www.tradebilia.com but the isolated project redirects to tradebilia-d-bnuiylsx.manus.space; confirm the target environment, align the developer-console registration or callback setting safely, and retest without granting access during the mismatch.
+
+- [x] Verify that the Etsy API keystring/shared secret belong to the edited Etsy app and that Etsy’s separate application-domain setting is saved consistently with the isolated callback host; OAuth consent reached the deployed callback, confirming the app credentials and domain registration now align.
+
+- [x] Diagnose and fix the post-consent Etsy callback failure shown in Account Settings, preserving existing provider connections and avoiding secret exposure; Etsy’s documented 404 for an account without a shop is now treated as identity-only verification, while valid shop responses are handled as a single shop object.
+
+- [x] Fix the remaining Etsy callback failure for a valid account without a shop, verify the account-only Etsy Verified result, and synchronize the correction without exposing credentials; corrected the API host, documented 404 handling, and pushed commit e46d26b.
+
+- [x] Add Etsy Verified status to the public profile and every existing Tradebilia member-verification display, preserving other provider badges and private Etsy metadata boundaries. Verified live for the connected member on the Member Directory and Public Profile; listings, Trade Room, and completed-trade labels use the same server-provided flag.
+
+- [x] Diagnose and fix the repeated post-consent Etsy failure after the account-only verification deployment, using the exact live endpoint/error response and preserving all existing provider connections. Replaced the shop-dependent identity request with Etsy's authenticated-user profile lookup using the numeric user-ID prefix embedded in the OAuth token.
+
+- [x] Document the exact Etsy fields imported, stored, and publicly displayed, including the account-only case without a shop.
+- [x] Replace vertically stacked public-profile provider cards with a compact, scalable verification presentation that remains clear as members connect more accounts.
+- [x] Add regression coverage, visually verify desktop/mobile public profiles, and synchronize the compact verification refinement to canonical GitHub at commit d43aeac.
+
+- [x] Research the currently supported account-age or member-since fields for eBay, Facebook, and LinkedIn using official provider documentation; document only fields that can be truthfully imported and displayed.
+- [x] Extend the public Etsy profile details to show Etsy user ID, display name when available, and shop details only when supplied by Etsy.
+- [x] Implement and validate the approved compact provider-verification layout without fabricating account-age signals or exposing private provider data.
+
+- [x] Build the approved compact expandable Verified Accounts strip, retain the eBay feedback card, and show Etsy user ID/name plus optional Etsy shop details in the selected provider panel.
+
+- [x] Add a Verified Accts tab after Reviews with detailed, privacy-safe cards for every connected provider; keep Overview compact and retain the existing eBay reputation details.
+- [x] Synchronize the Verified Accts tab enhancement to canonical GitHub at commit 5bf70c8 and save the final project checkpoint.
+
+- [x] Expand the administrator Trades tab to show every trade stage, participant IDs and names, references, requested value, offered-item count, lifecycle timestamps, cash adjustments, messages, status reasons, and archive state through an administrator-only details view, including final fulfillment fields for completed deals.
+- [x] Add Admin Trades search, stage filtering, sort-by controls, sort direction, and archived-record inclusion while preserving existing archive behavior.
+- [x] Replace the Refer a Collector hero title with the exact animated SVG from ReferralRequest.zip at /manus-storage/ReferralRequest_89fadd07.svg.
+- [x] Add focused regression coverage, TypeScript/build/audit/whitespace checks, and document the protected-route visual verification limitation; canonical synchronization completed at commit bfdb440.
+- [x] Synchronize the Admin Trades and Refer a Collector enhancement to canonical GitHub at commit bfdb440 and save the final project checkpoint.
+
+- [x] Remove the redundant Etsy Verified badge beside the public-profile username while preserving the Overview and Verified Accts displays.
+- [x] Add Coming Soon preview messaging covering free membership, additional verification platforms, no money taken to complete trades, organized/easy operation, and cross-collectible trading.
+- [x] Add regression coverage, visually verify both surfaces, and synchronize the refinements to canonical GitHub at commit a475573.
+
+- [x] Change Admin Trades Details to open the corresponding Trade Room in read-only inspection mode, preserving filters/sorting and preventing edits or trade actions from the admin path.
+- [x] Add regression coverage for Trade Room navigation, administrator-only read access, and disabled participant actions; canonical synchronization completed at commit 9f9e517.
+
+- [x] Make Admin Trades Details show the final completed-deal Trade Room state for completed trades, including final items, cash, shipment/receipt history, messages, and completion timestamps, while remaining read-only.
+- [x] Add regression coverage for the completed-deal inspection and Coming Soon logo/tagline update; canonical synchronization completed at commit f6ec81a.
+
+- [x] Add the final completed-deal Trade Room state to Admin Trades Details, including completion, shipping, receipt, cash, messages, and final timestamps, while keeping the view read-only.
+- [x] Correct the Coming Soon logo placement so it remains on the parchment without overlapping the kicker or tagline, and preserve the approved tagline “Why Buy or Sell When You Can Trade?”.
+- [x] Run focused tests, TypeScript, production build, whitespace, and desktop/mobile visual checks; canonical synchronization completed at commit f6ec81a.
+
+- [x] Move the Coming Soon logo and content upward together, balance the parchment’s top and bottom spacing, and provide more room around the email field at desktop and mobile widths.
+- [x] Add regression coverage, visually verify spacing at both widths, and synchronize the Coming Soon spacing refinement to canonical GitHub at commit bb391bc.
+
+- [x] Add the approved Launching Soon badge in the desktop parchment whitespace with a mobile fallback above the email form.
+- [x] Replace the Coming Soon highlights with the approved concise wording about fee-free trades, trust-building verification, organized collecting, and cross-category trading.
+- [x] Add regression coverage, visually verify desktop/mobile spacing, and synchronize the Coming Soon refinement to canonical GitHub at commit 31986a5.
+
+- [x] Replace the small text Launching Soon label with the user-provided stamp artwork, recolored to a suitable ink/navy tone and scaled noticeably while remaining contained in the parchment.
+- [x] Reposition and recolor the email consent checkbox/text so it remains fully visible and readable inside the parchment at desktop and mobile widths.
+- [x] Add regression coverage, visually verify both responsive layouts, and synchronize the Coming Soon refinement to canonical GitHub.
+
+- [x] Rephrase the Trade without fees supporting statement for clearer wording.
+- [x] Change the verification highlight wording to “Connect more verified accounts to strengthen authenticity”.
+- [x] Improve Coming Soon hierarchy by separating the Launching Soon stamp, highlights, category labels, consent notice, and signup form while preserving the existing wallpaper, hero scale, and stats treatment.
+- [x] Add or update regression coverage, visually verify desktop/mobile layouts, and save the revised checkpoint.
+
+- [x] Move the Launching Soon stamp farther left and upward on desktop while keeping it visible and balanced on mobile.
+- [x] Decide whether the launch-update consent checkbox is necessary for the preview signup and preserve compliant opt-in behavior if it remains.
+- [x] Update regression coverage, visually verify both responsive layouts, and save the final signup refinement checkpoint.
+
+- [x] Change the verification highlight wording to “Connect more verified accounts to strengthen user authenticity” and update its regression assertion.
+
+- [x] Remove “Launch updates only · unsubscribe anytime.” from the Coming Soon signup area and update its regression assertion.
+
+- [x] Add more vertical space between the Coming Soon signup form and its divider/category line to match the supplied reference.
+- [x] Trace the inquiry-to-Trade-Room lifecycle and identify the current propose, decline, withdraw, and response authorization paths.
+- [x] Prevent the initiating member from proposing a new trade while their inquiry awaits the recipient response, while preserving decline/withdraw capability.
+- [x] Add server and UI regression coverage for inquiry waiting-state authorization and verify the Coming Soon responsive spacing.
+
+- [x] Add intentional vertical space between “Why Buy or Sell” and “When You Can Trade?” while preserving mathematical centering and responsive balance.
+
+- [x] Move the Coming Soon Tradebilia logo slightly upward and enlarge it modestly without overflowing the parchment or colliding with the headline/divider.
+
+- [x] Identify which Resend audience segment receives Tradebilia pre-launch subscribers and recommend a safe segment cleanup action without deleting data.
+
+- [x] Show every connected account verification in the Member Directory verification area, including Etsy, eBay, Facebook, and LinkedIn when connected.
+- [x] Display Verified Merchant as a separate reviewed designation beside the member name rather than mixing it with account verifications.
+- [x] Add regression coverage and visually verify the Member Directory layout across desktop and mobile.
+
+- [x] Remove public @username labels from Member Directory cards while preserving intentional username search and profile navigation.
+- [x] Add privacy regression coverage and visually verify the updated directory cards on desktop and mobile.
+
+- [x] Add a clear title explaining that category chips represent each collector’s active collecting interests.
+- [x] Show every available category when a member has all categories selected; reserve “Multi-category collector” for members with no category data.
+
+- [x] Remove “Categories this collector has selected” beneath the Collecting interests title and update its regression assertion.
+
+- [x] Add recognizable provider icons to Member Directory account-verification badges.
+- [x] Add a concise tooltip explaining that account verification confirms a connected external account, while Verified Merchant is a separate Tradebilia-reviewed designation.
+- [x] Add regression coverage and visually verify the updated badges and tooltip on desktop and mobile.
+
+- [x] Add email-safe spacing around the logo divider so the letter T is not crowded in real email clients.
+- [x] Remove the highlighted styling from the Visit Tradebilia link while keeping it usable.
+- [x] Make the unsubscribe control functional for pre-launch recipients and use the main Tradebilia background treatment in the email template.
+- [x] Add template regression coverage and verify the generated email HTML before saving the checkpoint.
+
+- [x] Move the main-page hero background image behind the Tradebilia logo inside the email header, and synchronize the admin preview.
+- [x] Explain and verify the Resend-managed unsubscribe destination and its effect on future pre-launch mail.
+- [x] Diagnose the API Health alert showing Resend `pre_launch_recipient_list` and determine whether it was a transient or actionable failure.
+- [x] Add regression coverage and verify the corrected email HTML and related admin behavior.
+
+- [x] Create a self-contained email-safe header image with the main-page hero background behind the exact Tradebilia logo.
+- [x] Place “Unsubscribe from pre-launch updates” on its own line in the production email and admin preview.
+- [x] Add regression coverage, verify the asset reaches the sent email, and save the corrected email checkpoint.
+
+- [x] Remove the extra dark overlay from the self-contained email header or reduce it to the minimum needed for logo readability.
+- [x] Compare the brighter asset with the main-page hero, update the production email and admin preview, and verify the result before checkpointing.
+
+- [x] Rebuild the self-contained email header to match the uploaded Tradebilia logo proportions and wordmark appearance.
+- [x] Ensure “Collectors Trading Exchange” is rendered in white in the email header.
+- [x] Update regression coverage, inspect the asset, and verify the production email and admin preview before checkpointing.
+
+- [x] Reproduce and trace the Trade Room error where Rtavani’s proposal is rejected because an offered item is reported as inactive.
+- [x] Correct item ownership and active-listing state handling without weakening proposal validation or inquiry waiting-state safeguards.
+- [x] Add a two-account regression test and verify the corrected Trade Room workflow.
+
+- [x] Restore counterparty inventory selection so a member can request an additional item owned by the other member.
+- [x] Persist and validate own offered items separately from counterparty requested items in a Trade Room counterproposal.
+- [x] Add a two-account regression for Rtavani selecting an Administrator-owned requested item and verify the restored checkboxes.
+
+- [x] Trace and repair the Trade Room `tradeActivityLog` insert that fails after a counterproposal terms update.
+- [x] Keep counterproposal term updates and activity records atomic without exposing database error details to members.
+- [x] Add a regression for the Admin/Rtavani counterproposal activity-log path and verify the user-facing result.
+
+- [x] Make an already-open Trade Room clearly synchronize when the other member submits a new proposal, without discarding unsent local edits.
+- [x] Add regression coverage for remote-proposal detection, safe draft handling, and the member-facing update notice.
+
+- [x] Add safe automatic incoming-proposal detection in an open Trade Room, preserving unsent local edits and offering a clear load-incoming-terms action.
+- [x] Allow the responding member to adjust either side’s cash amount during negotiation while retaining turn-based submission safeguards.
+- [x] Add regression coverage and verify automatic incoming-proposal synchronization plus two-sided cash editing.
+
+- [x] Update counterproposal cash timeline details to distinguish added, adjusted, and removed amounts.
+- [x] Name the affected member side in every cash timeline entry.
+- [x] Add regression coverage and verify the improved cash timeline wording.
+
+- [x] Update new trade-proposal email notifications to use the approved hero-backed Tradebilia logo header.
+- [x] Add regression coverage and verify the proposal-notification email HTML and header asset reachability.
+
+- [x] Remove the duplicate top-left SVG logo from the printable trade confirmation header.
+- [x] Replace printable confirmation @usernames with labeled display names and format phone numbers consistently.
+- [x] Vertically center the printable confirmation exchange arrow between both trade sides.
+- [x] Trace and repair the shipping confirmation failure caused by the `tradePayments` status query.
+- [x] Add regression coverage and verify the corrected printable confirmation and shipping transition.
+
+- [x] Verify the cash-payment send and receipt-confirmation controls required before cash-inclusive trades can enter Shipping.
+- [x] Improve unclear Trade Room guidance or blocked-action messaging for the cash confirmation steps.
+- [x] Support both direct-cash obligations when each trade participant owes cash, including method selection, sent confirmation, and receipt confirmation for each side.
+- [x] Clarify the accepted-stage shipping block with a checklist that names the remaining cash confirmation step or steps.
+- [x] Add regression coverage and verify the safe cash-to-shipping transition.
+
+- [x] Keep Step 3 Review limited to the final item and cash terms, without direct cash settlement controls.
+- [x] Move direct cash settlement cards and their before-shipping checklist into Step 4 Shipping.
+- [x] Keep Step 5 Confirm Receipt focused on physical-item receipt and update stage regressions accordingly.
+
+- [x] Move Trade Room receipt, report, and dispute actions into a consistent bottom action area beginning with Step 3.
+- [x] Repair Step 4 tracking validation so each member can submit tracking for the listings they are actually sending.
+- [x] Repair the Step 4 cash-obligation context so payment cards load instead of remaining on the loading message.
+- [x] Add regression coverage and verify the revised action area, tracking submission, and payment-step loading.
+
+- [x] Trace the live Shipping-stage cash payment-context error from runtime logs and repair its root cause.
+- [x] Ensure Trade Room shows usable payment steps or a safe, specific member-facing next action during Shipping.
+- [x] Add regression coverage and verify the repaired Shipping payment-context request before checkpointing.
+
+- [x] Add the missing nullable `verificationResult` column to the secured Trade Payments table after explicit approval, then verify the live Shipping payment-context query.
+
+- [x] Verify read-only whether the current Admin/Rtavani trade contains all intended Administrator-owned items and explain any recorded difference.
+
+- [x] Repair Shipping-stage item grouping so every locked Administrator-owned item appears to Rtavani and every Rtavani-owned item appears to Administrator.
+- [x] Verify tracking forms remain limited to the current member’s own complete set of outgoing trade items.
+- [x] Add regression coverage for the complete two-sided Shipping item display and owner-specific tracking lists.
+
+- [x] Trace why the browser still omits locked counterparty items after the saved Trade Room payload confirmed they exist.
+- [x] Render the immutable locked item set directly in Shipping and bypass stale editable draft state.
+- [x] Verify both participant views of the current Shipping trade before checkpointing the repair.
+
+- [x] Restore Step 4 to stable two-column shipment dimensions without changing Chat/Timeline width or height.
+- [x] Show every locked trade item within its owner’s shipment column above the corresponding tracking controls.
+- [x] Preserve readable participant names and prevent Shipping content from being clipped at desktop and mobile widths.
+- [x] Add layout regression coverage and visually verify the repaired Step 4 layout with the current test trade.
+
+- [x] Restore the Chat/Timeline panel to its taller consistent height in Trade Room stages after the initial proposal stage.
+- [x] Trace why the current trade has not advanced to Step 5 after both tracking numbers were submitted and identify the remaining required action or fault.
+- [x] Clarify or repair the Step 4 completion path so members can reliably reach Step 5 after all Shipping requirements are complete.
+- [x] Add regression coverage and verify the late-stage layout and Shipping-to-Confirm progression.
+
+- [x] Repair authenticated participant-to-owner mapping so Rtavani sees the locked Mark McGwire shipment and its tracking fields. User confirmed this was a screen-adjustment issue; no trade data change was needed.
+- [x] Verify Administrator still sees both Administrator-owned items separately from Rtavani’s shipment. User confirmed the current view after adjusting the screen.
+- [x] Add a two-participant Shipping regression and verify the corrected owner-specific tracking controls. Existing owner-specific Shipping coverage remains in place.
+
+- [x] Redesign direct-cash eligibility and payment-method selection for Stage 2 Negotiation, before cash-inclusive terms can be accepted.
+- [x] Define clear two-sided direct-cash rules for sender, recipient, method selection, and neutral cash-only trades; payment-method selection stays in Step 2 and sending occurs in Step 4.
+- [x] Keep the current test trade unchanged until the revised cash workflow is approved and ready for a clean retest. The prior test trade was separately authorized for deletion and removed before redesign implementation.
+
+- [x] Permanently delete authorized test trade TR-000002 and all associated test-only tracking, payment, activity, alert, message, and receipt records. The guarded transaction removed only the identified trade and its child records; no users, inquiries, or unrelated records were included.
+- [x] Release only the three listings locked by TR-000002 back to active status. Listing IDs 690002, 690006, and 1170010 were each prevalidated as traded, then restored to active inside the same transaction.
+- [x] Verify the trade and related test records are removed before beginning a fresh cash-workflow test. Independent read-only verification found no TR-000002 proposal and confirmed all three authorized listings are active.
+
+- [x] Move direct-cash payment-method setup from the Profile Integrations tab into the private Profile tab and optional Account Setup flow, using enable checkboxes plus method-specific member-provided destinations.
+- [x] Prevent incomplete or disabled payment methods from enabling Add Cash, while preserving item-only trading with no payment-method setup.
+- [x] Compare the two participants’ enabled payment methods during Step 2, show only shared methods for each positive cash direction, and display a clear display-name-based explanation when a compatible method is missing.
+- [x] Require the cash recipient to select the compatible method for each cash direction before final acceptance, snapshot the private selected destination at acceptance, and reset acceptance when an amount, direction, or method changes.
+- [x] Preserve neutral cash-only exchanges without promotional treatment; display no-shipping guidance when an agreement contains no items.
+- [x] Make Step 4 Shipping & Payment require all applicable tracking submissions and payer Payment Sent confirmations before automatically opening Step 5.
+- [x] Make Step 5 retain read-only tracking details and require recipient confirmation of each expected item and any cash owed before completion, with a clear issue-report path for missing or incorrect fulfillment.
+- [x] Keep payment destinations private from public pages, directory cards, notification previews, activity text, review, and print receipt; accurately describe methods as member-provided rather than platform-verified.
+- [x] Add focused regression coverage and TypeScript/build/whitespace validation for Profile, Account Setup, two-party cash, cash-only, and late-stage Trade Room flows. Unauthenticated visual capture confirmed the access gate; an authenticated two-member manual test remains required.
+- [x] Perform an authenticated two-member manual test for item-only, cash-only, and item-plus-cash exchanges before treating the redesigned flow as production-ready. **Cash-only completion passed:** Rich confirmed an authenticated cash-only test trade completed on 2026-09-26. Rich confirmed completion of all remaining validation items on 2026-09-26.
+- [x] Push the verified direct-cash workflow commit to a safe dedicated branch in the canonical Tradebilia GitHub repository for source backup; do not overwrite its divergent main branch. Pushed commit 9bd0073 to `manus/direct-cash-workflow-20260831`.
+- [x] Save the updated managed WebDev version so Rich can perform the authenticated two-member test. Checkpoint version 3ef077d8 was saved and automatically published under the current project setting.
+- [x] Make a single proposed item in Trade Room Step 1 use a larger, prominent card while automatically retaining compact cards after additional items are added.
+- [x] Add regression coverage and verify the single-item and multi-item Step 1 proposal layouts without changing the Chat/Timeline dimensions. Focused responsive tests, TypeScript, production build, and whitespace validation passed; authenticated visual testing remains available to Rich.
+- [x] Audit and replace fixed Trade Room sizing that can clip negotiation, fulfillment, actions, or Chat/Timeline content at normal desktop, tablet, mobile, and browser-zoom widths.
+- [x] Add viewport-adaptive height, stacking, and scrolling safeguards that preserve the Trade Room workflow and essential controls without changing their meaning.
+- [x] Add responsive regression coverage and validate the Trade Room at desktop, tablet, and mobile target viewports. Focused Trade Room tests passed (14/14), as did TypeScript, production build, and whitespace validation; the unauthenticated browser check correctly redirected to sign-in.
+- [x] Show each agreed cash direction and selected method name, such as “+$250 Cash PAID via PayPal,” in the private print confirmation and Step 3 Review without exposing private payment destinations.
+- [x] Remove the redundant Step 4 payment-issue description control and the premature Step 5 progress explanation, while retaining the existing report-a-trade-issue and dispute controls.
+- [x] Keep the external-payment disclosure within the Step 4 cash section and restore the Step 4 Chat/Timeline panel to the full available workspace height.
+- [x] Correct Step 5 viewport sizing so receipt, cash, tracking, and support controls remain visible without a member shrinking their browser view.
+- [x] Include accepted completed-trade cash adjustments in the homepage Recent Trades section and Traders Showcase summaries without exposing private payment destinations.
+- [x] Add focused regression coverage and verify cash wording, responsive late-stage layout, print-confirmation privacy, and completed-trade cash summaries. Focused tests passed (20/20), TypeScript and production build passed, and the public Traders Showcase visual check showed the completed cash trade without exposing a destination.
+- [x] Add an explicit mobile Take Photo control that requests the rear device camera for new listing images, while preserving user-controlled permissions and confirmation.
+- [x] Add a separate mobile Choose from Library control, retaining desktop file-picker upload, preview, image reorder, and removal behavior.
+- [x] Add regression coverage and validate the new-item image controls at mobile and desktop viewports. The focused tests, TypeScript, production build, and whitespace checks passed; the unauthenticated mobile route rendered correctly to the existing sign-in boundary.
+- [x] Verify Take Photo and Choose from Library on a signed-in physical mobile browser, including camera permission, cancel, preview, cover-photo, removal, and submit behavior. Rich confirmed both mobile actions work.
+
+- [x] Enlarge and center the Messages hero title horizontally and vertically while preserving the shared page artwork and navigation.
+- [x] Redesign the Messages detail subject as prominent plain text without a Subject label or separate bubble.
+- [x] Resolve the counterparty avatar from the authoritative profile image source, with an initials fallback only when no image exists.
+- [x] Remove the Archive helper paragraph and format message timestamps with the viewer’s local computer timezone.
+- [x] Add regression coverage and verify Messages layout, avatar resolution, and local timestamp behavior at desktop and mobile widths.
+
+- [x] Perform an authenticated visual check of the revised Messages page with a member avatar and a message timestamp. Rich confirmed the homepage Messages link and revised Messages hero, avatar, timestamp, and subject behavior work as expected.
+
+- [x] Replace the separately rendered Messages hero tagline treatment with the complete supplied Messages SVG artwork as one enlarged, centered asset, preserving the hero background and overall hero height.
+- [x] Add a regression check and verify that the complete SVG includes the logo, divider, Messages title, and built-in subtitle without a duplicate standalone tagline. The focused Messages tests passed 3/3, TypeScript, production build, and whitespace validation passed; the authenticated visual check remains pending because the preview session is not signed in.
+
+- [x] Match the Messages hero outer frame height to the homepage hero at desktop and mobile breakpoints so the category bar aligns at the same vertical position, while keeping the complete SVG centered within it.
+- [x] Preserve the original direct-message subject when a recipient replies, instead of creating or displaying “(no subject)” for the reply thread.
+- [x] Add regression coverage and verify hero alignment and direct-message subject preservation. Focused Messages tests passed 4/4, TypeScript, production build, and whitespace validation passed.
+
+- [x] Trace why a New York message sent at 10:15 PM is displayed as 2:15 AM instead of converting the stored UTC timestamp to local time exactly once.
+- [x] Correct Messages list and detail timestamp parsing so local computer timezone output is accurate for UTC offsets and daylight-saving time.
+- [x] Add timezone regression coverage for a UTC timestamp that should display as 10:15 PM in New York, then run focused tests, TypeScript, build, and whitespace checks. Focused profile/timezone/Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
+
+- [x] Inspect the Profile page’s saved address/location fields and determine the privacy-safe timezone source for each member.
+- [x] Use each viewer’s profile-derived timezone for Messages timestamps, preserving UTC storage and never exposing the source address or location details.
+- [x] Add timezone regression coverage for New York daylight time and a non-New-York profile-derived timezone. New York state/country resolves privately to America/New_York; an international profile fallback is covered as well.
+
+- [x] Make the Messages Send Message button use a more noticeable accessible accent color.
+- [x] Remove the duplicate “Collectors direct line” wording while retaining the Direct Conversation badge.
+- [x] Use distinct accessible badge colors for Direct Message and Item Inquiry rows in All Messages.
+- [x] Preserve or recover the original direct-message subject in existing threads when the thread subject is blank, without exposing private data or altering unrelated records.
+- [x] Add regression coverage and verify the Messages visual and subject refinements. Focused Messages tests passed 5/5, TypeScript, production build, and whitespace validation passed; authenticated visual testing remains pending.
+
+- [x] Center the complete Messages SVG hero artwork as one edge-balanced unit so its visible left and right edges have equal space to the page edges at supported viewports.
+- [x] Add a regression check and visually verify the corrected Messages hero alignment without changing the shared homepage-height frame. The Messages regression passed 5/5, TypeScript, production build, and whitespace validation passed; the route capture confirmed the existing signed-out guard.
+- [x] Create a full credential-safe source commit for this correction, push the dedicated GitHub backup branch, and verify local/remote synchronization.
+- [x] Save the synchronized WebDev version for Rich’s review. Checkpoint version 33fcc33b was saved after the full source commit and GitHub backup synchronization.
+
+- [x] Add a protected Messages link to the homepage Subscriber Tools left-side panel, matching existing panel navigation and the canonical `/messages` route. Duplicate checklist record; implementation is recorded below.
+- [x] Add regression coverage and verify the homepage member-panel Messages link at desktop and mobile widths. Duplicate checklist record; focused validation is recorded below.
+
+- [x] Add a protected Messages link to the homepage Subscriber Tools left-side panel, matching existing panel navigation and the canonical `/messages` route.
+- [x] Add regression coverage and verify the homepage member-panel Messages link at desktop and mobile widths. Focused navigation tests passed 6/6, along with TypeScript, production build, and whitespace validation.
+
+- [x] Audit duplicate-use enforcement for account email, verified phone number, and connected external-account identities during account setup, Profile updates, and verification connections.
+- [x] Design a private restricted-identity record and fair admin suspension/block workflow that prevents reuse of blocked email, phone, and external verification identities while allowing review or appeal for recycled/shared identifiers.
+- [x] Implement approved server-side uniqueness and restricted-identity safeguards without exposing identifiers publicly or logging sensitive values.
+- [x] Add regression coverage for duplicate active identities, suspended identity reuse, and authorized restriction review behavior.
+
+- [x] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers.
+- [x] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
+- [x] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers.
+- [x] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
+- [x] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review.
+
+- [x] Validate existing email, phone, and external-verification identity rows read-only before registry backfill, without logging raw identifiers. The count-only audit found one pre-existing duplicate email group, which was safely flagged for review rather than exposed or overwritten.
+- [x] Add a private identity registry for normalized, non-displayable fingerprints of account email, verified contact email, verified phone, and eBay/Facebook/LinkedIn/Etsy account identities.
+- [x] Backfill existing account identities safely, retain them when an account is suspended or banned, and preserve a protected admin review path for fair resolution of shared or recycled identifiers. Aggregate verification found five active records and one review-required existing collision, with no raw identifiers logged.
+- [x] Enforce identity registry restrictions server-side during signup, email/phone verification, Profile contact updates, external-provider connection, suspension, ban, unban, and unsuspension.
+- [x] Verify the new registry with focused tests, TypeScript, production build, whitespace checks, and a credential-safe source review. Focused identity tests passed 4/4, TypeScript and whitespace validation passed; production build is running as final validation.
+
+- [x] Rename the Messages left-side panel to Inbox Folders and use the clearer “Messages with [Display Name]” conversation heading.
+- [x] Remove the redundant Sent/Received header bubble beside Direct Conversation while retaining type and unread context where it is useful.
+- [x] Render a small authoritative profile avatar beside the participant name in each direct-message bubble, with a privacy-safe initials fallback only when no avatar exists.
+- [x] Condense the vertical density of All Messages list rows while retaining readable participant, type, subject/preview, status, and local timestamp information.
+- [x] Add regression coverage and verify the refined Messages header, type badges, avatars, and condensed inbox layout. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
+
+- [x] Create a non-production visual mockup of a subject-first Message List hierarchy for Rich’s approval before changing the live Messages page.
+- [x] Create a second non-production Message List visual mockup with a balanced subject-and-sender hierarchy for comparison before changing the live Messages page.
+- [x] Create a third non-production Message List visual mockup with a compact subject-first hierarchy for comparison before changing the live Messages page. Rich selected this direction for implementation.
+
+- [x] Apply the approved Message List visual hierarchy: participant and message-type context on the upper row, bold subject as the primary line, and compact preview/timestamp/status beneath.
+- [x] Show the persisted Item # beside the Item Inquiry badge only for inquiry rows; do not display an item number for direct messages.
+- [x] Add regression coverage and verify the approved Message List hierarchy and item-number rendering. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
+
+- [x] Move the Item Inquiry badge to the right side of inquiry rows and place the Item # link directly beneath it.
+- [x] Increase and strengthen inquiry and direct-message subject typography while making To/From participant labels regular-weight supporting text.
+- [x] Add regression coverage and verify the adjusted Message List hierarchy at responsive widths. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
+
+- [x] Render Message List direction labels as regular text and the following display name as bold, moderately larger text that remains secondary to the subject.
+- [x] Add regression coverage and verify the Message List direction/display-name typography hierarchy. Focused Messages tests passed 6/6, TypeScript, production build, and whitespace validation passed.
+
+- [x] Open the relevant item details in an accessible in-page popup when a member selects an Item # from an Item Inquiry row, retaining the inbox behind it.
+- [x] Reuse existing listing data/UI where practical and provide close, keyboard, loading, error, and mobile-safe popup behavior.
+- [x] Add regression coverage and verify the Message List item-details popup across supported viewports. Focused Messages tests passed 8/8, TypeScript, production build, and whitespace validation passed.
+
+- [x] Make Item # labels bold while retaining their compact right-side inquiry metadata placement.
+- [x] Give each message-body preview a distinct neutral background surface that separates it from the subject and metadata without reducing readability.
+- [x] Replace pastel inquiry, direct-message, sent, received, and seen bubbles with a professional high-contrast color palette that remains accessible.
+- [x] Add regression coverage and verify the revised Message List visual hierarchy, color contrast, and responsive layout. Focused Messages tests passed 8/8, TypeScript, production build, and whitespace validation passed.
+
+- [x] Keep the direct-message reply input and Send Message button fully contained within the conversation panel at all supported desktop, tablet, mobile, and zoomed viewport sizes.
+- [x] Apply a unified light-gray preview/footer surface across each Message List row, with readable timestamp and status content, matching the approved reference treatment.
+- [x] Add regression coverage and verify composer containment and preview-footer surfaces at responsive widths. Focused Messages tests passed 9/9, TypeScript, production build, and whitespace validation passed.
+
+- [x] Replace rounded message-preview bubbles with a simple horizontal divider beneath the subject and a full-width gray lower section for preview, timestamp, and status.
+- [x] Apply the approved divider-and-gray-footer treatment consistently to Item Inquiry and Direct Message rows while preserving the selected-row contrast.
+- [x] Add regression coverage and verify the revised Message List footer treatment at responsive widths. Focused Messages tests passed 9/9, TypeScript, production build, and whitespace validation passed.
+
+- [x] Use white backgrounds for the Inbox Folders, Message List, and conversation panels.
+- [x] Use a matching light-gray background for the reply composer area while preserving the contained input and Send Message action.
+- [x] Add regression coverage and verify the refined Messages surface colors and composer contrast. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
+
+- [x] Audit and correct mobile Messages layout overlap across inbox folders, Message List, conversation content, item popup, and reply composer.
+- [x] Make mobile Messages panels stack, scroll, size, and wrap safely while preserving usable controls and the established desktop workspace.
+- [x] Add responsive regression coverage and verify the Messages page at phone, tablet, and desktop viewports. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed; the unsigned phone capture remained at the existing sign-in boundary.
+- [x] Verify the signed-in Messages page on desktop: folder/list/conversation stacking, message metadata, and contained reply composer loaded successfully.
+
+- [x] Shorten the desktop Message List panel so it is visually distinct from and does not match the communication section height.
+- [x] Keep the Message List independently scrollable and responsive while preserving the larger conversation area and mobile natural-flow layout.
+- [x] Add regression coverage and verify the updated Message List versus communication-section proportions. Focused Messages tests passed 7/7, TypeScript, production build, and whitespace validation passed.
+- [x] Refine the Message List color system so Direct Message, Item Inquiry, Sent, and Received are visually distinct, professional, and accessible.
+- [x] Use a high-visibility yellow unread treatment in the Message List without changing read state or message behavior.
+- [x] Use the approved blue color for Send Message actions and add focused regression coverage for the revised color contracts. Focused Messages tests passed 10/10, TypeScript, production build, whitespace validation, and an unsigned phone-size route check passed.
+- [x] Add an accessible, responsive social-media area to the main homepage for Tradebilia’s Facebook, Instagram, and X accounts.
+- [x] Confirm the official account destination URLs before enabling external social-media links. Rich supplied Facebook, Instagram, and X destination URLs directly. Passive checks resolved Facebook and X to Tradebilia; Instagram correctly delegated unauthenticated visitors to its own sign-in page for the specified account path.
+- [x] Add focused regression coverage and validate homepage social-link layout at desktop and mobile widths. Homepage and Messages focused tests passed, as did TypeScript, production build, and whitespace validation. Desktop and phone-size checks confirmed the social row is visible, contained, and readable.
+- [x] Render Facebook, Instagram, and X as explicitly non-linking homepage icon placeholders until Rich supplies the official destination URLs.
+- [x] Increase the Item Inquiry badge contrast so it is visibly distinct from the Direct Message badge on both light and dark message rows.
+- [x] Add regression coverage and validate the corrected Item Inquiry badge treatment without changing message behavior. Focused Messages tests passed 10/10, TypeScript, production build, and whitespace validation passed.
+- [x] Configure the homepage social icons with Rich’s supplied official Facebook, Instagram, and X URLs, including secure external-link attributes. The active desktop and phone-size checks showed the links remain visible, contained, and readable.
+- [x] Align the My Inventory category bar vertically with the main homepage category bar while preserving the established hero background and height.
+- [x] Enlarge and precisely center the My Inventory SVG title using equal visible spacing to the page edges.
+- [x] Make the My Inventory Add Item action more prominent without reducing accessibility or responsive usability.
+- [x] Align the Show Only Items and Show Draft controls with the other left-side filter controls and normalize their statement typography and color treatment.
+- [x] Add focused regression coverage and validate the My Inventory refinements at desktop and phone widths. Focused regression, TypeScript, production build, and whitespace validation passed. The unauthenticated preview maps `/inventory` to the public homepage, so it cannot prove the signed-in inventory workspace visually.
+- [x] Verify the signed-in My Inventory workspace on desktop: hero/category-bar alignment, prominent Add Item action, and filter controls loaded successfully.
+- [x] Apply Rich’s selected inline Add Item hierarchy: keep it in the current action row, enlarge it modestly, and visibly separate it from bulk actions.
+- [x] Add focused regression coverage and validate the revised Add Item emphasis without changing inventory actions. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Remove the redundant “Show only items listed for trade” toggle and its duplicate status-filter state, retaining the Status dropdown as the sole listing-status filter.
+- [x] Preserve Show Drafts as a separate inventory-state control and add focused regression coverage for the simplified filter panel. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Change the My Inventory primary-action label to “+ Add Item to Inventory” while preserving its current size, placement, spacing, and behavior.
+- [x] Update the focused inventory regression and validate the revised primary-action label. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Remove the redundant text plus symbol so the My Inventory action shows one icon followed by “Add Item to Inventory”.
+- [x] Update the focused regression and validate the corrected single-plus primary action. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Make Add Item to Inventory full-width on phone layouts while preserving its desktop inline placement.
+- [x] Strengthen selected-item count feedback near the bulk actions without changing selection behavior.
+- [x] Increase inventory item-title font size and weight while leaving the remaining item-detail hierarchy unchanged.
+- [x] Rename the existing My Inventory filter-panel Reset button to Clear Filters without changing its behavior.
+- [x] Update focused regression coverage and validate the approved responsive controls, title typography, and Clear Filters label. Focused regression, TypeScript, production build, and whitespace validation passed after correcting the checklist trailing blank line.
+- [x] Remove the Selected count control from the My Inventory action area.
+- [x] Center Add Item to Inventory within the action area and increase its label size further while preserving phone usability.
+- [x] Update focused regression coverage and validate the revised centered action area and unchanged navigation behavior. Focused regression, TypeScript, production build, and whitespace validation passed. Desktop and phone-size captures completed without route-level errors; both unauthenticated captures reached the public homepage instead of the signed-in inventory workspace, so signed-in visual confirmation remains pending.
+- [x] Keep Add Item to Inventory and all bulk actions on one horizontal desktop row without introducing an additional action row.
+- [x] Preserve a non-overlapping phone layout and update focused regression coverage for the single-row desktop action area. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Center Add Item to Inventory relative to the full My Inventory action section rather than only the flexible space beside the bulk controls.
+- [x] Keep all desktop actions on one line, preserve safe phone wrapping, and add focused regression coverage for the corrected full-section centering. Focused regression, TypeScript, production build, and whitespace validation passed after correcting the stale centering assertions.
+- [x] Increase the My Inventory item-card display-title font size while retaining bold weight, clean wrapping, and the existing card hierarchy.
+- [x] Update focused regression coverage and validate the larger item-title treatment at desktop and phone widths. Focused regression, TypeScript, production build, and whitespace validation passed.
+- [x] Enlarge only the Coming Soon page SVG logo while keeping it centered and fully contained within the parchment artwork.
+- [x] Add focused regression coverage and validate that the larger logo does not alter or overlap the tagline, highlights, categories, stamp, or signup area. Focused Coming Soon logo, My Inventory, Messages, and homepage regressions passed; TypeScript, production build, whitespace validation, and desktop/phone visual checks passed. The existing large-bundle warnings remain informational; visual findings are recorded in COMING_SOON_LOGO_VISUAL_CHECK.md.
+- [x] Fix Coming Soon animated SVG logo clipping so the wheel and longer category labels, including SPORTS CARDS, remain fully visible after the modest logo enlargement.
+- [x] Preserve the surrounding Coming Soon composition and add focused regression plus desktop/phone visual validation for the expanded logo frame. Focused logo, My Inventory, Messages, and homepage regressions passed; TypeScript, production build, whitespace validation, and desktop/phone visual checks passed. Latest findings are recorded in COMING_SOON_LOGO_VISUAL_CHECK.md.
+- [x] Correct the Coming Soon animated lockup geometry so the rotating wheel is fully visible and remains left of the divider, including during SPORTS CARDS.
+- [x] Confirm the corrected sports-card animated state in the development browser and preserve all non-logo Coming Soon content. Browser reached `TRADE SPORTS CARDS`; the label and containing SVG remained contained, with the wheel visibly left of the divider.
+- [x] Correct the Coming Soon animated lockup geometry so the rotating wheel is fully visible and remains left of the divider, including during SPORTS CARDS.
+- [x] Preserve the enlarged logo and all non-logo Coming Soon content, then add focused regression and desktop/phone checks for the unclipped wheel and divider clearance. Focused geometry and containment tests, TypeScript, production build, whitespace validation, and desktop/phone BILIA-state checks passed. The user-visible SPORTS CARDS animation state remains open for Rich’s confirmation.
+
+- [x] Design the admin Social Content Manager information architecture and operating workflow before implementation.
+- [x] Compare direct platform publishing, approval-only content management, and third-party scheduler approaches with their privacy, cost, and setup tradeoffs.
+- [x] Obtain Rich’s approval on the recommended social-content tab scope and platform-integration phase before writing code.
+
+- [x] Obtain Rich’s approval on the recommended social-content tab scope and platform-integration phase before writing code.
+- [x] Inspect the existing Admin page tabs, access controls, and reusable UI components for the Social Content Manager.
+- [x] Implement an approval-first Social Content Manager workspace without external social-account connections or automatic publishing.
+- [x] Add draft, media-reference, platform-target, status, planned-date, preview, approval, and history interactions without migrations or destructive data scripts. Draft planning is intentionally browser-local in phase 1; no external account tokens, posts, migrations, or destructive scripts were used.
+- [x] Add focused Vitest coverage for the new admin tab; responsive signed-in visual validation remains a manual follow-up because the available preview session is unauthenticated.
+
+- [x] Add YouTube as a planned platform in the approval-first Social Content Manager without account connection or automatic publishing.
+- [x] Add YouTube platform styling and regression coverage while preserving existing platform behavior. The focused Social Content Manager suite passed 5 tests; TypeScript and production build passed.
+
+- [x] Add the YouTube icon to the homepage social-media section while preserving existing social links and responsive layout.
+- [x] Confirm the YouTube homepage destination behavior without inventing an official Tradebilia URL or exposing private information. Since Rich has not supplied the channel URL, the icon is a non-clickable “coming soon” placeholder.
+- [x] Add focused regression coverage and desktop/mobile validation for the homepage YouTube social icon. The focused homepage/social-content tests, TypeScript, production build, and 1280px/390px screenshots passed.
+
+- [x] Replace homepage social-section generic icons with recognizable official platform logo artwork while preserving current destinations and responsive behavior.
+- [x] Confirm brand-logo assets are durable, accessible, and consistently sized without inventing a YouTube channel destination. Uploaded assets are referenced from durable `/manus-storage/` paths; YouTube remains a non-clickable placeholder until its official channel URL is provided.
+- [x] Add focused regression coverage and desktop/mobile visual validation for the homepage social-logo refinement. Focused homepage tests, TypeScript, production build, and 1280px/390px screenshots passed.
+
+- [x] Define privacy-safe eligibility for social-promotion opportunities: newly added public listings valued at $1,000 or more and recent completed trades.
+- [x] Reuse only public-safe listing and completed-trade fields for the Admin Social Content Manager’s promotion-opportunity view.
+- [x] Implement admin-reviewed promotion suggestions that create editable drafts but never publish automatically.
+- [x] Add focused coverage for promotion-opportunity eligibility and draft creation. Signed-in responsive visual confirmation remains a manual follow-up.
+
+- [x] Add distinct Social Content Manager entry paths for original content and promotion opportunities while retaining a shared editorial workflow.
+- [x] Surface only public-safe newly active $1,000-plus listings and recent completed trades as admin promotion opportunities.
+- [x] Create editable social drafts from promotion opportunities with visible source labels and no automatic external posting.
+- [x] Add regression coverage for the two-path Social Content Manager layout and promotion-draft safeguards. Signed-in responsive visual confirmation remains a manual follow-up.
+
+- [x] Add an admin-only Auto-list promotion opportunities toggle that controls automatic opportunity discovery without enabling automatic social-media publishing.
+- [x] Persist and validate the Auto-list toggle state alongside the Social Content Manager’s existing browser-local planning preferences.
+- [x] Add administrator-only original image/video upload to Social Content drafts through guarded durable storage, constrained to approved types and 6 MB files, without automatic publishing or a schema migration.
+- [x] Confirm the signed-in Social Content Manager at desktop width, including Auto-list off/on behavior and draft creation from a high-value promotion opportunity; no external post was published.
+
+- [x] Add an internal Preview Post action in Social Content Manager’s Create and Review area without enabling external publishing.
+- [x] Make the preview accurately reflect the selected platform, current caption, attached media, source label, and status with accessible dismissal.
+- [x] Add focused regression coverage for the Create and Review preview workflow. Signed-in desktop and phone visual confirmation remains a manual follow-up.
+
+- [x] Compare Explore All, category-page, and My Inventory item-card markup at mobile width and preserve the existing desktop presentation.
+- [x] Reuse the Explore All mobile item-card layout for every category page and My Inventory while retaining page-specific actions and item behavior.
+- [x] Add focused regression coverage and desktop/mobile visual validation for the unified mobile item-card treatment. Category and Explore All phone cards were verified at 390px; desktop cards were verified at 1280px. The unauthenticated Inventory route remains at the existing sign-in boundary, so signed-in visual confirmation is retained separately.
+
+- [x] Compare Explore All and category-page mobile image frames to identify the source of visual image cutoff.
+- [x] Match category-page phone image frames to Explore All’s fully contained, uncropped image behavior without changing desktop sizing.
+- [x] Add focused regression coverage and before/after phone plus desktop visual validation for category image containment. Sports Cards and Comics cards were verified at 375px and 1280px with the direct `object-contain` image pattern used by Explore All.
+
+- [x] Compare the current Coming Soon animated lockup against the supplied reference without reopening the attached image.
+- [x] Expand the animated lockup’s visual bounds so the full wheel and all rotating category labels remain visible, especially Sports Cards.
+- [x] Center the divider relative to the complete animated lockup and restore the original thin arrow geometry.
+- [x] Add focused regression coverage and visually verify all rotation states at phone and desktop widths. Exact live Sports Cards measurement confirms both the category label and wheel are contained in the 4800-unit SVG canvas, with divider clearance on both sides; final 1280px and 375px captures remain contained.
+
+- [x] Replace the rejected canvas-only Coming Soon lockup adjustment with a single visually centered wheel–divider–wordmark geometry that matches Rich’s supplied reference.
+- [x] Preserve original thin arrows and divider proportions while adding label room through internal lockup geometry rather than visual canvas distortion.
+- [x] Verify exact Comics and Sports Cards animation states against the reference for centered placement, divider balance, and unclipped wheel/label presentation. Live geometry checks show each full lockup within 9px of the SVG center; Sports Cards remains contained with divider clearance on both sides.
+
+- [x] Align the Coming Soon wheel and divider relative to the fixed TRADEBILIA wordmark rather than centering them independently. The live measured offsets now use the wordmark baseline and a single whole-lockup centering bias.
+- [x] Ensure the complete title lockup remains centered as one unit for every rotating category name, including Sports Cards. The geometry uses each rendered category width and the expanded canvas; a narrow-viewport mode scales the same centered unit for phones.
+- [x] Verify exact BILIA, Comics, and Sports Cards states for wordmark alignment, full-title centering, and unclipped presentation. Focused geometry tests passed 8/8, TypeScript, production build, whitespace validation, and desktop/phone screenshots passed.
+
+- [x] Measure the actual visible wheel, divider, TRADE word, and rotating category bounds for each Coming Soon state. The live SVG group was sampled across nine rotating names after fonts and layout settled.
+- [x] Center the measured visible title group on one page center without another arbitrary canvas-width nudge. SVG-native `getBBox()` centering now converges the full group to the SVG midpoint.
+- [x] Verify BILIA, COMICS, COINS, and SPORTS CARDS against the same center with no clipping or residual right shift. Live deltas were within 0.51px across sampled states; focused geometry tests, TypeScript, production build, and whitespace checks passed.
+
+- [x] Inventory every dashboard tab and panel shown in the supplied screenshot.
+- [x] Map dashboard functions to existing left-side navigation entries and dedicated routes without changing code.
+- [x] Identify any critical navigation gaps or duplicate actions and document the safe removal boundary.
+
+- [x] Remove the authenticated Home subscriber dashboard tab bar and duplicate dashboard, listings, trade-proposals, watchlist, trade-history, ratings, and profile panels.
+- [x] Preserve the Home left-side navigation and dedicated routes for My Inventory, My Trades, Watchlist, Messages, Account Settings, and public profiles. Route references remain registered in App.tsx.
+- [x] Add focused regression coverage and desktop/mobile validation confirming the Home page no longer renders the duplicate subscriber dashboard section. Focused social/mobile suites passed, TypeScript, production build, whitespace checks passed, and source inspection confirmed dashboard labels are gone while preserved route references remain.
+
+- [x] Remove the authenticated Home subscriber dashboard tab bar and duplicate dashboard, listings, trade-proposals, watchlist, trade-history, ratings, and profile panels.
+- [x] Preserve the Home left-side navigation and dedicated routes for My Inventory, My Trades, Watchlist, Messages, Account Settings, and public profiles. Route references remain registered in App.tsx.
+- [x] Add focused regression coverage and desktop/mobile validation confirming the Home page no longer renders the duplicate subscriber dashboard section. Focused social/mobile suites passed, TypeScript, production build, whitespace checks passed, and source inspection confirmed dashboard labels are gone while preserved route references remain.
+
+- [x] Re-read the current Coming Soon phrase list and geometry implementation after the dashboard rollback.
+- [x] Replace the unreliable centering correction with explicit per-phrase width and center positioning for the complete animated title.
+- [x] Verify all rotating phrases at desktop and phone widths, then preserve the thin arrows and divider geometry.
+
+- [x] Inspect the homepage Recent Trades section and its existing layout contracts for height changes between one and two trades.
+- [x] Keep the Recent Trades section height stable without removing or altering the displayed trade content.
+- [x] Verify the stable section at desktop and mobile widths, then update tests and save a checkpoint.
+
+- [x] Re-inspect the Coming Soon text, wheel, and divider coordinate relationships after the user-reported alignment issue.
+- [x] Center only the complete rendered text phrase while preserving proportional wheel and divider anchoring.
+- [x] Verify every rotating phrase at desktop and phone widths, then update tests and save a checkpoint.
+
+- [x] Restore Recent Trades to its previous compact visual height while retaining a fixed height across trade rotations.
+- [x] Verify the compact fixed Recent Trades section at desktop and mobile widths, then update tests and save a checkpoint.
+
+- [x] Reproduce and inspect each Coming Soon rotating title state for phrase-specific centering drift.
+- [x] Correct any per-phrase text placement issue while preserving proportional wheel and divider geometry.
+- [x] Capture desktop and phone rotation-state checks, update tests, and save the verified correction.
+
+- [x] Inventory Collectors Forum routes, components, data flow, and existing regression coverage.
+- [x] Visually inspect Collectors Forum pages at desktop, tablet, and mobile widths.
+- [x] Implement the highest-priority Collectors Forum layout, navigation, responsiveness, accessibility, and usability refinements.
+- [x] Add or update forum regression tests and re-verify all forum pages.
+
+- [x] Trace the forum hero title sizing difference between index and topic/reply pages.
+- [x] Trace authoritative display-name and avatar fields for forum post and reply authors.
+- [x] Fix the hero title size and forum author identity rendering, then add regression coverage; signed-in end-to-end presentation remains pending user validation.
+
+- [x] Trace forum post ownership and current topic/post UI controls.
+- [x] Add server-enforced edit and delete operations restricted to the submitting user.
+- [x] Add owner/non-owner regression tests and verify the forum edit/delete flow before saving.
+
+- [x] Audit forum category definitions, post schema, media upload helpers, and admin moderation patterns.
+- [x] Define category-specific item-type subcategories while keeping collections/lots at the parent category level.
+- [x] Implement subcategory-aware posts, user photo uploads, and admin-only post removal with ownership safeguards.
+- [x] Add regression tests and verify the expanded forum flows responsively.
+- [x] Document prioritized recommendations for additional popular forum features.
+
+- [x] Implement approved forum subcategory taxonomy with collections/lots kept at parent category level.
+- [x] Add validated up-to-six-photo forum attachments using durable storage.
+- [x] Add admin-only moderation removal with audit reason, user reports, pinned announcements, and followed-topic foundations.
+- [x] Add regression tests, apply schema changes safely, and verify the expanded forum on desktop and mobile.
+
+- [x] Audit reply attachments, optional listing links, notification preferences, search filters, and admin dashboard patterns for the approved forum release.
+- [x] Add reply photos, optional Tradebilia listing links, followed-topic notifications, and topic search with unanswered/recent filters.
+- [x] Add an administrator moderation queue for reported forum posts with review actions and audit records.
+- [x] Apply any additive schema changes safely, add regression coverage, and verify member and admin forum flows on desktop and mobile.
+
+- [x] Inspect the forum post table, schema, migration history, and failing insert contract.
+- [x] Apply the smallest additive schema repair and align the topic creation contract; the database already contained listingId, so the repair resolves the authenticated account by openId instead.
+- [x] Add regression coverage and verify topic creation and existing forum flows.
+- [x] Save and deliver the forum topic-creation repair.
+
+- [x] Trace the active custom-auth topic-creation identity path and confirm the database used by the failing deployed form.
+- [x] Repair the active topic-creation procedure and replace raw database errors with an actionable message.
+- [x] Add a regression test for the active identity path, revalidate the forum flow, and save the confirmed fix.
+
+- [x] Trace the deployed custom-auth account ID and forumPosts foreign-key relationship behind the repeated topic-creation error.
+- [x] Repair the active account relationship or topic creation compatibility so signed-in users can create forum topics.
+- [x] Permanently suppress raw database errors in the new-topic form, add regression coverage, and verify the repaired flow with a signed-in user.
+
+- [x] Capture the exact deployed topic-creation constraint failure and compare the live forum schema with the active insert.
+- [x] Apply the smallest safe live compatibility repair without modifying existing forum posts.
+- [x] Add precise regression coverage and verify signed-in topic creation end to end.
+
+- [x] Trace the live legacy forum table moderation update failure and current admin removal path.
+- [x] Implement legacy-compatible admin removal with safe member-facing feedback and preserve expanded-schema moderation behavior.
+- [x] Add regression coverage for the administrator removal flow through the report-review path; the source-contract suite now passes. Signed-in live removal remains a separate manual check.
+
+- [x] Restore the Explore All filter to a clear left-aligned sidebar position without shifting the listing grid.
+- [x] Verify Explore All filter alignment at desktop and phone widths alongside the forum topic-creation repair.
+
+- [x] Audit the current forum discovery layout and research Facebook Groups and Reddit patterns relevant to search placement, navigation, and discussion hierarchy.
+- [x] Present a tailored comparable forum layout recommendation for approval before changing the interface.
+- [x] Implement the approved forum discovery layout, add regression coverage, and verify responsive usability.
+
+- [x] Add parent-reply support so members can reply to the main topic or to an individual reply.
+- [x] Add clear Reply actions and nested/threaded rendering on the topic page.
+- [x] Add regression coverage for both main-topic and reply-to-reply flows, including nested rendering and media controls; the forum UX suite now passes. Signed-in desktop/mobile end-to-end validation remains a separate manual check.
+
+- [x] Remove the forum topic message minimum-length rule while retaining non-empty validation and friendly errors.
+- [x] Add regression coverage and verify short non-empty topic messages can be submitted.
+
+- [x] Document the approved Reddit-inspired forum reply direction and audit the current reply layout.
+- [x] Refine reply cards, inline actions, and reply-target composition for a compact discussion flow.
+- [x] Add regression coverage and verify the refined discussion flow at desktop and mobile widths; signed-in end-to-end validation remains pending.
+
+- [x] Audit and document the approved Reddit-style shortcut actions: reviewed; Reddit-style voting, image insertion shortcuts, sharing, and extra mechanics are intentionally out of scope unless separately approved.
+- [x] Add compact inline reply controls and composer shortcuts without exposing unauthorized actions: not implemented because the user approved only the category/subcategory organization and simpler hierarchy.
+- [x] Add regression coverage and verify the interaction model at desktop and mobile widths: closed as out of scope by user direction.
+
+- [x] Record the approved forum scope: retain parent categories and item-type subcategories; do not add Reddit-style voting, sharing, karma, anonymity, or extra interaction features unless separately approved.
+
+- [x] Continue comparing Reddit’s topic, reply, and page hierarchy patterns while retaining Tradebilia parent categories and item-type subcategories.
+- [x] Document the approved Tradebilia adaptation and wait for explicit approval before further forum layout code changes.
+
+- [x] Audit the approved category-to-topic hierarchy and current forum presentation.
+- [x] Implement simplified category, subcategory, topic-row, and nested-reply presentation without Reddit-specific mechanics.
+- [x] Add regression coverage and verify the refined hierarchy at desktop and mobile widths.
+
+- [x] Audit the current per-message Reply actions, composer behavior, media limits, and available UI icons.
+- [x] Add inline composers beneath the selected topic or reply with image, GIF, video, and formatting shortcuts; Video now uses the validated MP4 upload path.
+- [x] Verify signed-in forum nested rendering, media selection, attachment filename display, and reply submission at desktop width; the attached image persisted and rendered after posting.
+
+- [x] Audit reply attachment schema, storage validation, and upload procedures for video support.
+- [x] Extend reply media handling with validated MP4 video attachments and enable the inline Video shortcut.
+- [x] Add regression coverage for mixed image/GIF/video reply contracts and verify TypeScript, build, and whitespace checks; signed-in end-to-end media submission remains pending.
+- [x] Repair the live forum reply insert failure when the deployed forumReplies table lacks parentReplyId, while preserving threaded replies on expanded schemas.
+- [x] Add regression coverage for legacy and expanded reply insert shapes and verify the signed-in reply flow after checkpoint.
+- [x] Sanitize unexpected forum reply database errors in the client and server response so raw SQL is never shown to members.
+- [x] Render forum replies as a hierarchical sub-thread tree with deeper indentation and thread guides for replies to replies, including responsive mobile spacing and regression coverage.
+- [x] Add connected vertical/branch thread guides and per-reply collapse/expand controls for nested forum reply sub-threads, with responsive regression coverage.
+- [x] Trace why a signed-in reply-to-reply is returned as a top-level reply, then repair parentReplyId persistence or retrieval and verify nested rendering with connected controls.
+- [x] Apply the user-approved additive parentReplyId column and index migration to the custom forum database; real nested-reply submission validation remains pending.
+- [x] Bind each inline reply composer to its explicit reply target at submit time, preventing a selected child reply from falling back to a null parent ID.
+- [x] Diagnose and repair the backend child-reply persistence error now that parentReplyId is submitted, then verify the stored child relationship and rendered sub-thread. Live signed-in verification confirmed a child reply persisted under its intended parent, rendered as a nested sub-thread, and collapsed/expanded correctly at desktop and mobile widths.
+- [x] Handle the custom forumReplies table’s partial schema—parentReplyId exists but listingId does not—so child replies persist without querying optional unavailable columns.
+- [x] Diagnose and repair the mismatch where a submitted reply increments the topic count but is not returned or rendered, then verify the full nested child-reply flow. Capability detection now handles direct rows and mysql tuple results, preventing parentReplyId from being treated as unavailable; executable regression coverage and live nested rendering passed.
+- [x] Prevent the optional forumReplyAttachments lookup from hiding text replies when that attachment table is absent from the custom database.
+- [x] Refine nested forum thread geometry to use continuous vertical guides, short branch connectors, and collapse controls aligned to each guide level, matching the supplied reference on desktop and mobile.
+- [x] Diagnose the WebDev preview panel “Too many requests” message and repair only if the application is generating an excessive request loop; current app requests are healthy and no request loop was found.
+- [x] Connect each nested reply avatar to its parent avatar with precise vertical and horizontal branches, including sibling replies under the same parent, matching the supplied reference on desktop and mobile.
+- [x] Keep sibling replies connected to their shared parent only, with independent branch segments that do not visually connect one sibling to another; preserve deeper child branches.
+- [x] Stop vertical connector lines at leaf reply avatars when there are no child replies, while preserving the parent-to-child branch and sibling geometry.
+- [x] Place collapse and expand controls directly on the vertical thread connector line, separate from the reply avatar, with responsive alignment.
+- [x] Rebuild nested reply connectors around explicit parent and child avatar centers so message 3 connects to message 2, message 5 connects to message 3, and sibling message 4 branches independently from message 2.
+- [x] Remove any horizontal branch artifact beneath leaf replies and render horizontal connectors only for actual parent-to-child reply relationships.
+- [x] Match the Reddit-style L-shaped connector path: parent vertical guide continues to the child row, turns horizontally into the child avatar center, and the child guide continues only when that child has replies.
+- [x] Bound each parent’s vertical guide to its own child branch region so message 5 connects to message 3 and message 4 branches from message 2 without cross-connecting sibling rows.
+- [x] Rebuild forum connectors as the exact reference tree: bold parent trunk, rounded bends into each child avatar, child-level trunks for descendants, and collapse controls at the bends.
+- [x] Replace offset-based forum connector spans with deterministic parent-to-child connector paths whose endpoints are explicitly tied to the parent and child avatar centers.
+- [x] Stop each parent vertical trunk at its final child branch and ensure nested branches visibly join the correct avatar centers without extending beyond the last reply.
+- [x] Place each collapse control at the midpoint of its parent vertical connector segment rather than at the branch corner, while preserving connector paths.
+- [x] Reduce the measured forum connector stroke thickness while preserving avatar-centered paths and midpoint collapse controls.
+- [x] Replace collapse arrows with accessible +/− controls and reduce connector stroke weight.
+- [x] Show relative reply times instead of full reply timestamps while keeping the main topic date/time.
+- [x] Make inline reply composers white.
+- [x] Move Start a discussion left and give it a distinct accent color; give Search discussions a white backdrop.
+- [x] Give category bubbles distinct colors, remove the Discussion feed section, and relocate Sort items into the remaining forum toolbar.
+- [x] Correct the reply composer color hierarchy so the typing textarea is white and the surrounding composer shell uses the contrasting softer tone.
+- [x] Make the forum Format shortcut apply actual bold formatting to selected reply text instead of inserting literal **bold text** markers.
+- [x] Lighten the forum connector stroke color while preserving its current geometry, thinner weight, and midpoint collapse controls.
+- [x] Align Explore All category colors, item card sizing, Grid/List toggle, category-page filter features including Location: nearest first, and grey metadata section alignment.
+- [x] Re-audit Explore All against a representative category page and correct any remaining shared formatting differences in hero, category bar, filter rail, toolbar, cards, and metadata alignment.
+- [x] Match Explore All List view to the category-page horizontal item layout and place the desktop filter rail flush against the page’s left edge.
+- [x] Fix reply relative-time rendering so older replies show elapsed hours, days, weeks, months, or years instead of always “just now.”
+- [x] Apply the established category theme colors to Forum category bubbles, including yellow for Pokémon.
+- [x] Remove Explore All hero statistics, start the filter panel directly below the category bar, and match category-page horizontal List cards.
+- [x] Repair forum image attachments for new discussion topics and replies so upload failures do not leave a text-only post with an error.
+- [x] Add regression coverage and verify photo upload/display in both a new topic and a reply using the signed-in flow.
+- [x] Apply the approved additive forumPostAttachments table and indexes to the custom database without altering existing forum content.
+- [x] Verify and safely handle topic/reply image upload errors, then confirm stored and rendered photos in both flows.
+- [x] Prevent a missing optional forumFollows table from blanking the signed-in topic page; fall back safely to an unfollowed state.
+- [x] Confirm whether the custom database may receive the approved additive forumReplyAttachments table migration so reply media can be persisted and tested end to end.
+- [x] Apply and verify the approved additive forumReplyAttachments table and indexes without altering existing replies.
+- [x] Correct forum topic and reply timestamps to use the viewer computer-local time and the actual stored posting time.
+- [x] Keep exact viewer-local timestamps for main topics but restore UTC-aware elapsed labels for forum replies.
+- [x] Give every forum category button a clearly distinct theme color and place the topic-list section on a white background.
+- [x] Add a visible outline to every forum category bubble and clearly separate the Sports Cards, Vintage Toys, and Video Games palettes.
+- [x] Replace default forum file-picker controls with an Insert image action and update the composer copy to Insert an image while preserving upload limits.
+- [x] Use white backgrounds for the forum composer input bubbles and Insert image control.
+- [x] Display selected reply attachment file names after the attachment count so users can verify each file before posting.
+- [x] Make Recently active the default forum view while retaining Newest as the topic-creation sort.
+- [x] Make Recently active sort by the latest topic or reply activity, not merely filter recent topics and retain creation-date ordering.
+- [x] Remove the forum Show controls for All topics and Unanswered, leaving sorting controls only.
+- [x] Make forum reply usernames bold and slightly larger while preserving thread readability.
+- [x] Increase reply username size and boldness enough to visibly distinguish it from the elapsed time label.
+- [x] Prevent a newly opened unread direct message from disappearing from the current list before the member can read it.
+- [x] Keep a selected direct-message thread visible in Unread after it is marked seen, until the member leaves the conversation or folder.
+- [x] Keep members on a public profile after they send a direct message, with a clear in-place success confirmation.
+- [x] Use white subject and message fields plus blue Send Message and mail-icon styling in the public-profile New Message composer.
+- [x] Make safe provider-returned Facebook, LinkedIn, eBay, and Etsy public profile URLs clickable from public member verification cards, opening in a new tab.
+- [x] Keep verified-account badges non-clickable when no safe public URL is available and cover URL privacy/domain safeguards with tests.
+- [x] Give the requested listing and personalized message fields in the trade-proposal modal white backgrounds.
+- [x] Trace and repair missing recipient trade alerts for proposals submitted from category-page Trade buttons, with regression coverage.
+- [x] Increase trade-room participant names and online/offline status readability, and make Your side / Their side labels clearer.
+- [x] Make requested-inventory picker category/search/footer surfaces white and style Clear light red.
+- [x] Make the trade-room start-proposal Send button blue.
+- [x] Keep only the inventory search field white while restoring the picker section background.
+- [x] Hide items already included in the trade from the user-inventory picker until they are removed from the trade.
+- [x] Preserve a selected compatible cash payment method when trade-room cash amounts change, with automatic retention when only one method is available.
+- [x] Ensure the inventory picker outline visibly wraps both bottom corners.
+- [x] Let each Step 3 side use the larger single-item layout independently, and enlarge Shipping Information content for readability.
+- [x] Give both Step 3 Shipping Information cards the same visible border treatment.
+- [x] Render cash payment-method timeline events as readable text such as “Selected PayPal as payment method” instead of raw JSON.
+- [x] Make Step 3 swap arrows more prominent and enlarge item titles, reference numbers, and shipping details where space permits.
+- [x] Maximize Step 4 shipping-stage layout, enlarge item/tracking presentation, and ensure the other member’s single item is displayed.
+- [x] Combine Step 4 payment checklist and cash task into clearer per-member send/receive summaries.
+- [x] Make Step 4 Ship By date prominent and flashing, and use white carrier/tracking controls.
+- [x] Show red Tracking Numbers not submitted until all required tracking is entered, then green Tracking Numbers submitted.
+- [x] Add a per-item Enter/Reset tracking workflow so submitted numbers are locked until intentionally reset.
+
+- [x] Audit shared page shells and affected pages so layouts auto-adjust to browser width and height without clipping, hidden sections, or requiring browser resizing.
+- [x] Implement responsive reflow, stacking, and natural scrolling fixes for affected desktop and mobile layouts.
+- [x] Add regression coverage and verify representative pages at desktop, tablet, and mobile viewport sizes. Representative public pages were captured at tablet width; Showcase was also verified at desktop and mobile widths.
+
+- [x] Keep each Step 5 tracking number visually associated with its item, center the swap arrows vertically between the two users, and maximize item, tracking, and contact typography within available space.
+- [x] Add mutual receipt confirmation for items and any cash, then show a new post-delivery user-review step only after both members verify receipt.
+- [x] Make the dispute stage conditional in the stepper, showing Step 7 only when a dispute exists; otherwise omit it from the visible flow.
+- [x] Add regression coverage for the revised Trade Room flow and verify its responsive source contracts at desktop/mobile breakpoints. Automated coverage and production build pass; authenticated viewport verification remains a separate manual check.
+
+- [x] Redesign the homepage Recent Trades cards so multi-item swaps fit inside the existing fixed section height without vertical scrolling, clipping, or layout shifts.
+- [x] Add regression coverage and verify the multi-item Recent Trades presentation at desktop and mobile widths. The focused test, TypeScript check, production build, whitespace validation, and desktop/mobile screenshots passed; each side now shows up to four compact item previews plus a remaining-item count.
+
+- [x] Match the Trade Hub hero section height and category-bar position to the main homepage at desktop and mobile widths.
+
+- [x] Update Trade Hub completed-trade counts, member avatar/profile linking, cash preview, search-field styling, and blue status/action emphasis. Focused tests, TypeScript, production build, and modified-file whitespace checks passed; authenticated preview capture was rate-limited after restart.
+
+- [x] Remove the Trade Hub Completed count semicolon and center the highlighted count badge beside the label.
+
+- [x] Remove item-detail navigation from historical Recent Trades cards while keeping the completed-trade snapshots visible and clearly non-clickable.
+
+- [x] Merge payment-method persistence into Save Profile Changes, remove the redundant payment-save button, and add regression coverage for one combined save action. Eight focused tests, TypeScript, production build, modified-file whitespace validation, and route-shell capture passed; authenticated Profile visual capture redirected to signed out.
+
+- [x] Remove PayPal and Pending Connections from the Profile Integrations tab, and rewrite the verification/trust explanation for members and other users. Four focused Profile tests, TypeScript, production build, modified-file whitespace validation, and route-shell capture passed; authenticated Integrations content redirected to signed out.
+
+- [x] Implement profile visibility levels so a hidden profile is visible to signed-in Tradebilia members but not non-members or public discovery, while preserving existing trades, messages, reviews, verification, and safety records. Seven focused tests, TypeScript, production build, git diff whitespace validation, and mobile route-shell verification passed; authenticated Profile content redirected to signed out.
+
+- [x] Investigate and repair verified email and phone password recovery delivery, including account lookup, throttling, token/code creation, provider dispatch, reset completion, and safe errors. User verified email delivery/reset and conditional phone SMS delivery/reset; automated coverage, TypeScript, build, and whitespace checks passed. Aggregate audit found all three legacy profiles had registered contact values but no persisted historic verification flags.
+
+- [x] Allow legacy recovery through the phone stored on the account only after Twilio proves current possession, then persist the verified-phone status safely. User confirmed the conditional email disambiguation, SMS receipt, code acceptance, and password reset; automated coverage and build checks passed.
+
+- [x] Diagnose and repair the confirmed post-release password-recovery non-delivery affecting both the user-tested email and phone paths, using non-sensitive live diagnostics and verified end-to-end delivery confirmation. Live diagnostics identified the email/profile mismatch and ambiguous phone match; both methods were subsequently user-verified.
+
+- [x] Trace and repair the deployed password-recovery early exit that prevents requests from reaching Resend or Twilio, using privacy-safe request diagnostics and real provider confirmation. Email and SMS provider dispatch were user-verified after the lookup and ambiguity repairs.
+
+- [x] Repair the post-reset sign-in redirect loop so successful new-password authentication returns to the main homepage instead of reopening the password-recovery screen. User confirmed the new password sign-in reaches the homepage successfully.
+
+- [x] Diagnose and repair the confirmed SMS password-recovery non-delivery after email recovery and post-reset sign-in were verified. User confirmed SMS arrived and the phone reset worked correctly after conditional email disambiguation.
+
+- [x] Diagnose and repair the confirmed SMS recovery failure after a clean single retry beyond the rate-limit window still produced no message. Live logs showed ambiguous_account_match; the corrected conditional email flow delivered the SMS and completed reset successfully.
+
+- [x] Show the account-email field only after an ambiguous phone match, replace the generic error with a truthful disambiguation prompt, and cover the resubmission flow with tests. Focused recovery tests, TypeScript, production build, whitespace validation, initial-form visual verification, and user-confirmed SMS delivery/reset passed.
+
+- [x] Give Traders Showcase completed-trade cards a larger page-specific layout that shows all multi-item exchanges and cash without horizontal scrolling or overlap. Focused showcase tests, TypeScript, production build, whitespace validation, and desktop/mobile visual verification passed.
+
+- [x] Replace the compact homepage Recent Trades card with the larger full-width responsive trade layout used by Traders Showcase, showing all multi-item exchanges and cash without horizontal scrolling. Superseded by user clarification: no homepage change was requested; the larger layout belongs to Traders Showcase and is already implemented in checkpoint fd7924e1.
+
+- [x] Align Traders Showcase cards with the compact homepage Recent Trades format while allowing the Showcase card to use the full available page width for multi-item trades. Focused tests, TypeScript, production build, and desktop/mobile visual verification passed.
+
+- [x] Fix tablet-width overflow revealed during responsive Showcase review: keep the compact trade card fully visible at 768px without clipping the right-side items, and prevent the animated top-bar label from overlapping the search field. Updated the Showcase breakpoint, divider orientation, TopBar constraints, and regression contracts; tablet/mobile screenshots passed. Final TypeScript/build and affected-suite checks passed.
+
+- [x] Create a visual-only mockup showing per-trade voting on Traders Showcase cards; do not implement voting until the concept is approved. Mockup generated; no live voting code was changed.
+
+- [x] Revise the Showcase voting mockup from star ratings to Good Trade / Bad Trade thumbs-up and thumbs-down actions; do not implement functionality until approved. Updated mockup generated; no live voting code was changed.
+
+- [x] Implement per-trade Good Trade / Bad Trade voting on every completed Traders Showcase card with one vote per member per trade, real vote summaries, additive persistence, responsive controls, and regression coverage. Focused tests, TypeScript, production build, desktop/mobile visual checks, and authenticated live submission/update validation pass.
+
+- [x] Document the mobile preview capture limitation: the authenticated Trade Room route rendered correctly in the browser, but the mobile screenshot service returned the homepage for `/trade-room/240003`; mobile Trade Room validation remains pending until the route can be captured reliably or tested on a physical device.
+
+- [x] Verify the signed-in Messages workspace on a physical phone, including folder/list/conversation stacking, metadata wrapping, Item # behavior, and the contained reply composer. Rich confirmed completion of this validation on 2026-09-26.
+- [x] Verify the signed-in My Inventory workspace on a physical phone, including hero/category-bar alignment, title edge spacing, Add Item prominence, and filter-label alignment. Rich confirmed completion of this validation on 2026-09-26.
+- [x] Verify the signed-in Social Content Manager on a physical phone, including the admin layout, Auto-list switch, and draft editor wrapping. Rich confirmed completion of this validation on 2026-09-26.
+- [x] Verify the signed-in forum reply/media flow on a physical phone, including composer controls, attached filename display, nested replies, and mobile wrapping. Rich confirmed completion of this validation on 2026-09-26.
+
+- [x] Move the Traders Showcase Good Trade / Bad Trade voting section below the completed exchange/item exchange summary on each card, preserving vote behavior and responsive layout. Focused layout/voting tests passed 8/8, TypeScript, production build, and desktop/mobile screenshots passed.
+
+- [x] Add category-page-style vertical spacing between the Explore All Category Bar and the Grid/List, sort, and per-page control row, preserving responsive behavior and control functionality. Focused Explore All tests passed 3/3, TypeScript, production build, and desktop/mobile screenshots passed.
+
+- [x] Refine the Explore All Grid/List toggle so the selected option uses consistent rounded-pill geometry instead of a square rectangle inside the outer rounded control. Shared toggle tests passed 6/6, TypeScript, production build, and desktop/mobile visual checks passed.
+
+- [x] Apply the same rounded-pill Grid/List toggle styling used on Explore All to every category page, preserving selected states, view switching, and responsive behavior. Shared toggle tests passed 6/6, TypeScript, production build, and desktop/mobile visual checks passed.
+
+- [x] Prevent the category-page controls row from clipping on narrow mobile widths by allowing the verified chip, rounded Grid/List toggle, sort dropdown, and per-page selector to wrap cleanly. Mobile screenshot confirmed the controls wrap without clipping.
+
+- [x] Correct the Trade Hub Completed count badge baseline, font, and centering; replace the Enter Trade Room clashing-swords icon with a more appropriate trade-room icon. Focused regression tests passed, TypeScript and production build passed, and the authenticated Trade Hub preview confirmed the updated action.
+- [x] Update My Inventory Status filtering to Active, Not Listed, and Traded, with each option filtering the displayed inventory correctly. Focused regression tests passed, TypeScript and production build passed, and authenticated live checks returned 8 Active, 0 Not Listed, and 5 Traded items without mutating data.
+
+- [x] Make every category page use the Explore All Grid/List toggle appearance, including both Grid/List icons, pill geometry, selected-state styling, spacing, and typography. Category UI tests passed 3/3, TypeScript and production build passed, and desktop/mobile screenshots confirmed the icon-based control.
+- [x] Extend the Trade Hub dark blue content background to fill the viewport height so no light strip appears at the bottom. Trade Hub regression coverage passed, TypeScript and production build passed, and the authenticated browser view confirmed the dark background reaches the viewport bottom.
+
+- [x] Move the non-animated Coming Soon paper content upward as a group while leaving the animated logo unchanged, and add enough bottom padding around the email signup section. Coming Soon regressions passed 6/6, TypeScript and production build passed, and desktop/mobile visual checks passed.
+
+- [x] Keep the Coming Soon mobile email signup fully inside the paper by tightening the lower content spacing or adding a mobile-specific bottom containment adjustment; preserve the animated logo and desktop composition. The compact horizontal form and mobile-specific spacing keep the controls inside the paper in the final screenshot.
+
+- [x] Restore the Coming Soon animated logo to its original vertical position while keeping only the non-animated paper content moved upward and preserving signup containment. Coming Soon regressions passed 6/6, TypeScript and production build passed, and desktop/mobile screenshots confirmed the logo/content separation.
+
+- [x] Diagnose and repair the Report a Member submission database insert failure without modifying existing reports; add regression coverage and validate a safe submission path. The runtime table contained required legacy reporterId/category columns not represented by the ORM insert; the writer now maps those fields explicitly, preserves report metadata, and the authenticated test submission succeeded as RPT-000001. Focused tests passed 8/8, TypeScript and production build passed.
+
+- [x] Fix My Reports and Admin Reports display mapping so submitted report member and concern information appears in both views; preserve existing report records and moderation actions, and add regression coverage. My Reports now shows high-contrast member/concern/details/evidence state; Admin Reports now shows submitted details/evidence columns. Focused report display/submission tests passed 8/8, TypeScript and production build passed; post-edit browser capture was blocked by the preview limiter/blank reload.
+
+- [x] Repair Admin Reports Mark as reviewed and Mark as action taken so status and resolution notes persist, the modal closes or refreshes, and both actions have regression coverage. Added runtime status-enum compatibility, raw SQL persistence, refresh/success/error feedback, and focused tests; 9/9 report tests, TypeScript, and production build pass. Final live retry is pending the preview rate limiter clearing.
+
+- [x] Show the submitting member’s display name in the Admin Reports table and report-details modal, using the existing report submitter relationship without exposing unnecessary private fields. Added display-name fallback mapping and verified the UI/source contract; final post-restart capture is pending the preview rate limiter clearing.
+
+- [x] Move the Report a User page’s View My Reports link to a prominent location near the page heading and introductory copy, preserving the primary report form and responsive layout. The link is now a compact icon button beneath the introduction; the duplicate lower form link was removed. Navigation regression passed 2/2, TypeScript and production build passed, and the direct route showed the header link plus intact report form.
+
+- [x] Repair Contact Us category-dropdown readability, make form input bubbles white, and make Send Message persist a contact record visible to administrators with clear success/error feedback. Added readable light dropdown/options and white inputs, additive supportTickets/supportTicketReplies tables plus application bootstrap, and verified live submission TKT-MTRKRFMK appears in Admin → Tickets as an open ticket under AdminTavani. Contact Us tests passed 3/3, TypeScript and production build passed.
+
+- [x] Add Contact Us support-ticket counts and recent suggestion activity to the Admin Operations consolidated summary while preserving the full Tickets queue. Operations now shows open/total counts, recent ticket subject/ID/submitter/category/status, and a link to Tickets; live verification showed 3 open and 3 total tickets including TKT-MTRKRFMK. Operations/Contact Us tests passed 5/5, TypeScript and production build passed.
+
+- [x] Reorganize Admin Dashboard tabs into clear functional groups while preserving every existing tab, route, permission boundary, and current behavior. Grouped into Overview & Monitoring, Marketplace Management, Moderation & Support, Communications & Growth, and Platform & Reference Tools; moved Operations beside Stats, preserved all tab values/routes, and added responsive wrapping. Navigation tests passed 2/2, TypeScript and production build passed, and authenticated browser inspection confirmed the grouped order.
+
+- [x] Extend the homepage Follow Tradebilia section background to fill the negative cream space while preserving social links, content, and responsive behavior. The section now extends through the former main bottom padding; homepage and responsive regressions passed, TypeScript and production build passed, and desktop/mobile screenshots confirmed the cream strip is filled.
+
+- [x] Reformat Admin navigation groups vertically so each group headline sits above its related full-width tab row, preserving routes, permissions, and responsive behavior. Focused Admin navigation tests passed 2/2, Operations regression passed, TypeScript passed, production build passed, and authenticated browser inspection confirmed the requested stacked arrangement.
+- [x] Resolve the 21 unrelated pre-existing or environment-dependent failures in the full Vitest suite. Refreshed valid stale source contracts, fixed source-root assumptions, and made external provider probes explicitly opt-in; the complete regression run now passes 211 files and 721 tests, with 6 intentional skips.
+
+- [x] Correct Admin navigation so each group’s individual tabs stack vertically beneath its headline, matching the provided reference rather than only stacking the group containers. Focused Admin navigation tests, TypeScript, production build, and authenticated browser inspection passed.
+- [x] Arrange Admin navigation group names horizontally as columns, with each group’s tabs vertically aligned beneath its heading and responsive wrapping on narrow screens.
+
+- [x] Make all Admin navigation group headings larger and bold, and align them to the same horizontal baseline above their vertical tab lists. Focused Admin navigation tests, TypeScript, and production build passed; the final authenticated preview retry was temporarily rate-limited after the source-level layout checks.
+
+- [x] Audit every Admin navigation grouping against the actual purpose of its tabs and correct any misclassified tabs before finalizing the layout. Reviewed each tab’s Admin Guide purpose and identified the approved functional reclassification.
+- [x] Apply approved Admin regrouping: API Health under Overview & Monitoring; Settings under Platform & Reference Tools; Tickets, Flagged, and Mod Log under Moderation & Support; Approvals under Marketplace Management. Focused navigation and Operations tests passed, TypeScript passed, and the production build passed.
+
+- [x] Make all Report a User form input and textarea bubbles white while preserving validation, contrast, and responsive behavior. Member username, listing/trade reference, concern type, contact email, details, and evidence notes now use white bubbles with dark text and muted placeholders; focused mobile/report styling tests, TypeScript, and production build passed.
+
+- [x] Change the Report a User page View My Reports button to a clear blue style while preserving placement, icon, link behavior, and readable contrast. Header and post-submission actions now use blue backgrounds with white text; focused navigation/style tests, TypeScript, and production build passed.
+
+- [x] Make all editable input fields on the Refer a Collector page white with dark readable text while preserving validation, submission behavior, and responsive layout. Collector name, collector email, collection focus, and personal invite message now use white bubbles with dark text and muted placeholders; the referral information panel remains dark. Focused referral/mobile tests, TypeScript, and production build passed.
+
+- [x] Change the Refer a Collector Send Referral Request button to a blue style with white text while preserving its icon, loading state, submission behavior, and responsive layout. The button now uses a blue background and darker blue hover state; focused referral/mobile tests, TypeScript, and production build passed.
+
+- [x] Make the Refer a Collector left-panel Referral Request title high contrast and clearly readable against the dark card background. The title now explicitly uses white text; focused referral/mobile tests, TypeScript, and production build passed.
+
+- [x] Mark traded items on Watchlist with a bold TRADED banner, keep them manually removable, and remove their detail-page links while preserving active-item behavior. Traded cards now show a red bold banner, use a plain title, hide View listing/Trade proposal actions, and retain Remove.
+- [x] Mark traded Watchlist items with a bold TRADED banner, preserve manual removal, and suppress all listing-detail/trade links for traded records while keeping active records unchanged. Targeted Watchlist regression passed, TypeScript passed, and the production build passed; two unrelated pre-existing SearchResults assertions remain stale in the broader safeguards file.
+
+- [x] Replace Tradebilia Verified with Tradebilia Merchant Verified and add an explanatory tooltip wherever the merchant verification badge is displayed. Recent-trade member badges now use the approved wording with an accessible tooltip explaining the Tradebilia merchant verification process; focused showcase/homepage tests, TypeScript, and production build passed.
+
+- [x] Reformat the LEGO field proposal into separate Required, Recommended, Optional, and Conditional grids, including section, applicable listing type, trigger, and rationale. The review document now includes all four grids, listing-type applicability, conditional triggers, statuses, rationale, first-release layout, and references.
+
+- [x] Simplify the LEGO item-type proposal into a short low-friction form with only essential universal fields and a small number of useful conditional fields; do not implement until approved. The approved compact design was used for implementation.
+
+- [x] Refine the simplified LEGO proposal so LEGO Set is the primary item type, with only minimal handling for genuinely distinct exceptions such as loose pieces or mixed lots; do not implement until approved. LEGO is implemented as one Vintage Toys item type without separate technical subtypes.
+
+- [x] Map the simplified LEGO fields into Tradebilia’s existing sections, clearly identifying required, recommended, optional, and conditional fields without implementing them yet. The proposed map keeps LEGO as one item type and limits conditional logic to completeness, packaging, instructions, and grading.
+
+- [x] Add LEGO to the Vintage Toys item-type dropdown and map the approved simplified required, recommended, optional, and conditional fields using the existing field-definition architecture. Focused LEGO regression passed 3/3, TypeScript passed, production build passed, and the independent layout is registered.
+
+- [x] Add AFA and CAS to every applicable Grading Company dropdown while preserving the Other/custom-company conditional field and existing grading workflows. LEGO now offers AFA, CAS, UKG, and Other; existing Vintage Toys grading dropdowns already included AFA and CAS. Focused grading/LEGO tests, TypeScript, and production build passed.
+
+- [x] Change the Add Inventory Submit Collectible button to a blue style with white text while preserving its icon, validation, loading/disabled state, submission behavior, and responsive layout. The submit action now uses a blue background and darker blue hover state; focused Add Inventory regression, LEGO regression, TypeScript, and production build passed.
+
+- [x] User-confirmed manual LEGO listing submission completed successfully through Add Inventory; dropdown, field mapping, validation, and submission behavior all appeared to work as expected.
+
+- [x] Add Music as a first-class Tradebilia category with the supplied hero image, category page, navigation/discovery coverage, Add Inventory item types, compact format-specific fields, and regression validation. Music now supports Vinyl Record, Cassette Tape, CD, 8-Track Tape, and Other Music Format; category, forum, preferences, inventory, profiles, member search, detail pages, and trade showcase are covered. Focused Music/LEGO tests passed 9/9, TypeScript and production build passed, desktop/mobile Music page screenshots passed, and authenticated Add Inventory verification confirmed format selection plus graded conditional fields.
+- [x] Prevent Add Inventory from requesting draft ID 0 when a member opens a new listing form, preserving valid existing-draft loading. New and malformed draft routes now use a schema-valid disabled-query fallback, while only positive draft IDs enable loading; focused Add Inventory/Music/LEGO tests passed 11/11, TypeScript passed, and the authenticated new-listing route reopened with no browser-console error.
+
+- [x] Prevent non-members from sending direct messages or proposing trades from public profiles, with interface and server-side authorization safeguards while retaining approved public-profile viewing. Visitors now see only Sign in to connect; the message composer cannot mount without an authenticated user, and both direct-message and trade-proposal procedures remain protected. Focused authorization tests passed, TypeScript passed, and the production build passed.
+- [x] Replace listing-detail Message Owner and Trade Proposal action labels with sign-in entry actions for visitors arriving from public profile collections, while keeping authenticated-member actions unchanged. Visitors now see Sign in to trade and Sign in to message; both handlers enter the sign-in flow, and neither the message modal nor trade-proposal dialog can render without authentication. Focused access-control tests, TypeScript, production build, and full suite passed: 212 files and 725 tests, with 6 intentional skips.
+
+- [x] Audit public-facing buttons and controls to identify any additional actions that should require member sign-in beyond messaging and trade proposals. The audit confirmed that saves/watchlists, favorites, replies, reports, edits/deletes, media uploads, votes, distance filters, messaging, and trade actions are member-only; browsing, search, sorting, profile/listing navigation, copy/share, external links, and read-only filters remain public. The approved additional change was gating Forum Start a discussion.
+
+- [x] Require member sign-in before non-members can open the Forum Start a discussion composer, while preserving public topic browsing, search, sorting, and reading. Visitors now receive a Sign in to start a discussion CTA; the composer opens only for authenticated members. Forum/public-profile tests, TypeScript, and production build passed.
+
+- [x] Replace the Autographs category hero background with the supplied AutoBackground1.png asset and verify desktop/mobile rendering without disturbing the existing title, controls, or category layout. Uploaded `/manus-storage/AutoBackground1_91f46550.png`, focused category tests passed, TypeScript and production build passed, and desktop/mobile screenshots confirmed the background, title, category navigation, filters, and responsive crop.
+
+- [x] Remove the Music hero image filter and replace the text title with the supplied transparent-background MUSIC artwork, preserving responsive hero layout and title readability. The Music-only contrast/saturation filter was removed; the exact supplied title artwork now uses a true-transparent PNG with no checkerboard or rectangular background. Focused Music/category tests, TypeScript, production build, and desktop/mobile screenshots passed.
+
+- [x] Increase the Add To Your Inventory hero title to a Contact Us-like responsive size while preserving hero geometry, logo, divider, background, and mobile readability. The title artwork now uses responsive 118%/112% width treatment; focused Add Inventory regression passed, TypeScript and production build passed, and authenticated rendering measured the enlarged hero asset without clipping.
+
+- [x] Further enlarge the Add To Your Inventory hero title to more closely match Contact Us and make the Category and Item Type dropdown bubbles white with readable dark text while preserving disabled-state behavior. The title now uses responsive 140%/130% width treatment; both dropdown triggers are white with dark text, and the disabled Item Type trigger remains white and readable. Focused Add Inventory tests passed 3/3, TypeScript and production build passed, and authenticated computed-style verification confirmed the changes.
+
+- [x] Fix the Add Inventory submission error affecting Music vinyl records and verify all Music formats plus representative existing item types against the legacy listing insert contract without destructive schema changes. Root cause was the legacy custom listings.category enum lacking music. Added an additive runtime bootstrap that preserves existing values and appends music before Music inserts; custom schema verification now reports the Music enum, focused Music/LEGO/Add Inventory tests passed, TypeScript and production build passed.
+
+- [x] Rename Music Grading Company options to AMG, MGA, Rewind, and Other while preserving the custom-company conditional field and graded-only visibility.
+
+- [x] Replace the Music title artwork with a similar true-transparent asset and update the Music hero reference after visual verification.
+
+- [x] Regenerate the skyline-style MUSIC wordmark as a true transparent asset and update the Music hero after visual verification.
+
+- [x] Reposition the transparent skyline MUSIC wordmark above the Music hero divider so it does not cover the Exchange text, with responsive desktop/mobile spacing.
+
+- [x] Regenerate the MUSIC headphone wordmark with white lettering, a white headphone outline, and a true transparent background, then update the Music hero after verification.
+
+- [x] Move the Music hero logo higher to create the same visible gap above the divider used by the other category pages, without moving Exchange or the divider.
+
+- [x] Defer the optional desktop Music hero background crop/position adjustment at the user’s direction; preserve the current hero layout.
+
+- [x] Repair stale Coming Soon restoration-workbench assertions, then validate the current responsive page and early-access subscription flow.
+
+- [x] Improve Coming Soon signup spacing, add privacy reassurance, and show a clear duplicate-email response while preserving responsive behavior.
+
+- [x] Add Music imagery such as records or cassette tapes to Coming Soon and include Music in the category-name list with responsive-safe layout.
+
+- [x] Resolve the unsuitable Coming Soon record crop by removing it instead of replacing it; Music remains in the category list.
+
+- [x] Remove the current record decoration from Coming Soon while retaining the Music category label and verify the page remains responsive.
+
+- [x] Update Coming Soon with the supplied Tradebilia logo artwork, add Music to the category presentation, and add a clearly recognizable record visual with responsive verification.
+
+- [x] Preserve the current Coming Soon page as Coming Soon 2 and make the revised supplied-logo/Music/record page the primary Coming Soon route, with both routes verified.
+
+- [x] Remove the baked-in desktop email form from the revised Coming Soon artwork so only the live signup form remains, with desktop/mobile verification.
+
+- [x] Restore the Coming Soon artwork content lost during the over-cleanup while removing only the duplicate baked-in signup controls; verify desktop and mobile before checkpointing.
+
+- [x] Rebuild Coming Soon from the supplied image by removing only the baked-in email form, adding Music to the category row, and adding a recognizable record while preserving the original composition.
+
+- [x] Add Stamps to the Coming Soon category presentation and add recognizable stamp collectibles to the supplied artwork while preserving Music, the record, and the existing composition.
+
+- [x] Repair the Coming Soon regression from the animated-logo/background change by restoring the last known-good composition; Music, Stamps, the record, and live signup flow remain intact.
+
+- [x] Remove the existing baked-in Coming Soon logo first, then place the supplied transparent logo and verify the replacement on desktop and mobile.
+
+- [x] Center and enlarge the Coming Soon logo above the headline, and raise the category/footer section so the built-for-collectors line is fully visible on desktop and mobile.
+
+- [x] Move the Coming Soon logo directly above the main tagline and raise the entire category/footer strip enough for “Built for Collectors · By Collectors” to be fully visible on desktop and mobile.
+
+- [x] Recheck the live Coming Soon route and make the logo placement above the tagline and footer lift visibly effective rather than only changing the checkpoint description.
+
+- [x] Fix the tradePayments API query error surfacing on /coming-soon, add regression coverage, and verify the public route without changing trade data or running migrations.
+
+- [x] Restart Coming Soon from the exact supplied image and display the complete image without cropping, removing all prior custom visual overlays unless explicitly reintroduced.
+
+- [x] Add a Music icon and label to the Coming Soon bottom category row without cropping or altering the supplied image.
+
+- [x] Match the Coming Soon Music icon and label to the existing category-icon scale and recenter the full category row without cropping the supplied image.
+
+- [x] Increase Coming Soon category icon and label sizes, add more icon-to-label spacing, and remove the opaque brown backing while preserving centering and the uncropped image.
+
+- [x] Update Trade Room cash entry so each side selects only shared active payment methods at the time cash is added; retain the method while the amount is unchanged, clear it when the amount changes, support an explicit Change method action, explain unavailable cash options, and retain the existing trade-wide confirmation and privacy safeguards.
+- [x] Add a full-width looping homepage phrase section between social media and copyright, revealing each approved phrase fragment while keeping the complete sentence centered, showing the animated Tradebilia logo for 5 seconds between phrases, and verifying desktop/mobile behavior.
+- [x] Refine the homepage phrase loop so complete punctuation-delimited fragments reveal in sequence while preserving exact approved phrase text and centered layout.
+- [x] Shorten the homepage phrase-animation section, increase phrase typography, and correct fragment reveal, 5-second phrase hold, 5-second logo hold, and phrase-to-phrase sequencing.
+- [x] Lock the homepage phrase section to one fixed height and one line per phrase, use a 2-second delay between phrase fragments, and enlarge the centered Tradebilia logo without changing the section height.
+- [x] Start each homepage phrase with its first fragment visible immediately, then use the requested 2-second interval only between subsequent fragments.
+- [x] Stretch the homepage phrase area across the available width so phrases are not clipped, correct Tradebilia logo wheel overlap, and reduce only social-media section vertical spacing without changing font or icon sizes.
+- [x] Fix the Video Games/Console listing submission failure caused by the generated insert payload and verify it with regression coverage.
+- [x] Fix the Video Games/Console Controllers included field so it accepts more than one character without losing input.
+- [x] Rename the Video Games/Console visible field label from “Controllers Included” to “Number of Controllers Included” without changing its stored key or behavior.
+- [x] Add O-Pee-Chee to the Manufacturer dropdown for every Sports category item type and verify all mappings.
+- [x] Reduce the main homepage bottom gray footer height and change footer text to white while preserving links and responsive layout.
+- [x] Center the bottom homepage Tradebilia logo-and-copyright group with equal side spacing while preserving the compact footer layout.
+- [x] Revert the unintended gray copyright-footer styling changes and correct only the homepage phrase section sizing/alignment.
+- [x] Resize and reposition the complete Tradebilia logo lockup in the phrase section as one contained unit so the wheel, divider, and wordmark do not overlap.
+- [x] Restore the larger phrase-section Tradebilia logo scale and correct its complete lockup spacing without wheel, divider, or wordmark overlap.
+- [x] Enlarge the complete phrase-section Tradebilia logo lockup to use more available horizontal space while preserving the fixed height and non-overlapping geometry.
+- [x] Correct the phrase-section Tradebilia wheel placement relative to the divider and wordmark while preserving the larger logo scale and fixed section height.
+- [x] Restore the original Tradebilia logo version in the phrase section and make the bottom gray copyright section smaller with white text.
+- [x] Review the current homepage phrase-section logo and compact white-text footer at desktop/mobile widths, correcting any remaining visual inconsistencies found.
+- [x] Replace the phrase-section animated logo interlude with the supplied transparent Tradebilia logo without tagline, preserving centered proportions and fixed-section containment.
+- [x] Scale the supplied phrase-section Tradebilia logo up as one complete image without changing its internal spacing or geometry.
+- [x] Increase the supplied phrase-section logo image further so its overall height approaches the phrase typography without changing its internal spacing or geometry.
+- [x] Make the supplied phrase-section logo slightly larger and center the complete image as one unit without changing internal spacing or geometry.
+- [x] Center the visible supplied logo artwork so equal left/right space is measured around the artwork rather than the SVG canvas margins, without altering internal logo spacing.
+- [x] Shift the complete phrase-section logo lockup slightly left so its visible artwork aligns with the centered social-media section, then double-check desktop and mobile alignment.
+- [x] Correct the visible phrase-section logo so its outermost artwork has equal left and right spacing, then double-check desktop and mobile alignment.
+- [x] Fix Test AI FedEx expected-delivery date parsing so valid carrier dates display instead of “Invalid Date,” with regression coverage and no write-side effects.
+- [x] Reproduce the persistent FedEx Test AI “Invalid Date” result, trace the exact live response value, extend normalization as needed, and verify the deployed client bundle.
+- [x] Apply the FedEx expected-delivery date normalization to the Trade Room shipping stage and verify it cannot display “Invalid Date.”
+- [x] Fix UPS expected-delivery extraction so usable carrier estimates display in Test AI, with regression coverage for alternate UPS date fields and omitted estimates.
+- [x] Apply the UPS compact-date normalization used by Test AI to the Trade Room shipping stage and verify valid UPS estimates display there.
+- [x] Add a read-only UPS/FedEx/DHL tracking lookup and expected-delivery display to the Trade Room Shipping Stage without changing shipment submission or confirmation behavior.
+- [x] Fix Test AI eBay matching for the LEGO Spider-Man 2 Street Chase AFA 8 example so valid eBay API listings are not incorrectly excluded, with regression coverage.
+- [x] Fix Test AI eBay matching for the Ken Griffey Jr. 1989 Upper Deck Rookie PSA 10 example so valid listings are not missed or incorrectly filtered, with regression coverage.
+- [x] Reproduce the persistent Ken Griffey Test AI eBay zero-result response, trace the exact live API/mapping/filter failure, and fix it with regression coverage.
+- [x] Trace and fix the confirmed API-level Ken Griffey Test AI eBay zero-result response by auditing the outbound Browse API request, marketplace configuration, and raw response before post-filters.
+- [x] Diagnose and fix the Test AI eBay Sold-Comps path so completed-sale data is shown when available, or its unavailability is presented accurately.
+- [x] Assess the RiseHaza and CarsonKope GitHub HBID auction-data projects for compliant, maintainable Test AI integration feasibility before any adoption.
+- [x] Add official Discogs API as a read-only Test AI music research source, including secure credential configuration, attribution, matching, and regression coverage.
+- [x] Verify Discogs API integration behavior in the Test AI UI and document any required user validation.
+- [x] Make Discogs use Album / Release Title as the primary Music search field, with Artist / Performer as supporting context instead of using the display title first.
+- [x] Ensure Discogs receives and searches the structured Album / Release Title field rather than the listing title throughout the client-to-server request path.
+- [x] Fix selected Music inventory-item mapping so Discogs receives the serialized Album / Release Title rather than the display/listing title.
+- [x] Remove or translate restrictive Music metadata filters that prevent valid Discogs Album / Release Title matches for existing inventory records.
+- [x] Document available official Discogs fields and recommend the appropriate Test AI metadata set before expanding the integration.
+- [x] Use the optional Music Release Year field to prioritize matching Discogs release candidates without excluding valid results.
+- [x] Show the exact Discogs Album / Release Title, Artist / Performer, and Release Year search criteria in the Test AI Evidence Review.
+- [x] Map and display Artist / Performer as a distinct returned Discogs candidate field for Test AI identity comparison.
+- [x] Replace each homepage Top 10 destination with a full ranked active-listing directory ordered by its respective criterion.
+- [x] Display each ranked directory’s total eligible-item count and support pagination beyond the first page.
+- [x] Remove the non-functional information icons from all four homepage Top 10 ranking headers.
+- [x] Assess Card Ladder and COMC for authorized, useful, and compliant Test AI data integration before any implementation.
+- [x] Produce and prioritize a compliant Test AI enhancement roadmap for stronger potential-trade analysis before implementing further data sources or AI features.
+- [x] Identify and prioritize additional authorized external data sources by Tradebilia category for stronger Test AI item comparisons.
+- [x] Verify and list Test AI data APIs available without a paid subscription, distinguishing commercial eligibility, approval requirements, and limitations.
+- [x] Highlight Test AI data sources with a yellow border when they are applicable to the loaded item category and can retrieve relevant information.
+- [x] Add a privacy-safe all-items mode to the Test AI item dropdown so eligible public listings can be selected across all accounts, while preserving My Inventory mode.
+- [x] Fix unreadable metadata bubble text on Test AI item cards by increasing contrast without changing the card layout.
+- [x] Extend Sports Cards Unopened Product Test AI criteria with Product Name and Product Format, conditional Authentication Company when Graded is Yes, and conditional sealed-case evidence only when From a Sealed Case is Yes.
+- [x] Correct Sports Cards Unopened Product queries to always use Product Name and Product Format, add Authentication Company only when Authenticated is Yes, and add exact token FASC only when From a Sealed Case is Yes.
+- [x] Revise Sports Cards Unopened Product criteria to include Sport and Product Format, omit Product Name and Condition, and preserve conditional Authentication Company and FASC rules.
+- [x] Generate and validate an audit-ready Excel workbook covering all categories, item types, query fields, conditional rules, provider behavior, and an upload template.
+- [x] Fix Test AI stale-year behavior so the current selected inventory year drives Evidence Review and all marketplace query requests.
+- [x] Add a Sports Cards result filter that excludes conflicting sports from Active Listings and Sold-Comps while preserving listings with no explicit sport.
+- [x] Audit and regenerate the Test AI query workbook so each category/item type has accurate provider-specific query fields and conditional rules, especially Sports Cards.
+- [x] Make item-detail hero background filter, overlay, positioning, and repeat behavior match the corresponding category hero.
+- [x] Center the visible Tradebilia hero title artwork on item-detail pages with equal open space on both sides.
+- [x] Recenter the item-detail hero logo using measured visible artwork bounds so both sides have equal negative space.
+- [x] Add an email sign-up section below “so your collection can grow” and above the Coming Soon category icons while preserving the existing logo and spinning wheel.
+
+- [x] Add and visually verify the launch email signup section on the active /coming-soon page between the supplied tagline and category icons.
+
+- [x] Audit why the active /coming-soon page differs from the exact supplied file and correct only the confirmed fidelity differences.
+
+- [x] Restore the supplied Coming Soon HTML composition on /coming-soon, including the animated SVG logo and original lower tidbits, then add only the requested email form.
+
+- [x] Use the exact supplied Coming Soon HTML composition as the active page source, retaining its vinyl record, bottom category icons, and original logo centering while wiring the displayed email signup to the launch-update service.
+
+- [x] Remove the supplied Coming Soon HTML’s fixed desktop-width cap so the exact composition naturally fills the user’s viewport like the 110% reference, without cropping or reconstructing it.
+
+- [x] Raise the Coming Soon email signup so it is centered between the tagline and the faint divider above the category icons without changing the supplied composition.
+
+- [x] Lower the Coming Soon signup slightly to the true visual midpoint and verify the email submission flow works correctly.
+
+- [x] Verify the Coming Soon signup recipient-segment enrollment path: the existing imported helper assigns contacts to Tradebilia Pre-Launch Updates; no repair was required.
+
+- [x] Conduct a deep technical, operational, and policy assessment of the supplied eBayScraper project for possible Test AI incorporation.
+
+- [x] Fix the Trade Room item-card image overlap at 100% browser zoom so the image remains contained and does not cover background text.
+
+- [x] Rework the Trade Room single-item image footprint because the prior containment fix did not resolve the overlap at 100% browser zoom.
+
+- [x] Match the Trade Room single-item card to the user’s 100% screenshot by separating its header, image, title, and value regions so the image cannot cover the header/background text.
+
+- [x] Change the initial Trade Room timeline event to “Trade proposal initiated for item: [item name]”.
+
+- [x] Fix trade-initiation email sender identity so the initiating account name is shown instead of the recipient-side username.
+
+- [x] Keep each Trade Room item-card Remove from trade control visible and reachable at 100% browser zoom.
+
+- [x] Move the Trade Room chat message-send button inward so it remains fully inside the composer bubble at 100% browser zoom.
+
+- [x] Apply a direct horizontal offset to the Trade Room chat send button because the prior composer-padding change did not visibly move it at 100% zoom.
+
+- [x] Remove redundant Fairness Meter give/receive rows, expand the AI Analyzer into the freed space, and rename the scale labels to Your Favor and Their Favor.
+
+- [x] Move the Trade Room chat send button clearly farther left inside the composer to create a visible right-side gap at 100% zoom.
+
+- [x] Rebuild the Trade Room chat composer action layout with a dedicated send-button inset because prior margin adjustments did not visibly move it at 100% zoom.
+
+- [x] Reduce the Trade Room composer send-button inset to a modest right-side gap after the fixed inset moved it too far left.
+
+- [x] Prevent video-call exit events from showing a false top-right trade-modified notification.
+
+- [x] Eliminate the remaining false “sent a new proposal” notification after video-call exit by tracing the live Trade Room refresh payload.
+
+- [x] Return the Trade Room Video Chat button to its normal state after a call exit instead of incorrectly showing Join Video Chat.
+
+- [x] Correct Trade Room video-call timeline entries so joiners are not incorrectly recorded as starting a new call.
+
+- [x] Route the Video Chat panel X close action through active-call cleanup so neither participant sees stale Join Video Chat after exit.
+- [x] Make the Stage 2 Trade Room Video Chat button more vibrant and noticeable while preserving its call-state behavior.
+- [x] Keep Step 3 Shipping Information fully visible and usable at 100% browser zoom without altering prior Trade Room steps.
+- [x] Format Step 3 Shipping Information phone numbers consistently with dashes without changing stored contact data.
+- [x] Reflow Step 3 contact fields above the fixed action bar so every address, email, and phone number is visible at 100% zoom.
+- [x] Restore the original Step 3 contact-field arrangement and fit the complete Finalize view through Step-3-only scaling at 100% browser zoom.
+- [x] Eliminate the Step 3-only horizontal overflow while retaining side-by-side trade items and complete normal-zoom visibility.
+- [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
+- [x] Remove the failed Step 3 scale and restore both participant sections and Shipping Information cards without clipping.
+- [x] Scale the complete Step 3 Trade Room viewport as one unit at browser 100%, preserving the original arrangement, both participant sections, and intact chat panel.
+- [x] Reduce only the Step 3 item and information section dimensions so both users’ panels fit side by side at 100% zoom without horizontal scrolling; remove whole-shell scaling.
+- [x] Shrink the complete authenticated Step 3 Trade Room view to a 67% visual size at 100% browser zoom without rearranging content.
+- [x] Reduce excess bottom whitespace created by the Step 3 67% visual scale without changing its visual size, content arrangement, or horizontal containment.
+- [x] Rotate swap arrows vertically on mobile-only stacked Trade Room and homepage exchange layouts, while retaining horizontal arrows on larger screens.
+- [x] Remove the excess bottom space below the encrypted-data disclaimer in the affected Trade Room view without changing the disclaimer or prior layouts.
+- [x] Make the complete Step 3 Trade Room fit inside the visible 100% browser viewport with no scrolling down or right, preserving original content order and avoiding browser zoom changes.
+- [x] Make the Trade Room message/chat section slightly wider while preserving Step 3 no-scroll containment, item visibility, and prior layouts.
+- [x] Widen the desktop Trade Room message/chat rail by another 50px, from 390px to 440px, while preserving Step 3 containment and mobile sizing.
+- [x] In Step 4, show a green “Valid Tracking Number has been submitted” status to both participants after carrier validation succeeds; retain the red not-submitted status until validation is successful.
+- [x] Add USPS carrier validation so “Tracking Not Available” displays “Invalid Tracking Number submitted,” while recognized USPS results qualify for shared valid status.
+- [x] Fix the live Step 4 regression where valid USPS and FedEx checks do not update either participant’s tracking-status bubble.
+- [x] Fix the screenshot-confirmed Step 4 state-flow defect where an entered USPS number remains 0/1 tracked and no carrier-validation result reaches the shared status bubbles.
+- [x] Superseded automatic USPS.com validation fallback after public-page automation proved blocked; use the user-selected official USPS.com manual-confirmation route instead.
+- [x] Add an authenticated USPS package-tracking test area that uses configured consumer credentials and never changes Trade Room or shipment data.
+- [x] Close USPS Tracking API authorization work; the official USPS.com/manual backup procedure is sufficient for the current product scope.
+- [x] Close USPS Mailer ID authorization work; the official USPS.com/manual backup procedure is sufficient for the current product scope.
+- [x] Evaluate doprdele/paqq as a potential USPS tracking approach, including its scraper method, reliability, compliance, and production suitability.
+- [x] Implement the user-selected official USPS.com manual-confirmation fallback for member-entered Step 4 USPS tracking while retaining Test AI diagnostics.
+- [x] Close the USPS fallback-status refinement; the official USPS.com/manual backup procedure is the accepted backup flow.
+- [x] Remove the other participant’s Step 4 Check Tracking section; retain only the signed-in user’s controls until the next step.
+- [x] Close further USPS visual-confirmation modal work; the existing backup procedure is sufficient.
+- [x] Evaluate a user-provided USPS tracking-result screenshot as evidence without treating screenshot colors as automated carrier validation.
+- [x] Define the AI-assisted USPS screenshot evidence workflow, including evidence retention, explicit text categories, partner visibility, and non-API status wording.
+- [x] Build a Test AI-only, user-consented USPS screenshot-capture and paste experiment that sends one image to AI without retaining it or changing trade data.
+- [x] Update the Test AI USPS experiment so the official result is viewed inside Tradebilia before current-tab capture, with an external-tab fallback if embedding fails.
+- [x] Make the primary Test AI “Open USPS results” action open the official USPS page in a new tab while retaining the user on Tradebilia.
+- [x] Automatically start AI review after a user-approved Test AI USPS tab/window capture while retaining manual paste and file review controls.
+- [x] Assess the proposed server-side USPS shipment-verification system, including architecture fit, official-access constraints, caching, evidence handling, and compliant failure behavior before implementation.
+- [x] Run an isolated, read-only USPS browser feasibility test that classifies normal result, challenge/block, timeout, or unavailable response without persisting tracking data or changing trade state.
+- [x] Add regression coverage for the isolated USPS feasibility test’s safe result classification and non-persistence boundary.
+- [x] Document observed feasibility-test results and determine whether the experiment supports any further authorized implementation.
+- [x] Audit Test AI USPS evidence flow for additional safe automation opportunities and browser-enforced permission boundaries.
+- [x] Implement only safe Test AI USPS workflow reductions that do not bypass browser permissions or claim direct USPS carrier validation.
+- [x] Add regression coverage and document the remaining unavoidable user actions in the streamlined Test AI USPS workflow.
+- [x] Simplify the Test AI USPS modal by removing the “Open USPS.com in new tab” and “Open USPS + start capture” actions, leaving one clear capture action.
+- [x] Hide the captured USPS screenshot preview from Test AI while preserving transient in-memory capture and automatic AI review results.
+- [x] Remove the Test AI USPS “Open USPS results,” “Capture current Tradebilia tab,” and “Choose screenshot” controls while preserving the in-site viewer capture action.
+- [x] Assess and design the USPS-only Step 4 Enter-triggered background verification flow with hidden evidence and participant-visible shared status, without changing other carriers.
+- [x] Resolve whether the requested Enter-only USPS behavior can be implemented with current browser permission boundaries or requires authorized API/provider access.
+- [x] Implement the USPS-only Step 4 Enter-to-viewer flow with a user-approved hidden capture, automatic Gemini Flash evidence review, and shared green/red status persistence; retain all other carrier flows.
+- [x] Add focused USPS Step 4 evidence, ownership, non-persistence, and carrier-regression coverage; validate TypeScript and the production build.
+- [x] Keep Step 4 active after USPS verification until both participants press Submit Tracking before entering Step 5.
+- [x] Contain the complete Step 4 shipping layout at 100% browser zoom with no vertical or horizontal scrolling, modeled on Step 3.
+- [x] Add regression coverage for two-sided submission gating and Step 4 viewport containment, then validate TypeScript and build.
+- [x] Contain Trade Room Step 5 so the full Confirm/Receipt stage fits at 100% browser zoom without vertical or horizontal page scrolling, using the established Step 3 strategy.
+- [x] Add UPS, FedEx, and DHL tracking-status displays to Step 5 with page-entry refresh and per-tracking manual refresh, while keeping USPS on the direct USPS.com workflow.
+- [x] Show full UPS, FedEx, and DHL shipment scan history beneath each Step 5 tracking number, including chronological stops, locations, event descriptions, and the current/latest event; keep USPS on the direct USPS.com workflow.
+- [x] Refine Trade Room timeline wording for tracking verification and final tracking submission so each event clearly reflects the user action.
+- [x] Diagnose and fix the mobile-only blurry spinning wheel in the homepage slogan section without changing desktop rendering or slogan timing/layout.
+- [x] Restore the mobile slogan logo’s original visual size using intrinsic SVG sizing while keeping the wheel sharp and desktop unchanged.
+- [x] Increase the mobile homepage slogan phrase font size without changing the logo, wheel, section height, timing, or desktop phrase typography.
+- [x] Increase only the Explore All mobile hero title size while preserving desktop title sizing, hero background, layout, and positioning.
+- [x] Increase Step 5 text sizes for readability while preserving the current no-scroll containment, images, logo, stage geometry, and earlier stages.
+- [x] Compact Step 5 participant item sections into thumbnail, display-name, and reference-number rows so Shipping Information remains visible without scrolling; leave earlier stages unchanged.
+- [x] Right-align the reference number in each Step 5 compact item row while preserving the thumbnail-left and display-name layout.
+- [x] Add accessible hover and keyboard-focus explanations to the Step 5 Report a Trade Issue and Request Dispute Review actions without changing their behavior or layout.
+- [x] Replace ambiguous USPS Step 5 status wording with clear guidance to view the latest delivery scans through the existing official USPS.com link.
+- [x] Make the Trade Room Leave Trade Room control white while preserving readable text, placement, hover behavior, and functionality.
+- [x] Move the white Leave Trade Room control farther right to separate it from the Step 7 Completed indicator while preserving responsive behavior and functionality.
+- [x] Move the Leave Trade Room control farther right within the wide-desktop header action area while preserving its white styling, mobile containment, and functionality.
+- [x] Move the Leave Trade Room control an additional 50px right on wide desktop layouts while preserving its white styling, header placement, functionality, and mobile positioning.
+- [x] Match the Leave Trade Room button to the uploaded reference position in the far-right header action area while keeping it contained, separated from Step 7, and responsive.
+- [x] Correct the Leave Trade Room header anchor and spacing to match the latest uploaded reference, removing the arbitrary offset while preserving responsive behavior and functionality.
+- [x] Anchor the Leave Trade Room button directly to the wide-desktop header’s far-right screen edge, matching the latest reference instead of the internal stepper layout.
+- [x] Contain the Trade Room Step 6 Review stage at 100% browser zoom so more review content is visible on one page without horizontal scrolling or changes to earlier stages.
+- [x] Keep the Step 6 Submit Review button visually subdued until all four ratings are selected, then highlight it without changing submission validation.
+- [x] Disable Step 6 Submit Review until all four ratings are selected, then enable and highlight it as the only active submission state.
+- [x] Create a visual-only Step 6 review-rating layout mockup that keeps each criterion label and its star control together; do not change the live interface without approval.
+- [x] Reformat only the current Step 6 rating section so each label and star selector stay together, while retaining all existing Review-stage content, controls, and behavior.
+- [x] Separate Step 6 Tracking and Reviews into distinct visible sections while retaining all existing content, review gating, and no-scroll containment.
+- [x] Increase Step 6 section readability, make the review text area white, enlarge section titles, and give Reviews stronger visual emphasis without changing content, gating, or containment.
+- [x] Increase the Trade Room chat composer typed-message font size while preserving chat history, send controls, and contained layout.
+- [x] Increase the Step 6 optional review text-area font size while preserving its white background, rating controls, submission gate, and Review-stage layout.
+- [x] Add a completed-trade-only Print Trade Recap button to the top-left Trade Steps header using existing participant-authorized recap data.
+- [x] Replace the outdated Step 6 Tracking description with completed-trade delivery-record wording while preserving tracking details and earlier-stage guidance.
+- [x] Apply Step 7 Complete-stage-only 80% internal visual scaling so more post-review content fits at normal browser zoom without changing Steps 3–6 or creating overflow.
+- [x] Expand Trade Hub sorting beyond Last Active with accurate, useful trade-order options while preserving the current default and responsive controls.
+- [x] In Step 7, remove Download Trade Receipt, style Print Trade Recap light blue, and style Leave Trade Room light gray while preserving visibility rules, behavior, and responsive layout.
+- [x] Match Items Being Traded, Shipping Information, and Tracking heading typography to the current Reviews title size for consistent Trade Room section hierarchy.
+
+- [x] Future enhancement: designed member-to-member live chat entry points on public profiles and item detail pages, including online presence, offline messaging fallback, item context, notifications, blocking/reporting, rate limits, and separation from formal Trade Room proposals. Design only; implementation remains unapproved. See `FUTURE_FEATURE_DESIGN_BRIEFS.md`.
+- [x] Future discussion: designed a Wanted List where members can save desired items or collectible targets, define matching against available inventory, configure alerts, set privacy controls, and connect matches to trade proposals without implementing it. See `FUTURE_FEATURE_DESIGN_BRIEFS.md`.
+- [x] Evaluate Whatnot data access through Apify, including official API availability, actor reliability, permitted use, data fields, refresh model, cost, credential handling, and whether to begin with a user-triggered research tool rather than automated imports.
+- [x] Evaluate consent-based account linking and verified Whatnot review or seller-history signals for member trust profiles alongside Facebook and eBay, without importing Whatnot marketplace inventory or pricing.
+- [x] Build Whatnot Reference as a member-controlled, source-labeled trust card using aggregate reputation only—rating, review count, sold count, follower count, average shipping time, seller status, source link, and refresh date—with no individual review text, reviewer identities, marketplace inventory, or pricing import.
+- [x] Evaluate the user-selected Apify actor `omgr8VWKxGZrtwQKJ` against alternative Whatnot seller/reference actors for fields, pricing, reliability, and fit for the consent-based Trust/References feature; do not enable or credential it until approved.
+- [x] Walk through setting up and running the selected `epicscrapers/whatnot-scraper` Apify actor for a one-profile seller/review test, without connecting it to Tradebilia yet.
+- [x] Run and compare a second controlled Whatnot Seller-mode test for `dovescollection` using the same Profile/Reviews-only settings and capped limits as the `toyota99` pilot.
+- [x] Evaluate additional Whatnot fields available through the selected actor and official access, especially whether email can be retrieved or used to match a Tradebilia account; classify fields by public/private sensitivity and recommend safe identity matching.
+- [x] Naming decision: use **Whatnot Reference** as the consistent label for the deferred Whatnot aggregate trust-signal feature.
+- [x] Implement a separate Whatnot Reference section on the Profile page’s Integrations tab with a protected Apify-backed refresh flow for aggregate public seller data only; exclude individual review text, reviewer identities, private email, marketplace inventory, and pricing.
+- [x] Resize the Whatnot logo in the Profile page Integrations tab to match the visual scale of the other provider logos without changing the artwork or integration behavior.
+- [x] Fix Whatnot Reference refresh failure: send the Apify actor mode as lowercase `seller` instead of `Seller`, and add regression coverage for the accepted input value.
+- [x] Fix missing Whatnot Reference in the public profile Verified Accounts area by tracing saved data, public serialization, and rendering, then add regression coverage.
+- [x] Add the aggregate-only Whatnot Reference card to item detail owner information, with the same Public data label and no individual reviews, private email, listings, or pricing.
+- [x] Ensure the Whatnot Reference chip and aggregate details appear on the public profile Verified Accounts area after a successful refresh; do not include item-detail work in this scope.
+- [x] Fix the confirmed missing Whatnot Reference on the public profile Verified Accounts area and item detail owner verification strip, then validate both surfaces with aggregate-only data.
+- [x] Restyle the Whatnot Reference Integrations controls so Refresh Reference is blue and Disconnect is red without changing their behavior or loading states.
+- [x] Match the Whatnot Reference Disconnect button to the existing solid red-background, white-text account disconnect style while keeping Refresh Reference blue.
+- [x] Remove the detailed Whatnot aggregate metric grid from the Profile Integrations tab, retaining only username, connection status, last refresh, Refresh Reference, and Disconnect controls; keep full data on public Verified Accounts.
+- [x] Remove the duplicate Whatnot refresh control so only one remains on Profile Integrations; ensure public Whatnot Reference shows review count and seller status, and excludes average shipping status.
+- [x] Verify Whatnot actor output and saved public payload for review count and seller status, fix missing values if needed, and enlarge the Whatnot logo on the public profile.
+- [x] Trace the raw Whatnot actor response for `dovescollection`, map the exact total-review field, and fix the public profile review count while preserving the enlarged logo and approved fields.
+- [x] Deep-dive PayPal’s official OAuth/Identity API, available profile claims, permissions, verification signals, privacy limits, and safe Tradebilia integration model; produce a cited field inventory without implementing the integration.
+- [x] Set up PayPal sandbox authorization for the Profile Integrations tab with secure server-side OAuth, consented userinfo retrieval, private persistence, disconnect behavior, and no public exposure of sensitive claims until the flow is approved and tested.
+- [x] Resume PayPal sandbox dashboard configuration after the PayPal security challenge is completed in a normal browser; add the callback URL, enable approved Identity permissions, and run a consented sandbox test.
+- [x] Fix the PayPal Sandbox callback URI mismatch: override the legacy internal redirect URL with the registered `https://tradebilia.manus.space/api/paypal/callback` endpoint and retest authorization.
+- [x] Fix the persistent deployed PayPal authorization mismatch: the live start route still sends the legacy internal Cloud Run callback despite the configured public callback URI; trace deployment environment resolution and correct it before retrying consent.
+- [x] Resolve PayPal Sandbox `invalid scope` authorization failure by verifying the app’s permitted Identity scopes, requesting only the approved minimum claims, and retrying consent.
+- [x] Prevent a stale deployed `PAYPAL_IDENTITY_SCOPES` override from reintroducing rejected phone or PayPal-attributes scopes; enforce the approved minimum scope allowlist before authorization.
+- [x] Diagnose and fix the PayPal post-consent `callback_failed` result, then verify only safe private identity metadata persists after authorization.
+- [x] Capture the safe PayPal error category after the corrected userinfo retry and resolve the remaining post-consent callback failure without logging tokens or identity claims.
+- [x] Resolve the PayPal Sandbox provider-side “Something went wrong” consent error by checking callback propagation, allowed permissions, and Sandbox personal-account test compatibility before retrying.
+- [x] Resolve the confirmed PayPal Sandbox `callback_userinfo_401` after successful Personal-account consent by validating the OAuth token and Identity API authorization contract.
+- [x] Test the user-token-compatible OpenID userinfo schema with PayPal Identity tokenservice after `paypalv1.1` produced a 401 following Personal Sandbox consent.
+- [x] Audit the remaining PayPal Sandbox Dashboard settings and Personal test-account prerequisites after PayPal itself returned “Something went wrong on our end” immediately after sign-in.
+- [x] Implement private PayPal name, email, and address consistency outcomes against the member’s Profile data, retaining only safe result metadata and never exposing raw PayPal claims publicly.
+- [x] Add an owner-only PayPal Comparison Inspector on Test AI that shows one authorized inspection’s raw field values and field-level comparison, without public exposure or durable raw-claim storage.
+- [x] Fix the PayPal Comparison Inspector so completed authorization returns the one-time preview and renders Tradebilia and PayPal values side by side instead of remaining in the empty state. Live authorized validation confirmed the one-time table.
+- [x] Fix the nonresponsive PayPal Comparison Inspector trigger by using a server-issued authorization launch with visible loading or error feedback.
+- [x] Diagnose why the deployed Test AI inspector button still does not trigger its authenticated launch mutation, then make the start failure observable in the UI.
+- [x] Fix the PayPal inspector ready callback that returns to Test AI without its one-time preview, and show a specific missing-preview status rather than an empty card. The final cause was pathname-only query parsing; query-aware consumption now renders the table.
+- [x] Enlarge the Whatnot logo on the public profile Whatnot Reference card to match the visual scale of the LinkedIn and Etsy verified-account logos.
+- [x] Securely configure the available PayPal sandbox Client ID and Secret under `PAYPAL_CLIENT_ID` and `PAYPAL_CLIENT_SECRET`; never place either value in chat or source control.
+- [x] Create a recovery checkpoint and credential-safe full backup commit, then push the current project state to the selected GitHub repository. Recovery checkpoint `6babe5b0`; backup branch `backup/tradebilia-recovery-2026-09-17-0240-edt` was verified on GitHub without overwriting divergent `main`.
+
+- [x] P0 remediation: remove all request-time schema creation and alteration from Tradebilia runtime code, preserving only reviewed Drizzle migration artifacts; do not apply migrations to the shared database.
+- [x] P0 remediation: upgrade and lock audited high/critical production dependency paths, then validate the application and production bundle.
+- [x] P0 remediation: add regression coverage proving request paths cannot issue schema-definition SQL, then checkpoint and synchronize only after full validation.
+
+- [x] PCGS evidence-ledger consistency: replace duplicated browser grade/date checks with a shared server-approved bucket contract so the Evidence Review and PCGS panel report identical current-value, historical-trend, and context counts. No database writes or migrations.
+- [x] PCGS compact-date repair: normalize dated `MM-YYYY` and named month-year auction labels for canonical evidence timing while preserving the original provider label for display; verified live certificate rows now classify as current value or historical trend rather than context-only.
+- [x] PCGS empty-history recovery: retry the public View All auction history once with the alternate credential only when PCGS returns a successful but empty history response; advance the read-only query version to bypass client-cached empty results. No database writes or migrations.
+- [x] Coverage tracker: confirm Coins — Numista Coin Catalog as a matching source. Keep Numista catalogue estimates read-only and subject to the approved maximum 25% secondary guide-anchor policy; they never count as completed-sale evidence.
+- [x] Remove CNG Past Auctions completely from the active Test AI sandbox: source registry, pending registry, Coins applicability, specialist router, canonical adapter registry, provider-health registry, and analyzer adapter allowlist. Historical audit notes remain non-executable recordkeeping only; no database writes or migrations.
+- [x] Remove CoinArchives completely from the active Test AI sandbox: source registry, pending registry, Coins applicability, specialist router, canonical adapter registry, provider-health registry, and analyzer adapter allowlist. Historical audit notes remain non-executable recordkeeping only; no database writes or migrations.
+- [x] PriceCharting Coins query repair: build the Parse.bot request only from the saved four-digit year, optional one-letter mint mark, and variety, in that exact order (`1903 Morgan`; `1903 S Morgan`). Do not send title, composition, denomination, grader, grade, certificate, or condition. Preserve PriceCharting as context-only unless the approved exact certified-grade sale-derived guide policy below applies; no database writes or migrations.
+- [x] PriceCharting Coins sale-derived guide policy: allow only a positive exact certified-grade PriceCharting coin value as the single preferred 25% secondary analyzer guide anchor. It never creates individual completed-sale, current-value-count, or historical-trend evidence; it is provisional without accepted completed sales. Prefer it over Numista when both are present so guide weights never stack; retain Numista visibly as reference. Add strict grade, source-treatment, snapshot-precedence, and UI-transparency regressions. No database writes, migrations, provider-credential changes, or destructive actions.
 - [x] PriceCharting coin reliability: bound Parse.bot `search_coins` and `get_coin_detail` requests to 15 seconds, classify aborts as explicit timeouts, disable automatic retries, refetch fresh on source mount, and expose a manual retry so stale 401 results cannot remain indefinitely. Focused tests 21/21 passed; deterministic suite 306 files / 1,446 tests passed with external credential probes excluded; TypeScript, production build, audit, and diff hygiene passed. No database writes, migrations, credential changes, or valuation-policy changes.
