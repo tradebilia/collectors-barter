@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatGrade, formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
@@ -484,6 +485,14 @@ function SourceCoverageTracker() {
   </section>;
 }
 
+function getPriceChartingVideoGameUpc(item: SelectedItem | null): string | null {
+  if (!item) return null;
+  const details = testAiDetails(item);
+  const raw = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
+  const upc = String(raw).replace(/\D/g, '');
+  return /^\d{8,14}$/.test(upc) ? upc : null;
+}
+
 // ─── Source Selector ─────────────────────────────────────────────────────────
 function SourceSelector({ enabled, onChange, side, item }: {
   enabled: Set<SourceId>;
@@ -492,6 +501,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
   item: SelectedItem | null;
 }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const priceChartingVideoGameUpc = getPriceChartingVideoGameUpc(item);
   const applicableSourceIds = new Set<TestAiSourceId>(
     item
       ? getEligibleTestAiSources({
@@ -524,7 +534,10 @@ function SourceSelector({ enabled, onChange, side, item }: {
                 const testResult = item ? SOURCE_TEST_RESULTS[`${item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ')}:${source.id}`] : undefined;
                 const isPermissionPending = source.status === 'permission_pending';
                 const isDeferred = source.status === 'deferred';
-                const isSelectable = !isPermissionPending && !isDeferred;
+                const missingPriceChartingVideoGameUpc = source.id === 'pricecharting'
+                  && item?.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'video games'
+                  && !priceChartingVideoGameUpc;
+                const isSelectable = !isPermissionPending && !isDeferred && !missingPriceChartingVideoGameUpc;
                 const pendingTestLabel = source.liveTestStatus === 'verified'
                   ? 'item test passed'
                   : source.liveTestStatus === 'partial'
@@ -562,8 +575,8 @@ function SourceSelector({ enabled, onChange, side, item }: {
                     key={source.id}
                     onClick={() => isSelectable && toggle(source.id as SourceId)}
                     disabled={!isSelectable}
-                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${testResult === 'match' ? ' Confirmed match for this category/source test.' : ''}${testResult === 'mismatch' ? ' Confirmed mismatch for this category/source test.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}${isDeferred ? ' It is not applicable or activatable.' : ''}`}
-                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${testResult === 'match' ? ' — confirmed match' : ''}${testResult === 'mismatch' ? ' — confirmed mismatch' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}${isDeferred ? ' — deferred by owner and disabled' : ''}`}
+                    title={`${source.description}${isApplicable ? ' Applicable to the loaded item.' : ''}${testResult === 'match' ? ' Confirmed match for this category/source test.' : ''}${testResult === 'mismatch' ? ' Confirmed mismatch for this category/source test.' : ''}${isPermissionPending ? ' Remote lookup remains disabled.' : ''}${isDeferred ? ' It is not applicable or activatable.' : ''}${missingPriceChartingVideoGameUpc ? ' A valid 8–14 digit UPC/barcode is required before PriceCharting can be used for a video game.' : ''}`}
+                    aria-label={`${source.label}${isApplicable ? ' — applicable to loaded item' : ''}${testResult === 'match' ? ' — confirmed match' : ''}${testResult === 'mismatch' ? ' — confirmed mismatch' : ''}${isPermissionPending ? ' — permission pending and disabled' : ''}${isDeferred ? ' — deferred by owner and disabled' : ''}${missingPriceChartingVideoGameUpc ? ' — disabled until a valid video-game UPC or barcode is supplied' : ''}`}
                     className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium border transition-all disabled:cursor-not-allowed ${sourceClassName}`}
                   >
                     <span>{source.icon}</span>
@@ -1495,9 +1508,8 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const coinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);
   const hasCoinQueryInput = isPriceChartingCoinSearchReady(coinQueryInput);
   const coinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(coinQueryInput, { enabled: isCoin && hasCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
-  const rawUpc = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
-  const upc = String(rawUpc).replace(/\D/g, '');
-  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery({ upc: /^\d{8,14}$/.test(upc) ? upc : '00000000' }, { enabled: isVideoGame && /^\d{8,14}$/.test(upc) });
+  const priceChartingVideoGameUpc = getPriceChartingVideoGameUpc(item);
+  const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken, { enabled: isVideoGame && Boolean(priceChartingVideoGameUpc) });
   const setSlug = String(details.setSlug ?? details.cardSetSlug ?? details.priceChartingSetSlug ?? 'unavailable').trim();
   const cardSlug = String(details.cardSlug ?? details.priceChartingCardSlug ?? 'unavailable').trim();
   const slugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery({ setSlug, cardSlug }, { enabled: isPokemonOrTcg && setSlug !== 'unavailable' && cardSlug !== 'unavailable' });
@@ -1541,7 +1553,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
           </div>
         </div>
       )}
-      {isVideoGame && !videoGameData && <p className="text-[10px] text-gray-500">Add an 8–14 digit UPC/barcode to the item details to run the PriceCharting game lookup.</p>}
+      {isVideoGame && !priceChartingVideoGameUpc && <p className="text-[10px] text-amber-300">PriceCharting video-game lookup is unavailable until the item has an 8–14 digit UPC/barcode. No PriceCharting game request was generated.</p>}
       {isPokemonOrTcg && !cardData && !slugData && <p className="text-[10px] text-gray-500">For a compatible non-Pokémon TCG, add PriceCharting setSlug and cardSlug fields to item details.</p>}
       {effectiveMoversData?.status === 'success' && movers.length > 0 && <details className="rounded border border-gray-700/30 bg-gray-950/40 p-2"><summary className="cursor-pointer text-[9px] text-gray-300">Cross-category market movers ({movers.length})</summary><div className="mt-2 space-y-1">{movers.slice(0, 5).map((mover: any, index: number) => <div key={`${mover.name}-${index}`} className="flex items-center justify-between gap-2 text-[9px]"><span className="min-w-0 truncate text-gray-400">{mover.name || 'Unnamed mover'}{mover.category ? ` · ${mover.category}` : ''}</span><span className="shrink-0 text-emerald-300">{mover.change != null ? formatWholeDollar(mover.change) : 'Change N/A'}</span></div>)}</div></details>}
       {effectiveMoversData?.status === 'error' && <p className="text-[9px] text-gray-500">Market-mover context unavailable: {effectiveMoversData.message}</p>}
@@ -2184,11 +2196,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   }, [details, item.title]);
   const priceChartingCoinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);
   const hasPriceChartingCoinQueryInput = isPriceChartingCoinSearchReady(priceChartingCoinQueryInput);
-  const priceChartingVideoGameInput = useMemo(() => {
-    const raw = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
-    const upc = String(raw).replace(/\D/g, '');
-    return { upc: /^\d{8,14}$/.test(upc) ? upc : '00000000' };
-  }, [details]);
+  const priceChartingVideoGameUpc = useMemo(() => getPriceChartingVideoGameUpc(item), [item]);
   const priceChartingSlugInput = useMemo(() => ({
     setSlug: String(details.setSlug ?? details.cardSetSlug ?? details.priceChartingSetSlug ?? 'unavailable').trim(),
     cardSlug: String(details.cardSlug ?? details.priceChartingCardSlug ?? 'unavailable').trim(),
@@ -2225,7 +2233,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && gameInput.title.length >= 2 });
   const priceChartingQuery = trpc.testAI.getPriceChartingData.useQuery({ query: item.title }, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && !!item.title });
   const priceChartingCoinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(priceChartingCoinQueryInput, { enabled: enabledSources.has('pricecharting') && item.category === 'coins' && hasPriceChartingCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
-  const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameInput, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && priceChartingVideoGameInput.upc !== '00000000' });
+  const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && Boolean(priceChartingVideoGameUpc) });
   const priceChartingSlugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery(priceChartingSlugInput, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && priceChartingSlugInput.setSlug !== 'unavailable' && priceChartingSlugInput.cardSlug !== 'unavailable' });
   const priceChartingMoversQuery = trpc.testAI.getPriceChartingBigMovers.useQuery(undefined, { enabled: enabledSources.has('pricecharting') });
   const [selectedDiscogsReleaseId, setSelectedDiscogsReleaseId] = useState<number | null>(null);

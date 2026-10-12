@@ -90,6 +90,10 @@ PSA whole-number normalization remains in force for Sports Cards. For Video Game
 
 IGDB lookups now use the saved **Game Title** and **Platform** as the blocking identity criteria. The server resolves the platform through IGDB and includes its platform ID in the games query. The saved release year remains reference context only because IGDB's primary release year can reflect a different regional release; a title/platform match is accepted with an explicit year-difference note. IGDB remains read-only factual metadata and never contributes valuation, grading, certification, or stored data.
 
+### PriceCharting Video Game UPC guard — October 12, 2026
+
+The Parse.bot PriceCharting video-game endpoint requires a numeric UPC/barcode. Test AI now disables PriceCharting selection for a Video Games item without a valid 8–14 digit UPC, skips the tRPC request instead of creating a placeholder input, and states that no PriceCharting game request was generated. A real UPC remains eligible for `lookup_video_game_by_upc`; cross-category market movers are separate context and do not substitute for the game lookup.
+
 Move to **P1 performance and maintainability** only after discussing the specific scope. The first candidate is splitting the oversized Test AI and Admin Dashboard frontend chunks, then addressing unbounded result-fetch patterns identified by the code-quality audit.
 
 ## Do not change without explicit approval

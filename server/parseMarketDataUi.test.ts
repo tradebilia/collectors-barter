@@ -31,6 +31,14 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('coinQuery.refetch()');
   });
 
+  it('does not generate a PriceCharting video-game request without a real UPC', () => {
+    expect(testAiSource).toContain('function getPriceChartingVideoGameUpc(item: SelectedItem | null)');
+    expect(testAiSource).toContain('getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken');
+    expect(testAiSource).not.toContain("upc: '00000000'");
+    expect(testAiSource).toContain('No PriceCharting game request was generated.');
+    expect(testAiSource).toContain('disabled until a valid video-game UPC or barcode is supplied');
+  });
+
   it('uses only exact certified-grade PriceCharting coin values as a capped analyzer guide', () => {
     expect(testAiSource).toContain("import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide'");
     expect(testAiSource).toContain("role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context'");
