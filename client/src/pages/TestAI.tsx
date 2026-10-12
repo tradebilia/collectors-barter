@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
-import { normalizeTestAiEvidence, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
+import { normalizeTestAiEvidence, selectPreferredGuideAnchor, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
+import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide';
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
 import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
@@ -1509,6 +1510,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const data = isCoin ? effectiveCoinData : isVideoGame ? effectiveVideoGameData : (setSlug !== 'unavailable' && cardSlug !== 'unavailable') ? effectiveSlugData : effectiveCardData;
   const isLoading = data === undefined;
   const prices = data?.data?.prices ?? {};
+  const coinGuide = isCoin ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices }) : null;
   const movers = effectiveMoversData?.data?.movers ?? [];
   const lookupMode = isCoin ? 'US coin price-guide context' : isVideoGame ? 'video-game UPC lookup' : isPokemonOrTcg ? 'Pokémon / compatible TCG price-guide context' : 'available only for compatible PriceCharting records';
   return (
@@ -1517,8 +1519,9 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🧩 PriceCharting (via Parse.bot)</p>
         {(isLoading || effectiveMoversData === undefined) && <Spinner className="w-3 h-3" />}
       </div>
-      <p className="text-gray-500 text-[10px]">Read-only {lookupMode}. Price-guide and mover data remain context-only and cannot create completed-sale evidence.</p>
+      <p className="text-gray-500 text-[10px]">Read-only {lookupMode}. {isCoin ? 'An exact certified-grade, sale-derived coin guide may serve as one capped 25% secondary analyzer anchor; it never becomes an individual completed-sale record or sale count.' : 'Price-guide and mover data remain context-only and cannot create completed-sale evidence.'}</p>
       {isCoin && hasCoinQueryInput && <p className="text-[9px] text-gray-500">Coin search used: {[coinQueryInput.year, coinQueryInput.mintMark, coinQueryInput.variety].filter(Boolean).join(' ')}</p>}
+      {isCoin && data?.status === 'success' && <p className={`text-[9px] ${coinGuide ? 'text-emerald-300' : 'text-gray-500'}`}>{coinGuide ? `Exact ${coinGuide.grade} PriceCharting guide: ${formatWholeDollar(coinGuide.value)} — eligible as the preferred 25% sale-derived analyzer guide anchor.` : 'No exact certified-grade PriceCharting value matched the listing grade; PriceCharting remains context only for this item.'}</p>}
       {isCoin && !hasCoinQueryInput && <p className="text-[9px] text-amber-300">Add a four-digit year and variety before running the PriceCharting coin search. Mint mark is optional and must be one letter.</p>}
       {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">{data.message}</p>}
@@ -2406,7 +2409,29 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const priceData = priceChartingQuery.data ?? priceChartingCoinQuery.data ?? priceChartingVideoGameQuery.data ?? priceChartingSlugQuery.data;
       const marketMoverCount = priceChartingMoversQuery.data?.data?.movers?.length ?? 0;
       const priceFields = (priceData?.data ?? {}) as Record<string, any>;
-      add({ id: 'pricecharting', label: 'PriceCharting', kind: 'market_current', role: 'asking_price_context', status: evidenceStatus(priceData), fields: { cardName: priceFields.name, title: priceFields.title, set: priceFields.set, cardNumber: priceFields.cardNumber, platform: priceFields.platform, marketMoverCount }, message: priceData?.message ?? priceChartingMoversQuery.data?.message ?? null });
+      const priceChartingCoinGuide = item.category === 'coins'
+        ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices: priceFields.prices })
+        : null;
+      add({
+        id: 'pricecharting',
+        label: 'PriceCharting',
+        kind: 'market_current',
+        role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context',
+        status: evidenceStatus(priceData),
+        fields: {
+          cardName: priceFields.name,
+          title: priceFields.title,
+          set: priceFields.set,
+          cardNumber: priceFields.cardNumber,
+          platform: priceFields.platform,
+          marketMoverCount,
+          guideValue: priceChartingCoinGuide?.value,
+          guideGrade: priceChartingCoinGuide?.grade,
+          guideSelectedGrade: priceChartingCoinGuide?.selectedGrade,
+          guideMatchType: priceChartingCoinGuide?.matchType,
+        },
+        message: priceData?.message ?? priceChartingMoversQuery.data?.message ?? null,
+      });
     }
     if (enabledSources.has('discogs') && discogsSearchCriteria.isMusic) {
       const release = discogsCandidates.find((candidate) => candidate.id === selectedDiscogsReleaseId) ?? null;
@@ -2460,6 +2485,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
 
   const statusLabel = (status: string) => status === 'success' ? 'available' : status === 'idle' ? 'checking' : status.replace('_', ' ');
   const sourceDecisions = summary.sourceDecisions ?? [];
+  const preferredGuideAnchor = selectPreferredGuideAnchor(summary.guideAnchors);
   return <section className="rounded-xl border border-violet-700/40 bg-violet-950/20 p-3 space-y-3" aria-label={`${side === 'left' ? 'Item A' : 'Item B'} normalized evidence review`}>
     <div className="flex flex-wrap items-start justify-between gap-2"><div><p className={`text-[11px] font-bold uppercase ${accentColor}`}>Evidence review</p><p className="mt-0.5 text-[10px] text-gray-500">Deterministic identity and evidence check. It preserves source facts and does not calculate a value.</p></div><Badge variant="outline" className="border-violet-600/50 text-[9px] text-violet-200">{summary.category}</Badge></div>
     <div className="grid gap-1 rounded-md border border-violet-700/25 bg-gray-950/30 p-2 text-[9px] text-gray-400 sm:grid-cols-3" aria-label="Evidence Review flag legend">
@@ -2526,7 +2552,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         })}
       </div>
     </div>
-    {summary.guideAnchors.length > 0 && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Guide-value anchors retained</p>{summary.guideAnchors.map((anchor) => <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} recorded sales{anchor.lastSaleDate ? ` · last sale ${anchor.lastSaleDate}` : ''}. This is blended only as bounded secondary evidence.</p>)}</div>}
+    {summary.guideAnchors.length > 0 && <div className="rounded border border-sky-700/30 bg-sky-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-sky-300">Guide-value anchors retained</p>{summary.guideAnchors.map((anchor) => {
+      const selected = anchor === preferredGuideAnchor;
+      return <p key={`${anchor.sourceId}-${anchor.grade}`} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-sky-200">{anchor.sourceLabel}:</span> grade {anchor.grade || 'unknown'} · ${anchor.value.toLocaleString()} · {anchor.recordedSales ?? 'recorded-sale count unavailable'} recorded sales{anchor.lastSaleDate ? ` · last sale ${anchor.lastSaleDate}` : ''}. {selected ? 'Selected as the single 25% analyzer guide anchor.' : 'Retained as reference only because a higher-priority guide anchor was selected.'}</p>;
+    })}</div>}
     {summary.reviewFlags.length > 0 && <div className="space-y-1 rounded bg-amber-950/25 p-2"><p className="text-[9px] font-semibold uppercase text-amber-300">Review before comparing</p>{summary.reviewFlags.map((flag, index) => <p key={`${flag.sourceId ?? 'flag'}-${index}`} className="text-[10px] text-amber-100/90">• {flag.message}</p>)}</div>}
     <p className="text-[9px] text-gray-600">{summary.sources.map((source) => `${source.label}: ${source.role.replace(/_/g, ' ')} · ${statusLabel(source.status)}`).join(' · ') || 'No selected source has a summary contract.'}</p>
   </section>;
@@ -3277,7 +3306,7 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
                       <p className="text-gray-200 text-xs font-semibold">{label}{item?.title ? ` · ${item.title}` : ''}</p>
                       <p className="text-gray-300 text-[10px]">Observed accepted-sale range: <span className="text-white font-semibold">{profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'Not verified'}</span></p>
                       <p className="text-gray-500 text-[9px]">Typical middle band: {profile.typicalBand?.supported ? `$${profile.typicalBand.low.toLocaleString()}–$${profile.typicalBand.high.toLocaleString()}` : 'not enough verified sales'}</p>
-                      <p className="text-gray-400 text-[10px]">Primary median value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Analyzer value is this deterministic figure · {profile.guideAnchorValue !== null ? `Guide input $${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}%${profile.guideProvisional ? ' · provisional, not market-supported' : ' · blended with 75% accepted market value'}` : 'No guide input'} · recency-weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'}</p>
+                      <p className="text-gray-400 text-[10px]">Primary median value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Analyzer value is this deterministic figure · {profile.guideAnchorValue !== null ? `${profile.guideAnchorSourceLabel ?? 'Guide'} input $${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}%${profile.guideProvisional ? ' · provisional, not market-supported' : ' · blended with 75% accepted market value'}` : 'No guide input'} · recency-weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'}</p>
                       <p className="text-gray-400 text-[10px]">Confidence: <span className="text-emerald-200 capitalize">{profile.evidenceQuality}</span> — {profile.directComparableCount} direct completed sale{profile.directComparableCount === 1 ? '' : 's'} used.</p>
                       <p className="text-gray-400 text-[10px]">Source reliability: <span className="text-emerald-200 capitalize">{profile.sourceReliability}</span>{profile.sourceReliabilityScore !== null ? ` (${profile.sourceReliabilityScore}/100)` : ''} · {profile.evidenceCoverage.attributedCount}/{profile.evidenceCoverage.selectedCount} selected records attributed.</p>
                       <div aria-label={`Source reliability ${profile.sourceReliabilityScore ?? 0} out of 100`} className="space-y-0.5"><div className="flex justify-between text-[8px] uppercase tracking-wide text-slate-500"><span>Source reliability meter</span><span>{profile.sourceReliabilityScore ?? 0}/100</span></div><div className="h-1.5 overflow-hidden rounded-full bg-slate-800"><div className={`h-full rounded-full ${profile.sourceReliability === 'high' ? 'bg-emerald-400' : profile.sourceReliability === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${profile.sourceReliabilityScore ?? 0}%` }} /></div></div>

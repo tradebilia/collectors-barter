@@ -194,6 +194,8 @@ export interface MarketProfile {
   primaryValue: number | null;
   /** Direct-grade or documented grade-band guide estimate blended as a capped secondary anchor; never a sale count. */
   guideAnchorValue: number | null;
+  guideAnchorSourceId: string | null;
+  guideAnchorSourceLabel: string | null;
   guideAnchorWeightPct: number;
   guideAdjustedValue: number | null;
   guideProvisional: boolean;
@@ -2113,6 +2115,8 @@ export function buildMarketProfile(
     typicalBand: supported && acceptedQ1 !== null && acceptedQ3 !== null ? { low: Math.round(acceptedQ1), high: Math.round(acceptedQ3), supported: true } : { low: null, high: null, supported: false },
     primaryValue: guideAdjustedValue,
     guideAnchorValue,
+    guideAnchorSourceId: valuationGuideAnchor?.sourceId ?? null,
+    guideAnchorSourceLabel: valuationGuideAnchor?.sourceLabel ?? null,
     guideAnchorWeightPct,
     guideAdjustedValue,
     guideProvisional,
@@ -2261,7 +2265,7 @@ export function marketProfileForPrompt(label: string, profile: MarketProfile): s
   return [
     `${label} DETERMINISTIC MARKET PROFILE:`,
     `- Evidence state: ${profile.evidenceState}; valuation method: ${profile.valuationMethod}`,
-    `- Primary value: ${profile.primaryValue === null ? 'unavailable' : `$${profile.primaryValue.toLocaleString()}`}; guide anchor: ${profile.guideAnchorValue === null ? 'none' : `$${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}% secondary weight`}; weighted mean diagnostic: ${profile.weightedValue === null ? 'unavailable' : `$${profile.weightedValue.toLocaleString()}`}`,
+    `- Primary value: ${profile.primaryValue === null ? 'unavailable' : `$${profile.primaryValue.toLocaleString()}`}; guide anchor: ${profile.guideAnchorValue === null ? 'none' : `${profile.guideAnchorSourceLabel ?? 'guide'} $${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}% secondary weight`}; weighted mean diagnostic: ${profile.weightedValue === null ? 'unavailable' : `$${profile.weightedValue.toLocaleString()}`}`,
     `- Observed accepted sale range: ${profile.marketRange.supported && profile.marketRange.low !== null && profile.marketRange.high !== null ? `$${profile.marketRange.low.toLocaleString()}-$${profile.marketRange.high.toLocaleString()}` : 'no defensible range'}`,
     `- Confidence: evidence ${profile.evidenceQuality}, identification ${profile.itemIdentificationConfidence}, stability ${profile.marketStability}, liquidity ${profile.liquidity}, grade/condition ${profile.gradeConditionConfidence}`,
     `- Sales velocity: 7d ${profile.salesVelocity.sevenDay}, 30d ${profile.salesVelocity.thirtyDay}, 90d ${profile.salesVelocity.ninetyDay}; recent sales ${profile.recentSaleCount}; authoritative sales ${profile.authoritativeSaleCount}`,

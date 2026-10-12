@@ -30,7 +30,7 @@ function sale(overrides: Partial<MarketSale> = {}): MarketSale {
   };
 }
 
-describe('Analyzer 2.9 unified analysis snapshot', () => {
+describe('Analyzer 2.10 unified analysis snapshot', () => {
   it('preserves source status, material flags, and visual-review counts in one versioned snapshot', () => {
     const evidence = normalizeTestAiEvidence(griffey, [
       { id: 'sold_comps', label: 'eBay Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 2 } },
@@ -42,7 +42,7 @@ describe('Analyzer 2.9 unified analysis snapshot', () => {
       evidenceSummary: evidence,
       now,
     });
-    expect(snapshot.version).toBe('2.9.0');
+    expect(snapshot.version).toBe('2.10.0');
     expect(snapshot.profile.authoritativeSaleCount).toBe(2);
     expect(snapshot.evidence.sourceStatuses.map((source) => source.id)).toEqual(['sold_comps', 'psa']);
     expect(snapshot.evidence.visualReview).toMatchObject({ match: 1, roughMatch: 1, mismatch: 1, unreadable: 0, notReviewed: 0 });
@@ -116,6 +116,54 @@ describe('Analyzer 2.9 unified analysis snapshot', () => {
     expect(snapshot.profile.guideAnchorWeightPct).toBe(25);
     expect(snapshot.profile.primaryValue).toBe(575);
     expect(snapshot.profile.guideProvisional).toBe(false);
+  });
+
+  it('prefers the exact-grade PriceCharting sale-derived guide over a catalogue anchor without adding guide weights', () => {
+    const coinTarget = {
+      title: '1903 Morgan Dollar',
+      category: 'coins',
+      grade: 'MS65',
+      certificationCompany: 'PCGS',
+      itemDetails: JSON.stringify({ country: 'United States', denomination: '$1', year: '1903', variety: 'Morgan' }),
+    };
+    const evidence = normalizeTestAiEvidence(coinTarget, []);
+    evidence.guideAnchors = [
+      { sourceId: 'numista', sourceLabel: 'Numista Coin Catalog', grade: 'UNC', selectedGrade: 'MS65', matchType: 'mapped', value: 2_000, recordedSales: 0, lastSaleDate: null, totalRecordedSales: 0 },
+      { sourceId: 'pricecharting', sourceLabel: 'PriceCharting', grade: 'MS65', selectedGrade: 'MS65', matchType: 'exact', value: 1_200, recordedSales: null, lastSaleDate: null, totalRecordedSales: null },
+    ];
+    const snapshot = buildAnalysisSnapshot({
+      target: coinTarget,
+      sales: [sale({ saleId: 'pricecharting-priority', title: '1903 $1 Morgan Dollar PCGS MS65', price: 100 })],
+      evidenceSummary: evidence,
+      now,
+    });
+
+    expect(snapshot.profile.guideAnchorValue).toBe(1_200);
+    expect(snapshot.profile.guideAnchorSourceId).toBe('pricecharting');
+    expect(snapshot.profile.guideAnchorSourceLabel).toBe('PriceCharting');
+    expect(snapshot.profile.guideAnchorWeightPct).toBe(25);
+    expect(snapshot.profile.primaryValue).toBe(375);
+    expect(snapshot.profile.authoritativeSaleCount).toBe(1);
+  });
+
+  it('rejects a browser-carried PriceCharting guide when the target is not an exact-grade coin', () => {
+    const evidence = normalizeTestAiEvidence(griffey, []);
+    evidence.guideAnchors = [{
+      sourceId: 'pricecharting',
+      sourceLabel: 'PriceCharting',
+      grade: 'MS65',
+      selectedGrade: 'MS65',
+      matchType: 'exact',
+      value: 1_200,
+      recordedSales: null,
+      lastSaleDate: null,
+      totalRecordedSales: null,
+    }];
+    const snapshot = buildAnalysisSnapshot({ target: griffey, sales: [sale({ saleId: 'guide-rejection', price: 100 })], evidenceSummary: evidence, now });
+
+    expect(snapshot.profile.guideAnchorValue).toBeNull();
+    expect(snapshot.profile.guideAnchorSourceId).toBeNull();
+    expect(snapshot.profile.primaryValue).toBe(100);
   });
 
   it('withholds cash guidance until each side meets the three-sale preliminary range floor', () => {

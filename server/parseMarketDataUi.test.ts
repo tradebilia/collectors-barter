@@ -25,6 +25,14 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('Coin search used:');
   });
 
+  it('uses only exact certified-grade PriceCharting coin values as a capped analyzer guide', () => {
+    expect(testAiSource).toContain("import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide'");
+    expect(testAiSource).toContain("role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context'");
+    expect(testAiSource).toContain('guideValue: priceChartingCoinGuide?.value');
+    expect(testAiSource).toContain('preferred 25% sale-derived analyzer guide anchor');
+    expect(testAiSource).toContain('Selected as the single 25% analyzer guide anchor.');
+  });
+
   it('keeps all three provider panels explicitly read-only', () => {
     expect(testAiSource).toContain('Read-only cert details, grade, designation, and population data');
     expect(testAiSource).toContain('Read-only Pokémon card market prices by grade');

@@ -1,4 +1,4 @@
-import type { NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
+import { selectPreferredGuideAnchor, type GuideValueAnchor, type NormalizedEvidenceSummary } from '../shared/testAiEvidenceNormalization';
 import {
   buildMarketProfile,
   deterministicTradeComparison,
@@ -9,7 +9,7 @@ import {
   type ConfidenceLevel,
 } from './testAiComparableEngine';
 
-export const ANALYZER_SNAPSHOT_VERSION = '2.9.0';
+export const ANALYZER_SNAPSHOT_VERSION = '2.10.0';
 
 export type AnalysisCashAdjustment = {
   amount: number;
@@ -79,6 +79,25 @@ function sourceReviewCounts(sales: MarketSale[]) {
   return counts;
 }
 
+function normalizedCoinGuideGrade(value: unknown): string {
+  return String(value ?? '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
+}
+
+/**
+ * Evidence summaries originate in the browser, so the server repeats the
+ * category, exact-grade, and amount gates before a PriceCharting guide can
+ * affect a deterministic analyzer profile.
+ */
+function isServerEligibleGuideAnchor(anchor: GuideValueAnchor, target: ComparableTarget): boolean {
+  if (!Number.isFinite(anchor.value) || anchor.value <= 0) return false;
+  if (anchor.sourceId !== 'pricecharting') return true;
+
+  return target.category.trim().toLowerCase().replace(/[\s-]+/g, '_') === 'coins'
+    && anchor.matchType === 'exact'
+    && Boolean(target.grade)
+    && normalizedCoinGuideGrade(anchor.selectedGrade) === normalizedCoinGuideGrade(target.grade);
+}
+
 /**
  * The snapshot is the server-side handoff used by the profile, prompt, and
  * result UI. It intentionally contains no raw provider credentials, no asking
@@ -93,7 +112,12 @@ export function buildAnalysisSnapshot(input: {
   now?: Date;
 }): AnalysisSnapshot {
   const sales = input.sales ?? [];
-  const valuationGuideAnchor = input.evidenceSummary?.guideAnchors?.[0] ?? null;
+  // The server chooses one guide only. Exact-grade PriceCharting coin guides
+  // take precedence over catalogue anchors; this prevents additive guide
+  // weighting when more than one reference source returns a value.
+  const valuationGuideAnchor = selectPreferredGuideAnchor(
+    (input.evidenceSummary?.guideAnchors ?? []).filter((anchor) => isServerEligibleGuideAnchor(anchor, input.target)),
+  );
   const profile = buildMarketProfile(
     input.target,
     sales,

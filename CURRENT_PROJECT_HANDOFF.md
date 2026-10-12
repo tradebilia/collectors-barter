@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | PCGS empty-history recovery: an HTTP-successful but empty PCGS View All result is retried once with the alternate configured credential; the Test AI cache key is advanced to refresh prior empty browser results |
-| Latest validation | 320 Vitest files passed; 1,454 tests passed; 6 tests skipped. TypeScript, production build, `git diff --check`, PCGS provider-stage verification, and runtime-schema scan passed. |
+| Latest functional change | PriceCharting exact-grade, sale-derived coin-guide policy: one positive exact certified-grade result may become the preferred capped 25% secondary guide anchor; it never creates sale rows/counts and cannot stack with Numista. |
+| Latest validation | 302 deterministic Vitest files / 1,440 tests passed (external credential probes excluded); TypeScript, production build, `git diff --check`, runtime-schema scan, and literal-secret diff scan passed. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
 ## Coverage tracker confirmation — October 11, 2026
@@ -28,7 +28,16 @@
 
 ## Approved PriceCharting coin-search rule — October 11, 2026
 
-For the read-only **Parse.bot PriceCharting Coins** lookup, the server constructs the provider query from only three saved coin fields, in this exact order: **four-digit year**, optional **one-letter mint mark**, then **variety**. For example, `1903 Morgan` has no stored mint-mark letter; `1903 S Morgan` includes `S`. The listing title, country, denomination, composition, grader, grade, certificate number, condition, and other fields are never sent in this provider query. The Test AI panel displays the resulting query. PriceCharting remains context-only guide/asking-price information and cannot create completed-sale evidence or alter analyzer valuation policy.
+For the read-only **Parse.bot PriceCharting Coins** lookup, the server constructs the provider query from only three saved coin fields, in this exact order: **four-digit year**, optional **one-letter mint mark**, then **variety**. For example, `1903 Morgan` has no stored mint-mark letter; `1903 S Morgan` includes `S`. The listing title, country, denomination, composition, grader, grade, certificate number, condition, and other fields are never sent in this provider query. The Test AI panel displays the resulting query.
+
+## Approved PriceCharting sale-derived guide policy — October 11, 2026
+
+PriceCharting’s published U.S.-coin methodology describes grade-specific **current market prices** calculated from filtered historic completed sales. The approved sandbox treatment is deliberately bounded:
+
+1. Only a **Coins** result with a positive PriceCharting value at the listing’s exact declared certified grade may qualify. Numeric-only, mapped, missing, mismatched, or non-coin grade values remain context only.
+2. A qualifying value is a **sale-derived aggregate guide**, not an individual dated transaction. It contributes at most **25%** as the one secondary analyzer guide anchor and never creates a completed-sale record, current-value sale count, or historical-trend row.
+3. The server rechecks the PriceCharting source, Coins category, positive amount, exact-grade flag, and the declared target grade before it can affect the analyzer, then chooses **one** guide anchor. An exact-grade PriceCharting coin guide takes precedence over Numista’s catalogue anchor; Numista remains visible as reference. The two guide values are never stacked or allowed to exceed the 25% cap.
+4. Verified, dated, identity-compatible completed sales remain the primary 75% baseline. With no accepted completed-sale baseline, the selected guide is explicitly labeled provisional and not market-supported.
 
 The owner explicitly approved this Trade Analyzer behavior:
 
@@ -58,7 +67,7 @@ The P0 work is documented in [P0_REMEDIATION_HANDOFF_2026-10-11.md](P0_REMEDIATI
 The isolated development project uses the existing custom database. Treat every server action as potentially connected to real development data.
 
 - **Fresh read-only baseline:** 3 users, 3 profiles, 48 listings, 74 listing photos, 1 inquiry reply, and 6 trade proposals.
-- **No database writes were made for the P0, Numista, denomination, visual-fallback, or PCGS policy work.** No migrations, seed scripts, deletion scripts, or schema SQL were executed.
+- **No database writes were made for the P0, Numista, denomination, visual-fallback, PCGS, or PriceCharting policy work.** No migrations, seed scripts, deletion scripts, or schema SQL were executed.
 - The deployed database does **not** expose an `inquiries` table; the current queryable inquiry-related table is `inquiryReplies`. Do not assume ORM/schema names exist in the shared database—inspect read-only first.
 - Never print, copy, commit, or request raw database URLs, API keys, OAuth tokens, encryption keys, JWT secrets, or `.project-config.json`.
 
@@ -81,7 +90,7 @@ Move to **P1 performance and maintainability** only after discussing the specifi
 - Database migration execution, seed scripts, or deletion scripts
 - Provider credentials, external OAuth configuration, payment settings, schedules, or notification delivery
 - Hosting/domain reassignment or a new replacement project
-- Trade Analyzer valuation behavior beyond the owner-approved **Numista 25% guide policy** and **PCGS 365-day current-value / older-history policy** documented above
+- Trade Analyzer valuation behavior beyond the owner-approved **PriceCharting/Numista single 25% guide-anchor policy** and **PCGS 365-day current-value / older-history policy** documented above
 
 ## Quick continuation prompt
 

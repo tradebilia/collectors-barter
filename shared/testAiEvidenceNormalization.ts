@@ -101,6 +101,18 @@ export type GuideValueAnchor = {
   totalRecordedSales: number | null;
 };
 
+/**
+ * The analyzer accepts exactly one capped guide input. When an exact-grade
+ * PriceCharting coin guide is present, it wins over catalogue anchors because
+ * it is sale-derived. Catalogue anchors remain visible as reference context.
+ */
+export function selectPreferredGuideAnchor(anchors: GuideValueAnchor[]): GuideValueAnchor | null {
+  return anchors.find((anchor) => anchor.sourceId === 'pricecharting')
+    ?? anchors.find((anchor) => anchor.sourceId === 'numista')
+    ?? anchors[0]
+    ?? null;
+}
+
 type DetailRecord = Record<string, unknown>;
 
 const FIELD_LABELS: Record<string, string> = {
@@ -221,6 +233,10 @@ function normalized(value: string): string {
 
 function equivalent(left: string, right: string): boolean {
   return normalized(left) === normalized(right);
+}
+
+function equivalentCoinGuideGrade(left: string, right: string): boolean {
+  return left.toUpperCase().replace(/[^A-Z0-9]+/g, '') === right.toUpperCase().replace(/[^A-Z0-9]+/g, '');
 }
 
 function normalizeCoinDenomination(value: string): string {
@@ -430,9 +446,10 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
   const currentListings = Number(market?.currentListingCount ?? 0);
   const context = market ? Math.max(0, currentListings + completed - accepted - currentValue - historicalTrend + undated) : 0;
   const hasGuideValue = source.status === 'success' && Number.isFinite(Number(source.fields?.guideValue)) && Number(source.fields?.guideValue) > 0;
+  const guideSource = source.id === 'numista' || source.id === 'pricecharting';
   const treatment = source.status === 'error' || source.status === 'not_found'
     ? 'unavailable'
-    : hasGuideValue && source.id === 'numista'
+    : hasGuideValue && guideSource
       ? 'valuation_guide'
       : accepted > 0
         ? 'valuation_candidate'
@@ -442,7 +459,9 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
             ? 'certification_context'
             : 'context_only';
   const treatmentReason = treatment === 'valuation_guide'
-    ? 'USD catalogue estimate enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale.'
+    ? source.id === 'pricecharting'
+      ? 'Exact certified-grade, sale-derived PriceCharting coin guide enters the analyzer as the preferred secondary guide anchor at 25%; it is not an individual dated completed sale.'
+      : 'USD catalogue estimate enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale.'
     : treatment === 'valuation_candidate'
       ? 'Completed, identity-compatible sale candidates are sent to the analyzer; final comparable gates determine inclusion and sale-level weight.'
       : treatment === 'historical_trend'
@@ -514,6 +533,34 @@ export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: Ev
         sourceId: source.id,
         sourceLabel: source.label,
         message: `${source.label} returned a USD catalogue estimate. It enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale and remains separately classified from sale evidence.`,
+      });
+    }
+    const selectedGuideGrade = text(source.fields?.guideSelectedGrade);
+    const exactPriceChartingGuide = source.status === 'success'
+      && source.id === 'pricecharting'
+      && category === 'coins'
+      && text(source.fields?.guideMatchType) === 'exact'
+      && Boolean(listingValues.grade)
+      && equivalentCoinGuideGrade(selectedGuideGrade, listingValues.grade)
+      && Number.isFinite(guideValue)
+      && guideValue > 0;
+    if (exactPriceChartingGuide) {
+      guideAnchors.push({
+        sourceId: source.id,
+        sourceLabel: source.label,
+        grade: text(source.fields?.guideGrade),
+        selectedGrade: selectedGuideGrade,
+        matchType: 'exact',
+        value: guideValue,
+        recordedSales: null,
+        lastSaleDate: null,
+        totalRecordedSales: null,
+      });
+      reviewFlags.push({
+        kind: 'context',
+        sourceId: source.id,
+        sourceLabel: source.label,
+        message: `${source.label} returned an exact certified-grade, sale-derived coin guide. It is the preferred secondary analyzer anchor at 25%, never an individual dated completed sale or a completed-sale count.`,
       });
     }
     if (source.status === 'error') {

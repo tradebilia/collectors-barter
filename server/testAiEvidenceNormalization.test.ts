@@ -182,6 +182,34 @@ describe('normalizeTestAiEvidence', () => {
     expect(formatTestAiEvidenceForAnalysis(summary, 'ITEM A')).toContain('Numista Coin Catalog');
   });
 
+  it('uses only an exact-grade PriceCharting coin guide as the preferred sale-derived anchor', () => {
+    const summary = normalizeTestAiEvidence({
+      title: '1903 Morgan Dollar PCGS MS65',
+      category: 'coins',
+      grade: 'MS-65',
+      certificationCompany: 'PCGS',
+      itemDetails: { country: 'United States', denomination: '$1', year: '1903', variety: 'Morgan' },
+    }, [{
+      id: 'pricecharting',
+      label: 'PriceCharting',
+      kind: 'market_current',
+      role: 'valuation_guide',
+      status: 'success',
+      fields: { guideValue: 1_250, guideGrade: 'MS65', guideSelectedGrade: 'MS65', guideMatchType: 'exact' },
+    }]);
+
+    expect(summary.guideAnchors).toEqual([expect.objectContaining({ sourceId: 'pricecharting', value: 1_250, matchType: 'exact' })]);
+    expect(summary.sourceDecisions).toEqual(expect.arrayContaining([expect.objectContaining({
+      id: 'pricecharting',
+      treatment: 'valuation_guide',
+      analyzerWeightPct: 25,
+      accepted: 0,
+    })]));
+    expect(summary.reviewFlags).toEqual(expect.arrayContaining([expect.objectContaining({
+      kind: 'context', sourceId: 'pricecharting', message: expect.stringContaining('preferred secondary analyzer anchor at 25%'),
+    })]));
+  });
+
   it('reports unavailable specialist evidence as coverage rather than a false negative conclusion', () => {
     const summary = normalizeTestAiEvidence({ title: 'Transformers Megatron G1', category: 'vintage_toys', itemDetails: { brand: 'Hasbro', toyName: 'Megatron', year: '1984' } }, [
       { id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: 'success', market: { completedSaleCount: 3 } },

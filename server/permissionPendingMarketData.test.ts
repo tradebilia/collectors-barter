@@ -167,9 +167,8 @@ describe('permission-pending market-source adapters', () => {
     }, {});
 
     expect(statusCounts).toEqual({
-      verified: 16,
+      verified: 15,
       partial: 3,
-      no_completed_item: 1,
       deferred: 2,
     });
   });
