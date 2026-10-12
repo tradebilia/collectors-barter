@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | PriceCharting exact-grade, sale-derived coin-guide policy remains unchanged; coin lookups now have a 30-second server timeout, no automatic retries, fresh-on-mount query behavior, and a visible manual retry so slow provider responses can complete without leaving stale 401s indefinitely. |
-| Latest validation | 306 deterministic Vitest files / 1,446 tests passed (external credential probes excluded); focused PriceCharting tests 21/21 passed; TypeScript, production build, `git diff --check`, and production audit passed with two low findings. |
+| Latest functional change | PriceCharting exact-grade, sale-derived coin-guide policy remains unchanged; coin lookups have a 30-second timeout, no automatic retries, fresh-on-mount query behavior, and a visible manual retry. Timeout messages now identify whether the stall occurred during `search_coins` response headers/body or `get_coin_detail` response headers/body. |
+| Latest validation | Focused PriceCharting tests 22/22 passed; deterministic validation is rerun after the phase-diagnostic update; TypeScript, production build, `git diff --check`, and production audit remain required before checkpointing. |
 | Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
 
 ## Coverage tracker confirmation — October 11, 2026

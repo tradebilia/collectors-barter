@@ -51,11 +51,28 @@ function asObject(value: unknown): Record<string, any> {
   return value && typeof value === 'object' ? value as Record<string, any> : {};
 }
 
-async function fetchPriceCharting(url: string, init: RequestInit): Promise<Response> {
+async function fetchPriceChartingJson(url: string, init: RequestInit, operation: string): Promise<{ response: Response; payload: unknown }> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), PRICECHARTING_REQUEST_TIMEOUT_MS);
+  let phase = `${operation} response`;
+  let timedOut = false;
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, PRICECHARTING_REQUEST_TIMEOUT_MS);
   try {
-    return await fetch(url, { ...init, signal: controller.signal });
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    phase = `${operation} response body`;
+    let payload: unknown = null;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') throw error;
+    }
+    return { response, payload };
+  } catch (error) {
+    if (timedOut || (error instanceof Error && error.name === 'AbortError')) {
+      const timeoutError = new Error(`PriceCharting ${phase} timed out`);
+      timeoutError.name = 'PriceChartingTimeoutError';
+      throw timeoutError;
+    }
+    throw error;
   } finally {
     clearTimeout(timeout);
   }
@@ -198,8 +215,7 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
   if (!apiKey) return { query: normalizedQuery ?? '', status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
   if (!normalizedQuery) return { query: '', status: 'error' as const, message: 'PriceCharting coin searches require a four-digit year and a variety. An optional mint mark must be one letter.', data: null };
   try {
-    const response = await fetchPriceCharting(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/search_coins?query=${encodeURIComponent(normalizedQuery)}`, { headers: { 'X-API-Key': apiKey } });
-    const payload = await response.json().catch(() => null);
+    const { response, payload } = await fetchPriceChartingJson(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/search_coins?query=${encodeURIComponent(normalizedQuery)}`, { headers: { 'X-API-Key': apiKey } }, 'search_coins');
     if (!response.ok) { await recordParseFailure('PriceCharting coin search', response.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse PriceCharting', payload), data: null }; }
     const result = asObject(asObject(payload).data ?? payload);
     const coins = Array.isArray(result.coins) ? result.coins : Array.isArray(result.items) ? result.items : [];
@@ -212,8 +228,7 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
         : 'No matching US coin was found in PriceCharting.';
       return { query: normalizedQuery, status: 'not_found' as const, message, data: null };
     }
-    const detailResponse = await fetchPriceCharting(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_coin_detail?set_slug=${encodeURIComponent(String(firstCoin.set_slug))}&coin_slug=${encodeURIComponent(String(firstCoin.coin_slug))}`, { headers: { 'X-API-Key': apiKey } });
-    const detailPayload = await detailResponse.json().catch(() => null);
+    const { response: detailResponse, payload: detailPayload } = await fetchPriceChartingJson(`${PARSE_API_BASE}/${PRICECHARTING_SCRAPER_ID}/get_coin_detail?set_slug=${encodeURIComponent(String(firstCoin.set_slug))}&coin_slug=${encodeURIComponent(String(firstCoin.coin_slug))}`, { headers: { 'X-API-Key': apiKey } }, 'get_coin_detail');
     if (!detailResponse.ok) { await recordParseFailure('PriceCharting coin detail', detailResponse.status); return { query: normalizedQuery, status: 'error' as const, message: parseErrorMessage(detailResponse.status, 'Parse PriceCharting', detailPayload), data: null }; }
     const coin = asObject(asObject(detailPayload).data ?? detailPayload);
     const resultName = `${coin.name ?? firstCoin.name ?? ''} ${coin.set ?? firstCoin.set ?? ''}`;
@@ -222,8 +237,8 @@ export async function lookupPriceChartingCoin(input: PriceChartingCoinSearchInpu
     }
     return { query: normalizedQuery, status: 'success' as const, data: { name: coin.name ?? firstCoin.name ?? null, set: coin.set ?? firstCoin.set ?? null, year: coin.year ?? coin.release_date ?? null, mint: coin.mint ?? null, mintage: coin.mintage ?? coin.metadata?.mintage ?? null, url: coin.url ?? firstCoin.url ?? null, prices: asObject(coin.prices ?? firstCoin.prices), source: 'US coin price-guide context' } };
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup timed out after 30 seconds. No value was accepted; retry when the provider is responsive.', data: null };
+    if (error instanceof Error && error.name === 'PriceChartingTimeoutError') {
+      return { query: normalizedQuery, status: 'error' as const, message: `${error.message} after 30 seconds. No value was accepted; retry when the provider is responsive.`, data: null };
     }
     return { query: normalizedQuery, status: 'error' as const, message: 'Parse PriceCharting coin lookup could not be reached. Try again shortly.', data: null };
   }

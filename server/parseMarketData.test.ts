@@ -75,7 +75,17 @@ describe('Parse SGC and PriceCharting adapters', () => {
     const result = await lookupPriceChartingCoin({ year: '1903', variety: 'Morgan' }, { PARSE_BOT_API_KEY: 'configured-key' });
 
     expect(result.status).toBe('error');
+    expect(result.message).toContain('search_coins response');
     expect(result.message).toContain('timed out after 30 seconds');
+  });
+
+  it('identifies a timeout while reading the PriceCharting search response body', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => { const error = new Error('aborted'); error.name = 'AbortError'; throw error; } }) as typeof fetch;
+
+    const result = await lookupPriceChartingCoin({ year: '1903', variety: 'Morgan' }, { PARSE_BOT_API_KEY: 'configured-key' });
+
+    expect(result.status).toBe('error');
+    expect(result.message).toContain('search_coins response body');
   });
 
   it('rejects conflicting years or mint marks instead of accepting a fuzzy coin match', async () => {
