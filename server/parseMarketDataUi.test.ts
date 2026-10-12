@@ -25,6 +25,12 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('Coin search used:');
   });
 
+  it('does not reuse failed coin lookups silently and exposes a bounded retry', () => {
+    expect(testAiSource).toContain("retry: false, staleTime: 0, refetchOnMount: 'always'");
+    expect(testAiSource).toContain('Retry PriceCharting coin lookup');
+    expect(testAiSource).toContain('coinQuery.refetch()');
+  });
+
   it('uses only exact certified-grade PriceCharting coin values as a capped analyzer guide', () => {
     expect(testAiSource).toContain("import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide'");
     expect(testAiSource).toContain("role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context'");

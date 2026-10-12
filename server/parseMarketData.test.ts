@@ -67,6 +67,17 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[1][0]).toContain('/get_coin_detail?set_slug=lincoln-cents&coin_slug=1909-s-vdb');
   });
 
+  it('classifies an aborted PriceCharting coin request as a bounded timeout', async () => {
+    const timeout = new Error('aborted');
+    timeout.name = 'AbortError';
+    global.fetch = vi.fn().mockRejectedValue(timeout) as typeof fetch;
+
+    const result = await lookupPriceChartingCoin({ year: '1903', variety: 'Morgan' }, { PARSE_BOT_API_KEY: 'configured-key' });
+
+    expect(result.status).toBe('error');
+    expect(result.message).toContain('timed out after 15 seconds');
+  });
+
   it('rejects conflicting years or mint marks instead of accepting a fuzzy coin match', async () => {
     expect(isPriceChartingCoinIdentityCompatible({ year: '1945', variety: 'Walking Liberty' }, '2016 W [GOLD] Walking Liberty Half Dollar')).toBe(false);
     expect(isPriceChartingCoinIdentityCompatible({ year: '1903', variety: 'Morgan' }, '1903 S Morgan Silver Dollar')).toBe(false);

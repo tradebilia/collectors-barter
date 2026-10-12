@@ -1494,7 +1494,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const isPokemonOrTcg = normalizedCategory === 'pokemon';
   const coinQueryInput = useMemo(() => buildPriceChartingCoinInput(item), [item]);
   const hasCoinQueryInput = isPriceChartingCoinSearchReady(coinQueryInput);
-  const coinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(coinQueryInput, { enabled: isCoin && hasCoinQueryInput });
+  const coinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(coinQueryInput, { enabled: isCoin && hasCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
   const rawUpc = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
   const upc = String(rawUpc).replace(/\D/g, '');
   const videoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery({ upc: /^\d{8,14}$/.test(upc) ? upc : '00000000' }, { enabled: isVideoGame && /^\d{8,14}$/.test(upc) });
@@ -1508,7 +1508,7 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const effectiveSlugData = slugData ?? slugQuery.data;
   const effectiveMoversData = moversData ?? moversQuery.data;
   const data = isCoin ? effectiveCoinData : isVideoGame ? effectiveVideoGameData : (setSlug !== 'unavailable' && cardSlug !== 'unavailable') ? effectiveSlugData : effectiveCardData;
-  const isLoading = data === undefined;
+  const isLoading = data === undefined || (isCoin && coinQuery.isFetching);
   const prices = data?.data?.prices ?? {};
   const coinGuide = isCoin ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices }) : null;
   const movers = effectiveMoversData?.data?.movers ?? [];
@@ -1523,7 +1523,8 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
       {isCoin && hasCoinQueryInput && <p className="text-[9px] text-gray-500">Coin search used: {[coinQueryInput.year, coinQueryInput.mintMark, coinQueryInput.variety].filter(Boolean).join(' ')}</p>}
       {isCoin && data?.status === 'success' && <p className={`text-[9px] ${coinGuide ? 'text-emerald-300' : 'text-gray-500'}`}>{coinGuide ? `Exact ${coinGuide.grade} PriceCharting guide: ${formatWholeDollar(coinGuide.value)} — eligible as the preferred 25% sale-derived analyzer guide anchor.` : 'No exact certified-grade PriceCharting value matched the listing grade; PriceCharting remains context only for this item.'}</p>}
       {isCoin && !hasCoinQueryInput && <p className="text-[9px] text-amber-300">Add a four-digit year and variety before running the PriceCharting coin search. Mint mark is optional and must be one letter.</p>}
-      {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
+      {isCoin && data?.status === 'error' && <div className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400"><p>{data.message}</p><button type="button" onClick={() => void coinQuery.refetch()} disabled={coinQuery.isFetching} className="mt-2 rounded border border-red-500/40 px-2 py-1 text-[9px] text-red-200 hover:bg-red-900/40 disabled:opacity-50">{coinQuery.isFetching ? 'Retrying…' : 'Retry PriceCharting coin lookup'}</button></div>}
+      {!isCoin && data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
       {data?.status === 'not_found' && <p className="text-[10px] text-gray-500">{data.message}</p>}
       {data?.status === 'success' && data.data && (
         <div className="space-y-2 rounded bg-gray-900/40 p-2">
@@ -2223,7 +2224,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const rawgQuery = trpc.testAI.getRawgGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('rawg') && item.category === 'video_games' && gameInput.title.length >= 2 });
   const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && gameInput.title.length >= 2 });
   const priceChartingQuery = trpc.testAI.getPriceChartingData.useQuery({ query: item.title }, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && !!item.title });
-  const priceChartingCoinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(priceChartingCoinQueryInput, { enabled: enabledSources.has('pricecharting') && item.category === 'coins' && hasPriceChartingCoinQueryInput });
+  const priceChartingCoinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(priceChartingCoinQueryInput, { enabled: enabledSources.has('pricecharting') && item.category === 'coins' && hasPriceChartingCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
   const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameInput, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && priceChartingVideoGameInput.upc !== '00000000' });
   const priceChartingSlugQuery = trpc.testAI.getPriceChartingCardDetail.useQuery(priceChartingSlugInput, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && priceChartingSlugInput.setSlug !== 'unavailable' && priceChartingSlugInput.cardSlug !== 'unavailable' });
   const priceChartingMoversQuery = trpc.testAI.getPriceChartingBigMovers.useQuery(undefined, { enabled: enabledSources.has('pricecharting') });
