@@ -710,7 +710,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
             <div className="flex flex-wrap gap-1 mt-1">
               {item.category && item.category !== 'unknown' && <Badge variant="secondary" className="bg-slate-700/80 text-[10px] text-slate-100 border-slate-500/70">{item.category.replace(/_/g, ' ')}</Badge>}
               {getItemManufacturer(item) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{getItemManufacturer(item)}</Badge>}
-              {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '')) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? ''))}</Badge>}
+              {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? ''), item.category) && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">Grade {normalizeTestAiGrade(item.grade, resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? ''), item.category)}</Badge>}
               {resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '') && <Badge variant="outline" className="bg-slate-900/70 text-[10px] text-slate-100 border-slate-400/80">{resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '')}</Badge>}
             </div>
             {item.estimatedValue != null && <p className="text-green-400 text-sm font-semibold mt-1">{formatItemValue(item.estimatedValue)}</p>}
@@ -725,7 +725,7 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
 function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem; query?: string | null; isLoading?: boolean }) {
   const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
-  const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany);
+  const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany, item.category);
   const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
   const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || Boolean((parseTestAiDetails(item.itemDetails) as Record<string, unknown>).productFormat));
   const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, isUnopenedProduct ? [] : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition], item.itemType ?? '');

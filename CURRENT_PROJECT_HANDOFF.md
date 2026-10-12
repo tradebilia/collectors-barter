@@ -82,6 +82,10 @@ The isolated development project uses the existing custom database. Treat every 
 
 ## Next recommended work
 
+### PSA grade normalization exception — October 12, 2026
+
+PSA whole-number normalization remains in force for Sports Cards. For Video Games only, PSA half-point grades are preserved in Sold-Comps and Test AI query previews: `7.5` remains `7.5` instead of becoming `8`. The server and shared client helper both receive the item category so this exception cannot broaden to PSA Sports Cards or unrelated categories.
+
 Move to **P1 performance and maintainability** only after discussing the specific scope. The first candidate is splitting the oversized Test AI and Admin Dashboard frontend chunks, then addressing unbounded result-fetch patterns identified by the code-quality audit.
 
 ## Do not change without explicit approval

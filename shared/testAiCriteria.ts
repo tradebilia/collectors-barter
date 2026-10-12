@@ -15,14 +15,15 @@ export function resolveTestAiGradingCompany(itemDetails: unknown, fallback = '')
   return detailText(details, ['customGradingCompany', 'customCertificationCompany']) || direct;
 }
 
-export function normalizeTestAiGrade(value: unknown, gradingCompany = ''): string {
+export function normalizeTestAiGrade(value: unknown, gradingCompany = '', category = ''): string {
   const raw = String(value ?? '').trim();
   if (!raw) return '';
   if (/^(?:raw|ungraded|n\/a|none|null|undefined)$/i.test(raw)) return '';
   const numeric = Number(raw);
   if (!Number.isFinite(numeric)) return raw;
   if (numeric <= 0) return '';
-  if (gradingCompany.trim().toUpperCase() === 'PSA') return String(Math.round(numeric));
+  const normalizedCategory = category.trim().toLowerCase().replace(/[- ]+/g, '_');
+  if (gradingCompany.trim().toUpperCase() === 'PSA' && normalizedCategory !== 'video_games') return String(Math.round(numeric));
   return raw.includes('.') ? numeric.toFixed(1) : String(numeric);
 }
 
@@ -84,7 +85,7 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
     : keys.map((key) => key === 'manufacturer' ? manufacturer : detailText(details, [key]));
   const extraValues = unopenedProduct ? [] : extra.map((value) => {
     const normalized = String(value ?? '').trim();
-    if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized, gradingCompany);
+    if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized, gradingCompany, normalizedCategory);
     return normalized.toLowerCase() === 'other' && gradingCompany ? gradingCompany : normalized;
   });
   return [...baseValues, unopenedProduct ? '' : gradingCompany, ...extraValues]

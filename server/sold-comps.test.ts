@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey } from './testAIRouter';
+import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, normalizeSearchGrade } from './testAIRouter';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -18,6 +18,12 @@ describe('Sold-Comps API key validation', () => {
     const query = '1989 Upper Deck Ken Griffey Jr 1 PSA 10';
 
     expect(buildEbayBrowseQuery(query, { preserveGrade: true })).toBe(query);
+  });
+
+  it('preserves PSA half-point grades for video games only', () => {
+    expect(normalizeSearchGrade('7.5', 'video_games', 'PSA')).toBe('7.5');
+    expect(normalizeSearchGrade('7.50', 'video_games', 'PSA')).toBe('7.5');
+    expect(normalizeSearchGrade('7.5', 'sports_cards', 'PSA')).toBe('8');
   });
 
   it('creates bounded targeted and broader fallback queries', () => {

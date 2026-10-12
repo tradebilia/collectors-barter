@@ -187,10 +187,10 @@ function normalizeExtractedGrade(prefix: string | undefined, numeric: string, pl
   return `${prefix.toUpperCase()}${numeric}${plus}`;
 }
 
-function normalizeSearchGrade(value: string | undefined, category: string, certificationCompany: string): string | null {
+export function normalizeSearchGrade(value: string | undefined, category: string, certificationCompany: string): string | null {
   const normalized = String(value ?? '').trim();
   if (!normalized) return null;
-  if (/^psa$/i.test(certificationCompany.trim())) {
+  if (/^psa$/i.test(certificationCompany.trim()) && category !== 'video_games') {
     const psaGrade = Number(normalized);
     return Number.isFinite(psaGrade) && psaGrade > 0 ? String(Math.round(psaGrade)) : null;
   }
