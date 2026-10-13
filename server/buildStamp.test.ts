@@ -92,7 +92,7 @@ describe('safe public build stamp', () => {
   it('lists exactly the tracked application/configuration source in the fingerprint manifest', () => {
     const manifest = JSON.parse(readFileSync(path.resolve(process.cwd(), 'scripts/source-fingerprint-manifest.json'), 'utf8'));
     const tracked = execFileSync('git', ['ls-files'], { cwd: process.cwd(), encoding: 'utf8' }).trim().split('\n');
-    const rootFiles = new Set(['.gitignore', 'package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts', 'vitest.config.ts']);
+    const rootFiles = new Set(['package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts', 'vitest.config.ts']);
     const expected = tracked.filter((file) => (
       file !== 'scripts/source-fingerprint-manifest.json'
       && !file.startsWith('client/public/__manus__/')
