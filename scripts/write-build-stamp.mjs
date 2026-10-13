@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,6 +8,11 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 const outputPath = process.env.TRADEBILIA_BUILD_STAMP_OUTPUT
   ? path.resolve(process.env.TRADEBILIA_BUILD_STAMP_OUTPUT)
   : path.join(projectRoot, 'client', 'public', 'tradebilia-build.json');
+const fingerprintInputs = ['client', 'server', 'shared', 'scripts', 'drizzle', '.gitignore', 'package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts', 'vitest.config.ts'];
+const excludedFingerprintPaths = new Set([
+  'client/public/__manus__/version.json',
+  'client/public/tradebilia-build.json',
+]);
 
 function gitValue(args) {
   try {
@@ -32,9 +38,46 @@ function sourceTreeState() {
   return status ? 'dirty' : 'clean';
 }
 
+async function collectFingerprintFiles(relativePath, files) {
+  const absolutePath = path.join(projectRoot, relativePath);
+  let details;
+  try {
+    details = await stat(absolutePath);
+  } catch {
+    return;
+  }
+  if (details.isDirectory()) {
+    for (const entry of await readdir(absolutePath)) {
+      await collectFingerprintFiles(path.posix.join(relativePath, entry), files);
+    }
+    return;
+  }
+  if (details.isFile() && !excludedFingerprintPaths.has(relativePath)) files.push(relativePath);
+}
+
+/**
+ * Identifies the application source without depending on a `.git` directory.
+ * Generated platform metadata and this generated stamp are intentionally
+ * excluded so the same committed source produces the same fingerprint across
+ * WebDev and public builders.
+ */
+async function sourceFingerprint() {
+  const files = [];
+  for (const input of fingerprintInputs) await collectFingerprintFiles(input, files);
+  const hash = createHash('sha256');
+  for (const relativePath of files.sort()) {
+    hash.update(relativePath);
+    hash.update('\0');
+    hash.update(await readFile(path.join(projectRoot, relativePath)));
+    hash.update('\0');
+  }
+  return hash.digest('hex');
+}
+
 const stamp = {
   sourceCommit: configuredCommit(),
   sourceTreeState: sourceTreeState(),
+  sourceFingerprint: await sourceFingerprint(),
   builtAt: new Date().toISOString(),
 };
 

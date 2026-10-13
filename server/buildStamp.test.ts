@@ -24,8 +24,9 @@ describe('safe public build stamp', () => {
         sourceCommit: 'c8a8397193812d8e95bb2bcf72d9362a7fddbb0c',
         sourceTreeState: 'clean',
       });
-      expect(Object.keys(stamp).sort()).toEqual(['builtAt', 'sourceCommit', 'sourceTreeState']);
+      expect(Object.keys(stamp).sort()).toEqual(['builtAt', 'sourceCommit', 'sourceFingerprint', 'sourceTreeState']);
       expect(Number.isNaN(Date.parse(stamp.builtAt))).toBe(false);
+      expect(stamp.sourceFingerprint).toMatch(/^[0-9a-f]{64}$/);
       expect(JSON.stringify(stamp)).not.toMatch(/database|token|secret|password|api.?key/i);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
@@ -50,7 +51,9 @@ describe('safe public build stamp', () => {
         env: { ...process.env, TRADEBILIA_BUILD_STAMP_OUTPUT: outputPath },
         stdio: 'pipe',
       });
-      expect(JSON.parse(readFileSync(outputPath, 'utf8'))).toMatchObject({ sourceTreeState: 'clean' });
+      const stamp = JSON.parse(readFileSync(outputPath, 'utf8'));
+      expect(stamp).toMatchObject({ sourceTreeState: 'clean' });
+      expect(stamp.sourceFingerprint).toMatch(/^[0-9a-f]{64}$/);
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
