@@ -29,8 +29,8 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
 };
 
 export const VISUAL_REVIEW_BATCH_SIZE = 20;
-export const VISUAL_REVIEW_TARGET_MATCHES = 7;
-export const VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT = 20;
+export const VISUAL_REVIEW_TARGET_MATCHES = 3;
+export const VISUAL_REVIEW_MAX_CANDIDATES = 50;
 
 const VERDICTS = new Set(["match", "rough_match", "mismatch", "unreadable"]);
 const CONFIDENCES = new Set(["high", "medium", "low"]);
@@ -248,7 +248,7 @@ export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate
     // Exact-tier results are the strongest evidence of the user's requested
     // search and must enter the bounded vision window before relaxed tiers.
     .sort((a, b) => visualQueryTierPriority(b.item) - visualQueryTierPriority(a.item) || visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || a.candidateIndex - b.candidateIndex)
-    .slice(0, VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT);
+    .slice(0, VISUAL_REVIEW_MAX_CANDIDATES);
 }
 
 export function applyDeclaredIdentityFilter<T extends VisualSourceCandidate>(
@@ -306,7 +306,7 @@ export async function filterVisualSourceCandidates<
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string } =>
         !!entry.imageUrl
     )
-    .slice(0, 100);
+    .slice(0, VISUAL_REVIEW_MAX_CANDIDATES);
   if (!candidates.length)
     return {
       listings: args.listings,
@@ -422,7 +422,7 @@ export async function filterVisualSourceCandidates<
           confidence: "low",
           rationale: reviewedQueueIndexes.has(candidate.candidateIndex)
             ? "The visual model returned no usable decision for this candidate; manual image review is required."
-            : "Candidate was retained outside the initial prioritized vision-review queue; expanded manual or AI review is required.",
+            : "Candidate was retained outside the bounded adaptive review window; expanded manual or AI review is required.",
         };
         uniqueReviews.push(fallback);
         reviewByIndex.set(candidate.candidateIndex, fallback);
@@ -466,7 +466,7 @@ export async function filterVisualSourceCandidates<
       removedCount: contextListings.length,
       status: "applied",
       reviews: uniqueReviews,
-      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Initial deterministic prioritization sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates to vision; ${contextListings.length} explicit identity conflict${contextListings.length === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.`,
+      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches or the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum; ${contextListings.length} explicit identity conflict${contextListings.length === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.`,
     };
   } catch {
     return {

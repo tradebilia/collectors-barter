@@ -113,3 +113,8 @@ The comic image-review path now treats broad AI-reported similarity as insuffici
 
 ## Coverage tracker confirmation — October 12, 2026
 **Comics — Sold-Comps (eBay Sold)** is confirmed as a **Match** in the Test AI source coverage tracker. It remains completed-sale evidence subject to the existing identity, date, currency, duplicate, grading, and conservative visual-review gates; visual review cannot independently create valuation evidence.
+
+
+## Adaptive visual-review cap — October 12, 2026
+
+Visual review now runs in batches of 20 image-bearing candidates. It stops as soon as 3 accepted visual matches (`match` or `rough_match`) are found, and it has an absolute maximum of 50 image candidates per source run. Candidates beyond the 50-image ceiling remain explicitly `not_visually_reviewed_window` and are retained as context/manual-review evidence; they are never implicitly accepted. The Test AI note reports the batch size, stopping target, and cap. Focused visual-filter tests (18/18) and TypeScript/diff checks passed. No database writes, migrations, credential changes, or valuation-policy changes.

@@ -8,7 +8,7 @@ import {
   conservativeComicVisualReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
-  VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT,
+  VISUAL_REVIEW_MAX_CANDIDATES,
   VISUAL_REVIEW_BATCH_SIZE,
   VISUAL_REVIEW_TARGET_MATCHES,
 } from "./testAiVisualSourceFilter";
@@ -160,9 +160,10 @@ describe("visual source filter", () => {
     expect(result.removedCount).toBe(1);
   });
 
-  it("uses adaptive review windows instead of treating 20 as the total review ceiling", () => {
+  it("uses adaptive 20-item batches until three matches or the 50-image ceiling", () => {
     expect(VISUAL_REVIEW_BATCH_SIZE).toBe(20);
-    expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(7);
+    expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(3);
+    expect(VISUAL_REVIEW_MAX_CANDIDATES).toBe(50);
     const reviews = buildDeclaredIdentityReviews(
       Array.from({ length: 40 }, (_, index) => ({ title: `Comic #2 Fifth Printing ${index}` })),
       "title=Comic #2 CGC 9.8",
@@ -171,18 +172,18 @@ describe("visual source filter", () => {
   });
 
   it("prioritizes a bounded initial queue while preserving explicit conflicts outside vision", () => {
-    const candidates = Array.from({ length: 25 }, (_, candidateIndex) => ({
+    const candidates = Array.from({ length: 60 }, (_, candidateIndex) => ({
       candidateIndex,
-      item: { title: candidateIndex === 24 ? "Edge of Spider-Verse #2 Fifth Printing" : `Edge of Spider-Verse #2 CGC 9.8 copy ${candidateIndex}` },
+      item: { title: candidateIndex === 59 ? "Edge of Spider-Verse #2 Fifth Printing" : `Edge of Spider-Verse #2 CGC 9.8 copy ${candidateIndex}` },
       imageUrl: `https://example.com/${candidateIndex}.jpg`,
     }));
     const metadata = "title=Edge of Spider-Verse #2 CGC 9.8; category=comics; grade=9.8";
     const declared = buildDeclaredIdentityReviews(candidates.map(candidate => candidate.item), metadata);
     const queue = prioritizeVisualSourceCandidates(candidates, metadata, declared);
-    expect(VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT).toBe(20);
-    expect(queue).toHaveLength(20);
-    expect(queue.some(candidate => candidate.candidateIndex === 24)).toBe(false);
-    expect(candidates).toHaveLength(25);
+    expect(VISUAL_REVIEW_MAX_CANDIDATES).toBe(50);
+    expect(queue).toHaveLength(50);
+    expect(queue.some(candidate => candidate.candidateIndex === 59)).toBe(false);
+    expect(candidates).toHaveLength(60);
   });
 
   it("marks image-bearing candidates outside the bounded review window as review-only", () => {

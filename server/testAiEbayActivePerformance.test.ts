@@ -117,10 +117,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("Auction activity:");
     expect(pageSource).toContain("unique bidders");
   });
-  it("keeps the first visual pass bounded and preserves the remaining candidates", () => {
-    expect(visualSource).toContain("VISUAL_REVIEW_INITIAL_CANDIDATE_LIMIT");
+  it("keeps adaptive visual review bounded and preserves the remaining candidates", () => {
+    expect(visualSource).toContain("VISUAL_REVIEW_MAX_CANDIDATES");
     expect(visualSource).toContain("prioritizeVisualSourceCandidates");
-    expect(visualSource).toContain("outside the initial prioritized vision-review queue");
+    expect(visualSource).toContain("outside the bounded adaptive review window");
   });
 
   it("prioritizes all exact-tier candidates before relaxed listings", () => {
@@ -139,7 +139,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
       "title=Transformers Megatron G1; grade=60.00; category=vintage_toys",
       [],
     );
-    expect(prioritized).toHaveLength(20);
+    expect(prioritized).toHaveLength(21);
     expect(prioritized.some((candidate) => candidate.candidateIndex === 20)).toBe(true);
     expect(prioritized.findIndex((candidate) => candidate.candidateIndex === 20)).toBe(0);
   });
