@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -27,6 +27,30 @@ describe('safe public build stamp', () => {
       expect(Object.keys(stamp).sort()).toEqual(['builtAt', 'sourceCommit', 'sourceTreeState']);
       expect(Number.isNaN(Date.parse(stamp.builtAt))).toBe(false);
       expect(JSON.stringify(stamp)).not.toMatch(/database|token|secret|password|api.?key/i);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('reports a successful empty porcelain status as a clean source tree', () => {
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'tradebilia-clean-build-stamp-'));
+    const scriptDir = path.join(tempDir, 'scripts');
+    const outputPath = path.join(tempDir, 'tradebilia-build.json');
+    try {
+      mkdirSync(scriptDir, { recursive: true });
+      copyFileSync(path.resolve(process.cwd(), 'scripts/write-build-stamp.mjs'), path.join(scriptDir, 'write-build-stamp.mjs'));
+      writeFileSync(path.join(tempDir, 'README.md'), '# Temporary clean repository\n');
+      execFileSync('git', ['init', '--quiet'], { cwd: tempDir });
+      execFileSync('git', ['config', 'user.email', 'test@example.invalid'], { cwd: tempDir });
+      execFileSync('git', ['config', 'user.name', 'Tradebilia Build Stamp Test'], { cwd: tempDir });
+      execFileSync('git', ['add', '.'], { cwd: tempDir });
+      execFileSync('git', ['commit', '--quiet', '-m', 'temporary clean source'], { cwd: tempDir });
+      execFileSync('node', ['scripts/write-build-stamp.mjs'], {
+        cwd: tempDir,
+        env: { ...process.env, TRADEBILIA_BUILD_STAMP_OUTPUT: outputPath },
+        stdio: 'pipe',
+      });
+      expect(JSON.parse(readFileSync(outputPath, 'utf8'))).toMatchObject({ sourceTreeState: 'clean' });
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }

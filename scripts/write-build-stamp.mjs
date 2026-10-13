@@ -10,7 +10,9 @@ const outputPath = process.env.TRADEBILIA_BUILD_STAMP_OUTPUT
 
 function gitValue(args) {
   try {
-    return execFileSync('git', args, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() || null;
+    // An empty `git status --porcelain` is the valid signal for a clean tree;
+    // only a thrown command is unavailable.
+    return execFileSync('git', args, { cwd: projectRoot, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
   } catch {
     return null;
   }
