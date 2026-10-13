@@ -119,31 +119,31 @@ describe('Sold-Comps API key validation', () => {
     expect(genericSet.evidenceDisposition).toBe('warning_review');
   });
 
-  it('does not activate the high-value price gate at or below a $2,000 stated trade value', () => {
-    expect(evaluateSoldCompPriceSafety(2_000, 1)).toMatchObject({ applies: false, status: 'inactive' });
+  it('does not activate the high-value price gate at or below a $10,000 stated trade value', () => {
+    expect(evaluateSoldCompPriceSafety(10_000, 1)).toMatchObject({ applies: false, status: 'inactive' });
     expect(evaluateSoldCompPriceSafety(1_000, 10_000)).toMatchObject({ applies: false, status: 'inactive' });
 
     const annotated = annotateSoldComparableCandidate(
       { title: 'High-value collectible', soldPrice: '1' },
-      { category: 'coins', targetItemType: '', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, statedTradeValue: 2_000 },
+      { category: 'coins', targetItemType: '', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, statedTradeValue: 10_000 },
     );
     expect(annotated.evidenceDisposition).toBe('valuation_eligible');
     expect(annotated.evidenceReasons).toEqual([]);
   });
 
-  it('accepts sold comps exactly at 25% and 250% when the stated value is above $2,000', () => {
-    expect(evaluateSoldCompPriceSafety(3_000, 750)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 750, maximumAcceptedPrice: 7_500 });
-    expect(evaluateSoldCompPriceSafety(3_000, 7_500)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 750, maximumAcceptedPrice: 7_500 });
+  it('accepts sold comps exactly at 25% and 250% when the stated value is above $10,000', () => {
+    expect(evaluateSoldCompPriceSafety(20_000, 5_000)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 5_000, maximumAcceptedPrice: 50_000 });
+    expect(evaluateSoldCompPriceSafety(20_000, 50_000)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 5_000, maximumAcceptedPrice: 50_000 });
   });
 
-  it('keeps high-value Sold-Comps outliers as context only with a precise reason', () => {
-    const baseContext = { category: 'coins', targetItemType: '', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, statedTradeValue: 3_000 };
-    const tooLow = annotateSoldComparableCandidate({ title: 'High-value collectible', soldPrice: '749' }, baseContext);
-    const tooHigh = annotateSoldComparableCandidate({ title: 'High-value collectible', soldPrice: '7501' }, baseContext);
+  it.each(['coins', 'sports_cards', 'comics', 'video_games', 'stamps'])('keeps %s high-value Sold-Comps outliers as context only with a precise reason', (category) => {
+    const baseContext = { category, targetItemType: '', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, statedTradeValue: 20_000 };
+    const tooLow = annotateSoldComparableCandidate({ title: 'High-value collectible', soldPrice: '4999' }, baseContext);
+    const tooHigh = annotateSoldComparableCandidate({ title: 'High-value collectible', soldPrice: '50001' }, baseContext);
 
     expect(tooLow.evidenceDisposition).toBe('warning_review');
-    expect(tooLow.evidenceReasons).toContain('high-value price safety gate: sold comp $749 is below 25% of the stated trade value $3,000 ($750 minimum); retained as context only');
+    expect(tooLow.evidenceReasons).toContain('high-value price safety gate: sold comp $4,999 is below 25% of the stated trade value $20,000 ($5,000 minimum); retained as context only');
     expect(tooHigh.evidenceDisposition).toBe('warning_review');
-    expect(tooHigh.evidenceReasons).toContain('high-value price safety gate: sold comp $7,501 is above 250% of the stated trade value $3,000 ($7,500 maximum); retained as context only');
+    expect(tooHigh.evidenceReasons).toContain('high-value price safety gate: sold comp $50,001 is above 250% of the stated trade value $20,000 ($50,000 maximum); retained as context only');
   });
 });

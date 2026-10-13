@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatTestAiEvidenceForAnalysis, normalizeTestAiEvidence } from '../shared/testAiEvidenceNormalization';
+import { formatTestAiEvidenceForAnalysis, normalizeTestAiEvidence, summarizeTestAiSourceRunOutcomes } from '../shared/testAiEvidenceNormalization';
 
 describe('normalizeTestAiEvidence', () => {
   it('aligns Pokémon identity fields while keeping market-guide evidence separate', () => {
@@ -126,6 +126,20 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.sourceDecisions).toEqual(expect.arrayContaining([
       expect.objectContaining({ label: 'eBay Active Listings', accepted: 0, currentValue: 0, historicalTrend: 0, context: 20 }),
       expect.objectContaining({ label: 'Reference Catalog', context: 0 }),
+    ]));
+  });
+
+  it('reports current-run returned, eligible, held-out, and timeout outcomes without persistence', () => {
+    const summary = normalizeTestAiEvidence({ title: 'High-value collectible', category: 'coins' }, [
+      { id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: 'success', market: { returnedRecordCount: 13, completedSaleCount: 10, analyzerSubmittedSaleCount: 3 } },
+      { id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: 'success', market: { currentListingCount: 2 } },
+      { id: 'pricecharting', label: 'PriceCharting', kind: 'market_current', status: 'error', message: 'get_coin_detail timed out while waiting for response headers' },
+    ]);
+
+    expect(summarizeTestAiSourceRunOutcomes(summary.sourceDecisions ?? [])).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'sold_comps', returned: 13, accepted: 3, excludedFromValuation: 7, context: 7, timedOut: false }),
+      expect.objectContaining({ id: 'ebay_active', returned: 2, accepted: 0, excludedFromValuation: 0, context: 2, timedOut: false }),
+      expect.objectContaining({ id: 'pricecharting', returned: 0, accepted: 0, timedOut: true }),
     ]));
   });
 

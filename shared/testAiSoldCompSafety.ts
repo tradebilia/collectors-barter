@@ -1,4 +1,7 @@
-export const HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD = 2_000;
+// The stated-value sanity range is intentionally reserved for genuinely
+// high-value collectibles. It applies uniformly to every category only above
+// the owner-approved $10,000 trade value, never as an identity substitute.
+export const HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD = 10_000;
 export const HIGH_VALUE_SOLD_COMP_MIN_RATIO = 0.25;
 export const HIGH_VALUE_SOLD_COMP_MAX_RATIO = 2.5;
 

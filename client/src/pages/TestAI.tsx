@@ -3,6 +3,7 @@ import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatGrade, formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
+import { SourceRunOutcomeSummary } from '@/components/test-ai/SourceRunOutcomeSummary';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
@@ -2298,9 +2299,9 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const summary = useMemo(() => {
     const observations: EvidenceSourceObservation[] = [];
     const add = (observation: EvidenceSourceObservation) => observations.push(observation);
-    if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
-    if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
-    if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
+    if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { returnedRecordCount: ebayData?.listings?.length ?? 0, currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
+    if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { returnedRecordCount: hipstampData?.listings?.length ?? 0, currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
+    if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { returnedRecordCount: hipstampSoldData?.listings?.length ?? 0, recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
     if (enabledSources.has('pokemon_price_tracker')) add({ id: 'pokemon_price_tracker', label: 'Pokémon Price Tracker', kind: 'reference', status: evidenceStatus(pokemonPriceTrackerData), fields: { cardName: pokemonPriceTrackerData?.detail?.name ?? pokemonPriceTrackerData?.selected?.card?.name, set: pokemonPriceTrackerData?.detail?.setName ?? pokemonPriceTrackerData?.selected?.card?.setName, cardNumber: pokemonPriceTrackerData?.detail?.cardNumber ?? pokemonPriceTrackerData?.selected?.card?.cardNumber, variant: pokemonPriceTrackerData?.detail?.prices?.primaryPrinting ?? pokemonPriceTrackerData?.selected?.card?.prices?.primaryPrinting }, message: pokemonPriceTrackerData?.messages?.join(' ') ?? null });
     if (enabledSources.has('the_card_api')) {
       const sales = theCardApiData?.sales ?? [];
@@ -2312,7 +2313,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical',
         role: confirmedRecent > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(theCardApiData),
-        market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length, analyzerSubmittedPrices: analyzerSubmittedSales.map((sale: any) => Number(sale.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
+        market: { returnedRecordCount: sales.length, completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length, analyzerSubmittedPrices: analyzerSubmittedSales.map((sale: any) => Number(sale.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
         fields: { subject: theCardApiData?.catalog?.selected?.candidate?.subject, set: theCardApiData?.catalog?.selected?.candidate?.set_name, cardNumber: theCardApiData?.catalog?.selected?.candidate?.card_number, catalogId: theCardApiData?.catalog?.selected?.candidate?.ucid },
         message: theCardApiData?.messages?.join(' ') ?? null,
       });
@@ -2326,7 +2327,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         kind: completedRecent > 0 ? 'market_completed' : 'market_historical',
         role: completedRecent > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(cardsightAiData),
-        market: { completedSaleCount: completedRecent, historicalSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'undated').length, currentListingCount: cardsightAiData?.activeListings?.length ?? 0 },
+        market: { returnedRecordCount: sales.length + (cardsightAiData?.activeListings?.length ?? 0), completedSaleCount: completedRecent, historicalSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'undated').length, currentListingCount: cardsightAiData?.activeListings?.length ?? 0 },
         // Cardsight's setName can be a catalog container such as “Checklist”,
         // while release + selected parallel carry the collectible identity.
         // Display both in the source panel but do not create a false Set conflict
@@ -2360,7 +2361,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         return Number.isFinite(timestamp) && Date.now() - timestamp > 365 * 86_400_000;
       }).length;
       const undatedSaleCount = completedCandidates.filter((sale: any) => !Number.isFinite(Date.parse(String(sale.date ?? '')))).length;
-      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, currentValueSaleCount: currentValueSales.length, historicalTrendSaleCount: historicalTrendSales.length, currentValuePrices: currentValueSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalTrendPrices: historicalTrendSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
+      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { returnedRecordCount: allRecords.length, completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, currentValueSaleCount: currentValueSales.length, historicalTrendSaleCount: historicalTrendSales.length, currentValuePrices: currentValueSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalTrendPrices: historicalTrendSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
     }
     if (enabledSources.has('sold_comps')) {
       const listings = soldCompsData?.listings ?? [];
@@ -2377,6 +2378,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         role: accepted.length ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(soldCompsData),
         market: {
+          returnedRecordCount: listings.length,
           completedSaleCount: listings.length,
           analyzerSubmittedSaleCount: Number(soldCompsData?.audit?.valuationEligible ?? accepted.length),
           analyzerSubmittedPrices: accepted.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
@@ -2399,6 +2401,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         role: recentCompletedCount > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(oneThirtyPointData),
         market: {
+          returnedRecordCount: sales.length,
           completedSaleCount: recentCompletedCount,
           historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length,
           undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length,
@@ -2408,7 +2411,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     }
     if (enabledSources.has('pwcc')) {
       const sales = pwccQuery.data?.data?.items ?? [];
-      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: pwccQuery.data?.message ?? null });
+      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { returnedRecordCount: sales.length, recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: pwccQuery.data?.message ?? null });
     }
     if (enabledSources.has('comic_book_realm')) {
       const guideRows = comicBookRealmQuery.data?.guideRows ?? [];
@@ -2429,7 +2432,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const records = [...(comicConnectData?.sales ?? []), ...(comicConnectData?.context ?? [])];
       const completed = records.filter((record: any) => record.completed === true || record.saleStatus === 'completed');
       const submitted = completed.filter((record: any) => record.identityMatched && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) && Number(record.price) > 0);
-      add({ id: 'comicconnect', label: 'ComicConnect Sold Archive', kind: completed.length ? 'market_completed' : 'market_historical', role: submitted.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(comicConnectData), market: { completedSaleCount: completed.length, analyzerSubmittedSaleCount: submitted.length, analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: submitted.filter((record: any) => record.timeWindow === 'current_12_months').length, historicalTrendSaleCount: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').length, currentValuePrices: submitted.filter((record: any) => record.timeWindow === 'current_12_months').map((record: any) => Number(record.price)), historicalTrendPrices: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').map((record: any) => Number(record.price)) }, message: comicConnectData?.messages?.join(' ') ?? null });
+      add({ id: 'comicconnect', label: 'ComicConnect Sold Archive', kind: completed.length ? 'market_completed' : 'market_historical', role: submitted.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(comicConnectData), market: { returnedRecordCount: records.length, completedSaleCount: completed.length, analyzerSubmittedSaleCount: submitted.length, analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: submitted.filter((record: any) => record.timeWindow === 'current_12_months').length, historicalTrendSaleCount: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').length, currentValuePrices: submitted.filter((record: any) => record.timeWindow === 'current_12_months').map((record: any) => Number(record.price)), historicalTrendPrices: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').map((record: any) => Number(record.price)) }, message: comicConnectData?.messages?.join(' ') ?? null });
     }
     if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
     if (enabledSources.has('pricecharting')) {
@@ -2498,7 +2501,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const pcgsAuctionBuckets = bucketPcgsAuctionRows(auctions);
       const currentValue = pcgsAuctionBuckets.currentValueRows;
       const historicalTrend = pcgsAuctionBuckets.historicalTrendRows;
-      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: pcgsAuctionBuckets.datedCompletedRows.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { completedSaleCount: pcgsAuctionBuckets.datedCompletedRows.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: pcgsAuctionBuckets.undatedOrIncompleteRows.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
+      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: pcgsAuctionBuckets.datedCompletedRows.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { returnedRecordCount: auctions.length, completedSaleCount: pcgsAuctionBuckets.datedCompletedRows.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: pcgsAuctionBuckets.undatedOrIncompleteRows.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     // Certificate-mode PCGS items receive verified year/denomination/grade
     // from CoinFacts in marketItem. Use that identity for readiness so the UI
@@ -2564,6 +2567,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       {discogsCandidates.length === 1 && <p className="mt-2 text-[9px] text-emerald-100/70">One Discogs candidate returned and is included as reference metadata for this sandbox run.</p>}
     </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
+    <SourceRunOutcomeSummary sourceDecisions={sourceDecisions} />
     <div className="rounded-lg border border-sky-700/30 bg-sky-950/15 p-2.5 space-y-2">
       <div><p className="text-[10px] font-semibold uppercase tracking-wide text-sky-200">How the analyzer uses the selected sources</p><p className="mt-0.5 text-[9px] text-gray-400">Each source appears once. Counts are separated by decision: valuation, historical trend, or context only.</p></div>
       <div className="grid gap-1 text-[9px] sm:grid-cols-3"><p className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1 text-emerald-200"><strong>Accepted for valuation</strong><br />Completed, identity-checked sales sent to the analyzer.</p><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-amber-200"><strong>Historical trend</strong><br />Matching older sales used to understand movement, not current value.</p><p className="rounded border border-gray-700/40 bg-gray-950/30 px-2 py-1 text-gray-300"><strong>Context only</strong><br />Asking prices, references, unavailable data, and excluded records.</p></div>

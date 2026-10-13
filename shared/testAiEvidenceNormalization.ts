@@ -20,6 +20,8 @@ export type EvidenceSourceObservation = {
   status: EvidenceSourceStatus;
   fields?: Record<string, unknown>;
   market?: {
+    /** All provider records returned for this source run, before evidence treatment. */
+    returnedRecordCount?: number;
     currentListingCount?: number;
     completedSaleCount?: number;
     analyzerSubmittedSaleCount?: number;
@@ -77,8 +79,12 @@ export type EvidenceSourceDecision = {
   label: string;
   status: EvidenceSourceStatus;
   kind: EvidenceSourceKind;
+  /** Total price-bearing records returned by a market source during this run. */
+  returned: number;
   completed: number;
   accepted: number;
+  /** Completed records held out of source-level valuation eligibility. */
+  excludedFromValuation: number;
   currentValue: number;
   historicalTrend: number;
   context: number;
@@ -86,6 +92,19 @@ export type EvidenceSourceDecision = {
   treatment: 'valuation_candidate' | 'valuation_guide' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
   analyzerWeightPct: number | null;
   treatmentReason: string;
+  message?: string | null;
+};
+
+export type TestAiSourceRunOutcome = {
+  id: string;
+  label: string;
+  status: EvidenceSourceStatus;
+  returned: number;
+  completed: number;
+  accepted: number;
+  excludedFromValuation: number;
+  context: number;
+  timedOut: boolean;
   message?: string | null;
 };
 
@@ -442,9 +461,17 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
   const accepted = Number(market?.analyzerSubmittedSaleCount ?? 0);
   const currentValue = Number(market?.currentValueSaleCount ?? market?.recentSaleCount ?? 0);
   const historicalTrend = Number(market?.historicalTrendSaleCount ?? market?.historicalSaleCount ?? 0);
-  const undated = Number(market?.undatedSaleCount ?? 0);
   const currentListings = Number(market?.currentListingCount ?? 0);
-  const context = market ? Math.max(0, currentListings + completed - accepted - currentValue - historicalTrend + undated) : 0;
+  const excludedFromValuation = Math.max(0, completed - accepted);
+  // A completed record can be eligible for source-level analyzer review and
+  // still fall into a current-value or historical-trend bucket. Those are
+  // overlapping classifications, so only explicitly held-out completed
+  // records and asking listings contribute to the context/review count.
+  const context = market ? Math.max(0, currentListings) + excludedFromValuation : 0;
+  const providerReportedReturned = Number(market?.returnedRecordCount);
+  const returned = Number.isFinite(providerReportedReturned)
+    ? Math.max(0, providerReportedReturned)
+    : Math.max(0, currentListings) + Math.max(0, completed);
   const hasGuideValue = source.status === 'success' && Number.isFinite(Number(source.fields?.guideValue)) && Number(source.fields?.guideValue) > 0;
   const guideSource = source.id === 'numista' || source.id === 'pricecharting';
   const treatment = source.status === 'error' || source.status === 'not_found'
@@ -476,8 +503,10 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
     label: source.label,
     status: source.status,
     kind: source.kind,
+    returned,
     completed,
     accepted,
+    excludedFromValuation,
     currentValue,
     historicalTrend,
     context,
@@ -487,6 +516,26 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
     treatmentReason,
     message: source.message,
   };
+}
+
+/**
+ * A deliberately current-run-only diagnostic. It derives from the same
+ * normalized evidence ledger that reaches the analyzer and never persists a
+ * listing, request, certificate, provider payload, or user identifier.
+ */
+export function summarizeTestAiSourceRunOutcomes(decisions: EvidenceSourceDecision[]): TestAiSourceRunOutcome[] {
+  return decisions.map((decision) => ({
+    id: decision.id,
+    label: decision.label,
+    status: decision.status,
+    returned: decision.returned,
+    completed: decision.completed,
+    accepted: decision.accepted,
+    excludedFromValuation: decision.excludedFromValuation,
+    context: decision.context,
+    timedOut: decision.status === 'error' && /\b(?:timeout|timed out|aborted)\b/i.test(String(decision.message ?? '')),
+    message: decision.message,
+  }));
 }
 
 export function normalizeTestAiEvidence(input: EvidenceListingInput, sources: EvidenceSourceObservation[]): NormalizedEvidenceSummary {

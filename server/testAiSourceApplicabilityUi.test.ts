@@ -4,6 +4,7 @@ import path from 'node:path';
 
 describe('manual Test AI selector boundary', () => {
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
+  const outcomeSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
 
   it('retains manual source state while highlighting sources applicable to the loaded item', () => {
     expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
@@ -153,6 +154,7 @@ describe('manual Test AI selector boundary', () => {
   it('discloses the high-value Sold-Comps price safety gate and its exclusion treatment', () => {
     expect(source).toContain("HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD");
     expect(source).toContain('High-value price safety check');
+    expect(source).toContain('formatWholeDollar(HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD)');
     expect(source).toContain('below {formatWholeDollar(priceSafetyMinimum!)} or above {formatWholeDollar(priceSafetyMaximum!)} are excluded from valuation and retained as context only');
     expect(source).toContain('only sold comps from 25% to 250% of the stated trade value can enter valuation');
     expect(source).toContain('high-value price safety gate:');
@@ -160,7 +162,8 @@ describe('manual Test AI selector boundary', () => {
 
   it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
     expect(source).toContain('analyzerSubmittedSaleCount');
-    expect(source).toContain('market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length');
+    expect(source).toContain('market: { returnedRecordCount: sales.length, completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length');
+    expect(source).toContain('returnedRecordCount: listings.length');
     expect(source).toContain('cardApiAnalyzerSubmittedSales');
     expect(source).toContain('completedCandidates');
     expect(source).toContain('analyzerSubmittedPrices: submittedPrices');
@@ -171,6 +174,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Accepted for valuation');
     expect(source).toContain('Historical trend');
     expect(source).toContain('Context only');
+  });
+
+  it('shows current-run source outcomes without claiming historical provider reliability', () => {
+    expect(source).toContain('SourceRunOutcomeSummary');
+    expect(outcomeSource).toContain('summarizeTestAiSourceRunOutcomes');
+    expect(outcomeSource).toContain('This-run source outcomes');
+    expect(outcomeSource).toContain('This is not a provider scorecard or historical reliability rate, and no result is stored.');
+    expect(outcomeSource).toContain('Held out');
+    expect(outcomeSource).toContain('<strong>{outcome.accepted}</strong> eligible');
+    expect(outcomeSource).toContain('timed out');
   });
 
   it('separates PCGS current-value candidates from historical trend rows', () => {
