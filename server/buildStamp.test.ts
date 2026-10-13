@@ -58,4 +58,32 @@ describe('safe public build stamp', () => {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('excludes all platform-managed __manus__ metadata from the source fingerprint', () => {
+    const tempDir = mkdtempSync(path.join(os.tmpdir(), 'tradebilia-platform-metadata-fingerprint-'));
+    const scriptDir = path.join(tempDir, 'scripts');
+    const platformMetadataDir = path.join(tempDir, 'client/public/__manus__');
+    const outputPath = path.join(tempDir, 'tradebilia-build.json');
+    const runStamp = () => {
+      execFileSync('node', ['scripts/write-build-stamp.mjs'], {
+        cwd: tempDir,
+        env: { ...process.env, TRADEBILIA_BUILD_STAMP_OUTPUT: outputPath },
+        stdio: 'pipe',
+      });
+      return JSON.parse(readFileSync(outputPath, 'utf8')).sourceFingerprint;
+    };
+    try {
+      mkdirSync(scriptDir, { recursive: true });
+      mkdirSync(platformMetadataDir, { recursive: true });
+      copyFileSync(path.resolve(process.cwd(), 'scripts/write-build-stamp.mjs'), path.join(scriptDir, 'write-build-stamp.mjs'));
+      writeFileSync(path.join(tempDir, 'package.json'), '{"name":"temporary-fingerprint-test"}\n');
+      writeFileSync(path.join(platformMetadataDir, 'version.json'), '{"version":"first"}\n');
+      const firstFingerprint = runStamp();
+      writeFileSync(path.join(platformMetadataDir, 'runtime.json'), '{"generated":"different deployment metadata"}\n');
+      writeFileSync(path.join(platformMetadataDir, 'version.json'), '{"version":"second"}\n');
+      expect(runStamp()).toBe(firstFingerprint);
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });

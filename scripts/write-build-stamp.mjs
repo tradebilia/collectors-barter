@@ -9,10 +9,12 @@ const outputPath = process.env.TRADEBILIA_BUILD_STAMP_OUTPUT
   ? path.resolve(process.env.TRADEBILIA_BUILD_STAMP_OUTPUT)
   : path.join(projectRoot, 'client', 'public', 'tradebilia-build.json');
 const fingerprintInputs = ['client', 'server', 'shared', 'scripts', 'drizzle', '.gitignore', 'package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts', 'vitest.config.ts'];
-const excludedFingerprintPaths = new Set([
-  'client/public/__manus__/version.json',
+const excludedFingerprintPathPrefixes = [
+  // WebDev creates this full directory in each build environment. None of its
+  // contents represent application-controlled source.
+  'client/public/__manus__/',
   'client/public/tradebilia-build.json',
-]);
+];
 
 function gitValue(args) {
   try {
@@ -39,6 +41,7 @@ function sourceTreeState() {
 }
 
 async function collectFingerprintFiles(relativePath, files) {
+  if (excludedFingerprintPathPrefixes.some((prefix) => relativePath === prefix || relativePath.startsWith(prefix))) return;
   const absolutePath = path.join(projectRoot, relativePath);
   let details;
   try {
@@ -52,12 +55,12 @@ async function collectFingerprintFiles(relativePath, files) {
     }
     return;
   }
-  if (details.isFile() && !excludedFingerprintPaths.has(relativePath)) files.push(relativePath);
+  if (details.isFile()) files.push(relativePath);
 }
 
 /**
  * Identifies the application source without depending on a `.git` directory.
- * Generated platform metadata and this generated stamp are intentionally
+ * Platform-managed metadata and this generated stamp are intentionally
  * excluded so the same committed source produces the same fingerprint across
  * WebDev and public builders.
  */
