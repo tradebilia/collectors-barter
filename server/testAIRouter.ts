@@ -496,10 +496,20 @@ function normalizedItemType(value: unknown): string {
   return String(value ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
 }
 
+function isSportsCardSetItemType(value: unknown): boolean {
+  const normalized = normalizedItemType(value);
+  return ['card_set', 'set', 'team_set', 'collection_set', 'multi_card_set', 'complete_set', 'factory_set', 'master_set'].includes(normalized)
+    || normalized.endsWith('_set');
+}
+
 export function hasSingleSportsCardForm(title: string): boolean {
   const normalized = String(title ?? '').trim();
+  if (/\b(?:complete|factory|master|base|team|sealed)\s+set\b/i.test(normalized)) return false;
   return /\b(?:single|individual)\s+card\b/i.test(normalized)
-    || /(?:^|\s)#?\d{1,4}\s+(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*\d+(?:\.\d+)?\b/i.test(normalized);
+    || /(?:^|\s)#?\d{1,4}\b/i.test(normalized)
+    || /\b(?:RC|rookie|autographed|autograph|signed|auto)\b/i.test(normalized)
+    || /\b(?:gem\s+mint|mint|near\s+mint)\s*\d+(?:\.\d+)?\b/i.test(normalized)
+    || /\b(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*\d+(?:\.\d+)?\b/i.test(normalized);
 }
 
 /**
@@ -525,7 +535,7 @@ export function annotateSoldComparableCandidate(
   const observedProvider = title.match(certificationProviderPattern)?.[1] ?? null;
   const observedGrade = extractGradeFromTitle(title);
 
-  if (context.category === 'sports_cards' && normalizedItemType(context.targetItemType) === 'card_set' && hasSingleSportsCardForm(title)) {
+  if (context.category === 'sports_cards' && isSportsCardSetItemType(context.targetItemType) && hasSingleSportsCardForm(title)) {
     reasons.push('candidate is an individual graded card, but the target is a sports-card set');
   }
 

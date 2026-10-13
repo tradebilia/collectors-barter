@@ -88,6 +88,9 @@ describe('Sold-Comps API key validation', () => {
 
   it('identifies explicit single-card forms in graded marketplace titles', () => {
     expect(hasSingleSportsCardForm('1985 Topps Mark McGwire 401 PSA 10')).toBe(true);
+    expect(hasSingleSportsCardForm('Kirby Puckett Rookie 1985 Topps #536 RC Card HOF GEM MINT 10')).toBe(true);
+    expect(hasSingleSportsCardForm('1985 Topps Kirby Puckett Rookie Baseball Card RC #536 PSA 9.5')).toBe(true);
+    expect(hasSingleSportsCardForm('Dolph Lundgren Autographed Rocky IV Ivan Drago AUTO PSA GEM MINT 10')).toBe(true);
     expect(hasSingleSportsCardForm('1985 Topps Baseball Complete Set PSA 10')).toBe(false);
     expect(hasSingleSportsCardForm('1985 Topps Baseball Factory Set')).toBe(false);
   });
@@ -107,5 +110,11 @@ describe('Sold-Comps API key validation', () => {
 
     expect(annotated.evidenceDisposition).toBe('warning_review');
     expect(annotated.evidenceReasons).toContain('candidate is an individual graded card, but the target is a sports-card set');
+
+    const genericSet = annotateSoldComparableCandidate(
+      { title: '1985 Topps Mark McGwire #401 RC PSA 10', soldPrice: '5300' },
+      { category: 'sports_cards', targetItemType: 'set', certificationCompany: 'PSA', targetGrade: 10, targetNumber: null, targetPlayer: null },
+    );
+    expect(genericSet.evidenceDisposition).toBe('warning_review');
   });
 });

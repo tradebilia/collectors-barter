@@ -116,3 +116,6 @@ Adaptive visual review uses batches of 20, stops after 3 accepted visual matches
 The Sold-Comps panel has a dedicated **Accepted for valuation candidates** section showing only completed eBay records already marked `evidenceDisposition: valuation_eligible` with a positive price. This is source-gate acceptance, not a guarantee of final analyzer comparable selection.
 
 For sports-card targets with item type `card_set`, an explicit individual graded-card marketplace title (for example, a card number followed by `PSA 10`) is downgraded to `warning_review` and cannot enter the valuation-eligible list. It remains available in the evidence ledger for audit context. The set-form regression passed 14/14 focused tests. No database writes, migrations, credential changes, or valuation-policy changes.
+
+
+The sports-card set-form safeguard was broadened after a live review found shorthand single-card titles still entering the accepted list. It now recognizes numbered cards such as `#536`, rookie/RC, autographed/auto, and labels such as `GEM MINT 10`, while excluding explicit set titles and recognizing alternate set item types including `set` and `*_set`. These candidates are downgraded to `warning_review` and remain audit context only.
