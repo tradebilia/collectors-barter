@@ -40,6 +40,7 @@ describe('safe public build stamp', () => {
     try {
       mkdirSync(scriptDir, { recursive: true });
       copyFileSync(path.resolve(process.cwd(), 'scripts/write-build-stamp.mjs'), path.join(scriptDir, 'write-build-stamp.mjs'));
+      writeFileSync(path.join(scriptDir, 'source-fingerprint-manifest.json'), '["scripts/write-build-stamp.mjs"]\n');
       writeFileSync(path.join(tempDir, 'README.md'), '# Temporary clean repository\n');
       execFileSync('git', ['init', '--quiet'], { cwd: tempDir });
       execFileSync('git', ['config', 'user.email', 'test@example.invalid'], { cwd: tempDir });
@@ -76,6 +77,7 @@ describe('safe public build stamp', () => {
       mkdirSync(scriptDir, { recursive: true });
       mkdirSync(platformMetadataDir, { recursive: true });
       copyFileSync(path.resolve(process.cwd(), 'scripts/write-build-stamp.mjs'), path.join(scriptDir, 'write-build-stamp.mjs'));
+      writeFileSync(path.join(scriptDir, 'source-fingerprint-manifest.json'), '["package.json", "scripts/write-build-stamp.mjs"]\n');
       writeFileSync(path.join(tempDir, 'package.json'), '{"name":"temporary-fingerprint-test"}\n');
       writeFileSync(path.join(platformMetadataDir, 'version.json'), '{"version":"first"}\n');
       const firstFingerprint = runStamp();
@@ -85,5 +87,18 @@ describe('safe public build stamp', () => {
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
     }
+  });
+
+  it('lists exactly the tracked application/configuration source in the fingerprint manifest', () => {
+    const manifest = JSON.parse(readFileSync(path.resolve(process.cwd(), 'scripts/source-fingerprint-manifest.json'), 'utf8'));
+    const tracked = execFileSync('git', ['ls-files'], { cwd: process.cwd(), encoding: 'utf8' }).trim().split('\n');
+    const rootFiles = new Set(['.gitignore', 'package.json', 'pnpm-lock.yaml', 'tsconfig.json', 'vite.config.ts', 'vitest.config.ts']);
+    const expected = tracked.filter((file) => (
+      file !== 'scripts/source-fingerprint-manifest.json'
+      && !file.startsWith('client/public/__manus__/')
+      && file !== 'client/public/tradebilia-build.json'
+      && (file.startsWith('client/') || file.startsWith('server/') || file.startsWith('shared/') || file.startsWith('drizzle/') || file.startsWith('scripts/') || rootFiles.has(file))
+    )).sort();
+    expect(manifest).toEqual(expected);
   });
 });
