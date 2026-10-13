@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSportsCardTestAiQueries, filterTestAiListingsBySport } from "../shared/testAiCriteria";
+import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, filterTestAiListingsBySport } from "../shared/testAiCriteria";
 import { buildEbayBrowseQuery, filterListingsByGrade, filterListingsByNumber, filterListingsByTargetGradingState } from "./testAIRouter";
 
 describe("Test AI sports-card eBay query candidates", () => {
@@ -91,6 +91,23 @@ describe("Test AI sports-card eBay query candidates", () => {
     expect(queries).toContain("1989 Upper Deck Ken Griffey Jr 1 PSA 10");
     expect(queries).toContain("1989 Upper Deck Ken Griffey Jr PSA 10");
     expect(queries).toContain("Upper Deck Ken Griffey Jr PSA 10");
+  });
+
+  it("uses year, manufacturer, sport, and set name for sports-card set searches", () => {
+    const details = {
+      year: "1985",
+      manufacturer: "Topps",
+      sport: "Baseball",
+      setName: "Topps Traded Set",
+      player: "Mark McGwire",
+      cardNumber: "401",
+    };
+
+    expect(buildSportsCardTestAiCriteria(details, "card_set")).toBe("1985 Topps Baseball Topps Traded Set");
+    expect(buildSportsCardTestAiQueries(details, "The Legend of Zelda", "", "", "card_set")).toEqual([
+      "1985 Topps Baseball Topps Traded Set",
+      "Topps Baseball Topps Traded Set",
+    ]);
   });
 
   it("treats AFA Q60 and AFA 60.0 as the same numeric grade", () => {

@@ -123,10 +123,15 @@ export function buildSportsCardTestAiCriteria(itemDetails: unknown, itemType = '
   const details = itemDetails as Record<string, unknown>;
   const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
   const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
+  const normalizedType = itemType.trim().toLowerCase().replace(/[ -]+/g, '_');
+  const setName = value('setName') || value('cardSet') || value('set');
+  const sport = value('sport') || value('customSport');
 
   const identity = unopened.length
     ? [value('year'), resolveTestAiManufacturer(details)]
-    : [value('year'), resolveTestAiManufacturer(details), value('player'), value('cardNumber')];
+    : normalizedType === 'set' || normalizedType.endsWith('_set')
+      ? [value('year'), resolveTestAiManufacturer(details), sport, setName]
+      : [value('year'), resolveTestAiManufacturer(details), value('player'), value('cardNumber')];
   return [...identity, ...unopened]
     .filter(Boolean)
     .join(' ');
@@ -157,9 +162,17 @@ export function buildSportsCardTestAiQueries(
   const normalizedCert = certificationCompany.trim();
   const normalizedGrade = grade.trim();
   const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
+  const normalizedType = itemType.trim().toLowerCase().replace(/[ -]+/g, '_');
+  const isSet = normalizedType === 'set' || normalizedType.endsWith('_set');
+  const sport = value('sport') || value('customSport');
+  const setName = value('setName') || value('cardSet') || value('set');
   const candidateParts: string[][] = unopened.length ? [
     [year, manufacturer, ...unopened],
     [manufacturer, ...unopened],
+  ] : isSet ? [
+    [year, manufacturer, sport, setName, normalizedCert, normalizedGrade],
+    [year, manufacturer, sport, setName],
+    [manufacturer, sport, setName],
   ] : [
     [year, manufacturer, player, cardNumber, normalizedCert, normalizedGrade],
     [year, manufacturer, player, normalizedCert, normalizedGrade],

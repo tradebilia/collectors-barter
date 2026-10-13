@@ -122,3 +122,6 @@ The sports-card set-form safeguard was broadened after a live review found short
 
 
 Image review now explicitly enforces sports-card set-versus-single-card form as a mandatory identity gate. When the target metadata identifies a set, the visual prompt requires mismatch for a visibly individual card against a visibly multi-card/set presentation, and requires unreadable/manual review when form cannot be determined; it must not treat an uncertain form as a match.
+
+
+Sports-card set searches now use the structured identity order year, manufacturer, sport, and set name. For example, a 1985 Topps baseball Topps Traded set produces `1985 Topps Baseball Topps Traded Set`; player/card-number criteria are not substituted for the set identity. This rule is shared by Sold-Comps and complementary eBay query tiers.
