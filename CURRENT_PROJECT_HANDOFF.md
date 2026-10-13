@@ -125,3 +125,9 @@ Image review now explicitly enforces sports-card set-versus-single-card form as 
 
 
 Sports-card set searches now use the structured identity order year, manufacturer, sport, and set name. For example, a 1985 Topps baseball Topps Traded set produces `1985 Topps Baseball Topps Traded Set`; player/card-number criteria are not substituted for the set identity. This rule is shared by Sold-Comps and complementary eBay query tiers.
+
+## High-value Sold-Comps price-safety gate — October 13, 2026
+
+For a user-entered trade value **above $2,000**, a Sold-Comps completed-sale candidate may enter source-level valuation evidence only when its positive sold price is between **25% and 250%** of that stated trade value, inclusive. For example, a $3,000 stated value admits $750 through $7,500; values below $750 or above $7,500 remain visible as context-only evidence and cannot affect the analyzer. The gate is inactive at or below $2,000 so lower-value items retain the existing evidence behavior.
+
+The server applies this gate in `annotateSoldComparableCandidate` using the shared `shared/testAiSoldCompSafety.ts` evaluator. Excluded records receive a precise `high-value price safety gate:` reason, remain in the evidence ledger, and are not included in Sold-Comps metrics or the **Accepted for valuation candidates** section. The Sold-Comps panel states whether the gate is active, shows the calculated bounds, and reports the number of records excluded by it. This is an outlier safeguard, not an identity substitute: identity, grade, form, date, currency, duplicate, visual, and final comparable gates still apply.

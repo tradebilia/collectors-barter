@@ -17,6 +17,7 @@ import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuid
 import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMarketSources';
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
 import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
+import { HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD } from '@shared/testAiSoldCompSafety';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -759,13 +760,18 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
   const { data, isLoading } = trpc.testAI.getSoldCompsData.useQuery(
-    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl },
+    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, statedTradeValue: item.estimatedValue ?? undefined, imageUrl: item.primaryPhotoUrl },
     { enabled: !!item.title && item.category !== 'unknown' }
   );
   const auditLedger = data?.audit?.ledger ?? [];
   const visualReviewRows = (data?.listings ?? []).map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
   const acceptedValuationListings = (data?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+  const statedTradeValue = Number(item.estimatedValue);
+  const priceSafetyApplies = Number.isFinite(statedTradeValue) && statedTradeValue > HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD;
+  const priceSafetyMinimum = priceSafetyApplies ? statedTradeValue * HIGH_VALUE_SOLD_COMP_MIN_RATIO : null;
+  const priceSafetyMaximum = priceSafetyApplies ? statedTradeValue * HIGH_VALUE_SOLD_COMP_MAX_RATIO : null;
+  const priceSafetyExcludedCount = Number(data?.priceSafety?.excludedCount ?? (data?.listings ?? []).filter((listing: any) => (listing.evidenceReasons ?? []).some((reason: string) => reason.startsWith('high-value price safety gate:'))).length);
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -789,6 +795,12 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
         <p className="font-semibold">Evidence coverage — {data.audit.rawReceived} unique candidates across {data.audit.retrievalCoverage?.length ?? 0} query tier{data.audit.retrievalCoverage?.length === 1 ? '' : 's'}</p>
         <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} not visually reviewed</p>
       </div>}
+      <div className="rounded border border-amber-700/35 bg-amber-950/20 p-2 text-[10px] text-amber-100" aria-label="High-value Sold-Comps price safety gate">
+        <p className="font-semibold">High-value price safety check</p>
+        {priceSafetyApplies
+          ? <p className="mt-0.5 text-amber-200/90">Active because the stated trade value is {formatWholeDollar(statedTradeValue)} (above {formatWholeDollar(HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD)}). Sold comps below {formatWholeDollar(priceSafetyMinimum!)} or above {formatWholeDollar(priceSafetyMaximum!)} are excluded from valuation and retained as context only{priceSafetyExcludedCount > 0 ? ` · ${priceSafetyExcludedCount} excluded by this gate` : ''}.</p>
+          : <p className="mt-0.5 text-amber-200/90">Inactive until the stated trade value is above {formatWholeDollar(HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD)}. When active, only sold comps from 25% to 250% of the stated trade value can enter valuation; outliers remain context only.</p>}
+      </div>
       {data && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2" aria-label="Accepted for valuation candidates">
         <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Accepted for valuation candidates</p><p className="mt-0.5 text-[9px] text-emerald-100/70">Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.</p></div><span className="shrink-0 rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-200">{acceptedValuationListings.length}</span></div>
         {acceptedValuationListings.length > 0 ? <div className="mt-2 max-h-48 space-y-1 overflow-y-auto pr-1">{acceptedValuationListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="flex min-w-0 items-start gap-2">{listing.imageUrl && <img src={listing.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}<div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><p className="text-[9px] text-gray-400">{listing.condition}{listing.endedAt ? ` · Sold ${listing.endedAt}` : ''}</p><AnalyzerUseLine eligible reason="completed sale passed the source evidence gate; final comparable selection still applies." /></div></div><p className="shrink-0 text-sm font-semibold text-emerald-300">{formatWholeDollar(listing.price)}</p></div>)}</div> : <p className="mt-2 text-[10px] text-gray-500">No candidates have passed the evidence gate yet.</p>}

@@ -38,6 +38,7 @@ import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListi
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
+import { evaluateSoldCompPriceSafety, HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD } from '../shared/testAiSoldCompSafety';
 import { lookupCollectAuctions, lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupSiriusSportsAuctions } from './siriusSportsAuctionMarketData';
 import { lookupComcListings } from './parseComcMarketData';
@@ -526,6 +527,7 @@ export function annotateSoldComparableCandidate(
     targetGrade: ExtractedGrade | null;
     targetNumber: string | null;
     targetPlayer: string | null;
+    statedTradeValue?: number | null;
     visualReview?: VisualSoldCandidateReview;
   },
 ) {
@@ -549,6 +551,8 @@ export function annotateSoldComparableCandidate(
   if (context.visualReview?.verdict === 'mismatch') {
     reasons.push(`visual comparison flag: ${context.visualReview.rationale || 'manual identity review required'}`);
   }
+  const priceSafety = evaluateSoldCompPriceSafety(context.statedTradeValue, item?.soldPrice ?? item?.price);
+  if (priceSafety.reason) reasons.push(priceSafety.reason);
   const carriedVisualStatus = context.visualReview?.verdict ?? item?.visualReviewStatus ?? 'not_reviewed';
   const carriedVisualRationale = context.visualReview?.rationale ?? item?.visualReviewRationale ?? null;
   const carriedDisposition = item?.evidenceDisposition as SoldComparableDisposition | undefined;
@@ -1531,6 +1535,7 @@ export const testAIRouter = router({
       certificationCompany: z.string().optional(),
       itemDetails: z.string().optional(),
       itemType: z.string().optional(),
+      statedTradeValue: z.number().finite().nonnegative().optional(),
       imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {
@@ -1782,6 +1787,7 @@ export const testAIRouter = router({
           targetGrade,
           targetNumber,
           targetPlayer: playerName,
+          statedTradeValue: input.statedTradeValue,
           visualReview: reviewByIndex.get(index),
         }));
         const canonicalListings = attachCanonicalProvenance('sold_comps', annotatedListings.map((item: any) => ({
@@ -1837,6 +1843,13 @@ export const testAIRouter = router({
           })),
           metrics,
           visualFilter: visualSoldFilter,
+          priceSafety: {
+            applies: Number(input.statedTradeValue) > HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD,
+            statedTradeValue: input.statedTradeValue ?? null,
+            minimumAcceptedRatio: HIGH_VALUE_SOLD_COMP_MIN_RATIO,
+            maximumAcceptedRatio: HIGH_VALUE_SOLD_COMP_MAX_RATIO,
+            excludedCount: canonicalListings.filter((item: any) => (item.evidenceReasons ?? []).some((reason: string) => reason.startsWith('high-value price safety gate:'))).length,
+          },
           audit: {
             retrievalCoverage,
             rawReceived: rawItems.length,

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
+import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -116,5 +117,33 @@ describe('Sold-Comps API key validation', () => {
       { category: 'sports_cards', targetItemType: 'set', certificationCompany: 'PSA', targetGrade: 10, targetNumber: null, targetPlayer: null },
     );
     expect(genericSet.evidenceDisposition).toBe('warning_review');
+  });
+
+  it('does not activate the high-value price gate at or below a $2,000 stated trade value', () => {
+    expect(evaluateSoldCompPriceSafety(2_000, 1)).toMatchObject({ applies: false, status: 'inactive' });
+    expect(evaluateSoldCompPriceSafety(1_000, 10_000)).toMatchObject({ applies: false, status: 'inactive' });
+
+    const annotated = annotateSoldComparableCandidate(
+      { title: 'High-value collectible', soldPrice: '1' },
+      { category: 'coins', targetItemType: '', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, statedTradeValue: 2_000 },
+    );
+    expect(annotated.evidenceDisposition).toBe('valuation_eligible');
+    expect(annotated.evidenceReasons).toEqual([]);
+  });
+
+  it('accepts sold comps exactly at 25% and 250% when the stated value is above $2,000', () => {
+    expect(evaluateSoldCompPriceSafety(3_000, 750)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 750, maximumAcceptedPrice: 7_500 });
+    expect(evaluateSoldCompPriceSafety(3_000, 7_500)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 750, maximumAcceptedPrice: 7_500 });
+  });
+
+  it('keeps high-value Sold-Comps outliers as context only with a precise reason', () => {
+    const baseContext = { category: 'coins', targetItemType: '', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, statedTradeValue: 3_000 };
+    const tooLow = annotateSoldComparableCandidate({ title: 'High-value collectible', soldPrice: '749' }, baseContext);
+    const tooHigh = annotateSoldComparableCandidate({ title: 'High-value collectible', soldPrice: '7501' }, baseContext);
+
+    expect(tooLow.evidenceDisposition).toBe('warning_review');
+    expect(tooLow.evidenceReasons).toContain('high-value price safety gate: sold comp $749 is below 25% of the stated trade value $3,000 ($750 minimum); retained as context only');
+    expect(tooHigh.evidenceDisposition).toBe('warning_review');
+    expect(tooHigh.evidenceReasons).toContain('high-value price safety gate: sold comp $7,501 is above 250% of the stated trade value $3,000 ($7,500 maximum); retained as context only');
   });
 });

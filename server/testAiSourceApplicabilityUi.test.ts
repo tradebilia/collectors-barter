@@ -150,6 +150,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.');
   });
 
+  it('discloses the high-value Sold-Comps price safety gate and its exclusion treatment', () => {
+    expect(source).toContain("HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD");
+    expect(source).toContain('High-value price safety check');
+    expect(source).toContain('below {formatWholeDollar(priceSafetyMinimum!)} or above {formatWholeDollar(priceSafetyMaximum!)} are excluded from valuation and retained as context only');
+    expect(source).toContain('only sold comps from 25% to 250% of the stated trade value can enter valuation');
+    expect(source).toContain('high-value price safety gate:');
+  });
+
   it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
     expect(source).toContain('analyzerSubmittedSaleCount');
     expect(source).toContain('market: { completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length');
