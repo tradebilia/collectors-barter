@@ -765,6 +765,7 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
   const auditLedger = data?.audit?.ledger ?? [];
   const visualReviewRows = (data?.listings ?? []).map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
+  const acceptedValuationListings = (data?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -787,6 +788,10 @@ function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | '
       {data?.audit && <div className="rounded border border-violet-700/30 bg-violet-950/20 p-2 text-[10px] text-violet-100">
         <p className="font-semibold">Evidence coverage — {data.audit.rawReceived} unique candidates across {data.audit.retrievalCoverage?.length ?? 0} query tier{data.audit.retrievalCoverage?.length === 1 ? '' : 's'}</p>
         <p className="mt-0.5 text-violet-200/90">{data.audit.valuationEligible} valuation-eligible · {data.audit.warningReview} retained for review · {data.audit.objectiveConflicts} objective conflicts retained in the audit ledger · {data.audit.notVisuallyReviewed} not visually reviewed</p>
+      </div>}
+      {data && <div className="rounded border border-emerald-700/35 bg-emerald-950/20 p-2" aria-label="Accepted for valuation candidates">
+        <div className="flex items-center justify-between gap-2"><div><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Accepted for valuation candidates</p><p className="mt-0.5 text-[9px] text-emerald-100/70">Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.</p></div><span className="shrink-0 rounded bg-emerald-900/50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-200">{acceptedValuationListings.length}</span></div>
+        {acceptedValuationListings.length > 0 ? <div className="mt-2 max-h-48 space-y-1 overflow-y-auto pr-1">{acceptedValuationListings.map((listing: any, index: number) => <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="flex min-w-0 items-start gap-2">{listing.imageUrl && <img src={listing.imageUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover" />}<div className="min-w-0"><a href={listing.itemUrl} target="_blank" rel="noopener noreferrer" className="block truncate text-[10px] text-blue-300 hover:underline">{listing.title}</a><p className="text-[9px] text-gray-400">{listing.condition}{listing.endedAt ? ` · Sold ${listing.endedAt}` : ''}</p><AnalyzerUseLine eligible reason="completed sale passed the source evidence gate; final comparable selection still applies." /></div></div><p className="shrink-0 text-sm font-semibold text-emerald-300">{formatWholeDollar(listing.price)}</p></div>)}</div> : <p className="mt-2 text-[10px] text-gray-500">No candidates have passed the evidence gate yet.</p>}
       </div>}
       {data?.metrics && (
         <div className="grid grid-cols-4 gap-2 text-[11px]">

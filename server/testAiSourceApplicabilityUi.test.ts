@@ -145,6 +145,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('historical or undated data is retained for context');
     expect(source).toContain('identity mismatch prevents direct valuation');
     expect(source).toContain('Exclusion reason:');
+    expect(source).toContain("const acceptedValuationListings = (data?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
+    expect(source).toContain('Accepted for valuation candidates');
+    expect(source).toContain('Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.');
   });
 
   it('shows completed-sale totals alongside analyzer-submitted totals in market evidence classification', () => {
