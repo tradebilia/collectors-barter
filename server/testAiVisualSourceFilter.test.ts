@@ -8,6 +8,7 @@ import {
   conservativeComicVisualReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
+  sportsCardSetInstruction,
   VISUAL_REVIEW_MAX_CANDIDATES,
   VISUAL_REVIEW_BATCH_SIZE,
   VISUAL_REVIEW_TARGET_MATCHES,
@@ -212,6 +213,14 @@ describe("visual source filter", () => {
     expect(source).toContain("graded/slabbed or raw/ungraded");
     expect(source).toContain("Graded-versus-raw status is a mandatory identity gate");
     expect(source).toContain("target is graded and the candidate is visibly raw");
+  });
+
+  it("requires the visual reviewer to gate sports-card set versus single-card form", () => {
+    const instruction = sportsCardSetInstruction("title=1985 Topps Complete Set; category=sports_cards; itemType=card_set");
+    expect(instruction).toContain("item form is a mandatory identity gate");
+    expect(instruction).toContain("one individual card");
+    expect(instruction).toContain("mark mismatch with high confidence");
+    expect(sportsCardSetInstruction("title=1985 Topps #401; category=sports_cards; itemType=single_card")).toBe("");
   });
 
   it("ignores unique certificate IDs when visually comparing graded coins", () => {
