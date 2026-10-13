@@ -492,15 +492,26 @@ function playerSurname(value: string | null | undefined): string | null {
   return suffixes.has(last.toLowerCase()) && parts.length > 1 ? parts[parts.length - 2]! : last;
 }
 
+function normalizedItemType(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
+}
+
+export function hasSingleSportsCardForm(title: string): boolean {
+  const normalized = String(title ?? '').trim();
+  return /\b(?:single|individual)\s+card\b/i.test(normalized)
+    || /(?:^|\s)#?\d{1,4}\s+(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*\d+(?:\.\d+)?\b/i.test(normalized);
+}
+
 /**
  * Candidate metadata is intentionally lossless: absent provider/title identity
  * becomes warning/review, while the earlier deterministic filters record only
  * explicit, category-relevant contradictions as hard exclusions.
  */
-function annotateSoldComparableCandidate(
+export function annotateSoldComparableCandidate(
   item: any,
   context: {
     category: string;
+    targetItemType: string;
     certificationCompany: string;
     targetGrade: ExtractedGrade | null;
     targetNumber: string | null;
@@ -513,6 +524,10 @@ function annotateSoldComparableCandidate(
   const targetProvider = normalizeCertificationCompany(context.certificationCompany);
   const observedProvider = title.match(certificationProviderPattern)?.[1] ?? null;
   const observedGrade = extractGradeFromTitle(title);
+
+  if (context.category === 'sports_cards' && normalizedItemType(context.targetItemType) === 'card_set' && hasSingleSportsCardForm(title)) {
+    reasons.push('candidate is an individual graded card, but the target is a sports-card set');
+  }
 
   if (targetProvider && !observedProvider) reasons.push('grading or authentication company is not stated in the marketplace title');
   if (context.targetGrade && !observedGrade) reasons.push('grade is not stated or cannot be normalized from the marketplace title');
@@ -1752,6 +1767,7 @@ export const testAIRouter = router({
         const reviewByIndex = new Map<number, VisualSoldCandidateReview>((visualSoldFilter.reviews as VisualSoldCandidateReview[]).map((review) => [review.candidateIndex, review]));
         const annotatedListings = visuallyFiltered.map((item: any, index: number) => annotateSoldComparableCandidate(item, {
           category: input.category,
+          targetItemType: input.itemType || '',
           certificationCompany: cert,
           targetGrade,
           targetNumber,

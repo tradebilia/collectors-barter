@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, normalizeSearchGrade } from './testAIRouter';
+import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
 
 describe('Sold-Comps API key validation', () => {
   it('accepts the configured SOLID_COMPS_API_KEY name without exposing its value', () => {
@@ -84,5 +84,28 @@ describe('Sold-Comps API key validation', () => {
     ];
 
     expect(filterListingsByGrade(listings, 9.8)).toEqual([listings[0], listings[2]]);
+  });
+
+  it('identifies explicit single-card forms in graded marketplace titles', () => {
+    expect(hasSingleSportsCardForm('1985 Topps Mark McGwire 401 PSA 10')).toBe(true);
+    expect(hasSingleSportsCardForm('1985 Topps Baseball Complete Set PSA 10')).toBe(false);
+    expect(hasSingleSportsCardForm('1985 Topps Baseball Factory Set')).toBe(false);
+  });
+
+  it('keeps an individual card out of valuation when the target is a card set', () => {
+    const annotated = annotateSoldComparableCandidate(
+      { title: '1985 Topps Mark McGwire 401 PSA 10', soldPrice: '5300' },
+      {
+        category: 'sports_cards',
+        targetItemType: 'card_set',
+        certificationCompany: 'PSA',
+        targetGrade: 10,
+        targetNumber: null,
+        targetPlayer: null,
+      },
+    );
+
+    expect(annotated.evidenceDisposition).toBe('warning_review');
+    expect(annotated.evidenceReasons).toContain('candidate is an individual graded card, but the target is a sports-card set');
   });
 });
