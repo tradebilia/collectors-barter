@@ -168,7 +168,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('completedCandidates');
     expect(source).toContain('analyzerSubmittedPrices: submittedPrices');
     expect(source).toContain('analyzerSubmittedSaleCount: analyzerSubmitted.length');
-    expect(source).toContain('Number(soldCompsData?.audit?.valuationEligible ?? accepted.length)');
+    expect(source).toContain('analyzerSubmittedSaleCount: accepted.length');
+    expect(source).toContain('Do not trust a separately carried audit counter here; it can be');
+    expect(source).not.toContain('Number(soldCompsData?.audit?.valuationEligible ?? accepted.length)');
     expect(source).toContain('How the analyzer uses the selected sources');
     expect(source).toContain('sourceDecisions');
     expect(source).toContain('Accepted for valuation');

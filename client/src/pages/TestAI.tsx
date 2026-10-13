@@ -2380,7 +2380,11 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         market: {
           returnedRecordCount: listings.length,
           completedSaleCount: listings.length,
-          analyzerSubmittedSaleCount: Number(soldCompsData?.audit?.valuationEligible ?? accepted.length),
+          // Keep the Evidence Review count identical to the Sold-Comps panel:
+          // only the current response's valuation_eligible listings count.
+          // Do not trust a separately carried audit counter here; it can be
+          // stale when the listing dispositions have been reclassified.
+          analyzerSubmittedSaleCount: accepted.length,
           analyzerSubmittedPrices: accepted.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
           currentValueSaleCount: currentValue.length,
           historicalTrendSaleCount: historicalTrend.length,
