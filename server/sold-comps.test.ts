@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
+import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
@@ -117,6 +117,33 @@ describe('Sold-Comps API key validation', () => {
       { category: 'sports_cards', targetItemType: 'set', certificationCompany: 'PSA', targetGrade: 10, targetNumber: null, targetPlayer: null },
     );
     expect(genericSet.evidenceDisposition).toBe('warning_review');
+  });
+
+  it('keeps explicit multi-item lots out of source-level valuation acceptance', () => {
+    expect(extractSoldCompLotQuantity('Hot Wheels 70 Plymouth AAR Cuda (Lot of 2 Short Card & Long Card)')).toBe(2);
+    expect(extractSoldCompLotQuantity('Hot Wheels 70 Plymouth AAR Cuda 2026 P Case Lot of 3')).toBe(3);
+    expect(hasExplicitSoldCompLot('Hot Wheels 70 Plymouth AAR Cuda (Lot of 2 Short Card & Long Card)')).toBe(true);
+
+    const context = { category: 'vintage_toys', targetItemType: 'single_item', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null };
+    const lotOfTwo = annotateSoldComparableCandidate({ title: 'Hot Wheels 70 Plymouth AAR Cuda (Lot of 2 Short Card & Long Card)', soldPrice: '11' }, context);
+    const lotOfThree = annotateSoldComparableCandidate({ title: 'Hot Wheels 70 Plymouth AAR Cuda 2026 P Case Lot of 3', soldPrice: '19' }, context);
+    const single = annotateSoldComparableCandidate({ title: '2026 Hot Wheels 70 Plymouth AAR Cuda 2026 P Case', soldPrice: '6' }, context);
+
+    expect(lotOfTwo).toMatchObject({ evidenceDisposition: 'warning_review', lotQuantity: 2 });
+    expect(lotOfTwo.evidenceReasons).toContain('candidate is a multi-item lot of 2; total lot price is not directly comparable to one target item and is retained as context only');
+    expect(lotOfThree).toMatchObject({ evidenceDisposition: 'warning_review', lotQuantity: 3 });
+    expect(lotOfThree.evidenceReasons).toContain('candidate is a multi-item lot of 3; total lot price is not directly comparable to one target item and is retained as context only');
+    expect(single.evidenceDisposition).toBe('valuation_eligible');
+  });
+
+  it('keeps generic bundles and counted multi-item titles out of valuation without inventing a quantity', () => {
+    const context = { category: 'vintage_toys', targetItemType: 'single_item', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null };
+    const bundle = annotateSoldComparableCandidate({ title: 'Hot Wheels AAR Cuda Multipack', soldPrice: '20' }, context);
+    const counted = annotateSoldComparableCandidate({ title: 'Hot Wheels AAR Cuda 3 Cars Set', soldPrice: '20' }, context);
+
+    expect(bundle).toMatchObject({ evidenceDisposition: 'warning_review', lotQuantity: null });
+    expect(bundle.evidenceReasons?.[0]).toContain('multi-item lot or bundle');
+    expect(counted).toMatchObject({ evidenceDisposition: 'warning_review', lotQuantity: 3 });
   });
 
   it('does not activate the high-value price gate at or below a $10,000 stated trade value', () => {

@@ -514,6 +514,34 @@ export function hasSingleSportsCardForm(title: string): boolean {
 }
 
 /**
+ * A lot's total price is not a direct comparable for a single target item.
+ * Keep explicit multi-item listings in the evidence ledger, but do not admit
+ * them to the source-level valuation list until per-unit/lot identity logic
+ * exists. The quantity is retained for transparent UI/audit messaging.
+ */
+export function extractSoldCompLotQuantity(title: string): number | null {
+  const normalized = String(title ?? '').trim();
+  const explicitLot = normalized.match(/\b(?:lot|bundle|collection)\s+of\s+(\d+)\b/i);
+  if (explicitLot) {
+    const quantity = Number(explicitLot[1]);
+    return Number.isInteger(quantity) && quantity > 1 ? quantity : null;
+  }
+  const countedItems = normalized.match(/\b(\d+)\s*(?:cards?|comics?|pins?|games?|records?|items?|pieces?|cars?|vehicles?)\b/i);
+  if (countedItems) {
+    const quantity = Number(countedItems[1]);
+    return Number.isInteger(quantity) && quantity > 1 ? quantity : null;
+  }
+  if (/\b(?:multi[- ]?pack|multipack|bundle|collection)\b/i.test(normalized)) return null;
+  return null;
+}
+
+export function hasExplicitSoldCompLot(title: string): boolean {
+  const normalized = String(title ?? '').trim();
+  return extractSoldCompLotQuantity(normalized) !== null
+    || /\b(?:multi[- ]?pack|multipack|bundle|collection)\b/i.test(normalized);
+}
+
+/**
  * Candidate metadata is intentionally lossless: absent provider/title identity
  * becomes warning/review, while the earlier deterministic filters record only
  * explicit, category-relevant contradictions as hard exclusions.
@@ -536,6 +564,13 @@ export function annotateSoldComparableCandidate(
   const targetProvider = normalizeCertificationCompany(context.certificationCompany);
   const observedProvider = title.match(certificationProviderPattern)?.[1] ?? null;
   const observedGrade = extractGradeFromTitle(title);
+  const lotQuantity = extractSoldCompLotQuantity(title);
+
+  if (hasExplicitSoldCompLot(title)) {
+    reasons.push(lotQuantity
+      ? `candidate is a multi-item lot of ${lotQuantity}; total lot price is not directly comparable to one target item and is retained as context only`
+      : 'candidate is a multi-item lot or bundle; total lot price is not directly comparable to one target item and is retained as context only');
+  }
 
   if (context.category === 'sports_cards' && isSportsCardSetItemType(context.targetItemType) && hasSingleSportsCardForm(title)) {
     reasons.push('candidate is an individual graded card, but the target is a sports-card set');
@@ -567,6 +602,7 @@ export function annotateSoldComparableCandidate(
     ...item,
     evidenceDisposition,
     evidenceReasons: reasons,
+    lotQuantity: item?.lotQuantity ?? lotQuantity,
     visualReviewStatus: carriedVisualStatus,
     visualReviewRationale: carriedVisualRationale,
   };
