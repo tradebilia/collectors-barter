@@ -132,16 +132,21 @@ function metadataValue(metadata: string, key: string): string {
 
 function normalizedGrade(value: string): string | null {
   const match = value.match(/\d{1,3}(?:\.\d+)?/);
-  return match?.[0] ?? null;
+  if (!match) return null;
+  const numeric = Number(match[0]);
+  return Number.isFinite(numeric) ? String(numeric) : match[0];
 }
 
 function candidateGradeEvidence(title: string, rationale: string, targetGrade: string, grader: string): boolean {
   const targetNumericGrade = normalizedGrade(targetGrade);
   const candidateText = `${title} ${rationale}`;
-  const gradeMentioned = /\b(?:grade|graded|score|rating)\b/i.test(candidateText) || Boolean(grader && new RegExp(`\\b${grader}\\b`, "i").test(candidateText));
+  const gradeMentioned = /\b(?:grade|graded|score|rating)\b/i.test(candidateText) || Boolean(grader && new RegExp(`\b${grader}\b`, "i").test(candidateText));
   if (!gradeMentioned) return false;
   if (!targetNumericGrade) return /\b(?:grade|graded|score|rating)\b\s*(?:is|of|:)?\s*\d{1,3}(?:\.\d+)?/i.test(candidateText);
-  return new RegExp(`(?:^|[^0-9])${targetNumericGrade.replace(".", "\\.")}(?:\\.0+)?(?:$|[^0-9])`).test(candidateText);
+  const numeric = targetNumericGrade.replace(".", "\\.");
+  const gradeWords = "(?:grade|graded|score|rating)";
+  const graderWord = grader ? `|${grader.replace(/[.*+?^${}()|[\\]\\]/g, "\\$&")}` : "";
+  return new RegExp(`(?:\\b(?:${gradeWords}${graderWord})\\b[^0-9]{0,24}(?:^|[^0-9])${numeric}(?:\\.0+)?(?:$|[^0-9])|(?:^|[^0-9])${numeric}(?:\\.0+)?(?:$|[^0-9])[^0-9]{0,12}\\b(?:${gradeWords}${graderWord})\\b)`, "i").test(candidateText);
 }
 
 /** A graded target requires readable candidate-grade evidence; holder similarity alone is insufficient. */
@@ -155,9 +160,20 @@ export function conservativeGradedVisualReviews(
   const targetIsGraded = Boolean(targetGrade && targetGrade.toLowerCase() !== "unknown") || Boolean(targetGrader && targetGrader.toLowerCase() !== "unknown");
   if (!targetIsGraded) return reviews;
   return reviews.map((review) => {
-    if (review.verdict !== "match" && review.verdict !== "rough_match") return review;
     const title = String(listings[review.candidateIndex]?.title ?? "");
-    if (candidateGradeEvidence(title, review.rationale, targetGrade, targetGrader)) return review;
+    const gradeEvidence = candidateGradeEvidence(title, review.rationale, targetGrade, targetGrader);
+    const explicitGradeConfirmation = /\b(?:grade|numeric|descriptive)\b.{0,90}\b(?:clearly?\s+)?(?:readable|visible|confirmed|matches|match)\b/i.test(review.rationale);
+    const explicitGradeConflict = /\b(?:not\s+(?:clearly\s+)?(?:readable|visible|verified)|unreadable|unclear|obscured|cannot|can't|unable|conflict(?:ing)?)\b/i.test(review.rationale);
+    if ((review.verdict === "match" || review.verdict === "rough_match") && gradeEvidence) return review;
+    if (review.verdict === "unreadable" && gradeEvidence && explicitGradeConfirmation && !explicitGradeConflict) {
+      return {
+        ...review,
+        verdict: "match",
+        confidence: review.confidence === "low" ? "medium" : review.confidence,
+        rationale: `${review.rationale} The title and gallery review explicitly confirm the target grader and equivalent numeric grade, so this is eligible for visual identity consideration.` ,
+      };
+    }
+    if (review.verdict !== "match" && review.verdict !== "rough_match") return review;
     return {
       ...review,
       verdict: "unreadable",

@@ -87,6 +87,20 @@ describe("visual source filter", () => {
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
 
+  it("treats equivalent AFA plus-grade formats as the same numeric grade", () => {
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 75+ grade is clearly readable on the gallery label and matches the target." },
+    ], [{ title: "MOTU Man-at-Arms AFA 75+ Masters of the Universe" }], "title=MOTU Man-at-Arms; category=vintage_toys; grade=75.0; certificationCompany=AFA");
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match." },
+    ], [{ title: "MOTU Man-at-Arms AFA 75+" }], "title=MOTU Man-at-Arms; category=vintage_toys; grade=75; certificationCompany=AFA");
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
+  });
+
   it("requests additional gallery images when the primary review cannot verify a graded target", () => {
     expect(shouldReviewAdditionalVisualImages({
       imageCount: 3,
