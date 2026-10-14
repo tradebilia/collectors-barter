@@ -174,3 +174,9 @@ When a selected target has a primary image, eBay Active image review now starts 
 - A timed-out or deadline-limited run returns `completed_with_timeout`, reports the timeout/deadline in its note, and keeps unanswered candidates as required manual-review/context evidence. They cannot enter current-value or valuation evidence implicitly.
 - The Test AI UI explains the two-minute bound and distinguishes completed visual results from candidates retained because review timed out or was incomplete.
 - Regression coverage includes the timeout constants, abort path, status contract, and user-facing explanation. Validation passed: focused visual/UI tests 54/54, deterministic suite 322 files / 1,515 tests with 6 skipped (USPS credential probe excluded), TypeScript, production build, and diff hygiene.
+
+## Decoupled eBay Active retrieval and visual review
+
+The eBay Active Test AI path now separates fast market retrieval from the bounded AI image review. `getEbayData` returns the deterministic title/metadata-filtered asking-price context plus the bounded `visualReviewListings` payload and server-built target metadata without waiting for vision. The client then calls `reviewEbayVisualData` separately when a target image and candidate images exist. While that second request runs, asking-price context remains visible; only completed visual matches can be classified as current-value evidence. Timeouts and partial reviews remain fail-closed and cannot implicitly enter the analyzer. This avoids making the entire eBay panel appear stalled while the image-review model is processing.
+
+Validation for this change: focused eBay/UI/visual-filter regressions 66/66 passed; deterministic suite 1,509 passed with 6 skipped and the unrelated external USPS credential probe excluded; TypeScript, production build, and diff hygiene passed. No database writes, migrations, credential changes, provider configuration changes, or public publication were performed.

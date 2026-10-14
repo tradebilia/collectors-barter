@@ -33,7 +33,7 @@ import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFie
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import type { VisualSoldCandidateReview } from './testAiVisualSoldFilter';
-import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
@@ -1236,7 +1236,8 @@ export const testAIRouter = router({
             queryTierCount: 1 + fallbackQueries.length,
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },
-          visualReviewListings: visualActiveFilter ? displaySummaries.map((s: any) => ({
+          visualReviewTargetMetadata: targetMetadata,
+          visualReviewListings: displaySummaries.map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
@@ -1256,7 +1257,7 @@ export const testAIRouter = router({
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
-          })) : [],
+          })),
           listings: displaySummaries.slice(0, 20).map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
@@ -1283,6 +1284,39 @@ export const testAIRouter = router({
       } catch (err: any) {
         return { query, listings: [], metrics: null, error: err.message };
       }
+    }),
+
+  // Run the bounded eBay image review separately from market retrieval so the
+  // asking-price context can render immediately while AI review is pending.
+  reviewEbayVisualData: protectedProcedure
+    .input(z.object({
+      targetImageUrl: z.string().url(),
+      targetMetadata: z.string().min(1).max(12000),
+      listings: z.array(z.record(z.string(), z.any())).max(VISUAL_REVIEW_MAX_CANDIDATES),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'eBay active listings',
+        targetImageUrl: input.targetImageUrl,
+        targetMetadata: input.targetMetadata,
+        listings: input.listings.map((listing) => ({
+          ...listing,
+          imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
+          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls : [],
+        })),
+      });
+      const listings = visualFilter.listings as any[];
+      const visualMatchMetrics = computeVisualMatchMetrics(listings);
+      return {
+        query: '',
+        listings,
+        visualReviewListings: listings,
+        metrics: visualMatchMetrics,
+        visualMatchMetrics,
+        visualFilter,
+        error: null,
+      };
     }),
 
   // Fetch HIPStamp active listings for Stamps only — sandbox-only and read-only.

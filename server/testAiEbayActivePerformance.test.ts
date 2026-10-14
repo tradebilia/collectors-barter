@@ -63,6 +63,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).toContain("const declaredIdentityFilter = applyDeclaredIdentityFilter(");
     expect(section).toContain("const metrics = computeMetrics(displaySummaries)");
     expect(section).toContain("const displaySummaries = visualActiveFilter?.listings ?? declaredIdentityFilter.listings");
+    expect(section).toContain("visualReviewTargetMetadata: targetMetadata");
+    expect(section).toContain("visualReviewListings: displaySummaries.map");
+    expect(routerSource).toContain("reviewEbayVisualData: protectedProcedure");
+    expect(routerSource).toContain("VISUAL_REVIEW_MAX_CANDIDATES");
   });
 
   it("times out eBay OAuth and Browse calls and reports an actionable redacted state", () => {
@@ -76,7 +80,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
 
   it("keeps the UI on the fast result while mandatory image checks run", () => {
     expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }");
-    expect(pageSource).toContain("includeVisualReview: true");
+    expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useQuery");
+    expect(pageSource).toContain("data?.visualReviewListings");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
     expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");

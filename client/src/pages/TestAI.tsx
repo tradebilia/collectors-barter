@@ -915,9 +915,14 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean);
     return parts.join(' ') || item.title;
   }, [item.category, item.itemDetails, item.title, item.certificationCompany, item.grade, item.condition]);
-  const visualReviewQuery = trpc.testAI.getEbayData.useQuery(
-    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, imageUrl: item.primaryPhotoUrl, includeVisualReview: true },
-    { enabled: reviewRequested && !!item.title && item.category !== 'unknown' },
+  const visualReviewInput = useMemo(() => ({
+    targetImageUrl: item.primaryPhotoUrl || 'https://invalid.local/target-image-placeholder',
+    targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
+    listings: Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : [],
+  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
+  const visualReviewQuery = trpc.testAI.reviewEbayVisualData.useQuery(
+    visualReviewInput,
+    { enabled: reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata && visualReviewInput.listings.length > 0 },
   );
   useEffect(() => {
     setReviewRequested(Boolean(item.primaryPhotoUrl));
