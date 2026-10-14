@@ -168,3 +168,9 @@ For vintage toys, graded status and numeric grade are not sufficient identity ch
 ## eBay Active visual-admission rule — October 14, 2026
 
 When a selected target has a primary image, eBay Active image review now starts automatically instead of waiting for a manual button click. Active listings remain visible as asking-price context while the bounded review runs, but only visually confirmed matches can enter the Evidence Review as **current-value market evidence**. This prevents unreviewed active listings from being counted as analyzer-bound evidence. If the target has no image, the source remains context-only and the UI explains why. Completed sales and historical-trend classifications are unaffected. Added UI regression coverage; no database writes, migrations, credential or provider changes, or public-domain publication.
+
+## Bounded visual-review runtime (2026-10-14)
+- Visual provider calls now have a 20-second per-candidate timeout and a 120-second overall review deadline; the LLM request is aborted rather than left running indefinitely.
+- A timed-out or deadline-limited run returns `completed_with_timeout`, reports the timeout/deadline in its note, and keeps unanswered candidates as required manual-review/context evidence. They cannot enter current-value or valuation evidence implicitly.
+- The Test AI UI explains the two-minute bound and distinguishes completed visual results from candidates retained because review timed out or was incomplete.
+- Regression coverage includes the timeout constants, abort path, status contract, and user-facing explanation. Validation passed: focused visual/UI tests 54/54, deterministic suite 322 files / 1,515 tests with 6 skipped (USPS credential probe excluded), TypeScript, production build, and diff hygiene.

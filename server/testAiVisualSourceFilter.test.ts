@@ -16,6 +16,8 @@ import {
   VISUAL_REVIEW_MAX_CANDIDATES,
   VISUAL_REVIEW_BATCH_SIZE,
   VISUAL_REVIEW_TARGET_MATCHES,
+  VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS,
+  VISUAL_REVIEW_OVERALL_DEADLINE_MS,
 } from "./testAiVisualSourceFilter";
 
 describe("visual source filter", () => {
@@ -340,5 +342,21 @@ describe("visual source filter", () => {
     expect(pageSource).toContain("formatVisualReviewPrice");
     expect(pageSource).toContain("listing?.price ?? listing?.soldPrice");
     expect(pageSource).toContain("{formatVisualReviewPrice(listing)}");
+  });
+
+  it("keeps visual review bounded and fails closed when the provider times out", () => {
+    expect(VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS).toBe(20_000);
+    expect(VISUAL_REVIEW_OVERALL_DEADLINE_MS).toBe(120_000);
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("completed_with_timeout");
+    expect(source).toContain("Remaining candidates are retained for manual review and cannot enter valuation implicitly.");
+    expect(source).toContain("controller.abort()");
+  });
+
+  it("explains timeout and partial-review states in the eBay Active UI", () => {
+    const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+    expect(pageSource).toContain("maximum 2 minutes");
+    expect(pageSource).toContain("Only candidates with a completed visual result can support current-value evidence");
+    expect(pageSource).toContain("cannot enter the analyzer implicitly");
   });
 });

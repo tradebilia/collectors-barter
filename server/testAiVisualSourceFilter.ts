@@ -19,12 +19,15 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   preVisualExcludedCount?: number;
   status:
     | "applied"
+    | "completed_with_timeout"
     | "skipped_no_target_image"
     | "skipped_no_candidate_images"
     | "provider_unavailable";
   reviewedCount: number;
   removedCount: number;
   retainedUnreviewedCount: number;
+  timedOutCount?: number;
+  deadlineReached?: boolean;
   reviews: VisualSourceReview[];
   note: string;
 };
@@ -32,6 +35,8 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
 export const VISUAL_REVIEW_BATCH_SIZE = 20;
 export const VISUAL_REVIEW_TARGET_MATCHES = 3;
 export const VISUAL_REVIEW_MAX_CANDIDATES = 50;
+export const VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS = 20_000;
+export const VISUAL_REVIEW_OVERALL_DEADLINE_MS = 120_000;
 
 const VERDICTS = new Set(["match", "rough_match", "mismatch", "unreadable"]);
 const CONFIDENCES = new Set(["high", "medium", "low"]);
@@ -42,6 +47,31 @@ function safeHttps(value: unknown): string | null {
     return new URL(value).protocol === "https:" ? value : null;
   } catch {
     return null;
+  }
+}
+
+class VisualReviewTimeoutError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "VisualReviewTimeoutError";
+  }
+}
+
+async function invokeVisualReview(
+  params: Parameters<typeof invokeLLM>[0],
+  timeoutMs: number,
+): Promise<Awaited<ReturnType<typeof invokeLLM>>> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await invokeLLM({ ...params, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new VisualReviewTimeoutError(`Visual review exceeded the ${timeoutMs / 1000}-second per-candidate limit.`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -525,12 +555,19 @@ export async function filterVisualSourceCandidates<
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let reviewedCandidateCount = 0;
+    let timedOutCount = 0;
+    let deadlineReached = false;
     let lastError: unknown;
+    const reviewDeadline = Date.now() + VISUAL_REVIEW_OVERALL_DEADLINE_MS;
     // Keep each comparison one-to-one and run four at a time. A later explicit
     // review-more action can expand beyond this initial queue.
     for (let windowOffset = 0; windowOffset < reviewQueue.length; windowOffset += VISUAL_REVIEW_BATCH_SIZE) {
       const window = reviewQueue.slice(windowOffset, windowOffset + VISUAL_REVIEW_BATCH_SIZE);
       for (let offset = 0; offset < window.length; offset += 4) {
+      if (Date.now() >= reviewDeadline) {
+        deadlineReached = true;
+        break;
+      }
       const batch = window.slice(offset, offset + 4);
       const batchResults = await Promise.all(batch.map(async (candidate) => {
       const content: Array<TextContent | ImageContent> = [
@@ -547,7 +584,7 @@ export async function filterVisualSourceCandidates<
       let candidateError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
-          const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
+          const response = await invokeVisualReview({ model: "gpt-5-mini", messages: [{ role: "user", content }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           text = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           if (text.trim()) break;
@@ -576,7 +613,7 @@ export async function filterVisualSourceCandidates<
       let galleryError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
-          const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
+          const response = await invokeVisualReview({ model: "gpt-5-mini", messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
           galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
           if (galleryText.trim()) break;
@@ -592,10 +629,14 @@ export async function filterVisualSourceCandidates<
       for (const result of batchResults) {
         reviews.push(...result.reviews);
         if (result.reviews.length) completedBatches += 1;
-        if (result.error) lastError = result.error;
+        if (result.error) {
+          lastError = result.error;
+          if (result.error instanceof VisualReviewTimeoutError) timedOutCount += 1;
+        }
       }
+      reviewedCandidateCount += batch.length;
       }
-      reviewedCandidateCount += window.length;
+      if (deadlineReached) break;
       const acceptedMatches = normalizeExplicitUngradedVisualReviews(
         conservativeGradedVisualReviews(
           conservativeComicVisualReviews(reviews, candidates.map((candidate) => candidate.item), args.targetMetadata),
@@ -606,7 +647,7 @@ export async function filterVisualSourceCandidates<
       ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
     }
-    if (!completedBatches && reviewQueue.length) {
+    if (!completedBatches && reviewQueue.length && !timedOutCount && !deadlineReached) {
       throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     }
     const uniqueReviews = normalizeExplicitUngradedVisualReviews(
@@ -670,15 +711,18 @@ export async function filterVisualSourceCandidates<
     const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
     const contextListings = applied.listings.filter((_, index) => declaredConflictIndexes.has(index));
     const visibleListings = applied.listings.filter((_, index) => !declaredConflictIndexes.has(index));
+    const completedWithTimeout = timedOutCount > 0 || deadlineReached;
     return {
       ...applied,
       listings: visibleListings,
       contextListings,
       preVisualExcludedCount: contextListings.length,
       removedCount: contextListings.length,
-      status: "applied",
+      status: completedWithTimeout ? "completed_with_timeout" : "applied",
       reviews: uniqueReviews,
-      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches or the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum; ${contextListings.length} explicit identity conflict${contextListings.length === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.`,
+      timedOutCount,
+      deadlineReached,
+      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${contextListings.length} explicit identity conflict${contextListings.length === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
     };
   } catch {
     return {
