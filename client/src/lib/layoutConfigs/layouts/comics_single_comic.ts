@@ -38,6 +38,8 @@ export const comicsSinglecomicLayout: ItemTypeLayoutConfig = {
         keyIssue: { colSpan: 'half', position: 4 },
         signed: { colSpan: 'half', position: 5 },
         facsimile: { colSpan: 'half', position: 6 },
+        certificationLabelStatus: { colSpan: 'half', position: 7 },
+        labelNotation: { colSpan: 'full', position: 8 },
       },
     },
     optional: {

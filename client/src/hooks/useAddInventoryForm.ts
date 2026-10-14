@@ -160,9 +160,9 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
         const actualValue = formData[fieldKey];
         // Case-insensitive comparison for enum values
         const actualValueStr = String(actualValue).toLowerCase().trim();
-        const expectedValueStr = expectedValue.trim().toLowerCase();
-        const result = actualValueStr === expectedValueStr;
-        console.log(`[evaluateCondition] Comparing: "${actualValue}" (${actualValueStr}) === "${expectedValue.trim()}" (${expectedValueStr}), result: ${result}`);
+        const expectedValues = expectedValue.split('|').map(value => value.trim().toLowerCase()).filter(Boolean);
+        const result = expectedValues.includes(actualValueStr);
+        console.log(`[evaluateCondition] Comparing: "${actualValue}" (${actualValueStr}) against "${expectedValues.join('|')}", result: ${result}`);
         return result;
       }
 
@@ -429,6 +429,16 @@ export const useAddInventoryForm = (photos: any[] = []): UseAddInventoryFormRetu
     const tradeValue = Number(formData.tradeValue);
     if (formData.tradeValue !== undefined && formData.tradeValue !== null && formData.tradeValue !== '' && (!Number.isFinite(tradeValue) || tradeValue < 1)) {
       newErrors.tradeValue = 'Trade Value must be at least $1';
+    }
+
+    const serialNumber = String(formData.serialNumber ?? '').trim();
+    if (serialNumber && String(formData.serialNumbered ?? '').trim().toLowerCase() === 'yes' && !/^\d{1,5}\s*\/\s*\d{1,7}$/.test(serialNumber)) {
+      newErrors.serialNumber = 'Enter the full serial number and print run, for example 10/100.';
+    }
+
+    const upc = String(formData.upc ?? '').trim();
+    if (upc && !/^\d{8,14}$/.test(upc.replace(/\D/g, ''))) {
+      newErrors.upc = 'Enter an 8- to 14-digit UPC or EAN, using digits only or standard separators.';
     }
 
     // Check shipping

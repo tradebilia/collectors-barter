@@ -35,6 +35,7 @@ export const coinsSinglecoinLayout: ItemTypeLayoutConfig = {
         composition: { colSpan: 'half', position: 4 },
         weight: { colSpan: 'half', position: 5 },
         diameter: { colSpan: 'half', position: 6 },
+        designation: { colSpan: 'full', position: 7 },
       },
     },
     optional: {

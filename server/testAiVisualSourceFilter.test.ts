@@ -91,6 +91,32 @@ describe("visual source filter", () => {
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
 
+  it("holds a graded-card match for manual review when the target qualifier is not explicitly verified", () => {
+    const metadata = `title=2018 Topps; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ gradeQualifier: "OC" })}`;
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The PSA 8 grade is clearly readable and the card front matches." },
+    ], [{ title: "2018 Topps PSA 8" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("grade qualifier");
+  });
+
+  it("accepts an explicitly confirmed equivalent target qualifier after visual review", () => {
+    const metadata = `title=2018 Topps; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ gradeQualifier: "OC" })}`;
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The PSA 8 OC grade is clearly readable and the card front matches." },
+    ], [{ title: "2018 Topps PSA 8 OC" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("holds a comic match for manual review when the target certification label status is not confirmed", () => {
+    const metadata = `title=Amazing Spider-Man #300; category=comics; grade=9.8; certificationCompany=CGC; fullItemDetails=${JSON.stringify({ certificationLabelStatus: "Restored" })}`;
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The CGC 9.8 grade and cover art are clearly readable and match." },
+    ], [{ title: "Amazing Spider-Man #300 CGC 9.8" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("comic certification label status");
+  });
+
   it("treats structured Is graded = No as authoritative and skips graded-target enforcement", () => {
     const metadata = 'title=Monster High; category=vintage_toys; grade=unknown; certificationCompany=unknown; fullItemDetails={"isGraded":"No"}';
     expect(hasExplicitlyUngradedTarget(metadata)).toBe(true);
@@ -358,6 +384,7 @@ describe("visual source filter", () => {
     expect(source).toContain("target is graded and the candidate is visibly raw");
     expect(source).toContain("candidate numeric or descriptive grade is also mandatory");
     expect(source).toContain("candidate grade is not clearly readable");
+    expect(source).toContain("grade qualifier, label designation, or comic certification label status");
     expect(source).toContain("structured metadata explicitly says Is graded = No");
     expect(source).toContain("Treat the target as raw/ungraded for this review");
   });

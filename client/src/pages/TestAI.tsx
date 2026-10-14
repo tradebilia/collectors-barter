@@ -491,7 +491,7 @@ function SourceCoverageTracker() {
 function getPriceChartingVideoGameUpc(item: SelectedItem | null): string | null {
   if (!item) return null;
   const details = testAiDetails(item);
-  const raw = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.productUpc ?? '';
+  const raw = details.upc ?? details.UPC ?? details.barcode ?? details.barCode ?? details.ean ?? details.EAN ?? details.gtin ?? details.GTIN ?? details.productUpc ?? '';
   const upc = String(raw).replace(/\D/g, '');
   return /^\d{8,14}$/.test(upc) ? upc : null;
 }

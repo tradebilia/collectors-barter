@@ -31,6 +31,9 @@ export const stampsSinglestampLayout: ItemTypeLayoutConfig = {
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
         denomination: { colSpan: 'half', position: 2 },
+        perforation: { colSpan: 'half', position: 3 },
+        watermark: { colSpan: 'half', position: 4 },
+        overprintSurcharge: { colSpan: 'full', position: 5 },
       },
     },
     optional: {

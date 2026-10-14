@@ -34,6 +34,7 @@ export const pokemonSinglecardLayout: ItemTypeLayoutConfig = {
         rarity: { colSpan: 'half', position: 2 },
         finishVariant: { colSpan: 'half', position: 3 },
         language: { colSpan: 'half', position: 4 },
+        gradeQualifier: { colSpan: 'full', position: 5 },
       },
     },
     optional: {

@@ -419,6 +419,14 @@ export const COINS_SINGLE_COIN_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
   },
   {
+    name: 'designation',
+    label: 'Strike / Designation (as printed on holder)',
+    inputType: 'text',
+    maxLength: 120,
+    requirement: 'recommended',
+    notes: 'Examples: PR, SP, CAM, DCAM, PL, DPL, FS, FB, FH, Details – Cleaned.',
+  },
+  {
     name: 'isGraded',
     label: 'Is Graded',
     inputType: 'dropdown',
@@ -796,6 +804,25 @@ export const COMICS_SINGLE_COMIC_FIELDS: FieldDefinition[] = [
     requirement: 'recommended',
     defaultValue: 'No',
     dropdownOptions: ['Yes', 'No'],
+  },
+  {
+    name: 'certificationLabelStatus',
+    label: 'Certification Label Status',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    conditionalLogic: 'Is Graded = yes',
+    dropdownOptions: ['Universal', 'Qualified', 'Restored', 'Conserved', 'Signature Series', 'Other'],
+    supportsOther: true,
+    inlineCustomField: true,
+    otherFieldName: 'Custom Certification Label Status',
+  },
+  {
+    name: 'labelNotation',
+    label: 'Label Notation / Restoration Detail',
+    inputType: 'text',
+    maxLength: 180,
+    requirement: 'recommended',
+    conditionalLogic: 'Certification Label Status = Restored|Conserved',
   },
   {
     name: 'isGraded',
@@ -1877,8 +1904,9 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'serialNumber',
-    label: 'Serial Number',
+    label: 'Serial Number / Print Run (example: 10/100)',
     inputType: 'text',
+    maxLength: 14,
     requirement: 'recommended',
     conditionalLogic: 'Serial Numbered = Yes',
   },
@@ -1916,6 +1944,15 @@ export const SPORTS_CARDS_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     requirement: 'required',
     conditionalLogic: 'Is Graded = yes',
+  },
+  {
+    name: 'gradeQualifier',
+    label: 'Grade Qualifier / Label Designation',
+    inputType: 'text',
+    maxLength: 80,
+    requirement: 'recommended',
+    conditionalLogic: 'Is Graded = yes',
+    notes: 'Examples: OC, ST, PD, OF, MK, Authentic, Black Label, Pristine. Enter only what is printed on the label.',
   },
 ];
 
@@ -2174,6 +2211,27 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
     label: 'Denomination',
     inputType: 'text',
     maxLength: 10,
+    requirement: 'recommended',
+  },
+  {
+    name: 'perforation',
+    label: 'Perforation',
+    inputType: 'text',
+    maxLength: 40,
+    requirement: 'recommended',
+  },
+  {
+    name: 'watermark',
+    label: 'Watermark',
+    inputType: 'text',
+    maxLength: 100,
+    requirement: 'recommended',
+  },
+  {
+    name: 'overprintSurcharge',
+    label: 'Overprint / Surcharge',
+    inputType: 'text',
+    maxLength: 120,
     requirement: 'recommended',
   },
   {
@@ -2712,6 +2770,14 @@ export const VIDEO_GAMES_GAME_FIELDS: FieldDefinition[] = [
     label: 'Release Year',
     inputType: 'number',
     requirement: 'recommended',
+  },
+  {
+    name: 'upc',
+    label: 'UPC / EAN (if printed on packaging)',
+    inputType: 'text',
+    maxLength: 18,
+    requirement: 'recommended',
+    notes: 'Use the 8–14 digit product barcode when available. It is used for exact PriceCharting product lookup.',
   },
   {
     name: 'region',
@@ -3993,6 +4059,15 @@ export const POKEMON_SINGLE_CARD_FIELDS: FieldDefinition[] = [
     inputType: 'text',
     requirement: 'conditional',
     conditionalLogic: 'Is Graded = yes',
+  },
+  {
+    name: 'gradeQualifier',
+    label: 'Grade Qualifier / Label Designation',
+    inputType: 'text',
+    maxLength: 80,
+    requirement: 'recommended',
+    conditionalLogic: 'Is Graded = yes',
+    notes: 'Examples: OC, ST, PD, OF, MK, Authentic, Black Label, Pristine. Enter only what is printed on the label.',
   },
 ];
 

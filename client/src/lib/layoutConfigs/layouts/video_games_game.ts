@@ -32,9 +32,10 @@ export const video_gamesGameLayout: ItemTypeLayoutConfig = {
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
         releaseYear: { colSpan: 'half', position: 2 },
-        region: { colSpan: 'half', position: 3 },
-        completeInBox: { colSpan: 'half', position: 4 },
-        sealed: { colSpan: 'half', position: 5 },
+        upc: { colSpan: 'full', position: 3 },
+        region: { colSpan: 'half', position: 4 },
+        completeInBox: { colSpan: 'half', position: 5 },
+        sealed: { colSpan: 'half', position: 6 },
       },
     },
     optional: {

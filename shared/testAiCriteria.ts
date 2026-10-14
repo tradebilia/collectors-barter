@@ -56,33 +56,39 @@ function detailText(details: Record<string, unknown>, keys: string[]): string {
   return '';
 }
 
+function cautiousMatrixRunout(details: Record<string, unknown>): string {
+  const value = detailText(details, ['pressingDetails', 'matrixRunout', 'runout']);
+  // Only promote structured matrix/runout identifiers, not free-form notes.
+  return /(?:\b(?:matrix|runout|deadwax)\b|\b[A-Z0-9]{2,}(?:[-/][A-Z0-9]{2,}){1,}\b)/i.test(value) ? value : '';
+}
+
 /** Builds an ordered, title-independent identity term list for request previews and adapters. */
 export function buildStructuredItemQuery(category: string, itemDetails: unknown, extra: Array<string | null | undefined> = [], itemType = ''): string {
   const details = parseTestAiDetails(itemDetails);
   const normalizedCategory = category.trim().toLowerCase().replace(/[- ]+/g, '_');
   const unopenedProduct = normalizedCategory === 'sports_cards' && isSportsCardsUnopenedProduct(details, itemType);
   const keys = normalizedCategory === 'sports_cards'
-    ? ['year', 'manufacturer', 'player', 'athlete', 'cardNumber', 'setName', 'cardSet', 'parallel', 'variant']
+    ? ['year', 'manufacturer', 'player', 'athlete', 'cardNumber', 'setName', 'cardSet', 'parallel', 'parallelVariation', 'variant']
     : normalizedCategory === 'pokemon'
       ? ['cardName', 'pokemonName', 'name', 'cardNumber', 'cardNo', 'number', 'setName', 'set', 'cardSet', 'variant', 'printing', 'language']
       : normalizedCategory === 'comics'
         ? ['comicTitle', 'series', 'title', 'issueNumber', 'issueNo', 'issue', 'year', 'publisher', 'variant']
-        : normalizedCategory === 'music'
-          ? ['releaseTitle', 'album', 'artist', 'performer', 'releaseYear', 'catalogNumber']
+      : normalizedCategory === 'music'
+          ? ['releaseTitle', 'album', 'artist', 'performer', 'releaseYear', 'catalogNumber', 'pressingDetails']
           : normalizedCategory === 'video_games'
-            ? ['gameTitle', 'videoGameTitle', 'title', 'releaseYear', 'year', 'platform', 'console', 'system', 'upc', 'barcode']
+            ? ['gameTitle', 'videoGameTitle', 'title', 'releaseYear', 'year', 'platform', 'console', 'system', 'upc', 'barcode', 'ean', 'gtin']
         : normalizedCategory === 'vintage_toys'
           ? ['brand', 'manufacturer', 'line', 'franchise', 'toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName', 'setNumber', 'theme', 'toyForm', 'objectType', 'productType', 'version', 'variant', 'year']
         : normalizedCategory === 'coins'
           ? ['year', 'denomination', 'series', 'coinSeries', 'name', 'subject', 'mintMark', 'mint', 'country', 'variety', 'designation']
         : normalizedCategory === 'stamps'
-              ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series']
+              ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series', 'perforation', 'watermark', 'overprintSurcharge']
               : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
   const gradingCompany = resolveTestAiGradingCompany(details);
   const manufacturer = normalizedCategory === 'sports_cards' ? resolveTestAiManufacturer(details) : '';
   const baseValues = unopenedProduct
     ? [detailText(details, ['year']), manufacturer, ...buildSportsCardsUnopenedProductCriteria(details)]
-    : keys.map((key) => key === 'manufacturer' ? manufacturer : detailText(details, [key]));
+    : keys.map((key) => key === 'manufacturer' ? manufacturer : key === 'pressingDetails' ? cautiousMatrixRunout(details) : detailText(details, [key]));
   const extraValues = unopenedProduct ? [] : extra.map((value) => {
     const normalized = String(value ?? '').trim();
     if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized, gradingCompany, normalizedCategory);

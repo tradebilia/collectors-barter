@@ -14,6 +14,18 @@ const FIELD_ALIASES: Record<string, string[]> = {
   setName: ['setName', 'series', 'set'],
   edition: ['edition', 'editionEra', 'releaseType'],
   variant: ['variant', 'parallel', 'finish', 'holoType', 'printing'],
+  parallel: ['parallel', 'parallelVariation', 'variant', 'finish', 'printing'],
+  parallelVariation: ['parallelVariation', 'parallel', 'variant', 'finish', 'printing'],
+  gradeQualifier: ['gradeQualifier', 'qualifier', 'gradeDesignation', 'labelDesignation'],
+  certificationLabelStatus: ['certificationLabelStatus', 'labelStatus', 'labelColor', 'cgcLabel'],
+  labelNotation: ['labelNotation', 'restorationDetail', 'labelNote'],
+  designation: ['designation', 'coinDesignation'],
+  upc: ['upc', 'UPC', 'barcode', 'barCode', 'ean', 'gtin', 'productUpc'],
+  perforation: ['perforation', 'perf'],
+  watermark: ['watermark', 'watermarkType'],
+  overprintSurcharge: ['overprintSurcharge', 'overprint', 'surcharge'],
+  pressingDetails: ['pressingDetails', 'matrixRunout', 'runout', 'pressing'],
+  serialNumber: ['serialNumber', 'serial', 'printRun'],
   packaging: ['packagingType', 'packageType', 'sealedStatus', 'completeness'],
   sealedStatus: ['sealedStatus', 'condition', 'packageStatus'],
   gradingCompany: ['gradingCompany', 'certificationCompany', 'grader'],
@@ -26,17 +38,17 @@ const FIELD_ALIASES: Record<string, string[]> = {
 };
 
 const CATEGORY_FIELDS: Record<string, string[]> = {
-  sports_cards: ['player', 'year', 'manufacturer', 'brand', 'series', 'setName', 'sport', 'team', 'league', 'cardNumber', 'rookieStatus', 'parallel', 'serialNumber', 'variant', 'gradingCompany', 'grade'],
-  pokemon: ['cardName', 'setName', 'series', 'cardNumber', 'rarity', 'language', 'holoType', 'variant', 'year', 'gradingCompany', 'grade', 'sealedStatus'],
-  coins: ['country', 'denomination', 'year', 'mintMark', 'variety', 'series', 'metal', 'strike', 'gradingCompany', 'grade'],
-  comics: ['publisher', 'series', 'issueNumber', 'volume', 'variant', 'edition', 'gradingCompany', 'grade', 'distributionType'],
-  video_games: ['gameTitle', 'platform', 'edition', 'region', 'releaseType', 'sealedStatus', 'publisher', 'catalogNumber', 'gradingCompany', 'grade'],
-  stamps: ['country', 'catalogNumber', 'denomination', 'issueYear', 'year', 'perforation', 'watermark', 'variety', 'gradingCompany', 'grade'],
+  sports_cards: ['player', 'year', 'manufacturer', 'brand', 'series', 'setName', 'sport', 'team', 'league', 'cardNumber', 'rookieStatus', 'parallel', 'serialNumber', 'variant', 'gradeQualifier', 'gradingCompany', 'grade'],
+  pokemon: ['cardName', 'setName', 'series', 'cardNumber', 'rarity', 'language', 'holoType', 'variant', 'year', 'gradeQualifier', 'gradingCompany', 'grade', 'sealedStatus'],
+  coins: ['country', 'denomination', 'year', 'mintMark', 'variety', 'series', 'metal', 'strike', 'designation', 'gradingCompany', 'grade'],
+  comics: ['publisher', 'series', 'issueNumber', 'volume', 'variant', 'edition', 'certificationLabelStatus', 'labelNotation', 'gradingCompany', 'grade', 'distributionType'],
+  video_games: ['gameTitle', 'platform', 'edition', 'region', 'releaseType', 'sealedStatus', 'publisher', 'catalogNumber', 'upc', 'gradingCompany', 'grade'],
+  stamps: ['country', 'catalogNumber', 'denomination', 'issueYear', 'year', 'perforation', 'watermark', 'overprintSurcharge', 'variety', 'gradingCompany', 'grade'],
   movies: ['title', 'format', 'releaseYear', 'edition', 'releaseType', 'gradingCompany', 'grade'],
   autographs: ['signer', 'signedItemType', 'authenticationCompany', 'certificationNumber', 'year', 'edition'],
   disney_pins: ['character', 'pinName', 'series', 'releaseEvent', 'editionSize', 'limitedEdition', 'year'],
   vintage_toys: ['brand', 'manufacturer', 'toyLine', 'character', 'productType', 'year', 'version', 'packagingType', 'sealedStatus', 'completeness', 'gradingCompany', 'grade'],
-  music: ['artist', 'releaseTitle', 'format', 'recordLabel', 'catalogNumber', 'country', 'pressing', 'year'],
+  music: ['artist', 'releaseTitle', 'format', 'recordLabel', 'catalogNumber', 'country', 'pressing', 'pressingDetails', 'year'],
 };
 
 function key(value: unknown): string {
@@ -122,6 +134,10 @@ function explicitGradeConflict(target: string, candidateTitle: string): string |
   return null;
 }
 
+function printRunDenominator(value: string): string {
+  return String(value).match(/\d+\s*\/\s*(\d{1,7})/)?.[1] ?? '';
+}
+
 /**
  * Returns only explicit, material conflicts. An absent candidate field is not
  * a conflict; this keeps provider omissions reviewable instead of fail-open or
@@ -142,6 +158,14 @@ export function findMaterialMetadataConflicts(targetMetadata: string, candidate:
     const targetValue = firstValue(target, field);
     if (!targetValue || /^(unknown|n ?a|none|raw|ungraded)$/i.test(targetValue)) continue;
     const directCandidateValue = firstValue(candidateRecord, field);
+    if (field === 'serialNumber') {
+      const targetPrintRun = printRunDenominator(targetValue);
+      const candidatePrintRun = printRunDenominator(directCandidateValue);
+      if (targetPrintRun && candidatePrintRun && targetPrintRun !== candidatePrintRun) {
+        conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: 'candidate metadata declares a different serial-number print-run denominator' });
+      }
+      continue;
+    }
     if (directCandidateValue && compact(directCandidateValue) !== compact(targetValue)) {
       conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: `${field} differs in explicit provider metadata` });
       continue;
@@ -152,10 +176,11 @@ export function findMaterialMetadataConflicts(targetMetadata: string, candidate:
       if (targetYear && candidateYears.length && !candidateYears.includes(targetYear)) conflicts.push({ field, targetValue, candidateValue: candidateYears[0], reason: 'candidate title declares a different year' });
       continue;
     }
-    if (field === 'issueNumber' || field === 'cardNumber' || field === 'catalogNumber') {
+    if (field === 'issueNumber' || field === 'cardNumber' || field === 'catalogNumber' || field === 'upc') {
       if (explicitNumberEvidence(field, targetValue, candidateTitle)) continue;
-      const hasDifferentExplicitNumber = /(?:issue|no\.?|number|card\s*(?:no\.?)?|catalog|cat\.?|#)\s*#?\d+[A-Za-z]?/i.test(candidateTitle) && !valueMatchesEvidence(targetValue, candidateTitle);
-      if (hasDifferentExplicitNumber) conflicts.push({ field, targetValue, candidateValue: candidateTitle, reason: 'candidate title declares a different issue/card/catalog number' });
+      const numberLabel = field === 'upc' ? '(?:upc|ean|barcode)' : '(?:issue|no\.?|number|card\s*(?:no\.?)?|catalog|cat\.?|#)';
+      const hasDifferentExplicitNumber = new RegExp(`${numberLabel}\\s*#?\\d+[A-Za-z]?`, 'i').test(candidateTitle) && !valueMatchesEvidence(targetValue, candidateTitle);
+      if (hasDifferentExplicitNumber) conflicts.push({ field, targetValue, candidateValue: candidateTitle, reason: field === 'upc' ? 'candidate title declares a different UPC/EAN/barcode' : 'candidate title declares a different issue/card/catalog number' });
       continue;
     }
     if (field === 'grade') {

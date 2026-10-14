@@ -38,6 +38,8 @@ export const sports_cardsSinglecardLayout: ItemTypeLayoutConfig = {
         autograph: { colSpan: 'half', position: 5 },
         relicMemorabilia: { colSpan: 'half', position: 6 },
         serialNumbered: { colSpan: 'half', position: 7 },
+        serialNumber: { colSpan: 'half', position: 8 },
+        gradeQualifier: { colSpan: 'full', position: 9 },
       },
     },
     optional: {
