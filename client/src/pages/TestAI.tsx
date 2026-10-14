@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
-import { normalizeTestAiEvidence, selectPreferredGuideAnchor, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
+import { normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
 import { normalizeTestAiSelectedItem } from '@shared/testAiSelectedItem';
 import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide';
@@ -755,6 +755,30 @@ function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem
 
 function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condition, currency, duplicate, and comparable gates still apply.' }: { eligible: boolean; reason?: string }) {
   return <p className={`mt-1 text-[8px] font-semibold ${eligible ? 'text-emerald-300' : 'text-amber-300'}`}>{eligible ? 'Analyzer: YES — submitted as a valuation candidate; ' : 'Analyzer: NO — context/review only; '}{reason}</p>;
+}
+
+function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string }) {
+  return <details className="mt-2 rounded border border-emerald-700/30 bg-emerald-950/15 p-2" open={acceptedCount > 0}>
+    <summary className="cursor-pointer text-[9px] font-semibold uppercase tracking-wide text-emerald-200">Items sent to analyzer ({acceptedCount})</summary>
+    {acceptedCount === 0 ? <p className="mt-1 text-[9px] text-gray-500">No {sourceLabel} records are being sent to the analyzer under this run’s current treatment.</p>
+      : records.length === 0 ? <p className="mt-1 text-[9px] text-amber-200">{acceptedCount} record{acceptedCount === 1 ? '' : 's'} are classified for analyzer submission, but this adapter did not return display-level record details.</p>
+        : <div className="mt-1 max-h-56 space-y-1 overflow-y-auto pr-1">{records.map((record, index) => <div key={`${record.id}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="min-w-0"><p className="truncate text-[9px] font-semibold text-gray-200">{record.url ? <a href={record.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{record.title}</a> : record.title}</p><p className="text-[8px] text-gray-400">{[record.bucket === 'current_value' ? 'Current value' : record.bucket === 'historical_trend' ? 'Historical trend' : record.bucket.replace('_', ' '), record.date].filter(Boolean).join(' · ')}</p>{record.note && <p className="text-[8px] text-amber-200/80">{record.note}</p>}</div><p className="shrink-0 text-[10px] font-semibold text-emerald-300">{record.price != null ? `${record.currency || 'USD'} ${formatWholeDollar(record.price)}` : 'Price unavailable'}</p></div>)}</div>}
+  </details>;
+}
+
+function toAnalyzerRecord(record: any, index: number, bucket: AnalyzerRecordDetail['bucket'], note?: string): AnalyzerRecordDetail {
+  const rawPrice = record?.price ?? record?.finalPrice ?? record?.salePrice ?? record?.soldPrice ?? record?.amount;
+  const numericPrice = Number(rawPrice);
+  return {
+    id: String(record?.saleId ?? record?.listingId ?? record?.id ?? record?.itemUrl ?? record?.url ?? `${record?.title ?? 'record'}-${index}`),
+    title: String(record?.title ?? record?.name ?? record?.subject ?? 'Untitled analyzer record'),
+    price: Number.isFinite(numericPrice) && numericPrice > 0 ? numericPrice : null,
+    currency: record?.currency ?? record?.soldCurrency ?? 'USD',
+    date: record?.date ?? record?.endedAt ?? record?.soldDate ?? record?.saleDate ?? null,
+    url: record?.itemUrl ?? record?.url ?? null,
+    bucket,
+    note: note ?? null,
+  };
 }
 
 function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean }) {
@@ -2309,7 +2333,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         kind: confirmedRecent > 0 ? 'market_completed' : 'market_historical',
         role: confirmedRecent > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(theCardApiData),
-        market: { returnedRecordCount: sales.length, completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length, analyzerSubmittedPrices: analyzerSubmittedSales.map((sale: any) => Number(sale.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
+        market: { returnedRecordCount: sales.length, completedSaleCount: confirmedRecent, analyzerSubmittedSaleCount: analyzerSubmittedSales.length, analyzerSubmittedPrices: analyzerSubmittedSales.map((sale: any) => Number(sale.price)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: analyzerSubmittedSales.map((sale: any, index: number) => toAnalyzerRecord(sale, index, sale.recency === 'historical' ? 'historical_trend' : 'current_value')), historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated' || !sale.confirmed).length },
         fields: { subject: theCardApiData?.catalog?.selected?.candidate?.subject, set: theCardApiData?.catalog?.selected?.candidate?.set_name, cardNumber: theCardApiData?.catalog?.selected?.candidate?.card_number, catalogId: theCardApiData?.catalog?.selected?.candidate?.ucid },
         message: theCardApiData?.messages?.join(' ') ?? null,
       });
@@ -2357,7 +2381,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         return Number.isFinite(timestamp) && Date.now() - timestamp > 365 * 86_400_000;
       }).length;
       const undatedSaleCount = completedCandidates.filter((sale: any) => !Number.isFinite(Date.parse(String(sale.date ?? '')))).length;
-      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { returnedRecordCount: allRecords.length, completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, currentValueSaleCount: currentValueSales.length, historicalTrendSaleCount: historicalTrendSales.length, currentValuePrices: currentValueSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalTrendPrices: historicalTrendSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
+      add({ id: source.id, label: source.label, kind: completedSaleCount > 0 ? 'market_completed' : 'market_historical', role: completedSaleCount > 0 ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(source.data), market: { returnedRecordCount: allRecords.length, completedSaleCount, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: submittedPrices, analyzerRecords: analyzerSubmitted.map((sale: any, index: number) => toAnalyzerRecord(sale, index, currentValueSales.includes(sale) ? 'current_value' : 'historical_trend')), currentValueSaleCount: currentValueSales.length, historicalTrendSaleCount: historicalTrendSales.length, currentValuePrices: currentValueSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalTrendPrices: historicalTrendSales.map((sale: any) => Number(sale.price ?? sale.finalPrice)), historicalSaleCount, undatedSaleCount }, message: source.data?.messages?.join(' ') ?? null });
     }
     if (enabledSources.has('sold_comps')) {
       const listings = soldCompsData?.listings ?? [];
@@ -2382,6 +2406,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           // stale when the listing dispositions have been reclassified.
           analyzerSubmittedSaleCount: accepted.length,
           analyzerSubmittedPrices: accepted.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
+          analyzerRecords: accepted.map((listing: any, index: number) => toAnalyzerRecord(listing, index, currentValue.includes(listing) ? 'current_value' : 'historical_trend')),
           currentValueSaleCount: currentValue.length,
           historicalTrendSaleCount: historicalTrend.length,
           currentValuePrices: currentValue.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
@@ -2432,7 +2457,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const records = [...(comicConnectData?.sales ?? []), ...(comicConnectData?.context ?? [])];
       const completed = records.filter((record: any) => record.completed === true || record.saleStatus === 'completed');
       const submitted = completed.filter((record: any) => record.identityMatched && ['current_12_months', 'extended_12_to_36_months'].includes(record.timeWindow) && Number(record.price) > 0);
-      add({ id: 'comicconnect', label: 'ComicConnect Sold Archive', kind: completed.length ? 'market_completed' : 'market_historical', role: submitted.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(comicConnectData), market: { returnedRecordCount: records.length, completedSaleCount: completed.length, analyzerSubmittedSaleCount: submitted.length, analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: submitted.filter((record: any) => record.timeWindow === 'current_12_months').length, historicalTrendSaleCount: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').length, currentValuePrices: submitted.filter((record: any) => record.timeWindow === 'current_12_months').map((record: any) => Number(record.price)), historicalTrendPrices: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').map((record: any) => Number(record.price)) }, message: comicConnectData?.messages?.join(' ') ?? null });
+      add({ id: 'comicconnect', label: 'ComicConnect Sold Archive', kind: completed.length ? 'market_completed' : 'market_historical', role: submitted.length ? 'valuation_candidate' : 'historical_context', status: evidenceStatus(comicConnectData), market: { returnedRecordCount: records.length, completedSaleCount: completed.length, analyzerSubmittedSaleCount: submitted.length, analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: submitted.map((record: any, index: number) => toAnalyzerRecord(record, index, record.timeWindow === 'current_12_months' ? 'current_value' : 'historical_trend')), currentValueSaleCount: submitted.filter((record: any) => record.timeWindow === 'current_12_months').length, historicalTrendSaleCount: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').length, currentValuePrices: submitted.filter((record: any) => record.timeWindow === 'current_12_months').map((record: any) => Number(record.price)), historicalTrendPrices: submitted.filter((record: any) => record.timeWindow !== 'current_12_months').map((record: any) => Number(record.price)) }, message: comicConnectData?.messages?.join(' ') ?? null });
     }
     if (enabledSources.has('tcgdex')) add({ id: 'tcgdex', label: 'TCGdex', kind: 'reference', status: evidenceStatus(tcgdexQuery.data), fields: factualFields(tcgdexQuery.data, 'tcgdex'), message: tcgdexQuery.data?.message ?? null });
     if (enabledSources.has('pricecharting')) {
@@ -2501,7 +2526,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       const pcgsAuctionBuckets = bucketPcgsAuctionRows(auctions);
       const currentValue = pcgsAuctionBuckets.currentValueRows;
       const historicalTrend = pcgsAuctionBuckets.historicalTrendRows;
-      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: pcgsAuctionBuckets.datedCompletedRows.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { returnedRecordCount: auctions.length, completedSaleCount: pcgsAuctionBuckets.datedCompletedRows.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: pcgsAuctionBuckets.undatedOrIncompleteRows.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
+      add({ id: 'pcgs_auction_results', label: 'PCGS Auction Prices Realized', kind: pcgsAuctionBuckets.datedCompletedRows.length ? 'market_completed' : 'market_historical', role: currentValue.length ? 'valuation_candidate' : historicalTrend.length ? 'historical_context' : 'reference_context', status: evidenceStatus(pcgsAuctionData), market: { returnedRecordCount: auctions.length, completedSaleCount: pcgsAuctionBuckets.datedCompletedRows.length, analyzerSubmittedSaleCount: currentValue.length, analyzerSubmittedPrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: currentValue.map((auction: any, index: number) => toAnalyzerRecord(auction, index, 'current_value')), currentValueSaleCount: currentValue.length, historicalTrendSaleCount: historicalTrend.length, currentValuePrices: currentValue.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && price > 0), historicalTrendPrices: historicalTrend.map((auction: any) => Number(auction.price)).filter((price: number) => Number.isFinite(price) && Number(price) > 0), historicalSaleCount: historicalTrend.length, undatedSaleCount: pcgsAuctionBuckets.undatedOrIncompleteRows.length }, fields: { certificationCompany: 'PCGS', certNumber: pcgsAuctionData?.data?.certNo ?? item.certId, pcgsNo: pcgsAuctionData?.data?.pcgsNo, subject: pcgsAuctionData?.data?.name, grade: pcgsAuctionData?.data?.grade }, message: pcgsAuctionData?.message ?? null });
     }
     // Certificate-mode PCGS items receive verified year/denomination/grade
     // from CoinFacts in marketItem. Use that identity for readiness so the UI
@@ -2579,6 +2604,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
             <div className="flex flex-wrap items-center justify-between gap-1"><p className="flex flex-wrap items-center gap-1.5 text-[10px] font-semibold text-gray-200">{decision.label}{decision.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className={`rounded px-1.5 py-0.5 text-[8px] uppercase ${unavailable ? 'bg-red-950/50 text-red-300' : nonMarket ? 'bg-gray-800 text-gray-400' : 'bg-sky-950/50 text-sky-200'}`}>{unavailable ? decision.status.replace('_', ' ') : nonMarket ? 'context source' : 'market source'}</span></div>
             {unavailable ? <p className="mt-1 text-[9px] text-red-200/80">{decision.message || 'No usable result was returned. This is a coverage issue, not proof the item is wrong.'}</p> : <><p className={`mt-1 text-[9px] ${decision.treatment === 'valuation_guide' || decision.treatment === 'valuation_candidate' ? 'text-emerald-200' : 'text-gray-400'}`}><strong>Analyzer treatment: {decision.treatment.replace(/_/g, ' ')}</strong>{decision.analyzerWeightPct !== null ? ` · configured guide weight ${decision.analyzerWeightPct}%` : ' · 0% direct guide weight'} · {decision.treatmentReason}</p>{nonMarket ? <p className="mt-1 text-[9px] text-gray-400">No completed-sale price count is created by this source classification.</p> : <div className="mt-1 grid gap-1 text-[9px] sm:grid-cols-5"><p className="text-emerald-200"><strong>{decision.accepted}</strong> accepted for valuation</p><p className="text-cyan-200"><strong>{decision.currentValue}</strong> current-value</p><p className="text-amber-200"><strong>{decision.historicalTrend}</strong> historical trend</p><p className="text-gray-300"><strong>{decision.context}</strong> context only</p><p className="text-slate-300"><strong>{decision.completed}</strong> completed found</p></div>}</>}
             {decision.acceptedPrices.length > 0 && <p className="mt-1 text-[9px] text-emerald-100/80">Submitted prices: {decision.acceptedPrices.map((price) => `$${Math.round(price).toLocaleString()}`).join(' · ')}</p>}
+            <AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} />
           </div>;
         })}
       </div>
@@ -2787,6 +2813,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
         completedSaleCount: completed.length,
         analyzerSubmittedSaleCount: submitted.length,
         analyzerSubmittedPrices: submitted.map((record: any) => Number(record.price ?? record.finalPrice)),
+        analyzerRecords: submitted.map((record: any, index: number) => toAnalyzerRecord(record, index, recent.includes(record) ? 'current_value' : 'historical_trend')),
         currentValueSaleCount: recent.length,
         historicalTrendSaleCount: historical.length,
         currentValuePrices: recent.map((record: any) => Number(record.price ?? record.finalPrice)),

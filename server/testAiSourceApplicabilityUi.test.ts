@@ -178,6 +178,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Context only');
   });
 
+  it('shows the exact records sent to the analyzer for every source decision', () => {
+    expect(source).toContain('function AnalyzerRecordPanel');
+    expect(source).toContain('Items sent to analyzer');
+    expect(source).toContain('adapter did not return display-level record details');
+    expect(source).toContain('No {sourceLabel} records are being sent to the analyzer');
+    expect(source).toContain('<AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} />');
+    expect(source).toContain('analyzerRecords: accepted.map');
+    expect(source).toContain('analyzerRecords: currentValue.map');
+  });
+
   it('uses one shared Sold-Comps response for Evidence Review and the provider panel', () => {
     expect(source).toContain('function SoldCompsSection({ item, side, data, isLoading }');
     expect(source).toContain('data={soldCompsData} isLoading={soldCompsLoading}');

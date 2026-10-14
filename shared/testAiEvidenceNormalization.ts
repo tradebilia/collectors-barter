@@ -11,6 +11,17 @@ export type EvidenceSourceStatus = 'success' | 'not_found' | 'error' | 'idle';
 
 export type EvidenceSourceKind = 'market_current' | 'market_completed' | 'market_historical' | 'certification' | 'reference';
 
+export type AnalyzerRecordDetail = {
+  id: string;
+  title: string;
+  price: number | null;
+  currency?: string | null;
+  date?: string | null;
+  url?: string | null;
+  bucket: 'current_value' | 'historical_trend' | 'guide' | 'context';
+  note?: string | null;
+};
+
 export type EvidenceSourceObservation = {
   id: string;
   label: string;
@@ -33,6 +44,7 @@ export type EvidenceSourceObservation = {
     recentSaleCount?: number;
     historicalSaleCount?: number;
     undatedSaleCount?: number;
+    analyzerRecords?: AnalyzerRecordDetail[];
   };
   message?: string | null;
 };
@@ -89,6 +101,7 @@ export type EvidenceSourceDecision = {
   historicalTrend: number;
   context: number;
   acceptedPrices: number[];
+  analyzerRecords: AnalyzerRecordDetail[];
   treatment: 'valuation_candidate' | 'valuation_guide' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
   analyzerWeightPct: number | null;
   treatmentReason: string;
@@ -511,6 +524,7 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
     historicalTrend,
     context,
     acceptedPrices: (market?.analyzerSubmittedPrices ?? []).filter((price) => Number.isFinite(price) && price > 0),
+    analyzerRecords: market?.analyzerRecords ?? [],
     treatment,
     analyzerWeightPct: treatment === 'valuation_guide' ? 25 : null,
     treatmentReason,

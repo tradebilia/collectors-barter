@@ -118,6 +118,20 @@ describe('normalizeTestAiEvidence', () => {
     expect(summary.sourceDecisions?.[0]).toMatchObject({ completed: 4, accepted: 4, currentValue: 1, historicalTrend: 3, context: 0 });
   });
 
+  it('preserves the exact source records classified for analyzer submission', () => {
+    const summary = normalizeTestAiEvidence({ title: 'Certified card', category: 'sports_cards' }, [{
+      id: 'the_card_api', label: 'The Card API Sales', kind: 'market_completed', status: 'success',
+      market: {
+        completedSaleCount: 2,
+        analyzerSubmittedSaleCount: 1,
+        analyzerSubmittedPrices: [300],
+        analyzerRecords: [{ id: 'sale-1', title: 'Certified card PSA 10', price: 300, currency: 'USD', date: '2026-10-01', bucket: 'current_value' }],
+      },
+    }]);
+
+    expect(summary.sourceDecisions?.[0]?.analyzerRecords).toEqual([expect.objectContaining({ id: 'sale-1', title: 'Certified card PSA 10', price: 300, bucket: 'current_value' })]);
+  });
+
   it('keeps asking listings and non-market sources in context-only buckets', () => {
     const summary = normalizeTestAiEvidence({ title: 'Megatron', category: 'vintage_toys' }, [
       { id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: 'success', market: { currentListingCount: 20 } },
