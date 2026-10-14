@@ -1299,7 +1299,7 @@ export const testAIRouter = router({
       listings: z.array(z.record(z.string(), z.any())).max(VISUAL_REVIEW_MAX_CANDIDATES),
       reviewDeadlineAt: z.number().int().optional(),
     }))
-    .query(async ({ ctx, input }) => {
+    .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'eBay active listings',

@@ -181,6 +181,12 @@ The eBay Active Test AI path now separates fast market retrieval from the bounde
 
 Validation for this change: focused eBay/UI/visual-filter regressions 66/66 passed; deterministic suite 1,509 passed with 6 skipped and the unrelated external USPS credential probe excluded; TypeScript, production build, and diff hygiene passed. No database writes, migrations, credential changes, provider configuration changes, or public publication were performed.
 
+## eBay Active visual-review POST transport repair — October 14, 2026
+
+The separate `reviewEbayVisualData` operation must remain a tRPC **mutation**. The project’s ordinary query transport intentionally limits GET URLs to 2,000 characters; image-review candidates, gallery URLs, and target metadata can exceed that limit even in a batch of ten, causing the client-only error `Input is too big for a single dispatch` before the server or vision model can run. The review operation therefore uses POST with an explicit compact candidate DTO (primary image plus at most two additional gallery images), preserving the existing maximum of 50 candidates, adaptive three-match stop, and one shared 120-second deadline. It must not be converted back to a query or widened to pass opaque eBay response fields.
+
+Visual verification in the isolated WebDev preview used the saved Transformers Megatron G1 AFA 60 item: the eBay response was received, the POST review completed for 10 candidates, 1 visually matched current-value record and 9 visible mismatches were rendered, and the expandable **View image checks** panel displayed the individual results. No database writes, migrations, credentials, provider configuration changes, or public publication were performed.
+
 ## Approved identity-field expansion — October 14, 2026
 Rich approved every recommendation in `FIELD_GAP_AUDIT_2026-10-14.md`, with one explicit condition preserved: **Grade Qualifier / Label Designation appears only when Is Graded = Yes for Sports Cards and Pokémon**.
 

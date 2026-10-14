@@ -12,6 +12,7 @@ import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
+const clientMainSource = readFileSync(resolve(import.meta.dirname, "../client/src/main.tsx"), "utf8");
 const visualSource = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
 
 function procedureSource(name: string, nextMarker: string): string {
@@ -80,25 +81,36 @@ describe("Test AI eBay active-listing responsiveness", () => {
 
   it("keeps the UI on the fast result while mandatory image checks run", () => {
     expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }");
-    expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useQuery");
+    expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useMutation");
+    expect(pageSource).toContain("visualReviewMutation.mutateAsync");
     expect(pageSource).toContain("data?.visualReviewListings");
     expect(pageSource).toContain("data.visualReviewListings.slice(0, 50)");
-    expect(pageSource).toContain("listing.imageUrls.slice(0, 3)");
+    expect(pageSource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
     expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
-    expect(pageSource).toContain("AI image checks could not start:");
+    expect(pageSource).toContain("AI image checks could not start");
+    expect(pageSource).toContain("AI image checks stopped after returning partial results");
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
 
   it("splits the visual-review transport into bounded sequential batches", () => {
     expect(pageSource).toContain("VISUAL_REVIEW_CLIENT_BATCH_SIZE = 10");
     expect(pageSource).toContain("VISUAL_REVIEW_CLIENT_MAX_BATCHES = 5");
-    expect(pageSource).toContain("reviewBatch0");
-    expect(pageSource).toContain("reviewBatch4");
-    expect(pageSource).toContain("reviewDeadlineAt");
+    expect(pageSource).toContain("for (const batch of reviewBatchInputs)");
+    expect(pageSource).toContain("const deadlineAt = Date.now() + 120_000");
+    expect(pageSource).toContain("reviewDeadlineAt: deadlineAt");
+    expect(pageSource).toContain("id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? '')");
+    expect(pageSource).toContain("// DTO so external eBay payload fields cannot expand the review contract.");
     expect(procedureSource("reviewEbayVisualData: protectedProcedure", "// Fetch HIPStamp active listings")).toContain("reviewDeadlineAt: z.number().int().optional()");
     expect(visualSource).toContain("args.reviewDeadlineAt");
+  });
+
+  it("uses a POST-capable mutation because the configured query transport has a 2,000-character URL ceiling", () => {
+    const reviewProcedure = procedureSource("reviewEbayVisualData: protectedProcedure", "// Fetch HIPStamp active listings");
+    expect(reviewProcedure).toContain(".mutation(async ({ ctx, input }) => {");
+    expect(reviewProcedure).not.toContain(".query(async ({ ctx, input }) => {");
+    expect(clientMainSource).toContain("maxURLLength: 2000");
   });
 
   it("shows the movie search request while eBay is still loading", () => {

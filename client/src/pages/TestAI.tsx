@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
@@ -906,14 +906,14 @@ function countAcceptedVisualMatches(data: any): number {
 function computeClientVisualMatchMetrics(listings: any[]): any | null {
   const seen = new Set<string>();
   const priced = listings.filter((listing: any) => {
-    const price = Number(listing?.price?.value);
+    const price = Number(listing?.price?.value ?? listing?.price);
     if (!Number.isFinite(price) || price <= 0 || (listing.visualReviewStatus !== 'match' && listing.visualReviewStatus !== 'rough_match')) return false;
     const key = String(listing.saleId ?? listing.id ?? listing.url ?? listing.link ?? `${listing.title ?? ''}|${price}`).trim().toLowerCase();
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
-  const prices = priced.map((listing: any) => Number(listing.price.value)).sort((a, b) => a - b);
+  const prices = priced.map((listing: any) => Number(listing.price?.value ?? listing.price)).sort((a, b) => a - b);
   if (!prices.length) return null;
   const q1 = prices[Math.floor(prices.length * 0.25)];
   const q3 = prices[Math.floor(prices.length * 0.75)];
@@ -931,6 +931,26 @@ function computeClientVisualMatchMetrics(listings: any[]): any | null {
   return { avg, median, min, max, spreadPct, count, confidence, confidenceReason: `${count} visually accepted priced listing${count === 1 ? '' : 's'} remained after the outlier check.`, rawPriceCount: prices.length, outliersExcluded: Math.max(0, prices.length - final.length) };
 }
 
+function mergeVisualReviewBatches(completed: any[]): any | undefined {
+  if (!completed.length) return undefined;
+  const latest = completed[completed.length - 1]!;
+  const listings = completed.flatMap((batch) => batch.listings ?? []);
+  const visualMatchMetrics = computeClientVisualMatchMetrics(listings);
+  const timedOut = completed.some((batch) => batch.visualFilter?.status === 'completed_with_timeout');
+  return {
+    ...latest,
+    listings,
+    visualReviewListings: listings,
+    metrics: visualMatchMetrics,
+    visualMatchMetrics,
+    visualFilter: {
+      ...latest.visualFilter,
+      reviewedCount: listings.filter((listing: any) => listing.visualReviewStatus).length,
+      status: timedOut ? 'completed_with_timeout' : 'completed',
+    },
+  };
+}
+
 function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; onVisualReviewData?: (data: any | null) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   // A target image makes visual confirmation mandatory before an eBay Active
@@ -939,6 +959,11 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   // evidence until the review result is available.
   const [reviewRequested, setReviewRequested] = useState(Boolean(item.primaryPhotoUrl));
   const [showVisualMatchMetrics, setShowVisualMatchMetrics] = useState(false);
+  const [visualReviewData, setVisualReviewData] = useState<any>();
+  const [visualReviewErrorMessage, setVisualReviewErrorMessage] = useState<string | null>(null);
+  const [visualReviewLoading, setVisualReviewLoading] = useState(false);
+  const reviewRunId = useRef(0);
+  const visualReviewMutation = trpc.testAI.reviewEbayVisualData.useMutation();
   const requestQueryPreview = useMemo(() => {
     const details = item.itemDetails ? (() => {
       try { return JSON.parse(item.itemDetails); } catch { return {}; }
@@ -951,56 +976,68 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean);
     return parts.join(' ') || item.title;
   }, [item.category, item.itemDetails, item.title, item.certificationCompany, item.grade, item.condition]);
-  const visualReviewDeadlineAt = useMemo(() => Date.now() + 120_000, [item.id, item.title, item.primaryPhotoUrl]);
   const visualReviewInput = useMemo(() => ({
     targetImageUrl: item.primaryPhotoUrl || 'https://invalid.local/target-image-placeholder',
     targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
-    reviewDeadlineAt: visualReviewDeadlineAt,
-    // Retrieval can return more candidates than the bounded vision procedure accepts.
-    // Cap the transport payload so validation cannot prevent review from starting.
+    // A visual-review mutation uses POST, but retain a small explicit candidate
+    // DTO so external eBay payload fields cannot expand the review contract.
     listings: Array.isArray(data?.visualReviewListings)
       ? data.visualReviewListings.slice(0, 50).map((listing: any) => ({
-          ...listing,
-          // Keep the primary plus a bounded set of gallery images in the RPC
-          // payload; the full gallery remains available in the listing panel.
-          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls.slice(0, 3) : [],
+          id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? ''),
+          title: String(listing.title ?? ''),
+          price: Number(listing.price?.value ?? listing.price) || null,
+          currency: String(listing.currency ?? listing.price?.currency ?? 'USD'),
+          condition: listing.condition ? String(listing.condition) : null,
+          seller: listing.seller ? String(listing.seller) : null,
+          itemUrl: listing.itemUrl ? String(listing.itemUrl) : null,
+          imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
+          // Preserve primary plus two additional images for progressive review.
+          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3) : [],
+          listingType: listing.listingType ? String(listing.listingType) : null,
+          bidCount: Number.isFinite(Number(listing.bidCount)) ? Number(listing.bidCount) : null,
+          uniqueBidderCount: Number.isFinite(Number(listing.uniqueBidderCount)) ? Number(listing.uniqueBidderCount) : null,
+          currentBidPrice: Number.isFinite(Number(listing.currentBidPrice?.value ?? listing.currentBidPrice)) ? Number(listing.currentBidPrice?.value ?? listing.currentBidPrice) : null,
+          auctionEndDate: listing.auctionEndDate ? String(listing.auctionEndDate) : null,
         }))
       : [],
-  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview, visualReviewDeadlineAt]);
+  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
   const reviewBaseEnabled = reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata;
   const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
     ...visualReviewInput,
     listings: visualReviewInput.listings.slice(batchIndex * VISUAL_REVIEW_CLIENT_BATCH_SIZE, (batchIndex + 1) * VISUAL_REVIEW_CLIENT_BATCH_SIZE),
   })), [visualReviewInput]);
-  const reviewBatch0 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[0], { enabled: reviewBaseEnabled && reviewBatchInputs[0].listings.length > 0 });
-  const reviewBatch1 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[1], { enabled: reviewBaseEnabled && reviewBatch0.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[1].listings.length > 0 });
-  const reviewBatch2 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[2], { enabled: reviewBaseEnabled && reviewBatch1.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) + countAcceptedVisualMatches(reviewBatch1.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[2].listings.length > 0 });
-  const reviewBatch3 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[3], { enabled: reviewBaseEnabled && reviewBatch2.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) + countAcceptedVisualMatches(reviewBatch1.data) + countAcceptedVisualMatches(reviewBatch2.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[3].listings.length > 0 });
-  const reviewBatch4 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[4], { enabled: reviewBaseEnabled && reviewBatch3.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) + countAcceptedVisualMatches(reviewBatch1.data) + countAcceptedVisualMatches(reviewBatch2.data) + countAcceptedVisualMatches(reviewBatch3.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[4].listings.length > 0 });
-  const reviewBatchQueries = [reviewBatch0, reviewBatch1, reviewBatch2, reviewBatch3, reviewBatch4];
-  const visualReviewLoading = reviewBatchQueries.some((query) => query.isLoading);
-  const visualReviewData = useMemo(() => {
-    const completed = reviewBatchQueries.map((query) => query.data).filter((batch): batch is NonNullable<typeof batch> => Boolean(batch));
-    if (!completed.length) return undefined;
-    const latest = completed[completed.length - 1]!;
-    const listings = completed.flatMap((batch) => batch.listings ?? []);
-    const visualMatchMetrics = computeClientVisualMatchMetrics(listings);
-    const timedOut = completed.some((batch) => batch.visualFilter?.status === 'completed_with_timeout');
-    return {
-      ...latest,
-      listings,
-      visualReviewListings: listings,
-      metrics: visualMatchMetrics,
-      visualMatchMetrics,
-      visualFilter: {
-        ...latest.visualFilter,
-        reviewedCount: listings.filter((listing: any) => listing.visualReviewStatus).length,
-        status: timedOut ? 'completed_with_timeout' : 'completed',
-      },
+  useEffect(() => {
+    const runId = ++reviewRunId.current;
+    setVisualReviewData(undefined);
+    setVisualReviewErrorMessage(null);
+    if (!reviewBaseEnabled || !reviewBatchInputs[0]?.listings.length) {
+      setVisualReviewLoading(false);
+      return;
+    }
+    let cancelled = false;
+    const deadlineAt = Date.now() + 120_000;
+    setVisualReviewLoading(true);
+    const runBatches = async () => {
+      const completed: any[] = [];
+      for (const batch of reviewBatchInputs) {
+        if (cancelled || Date.now() >= deadlineAt || !batch.listings.length) break;
+        try {
+          const result = await visualReviewMutation.mutateAsync({ ...batch, reviewDeadlineAt: deadlineAt });
+          if (cancelled || runId !== reviewRunId.current) return;
+          completed.push(result);
+          setVisualReviewData(mergeVisualReviewBatches(completed));
+          if (countAcceptedVisualMatches(mergeVisualReviewBatches(completed)) >= VISUAL_REVIEW_CLIENT_TARGET_MATCHES) break;
+        } catch (error) {
+          if (cancelled || runId !== reviewRunId.current) return;
+          setVisualReviewErrorMessage(error instanceof Error ? error.message : String(error));
+          break;
+        }
+      }
+      if (!cancelled && runId === reviewRunId.current) setVisualReviewLoading(false);
     };
-  }, [reviewBatch0.data, reviewBatch1.data, reviewBatch2.data, reviewBatch3.data, reviewBatch4.data]);
-  const visualReviewError = reviewBatchQueries.find((query) => query.error)?.error;
-  const visualReviewErrorMessage: string | null = visualReviewError ? String(visualReviewError instanceof Error ? visualReviewError.message : visualReviewError) : null;
+    void runBatches();
+    return () => { cancelled = true; };
+  }, [reviewBaseEnabled, reviewBatchInputs, visualReviewMutation.mutateAsync]);
   useEffect(() => {
     setReviewRequested(Boolean(item.primaryPhotoUrl));
     setShowVisualMatchMetrics(false);
@@ -1033,7 +1070,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
-      {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not start: {visualReviewErrorMessage}</p>}
+      {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">{visualReviewData ? 'AI image checks stopped after returning partial results' : 'AI image checks could not start'}: {visualReviewErrorMessage}</p>}
       {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
       {visualReviewData?.visualFilter && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
