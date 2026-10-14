@@ -7,6 +7,8 @@ import {
   buildDeclaredIdentityReviews,
   conservativeComicVisualReviews,
   conservativeGradedVisualReviews,
+  hasExplicitlyUngradedTarget,
+  normalizeExplicitUngradedVisualReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
   shouldReviewAdditionalVisualImages,
@@ -85,6 +87,32 @@ describe("visual source filter", () => {
       { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is clearly readable on the candidate label and matches the target; the figure and packaging also match." },
     ], [{ title: "MOTU 1982 Man-at-Arms AFA 8.0" }], "title=MOTU 1982 Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("treats structured Is graded = No as authoritative and skips graded-target enforcement", () => {
+    const metadata = 'title=Monster High; category=vintage_toys; grade=unknown; certificationCompany=unknown; fullItemDetails={"isGraded":"No"}';
+    expect(hasExplicitlyUngradedTarget(metadata)).toBe(true);
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The raw item artwork matches." },
+    ], [{ title: "Monster High Draculaura raw" }], metadata);
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("promotes a contradictory unreadable review when both raw items and identity match are explicitly confirmed", () => {
+    const metadata = 'title=Monster High Draculaura; category=vintage_toys; fullItemDetails={"isGraded":"No"}';
+    const result = normalizeExplicitUngradedVisualReviews([
+      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "Both target and candidate are raw/ungraded. The front artwork, packaging, and layout match, but the target is graded wording is not applicable." },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
+    expect(result[0].rationale).toContain("Is graded = No");
+  });
+
+  it("does not promote an ungraded review when a material identity conflict remains", () => {
+    const metadata = 'title=Monster High Draculaura; category=vintage_toys; isGraded=No';
+    const result = normalizeExplicitUngradedVisualReviews([
+      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "Both target and candidate are raw/ungraded, but this is a different edition and the artwork conflicts." },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
   });
 
   it("treats equivalent AFA plus-grade formats as the same numeric grade", () => {
@@ -263,6 +291,8 @@ describe("visual source filter", () => {
     expect(source).toContain("target is graded and the candidate is visibly raw");
     expect(source).toContain("candidate numeric or descriptive grade is also mandatory");
     expect(source).toContain("candidate grade is not clearly readable");
+    expect(source).toContain("structured metadata explicitly says Is graded = No");
+    expect(source).toContain("Treat the target as raw/ungraded for this review");
   });
 
   it("requires the visual reviewer to gate sports-card set versus single-card form", () => {

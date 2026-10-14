@@ -155,3 +155,8 @@ The eBay Active adapter now retains a bounded, deduplicated set of up to eight H
 
 ## Graded gallery evidence normalization — October 14, 2026
 Equivalent graded-title formats such as `AFA 75`, `AFA 75+`, `AFA Graded 75`, and descriptive suffixes are normalized to the same numeric grade for the visual gate. When an initial visual result is unreadable but the candidate title and additional-gallery rationale explicitly confirm the target grader and equivalent grade, the server may promote it to a medium-confidence visual match. The promotion is blocked by explicit uncertainty, unreadable, obscured, cannot/ can't confirm, or conflicting language, and does not override objective identity conflicts. Added regressions for AFA 75+ normalization, explicit gallery-confirmed promotion, and unrelated-title-number rejection.
+
+
+## Explicit ungraded-target visual safeguard — October 13, 2026
+
+When the selected item's structured metadata explicitly says `Is graded = No`, that value is authoritative for visual review. The shared visual filter now passes this constraint to the vision prompt, suppresses graded-target grade enforcement and additional-grade escalation, and prevents contradictory model wording from inventing a graded-target requirement. A narrow normalization may promote an `unreadable` review only when the rationale confirms both target and candidate are raw/ungraded and identifies a visual match; material identity conflicts remain manual review. Added regressions for authoritative ungraded handling, contradiction correction, conflict preservation, and prompt disclosure. No database writes, migrations, credentials, provider configuration, or public-domain publication were performed.

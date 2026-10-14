@@ -52,7 +52,7 @@ export function shouldReviewAdditionalVisualImages(args: {
   targetMetadata: string;
 }): boolean {
   if (args.imageCount <= 1 || !args.review) return false;
-  const targetIsGraded = /(?:^|;)\s*(?:grade|certificationCompany)=[^;]+/i.test(args.targetMetadata) && !/(?:^|;)\s*(?:grade|certificationCompany)=(?:unknown|raw|ungraded|none|n\/a)\s*(?:;|$)/i.test(args.targetMetadata);
+  const targetIsGraded = !hasExplicitlyUngradedTarget(args.targetMetadata) && /(?:^|;)\s*(?:grade|certificationCompany)=[^;]+/i.test(args.targetMetadata) && !/(?:^|;)\s*(?:grade|certificationCompany)=(?:unknown|raw|ungraded|none|n\/a)\s*(?:;|$)/i.test(args.targetMetadata);
   const titleHasGrade = /\b(?:grade|graded|score|rating)\s*(?:is|of|:)?\s*\d{1,3}(?:\.\d+)?\b|\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*\d{1,3}(?:\.\d+)?\b/i.test(String(args.title ?? ""));
   const uncertainty = /\b(?:unreadable|unclear|obscured|not visible|not readable|cannot (?:see|read|confirm)|can't (?:see|read|confirm)|unable to confirm|conflicting|low[- ]confidence|manual review)\b/i.test(args.review.rationale);
   return args.review.verdict === "unreadable" || args.review.confidence === "low" || uncertainty || (targetIsGraded && !titleHasGrade);
@@ -130,6 +130,31 @@ function metadataValue(metadata: string, key: string): string {
   return metadata.match(new RegExp(`(?:^|;)\\s*${key}=([^;]*)`, "i"))?.[1]?.trim() ?? "";
 }
 
+function metadataDetails(metadata: string): Record<string, unknown> {
+  const raw = metadataValue(metadata, "fullItemDetails") || metadataValue(metadata, "itemDetails") || metadataValue(metadata, "details");
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    return {};
+  }
+}
+
+/** An explicit user-selected Is graded = No is authoritative over model inference. */
+export function hasExplicitlyUngradedTarget(metadata: string): boolean {
+  const direct = metadataValue(metadata, "isGraded").toLowerCase();
+  const details = metadataDetails(metadata);
+  const nested = String(details.isGraded ?? details.graded ?? "").trim().toLowerCase();
+  return [direct, nested].some((value) => value === "no" || value === "false" || value === "0");
+}
+
+function explicitUngradedTargetInstruction(metadata: string): string {
+  return hasExplicitlyUngradedTarget(metadata)
+    ? " IMPORTANT TARGET CONSTRAINT: the user's structured metadata explicitly says Is graded = No. Treat the target as raw/ungraded for this review. Do not infer that the target is graded from a holder-like appearance, an ambiguous image, or contradictory model wording. Grade and certification matching are not required; compare the item's identity, artwork, packaging, edition, and variant instead. If both images are visibly raw/ungraded and the item identity matches, do not downgrade the result solely because the rationale mentions a graded-target rule."
+    : "";
+}
+
 function normalizedGrade(value: string): string | null {
   const match = value.match(/\d{1,3}(?:\.\d+)?/);
   if (!match) return null;
@@ -155,6 +180,7 @@ export function conservativeGradedVisualReviews(
   listings: VisualSourceCandidate[],
   targetMetadata: string,
 ): VisualSourceReview[] {
+  if (hasExplicitlyUngradedTarget(targetMetadata)) return reviews;
   const targetGrade = metadataValue(targetMetadata, "grade");
   const targetGrader = metadataValue(targetMetadata, "certificationCompany");
   const targetIsGraded = Boolean(targetGrade && targetGrade.toLowerCase() !== "unknown") || Boolean(targetGrader && targetGrader.toLowerCase() !== "unknown");
@@ -179,6 +205,32 @@ export function conservativeGradedVisualReviews(
       verdict: "unreadable",
       confidence: "low",
       rationale: `${review.rationale} The target is graded, but the candidate's numeric or descriptive grade is not clearly verified in the title or image review; retained for manual review rather than sent as a confirmed visual match.`,
+    };
+  });
+}
+
+/**
+ * Correct a contradictory model explanation for an explicitly ungraded target.
+ * This remains narrow: both raw/ungraded states and a visual identity match must
+ * be present, while material conflicts remain manual review.
+ */
+export function normalizeExplicitUngradedVisualReviews(
+  reviews: VisualSourceReview[],
+  targetMetadata: string,
+): VisualSourceReview[] {
+  if (!hasExplicitlyUngradedTarget(targetMetadata)) return reviews;
+  return reviews.map((review) => {
+    if (review.verdict !== "unreadable") return review;
+    const rationale = review.rationale;
+    const rawMentions = rationale.match(/\b(?:raw|ungraded)\b/gi)?.length ?? 0;
+    const identityMatch = /\b(?:matches?|same|corresponds|visually match(?:es)?|artwork|packaging|layout).{0,220}\b(?:match|matches|same|corresponds|identical|confirmed)\b/i.test(rationale);
+    const unresolvedConflict = /\b(?:different item|different edition|different variant|materially different|conflict(?:ing)?|cannot identify|unable to determine|not enough information)\b/i.test(rationale);
+    if (rawMentions < 2 || !identityMatch || unresolvedConflict) return review;
+    return {
+      ...review,
+      verdict: "match",
+      confidence: review.confidence === "low" ? "medium" : review.confidence,
+      rationale: `${rationale} The structured target metadata explicitly says Is graded = No, and the review confirms both items are raw/ungraded; the graded-target warning is therefore not applicable.`,
     };
   });
 }
@@ -455,7 +507,7 @@ export async function filterVisualSourceCandidates<
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${gradedCoinInstruction(args.targetMetadata)}${sportsCardSetInstruction(args.targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
+          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${explicitUngradedTargetInstruction(args.targetMetadata)}${gradedCoinInstruction(args.targetMetadata)}${sportsCardSetInstruction(args.targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"..."}]}. Target metadata: ${args.targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "auto" } },
@@ -515,9 +567,12 @@ export async function filterVisualSourceCandidates<
       }
       }
       reviewedCandidateCount += window.length;
-      const acceptedMatches = conservativeGradedVisualReviews(
-        conservativeComicVisualReviews(reviews, candidates.map((candidate) => candidate.item), args.targetMetadata),
-        candidates.map((candidate) => candidate.item),
+      const acceptedMatches = normalizeExplicitUngradedVisualReviews(
+        conservativeGradedVisualReviews(
+          conservativeComicVisualReviews(reviews, candidates.map((candidate) => candidate.item), args.targetMetadata),
+          candidates.map((candidate) => candidate.item),
+          args.targetMetadata,
+        ),
         args.targetMetadata,
       ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
@@ -525,13 +580,16 @@ export async function filterVisualSourceCandidates<
     if (!completedBatches && reviewQueue.length) {
       throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     }
-    const uniqueReviews = conservativeGradedVisualReviews(
-      conservativeComicVisualReviews(
-        reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
+    const uniqueReviews = normalizeExplicitUngradedVisualReviews(
+      conservativeGradedVisualReviews(
+        conservativeComicVisualReviews(
+          reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
+          candidates.map((candidate) => candidate.item),
+          args.targetMetadata,
+        ),
         candidates.map((candidate) => candidate.item),
         args.targetMetadata,
       ),
-      candidates.map((candidate) => candidate.item),
       args.targetMetadata,
     );
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
