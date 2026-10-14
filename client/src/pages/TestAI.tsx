@@ -896,7 +896,11 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
 // ─── eBay Active Listings Section ────────────────────────────────────────────
 function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; onVisualReviewData?: (data: any | null) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const [reviewRequested, setReviewRequested] = useState(false);
+  // A target image makes visual confirmation mandatory before an eBay Active
+  // listing can enter current-value evidence. Asking-price context can render
+  // while the bounded review runs, but it cannot be counted as analyzer
+  // evidence until the review result is available.
+  const [reviewRequested, setReviewRequested] = useState(Boolean(item.primaryPhotoUrl));
   const [showVisualMatchMetrics, setShowVisualMatchMetrics] = useState(false);
   const requestQueryPreview = useMemo(() => {
     const details = item.itemDetails ? (() => {
@@ -915,9 +919,9 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     { enabled: reviewRequested && !!item.title && item.category !== 'unknown' },
   );
   useEffect(() => {
-    setReviewRequested(false);
+    setReviewRequested(Boolean(item.primaryPhotoUrl));
     setShowVisualMatchMetrics(false);
-  }, [item.id, item.title]);
+  }, [item.id, item.title, item.primaryPhotoUrl]);
   const visualReviewData = visualReviewQuery.data;
   useEffect(() => {
     onVisualReviewData?.(visualReviewData && !visualReviewData.error ? visualReviewData : null);
@@ -970,8 +974,8 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       )}
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
       {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
-      {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Accepted visual matches update this asking-price context and are sent as current-value market evidence; they are not treated as completed sales.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
-      {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running separately. Current asking-price listings remain available below.</p>}
+      {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.</p></div>}
+      {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
       {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}

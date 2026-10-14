@@ -187,7 +187,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('analyzerRecords: accepted.map');
     expect(source).toContain('analyzerRecords: currentValue.map');
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
-    expect(source).toContain('Accepted visual matches update this asking-price context and are sent as current-value market evidence');
+    expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
     expect(source).toContain('const recordCount = records.length > 0 ? records.length : acceptedCount;');
   });
 
@@ -211,6 +211,14 @@ describe('manual Test AI selector boundary', () => {
     expect(outcomeSource).toContain('Returned records');
     expect(outcomeSource).toContain('Context / review');
     expect(outcomeSource).toContain('timed out');
+  });
+
+  it('requires eBay Active visual review before current-value evidence when images exist', () => {
+    expect(source).toContain('useState(Boolean(item.primaryPhotoUrl))');
+    expect(source).toContain('setReviewRequested(Boolean(item.primaryPhotoUrl))');
+    expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
+    expect(source).toContain('No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.');
+    expect(source).not.toContain('Optional AI image checks');
   });
 
   it('separates PCGS current-value candidates from historical trend rows', () => {

@@ -74,12 +74,11 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("eBay rejected the configured sandbox authorization. Recheck the secure eBay credentials.");
   });
 
-  it("keeps the UI on the fast result while a user explicitly requests image checks", () => {
+  it("keeps the UI on the fast result while mandatory image checks run", () => {
     expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }");
     expect(pageSource).toContain("includeVisualReview: true");
-    expect(pageSource).toContain("Run image checks");
-    expect(pageSource).toContain("Current listings load first.");
-    expect(pageSource).toContain("AI image checks are running separately.");
+    expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
+    expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
     expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
@@ -112,7 +111,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics");
     expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics");
     expect(pageSource).toContain("Full-market asking context before image filtering");
-    expect(pageSource).toContain("Accepted visual matches update this asking-price context and are sent as current-value market evidence");
+    expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
     expect(pageSource).toContain("No accepted visual matches have usable prices");
     expect(pageSource).toContain("Auction activity:");
     expect(pageSource).toContain("unique bidders");
