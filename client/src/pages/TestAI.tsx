@@ -758,10 +758,11 @@ function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condi
 }
 
 function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string }) {
-  return <details className="mt-2 rounded border border-emerald-700/30 bg-emerald-950/15 p-2" open={acceptedCount > 0}>
-    <summary className="cursor-pointer text-[9px] font-semibold uppercase tracking-wide text-emerald-200">Items sent to analyzer ({acceptedCount})</summary>
-    {acceptedCount === 0 ? <p className="mt-1 text-[9px] text-gray-500">No {sourceLabel} records are being sent to the analyzer under this run’s current treatment.</p>
-      : records.length === 0 ? <p className="mt-1 text-[9px] text-amber-200">{acceptedCount} record{acceptedCount === 1 ? '' : 's'} are classified for analyzer submission, but this adapter did not return display-level record details.</p>
+  const recordCount = records.length > 0 ? records.length : acceptedCount;
+  return <details className="mt-2 rounded border border-emerald-700/30 bg-emerald-950/15 p-2" open={recordCount > 0}>
+    <summary className="cursor-pointer text-[9px] font-semibold uppercase tracking-wide text-emerald-200">Items sent to analyzer ({recordCount})</summary>
+    {recordCount === 0 ? <p className="mt-1 text-[9px] text-gray-500">No {sourceLabel} records are being sent to the analyzer under this run’s current treatment.</p>
+      : records.length === 0 ? <p className="mt-1 text-[9px] text-amber-200">{recordCount} record{recordCount === 1 ? '' : 's'} are classified for analyzer submission, but this adapter did not return display-level record details.</p>
         : <div className="mt-1 max-h-56 space-y-1 overflow-y-auto pr-1">{records.map((record, index) => <div key={`${record.id}-${index}`} className="flex items-start justify-between gap-2 rounded bg-gray-950/35 px-1.5 py-1.5"><div className="min-w-0"><p className="truncate text-[9px] font-semibold text-gray-200">{record.url ? <a href={record.url} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:underline">{record.title}</a> : record.title}</p><p className="text-[8px] text-gray-400">{[record.bucket === 'current_value' ? 'Current value' : record.bucket === 'historical_trend' ? 'Historical trend' : record.bucket.replace('_', ' '), record.date].filter(Boolean).join(' · ')}</p>{record.note && <p className="text-[8px] text-amber-200/80">{record.note}</p>}</div><p className="shrink-0 text-[10px] font-semibold text-emerald-300">{record.price != null ? `${record.currency || 'USD'} ${formatWholeDollar(record.price)}` : 'Price unavailable'}</p></div>)}</div>}
   </details>;
 }
@@ -893,7 +894,7 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
 }
 
 // ─── eBay Active Listings Section ────────────────────────────────────────────
-function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean }) {
+function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; onVisualReviewData?: (data: any | null) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [reviewRequested, setReviewRequested] = useState(false);
   const [showVisualMatchMetrics, setShowVisualMatchMetrics] = useState(false);
@@ -918,6 +919,9 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
     setShowVisualMatchMetrics(false);
   }, [item.id, item.title]);
   const visualReviewData = visualReviewQuery.data;
+  useEffect(() => {
+    onVisualReviewData?.(visualReviewData && !visualReviewData.error ? visualReviewData : null);
+  }, [onVisualReviewData, visualReviewData]);
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
   const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
@@ -966,7 +970,7 @@ function EbayActiveSection({ item, side, data, isLoading }: { item: SelectedItem
       )}
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
       {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
-      {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Image review is a separate, bounded check; accepted visual matches update this asking-price context, not completed-sale valuation evidence.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
+      {data && !data.error && !reviewRequested && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 p-2"><div className="flex items-center justify-between gap-2"><div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">Optional AI image checks</p><p className="text-[9px] text-cyan-200/80">Current listings load first. Accepted visual matches update this asking-price context and are sent as current-value market evidence; they are not treated as completed sales.</p></div><button type="button" onClick={() => setReviewRequested(true)} className="shrink-0 rounded bg-cyan-800/70 px-2 py-1 text-[9px] font-semibold text-white hover:bg-cyan-700">Run image checks</button></div></div>}
       {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are running separately. Current asking-price listings remain available below.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
@@ -2319,7 +2323,11 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const summary = useMemo(() => {
     const observations: EvidenceSourceObservation[] = [];
     const add = (observation: EvidenceSourceObservation) => observations.push(observation);
-    if (enabledSources.has('ebay_active')) add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { returnedRecordCount: ebayData?.listings?.length ?? 0, currentListingCount: ebayData?.listings?.length ?? 0 }, message: ebayData?.error ?? null });
+    if (enabledSources.has('ebay_active')) {
+      const visualMatches = (ebayData?.visualReviewListings ?? []).filter((listing: any) => listing.visualReviewStatus === 'match' && Number(listing.price) > 0);
+      const analyzerRecords = visualMatches.map((listing: any, index: number) => toAnalyzerRecord(listing, index, 'current_value', 'Identity-matched active asking price; not a completed sale.'));
+      add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { returnedRecordCount: ebayData?.listings?.length ?? 0, currentListingCount: ebayData?.listings?.length ?? 0, currentValueSaleCount: analyzerRecords.length, currentValuePrices: analyzerRecords.flatMap((record: AnalyzerRecordDetail) => record.price != null ? [record.price] : []), analyzerRecords }, message: ebayData?.error ?? null });
+    }
     if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { returnedRecordCount: hipstampData?.listings?.length ?? 0, currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
     if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { returnedRecordCount: hipstampSoldData?.listings?.length ?? 0, recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
     if (enabledSources.has('pokemon_price_tracker')) add({ id: 'pokemon_price_tracker', label: 'Pokémon Price Tracker', kind: 'reference', status: evidenceStatus(pokemonPriceTrackerData), fields: { cardName: pokemonPriceTrackerData?.detail?.name ?? pokemonPriceTrackerData?.selected?.card?.name, set: pokemonPriceTrackerData?.detail?.setName ?? pokemonPriceTrackerData?.selected?.card?.setName, cardNumber: pokemonPriceTrackerData?.detail?.cardNumber ?? pokemonPriceTrackerData?.selected?.card?.cardNumber, variant: pokemonPriceTrackerData?.detail?.prices?.primaryPrinting ?? pokemonPriceTrackerData?.selected?.card?.prices?.primaryPrinting }, message: pokemonPriceTrackerData?.messages?.join(' ') ?? null });
@@ -3744,13 +3752,15 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, soldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
   enabledSources: Set<SourceId>;
   ebayData: any;
+  ebayEvidenceData?: any;
   ebayLoading: boolean;
+  onEbayVisualReview?: (data: any | null) => void;
   soldCompsData: any;
   soldCompsLoading: boolean;
   hipstampData: any;
@@ -3806,10 +3816,10 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={Object.values(specialistObservations)} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={Object.values(specialistObservations)} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
-          ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} />
+          ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} onVisualReviewData={onEbayVisualReview} />
           : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
               <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>🛒 eBay Active Listings</p>
               <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
@@ -3868,18 +3878,22 @@ export default function TestAI() {
   const [leftSources, setLeftSources] = useState<Set<SourceId>>(new Set());
   const [rightSources, setRightSources] = useState<Set<SourceId>>(new Set());
   const [leftEvidenceSummary, setLeftEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
+  const [leftEbayVisualReview, setLeftEbayVisualReview] = useState<any | null>(null);
   const [leftGoldinSales, setLeftGoldinSales] = useState<any[]>([]);
   const [rightGoldinSales, setRightGoldinSales] = useState<any[]>([]);
   const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
+  const [rightEbayVisualReview, setRightEbayVisualReview] = useState<any | null>(null);
   const leftSourceKey = useMemo(() => Array.from(leftSources).sort().join('|'), [leftSources]);
   const rightSourceKey = useMemo(() => Array.from(rightSources).sort().join('|'), [rightSources]);
 
   useEffect(() => {
     setLeftEvidenceSummary(null);
+    setLeftEbayVisualReview(null);
   }, [leftItem?.id, leftItem?.title, leftItem?.category, leftSourceKey]);
 
   useEffect(() => {
     setRightEvidenceSummary(null);
+    setRightEbayVisualReview(null);
   }, [rightItem?.id, rightItem?.title, rightItem?.category, rightSourceKey]);
 
   const { data: inventory = [], isLoading: inventoryLoading } = trpc.testAI.getMyInventory.useQuery(undefined, {
@@ -4178,8 +4192,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 

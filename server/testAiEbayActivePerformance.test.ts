@@ -75,7 +75,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("keeps the UI on the fast result while a user explicitly requests image checks", () => {
-    expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading }");
+    expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }");
     expect(pageSource).toContain("includeVisualReview: true");
     expect(pageSource).toContain("Run image checks");
     expect(pageSource).toContain("Current listings load first.");
@@ -112,7 +112,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics");
     expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics");
     expect(pageSource).toContain("Full-market asking context before image filtering");
-    expect(pageSource).toContain("accepted visual matches update this asking-price context");
+    expect(pageSource).toContain("Accepted visual matches update this asking-price context and are sent as current-value market evidence");
     expect(pageSource).toContain("No accepted visual matches have usable prices");
     expect(pageSource).toContain("Auction activity:");
     expect(pageSource).toContain("unique bidders");

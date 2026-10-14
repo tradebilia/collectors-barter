@@ -143,6 +143,21 @@ describe('normalizeTestAiEvidence', () => {
     ]));
   });
 
+  it('classifies identity-matched eBay Active records as current-value evidence', () => {
+    const summary = normalizeTestAiEvidence({ title: 'AFA graded collectible', category: 'vintage_toys' }, [{
+      id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: 'success',
+      market: {
+        returnedRecordCount: 20,
+        currentListingCount: 20,
+        currentValueSaleCount: 1,
+        currentValuePrices: [499],
+        analyzerRecords: [{ id: 'active-1', title: 'Matched active listing', price: 499, currency: 'USD', bucket: 'current_value', note: 'Identity-matched active asking price; not a completed sale.' }],
+      },
+    }]);
+    expect(summary.sourceDecisions?.[0]).toMatchObject({ accepted: 0, currentValue: 1, historicalTrend: 0, context: 19, treatment: 'current_value' });
+    expect(summary.sourceDecisions?.[0]?.analyzerRecords).toHaveLength(1);
+  });
+
   it('reports current-run returned, eligible, held-out, and timeout outcomes without persistence', () => {
     const summary = normalizeTestAiEvidence({ title: 'High-value collectible', category: 'coins' }, [
       { id: 'sold_comps', label: 'Sold-Comps', kind: 'market_completed', status: 'success', market: { returnedRecordCount: 13, completedSaleCount: 10, analyzerSubmittedSaleCount: 3 } },

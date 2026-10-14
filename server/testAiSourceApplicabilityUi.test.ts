@@ -186,6 +186,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} />');
     expect(source).toContain('analyzerRecords: accepted.map');
     expect(source).toContain('analyzerRecords: currentValue.map');
+    expect(source).toContain('Identity-matched active asking price; not a completed sale.');
+    expect(source).toContain('Accepted visual matches update this asking-price context and are sent as current-value market evidence');
+    expect(source).toContain('const recordCount = records.length > 0 ? records.length : acceptedCount;');
   });
 
   it('uses one shared Sold-Comps response for Evidence Review and the provider panel', () => {

@@ -102,7 +102,7 @@ export type EvidenceSourceDecision = {
   context: number;
   acceptedPrices: number[];
   analyzerRecords: AnalyzerRecordDetail[];
-  treatment: 'valuation_candidate' | 'valuation_guide' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
+  treatment: 'valuation_candidate' | 'valuation_guide' | 'current_value' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
   analyzerWeightPct: number | null;
   treatmentReason: string;
   message?: string | null;
@@ -480,7 +480,7 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
   // still fall into a current-value or historical-trend bucket. Those are
   // overlapping classifications, so only explicitly held-out completed
   // records and asking listings contribute to the context/review count.
-  const context = market ? Math.max(0, currentListings) + excludedFromValuation : 0;
+  const context = market ? Math.max(0, currentListings - currentValue) + excludedFromValuation : 0;
   const providerReportedReturned = Number(market?.returnedRecordCount);
   const returned = Number.isFinite(providerReportedReturned)
     ? Math.max(0, providerReportedReturned)
@@ -493,6 +493,8 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
       ? 'valuation_guide'
       : accepted > 0
         ? 'valuation_candidate'
+        : currentValue > 0
+          ? 'current_value'
         : historicalTrend > 0
           ? 'historical_trend'
           : source.kind === 'certification'
@@ -504,6 +506,8 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
       : 'USD catalogue estimate enters the analyzer as a secondary guide anchor at 25%; it is not a completed sale.'
     : treatment === 'valuation_candidate'
       ? 'Completed, identity-compatible sale candidates are sent to the analyzer; final comparable gates determine inclusion and sale-level weight.'
+    : treatment === 'current_value'
+      ? 'Visually identity-matched active listings are sent as current-value market evidence; they are not completed-sale records and remain confidence-limited by listing count and asking-price behavior.'
       : treatment === 'historical_trend'
         ? 'Retained for historical movement only; excluded from current valuation.'
         : treatment === 'certification_context'
