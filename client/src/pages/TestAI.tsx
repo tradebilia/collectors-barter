@@ -918,7 +918,16 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const visualReviewInput = useMemo(() => ({
     targetImageUrl: item.primaryPhotoUrl || 'https://invalid.local/target-image-placeholder',
     targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
-    listings: Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : [],
+    // Retrieval can return more candidates than the bounded vision procedure accepts.
+    // Cap the transport payload so validation cannot prevent review from starting.
+    listings: Array.isArray(data?.visualReviewListings)
+      ? data.visualReviewListings.slice(0, 50).map((listing: any) => ({
+          ...listing,
+          // Keep the primary plus a bounded set of gallery images in the RPC
+          // payload; the full gallery remains available in the listing panel.
+          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls.slice(0, 3) : [],
+        }))
+      : [],
   }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
   const visualReviewQuery = trpc.testAI.reviewEbayVisualData.useQuery(
     visualReviewInput,
@@ -929,6 +938,11 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     setShowVisualMatchMetrics(false);
   }, [item.id, item.title, item.primaryPhotoUrl]);
   const visualReviewData = visualReviewQuery.data;
+  const visualReviewError = visualReviewQuery.error instanceof Error
+    ? visualReviewQuery.error.message
+    : visualReviewQuery.error
+      ? String(visualReviewQuery.error)
+      : null;
   useEffect(() => {
     onVisualReviewData?.(visualReviewData && !visualReviewData.error ? visualReviewData : null);
   }, [onVisualReviewData, visualReviewData]);
@@ -957,6 +971,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
+      {visualReviewError && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not start: {visualReviewError}</p>}
       {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
       {visualReviewData?.visualFilter && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (

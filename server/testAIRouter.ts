@@ -1237,7 +1237,9 @@ export const testAIRouter = router({
             resultsPerTier: EBAY_ACTIVE_RESULTS_PER_TIER,
           },
           visualReviewTargetMetadata: targetMetadata,
-          visualReviewListings: displaySummaries.map((s: any) => ({
+          // Keep the separately transported review payload within the same
+          // bounded contract enforced by reviewEbayVisualData.
+          visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map((s: any) => ({
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
@@ -1245,7 +1247,9 @@ export const testAIRouter = router({
             seller: s.seller?.username,
             itemUrl: s.itemWebUrl,
             imageUrl: s.image?.imageUrl,
-            imageUrls: collectEbayImageUrls(s),
+            // Keep the review transport bounded; the normal listing response
+            // below still retains the full gallery for UI inspection.
+            imageUrls: collectEbayImageUrls(s).slice(0, 3),
             listingType: s.buyingOptions?.[0],
             bidCount: s.bidCount ?? null,
             uniqueBidderCount: s.uniqueBidderCount ?? null,
