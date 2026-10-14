@@ -91,6 +91,16 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
 
+  it("splits the visual-review transport into bounded sequential batches", () => {
+    expect(pageSource).toContain("VISUAL_REVIEW_CLIENT_BATCH_SIZE = 10");
+    expect(pageSource).toContain("VISUAL_REVIEW_CLIENT_MAX_BATCHES = 5");
+    expect(pageSource).toContain("reviewBatch0");
+    expect(pageSource).toContain("reviewBatch4");
+    expect(pageSource).toContain("reviewDeadlineAt");
+    expect(procedureSource("reviewEbayVisualData: protectedProcedure", "// Fetch HIPStamp active listings")).toContain("reviewDeadlineAt: z.number().int().optional()");
+    expect(visualSource).toContain("args.reviewDeadlineAt");
+  });
+
   it("shows the movie search request while eBay is still loading", () => {
     expect(pageSource).toContain("const requestQueryPreview = useMemo(() => {");
     expect(pageSource).toContain("if (item.category === 'movies')");

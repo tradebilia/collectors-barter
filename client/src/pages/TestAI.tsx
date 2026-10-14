@@ -895,6 +895,42 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
 }
 
 // ─── eBay Active Listings Section ────────────────────────────────────────────
+const VISUAL_REVIEW_CLIENT_BATCH_SIZE = 10;
+const VISUAL_REVIEW_CLIENT_MAX_BATCHES = 5;
+const VISUAL_REVIEW_CLIENT_TARGET_MATCHES = 3;
+
+function countAcceptedVisualMatches(data: any): number {
+  return (data?.listings ?? []).filter((listing: any) => listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match').length;
+}
+
+function computeClientVisualMatchMetrics(listings: any[]): any | null {
+  const seen = new Set<string>();
+  const priced = listings.filter((listing: any) => {
+    const price = Number(listing?.price?.value);
+    if (!Number.isFinite(price) || price <= 0 || (listing.visualReviewStatus !== 'match' && listing.visualReviewStatus !== 'rough_match')) return false;
+    const key = String(listing.saleId ?? listing.id ?? listing.url ?? listing.link ?? `${listing.title ?? ''}|${price}`).trim().toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const prices = priced.map((listing: any) => Number(listing.price.value)).sort((a, b) => a - b);
+  if (!prices.length) return null;
+  const q1 = prices[Math.floor(prices.length * 0.25)];
+  const q3 = prices[Math.floor(prices.length * 0.75)];
+  const iqr = q3 - q1;
+  const filtered = prices.filter((price) => price >= q1 - 1.5 * iqr && price <= q3 + 1.5 * iqr);
+  const final = filtered.length >= 3 ? filtered : prices;
+  const count = final.length;
+  const avg = Math.round(final.reduce((sum, price) => sum + price, 0) / count);
+  const middle = Math.floor(count / 2);
+  const median = count % 2 ? final[middle] : Math.round((final[middle - 1] + final[middle]) / 2);
+  const min = Math.round(final[0]);
+  const max = Math.round(final[count - 1]);
+  const spreadPct = avg > 0 ? Math.round(((max - min) / avg) * 100) : 0;
+  const confidence = count >= 7 && spreadPct < 80 ? 'high' : count >= 4 ? 'medium' : 'low';
+  return { avg, median, min, max, spreadPct, count, confidence, confidenceReason: `${count} visually accepted priced listing${count === 1 ? '' : 's'} remained after the outlier check.`, rawPriceCount: prices.length, outliersExcluded: Math.max(0, prices.length - final.length) };
+}
+
 function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; onVisualReviewData?: (data: any | null) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   // A target image makes visual confirmation mandatory before an eBay Active
@@ -915,9 +951,11 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean);
     return parts.join(' ') || item.title;
   }, [item.category, item.itemDetails, item.title, item.certificationCompany, item.grade, item.condition]);
+  const visualReviewDeadlineAt = useMemo(() => Date.now() + 120_000, [item.id, item.title, item.primaryPhotoUrl]);
   const visualReviewInput = useMemo(() => ({
     targetImageUrl: item.primaryPhotoUrl || 'https://invalid.local/target-image-placeholder',
     targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
+    reviewDeadlineAt: visualReviewDeadlineAt,
     // Retrieval can return more candidates than the bounded vision procedure accepts.
     // Cap the transport payload so validation cannot prevent review from starting.
     listings: Array.isArray(data?.visualReviewListings)
@@ -928,21 +966,45 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls.slice(0, 3) : [],
         }))
       : [],
-  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
-  const visualReviewQuery = trpc.testAI.reviewEbayVisualData.useQuery(
-    visualReviewInput,
-    { enabled: reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata && visualReviewInput.listings.length > 0 },
-  );
+  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview, visualReviewDeadlineAt]);
+  const reviewBaseEnabled = reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata;
+  const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
+    ...visualReviewInput,
+    listings: visualReviewInput.listings.slice(batchIndex * VISUAL_REVIEW_CLIENT_BATCH_SIZE, (batchIndex + 1) * VISUAL_REVIEW_CLIENT_BATCH_SIZE),
+  })), [visualReviewInput]);
+  const reviewBatch0 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[0], { enabled: reviewBaseEnabled && reviewBatchInputs[0].listings.length > 0 });
+  const reviewBatch1 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[1], { enabled: reviewBaseEnabled && reviewBatch0.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[1].listings.length > 0 });
+  const reviewBatch2 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[2], { enabled: reviewBaseEnabled && reviewBatch1.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) + countAcceptedVisualMatches(reviewBatch1.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[2].listings.length > 0 });
+  const reviewBatch3 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[3], { enabled: reviewBaseEnabled && reviewBatch2.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) + countAcceptedVisualMatches(reviewBatch1.data) + countAcceptedVisualMatches(reviewBatch2.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[3].listings.length > 0 });
+  const reviewBatch4 = trpc.testAI.reviewEbayVisualData.useQuery(reviewBatchInputs[4], { enabled: reviewBaseEnabled && reviewBatch3.isSuccess && countAcceptedVisualMatches(reviewBatch0.data) + countAcceptedVisualMatches(reviewBatch1.data) + countAcceptedVisualMatches(reviewBatch2.data) + countAcceptedVisualMatches(reviewBatch3.data) < VISUAL_REVIEW_CLIENT_TARGET_MATCHES && reviewBatchInputs[4].listings.length > 0 });
+  const reviewBatchQueries = [reviewBatch0, reviewBatch1, reviewBatch2, reviewBatch3, reviewBatch4];
+  const visualReviewLoading = reviewBatchQueries.some((query) => query.isLoading);
+  const visualReviewData = useMemo(() => {
+    const completed = reviewBatchQueries.map((query) => query.data).filter((batch): batch is NonNullable<typeof batch> => Boolean(batch));
+    if (!completed.length) return undefined;
+    const latest = completed[completed.length - 1]!;
+    const listings = completed.flatMap((batch) => batch.listings ?? []);
+    const visualMatchMetrics = computeClientVisualMatchMetrics(listings);
+    const timedOut = completed.some((batch) => batch.visualFilter?.status === 'completed_with_timeout');
+    return {
+      ...latest,
+      listings,
+      visualReviewListings: listings,
+      metrics: visualMatchMetrics,
+      visualMatchMetrics,
+      visualFilter: {
+        ...latest.visualFilter,
+        reviewedCount: listings.filter((listing: any) => listing.visualReviewStatus).length,
+        status: timedOut ? 'completed_with_timeout' : 'completed',
+      },
+    };
+  }, [reviewBatch0.data, reviewBatch1.data, reviewBatch2.data, reviewBatch3.data, reviewBatch4.data]);
+  const visualReviewError = reviewBatchQueries.find((query) => query.error)?.error;
+  const visualReviewErrorMessage: string | null = visualReviewError ? String(visualReviewError instanceof Error ? visualReviewError.message : visualReviewError) : null;
   useEffect(() => {
     setReviewRequested(Boolean(item.primaryPhotoUrl));
     setShowVisualMatchMetrics(false);
   }, [item.id, item.title, item.primaryPhotoUrl]);
-  const visualReviewData = visualReviewQuery.data;
-  const visualReviewError = visualReviewQuery.error instanceof Error
-    ? visualReviewQuery.error.message
-    : visualReviewQuery.error
-      ? String(visualReviewQuery.error)
-      : null;
   useEffect(() => {
     onVisualReviewData?.(visualReviewData && !visualReviewData.error ? visualReviewData : null);
   }, [onVisualReviewData, visualReviewData]);
@@ -961,7 +1023,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <div className="flex items-center justify-between">
         <p className={`text-[11px] font-bold uppercase ${accentColor}`}>🛒 eBay Active Listings</p>
-        {(isLoading || visualReviewQuery.isLoading) && <Spinner className="w-3 h-3" />}
+        {(isLoading || visualReviewLoading) && <Spinner className="w-3 h-3" />}
       </div>
       <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
         <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search query <span className="font-normal text-cyan-200/60">({queryStatus})</span></p>
@@ -971,7 +1033,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
-      {visualReviewError && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not start: {visualReviewError}</p>}
+      {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not start: {visualReviewErrorMessage}</p>}
       {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
       {visualReviewData?.visualFilter && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
@@ -996,7 +1058,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
       {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
       {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.</p></div>}
-      {reviewRequested && visualReviewQuery.isLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs (maximum 2 minutes; timed-out candidates remain context/manual review).</p>}
+      {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs in batches of 10 (maximum 50 candidates; maximum 2 minutes overall).</p>}
       {visualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">The AI image review stopped at its safety time limit. Only candidates with a completed visual result can support current-value evidence; the rest remain asking-price context.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}

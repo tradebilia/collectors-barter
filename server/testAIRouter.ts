@@ -1297,6 +1297,7 @@ export const testAIRouter = router({
       targetImageUrl: z.string().url(),
       targetMetadata: z.string().min(1).max(12000),
       listings: z.array(z.record(z.string(), z.any())).max(VISUAL_REVIEW_MAX_CANDIDATES),
+      reviewDeadlineAt: z.number().int().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -1309,6 +1310,7 @@ export const testAIRouter = router({
           imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
           imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls : [],
         })),
+        reviewDeadlineAt: input.reviewDeadlineAt,
       });
       const listings = visualFilter.listings as any[];
       const visualMatchMetrics = computeVisualMatchMetrics(listings);

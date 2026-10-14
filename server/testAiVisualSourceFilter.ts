@@ -498,10 +498,11 @@ export async function filterVisualSourceCandidates<
   T extends VisualSourceCandidate,
 >(args: {
   sourceLabel: string;
-  targetImageUrl?: string | null;
-  targetMetadata: string;
-  listings: T[];
-}): Promise<VisualSourceFilterResult<T>> {
+	  targetImageUrl?: string | null;
+	  targetMetadata: string;
+	  listings: T[];
+	  reviewDeadlineAt?: number;
+	}): Promise<VisualSourceFilterResult<T>> {
   const target = safeHttps(args.targetImageUrl);
   if (!target)
     return {
@@ -584,7 +585,10 @@ export async function filterVisualSourceCandidates<
     let timedOutCount = 0;
     let deadlineReached = false;
     let lastError: unknown;
-    const reviewDeadline = Date.now() + VISUAL_REVIEW_OVERALL_DEADLINE_MS;
+	    const reviewDeadline = Math.min(
+	      Date.now() + VISUAL_REVIEW_OVERALL_DEADLINE_MS,
+	      Number.isFinite(args.reviewDeadlineAt) ? Number(args.reviewDeadlineAt) : Number.POSITIVE_INFINITY,
+	    );
     // Keep each comparison one-to-one and run four at a time. A later explicit
     // review-more action can expand beyond this initial queue.
     for (let windowOffset = 0; windowOffset < reviewQueue.length; windowOffset += VISUAL_REVIEW_BATCH_SIZE) {
