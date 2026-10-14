@@ -1,2 +1,4 @@
 
 - [x] Explicit ungraded-target visual safeguard: treat structured `Is graded = No` as authoritative, suppress graded-target enforcement and grade escalation, and narrowly promote contradictory unreadable reviews only when both items are confirmed raw/ungraded with matching identity evidence. Added visual-filter and prompt regressions. No database writes, migrations, credentials, provider changes, or public publication.
+
+- [x] Vintage-toy packaging-form gate: for targets with structured carded/on-card/blister-card or loose/unboxed metadata, explicitly opposite-form marketplace titles are high-confidence mismatches before vision review; the vision prompt repeats the same mandatory gate. Added both-direction regressions and prompt coverage. No database writes, migrations, credentials, provider changes, or public publication.

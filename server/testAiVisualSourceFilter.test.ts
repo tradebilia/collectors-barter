@@ -122,6 +122,30 @@ describe("visual source filter", () => {
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
 
+  it("blocks a graded loose vintage toy when the target is graded and carded", () => {
+    const metadata = `title=G.I. Joe Snake Eyes; category=vintage_toys; grade=90; certificationCompany=AFA; fullItemDetails=${JSON.stringify({ packagingType: "carded" })}`;
+    const result = buildDeclaredIdentityReviews([
+      { title: "G.I. Joe Snake Eyes AFA 90 Loose Action Figure" },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(result[0].rationale).toContain("packaging form differs");
+  });
+
+  it("blocks a graded carded vintage toy when the target is graded and loose", () => {
+    const metadata = `title=G.I. Joe Snake Eyes; category=vintage_toys; grade=90; certificationCompany=AFA; fullItemDetails=${JSON.stringify({ packagingType: "loose" })}`;
+    const result = buildDeclaredIdentityReviews([
+      { title: "G.I. Joe Snake Eyes AFA 90 Carded" },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(result[0].rationale).toContain("packaging form differs");
+  });
+
+  it("exposes the vintage-toy packaging-form gate in the vision prompt", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("packaging form is a mandatory identity gate");
+    expect(source).toContain("carded/on-card/blister-card");
+  });
+
   it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
     const result = conservativeGradedVisualReviews([
       { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match." },
