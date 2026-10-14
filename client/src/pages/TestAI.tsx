@@ -414,6 +414,8 @@ function isCgcCompany(company?: string | null): boolean {
 const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'comics:ebay_active': 'match',
   'sports cards:ebay_active': 'match',
+  'vintage toys:ebay_active': 'match',
+  'vintage toys:sold_comps': 'match',
   'comics:comic_book_realm': 'match',
   'comics:comicconnect': 'match',
 	'comics:goldin': 'match',
