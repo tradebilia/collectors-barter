@@ -757,13 +757,9 @@ function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condi
   return <p className={`mt-1 text-[8px] font-semibold ${eligible ? 'text-emerald-300' : 'text-amber-300'}`}>{eligible ? 'Analyzer: YES — submitted as a valuation candidate; ' : 'Analyzer: NO — context/review only; '}{reason}</p>;
 }
 
-function SoldCompsSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
+function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
-  const { data, isLoading } = trpc.testAI.getSoldCompsData.useQuery(
-    { title: item.title, category: item.category, itemType: item.itemType, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? '', itemDetails: item.itemDetails ?? undefined, statedTradeValue: item.estimatedValue ?? undefined, imageUrl: item.primaryPhotoUrl },
-    { enabled: !!item.title && item.category !== 'unknown' }
-  );
   const auditLedger = data?.audit?.ledger ?? [];
   const visualReviewRows = (data?.listings ?? []).map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const visualMismatchRows = visualReviewRows.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
@@ -3721,7 +3717,7 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoading, soldCompsData, soldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -3729,6 +3725,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
   ebayData: any;
   ebayLoading: boolean;
   soldCompsData: any;
+  soldCompsLoading: boolean;
   hipstampData: any;
   hipstampSoldData: any;
   pokemonPriceTrackerData: any;
@@ -3804,7 +3801,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayLoad
       {enabledSources.has('comicconnect') && <ComicConnectSection item={queryItem} side={side} data={comicConnectData} isLoading={comicConnectLoading} />}
       {enabledSources.has('sold_comps') && (
         searchItem || item.category !== 'unknown'
-          ? <SoldCompsSection item={queryItem} side={side} />
+          ? <SoldCompsSection item={queryItem} side={side} data={soldCompsData} isLoading={soldCompsLoading} />
           : <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2">
               <p className={`text-[11px] font-bold uppercase ${side === 'left' ? 'text-cyan-300' : 'text-amber-300'}`}>💰 Sold-Comps — eBay Sold History</p>
               <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
@@ -4100,11 +4097,11 @@ export default function TestAI() {
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
   );
   const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
@@ -4154,8 +4151,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 

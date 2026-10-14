@@ -2115,3 +2115,5 @@
 - [x] Sold-Comps lot gate: explicit multi-item lots/bundles are downgraded before source-level valuation acceptance across categories; numeric quantities are retained as `lotQuantity`, total lot prices remain context-only, and single-item controls remain eligible. Added regressions for Lot of 2, Lot of 3, multipacks, counted items, and category-neutral behavior. No database writes, migrations, credentials, or provider changes.
 
 - [x] Sold-Comps count consistency: Evidence Review and the Accepted for valuation candidates panel now use the same current-response `evidenceDisposition: valuation_eligible` listing filter; a separately carried audit counter can no longer create conflicting eligible counts or submitted prices. Added UI regression coverage. No database writes, migrations, credentials, or provider changes.
+
+- [x] Sold-Comps panel consistency: consolidated Evidence Review and visible Sold-Comps to one parent query, passed the selected item’s stated trade value into that query so the high-value gate is applied consistently, and removed the duplicate request that caused provider-result drift. Added UI regression coverage.

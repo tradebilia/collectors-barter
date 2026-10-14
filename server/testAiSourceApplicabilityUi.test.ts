@@ -178,6 +178,15 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Context only');
   });
 
+  it('uses one shared Sold-Comps response for Evidence Review and the provider panel', () => {
+    expect(source).toContain('function SoldCompsSection({ item, side, data, isLoading }');
+    expect(source).toContain('data={soldCompsData} isLoading={soldCompsLoading}');
+    expect(source).toContain('statedTradeValue: leftItem?.estimatedValue ?? undefined');
+    expect(source).toContain('statedTradeValue: rightItem?.estimatedValue ?? undefined');
+    expect(source).not.toContain('function SoldCompsSection({ item, side }: { item: SelectedItem; side: \'left\' | \'right\' })');
+    expect(source).not.toContain('trpc.testAI.getSoldCompsData.useQuery(\n    { title: item.title');
+  });
+
   it('shows current-run source outcomes without claiming historical provider reliability', () => {
     expect(source).toContain('SourceRunOutcomeSummary');
     expect(outcomeSource).toContain('summarizeTestAiSourceRunOutcomes');
