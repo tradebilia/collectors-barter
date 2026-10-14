@@ -6,6 +6,7 @@ import {
   applyDeclaredIdentityFilter,
   buildDeclaredIdentityReviews,
   conservativeComicVisualReviews,
+  conservativeGradedVisualReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
   sportsCardSetInstruction,
@@ -68,6 +69,21 @@ describe("visual source filter", () => {
     ], [{ title: "X-Men #137 CGC 9.8 Newsstand" }], "title=X-Men #137; category=comics");
     expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
     expect(result[0].rationale).toContain("rather than a definitive mismatch");
+  });
+
+  it("downgrades a graded visual match when the candidate grade is not readable", () => {
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "Both figures are in AFA holders and the character/package layout matches, but the candidate grade is not visible." },
+    ], [{ title: "MOTU 1982 Vintage 8 Card Man-at-Arms AFA Graded RARE!" }], "title=MOTU 1982 Vintage 8 Card Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA");
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("numeric or descriptive grade is not clearly verified");
+  });
+
+  it("keeps a graded visual match only when the candidate grade is explicitly verified", () => {
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is clearly readable on the candidate label and matches the target; the figure and packaging also match." },
+    ], [{ title: "MOTU 1982 Man-at-Arms AFA 8.0" }], "title=MOTU 1982 Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA");
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
 
   it("preserves long visual explanations instead of cutting them off at 240 characters", () => {
@@ -213,6 +229,8 @@ describe("visual source filter", () => {
     expect(source).toContain("graded/slabbed or raw/ungraded");
     expect(source).toContain("Graded-versus-raw status is a mandatory identity gate");
     expect(source).toContain("target is graded and the candidate is visibly raw");
+    expect(source).toContain("candidate numeric or descriptive grade is also mandatory");
+    expect(source).toContain("candidate grade is not clearly readable");
   });
 
   it("requires the visual reviewer to gate sports-card set versus single-card form", () => {
