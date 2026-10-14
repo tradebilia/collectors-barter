@@ -118,6 +118,16 @@ async function fetchEbayListings(query: string, token: string, limit = 25, offse
   return data.itemSummaries ?? [];
 }
 
+function collectEbayImageUrls(item: any): string[] {
+  const imageValues = [
+    item?.image?.imageUrl,
+    ...(Array.isArray(item?.thumbnailImages) ? item.thumbnailImages.map((image: any) => image?.imageUrl) : []),
+    ...(Array.isArray(item?.additionalImages) ? item.additionalImages.map((image: any) => image?.imageUrl) : []),
+    ...(Array.isArray(item?.images) ? item.images.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
+  ];
+  return Array.from(new Set(imageValues.filter((url): url is string => typeof url === 'string' && /^https:\/\//i.test(url)))).slice(0, 8);
+}
+
 async function fetchEbayExactTierPages(query: string, token: string) {
   const pages: Array<{ items: any[]; offset: number }> = [];
   for (let page = 0; page < EBAY_ACTIVE_EXACT_PAGE_LIMIT; page += 1) {
@@ -144,6 +154,7 @@ async function fetchEbayAuctionDetails(itemId: string, token: string) {
   const data = await res.json().catch(() => null) as any;
   return data && typeof data === 'object'
     ? {
+        imageUrls: collectEbayImageUrls(data),
         bidCount: Number.isFinite(Number(data.bidCount)) ? Number(data.bidCount) : null,
         uniqueBidderCount: Number.isFinite(Number(data.uniqueBidderCount)) ? Number(data.uniqueBidderCount) : null,
         currentBidPrice: data.currentBidPrice ?? null,
@@ -163,7 +174,11 @@ async function enrichEbayAuctionDetails(items: any[], token: string) {
       const item = auctionItems[cursor++];
       try {
         const details = await fetchEbayAuctionDetails(String(item.itemId), token);
-        if (details) Object.assign(item, details);
+        if (details) {
+          const searchImageUrls = collectEbayImageUrls(item);
+          Object.assign(item, details);
+          item.imageUrls = Array.from(new Set([...searchImageUrls, ...(Array.isArray(details.imageUrls) ? details.imageUrls : [])])).slice(0, 8);
+        }
       } catch {
         // Bid metadata is supplementary. Keep the listing when getItem is unavailable.
       }
@@ -1178,7 +1193,7 @@ export const testAIRouter = router({
         });
         const targetMetadata = `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`;
         const declaredIdentityFilter = applyDeclaredIdentityFilter(
-          filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+          filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item), imageUrls: collectEbayImageUrls(item) })),
           targetMetadata,
         );
         const visualActiveFilter = input.includeVisualReview
@@ -1229,6 +1244,7 @@ export const testAIRouter = router({
             seller: s.seller?.username,
             itemUrl: s.itemWebUrl,
             imageUrl: s.image?.imageUrl,
+            imageUrls: collectEbayImageUrls(s),
             listingType: s.buyingOptions?.[0],
             bidCount: s.bidCount ?? null,
             uniqueBidderCount: s.uniqueBidderCount ?? null,
@@ -1249,6 +1265,7 @@ export const testAIRouter = router({
             seller: s.seller?.username,
             itemUrl: s.itemWebUrl,
             imageUrl: s.image?.imageUrl,
+            imageUrls: collectEbayImageUrls(s),
             listingType: s.buyingOptions?.[0],
             bidCount: s.bidCount ?? null,
             uniqueBidderCount: s.uniqueBidderCount ?? null,

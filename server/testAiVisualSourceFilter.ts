@@ -4,6 +4,7 @@ import { parseAnalyzerResponse } from "./testAiResponse";
 export type VisualSourceCandidate = {
   title?: string | null;
   imageUrl?: string | null;
+  imageUrls?: string[];
   [key: string]: unknown;
 };
 export type VisualSourceReview = {
@@ -42,6 +43,19 @@ function safeHttps(value: unknown): string | null {
   } catch {
     return null;
   }
+}
+
+export function shouldReviewAdditionalVisualImages(args: {
+  imageCount: number;
+  review?: Pick<VisualSourceReview, "verdict" | "confidence" | "rationale">;
+  title?: string | null;
+  targetMetadata: string;
+}): boolean {
+  if (args.imageCount <= 1 || !args.review) return false;
+  const targetIsGraded = /(?:^|;)\s*(?:grade|certificationCompany)=[^;]+/i.test(args.targetMetadata) && !/(?:^|;)\s*(?:grade|certificationCompany)=(?:unknown|raw|ungraded|none|n\/a)\s*(?:;|$)/i.test(args.targetMetadata);
+  const titleHasGrade = /\b(?:grade|graded|score|rating)\s*(?:is|of|:)?\s*\d{1,3}(?:\.\d+)?\b|\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*\d{1,3}(?:\.\d+)?\b/i.test(String(args.title ?? ""));
+  const uncertainty = /\b(?:unreadable|unclear|obscured|not visible|not readable|cannot (?:see|read|confirm)|can't (?:see|read|confirm)|unable to confirm|conflicting|low[- ]confidence|manual review)\b/i.test(args.review.rationale);
+  return args.review.verdict === "unreadable" || args.review.confidence === "low" || uncertainty || (targetIsGraded && !titleHasGrade);
 }
 
 export function normalizeVisualSourceReviews(
@@ -288,7 +302,7 @@ function visualQueryTierPriority<T extends VisualSourceCandidate>(item: T): numb
 }
 
 export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate>(
-  candidates: Array<{ item: T; candidateIndex: number; imageUrl: string }>,
+  candidates: Array<{ item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] }>,
   targetMetadata: string,
   declaredReviews: VisualSourceReview[],
 ) {
@@ -347,14 +361,21 @@ export async function filterVisualSourceCandidates<
       note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered.`,
     };
   const candidates = args.listings
-    .map((item, candidateIndex) => ({
-      item,
-      candidateIndex,
-      imageUrl: safeHttps(item.imageUrl),
-    }))
+    .map((item, candidateIndex) => {
+      const imageUrls = Array.from(new Set([
+        ...(Array.isArray(item.imageUrls) ? item.imageUrls : []),
+        item.imageUrl,
+      ].map(safeHttps).filter((url): url is string => Boolean(url)))).slice(0, 8);
+      return {
+        item,
+        candidateIndex,
+        imageUrl: imageUrls[0] ?? null,
+        imageUrls,
+      };
+    })
     .filter(
-      (entry): entry is { item: T; candidateIndex: number; imageUrl: string } =>
-        !!entry.imageUrl
+      (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
+        entry.imageUrls.length > 0
     )
     .slice(0, VISUAL_REVIEW_MAX_CANDIDATES);
   if (!candidates.length)
@@ -439,7 +460,37 @@ export async function filterVisualSourceCandidates<
         }
       }
       if (!text.trim()) return { reviews: [] as VisualSourceReview[], error: candidateError };
-      return { reviews: normalizeVisualSourceReviews(parseAnalyzerResponse(text), args.listings.length), error: null };
+      const primaryReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(text), args.listings.length);
+      const primaryReview = primaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
+      const needsGalleryReview = shouldReviewAdditionalVisualImages({
+        imageCount: candidate.imageUrls.length,
+        review: primaryReview,
+        title: String(candidate.item.title ?? ""),
+        targetMetadata: args.targetMetadata,
+      });
+      if (!needsGalleryReview) return { reviews: primaryReviews, error: null };
+
+      const galleryContent: Array<TextContent | ImageContent> = [
+        ...content,
+        { type: "text", text: `ADDITIONAL CANDIDATE GALLERY IMAGES: Review these additional images before deciding. Use them to resolve the uncertain grade, certification label, item front/back, edition, variant, or other identity question. Do not override a clear contradiction; if gallery images conflict, return unreadable/manual review and explain the conflict.` },
+        ...candidate.imageUrls.slice(1).map((url, index) => ({ type: "image_url" as const, image_url: { url, detail: "auto" as const }, })),
+      ];
+      let galleryText = "";
+      let galleryError: unknown;
+      for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
+        try {
+          const response = await invokeLLM({ model: "gpt-5-mini", messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, temperature: 0, response_format: responseFormat });
+          const raw = response.choices[0]?.message?.content;
+          galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          if (galleryText.trim()) break;
+          throw new Error("The gallery visual review returned no structured content");
+        } catch (error) {
+          galleryError = error;
+        }
+      }
+      if (!galleryText.trim()) return { reviews: primaryReviews, error: galleryError ?? null };
+      const galleryReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(galleryText), args.listings.length);
+      return { reviews: galleryReviews.length ? galleryReviews : primaryReviews, error: null };
       }));
       for (const result of batchResults) {
         reviews.push(...result.reviews);

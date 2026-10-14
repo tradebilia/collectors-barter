@@ -9,6 +9,7 @@ import {
   conservativeGradedVisualReviews,
   normalizeVisualSourceReviews,
   prioritizeVisualSourceCandidates,
+  shouldReviewAdditionalVisualImages,
   sportsCardSetInstruction,
   VISUAL_REVIEW_MAX_CANDIDATES,
   VISUAL_REVIEW_BATCH_SIZE,
@@ -84,6 +85,21 @@ describe("visual source filter", () => {
       { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is clearly readable on the candidate label and matches the target; the figure and packaging also match." },
     ], [{ title: "MOTU 1982 Man-at-Arms AFA 8.0" }], "title=MOTU 1982 Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("requests additional gallery images when the primary review cannot verify a graded target", () => {
+    expect(shouldReviewAdditionalVisualImages({
+      imageCount: 3,
+      title: "MOTU Man-at-Arms AFA Graded RARE",
+      targetMetadata: "title=MOTU Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA",
+      review: { verdict: "match", confidence: "high", rationale: "The holder matches, but the candidate grade is not visible." },
+    })).toBe(true);
+    expect(shouldReviewAdditionalVisualImages({
+      imageCount: 3,
+      title: "MOTU Man-at-Arms AFA 8.0",
+      targetMetadata: "title=MOTU Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA",
+      review: { verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is readable and matches." },
+    })).toBe(false);
   });
 
   it("preserves long visual explanations instead of cutting them off at 240 characters", () => {
@@ -222,6 +238,8 @@ describe("visual source filter", () => {
     const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
     expect(routerSource).toContain("visualReviewStatus: s.visualReviewStatus ?? null");
     expect(routerSource).toContain("visualReviewRationale: s.visualReviewRationale ?? null");
+    expect(routerSource).toContain("collectEbayImageUrls");
+    expect(routerSource).toContain("imageUrls: collectEbayImageUrls(s)");
   });
 
   it("requires the visual reviewer to gate graded versus raw packaging first", () => {
