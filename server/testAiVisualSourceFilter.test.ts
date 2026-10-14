@@ -142,6 +142,47 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("packaging form differs");
   });
 
+  it("holds a sports-card candidate with an explicit parallel conflict before vision", () => {
+    const metadata = `title=Mike Trout; category=sports_cards; fullItemDetails=${JSON.stringify({ player: "Mike Trout", year: "2011", manufacturer: "Topps", parallel: "Chrome Refractor" })}`;
+    const result = buildDeclaredIdentityReviews([
+      { title: "2011 Topps Mike Trout Chrome", itemDetails: JSON.stringify({ parallel: "Base" }) },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(result[0].rationale).toContain("parallel differs");
+  });
+
+  it("holds a video-game candidate with an explicit platform conflict before vision", () => {
+    const metadata = `title=The Legend of Zelda; category=video_games; fullItemDetails=${JSON.stringify({ platform: "NES", edition: "Standard" })}`;
+    const result = buildDeclaredIdentityReviews([
+      { title: "The Legend of Zelda Nintendo Switch", platform: "Nintendo Switch" },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(result[0].rationale).toContain("platform differs");
+  });
+
+  it("holds a coin candidate with an explicit mint-mark conflict before vision", () => {
+    const metadata = `title=1903 Morgan Dollar; category=coins; fullItemDetails=${JSON.stringify({ year: "1903", denomination: "1", mintMark: "S", variety: "Morgan" })}`;
+    const result = buildDeclaredIdentityReviews([
+      { title: "1903 Morgan Dollar", itemDetails: JSON.stringify({ year: "1903", denomination: "1", mintMark: "O", variety: "Morgan" }) },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(result[0].rationale).toContain("mintMark differs");
+  });
+
+  it("holds a comic candidate with an explicit issue-number conflict before vision", () => {
+    const metadata = `title=Amazing Spider-Man; category=comics; fullItemDetails=${JSON.stringify({ series: "Amazing Spider-Man", issueNumber: "300", publisher: "Marvel" })}`;
+    const result = buildDeclaredIdentityReviews([
+      { title: "Amazing Spider-Man #301 CGC 9.8" },
+    ], metadata);
+    expect(result[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(result[0].rationale).toContain("issueNumber");
+  });
+
+  it("does not reject a candidate merely because its provider omitted a target field", () => {
+    const metadata = `title=The Legend of Zelda; category=video_games; fullItemDetails=${JSON.stringify({ platform: "NES", edition: "Standard" })}`;
+    expect(buildDeclaredIdentityReviews([{ title: "The Legend of Zelda" }], metadata)).toEqual([]);
+  });
+
   it("exposes the vintage-toy packaging-form gate in the vision prompt", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("packaging form is a mandatory identity gate");

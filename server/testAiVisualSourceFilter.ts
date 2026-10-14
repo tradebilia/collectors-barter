@@ -1,5 +1,6 @@
 import { invokeLLM, type ImageContent, type TextContent } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
+import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -395,9 +396,12 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const distributionPhrase = candidateIsNewsstand ? "Newsstand" : candidateIsDirect ? "Direct" : null;
     const facsimileConflict = targetFacsimile === "no" && /\b(?:facsimile|reprint|reproduction)\b/i.test(title);
     const packagingConflict = vintageToyPackagingConflict(targetMetadata, title);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict);
+    const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing);
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = packagingConflict ?? (distributionConflict
+    const reason = packagingConflict ?? (materialConflicts.length > 0
+      ? metadataConflictReviewReason(materialConflicts)
+      : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
       : `Facsimile is No, but the title explicitly declares ${title.match(/\b(?:facsimile|reprint|reproduction)\b/i)?.[0] ?? "a reproduction"}.`);
     return [{
