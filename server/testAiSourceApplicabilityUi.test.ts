@@ -206,7 +206,10 @@ describe('manual Test AI selector boundary', () => {
     expect(outcomeSource).toContain('This-run source outcomes');
     expect(outcomeSource).toContain('This is not a provider scorecard or historical reliability rate, and no result is stored.');
     expect(outcomeSource).toContain('Held out');
-    expect(outcomeSource).toContain('<strong>{outcome.accepted}</strong> eligible');
+    expect(outcomeSource).toContain('<strong>{sentToAnalyzer}</strong> sent to analyzer');
+    expect(outcomeSource).toContain('Completed sales found: {outcome.completed}. Accepted for valuation: {outcome.accepted}. Current-value market evidence: {outcome.currentValue}. Historical trend records: {outcome.historicalTrend}.');
+    expect(outcomeSource).toContain('Returned records');
+    expect(outcomeSource).toContain('Context / review');
     expect(outcomeSource).toContain('timed out');
   });
 

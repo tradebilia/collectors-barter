@@ -115,6 +115,8 @@ export type TestAiSourceRunOutcome = {
   returned: number;
   completed: number;
   accepted: number;
+  currentValue: number;
+  historicalTrend: number;
   excludedFromValuation: number;
   context: number;
   timedOut: boolean;
@@ -549,6 +551,8 @@ export function summarizeTestAiSourceRunOutcomes(decisions: EvidenceSourceDecisi
     returned: decision.returned,
     completed: decision.completed,
     accepted: decision.accepted,
+    currentValue: decision.currentValue,
+    historicalTrend: decision.historicalTrend,
     excludedFromValuation: decision.excludedFromValuation,
     context: decision.context,
     timedOut: decision.status === 'error' && /\b(?:timeout|timed out|aborted)\b/i.test(String(decision.message ?? '')),
