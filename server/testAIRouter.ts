@@ -252,15 +252,32 @@ function normalizeCertificationCompany(value: string | undefined): string {
     .toUpperCase();
 }
 
-export function filterListingsByCertificationCompany(summaries: any[], certificationCompany: string | null | undefined): any[] {
+function hasVideoGameWataPsaEquivalence(title: string, target: string): boolean {
+  if (target !== 'PSA' && target !== 'WATA') return false;
+  const providers = [...title.matchAll(new RegExp(certificationProviderPattern.source, 'gi'))]
+    .map((match) => match[1].toUpperCase());
+  // PSA acquired WATA's video-game grading business. For video games only,
+  // either provider is accepted as equivalent evidence; unrelated graders are
+  // still treated as explicit conflicts.
+  return providers.includes('WATA') || providers.includes('PSA');
+}
+
+export function filterListingsByCertificationCompany(
+  summaries: any[],
+  certificationCompany: string | null | undefined,
+  category?: string,
+): any[] {
   const target = normalizeCertificationCompany(certificationCompany ?? undefined);
   if (!target) return summaries;
   return summaries.filter((item: any) => {
-    const match = String(item.title ?? '').match(certificationProviderPattern);
+    const title = String(item.title ?? '');
+    const match = title.match(certificationProviderPattern);
     // Absence is uncertainty, not a contradiction. Keep sparse titles in the
     // evidence ledger as review-only candidates; reject only an explicit,
     // recognized provider that conflicts with the target provider.
-    return !match || match[1].toUpperCase() === target;
+    return !match
+      || match[1].toUpperCase() === target
+      || (category === 'video_games' && hasVideoGameWataPsaEquivalence(title, target));
   });
 }
 
@@ -1804,7 +1821,7 @@ export const testAIRouter = router({
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
         const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
-        const byCertification = filterListingsByCertificationCompany(bySport, cert || null);
+        const byCertification = filterListingsByCertificationCompany(bySport, cert || null, input.category);
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 

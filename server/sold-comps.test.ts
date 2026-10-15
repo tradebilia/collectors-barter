@@ -62,6 +62,18 @@ describe('Sold-Comps API key validation', () => {
     expect(filterListingsByCertificationCompany(listings, 'CGC')).toEqual([listings[0], listings[2]]);
   });
 
+  it('treats WATA and PSA as equivalent grader evidence for video games only', () => {
+    const listings = [
+      { title: 'The Legend of Zelda NES WATA PSA 7.5' },
+      { title: 'The Legend of Zelda NES WATA 7.5' },
+      { title: 'The Legend of Zelda NES VGA 7.5' },
+    ];
+
+    expect(filterListingsByCertificationCompany(listings, 'PSA', 'video_games')).toEqual([listings[0], listings[1]]);
+    expect(filterListingsByCertificationCompany(listings, 'WATA', 'video_games')).toEqual([listings[0], listings[1]]);
+    expect(filterListingsByCertificationCompany(listings, 'PSA', 'comics')).toEqual([]);
+  });
+
   it('accepts a comic title that writes the issue as a bare number before CGC', () => {
     const listing = { title: 'Edge Of The Spider-verse 2 Cgc 9.8 1st spider-Gwen white pages' };
 
