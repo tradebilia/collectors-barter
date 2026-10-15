@@ -10,6 +10,7 @@ import {
   hasExplicitlyUngradedTarget,
   normalizeExplicitUngradedVisualReviews,
   normalizeVisualSourceReviews,
+  promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
   shouldReviewAdditionalVisualImages,
   sportsCardSetInstruction,
@@ -21,6 +22,11 @@ import {
 } from "./testAiVisualSourceFilter";
 
 describe("visual source filter", () => {
+  it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
+    expect(promoteEbayImageUrl("https://i.ebayimg.com/images/g/abc/s-l500.jpg")).toBe("https://i.ebayimg.com/images/g/abc/s-l1600.jpg");
+    expect(promoteEbayImageUrl("https://example.com/image-s-l500.jpg")).toBe("https://example.com/image-s-l500.jpg");
+  });
+
   it("retains high-confidence visual mismatches as review evidence", () => {
     const rows = normalizeVisualSourceReviews(
       {
@@ -86,7 +92,7 @@ describe("visual source filter", () => {
 
   it("keeps a graded visual match only when the candidate grade is explicitly verified", () => {
     const result = conservativeGradedVisualReviews([
-      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is clearly readable on the candidate label and matches the target; the figure and packaging also match." },
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 8.0 grade is clearly readable on the candidate label and matches the target; the figure and packaging also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
     ], [{ title: "MOTU 1982 Man-at-Arms AFA 8.0" }], "title=MOTU 1982 Man-at-Arms; category=vintage_toys; grade=8.0; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
@@ -100,10 +106,25 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("grade qualifier");
   });
 
+  it("rejects a graded match when the model omits structured visual evidence", () => {
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The PSA 9 label and grade appear visible and match." },
+    ], [{ title: "Super Mario Bros. 3 NES PSA 9" }], "title=Super Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(result[0].rationale).toContain("structured visual evidence");
+  });
+
+  it("rejects a graded match when structured evidence says the item is raw", () => {
+    const result = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The title says PSA 9, but the candidate appears raw.", visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: true } },
+    ], [{ title: "Super Mario Bros. 3 NES PSA 9" }], "title=Super Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
+    expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+  });
+
   it("accepts an explicitly confirmed equivalent target qualifier after visual review", () => {
     const metadata = `title=2018 Topps; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ gradeQualifier: "OC" })}`;
     const result = conservativeGradedVisualReviews([
-      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The PSA 8 OC grade is clearly readable and the card front matches." },
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The PSA 8 OC grade is clearly readable and the card front matches.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
     ], [{ title: "2018 Topps PSA 8 OC" }], metadata);
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
@@ -145,7 +166,7 @@ describe("visual source filter", () => {
 
   it("treats equivalent AFA plus-grade formats as the same numeric grade", () => {
     const result = conservativeGradedVisualReviews([
-      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 75+ grade is clearly readable on the gallery label and matches the target." },
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The AFA 75+ grade is clearly readable on the gallery label and matches the target.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
     ], [{ title: "MOTU Man-at-Arms AFA 75+ Masters of the Universe" }], "title=MOTU Man-at-Arms; category=vintage_toys; grade=75.0; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "high" });
   });
@@ -217,7 +238,7 @@ describe("visual source filter", () => {
 
   it("promotes an unreadable review only when title and gallery rationale explicitly confirm the grade", () => {
     const result = conservativeGradedVisualReviews([
-      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match." },
+      { candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The AFA 75+ grade is clearly readable in the additional gallery image and matches the target; the holder and item also match.", visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false }, }
     ], [{ title: "MOTU Man-at-Arms AFA 75+" }], "title=MOTU Man-at-Arms; category=vintage_toys; grade=75; certificationCompany=AFA");
     expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
   });
