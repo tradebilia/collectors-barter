@@ -120,9 +120,13 @@ async function fetchEbayListings(query: string, token: string, limit = 25, offse
 
 function collectEbayImageUrls(item: any): string[] {
   const imageValues = [
+    item?.imageUrl,
+    item?.thumbnailUrl,
     item?.image?.imageUrl,
     ...(Array.isArray(item?.thumbnailImages) ? item.thumbnailImages.map((image: any) => image?.imageUrl) : []),
     ...(Array.isArray(item?.additionalImages) ? item.additionalImages.map((image: any) => image?.imageUrl) : []),
+    ...(Array.isArray(item?.galleryImages) ? item.galleryImages.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
+    ...(Array.isArray(item?.imageUrls) ? item.imageUrls : []),
     ...(Array.isArray(item?.images) ? item.images.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
   ];
   return Array.from(new Set(imageValues.filter((url): url is string => typeof url === 'string' && /^https:\/\//i.test(url)))).slice(0, 8);
@@ -1900,7 +1904,10 @@ export const testAIRouter = router({
             sourceLabel: 'eBay Sold-Comps',
             targetImageUrl: safeTargetImage,
             targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; itemDetails=${input.itemDetails ?? '{}'}`,
-            listings: filtered.map((item: any) => ({ ...item, imageUrl: item.thumbnailUrl ?? item.imageUrl ?? null })),
+            listings: filtered.map((item: any) => {
+              const imageUrls = collectEbayImageUrls(item);
+              return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
+            }),
           });
           visuallyFiltered = sharedVisualFilter.listings;
           visualSoldFilter = {

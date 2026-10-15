@@ -237,6 +237,20 @@ describe("visual source filter", () => {
     })).toBe(false);
   });
 
+  it("escalates a title-declared graded candidate when the first image is interpreted as raw", () => {
+    expect(shouldReviewAdditionalVisualImages({
+      imageCount: 3,
+      title: "Mario Bros. 3 NES PSA Graded 9.0 CIB",
+      targetMetadata: "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA",
+      review: { verdict: "mismatch", confidence: "high", rationale: "Candidate appears loose and un-slabbed with no visible PSA label or grade." },
+    })).toBe(true);
+    const normalized = conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "mismatch", confidence: "high", rationale: "Candidate appears loose and un-slabbed with no visible PSA label or grade." },
+    ], [{ title: "Mario Bros. 3 NES PSA Graded 9.0 CIB" }], "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
+    expect(normalized[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(normalized[0].rationale).toContain("additional-image/manual review");
+  });
+
   it("preserves long visual explanations instead of cutting them off at 240 characters", () => {
     const ending = "The candidate front art, packaging, and visible certification details require manual comparison before any valuation decision.";
     const longRationale = `${"The target and candidate were compared across packaging, orientation, visible holder details, and front artwork. ".repeat(8)}${ending}`;
@@ -375,6 +389,9 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("visualReviewRationale: s.visualReviewRationale ?? null");
     expect(routerSource).toContain("collectEbayImageUrls");
     expect(routerSource).toContain("imageUrls: collectEbayImageUrls(s)");
+    expect(routerSource).toContain("item?.imageUrl");
+    expect(routerSource).toContain("item?.thumbnailUrl");
+    expect(routerSource).toContain("imageUrls = collectEbayImageUrls(item)");
   });
 
   it("requires the visual reviewer to gate graded versus raw packaging first", () => {
@@ -384,6 +401,8 @@ describe("visual source filter", () => {
     expect(source).toContain("target is graded and the candidate is visibly raw");
     expect(source).toContain("candidate numeric or descriptive grade is also mandatory");
     expect(source).toContain("candidate grade is not clearly readable");
+    expect(source).toContain("grading-evidence conflict");
+    expect(source).toContain('detail: "high"');
     expect(source).toContain("grade qualifier, label designation, or comic certification label status");
     expect(source).toContain("structured metadata explicitly says Is graded = No");
     expect(source).toContain("Treat the target as raw/ungraded for this review");
