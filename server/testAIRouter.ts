@@ -252,10 +252,22 @@ function normalizeCertificationCompany(value: string | undefined): string {
     .toUpperCase();
 }
 
+function positiveCertificationProviders(title: string): string[] {
+  return [...title.matchAll(new RegExp(certificationProviderPattern.source, 'gi'))]
+    .filter((match) => {
+      const index = match.index ?? 0;
+      const precedingText = title.slice(Math.max(0, index - 48), index);
+      // Marketplace titles often negate a comma-separated list, for example
+      // "Not WATA, VGA, PSA". Treat those provider mentions as exclusions,
+      // not as positive grader evidence.
+      return !/\b(?:not|no|without|non)\b[^.!?;]{0,48}$/i.test(precedingText);
+    })
+    .map((match) => match[1].toUpperCase());
+}
+
 function hasVideoGameWataPsaEquivalence(title: string, target: string): boolean {
   if (target !== 'PSA' && target !== 'WATA') return false;
-  const providers = [...title.matchAll(new RegExp(certificationProviderPattern.source, 'gi'))]
-    .map((match) => match[1].toUpperCase());
+  const providers = positiveCertificationProviders(title);
   // PSA acquired WATA's video-game grading business. For video games only,
   // either provider is accepted as equivalent evidence; unrelated graders are
   // still treated as explicit conflicts.
@@ -271,12 +283,14 @@ export function filterListingsByCertificationCompany(
   if (!target) return summaries;
   return summaries.filter((item: any) => {
     const title = String(item.title ?? '');
+    const providers = positiveCertificationProviders(title);
     const match = title.match(certificationProviderPattern);
+    const firstPositiveProvider = providers[0] ?? null;
     // Absence is uncertainty, not a contradiction. Keep sparse titles in the
     // evidence ledger as review-only candidates; reject only an explicit,
     // recognized provider that conflicts with the target provider.
-    return !match
-      || match[1].toUpperCase() === target
+    return !match || !firstPositiveProvider
+      || firstPositiveProvider === target
       || (category === 'video_games' && hasVideoGameWataPsaEquivalence(title, target));
   });
 }
@@ -588,6 +602,7 @@ export function annotateSoldComparableCandidate(
     targetNumber: string | null;
     targetPlayer: string | null;
     statedTradeValue?: number | null;
+    visualReviewRequired?: boolean;
     visualReview?: VisualSoldCandidateReview;
   },
 ) {
@@ -618,9 +633,14 @@ export function annotateSoldComparableCandidate(
   if (context.visualReview?.verdict === 'mismatch') {
     reasons.push(`visual comparison flag: ${context.visualReview.rationale || 'manual identity review required'}`);
   }
+  const carriedVisualStatus = context.visualReview?.verdict ?? item?.visualReviewStatus ?? 'not_reviewed';
+  if (context.visualReviewRequired && carriedVisualStatus !== 'match' && carriedVisualStatus !== 'rough_match') {
+    reasons.push(carriedVisualStatus === 'not_reviewed'
+      ? 'visual identity review was required but no completed candidate review was returned; retained for manual review'
+      : `visual identity review did not confirm a match (${carriedVisualStatus}); retained for manual review`);
+  }
   const priceSafety = evaluateSoldCompPriceSafety(context.statedTradeValue, item?.soldPrice ?? item?.price);
   if (priceSafety.reason) reasons.push(priceSafety.reason);
-  const carriedVisualStatus = context.visualReview?.verdict ?? item?.visualReviewStatus ?? 'not_reviewed';
   const carriedVisualRationale = context.visualReview?.rationale ?? item?.visualReviewRationale ?? null;
   const carriedDisposition = item?.evidenceDisposition as SoldComparableDisposition | undefined;
   if (carriedDisposition && carriedDisposition !== 'valuation_eligible') {
@@ -1898,6 +1918,7 @@ export const testAIRouter = router({
           targetNumber,
           targetPlayer: playerName,
           statedTradeValue: input.statedTradeValue,
+          visualReviewRequired: Boolean(safeTargetImage),
           visualReview: reviewByIndex.get(index),
         }));
         const canonicalListings = attachCanonicalProvenance('sold_comps', annotatedListings.map((item: any) => ({

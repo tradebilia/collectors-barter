@@ -67,11 +67,17 @@ describe('Sold-Comps API key validation', () => {
       { title: 'The Legend of Zelda NES WATA PSA 7.5' },
       { title: 'The Legend of Zelda NES WATA 7.5' },
       { title: 'The Legend of Zelda NES VGA 7.5' },
+      { title: 'The Legend of Zelda NES CGC 7.5 Graded 3 Screw Cart Not WATA, VGA, PSA' },
     ];
 
     expect(filterListingsByCertificationCompany(listings, 'PSA', 'video_games')).toEqual([listings[0], listings[1]]);
     expect(filterListingsByCertificationCompany(listings, 'WATA', 'video_games')).toEqual([listings[0], listings[1]]);
     expect(filterListingsByCertificationCompany(listings, 'PSA', 'comics')).toEqual([]);
+  });
+
+  it('does not allow a negated WATA/PSA phrase to override an explicit conflicting grader', () => {
+    const listing = { title: 'The Legend of Zelda NES CGC 7.5 Not WATA, VGA, PSA' };
+    expect(filterListingsByCertificationCompany([listing], 'PSA', 'video_games')).toEqual([]);
   });
 
   it('accepts a comic title that writes the issue as a bare number before CGC', () => {
@@ -156,6 +162,23 @@ describe('Sold-Comps API key validation', () => {
     expect(bundle).toMatchObject({ evidenceDisposition: 'warning_review', lotQuantity: null });
     expect(bundle.evidenceReasons?.[0]).toContain('multi-item lot or bundle');
     expect(counted).toMatchObject({ evidenceDisposition: 'warning_review', lotQuantity: 3 });
+  });
+
+  it('fails closed when an image-bearing Sold-Comps candidate has no completed visual review', () => {
+    const candidate = annotateSoldComparableCandidate(
+      { title: 'The Legend of Zelda NES PSA 7.5', soldPrice: '240', visualReviewStatus: 'not_reviewed' },
+      {
+        category: 'video_games',
+        targetItemType: 'single_item',
+        certificationCompany: 'PSA',
+        targetGrade: 7.5,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+      },
+    );
+    expect(candidate.evidenceDisposition).toBe('warning_review');
+    expect(candidate.evidenceReasons).toContain('visual identity review was required but no completed candidate review was returned; retained for manual review');
   });
 
   it('does not activate the high-value price gate at or below a $10,000 stated trade value', () => {
