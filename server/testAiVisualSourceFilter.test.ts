@@ -142,6 +142,19 @@ describe("visual source filter", () => {
     expect(source).toContain("INDEPENDENT HIGH-RESOLUTION GRADING ADJUDICATION");
     expect(source).toContain("Do not rely on or repeat any preliminary verdict");
     expect(source).toContain("A visible transparent slab plus a grading label and readable grade is graded—not raw");
+    expect(source).toContain('model: needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini"');
+    expect(source).toContain('reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined');
+  });
+
+  it("treats sealed and CIB graded video games as separate forms and fails closed on target-form conflict", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("item form is a mandatory identity gate: sealed, CIB/complete-in-box, boxed-only, loose/raw, and parts-only are distinct comparable cohorts");
+    expect(source).toContain("A candidate label that visibly says CIB is not the same as a target label that visibly says Sealed");
+    expect(source).toContain("target's structured title/details say CIB or Complete in Box while its visible holder label says Sealed");
+    expect(source).toContain("${videoGameFormInstruction(args.targetMetadata)}");
+    expect(source).toContain("VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding");
+    expect(source).toContain("A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge");
+    expect(source).toContain("${focusedVideoGameLabelInstruction(args.targetMetadata)}");
   });
 
   it("pins a one-candidate model response to the candidate that was sent, not its returned index", () => {
