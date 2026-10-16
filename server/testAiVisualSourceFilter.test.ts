@@ -36,6 +36,13 @@ describe("visual source filter", () => {
             verdict: "match",
             confidence: "high",
             rationale: "same object",
+            visualAudit: {
+              imageCount: 1,
+              initialVerdict: "match",
+              initialConfidence: "high",
+              retryStatus: "not_needed",
+              finalPass: "initial",
+            },
           },
           {
             candidateIndex: 1,
@@ -63,7 +70,27 @@ describe("visual source filter", () => {
       visualReviewStatus: "mismatch",
       evidenceDisposition: "warning_review",
     });
+    expect(result.listings[0]).toMatchObject({
+      visualAudit: {
+        imageCount: 1,
+        retryStatus: "not_needed",
+        finalPass: "initial",
+      },
+    });
     expect(result.removedCount).toBe(0);
+  });
+
+  it("records that a graded-title/raw-image candidate requires a high-resolution retry", () => {
+    expect(shouldReviewAdditionalVisualImages({
+      imageCount: 1,
+      title: "Super Mario Bros. 3 NES PSA Graded 9.0 CIB",
+      targetMetadata: "title=Super Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA",
+      review: {
+        verdict: "mismatch",
+        confidence: "high",
+        rationale: "The candidate image shows a loose, un-slabbed cartridge with no holder or visible grade.",
+      },
+    })).toBe(true);
   });
 
   it("downgrades broad comic visual matches when exact issue or cover evidence is absent", () => {

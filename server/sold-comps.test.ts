@@ -181,6 +181,55 @@ describe('Sold-Comps API key validation', () => {
     expect(candidate.evidenceReasons).toContain('visual identity review was required but no completed candidate review was returned; retained for manual review');
   });
 
+  it('preserves visual audit provenance from the review into the Sold-Comps listing', () => {
+    const visualAudit = {
+      imageCount: 1,
+      initialVerdict: 'mismatch' as const,
+      initialConfidence: 'high' as const,
+      retryStatus: 'performed' as const,
+      retryReason: 'The title declared a grade while the first pass read the image as raw.',
+      finalPass: 'high_resolution_retry' as const,
+      initialEvidence: {
+        slabVisible: false,
+        gradingLabelVisible: false,
+        graderVisible: false,
+        numericGradeVisible: false,
+        gradeMatches: false,
+        rawOrLooseVisible: true,
+      },
+      finalEvidence: {
+        slabVisible: true,
+        gradingLabelVisible: true,
+        graderVisible: true,
+        numericGradeVisible: true,
+        gradeMatches: true,
+        rawOrLooseVisible: false,
+      },
+    };
+    const candidate = annotateSoldComparableCandidate(
+      { title: 'Super Mario Bros. 3 NES PSA Graded 9.0', soldPrice: '950' },
+      {
+        category: 'video_games',
+        targetItemType: 'single_item',
+        certificationCompany: 'PSA',
+        targetGrade: 9,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+        visualReview: {
+          candidateIndex: 0,
+          verdict: 'match',
+          confidence: 'high',
+          rationale: 'The promoted image clearly shows the matching PSA slab and grade.',
+          visualAudit,
+        },
+      },
+    );
+
+    expect(candidate.visualAudit).toEqual(visualAudit);
+    expect(candidate.visualReviewStatus).toBe('match');
+  });
+
   it('does not activate the high-value price gate at or below a $10,000 stated trade value', () => {
     expect(evaluateSoldCompPriceSafety(10_000, 1)).toMatchObject({ applies: false, status: 'inactive' });
     expect(evaluateSoldCompPriceSafety(1_000, 10_000)).toMatchObject({ applies: false, status: 'inactive' });

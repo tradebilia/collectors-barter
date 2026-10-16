@@ -22,6 +22,16 @@ export type VisualSourceReview = {
   confidence: "high" | "medium" | "low";
   rationale: string;
   visualEvidence?: VisualEvidence;
+  visualAudit?: {
+    imageCount: number;
+    initialVerdict: VisualSourceReview["verdict"] | "no_decision";
+    initialConfidence: VisualSourceReview["confidence"] | "no_decision";
+    retryStatus: "not_needed" | "performed" | "failed";
+    retryReason?: string;
+    finalPass: "initial" | "high_resolution_retry";
+    initialEvidence?: VisualEvidence;
+    finalEvidence?: VisualEvidence;
+  };
 };
 export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   listings: T[];
@@ -50,6 +60,8 @@ export const VISUAL_REVIEW_OVERALL_DEADLINE_MS = 120_000;
 
 const VERDICTS = new Set(["match", "rough_match", "mismatch", "unreadable"]);
 const CONFIDENCES = new Set(["high", "medium", "low"]);
+const RETRY_STATUSES = new Set(["not_needed", "performed", "failed"]);
+const FINAL_PASSES = new Set(["initial", "high_resolution_retry"]);
 
 function safeHttps(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
@@ -143,6 +155,36 @@ export function normalizeVisualSourceReviews(
             numericGradeVisible: row.visualEvidence.numericGradeVisible === true,
             gradeMatches: row.visualEvidence.gradeMatches === true,
             rawOrLooseVisible: row.visualEvidence.rawOrLooseVisible === true,
+          }
+        : undefined,
+      visualAudit: row?.visualAudit && typeof row.visualAudit === "object" && RETRY_STATUSES.has(row.visualAudit.retryStatus) && FINAL_PASSES.has(row.visualAudit.finalPass)
+        ? {
+            imageCount: Number.isInteger(row.visualAudit.imageCount) && row.visualAudit.imageCount >= 0 ? row.visualAudit.imageCount : 0,
+            initialVerdict: VERDICTS.has(row.visualAudit.initialVerdict) ? row.visualAudit.initialVerdict : "no_decision",
+            initialConfidence: CONFIDENCES.has(row.visualAudit.initialConfidence) ? row.visualAudit.initialConfidence : "no_decision",
+            retryStatus: row.visualAudit.retryStatus,
+            retryReason: typeof row.visualAudit.retryReason === "string" ? row.visualAudit.retryReason.trim() : undefined,
+            finalPass: row.visualAudit.finalPass,
+            initialEvidence: row.visualAudit.initialEvidence && typeof row.visualAudit.initialEvidence === "object"
+              ? {
+                  slabVisible: row.visualAudit.initialEvidence.slabVisible === true,
+                  gradingLabelVisible: row.visualAudit.initialEvidence.gradingLabelVisible === true,
+                  graderVisible: row.visualAudit.initialEvidence.graderVisible === true,
+                  numericGradeVisible: row.visualAudit.initialEvidence.numericGradeVisible === true,
+                  gradeMatches: row.visualAudit.initialEvidence.gradeMatches === true,
+                  rawOrLooseVisible: row.visualAudit.initialEvidence.rawOrLooseVisible === true,
+                }
+              : undefined,
+            finalEvidence: row.visualAudit.finalEvidence && typeof row.visualAudit.finalEvidence === "object"
+              ? {
+                  slabVisible: row.visualAudit.finalEvidence.slabVisible === true,
+                  gradingLabelVisible: row.visualAudit.finalEvidence.gradingLabelVisible === true,
+                  graderVisible: row.visualAudit.finalEvidence.graderVisible === true,
+                  numericGradeVisible: row.visualAudit.finalEvidence.numericGradeVisible === true,
+                  gradeMatches: row.visualAudit.finalEvidence.gradeMatches === true,
+                  rawOrLooseVisible: row.visualAudit.finalEvidence.rawOrLooseVisible === true,
+                }
+              : undefined,
           }
         : undefined,
     }))
@@ -362,6 +404,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         ...listing,
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
+        ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
         ...(review.verdict === "mismatch" ? { evidenceDisposition: "warning_review" } : {}),
       } as T;
     }),
@@ -702,7 +745,26 @@ export async function filterVisualSourceCandidates<
         title: String(candidate.item.title ?? ""),
         targetMetadata: args.targetMetadata,
       });
-      if (!needsGalleryReview) return { reviews: primaryReviews, error: null };
+      const initialAudit: NonNullable<VisualSourceReview["visualAudit"]> = {
+        imageCount: candidate.imageUrls.length,
+        initialVerdict: primaryReview?.verdict ?? "no_decision" as const,
+        initialConfidence: primaryReview?.confidence ?? "no_decision" as const,
+        retryStatus: needsGalleryReview ? "performed" as const : "not_needed" as const,
+        retryReason: needsGalleryReview
+          ? "The first pass found an image-evidence uncertainty or a title/visual grading conflict."
+          : undefined,
+        finalPass: "initial" as const,
+        initialEvidence: primaryReview?.visualEvidence,
+        finalEvidence: primaryReview?.visualEvidence,
+      };
+      if (!needsGalleryReview) {
+        return {
+          reviews: primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+            ? { ...review, visualAudit: initialAudit }
+            : review),
+          error: null,
+        };
+      }
 
       const galleryContent: Array<TextContent | ImageContent> = [
         ...content,
@@ -722,9 +784,37 @@ export async function filterVisualSourceCandidates<
           galleryError = error;
         }
       }
-      if (!galleryText.trim()) return { reviews: primaryReviews, error: galleryError ?? null };
+      if (!galleryText.trim()) {
+        return {
+          reviews: primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+            ? {
+                ...review,
+                visualAudit: {
+                  ...initialAudit,
+                  retryStatus: "failed",
+                  retryReason: "The high-resolution retry did not return a usable structured decision; manual image review is required.",
+                  finalPass: "initial",
+                } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
+              }
+            : review),
+          error: galleryError ?? null,
+        };
+      }
       const galleryReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(galleryText), args.listings.length);
-      return { reviews: galleryReviews.length ? galleryReviews : primaryReviews, error: null };
+      const finalReviews = galleryReviews.length ? galleryReviews : primaryReviews;
+      return {
+        reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+          ? {
+              ...review,
+              visualAudit: {
+                ...initialAudit,
+                finalPass: galleryReviews.length ? "high_resolution_retry" : "initial",
+                finalEvidence: review.visualEvidence,
+              } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
+            }
+          : review),
+        error: null,
+      };
       }));
       for (const result of batchResults) {
         reviews.push(...result.reviews);

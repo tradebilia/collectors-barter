@@ -32,8 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import type { VisualSoldCandidateReview } from './testAiVisualSoldFilter';
-import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
@@ -607,7 +606,7 @@ export function annotateSoldComparableCandidate(
     targetPlayer: string | null;
     statedTradeValue?: number | null;
     visualReviewRequired?: boolean;
-    visualReview?: VisualSoldCandidateReview;
+    visualReview?: VisualSourceReview;
   },
 ) {
   const title = String(item?.title ?? '');
@@ -661,6 +660,10 @@ export function annotateSoldComparableCandidate(
     lotQuantity: item?.lotQuantity ?? lotQuantity,
     visualReviewStatus: carriedVisualStatus,
     visualReviewRationale: carriedVisualRationale,
+    // Preserve first-pass/retry provenance for the Evidence Review UI. The
+    // visual filter creates this audit object, but the Sold-Comps annotation
+    // layer must carry it forward into the returned listing record.
+    visualAudit: context.visualReview?.visualAudit ?? item?.visualAudit ?? null,
   };
 }
 
@@ -1916,7 +1919,7 @@ export const testAIRouter = router({
           };
         }
 
-        const reviewByIndex = new Map<number, VisualSoldCandidateReview>((visualSoldFilter.reviews as VisualSoldCandidateReview[]).map((review) => [review.candidateIndex, review]));
+        const reviewByIndex = new Map<number, VisualSourceReview>((visualSoldFilter.reviews as VisualSourceReview[]).map((review) => [review.candidateIndex, review]));
         const annotatedListings = visuallyFiltered.map((item: any, index: number) => annotateSoldComparableCandidate(item, {
           category: input.category,
           targetItemType: input.itemType || '',
@@ -1975,6 +1978,7 @@ export const testAIRouter = router({
             evidenceReasons: i.evidenceReasons,
             visualReviewStatus: i.visualReviewStatus,
             visualReviewRationale: i.visualReviewRationale,
+            visualAudit: i.visualAudit,
             provenanceToken: i.provenanceToken,
             provenance: i.provenance,
             validationErrors: i.validationErrors,
