@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
@@ -228,6 +230,56 @@ describe('Sold-Comps API key validation', () => {
 
     expect(candidate.visualAudit).toEqual(visualAudit);
     expect(candidate.visualReviewStatus).toBe('match');
+  });
+
+  it('keeps a visual decision bound to its provider record after declared conflicts compact the visible list', () => {
+    const recordBoundAudit = {
+      imageCount: 1,
+      initialVerdict: 'mismatch' as const,
+      initialConfidence: 'high' as const,
+      retryStatus: 'performed' as const,
+      finalPass: 'high_resolution_retry' as const,
+    };
+    const candidate = annotateSoldComparableCandidate(
+      {
+        title: 'Super Mario Bros. 3 NES PSA Graded 9.0 CIB',
+        soldPrice: '950',
+        // This is the decision already attached by the shared visual filter
+        // to the original provider listing before unrelated conflict rows are
+        // removed from the visible result set.
+        visualReviewStatus: 'mismatch',
+        visualReviewRationale: 'Both PSA labels are visible, but the candidate label says CIB while the target label says Sealed A.',
+        visualAudit: recordBoundAudit,
+      },
+      {
+        category: 'video_games',
+        targetItemType: 'single_item',
+        certificationCompany: 'PSA',
+        targetGrade: 9,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+        // Simulates a neighbouring record's result if a caller incorrectly
+        // reuses a post-filter display index. The listing-bound decision must
+        // win and cannot be overwritten by this fallback.
+        visualReview: {
+          candidateIndex: 0,
+          verdict: 'match',
+          confidence: 'high',
+          rationale: 'Unrelated neighbouring listing.',
+        },
+      },
+    );
+
+    expect(candidate).toMatchObject({
+      visualReviewStatus: 'mismatch',
+      visualReviewRationale: 'Both PSA labels are visible, but the candidate label says CIB while the target label says Sealed A.',
+      visualAudit: recordBoundAudit,
+    });
+    expect(candidate.evidenceReasons).toContain('visual comparison flag: Both PSA labels are visible, but the candidate label says CIB while the target label says Sealed A.');
+
+    const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
+    expect(routerSource).not.toContain('visualReview: reviewByIndex.get(index)');
   });
 
   it('does not activate the high-value price gate at or below a $10,000 stated trade value', () => {

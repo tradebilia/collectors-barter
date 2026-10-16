@@ -615,6 +615,15 @@ export function annotateSoldComparableCandidate(
   const observedProvider = title.match(certificationProviderPattern)?.[1] ?? null;
   const observedGrade = extractGradeFromTitle(title);
   const lotQuantity = extractSoldCompLotQuantity(title);
+  // The shared visual filter attaches a review directly to the original
+  // provider record before declared-conflict rows are hidden. That carried
+  // record is therefore authoritative here. A positional review passed by a
+  // caller is only a legacy fallback for an item that has no bound review.
+  // Reusing a review by the compacted display index can attach a neighbour's
+  // image decision after conflict rows have been removed.
+  const carriedVisualStatus = item?.visualReviewStatus ?? context.visualReview?.verdict ?? 'not_reviewed';
+  const carriedVisualRationale = item?.visualReviewRationale ?? context.visualReview?.rationale ?? null;
+  const carriedVisualAudit = item?.visualAudit ?? context.visualReview?.visualAudit ?? null;
 
   if (hasExplicitSoldCompLot(title)) {
     reasons.push(lotQuantity
@@ -633,10 +642,9 @@ export function annotateSoldComparableCandidate(
   if (context.category === 'sports_cards' && surname && !new RegExp(`\\b${surname.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i').test(title)) {
     reasons.push('player surname is not stated in the marketplace title');
   }
-  if (context.visualReview?.verdict === 'mismatch') {
-    reasons.push(`visual comparison flag: ${context.visualReview.rationale || 'manual identity review required'}`);
+  if (carriedVisualStatus === 'mismatch') {
+    reasons.push(`visual comparison flag: ${carriedVisualRationale || 'manual identity review required'}`);
   }
-  const carriedVisualStatus = context.visualReview?.verdict ?? item?.visualReviewStatus ?? 'not_reviewed';
   if (context.visualReviewRequired && carriedVisualStatus !== 'match' && carriedVisualStatus !== 'rough_match') {
     reasons.push(carriedVisualStatus === 'not_reviewed'
       ? 'visual identity review was required but no completed candidate review was returned; retained for manual review'
@@ -644,7 +652,6 @@ export function annotateSoldComparableCandidate(
   }
   const priceSafety = evaluateSoldCompPriceSafety(context.statedTradeValue, item?.soldPrice ?? item?.price);
   if (priceSafety.reason) reasons.push(priceSafety.reason);
-  const carriedVisualRationale = context.visualReview?.rationale ?? item?.visualReviewRationale ?? null;
   const carriedDisposition = item?.evidenceDisposition as SoldComparableDisposition | undefined;
   if (carriedDisposition && carriedDisposition !== 'valuation_eligible') {
     reasons.push(`source visual/evidence disposition retained: ${carriedDisposition}`);
@@ -663,7 +670,7 @@ export function annotateSoldComparableCandidate(
     // Preserve first-pass/retry provenance for the Evidence Review UI. The
     // visual filter creates this audit object, but the Sold-Comps annotation
     // layer must carry it forward into the returned listing record.
-    visualAudit: context.visualReview?.visualAudit ?? item?.visualAudit ?? null,
+    visualAudit: carriedVisualAudit,
   };
 }
 
@@ -1919,7 +1926,6 @@ export const testAIRouter = router({
           };
         }
 
-        const reviewByIndex = new Map<number, VisualSourceReview>((visualSoldFilter.reviews as VisualSourceReview[]).map((review) => [review.candidateIndex, review]));
         const annotatedListings = visuallyFiltered.map((item: any, index: number) => annotateSoldComparableCandidate(item, {
           category: input.category,
           targetItemType: input.itemType || '',
@@ -1929,7 +1935,6 @@ export const testAIRouter = router({
           targetPlayer: playerName,
           statedTradeValue: input.statedTradeValue,
           visualReviewRequired: Boolean(safeTargetImage),
-          visualReview: reviewByIndex.get(index),
         }));
         const canonicalListings = attachCanonicalProvenance('sold_comps', annotatedListings.map((item: any) => ({
           ...item,
