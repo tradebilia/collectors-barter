@@ -7,8 +7,11 @@ import {
   buildDeclaredIdentityReviews,
   conservativeComicVisualReviews,
   conservativeGradedVisualReviews,
+  embedPromotedEbayImageForReview,
   hasExplicitlyUngradedTarget,
+  hasTitleDeclaredGradeVisualRawConflict,
   normalizeExplicitUngradedVisualReviews,
+  normalizeSingleCandidateVisualReview,
   normalizeVisualSourceReviews,
   promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
@@ -25,6 +28,25 @@ describe("visual source filter", () => {
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
     expect(promoteEbayImageUrl("https://i.ebayimg.com/images/g/abc/s-l500.jpg")).toBe("https://i.ebayimg.com/images/g/abc/s-l1600.jpg");
     expect(promoteEbayImageUrl("https://example.com/image-s-l500.jpg")).toBe("https://example.com/image-s-l500.jpg");
+  });
+
+  it("embeds only a bounded promoted eBay image for a focused grading retry", async () => {
+    const fetchCalls: string[] = [];
+    const fetchImpl: typeof fetch = async (input) => {
+      fetchCalls.push(String(input));
+      return new Response(new Uint8Array([1, 2, 3, 4]), {
+        status: 200,
+        headers: { "content-type": "image/webp", "content-length": "4" },
+      });
+    };
+    const embedded = await embedPromotedEbayImageForReview(
+      "https://i.ebayimg.com/images/g/abc/s-l140.webp",
+      fetchImpl,
+    );
+    expect(fetchCalls).toEqual(["https://i.ebayimg.com/images/g/abc/s-l1600.webp"]);
+    expect(embedded).toBe("data:image/webp;base64,AQIDBA==");
+    expect(await embedPromotedEbayImageForReview("https://example.com/s-l140.webp", fetchImpl)).toBeNull();
+    expect(fetchCalls).toHaveLength(1);
   });
 
   it("retains high-confidence visual mismatches as review evidence", () => {
@@ -80,7 +102,7 @@ describe("visual source filter", () => {
     expect(result.removedCount).toBe(0);
   });
 
-  it("records that a graded-title/raw-image candidate requires a high-resolution retry", () => {
+  it("records that a graded-target mismatch requires a high-resolution retry", () => {
     expect(shouldReviewAdditionalVisualImages({
       imageCount: 1,
       title: "Super Mario Bros. 3 NES PSA Graded 9.0 CIB",
@@ -91,6 +113,86 @@ describe("visual source filter", () => {
         rationale: "The candidate image shows a loose, un-slabbed cartridge with no holder or visible grade.",
       },
     })).toBe(true);
+  });
+
+  it("requires a focused escalation for every initial mismatch against a graded target", () => {
+    const args = {
+      title: "Mario Bros. 3 NES Nintendo Game PSA Graded 9.0 CIB Complete In Box Oval Seal",
+      targetMetadata: "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA",
+      review: {
+        verdict: "mismatch" as const,
+        confidence: "high" as const,
+        rationale: "The preliminary image review calls the candidate loose and un-slabbed with no visible grade.",
+      },
+    };
+    expect(hasTitleDeclaredGradeVisualRawConflict(args)).toBe(true);
+    expect(hasTitleDeclaredGradeVisualRawConflict({ ...args, title: "Mario Bros. 3 NES CIB" })).toBe(true);
+    expect(hasTitleDeclaredGradeVisualRawConflict({
+      ...args,
+      review: { ...args.review, rationale: "The preliminary image review reports a different cover treatment." },
+    })).toBe(true);
+    expect(hasTitleDeclaredGradeVisualRawConflict({
+      ...args,
+      targetMetadata: "title=Mario Bros. 3 NES; category=video_games; isGraded=No",
+    })).toBe(false);
+  });
+
+  it("uses an independent high-resolution grading adjudication instead of anchoring on the first-pass result", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("INDEPENDENT HIGH-RESOLUTION GRADING ADJUDICATION");
+    expect(source).toContain("Do not rely on or repeat any preliminary verdict");
+    expect(source).toContain("A visible transparent slab plus a grading label and readable grade is graded—not raw");
+  });
+
+  it("pins a one-candidate model response to the candidate that was sent, not its returned index", () => {
+    const reviews = normalizeSingleCandidateVisualReview(
+      {
+        reviews: [{
+          // Simulates a malformed model index while reviewing the PSA 9.0
+          // listing at index 13.
+          candidateIndex: 999,
+          verdict: "match",
+          confidence: "high",
+          rationale: "Visible PSA slab and readable 9.0 label match the target.",
+          visualEvidence: {
+            slabVisible: true,
+            gradingLabelVisible: true,
+            graderVisible: true,
+            numericGradeVisible: true,
+            gradeMatches: true,
+            rawOrLooseVisible: false,
+          },
+        }],
+      },
+      14,
+      13,
+    );
+
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]).toMatchObject({ candidateIndex: 13, verdict: "match" });
+    const listings = Array.from({ length: 14 }, (_, index) => ({ title: `candidate ${index}` }));
+    const result = applyVisualSourceReviews(listings, reviews, 14);
+    expect(result.listings[0]).not.toHaveProperty("visualReviewStatus");
+    expect(result.listings[13]).toMatchObject({ visualReviewStatus: "match" });
+  });
+
+  it("uses original listing indexes after candidates without images are removed from the vision queue", () => {
+    const listings = [
+      { title: "No provider image" },
+      { title: "Mario Bros. 3 NES PSA Graded 9.0 CIB" },
+    ];
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 1,
+        verdict: "mismatch",
+        confidence: "high",
+        rationale: "Candidate appears raw and un-slabbed with no visible PSA label or numeric grade.",
+      },
+    ], listings, "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
+    expect(result[0]).toMatchObject({ candidateIndex: 1, verdict: "unreadable", confidence: "low" });
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("buildDeclaredIdentityReviews(\n      args.listings");
+    expect(source).toContain("conservativeGradedVisualReviews(\n          conservativeComicVisualReviews(reviews, args.listings");
   });
 
   it("downgrades broad comic visual matches when exact issue or cover evidence is absent", () => {
@@ -285,7 +387,7 @@ describe("visual source filter", () => {
     })).toBe(false);
   });
 
-  it("escalates a title-declared graded candidate when the first image is interpreted as raw", () => {
+  it("escalates a graded target when the first image is interpreted as raw", () => {
     expect(shouldReviewAdditionalVisualImages({
       imageCount: 3,
       title: "Mario Bros. 3 NES PSA Graded 9.0 CIB",
@@ -311,7 +413,7 @@ describe("visual source filter", () => {
       title: "Mario Bros. 3 NES Nintendo Game",
       targetMetadata: "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA",
       review: { verdict: "mismatch", confidence: "high", rationale: "Candidate appears raw and un-slabbed." },
-    })).toBe(false);
+    })).toBe(true);
   });
 
   it("preserves long visual explanations instead of cutting them off at 240 characters", () => {

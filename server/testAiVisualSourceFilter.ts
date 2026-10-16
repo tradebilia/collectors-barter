@@ -86,6 +86,52 @@ export function promoteEbayImageUrl(value: unknown): string | null {
   }
 }
 
+const EMBEDDED_EBAY_REVIEW_IMAGE_MAX_BYTES = 2_000_000;
+const EMBEDDED_EBAY_REVIEW_IMAGE_TIMEOUT_MS = 6_000;
+
+/**
+ * The provider thumbnail and its promoted URL can resolve differently for a
+ * downstream vision fetch. For a narrow, grading-conflict retry, embed the
+ * already-promoted eBay image bytes so the model receives the exact pixels
+ * inspected by the server. Non-eBay URLs stay remote to avoid broadening the
+ * server-side fetch surface.
+ */
+export async function embedPromotedEbayImageForReview(
+  value: unknown,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string | null> {
+  const promoted = promoteEbayImageUrl(value);
+  if (!promoted) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(promoted);
+  } catch {
+    return null;
+  }
+  if (!/(?:^|\.)ebayimg\.com$/i.test(parsed.hostname)) return null;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), EMBEDDED_EBAY_REVIEW_IMAGE_TIMEOUT_MS);
+  try {
+    const response = await fetchImpl(promoted, {
+      signal: controller.signal,
+      redirect: "error",
+    });
+    if (!response.ok) return null;
+    const contentType = response.headers.get("content-type")?.split(";", 1)[0]?.trim().toLowerCase();
+    if (!contentType || !/^image\/(?:jpeg|jpg|png|webp)$/i.test(contentType)) return null;
+    const declaredLength = Number(response.headers.get("content-length") ?? 0);
+    if (Number.isFinite(declaredLength) && declaredLength > EMBEDDED_EBAY_REVIEW_IMAGE_MAX_BYTES) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (!bytes.length || bytes.byteLength > EMBEDDED_EBAY_REVIEW_IMAGE_MAX_BYTES) return null;
+    return `data:${contentType};base64,${Buffer.from(bytes).toString("base64")}`;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 class VisualReviewTimeoutError extends Error {
   constructor(message: string) {
     super(message);
@@ -111,22 +157,35 @@ async function invokeVisualReview(
   }
 }
 
-export function shouldReviewAdditionalVisualImages(args: {
+type GradingConflictArgs = {
   imageCount: number;
   review?: Pick<VisualSourceReview, "verdict" | "confidence" | "rationale">;
   title?: string | null;
   targetMetadata: string;
-}): boolean {
+};
+
+export function hasTitleDeclaredGradeVisualRawConflict(args: Omit<GradingConflictArgs, "imageCount">): boolean {
+  if (!args.review) return false;
+  const targetIsGraded = !hasExplicitlyUngradedTarget(args.targetMetadata) && /(?:^|;)\s*(?:grade|certificationCompany)=[^;]+/i.test(args.targetMetadata) && !/(?:^|;)\s*(?:grade|certificationCompany)=(?:unknown|raw|ungraded|none|n\/a)\s*(?:;|$)/i.test(args.targetMetadata);
+  // A first-pass mismatch for a graded target is not final until a focused
+  // high-resolution pass checks the holder, label, grader, and grade. We do
+  // not rely on a marketplace title or model wording to activate this: those
+  // fields can be omitted, stale, or attached to a different provider card.
+  // The retry remains one extra bounded call and still fails closed.
+  return targetIsGraded && args.review.verdict === "mismatch";
+}
+
+export function shouldReviewAdditionalVisualImages(args: GradingConflictArgs): boolean {
   if (args.imageCount <= 0 || !args.review) return false;
   const targetIsGraded = !hasExplicitlyUngradedTarget(args.targetMetadata) && /(?:^|;)\s*(?:grade|certificationCompany)=[^;]+/i.test(args.targetMetadata) && !/(?:^|;)\s*(?:grade|certificationCompany)=(?:unknown|raw|ungraded|none|n\/a)\s*(?:;|$)/i.test(args.targetMetadata);
   const titleHasGrade = /\b(?:grade|graded|score|rating)\s*(?:is|of|:)?\s*\d{1,3}(?:\.\d+)?\b|\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*\d{1,3}(?:\.\d+)?\b/i.test(String(args.title ?? ""));
   const uncertainty = /\b(?:unreadable|unclear|obscured|not visible|not readable|cannot (?:see|read|confirm)|can't (?:see|read|confirm)|unable to confirm|conflicting|low[- ]confidence|manual review)\b/i.test(args.review.rationale);
-  const gradedRawConflict = targetIsGraded && /\b(?:raw|ungraded|loose|un[- ]slabbed|no slab|no holder|no certification|no grade|grade (?:is )?not visible)\b/i.test(args.review.rationale);
+  const gradedRawConflict = hasTitleDeclaredGradeVisualRawConflict(args);
   const unresolvedLabelField = explicitTargetLabelFields(args.targetMetadata).some((field) => !labelFieldEvidence(String(args.title ?? ""), args.review!.rationale, field.value));
-  // A single provider thumbnail still deserves one promoted high-resolution
-  // retry when its title declares a grade but the first pass calls it raw.
-  // Ordinary one-image candidates retain the existing single-pass behavior.
-  if (args.imageCount <= 1) return targetIsGraded && titleHasGrade && gradedRawConflict;
+  // A single provider image still receives one promoted high-resolution retry
+  // for a graded-target mismatch. Ordinary one-image candidates retain the
+  // existing single-pass behavior.
+  if (args.imageCount <= 1) return gradedRawConflict;
   return args.review.verdict === "unreadable" || args.review.confidence === "low" || uncertainty || gradedRawConflict || (targetIsGraded && !titleHasGrade) || unresolvedLabelField;
 }
 
@@ -201,6 +260,29 @@ export function normalizeVisualSourceReviews(
       (row: VisualSourceReview, index: number, all: VisualSourceReview[]) =>
         all.findIndex((other: VisualSourceReview) => other.candidateIndex === row.candidateIndex) === index
     );
+}
+
+/**
+ * Each LLM request in the bounded review loop contains exactly one candidate.
+ * Its returned candidateIndex is therefore untrusted presentation metadata,
+ * not an identity key. Pin the selected response to the candidate actually
+ * sent to vision, preventing a malformed index from crossing two listings.
+ */
+export function normalizeSingleCandidateVisualReview(
+  payload: unknown,
+  listingCount: number,
+  expectedCandidateIndex: number,
+): VisualSourceReview[] {
+  const rawRows = Array.isArray((payload as { reviews?: unknown })?.reviews)
+    ? (payload as { reviews: unknown[] }).reviews
+    : [];
+  // Do not let a malformed, stale, or out-of-range model index discard an
+  // otherwise valid review. The request itself is the authoritative binding.
+  const reviews = normalizeVisualSourceReviews(
+    { reviews: rawRows.map((row) => ({ ...(row as Record<string, unknown>), candidateIndex: expectedCandidateIndex })) },
+    listingCount,
+  );
+  return reviews.slice(0, 1);
 }
 
 function isComicMetadata(metadata: string): boolean {
@@ -688,7 +770,7 @@ export async function filterVisualSourceCandidates<
     // candidates to vision in the first pass. This bounds latency without
     // turning an omitted image review into an implicit acceptance.
     const declaredReviews = buildDeclaredIdentityReviews(
-      candidates.map(candidate => candidate.item),
+      args.listings,
       args.targetMetadata,
     );
     const reviewQueue = prioritizeVisualSourceCandidates(candidates, args.targetMetadata, declaredReviews);
@@ -737,7 +819,11 @@ export async function filterVisualSourceCandidates<
         }
       }
       if (!text.trim()) return { reviews: [] as VisualSourceReview[], error: candidateError };
-      const primaryReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(text), args.listings.length);
+      const primaryReviews = normalizeSingleCandidateVisualReview(
+        parseAnalyzerResponse(text),
+        args.listings.length,
+        candidate.candidateIndex,
+      );
       const primaryReview = primaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
       const needsGalleryReview = shouldReviewAdditionalVisualImages({
         imageCount: candidate.imageUrls.length,
@@ -745,13 +831,24 @@ export async function filterVisualSourceCandidates<
         title: String(candidate.item.title ?? ""),
         targetMetadata: args.targetMetadata,
       });
+      const needsFocusedGradeEscalation = hasTitleDeclaredGradeVisualRawConflict({
+        review: primaryReview,
+        title: String(candidate.item.title ?? ""),
+        targetMetadata: args.targetMetadata,
+      });
+      const embeddedFocusedCandidateImage = needsFocusedGradeEscalation
+        ? await embedPromotedEbayImageForReview(candidate.imageUrl)
+        : null;
+      const focusedCandidateImage = embeddedFocusedCandidateImage ?? promoteEbayImageUrl(candidate.imageUrl) ?? candidate.imageUrl;
       const initialAudit: NonNullable<VisualSourceReview["visualAudit"]> = {
         imageCount: candidate.imageUrls.length,
         initialVerdict: primaryReview?.verdict ?? "no_decision" as const,
         initialConfidence: primaryReview?.confidence ?? "no_decision" as const,
         retryStatus: needsGalleryReview ? "performed" as const : "not_needed" as const,
         retryReason: needsGalleryReview
-          ? "The first pass found an image-evidence uncertainty or a title/visual grading conflict."
+          ? needsFocusedGradeEscalation
+            ? `The preliminary mismatch involved a graded target, so an independent high-resolution grader check was performed before finalizing the decision${embeddedFocusedCandidateImage ? " using the exact promoted eBay image bytes" : " using the promoted provider image URL"}.`
+            : "The first pass found an image-evidence uncertainty or a title/visual grading conflict."
           : undefined,
         finalPass: "initial" as const,
         initialEvidence: primaryReview?.visualEvidence,
@@ -766,11 +863,23 @@ export async function filterVisualSourceCandidates<
         };
       }
 
-      const galleryContent: Array<TextContent | ImageContent> = [
-        ...content,
-        { type: "text", text: `HIGH-RESOLUTION ESCALATION: Reassess the candidate using the promoted high-resolution primary image${candidate.imageUrls.length > 1 ? " and the additional gallery images" : ""} before finalizing the decision. This second pass is mandatory when the title or metadata indicates a grade but the first image was interpreted as raw, loose, un-slabbed, or missing a visible label/grade. Verify whether a slab/holder, grader, and numeric grade are actually visible before calling graded-versus-raw mismatch. Use the clearest image as the deciding evidence. Do not ignore a clear contradiction; if the high-resolution review remains conflicting or insufficient, return unreadable/manual review and explain the conflict.` },
-        ...candidate.imageUrls.slice(1).map((url) => ({ type: "image_url" as const, image_url: { url: promoteEbayImageUrl(url) ?? url, detail: "high" as const }, })),
-      ];
+      const galleryContent: Array<TextContent | ImageContent> = needsFocusedGradeEscalation
+        ? [
+            {
+              type: "text",
+              text: `INDEPENDENT HIGH-RESOLUTION GRADING ADJUDICATION: Compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Do not rely on or repeat any preliminary verdict. Inspect pixels only and independently determine whether the candidate has a transparent slab/holder, a grading label, a visible grader, a readable numeric grade, and a grade that matches the target metadata. A visible transparent slab plus a grading label and readable grade is graded—not raw—even if the item inside is a cartridge, card, coin, comic, toy, or game. Only call the candidate raw/loose when those visible slab and label signals are absent. The candidate image is supplied as the exact promoted provider image bytes when available; inspect it rather than a displayed thumbnail. Then independently compare the actual product identity, front artwork/cover, packaging, and edition. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. If the grading evidence or identity remains truly unclear, return unreadable rather than guessing. Target metadata: ${args.targetMetadata}`,
+            },
+            { type: "text", text: "TARGET LISTING IMAGE:" },
+            { type: "image_url", image_url: { url: target, detail: "high" } },
+            { type: "text", text: `CANDIDATE ${candidate.candidateIndex} HIGH-RESOLUTION IMAGE:` },
+            { type: "image_url", image_url: { url: focusedCandidateImage, detail: "high" } },
+            ...candidate.imageUrls.slice(1).map((url) => ({ type: "image_url" as const, image_url: { url: promoteEbayImageUrl(url) ?? url, detail: "high" as const }, })),
+          ]
+        : [
+            ...content,
+            { type: "text", text: `HIGH-RESOLUTION ESCALATION: Reassess the candidate using the promoted high-resolution primary image${candidate.imageUrls.length > 1 ? " and the additional gallery images" : ""} before finalizing the decision. This second pass is mandatory when the title or metadata indicates a grade but the first image was interpreted as raw, loose, un-slabbed, or missing a visible label/grade. Verify whether a slab/holder, grader, and numeric grade are actually visible before calling graded-versus-raw mismatch. Use the clearest image as the deciding evidence. Do not ignore a clear contradiction; if the high-resolution review remains conflicting or insufficient, return unreadable/manual review and explain the conflict.` },
+            ...candidate.imageUrls.slice(1).map((url) => ({ type: "image_url" as const, image_url: { url: promoteEbayImageUrl(url) ?? url, detail: "high" as const }, })),
+          ];
       let galleryText = "";
       let galleryError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
@@ -800,7 +909,11 @@ export async function filterVisualSourceCandidates<
           error: galleryError ?? null,
         };
       }
-      const galleryReviews = normalizeVisualSourceReviews(parseAnalyzerResponse(galleryText), args.listings.length);
+      const galleryReviews = normalizeSingleCandidateVisualReview(
+        parseAnalyzerResponse(galleryText),
+        args.listings.length,
+        candidate.candidateIndex,
+      );
       const finalReviews = galleryReviews.length ? galleryReviews : primaryReviews;
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
@@ -828,9 +941,9 @@ export async function filterVisualSourceCandidates<
       }
       if (deadlineReached) break;
       const acceptedMatches = normalizeExplicitUngradedVisualReviews(
-        conservativeGradedVisualReviews(
-          conservativeComicVisualReviews(reviews, candidates.map((candidate) => candidate.item), args.targetMetadata),
-          candidates.map((candidate) => candidate.item),
+          conservativeGradedVisualReviews(
+          conservativeComicVisualReviews(reviews, args.listings, args.targetMetadata),
+          args.listings,
           args.targetMetadata,
         ),
         args.targetMetadata,
@@ -844,10 +957,10 @@ export async function filterVisualSourceCandidates<
       conservativeGradedVisualReviews(
         conservativeComicVisualReviews(
           reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
-          candidates.map((candidate) => candidate.item),
+          args.listings,
           args.targetMetadata,
         ),
-        candidates.map((candidate) => candidate.item),
+        args.listings,
         args.targetMetadata,
       ),
       args.targetMetadata,
