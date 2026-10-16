@@ -124,13 +124,14 @@ describe('Sold-Comps API key validation', () => {
       targetIsGraded: true,
       listings: [
         { title: 'The Legend of Zelda NES Complete Mint Condition', condition: 'Mint', soldPrice: 100 },
+        { title: 'The Legend of Zelda NES Tested Authentic', condition: 'Pre-Owned', soldPrice: 110 },
         { title: 'The Legend of Zelda NES WATA PSA 7.5 CIB', condition: 'Pre-Owned', soldPrice: 450 },
       ],
     });
     expect(result.eligible).toHaveLength(1);
     expect(result.eligible[0].title).toContain('WATA PSA 7.5');
-    expect(result.excluded).toHaveLength(1);
-    expect(result.excluded[0].reasons.join(' ')).toMatch(/condition-only/i);
+    expect(result.excluded).toHaveLength(2);
+    expect(result.excluded.map((entry) => entry.reasons.join(' ')).join(' ')).toMatch(/condition-only/i);
   });
 
   it('does not exclude a candidate when provider metadata is missing', () => {

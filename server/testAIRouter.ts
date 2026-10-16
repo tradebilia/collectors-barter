@@ -323,7 +323,7 @@ export function filterListingsByTargetGradingState(
   return summaries.filter((item: any) => !explicitGradedListingPattern.test(String(item?.title ?? '')));
 }
 
-const conditionOnlyPattern = /\b(?:mint|near mint|very good|excellent|good|acceptable|like new|raw|loose|ungraded)\b/i;
+const conditionOnlyPattern = /\b(?:mint|near mint|very good|excellent|good|acceptable|like new|raw|loose|ungraded|tested)\b/i;
 
 function hasExplicitGradedEvidence(item: any, metadata: Record<string, string>): boolean {
   const title = String(item?.title ?? '');
@@ -335,8 +335,8 @@ function hasConditionOnlyEvidence(item: any): boolean {
   const condition = String(item?.condition ?? '').trim();
   const conditionDescription = String(item?.conditionDescription ?? item?.condition_description ?? '').trim();
   // “Pre-Owned”, “Used”, and “New (Other)” are marketplace states, not proof
-  // that a collectible is raw or incomplete. Only explicit collectible-grade
-  // condition language is considered condition-only evidence here.
+  // that a collectible is raw or incomplete. Explicit condition/operation
+  // language such as “Tested” is condition-only evidence for a graded target.
   return conditionOnlyPattern.test(title)
     || conditionOnlyPattern.test(condition)
     || conditionOnlyPattern.test(conditionDescription);
