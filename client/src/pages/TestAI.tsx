@@ -995,7 +995,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     // A visual-review mutation uses POST, but retain a small explicit candidate
     // DTO so external eBay payload fields cannot expand the review contract.
     listings: Array.isArray(data?.visualReviewListings)
-      ? data.visualReviewListings.slice(0, 50).map((listing: any) => ({
+      ? data.visualReviewListings.slice(0, 30).map((listing: any) => ({
           id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? ''),
           title: String(listing.title ?? ''),
           price: Number(listing.price?.value ?? listing.price) || null,
@@ -1108,7 +1108,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {showingVisualMatchMetrics && <p className="text-[9px] text-emerald-300">✓ Using {visualMatchCount} visually accepted, priced listing{visualMatchCount === 1 ? '' : 's'} only. Red-X mismatches and unresolved images are excluded from these figures.</p>}
       {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
       {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.</p></div>}
-      {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs in batches of 10 (maximum 50 candidates; maximum 2 minutes overall).</p>}
+      {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs in batches of 10 (maximum 30 candidates; maximum 2 minutes overall).</p>}
       {visualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">The AI image review stopped at its safety time limit. Only candidates with a completed visual result can support current-value evidence; the rest remain asking-price context.</p>}
       {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}

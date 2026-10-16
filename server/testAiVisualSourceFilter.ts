@@ -54,7 +54,7 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
 
 export const VISUAL_REVIEW_BATCH_SIZE = 20;
 export const VISUAL_REVIEW_TARGET_MATCHES = 3;
-export const VISUAL_REVIEW_MAX_CANDIDATES = 50;
+export const VISUAL_REVIEW_MAX_CANDIDATES = 30;
 export const VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS = 20_000;
 export const VISUAL_REVIEW_OVERALL_DEADLINE_MS = 120_000;
 

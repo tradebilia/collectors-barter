@@ -520,10 +520,10 @@ describe("visual source filter", () => {
     expect(result.removedCount).toBe(1);
   });
 
-  it("uses adaptive 20-item batches until three matches or the 50-image ceiling", () => {
+  it("uses adaptive 20-item batches until three matches or the 30-image ceiling", () => {
     expect(VISUAL_REVIEW_BATCH_SIZE).toBe(20);
     expect(VISUAL_REVIEW_TARGET_MATCHES).toBe(3);
-    expect(VISUAL_REVIEW_MAX_CANDIDATES).toBe(50);
+    expect(VISUAL_REVIEW_MAX_CANDIDATES).toBe(30);
     const reviews = buildDeclaredIdentityReviews(
       Array.from({ length: 40 }, (_, index) => ({ title: `Comic #2 Fifth Printing ${index}` })),
       "title=Comic #2 CGC 9.8",
@@ -540,8 +540,8 @@ describe("visual source filter", () => {
     const metadata = "title=Edge of Spider-Verse #2 CGC 9.8; category=comics; grade=9.8";
     const declared = buildDeclaredIdentityReviews(candidates.map(candidate => candidate.item), metadata);
     const queue = prioritizeVisualSourceCandidates(candidates, metadata, declared);
-    expect(VISUAL_REVIEW_MAX_CANDIDATES).toBe(50);
-    expect(queue).toHaveLength(50);
+    expect(VISUAL_REVIEW_MAX_CANDIDATES).toBe(30);
+    expect(queue).toHaveLength(30);
     expect(queue.some(candidate => candidate.candidateIndex === 59)).toBe(false);
     expect(candidates).toHaveLength(60);
   });

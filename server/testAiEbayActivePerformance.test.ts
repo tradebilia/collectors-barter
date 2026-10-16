@@ -84,7 +84,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useMutation");
     expect(pageSource).toContain("visualReviewMutation.mutateAsync");
     expect(pageSource).toContain("data?.visualReviewListings");
-    expect(pageSource).toContain("data.visualReviewListings.slice(0, 50)");
+    expect(pageSource).toContain("data.visualReviewListings.slice(0, 30)");
     expect(pageSource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");

@@ -111,7 +111,7 @@ Move to **P1 performance and maintainability** only after discussing the specifi
 
 ## Recent validated Test AI safeguards — October 12, 2026
 
-Adaptive visual review uses batches of 20, stops after 3 accepted visual matches, and has a hard 50-image maximum. Mismatches and unreviewed candidates remain visible as context/manual-review evidence.
+Adaptive visual review uses batches of 20, stops after 3 accepted visual matches, and has a hard 30-image maximum. Matching grader-and-grade title candidates are prioritized before this cap is applied. Mismatches and unreviewed candidates remain visible as context/manual-review evidence.
 
 The Sold-Comps panel has a dedicated **Accepted for valuation candidates** section showing only completed eBay records already marked `evidenceDisposition: valuation_eligible` with a positive price. This is source-gate acceptance, not a guarantee of final analyzer comparable selection.
 
@@ -183,7 +183,8 @@ Validation for this change: focused eBay/UI/visual-filter regressions 66/66 pass
 
 ## eBay Active visual-review POST transport repair — October 14, 2026
 
-The separate `reviewEbayVisualData` operation must remain a tRPC **mutation**. The project’s ordinary query transport intentionally limits GET URLs to 2,000 characters; image-review candidates, gallery URLs, and target metadata can exceed that limit even in a batch of ten, causing the client-only error `Input is too big for a single dispatch` before the server or vision model can run. The review operation therefore uses POST with an explicit compact candidate DTO (primary image plus at most two additional gallery images), preserving the existing maximum of 50 candidates, adaptive three-match stop, and one shared 120-second deadline. It must not be converted back to a query or widened to pass opaque eBay response fields.
+The separate `reviewEbayVisualData` operation must remain a tRPC **mutation**. The project’s ordinary query transport intentionally limits GET URLs to 2,000 characters; image-review candidates, gallery URLs, and target metadata can exceed that limit even in a batch of ten, causing the client-only error `Input is too big for a single dispatch` before the server or vision model can run. The review operation therefore uses POST with an explicit compact candidate DTO (primary image plus at most
+two additional gallery images), preserving the existing maximum of 30 candidates, adaptive three-match stop, and one shared 120-second deadline. It must not be converted back to a query or widened to pass opaque eBay response fields.
 
 Visual verification in the isolated WebDev preview used the saved Transformers Megatron G1 AFA 60 item: the eBay response was received, the POST review completed for 10 candidates, 1 visually matched current-value record and 9 visible mismatches were rendered, and the expandable **View image checks** panel displayed the individual results. No database writes, migrations, credentials, provider configuration changes, or public publication were performed.
 
