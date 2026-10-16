@@ -10,7 +10,6 @@ import {
 } from "./testAIRouter";
 import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
 import { assessSoldCompsPreVisionCandidates } from "./testAIRouter";
-import { filterVisibleActiveCandidates } from "../shared/testAiMarketplaceDisplay";
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
@@ -26,20 +25,6 @@ function procedureSource(name: string, nextMarker: string): string {
 }
 
 describe("Test AI eBay active-listing responsiveness", () => {
-  it("hides pre-vision-excluded and Tested candidates from graded-target display and review", () => {
-    const visible = filterVisibleActiveCandidates([
-      { title: "Grand Theft Auto Vice City PS2 Tested", evidenceDisposition: null },
-      { title: "Grand Theft Auto Vice City PS2 PSA 9.8", evidenceDisposition: null },
-      { title: "Grand Theft Auto Vice City PS2 WATA 9.8", evidenceDisposition: null },
-      { title: "Grand Theft Auto Vice City PS2", evidenceDisposition: "pre_vision_excluded" },
-    ], true);
-    expect(visible.map((listing) => listing.title)).toEqual([
-      "Grand Theft Auto Vice City PS2 PSA 9.8",
-      "Grand Theft Auto Vice City PS2 WATA 9.8",
-    ]);
-    expect(filterVisibleActiveCandidates([{ title: "Resident Evil 2 PS2 Tested" }], false)).toHaveLength(1);
-  });
-
   it("reports auction bid fields without treating them as completed-sale evidence", () => {
     const metrics = computeMetrics([
       { id: 'fixed-1', price: { value: '100' }, buyingOptions: ['FIXED_PRICE'] },
@@ -126,14 +111,11 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useMutation");
     expect(pageSource).toContain("visualReviewMutation.mutateAsync");
     expect(pageSource).toContain("data?.visualReviewListings");
-    expect(pageSource).toContain("filterVisibleActiveCandidates(data.visualReviewListings, targetIsGraded).slice(0, 30)");
+    expect(pageSource).toContain("data.visualReviewListings.slice(0, 30)");
     expect(pageSource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
-    expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error");
-    expect(pageSource).toContain("filterVisibleActiveCandidates(data.visualReviewListings, targetIsGraded)");
-    expect(pageSource).toContain("preVisionFilter: visualReviewData.preVisionFilter ?? data?.preVisionFilter");
-    expect(pageSource).toContain("No eligible active listings remain after the metadata safety filters.");
+    expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
     expect(pageSource).toContain("active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison");

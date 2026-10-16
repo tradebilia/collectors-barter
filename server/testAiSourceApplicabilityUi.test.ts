@@ -17,6 +17,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'sports cards:ebay_active': 'match'");
     expect(source).toContain("'vintage toys:ebay_active': 'match'");
     expect(source).toContain("'vintage toys:sold_comps': 'match'");
+    expect(source).toContain("'video games:ebay_active': 'match'");
     expect(source).toContain("'video games:sold_comps': 'match'");
     expect(source).toContain("'sports cards:the_card_api': 'match'");
     expect(source).toContain("id: 'comc_parse'");
@@ -44,6 +45,11 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('!SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id)');
     expect(source).toContain('SANDBOX_SPECIALIST_SOURCES');
     expect(source).toContain("source.id !== 'ngc' && !isSandboxSiteBlockedSource(source.id)");
+  });
+
+  it('counts pending category/source items separately when the same API serves multiple categories', () => {
+    expect(source).toContain('categories.reduce((total, entry) => total + entry.pendingSourceIds.length, 0)');
+    expect(source).not.toContain('new Set(categories.flatMap((entry) => entry.pendingSourceIds)).size');
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
