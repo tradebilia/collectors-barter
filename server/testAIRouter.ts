@@ -203,6 +203,12 @@ type ExtractedGrade = number | string;
 function normalizeExtractedGrade(prefix: string | undefined, numeric: string, plus = ''): ExtractedGrade {
   const numberValue = Number(numeric);
   if (!prefix) return Number.isFinite(numberValue) ? numberValue : numeric;
+  // Marketplace titles may name two equivalent graders in a row, for example
+  // "WATA PSA 7.5". The second grader is not a qualified grade prefix; use
+  // the numeric grade used by the target query.
+  if (new RegExp(`^(?:${gradeProviderPattern})$`, 'i').test(prefix)) {
+    return Number.isFinite(numberValue) ? numberValue : numeric;
+  }
   return `${prefix.toUpperCase()}${numeric}${plus}`;
 }
 

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
+import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
@@ -27,6 +27,18 @@ describe('Sold-Comps API key validation', () => {
     expect(normalizeSearchGrade('7.5', 'video_games', 'PSA')).toBe('7.5');
     expect(normalizeSearchGrade('7.50', 'video_games', 'PSA')).toBe('7.5');
     expect(normalizeSearchGrade('7.5', 'sports_cards', 'PSA')).toBe('8');
+  });
+
+  it('parses consecutive equivalent graders as the numeric video-game grade', () => {
+    const title = 'The Legend of Zelda Nintendo 1987 NES CIB Graded WATA PSA 7.5';
+    const listing = { title };
+
+    expect(extractGradeFromTitle(title)).toBe(7.5);
+    expect(filterListingsByGrade([listing], 7.5, 'video_games', 'PSA')).toEqual([listing]);
+  });
+
+  it('preserves qualified coin grades when the token is not another grader', () => {
+    expect(extractGradeFromTitle('1881-S Morgan Dollar PCGS MS65')).toBe('MS65');
   });
 
   it('creates bounded targeted and broader fallback queries', () => {
