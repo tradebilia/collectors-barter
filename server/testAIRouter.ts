@@ -33,6 +33,7 @@ import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFie
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
@@ -347,6 +348,142 @@ export function buildSoldCompsQueryCandidates(query: string, options?: { preserv
     .map(removeOptionalArticles)
     .filter((candidate) => candidate && !baseCandidates.includes(candidate));
   return [...new Set([...baseCandidates, ...articleAliases])];
+}
+
+type SoldCompsPreVisionAssessment = {
+  item: any;
+  metadata: Record<string, string>;
+  reasons: string[];
+  excluded: boolean;
+};
+
+function normalizedSoldCompsField(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function addSoldCompsSpecific(target: Record<string, string>, rawKey: unknown, rawValue: unknown): void {
+  const key = normalizedSoldCompsField(rawKey);
+  const value = Array.isArray(rawValue) ? rawValue.map((entry) => String(entry ?? '').trim()).filter(Boolean).join(', ') : String(rawValue ?? '').trim();
+  if (!key || !value) return;
+  const canonicalKey = key === 'console' || key === 'system' || key === 'platform' ? 'platform'
+    : key === 'manufacturer' || key === 'maker' ? 'manufacturer'
+      : key === 'brand' ? 'brand'
+        : key === 'set' || key === 'set name' || key === 'series' ? 'setName'
+          : key === 'edition' || key === 'edition name' || key === 'release type' ? 'edition'
+            : key === 'region' || key === 'country of origin' ? 'region'
+              : key === 'language' ? 'language'
+                : key === 'variant' || key === 'variation' || key === 'parallel' || key === 'finish' || key === 'holo type' ? 'variant'
+                  : key === 'packaging' || key === 'package type' || key === 'completeness' ? 'packaging'
+                    : key === 'sealed status' || key === 'seal' ? 'sealedStatus'
+                      : key === 'grader' || key === 'grading company' || key === 'certification company' ? 'gradingCompany'
+                        : key === 'grade' || key === 'professional grade' ? 'grade'
+                          : key === 'sport' ? 'sport'
+                            : key === 'player' || key === 'athlete' ? 'player'
+                              : key === 'card number' || key === 'card no' || key === 'catalog number' || key === 'catalog no' ? 'cardNumber'
+                                : key === 'issue number' || key === 'issue no' ? 'issueNumber'
+                                  : key === 'upc' || key === 'ean' || key === 'barcode' || key === 'gtin' ? 'upc'
+                                    : null;
+  if (!canonicalKey || target[canonicalKey]) return;
+  target[canonicalKey] = value;
+}
+
+function collectSoldCompsSpecifics(value: unknown, target: Record<string, string>): void {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      if (entry && typeof entry === 'object') {
+        const record = entry as Record<string, unknown>;
+        const name = record.name ?? record.Name ?? record.key ?? record.label ?? record.propertyName;
+        const fieldValue = record.value ?? record.Value ?? record.values ?? record.propertyValue;
+        if (name !== undefined && fieldValue !== undefined) addSoldCompsSpecific(target, name, fieldValue);
+        else collectSoldCompsSpecifics(entry, target);
+      }
+    }
+    return;
+  }
+  if (!value || typeof value !== 'object') return;
+  for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
+    if (['itemSpecifics', 'item_specifics', 'specifics', 'aspects', 'itemDetails', 'item_details', 'details'].includes(key)) {
+      collectSoldCompsSpecifics(child, target);
+    } else if (child !== null && typeof child !== 'object') {
+      addSoldCompsSpecific(target, key, child);
+    } else if (Array.isArray(child)) {
+      addSoldCompsSpecific(target, key, child);
+    }
+  }
+}
+
+export function normalizeSoldCompsMetadata(item: any): Record<string, string> {
+  const metadata: Record<string, string> = {};
+  collectSoldCompsSpecifics(item?.itemSpecifics ?? item?.item_specifics ?? item?.specifics ?? item?.aspects ?? item?.itemDetails ?? item?.item_details ?? item?.details, metadata);
+  for (const key of ['platform', 'console', 'system', 'brand', 'manufacturer', 'setName', 'set', 'series', 'edition', 'releaseType', 'region', 'language', 'variant', 'packaging', 'packageType', 'completeness', 'sealedStatus', 'grader', 'gradingCompany', 'certificationCompany', 'grade', 'sport', 'player', 'cardNumber', 'catalogNumber', 'issueNumber', 'upc', 'ean', 'barcode']) {
+    addSoldCompsSpecific(metadata, key, item?.[key]);
+  }
+  return metadata;
+}
+
+function canonicalVideoGamePlatform(value: unknown): string | null {
+  const text = normalizedSoldCompsField(value);
+  if (!text) return null;
+  if (/\b(?:ps1|playstation 1|playstation one|ps one)\b/.test(text)) return 'ps1';
+  if (/\b(?:ps2|playstation 2)\b/.test(text)) return 'ps2';
+  if (/\b(?:ps3|playstation 3)\b/.test(text)) return 'ps3';
+  if (/\b(?:ps4|playstation 4)\b/.test(text)) return 'ps4';
+  if (/\b(?:ps5|playstation 5)\b/.test(text)) return 'ps5';
+  if (/\b(?:nes|nintendo entertainment system)\b/.test(text)) return 'nes';
+  if (/\b(?:snes|super nintendo(?: entertainment system)?)\b/.test(text)) return 'snes';
+  if (/\b(?:n64|nintendo 64)\b/.test(text)) return 'n64';
+  if (/\b(?:game boy color|gbc)\b/.test(text)) return 'gbc';
+  if (/\b(?:game boy advance|gba)\b/.test(text)) return 'gba';
+  if (/\b(?:game boy|gb)\b/.test(text)) return 'gb';
+  if (/\b(?:xbox 360|xbox360)\b/.test(text)) return 'xbox 360';
+  if (/\b(?:xbox one|xboxone)\b/.test(text)) return 'xbox one';
+  if (/\b(?:xbox series x)\b/.test(text)) return 'xbox series x';
+  if (/\b(?:xbox)\b/.test(text)) return 'xbox';
+  if (/\b(?:switch|nintendo switch)\b/.test(text)) return 'switch';
+  return null;
+}
+
+function soldCompsCandidateForMetadataConflict(item: any, metadata: Record<string, string>): any {
+  // Grader equivalence and numeric-grade rules are already handled by the
+  // dedicated Sold-Comps filters. Do not let a raw WATA/PSA provider field
+  // undo the video-game-only equivalence rule.
+  const conflictMetadata = { ...metadata };
+  delete conflictMetadata.gradingCompany;
+  delete conflictMetadata.grade;
+  return { ...item, itemDetails: JSON.stringify(conflictMetadata), certificationCompany: undefined, gradingCompany: undefined };
+}
+
+export function assessSoldCompsPreVisionCandidates(args: {
+  listings: any[];
+  category: string;
+  targetMetadata: string;
+  targetPlatform?: string | null;
+  statedTradeValue?: number | null;
+}): { eligible: any[]; excluded: SoldCompsPreVisionAssessment[] } {
+  const targetPlatform = args.category === 'video_games' ? canonicalVideoGamePlatform(args.targetPlatform) : null;
+  const assessments = args.listings.map((item) => {
+    const metadata = normalizeSoldCompsMetadata(item);
+    const reasons: string[] = [];
+    const conflicts = findMaterialMetadataConflicts(args.targetMetadata, soldCompsCandidateForMetadataConflict(item, metadata));
+    for (const conflict of conflicts) reasons.push(metadataConflictReviewReason([conflict]));
+
+    if (targetPlatform) {
+      const candidatePlatform = canonicalVideoGamePlatform(metadata.platform) ?? canonicalVideoGamePlatform(item?.title);
+      if (candidatePlatform && candidatePlatform !== targetPlatform) {
+        reasons.push(`candidate explicitly declares platform ${candidatePlatform}, but target platform is ${targetPlatform}`);
+      }
+    }
+    if (hasExplicitSoldCompLot(String(item?.title ?? ''))) {
+      reasons.push('candidate is an explicit lot, bundle, multipack, or collection; total price is not directly comparable to one target item');
+    }
+    const priceSafety = evaluateSoldCompPriceSafety(args.statedTradeValue, item?.soldPrice ?? item?.price);
+    if (priceSafety.reason) reasons.push(priceSafety.reason);
+    return { item: { ...item, soldCompsMetadata: metadata }, metadata, reasons, excluded: reasons.length > 0 };
+  });
+  return {
+    eligible: assessments.filter((assessment) => !assessment.excluded).map((assessment) => assessment.item),
+    excluded: assessments.filter((assessment) => assessment.excluded),
+  };
 }
 
 // Filter listings to match the grade from the search query
@@ -1865,6 +2002,31 @@ export const testAIRouter = router({
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
+        const soldCompsTargetMetadata = `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; fullItemDetails=${input.itemDetails ?? '{}'}`;
+        const preVisionAssessment = assessSoldCompsPreVisionCandidates({
+          listings: filtered,
+          category: input.category,
+          targetMetadata: soldCompsTargetMetadata,
+          targetPlatform: input.category === 'video_games' ? resolveTestAiDetailValue(details, 'platform') : null,
+          statedTradeValue: input.statedTradeValue,
+        });
+        const preVisionAuditLedger = preVisionAssessment.excluded.map(({ item, metadata, reasons }) => ({
+          title: item.title,
+          itemUrl: item.url,
+          saleId: item.saleId ?? item.id ?? null,
+          sourceId: item.sourceId ?? 'sold_comps',
+          sourceLabel: item.sourceLabel ?? 'eBay Sold-Comps',
+          retrievalQuery: item.retrievalQuery ?? null,
+          price: Number(item.soldPrice ?? 0),
+          currency: item.soldCurrency ?? null,
+          endedAt: item.endedAt ?? null,
+          soldCompsMetadata: metadata,
+          evidenceDisposition: 'rejected_objective_conflict' as const,
+          evidenceReasons: reasons,
+          visualReviewStatus: 'not_reviewed' as const,
+          visualReviewRationale: 'Excluded before visual review by explicit metadata, lot/bundle, or high-value price-safety evidence.',
+        }));
+
         const stageRows = [
           { rows: byYear, reason: targetYear ? `explicit stated year conflicts with target year ${targetYear}` : 'objective category field conflict' },
           { rows: byNumber, reason: targetNumber ? `explicit stated issue or catalog number conflicts with target ${targetNumber}` : 'objective category field conflict' },
@@ -1893,7 +2055,7 @@ export const testAIRouter = router({
             : null;
         }).filter(Boolean);
 
-        let visuallyFiltered = filtered;
+        let visuallyFiltered = preVisionAssessment.eligible;
         let visualSoldFilter: any = {
           status: 'skipped_no_target_image',
           reviewedCount: 0,
@@ -1917,10 +2079,10 @@ export const testAIRouter = router({
         // non-destructive: every mismatch is retained as warning evidence.
         if (safeTargetImage) {
           const sharedVisualFilter = await filterVisualSourceCandidates({
-            sourceLabel: 'eBay Sold-Comps',
-            targetImageUrl: safeTargetImage,
-            targetMetadata: `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; itemDetails=${input.itemDetails ?? '{}'}`,
-            listings: filtered.map((item: any) => {
+          sourceLabel: 'eBay Sold-Comps',
+          targetImageUrl: safeTargetImage,
+            targetMetadata: soldCompsTargetMetadata,
+            listings: preVisionAssessment.eligible.map((item: any) => {
               const imageUrls = collectEbayImageUrls(item);
               return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
             }),
@@ -1928,7 +2090,14 @@ export const testAIRouter = router({
           visuallyFiltered = sharedVisualFilter.listings;
           visualSoldFilter = {
             ...sharedVisualFilter,
+            preVisualExcludedCount: (sharedVisualFilter.preVisualExcludedCount ?? 0) + preVisionAssessment.excluded.length,
             note: `Sold-Comps visual review: ${sharedVisualFilter.note}`,
+          };
+        } else {
+          visualSoldFilter = {
+            ...visualSoldFilter,
+            preVisualExcludedCount: preVisionAssessment.excluded.length,
+            note: `${visualSoldFilter.note} ${preVisionAssessment.excluded.length} candidate${preVisionAssessment.excluded.length === 1 ? '' : 's'} excluded before vision by explicit metadata, lot/bundle, or high-value price-safety evidence.`,
           };
         }
 
@@ -1987,6 +2156,7 @@ export const testAIRouter = router({
             retrievalQuery: i.retrievalQuery ?? null,
             evidenceDisposition: i.evidenceDisposition,
             evidenceReasons: i.evidenceReasons,
+            soldCompsMetadata: i.soldCompsMetadata,
             visualReviewStatus: i.visualReviewStatus,
             visualReviewRationale: i.visualReviewRationale,
             visualAudit: i.visualAudit,
@@ -2010,7 +2180,7 @@ export const testAIRouter = router({
             warningReview: canonicalListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
             valuationEligible: valuationEligibleListings.length,
             notVisuallyReviewed: canonicalListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length,
-            ledger: [...canonicalListings, ...rawAuditLedger],
+            ledger: [...canonicalListings, ...rawAuditLedger, ...preVisionAuditLedger],
           },
           error: null,
         };

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade } from './testAIRouter';
+import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
@@ -64,6 +64,50 @@ describe('Sold-Comps API key validation', () => {
     expect(queries).toContain('Edge of Spider-Verse #2');
     expect(new Set(queries).size).toBe(queries.length);
     expect(queries.length).toBeLessThanOrEqual(6);
+  });
+
+  it('normalizes Sold-Comps item specifics from common provider shapes', () => {
+    expect(normalizeSoldCompsMetadata({
+      itemSpecifics: [
+        { name: 'Platform', value: 'PlayStation 4' },
+        { name: 'Edition', value: 'Greatest Hits' },
+        { name: 'Region', value: 'NTSC-U/C' },
+      ],
+    })).toMatchObject({ platform: 'PlayStation 4', edition: 'Greatest Hits', region: 'NTSC-U/C' });
+    expect(normalizeSoldCompsMetadata({ aspects: { Platform: 'NES', Completeness: 'CIB' } }))
+      .toMatchObject({ platform: 'NES', packaging: 'CIB' });
+  });
+
+  it('excludes explicit platform conflicts, lots, and high-value outliers before visual review', () => {
+    const targetMetadata = 'title=Resident Evil 2; category=video_games; itemType=single_item; grade=unknown; certificationCompany=unknown; fullItemDetails={"platform":"PS1","edition":"Standard"}';
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata,
+      targetPlatform: 'PS1',
+      statedTradeValue: 20_000,
+      listings: [
+        { title: 'Resident Evil 2 PS4 Greatest Hits', soldPrice: 2_000, itemSpecifics: [{ name: 'Platform', value: 'PlayStation 4' }] },
+        { title: 'Resident Evil 2 PS1 Lot of 2', soldPrice: 5_000 },
+        { title: 'Resident Evil 2 PS1', soldPrice: 1_000 },
+        { title: 'Resident Evil 2 PS1', soldPrice: 6_000 },
+      ],
+    });
+
+    expect(result.eligible).toHaveLength(1);
+    expect(result.eligible[0].soldPrice).toBe(6_000);
+    expect(result.excluded).toHaveLength(3);
+    expect(result.excluded.map((entry) => entry.reasons.join(' ')).join(' ')).toMatch(/platform|lot|25%|250%/i);
+  });
+
+  it('does not exclude a candidate when provider metadata is missing', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata: 'title=Resident Evil 2; category=video_games; itemType=single_item; fullItemDetails={"platform":"PS1"}',
+      targetPlatform: 'PS1',
+      listings: [{ title: 'Resident Evil 2', soldPrice: 90 }],
+    });
+    expect(result.eligible).toHaveLength(1);
+    expect(result.excluded).toHaveLength(0);
   });
 
   it('rejects an explicit wrong grading company while retaining an unstated provider for review', () => {
