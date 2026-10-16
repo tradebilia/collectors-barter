@@ -172,4 +172,25 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(prioritized.some((candidate) => candidate.candidateIndex === 20)).toBe(true);
     expect(prioritized.findIndex((candidate) => candidate.candidateIndex === 20)).toBe(0);
   });
+
+  it("puts an explicit matching grader and grade ahead of weaker exact-tier rows", () => {
+    const candidates = [
+      {
+        candidateIndex: 0,
+        imageUrl: "https://images.example/weak.jpg",
+        item: { title: "Pokemon Silver Version Nintendo Game Boy Color", __tradebiliaQueryTier: 0 },
+      },
+      {
+        candidateIndex: 1,
+        imageUrl: "https://images.example/graded.jpg",
+        item: { title: "Pokemon Silver Version Graded PSA 8.0 CIB Complete In Box Nintendo Game Boy Color", __tradebiliaQueryTier: 1 },
+      },
+    ];
+    const prioritized = prioritizeVisualSourceCandidates(
+      candidates,
+      "title=Pokemon Silver Version; grade=8.0; certificationCompany=PSA; category=video_games",
+      [],
+    );
+    expect(prioritized.map((candidate) => candidate.candidateIndex)).toEqual([1, 0]);
+  });
 });

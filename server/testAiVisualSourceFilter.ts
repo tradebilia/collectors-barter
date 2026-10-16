@@ -636,10 +636,18 @@ function visualPriorityScore<T extends VisualSourceCandidate>(item: T, targetMet
   const titleTokens = new Set(title.split(/[^a-z0-9]+/).filter(token => token.length >= 2));
   const overlap = [...targetTokens].filter(token => titleTokens.has(token)).length;
   const targetGrade = targetMetadata.match(/(?:^|;)\s*grade=([^;]+)/i)?.[1]?.trim().toLowerCase();
-  const normalizedTargetGrade = targetGrade?.match(/\d+(?:\.\d+)?/)?.[0];
-  const gradeMatch = normalizedTargetGrade && new RegExp(`(?:^|[^0-9])(?:q|afa)?\\s*${normalizedTargetGrade.replace('.', '\\.')}(?:\\.0+)?(?:$|[^0-9])`, 'i').test(title) ? 10 : 0;
+  const extractedTargetGrade = targetGrade?.match(/\d+(?:\.\d+)?/)?.[0];
+  const normalizedTargetGrade = extractedTargetGrade && Number.isFinite(Number(extractedTargetGrade))
+    ? String(Number(extractedTargetGrade))
+    : null;
+  const gradeMatch = normalizedTargetGrade && new RegExp(String.raw`(?:^|[^0-9])(?:q|afa)?\s*${normalizedTargetGrade.replace('.', '\\.')}(?:\.0+)?(?:$|[^0-9])`, 'i').test(title) ? 1_000 : 0;
+  const targetGrader = targetMetadata.match(/(?:^|;)\s*certificationCompany=([^;]+)/i)?.[1]?.trim();
+  const normalizedTargetGrader = targetGrader && !/^(?:unknown|none|raw|ungraded|n\/a)$/i.test(targetGrader)
+    ? targetGrader.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+    : null;
+  const graderMatch = normalizedTargetGrader && new RegExp(`\\b${normalizedTargetGrader}\\b`, 'i').test(title) ? 100 : 0;
   const issueMatch = /(?:#|issue\s*)\d+[a-z]?/i.test(targetTitle) && /(?:#|issue\s*)\d+[a-z]?/i.test(title) ? 20 : 0;
-  return overlap + gradeMatch + issueMatch;
+  return overlap + gradeMatch + graderMatch + issueMatch;
 }
 
 function visualQueryTierPriority<T extends VisualSourceCandidate>(item: T): number {
@@ -654,9 +662,11 @@ export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate
   const declaredConflicts = new Set(declaredReviews.filter(review => review.verdict === "mismatch").map(review => review.candidateIndex));
   return candidates
     .filter(candidate => !declaredConflicts.has(candidate.candidateIndex))
-    // Exact-tier results are the strongest evidence of the user's requested
-    // search and must enter the bounded vision window before relaxed tiers.
-    .sort((a, b) => visualQueryTierPriority(b.item) - visualQueryTierPriority(a.item) || visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || a.candidateIndex - b.candidateIndex)
+    // An explicit matching grader and numeric grade in the marketplace title
+    // are the strongest available pre-vision identity signals. They must reach
+    // vision before merely exact-tier rows; otherwise a clearly graded match
+    // can remain outside the bounded review window behind weaker results.
+    .sort((a, b) => visualPriorityScore(b.item, targetMetadata) - visualPriorityScore(a.item, targetMetadata) || visualQueryTierPriority(b.item) - visualQueryTierPriority(a.item) || a.candidateIndex - b.candidateIndex)
     .slice(0, VISUAL_REVIEW_MAX_CANDIDATES);
 }
 
