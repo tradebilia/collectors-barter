@@ -47,6 +47,11 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("source.id !== 'ngc' && !isSandboxSiteBlockedSource(source.id)");
   });
 
+  it('counts pending category/source items separately when the same API serves multiple categories', () => {
+    expect(source).toContain('categories.reduce((total, entry) => total + entry.pendingSourceIds.length, 0)');
+    expect(source).not.toContain('new Set(categories.flatMap((entry) => entry.pendingSourceIds)).size');
+  });
+
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
     expect(source).toContain("label: 'TCGdex Pokémon Catalog'");
     expect(source).toContain("status: 'live' as const");
