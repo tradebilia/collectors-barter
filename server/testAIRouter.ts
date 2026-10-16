@@ -323,6 +323,25 @@ export function filterListingsByTargetGradingState(
   return summaries.filter((item: any) => !explicitGradedListingPattern.test(String(item?.title ?? '')));
 }
 
+const conditionOnlyPattern = /\b(?:mint|near mint|very good|excellent|good|acceptable|like new|raw|loose|ungraded)\b/i;
+
+function hasExplicitGradedEvidence(item: any, metadata: Record<string, string>): boolean {
+  const title = String(item?.title ?? '');
+  return Boolean(metadata.gradingCompany || metadata.grade || explicitGradedListingPattern.test(title));
+}
+
+function hasConditionOnlyEvidence(item: any): boolean {
+  const title = String(item?.title ?? '');
+  const condition = String(item?.condition ?? '').trim();
+  const conditionDescription = String(item?.conditionDescription ?? item?.condition_description ?? '').trim();
+  // “Pre-Owned”, “Used”, and “New (Other)” are marketplace states, not proof
+  // that a collectible is raw or incomplete. Only explicit collectible-grade
+  // condition language is considered condition-only evidence here.
+  return conditionOnlyPattern.test(title)
+    || conditionOnlyPattern.test(condition)
+    || conditionOnlyPattern.test(conditionDescription);
+}
+
 export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean }): string[] {
   const precise = query.trim();
   const withoutGrade = buildEbayBrowseQuery(precise, { preserveGrade: false });
@@ -450,7 +469,17 @@ function soldCompsCandidateForMetadataConflict(item: any, metadata: Record<strin
   const conflictMetadata = { ...metadata };
   delete conflictMetadata.gradingCompany;
   delete conflictMetadata.grade;
-  return { ...item, itemDetails: JSON.stringify(conflictMetadata), certificationCompany: undefined, gradingCompany: undefined };
+  return {
+    ...item,
+    // eBay's generic marketplace condition (for example “Pre-Owned”) is not
+    // packaging/completeness evidence and must not conflict with target CIB.
+    condition: undefined,
+    conditionDescription: undefined,
+    condition_description: undefined,
+    itemDetails: JSON.stringify(conflictMetadata),
+    certificationCompany: undefined,
+    gradingCompany: undefined,
+  };
 }
 
 export function assessSoldCompsPreVisionCandidates(args: {
@@ -458,6 +487,7 @@ export function assessSoldCompsPreVisionCandidates(args: {
   category: string;
   targetMetadata: string;
   targetPlatform?: string | null;
+  targetIsGraded?: boolean;
   statedTradeValue?: number | null;
 }): { eligible: any[]; excluded: SoldCompsPreVisionAssessment[] } {
   const targetPlatform = args.category === 'video_games' ? canonicalVideoGamePlatform(args.targetPlatform) : null;
@@ -472,6 +502,9 @@ export function assessSoldCompsPreVisionCandidates(args: {
       if (candidatePlatform && candidatePlatform !== targetPlatform) {
         reasons.push(`candidate explicitly declares platform ${candidatePlatform}, but target platform is ${targetPlatform}`);
       }
+    }
+    if (args.targetIsGraded && hasConditionOnlyEvidence(item) && !hasExplicitGradedEvidence(item, metadata)) {
+      reasons.push('graded target: candidate has explicit condition-only evidence but no grader or graded-item evidence');
     }
     if (hasExplicitSoldCompLot(String(item?.title ?? ''))) {
       reasons.push('candidate is an explicit lot, bundle, multipack, or collection; total price is not directly comparable to one target item');
@@ -2008,6 +2041,7 @@ export const testAIRouter = router({
           category: input.category,
           targetMetadata: soldCompsTargetMetadata,
           targetPlatform: input.category === 'video_games' ? resolveTestAiDetailValue(details, 'platform') : null,
+          targetIsGraded: targetGrade !== null || Boolean(cert && grade),
           statedTradeValue: input.statedTradeValue,
         });
         const preVisionAuditLedger = preVisionAssessment.excluded.map(({ item, metadata, reasons }) => ({

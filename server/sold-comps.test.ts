@@ -99,6 +99,40 @@ describe('Sold-Comps API key validation', () => {
     expect(result.excluded.map((entry) => entry.reasons.join(' ')).join(' ')).toMatch(/platform|lot|25%|250%/i);
   });
 
+  it('keeps a graded Zelda listing with generic Pre-Owned condition eligible', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata: 'title=The Legend of Zelda; category=video_games; itemType=single_item; grade=7.5; certificationCompany=PSA; fullItemDetails={"platform":"NES"}',
+      targetPlatform: 'NES',
+      targetIsGraded: true,
+      listings: [{
+        title: 'The Legend Of Zelda Nintendo 1987 NES CIB Graded WATA PSA 7.5',
+        condition: 'Pre-Owned',
+        soldPrice: '449.99',
+        saleId: '147394273143',
+      }],
+    });
+    expect(result.eligible).toHaveLength(1);
+    expect(result.excluded).toHaveLength(0);
+  });
+
+  it('excludes condition-only candidates for graded targets but keeps explicit graded evidence', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata: 'title=The Legend of Zelda; category=video_games; grade=7.5; certificationCompany=PSA; fullItemDetails={"platform":"NES"}',
+      targetPlatform: 'NES',
+      targetIsGraded: true,
+      listings: [
+        { title: 'The Legend of Zelda NES Complete Mint Condition', condition: 'Mint', soldPrice: 100 },
+        { title: 'The Legend of Zelda NES WATA PSA 7.5 CIB', condition: 'Pre-Owned', soldPrice: 450 },
+      ],
+    });
+    expect(result.eligible).toHaveLength(1);
+    expect(result.eligible[0].title).toContain('WATA PSA 7.5');
+    expect(result.excluded).toHaveLength(1);
+    expect(result.excluded[0].reasons.join(' ')).toMatch(/condition-only/i);
+  });
+
   it('does not exclude a candidate when provider metadata is missing', () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: 'video_games',
