@@ -263,6 +263,20 @@ describe("visual source filter", () => {
     expect(result[0]).toMatchObject({ verdict: "unreadable", confidence: "low" });
   });
 
+  it("accepts a visually confirmed WATA label as PSA-equivalent for video games", () => {
+    const result = conservativeGradedVisualReviews([
+      {
+        candidateIndex: 0,
+        verdict: "unreadable",
+        confidence: "low",
+        rationale: "The WATA 9.0 label and numeric grade are clearly visible, the sealed game identity and cover art match, there is no raw/loose signal, and the grader conflict is only PSA versus WATA.",
+        visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false },
+      },
+    ], [{ title: "Super Mario Bros. 3 NES WATA 9.0 Sealed" }], "title=Super Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
+    expect(result[0]).toMatchObject({ verdict: "match", confidence: "medium" });
+    expect(result[0].rationale).toContain("PSA and WATA labels are accepted as equivalent grader evidence");
+  });
+
   it("accepts an explicitly confirmed equivalent target qualifier after visual review", () => {
     const metadata = `title=2018 Topps; category=sports_cards; grade=8; certificationCompany=PSA; fullItemDetails=${JSON.stringify({ gradeQualifier: "OC" })}`;
     const result = conservativeGradedVisualReviews([
