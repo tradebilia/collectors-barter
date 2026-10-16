@@ -17,6 +17,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("'sports cards:ebay_active': 'match'");
     expect(source).toContain("'vintage toys:ebay_active': 'match'");
     expect(source).toContain("'vintage toys:sold_comps': 'match'");
+    expect(source).toContain("'video games:sold_comps': 'match'");
     expect(source).toContain("'sports cards:the_card_api': 'match'");
     expect(source).toContain("id: 'comc_parse'");
     expect(source).toContain('Active COMC asking-price inventory only');
