@@ -482,6 +482,10 @@ function soldCompsCandidateForMetadataConflict(item: any, metadata: Record<strin
   };
 }
 
+function marketplaceCandidatePrice(item: any): unknown {
+  return item?.soldPrice ?? item?.price?.value ?? item?.price ?? item?.currentBidPrice ?? null;
+}
+
 export function assessSoldCompsPreVisionCandidates(args: {
   listings: any[];
   category: string;
@@ -509,7 +513,7 @@ export function assessSoldCompsPreVisionCandidates(args: {
     if (hasExplicitSoldCompLot(String(item?.title ?? ''))) {
       reasons.push('candidate is an explicit lot, bundle, multipack, or collection; total price is not directly comparable to one target item');
     }
-    const priceSafety = evaluateSoldCompPriceSafety(args.statedTradeValue, item?.soldPrice ?? item?.price);
+    const priceSafety = evaluateSoldCompPriceSafety(args.statedTradeValue, marketplaceCandidatePrice(item));
     if (priceSafety.reason) reasons.push(priceSafety.reason);
     return { item: { ...item, soldCompsMetadata: metadata }, metadata, reasons, excluded: reasons.length > 0 };
   });
@@ -1223,6 +1227,7 @@ export const testAIRouter = router({
       itemType: z.string().optional(),
       imageUrl: z.string().url().optional(),
       includeVisualReview: z.boolean().optional(),
+      statedTradeValue: z.number().finite().nonnegative().optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -1360,6 +1365,7 @@ export const testAIRouter = router({
           preserveGrade: true,
         }) || exactQuery;
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
+        const targetPlatform = input.category === 'video_games' ? resolveTestAiDetailValue(details, 'platform') : '';
         const issueNumber = input.category === 'comics' ? (resolveTestAiDetailValue(details, 'issueNumber') || null) : null;
         const cardNumber = input.category === 'sports_cards' ? (resolveTestAiDetailValue(details, 'cardNumber') || null) : null;
         const targetNumber = issueNumber || cardNumber;
@@ -1419,8 +1425,23 @@ export const testAIRouter = router({
           console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
         });
         const targetMetadata = `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`;
+        const preVisionAssessment = assessSoldCompsPreVisionCandidates({
+          category: input.category,
+          targetMetadata,
+          targetPlatform,
+          targetIsGraded,
+          statedTradeValue: input.statedTradeValue,
+          listings: filteredSummaries,
+        });
+        const preVisionExcludedListings = preVisionAssessment.excluded.map((entry) => ({
+          ...entry.item,
+          visualReviewStatus: 'not_reviewed',
+          visualReviewRationale: entry.reasons.join('; '),
+          evidenceDisposition: 'pre_vision_excluded',
+          preVisionExclusionReasons: entry.reasons,
+        }));
         const declaredIdentityFilter = applyDeclaredIdentityFilter(
-          filteredSummaries.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item), imageUrls: collectEbayImageUrls(item) })),
+          preVisionAssessment.eligible.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item), imageUrls: collectEbayImageUrls(item) })),
           targetMetadata,
         );
         const visualActiveFilter = input.includeVisualReview
@@ -1434,9 +1455,9 @@ export const testAIRouter = router({
         const combinedVisualFilter = visualActiveFilter
           ? {
               ...visualActiveFilter,
-              contextListings: [...declaredIdentityFilter.contextListings, ...(visualActiveFilter.contextListings ?? [])],
-              preVisualExcludedCount: declaredIdentityFilter.removedCount + (visualActiveFilter.preVisualExcludedCount ?? 0),
-              removedCount: declaredIdentityFilter.removedCount + visualActiveFilter.removedCount,
+              contextListings: [...preVisionExcludedListings, ...declaredIdentityFilter.contextListings, ...(visualActiveFilter.contextListings ?? [])],
+              preVisualExcludedCount: preVisionExcludedListings.length + declaredIdentityFilter.removedCount + (visualActiveFilter.preVisualExcludedCount ?? 0),
+              removedCount: preVisionExcludedListings.length + declaredIdentityFilter.removedCount + visualActiveFilter.removedCount,
             }
           : null;
         const displaySummaries = visualActiveFilter?.listings ?? declaredIdentityFilter.listings;
@@ -1450,7 +1471,8 @@ export const testAIRouter = router({
             afterNumberFilter: byNumber.length,
             afterGradeFilter: filteredSummaries.length,
             afterDeclaredIdentityFilter: declaredIdentityFilter.listings.length,
-            preVisualExcludedCount: declaredIdentityFilter.removedCount,
+            preVisionExcludedCount: preVisionExcludedListings.length,
+            preVisualExcludedCount: preVisionExcludedListings.length + declaredIdentityFilter.removedCount,
             targetGrade,
             executedQueries: [exactQuery, ...fallbackQueries],
             exactTierPageCount: exactPages.length,
@@ -1510,6 +1532,19 @@ export const testAIRouter = router({
           metrics,
           visualMatchMetrics,
           visualFilter: combinedVisualFilter,
+          preVisionFilter: {
+            excludedCount: preVisionExcludedListings.length,
+            excludedListings: preVisionExcludedListings.slice(0, 100).map((s: any) => ({
+              title: s.title,
+              price: parseFloat(s.price?.value || '0'),
+              currency: s.price?.currency || 'USD',
+              condition: s.condition,
+              itemUrl: s.itemWebUrl,
+              visualReviewStatus: s.visualReviewStatus,
+              visualReviewRationale: s.visualReviewRationale,
+              evidenceDisposition: s.evidenceDisposition,
+            })),
+          },
           error: null,
         };
       } catch (err: any) {

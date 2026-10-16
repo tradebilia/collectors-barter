@@ -9,6 +9,7 @@ import {
   computeMetrics,
 } from "./testAIRouter";
 import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
+import { assessSoldCompsPreVisionCandidates } from "./testAIRouter";
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
@@ -66,8 +67,14 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).toContain("const displaySummaries = visualActiveFilter?.listings ?? declaredIdentityFilter.listings");
     expect(section).toContain("visualReviewTargetMetadata: targetMetadata");
     expect(section).toContain("visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map");
+    expect(section).toContain("assessSoldCompsPreVisionCandidates({");
+    expect(section).toContain("statedTradeValue: input.statedTradeValue");
+    expect(section).toContain("preVisionExcludedListings");
+    expect(section).toContain("evidenceDisposition: 'pre_vision_excluded'");
     expect(routerSource).toContain("reviewEbayVisualData: protectedProcedure");
     expect(routerSource).toContain("VISUAL_REVIEW_MAX_CANDIDATES");
+    expect(pageSource).toContain("statedTradeValue: Number(leftSearchItem.estimatedValue) || undefined");
+    expect(pageSource).toContain("statedTradeValue: Number(rightSearchItem.estimatedValue) || undefined");
   });
 
   it("times out eBay OAuth and Browse calls and reports an actionable redacted state", () => {
@@ -77,6 +84,26 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("signal: AbortSignal.timeout(EBAY_BROWSE_TIMEOUT_MS)");
     expect(routerSource).toContain("eBay authorization timed out. Please try the lookup again.");
     expect(routerSource).toContain("eBay rejected the configured sandbox authorization. Recheck the secure eBay credentials.");
+  });
+
+  it("applies the shared pre-vision gate to active asking prices", () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: "video_games",
+      targetMetadata: 'title=Resident Evil 2; category=video_games; grade=unknown; fullItemDetails={"platform":"PS1"}',
+      targetPlatform: "PS1",
+      targetIsGraded: true,
+      statedTradeValue: 20_000,
+      listings: [
+        { title: "Resident Evil 2 PS4 Tested", price: { value: "1000", currency: "USD" } },
+        { title: "Resident Evil 2 PS1 Lot of 2", price: { value: "5000", currency: "USD" } },
+        { title: "Resident Evil 2 PS1 PSA 8", price: { value: "6000", currency: "USD" } },
+      ],
+    });
+
+    expect(result.eligible).toHaveLength(1);
+    expect(result.eligible[0].title).toContain("PSA 8");
+    expect(result.excluded).toHaveLength(2);
+    expect(result.excluded.flatMap((entry) => entry.reasons).join(" ")).toMatch(/platform|lot|condition-only|25%|250%/i);
   });
 
   it("keeps the UI on the fast result while mandatory image checks run", () => {
@@ -91,6 +118,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
+    expect(pageSource).toContain("active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison");
     expect(pageSource).toContain("data={ebayData} isLoading={ebayLoading}");
   });
 
