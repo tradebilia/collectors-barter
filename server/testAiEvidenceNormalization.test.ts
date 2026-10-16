@@ -65,6 +65,19 @@ describe('normalizeTestAiEvidence', () => {
     ]));
   });
 
+  it('shows a custom platform instead of the Other selector in evidence review', () => {
+    const summary = normalizeTestAiEvidence({
+      title: 'Pokemon Silver Version',
+      category: 'video_games',
+      itemDetails: { gameTitle: 'Pokemon Silver Version', platform: 'Other', customPlatform: 'Game Boy Color' },
+    }, []);
+
+    expect(summary.identity).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'platform', value: 'Game Boy Color' }),
+    ]));
+    expect(summary.identity.some((field) => field.value === 'Other')).toBe(false);
+  });
+
   it('retains completed, historical, and undated 130point records separately', () => {
     const summary = normalizeTestAiEvidence({ title: 'Wayne Gretzky Rookie', category: 'sports_cards' }, [
       { id: 'one_thirty_point', label: '130point', kind: 'market_completed', role: 'valuation_candidate', status: 'success', market: { completedSaleCount: 2, historicalSaleCount: 3, undatedSaleCount: 1 } },

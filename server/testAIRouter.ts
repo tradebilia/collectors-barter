@@ -21,7 +21,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -1057,7 +1057,7 @@ export const testAIRouter = router({
       const token = tokenResult.token;
 
       // Build a smart query from item details
-      const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
+      const details = parseTestAiDetails(input.itemDetails);
       console.log(`[Query Builder] category="${input.category}", title="${input.title}"`);
       let cert = resolveTestAiGradingCompany(details, input.certificationCompany || details.certificationCompany || '');
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
@@ -1184,11 +1184,11 @@ export const testAIRouter = router({
           preserveGrade: true,
         }) || exactQuery;
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
-        const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
+        const issueNumber = input.category === 'comics' ? (resolveTestAiDetailValue(details, 'issueNumber') || null) : null;
+        const cardNumber = input.category === 'sports_cards' ? (resolveTestAiDetailValue(details, 'cardNumber') || null) : null;
         const targetNumber = issueNumber || cardNumber;
-        const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
-        const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
+        const playerName = input.category === 'sports_cards' ? (resolveTestAiDetailValue(details, 'player') || null) : null;
+        const targetSport = input.category === 'sports_cards' ? resolveTestAiDetailValue(details, 'sport') : '';
         const targetIsGraded = Boolean(
           (cert && !/^(?:raw|ungraded|none|n\/a)$/i.test(cert.trim())) || grade,
         );
@@ -1688,7 +1688,7 @@ export const testAIRouter = router({
       if (!apiKey) return { query: input.title, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
 
       // Reuse same query-building logic as getEbayData
-      const details = input.itemDetails ? (() => { try { return JSON.parse(input.itemDetails); } catch { return {}; } })() : {};
+      const details = parseTestAiDetails(input.itemDetails);
       let cert = resolveTestAiGradingCompany(details, input.certificationCompany || details.certificationCompany || '');
       cert = cert.replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
       const grade = normalizeSearchGrade(input.grade, input.category, cert);
@@ -1844,16 +1844,16 @@ export const testAIRouter = router({
         // Apply same grade filtering as eBay active
         const targetYear = input.category === 'video_games' ? resolveTestAiYear(details) : '';
         const byYear = filterTestAiListingsByYear(rawItems.map((i: any) => ({ title: i.title, ...i })), targetYear);
-        const issueNumber = input.category === 'comics' ? (details.issueNumber || null) : null;
-        const cardNumber = input.category === 'sports_cards' ? (details.cardNumber || null) : null;
+        const issueNumber = input.category === 'comics' ? (resolveTestAiDetailValue(details, 'issueNumber') || null) : null;
+        const cardNumber = input.category === 'sports_cards' ? (resolveTestAiDetailValue(details, 'cardNumber') || null) : null;
         const targetNumber = issueNumber || cardNumber;
         const byNumber = filterListingsByNumber(byYear, targetNumber, {
           allowMissingNumber: input.category === 'sports_cards',
         });
         // For sports cards: also filter by player name
-        const playerName = input.category === 'sports_cards' ? (details.player || null) : null;
+        const playerName = input.category === 'sports_cards' ? (resolveTestAiDetailValue(details, 'player') || null) : null;
         const byPlayer = filterListingsByPlayer(byNumber, playerName);
-        const targetSport = input.category === 'sports_cards' ? String(details.sport || details.customSport || '') : '';
+        const targetSport = input.category === 'sports_cards' ? resolveTestAiDetailValue(details, 'sport') : '';
         const bySport = filterTestAiListingsBySport(byPlayer, targetSport);
         const byCertification = filterListingsByCertificationCompany(bySport, cert || null, input.category);
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);

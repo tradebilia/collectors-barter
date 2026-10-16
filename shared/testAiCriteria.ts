@@ -2,17 +2,14 @@ export function resolveTestAiManufacturer(itemDetails: unknown): string {
   if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) return '';
 
   const details = itemDetails as Record<string, unknown>;
-  const manufacturer = typeof details.manufacturer === 'string' ? details.manufacturer.trim() : '';
-  const customManufacturer = typeof details.customManufacturer === 'string' ? details.customManufacturer.trim() : '';
-
-  return manufacturer.toLowerCase() === 'other' ? customManufacturer : manufacturer;
+  return resolveTestAiDetailValue(details, 'manufacturer');
 }
 
 export function resolveTestAiGradingCompany(itemDetails: unknown, fallback = ''): string {
   const details = parseTestAiDetails(itemDetails);
   const direct = fallback.trim() || detailText(details, ['gradingCompany', 'certificationCompany']);
   if (direct && direct.toLowerCase() !== 'other') return direct;
-  return detailText(details, ['customGradingCompany', 'customCertificationCompany']) || direct;
+  return detailText(details, ['customGradingCompany', 'customCertificationCompany']);
 }
 
 export function normalizeTestAiGrade(value: unknown, gradingCompany = '', category = ''): string {
@@ -34,24 +31,56 @@ export type TestAiRequestAudit = {
   fallbackUsed?: boolean;
 };
 
-export function parseTestAiDetails(itemDetails: unknown): Record<string, unknown> {
-  if (itemDetails && typeof itemDetails === 'object' && !Array.isArray(itemDetails)) return itemDetails as Record<string, unknown>;
+export function parseTestAiDetails(itemDetails: unknown): Record<string, any> {
+  if (itemDetails && typeof itemDetails === 'object' && !Array.isArray(itemDetails)) return normalizeTestAiOtherDetails(itemDetails as Record<string, unknown>);
   if (typeof itemDetails !== 'string' || !itemDetails.trim()) return {};
   try {
     const parsed = JSON.parse(itemDetails);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? normalizeTestAiOtherDetails(parsed as Record<string, unknown>)
+      : {};
   } catch {
     return {};
   }
 }
 
+/**
+ * Treat the shared “Other” option as a UI selector, never as item identity.
+ * Dynamic listing forms persist its companion value using the stable
+ * `custom<FieldName>` convention (for example `customPlatform`). If the
+ * companion is absent, omit the field rather than inventing a search term.
+ */
+export function resolveTestAiDetailValue(details: Record<string, unknown>, key: string): string {
+  const value = details[key];
+  if (typeof value !== 'string' && typeof value !== 'number') return '';
+  const text = String(value).trim();
+  if (!text) return '';
+  if (text.toLowerCase() !== 'other') return text;
+
+  const customKey = `custom${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  const customValue = details[customKey];
+  if (typeof customValue !== 'string' && typeof customValue !== 'number') return '';
+  const customText = String(customValue).trim();
+  return customText && customText.toLowerCase() !== 'other' ? customText : '';
+}
+
+/** Resolves all persisted dropdown selectors before any source-specific query builder reads them. */
+export function normalizeTestAiOtherDetails(details: Record<string, unknown>): Record<string, any> {
+  const normalized = { ...details };
+  for (const [key, value] of Object.entries(details)) {
+    if (typeof value !== 'string' && typeof value !== 'number') continue;
+    if (String(value).trim().toLowerCase() !== 'other') continue;
+    const customValue = resolveTestAiDetailValue(details, key);
+    if (customValue) normalized[key] = customValue;
+    else delete normalized[key];
+  }
+  return normalized;
+}
+
 function detailText(details: Record<string, unknown>, keys: string[]): string {
   for (const key of keys) {
-    const value = details[key];
-    if (typeof value === 'string' || typeof value === 'number') {
-      const text = String(value).trim();
-      if (text) return text;
-    }
+    const text = resolveTestAiDetailValue(details, key);
+    if (text) return text;
   }
   return '';
 }
@@ -113,11 +142,11 @@ function isSportsCardsUnopenedProduct(details: Record<string, unknown>, itemType
 
 function buildSportsCardsUnopenedProductCriteria(details: Record<string, unknown>, itemType = ''): string[] {
   if (!isSportsCardsUnopenedProduct(details, itemType)) return [];
-  const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
-  const sport = value('sport') || value('customSport');
+  const value = (key: string) => resolveTestAiDetailValue(details, key);
+  const sport = value('sport');
   const parts = [sport, value('productFormat')];
   if (isYes(details.authentication) || isYes(details.authenticated) || isYes(details.isAuthenticated)) {
-    const authCompany = value('authenticationCompany') || value('customAuthenticationCompany');
+    const authCompany = value('authenticationCompany');
     if (authCompany) parts.push(authCompany);
   }
   if (isYes(details.fromASealedCase) || isYes(details.fromSealedCase)) parts.push('FASC');
@@ -127,7 +156,7 @@ function buildSportsCardsUnopenedProductCriteria(details: Record<string, unknown
 export function buildSportsCardTestAiCriteria(itemDetails: unknown, itemType = ''): string {
   if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) return '';
   const details = itemDetails as Record<string, unknown>;
-  const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
+  const value = (key: string) => resolveTestAiDetailValue(details, key);
   const unopened = buildSportsCardsUnopenedProductCriteria(details, itemType);
   const normalizedType = itemType.trim().toLowerCase().replace(/[ -]+/g, '_');
   const setName = value('setName') || value('cardSet') || value('set');
@@ -160,7 +189,7 @@ export function buildSportsCardTestAiQueries(
     return [fallbackTitle].filter(Boolean);
   }
   const details = itemDetails as Record<string, unknown>;
-  const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
+  const value = (key: string) => resolveTestAiDetailValue(details, key);
   const year = value('year');
   const manufacturer = resolveTestAiManufacturer(details);
   const player = value('player');
@@ -202,7 +231,7 @@ export function resolveTestAiYear(itemDetails: unknown): string {
 export function buildVideoGameTestAiCriteria(itemDetails: unknown, fallbackTitle: string): string {
   if (!itemDetails || typeof itemDetails !== 'object' || Array.isArray(itemDetails)) return fallbackTitle;
   const details = itemDetails as Record<string, unknown>;
-  const value = (key: string) => typeof details[key] === 'string' ? details[key].trim() : '';
+  const value = (key: string) => resolveTestAiDetailValue(details, key);
 
   return [resolveTestAiYear(details), value('gameTitle') || fallbackTitle, value('platform')]
     .filter(Boolean)

@@ -6,6 +6,7 @@ import {
   type P0EvidenceSufficiency,
   type TestAiP0Identity,
 } from './testAiP0Evidence';
+import { normalizeTestAiOtherDetails, resolveTestAiGradingCompany } from './testAiCriteria';
 
 export type EvidenceSourceStatus = 'success' | 'not_found' | 'error' | 'idle';
 
@@ -232,11 +233,13 @@ function normalizeCategory(category: string): string {
 
 function parseDetails(value: EvidenceListingInput['itemDetails']): DetailRecord {
   if (!value) return {};
-  if (typeof value === 'object' && !Array.isArray(value)) return value;
+  if (typeof value === 'object' && !Array.isArray(value)) return normalizeTestAiOtherDetails(value as DetailRecord);
   if (typeof value !== 'string') return {};
   try {
     const parsed = JSON.parse(value);
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as DetailRecord : {};
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? normalizeTestAiOtherDetails(parsed as DetailRecord)
+      : {};
   } catch {
     return {};
   }
@@ -714,4 +717,3 @@ ${sufficiency}
 Guide-value anchors: ${guides}
 Rule: Dated completed sales remain primary evidence. A validated direct-grade or documented mapped-grade-band guide anchor may influence the deterministic value only through the server-capped secondary weighting contract; it is never treated as a dated sale. Do not resolve a discrepancy silently, do not use factual reference metadata as value except for this validated guide-anchor contract, and do not use historical or undated records as current-value averages.`;
 }
-import { resolveTestAiGradingCompany } from './testAiCriteria';
