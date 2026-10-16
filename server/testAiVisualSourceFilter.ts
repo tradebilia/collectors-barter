@@ -732,8 +732,7 @@ export async function filterVisualSourceCandidates<
     .filter(
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
         entry.imageUrls.length > 0
-    )
-    .slice(0, VISUAL_REVIEW_MAX_CANDIDATES);
+    );
   if (!candidates.length)
     return {
       listings: args.listings,

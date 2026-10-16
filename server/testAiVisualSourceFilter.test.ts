@@ -546,6 +546,17 @@ describe("visual source filter", () => {
     expect(candidates).toHaveLength(60);
   });
 
+  it("builds the full image-bearing queue before applying the bounded priority cap", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    const candidateStart = source.indexOf("const candidates = args.listings");
+    const queueStart = source.indexOf("const reviewQueue = prioritizeVisualSourceCandidates", candidateStart);
+    expect(candidateStart).toBeGreaterThanOrEqual(0);
+    expect(queueStart).toBeGreaterThan(candidateStart);
+    expect(source.slice(candidateStart, queueStart)).not.toContain(".slice(0, VISUAL_REVIEW_MAX_CANDIDATES)");
+    expect(source.slice(queueStart, queueStart + 700)).toContain("prioritizeVisualSourceCandidates(candidates");
+    expect(source).toContain(".slice(0, VISUAL_REVIEW_MAX_CANDIDATES);");
+  });
+
   it("marks image-bearing candidates outside the bounded review window as review-only", () => {
     const result = applyVisualSourceReviews(
       [{ title: "reviewed" }, { title: "unreviewed" }],
