@@ -19,6 +19,7 @@ import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMark
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
 import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
 import { HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD } from '@shared/testAiSoldCompSafety';
+import { filterVisibleActiveCandidates } from '@shared/testAiMarketplaceDisplay';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -978,6 +979,10 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const [visualReviewLoading, setVisualReviewLoading] = useState(false);
   const reviewRunId = useRef(0);
   const visualReviewMutation = trpc.testAI.reviewEbayVisualData.useMutation();
+  const targetIsGraded = Boolean(
+    (item.certificationCompany && !/^(?:raw|ungraded|none|n\/a)$/i.test(item.certificationCompany.trim())) ||
+    (item.grade && !/^(?:raw|ungraded|none|n\/a|0)$/i.test(String(item.grade).trim())),
+  );
   const requestQueryPreview = useMemo(() => {
     const details = item.itemDetails ? (() => {
       try { return JSON.parse(item.itemDetails); } catch { return {}; }
@@ -996,7 +1001,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     // A visual-review mutation uses POST, but retain a small explicit candidate
     // DTO so external eBay payload fields cannot expand the review contract.
     listings: Array.isArray(data?.visualReviewListings)
-      ? data.visualReviewListings.slice(0, 30).map((listing: any) => ({
+      ? filterVisibleActiveCandidates(data.visualReviewListings, targetIsGraded).slice(0, 30).map((listing: any) => ({
           id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? ''),
           title: String(listing.title ?? ''),
           price: Number(listing.price?.value ?? listing.price) || null,
@@ -1014,7 +1019,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           auctionEndDate: listing.auctionEndDate ? String(listing.auctionEndDate) : null,
         }))
       : [],
-  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
+  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview, targetIsGraded]);
   const reviewBaseEnabled = reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata;
   const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
     ...visualReviewInput,
@@ -1061,7 +1066,16 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   }, [onVisualReviewData, visualReviewData]);
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
-  const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
+  const displayData = visualReviewData && !visualReviewData.error
+    ? {
+        ...data,
+        ...visualReviewData,
+        query: visualReviewData.query ?? data?.query,
+        debug: { ...data?.debug, ...visualReviewData.debug },
+        preVisionFilter: visualReviewData.preVisionFilter ?? data?.preVisionFilter,
+      }
+    : data;
+  const visibleListings = filterVisibleActiveCandidates(displayData?.listings, targetIsGraded);
   const visibleSearchQuery = displayData?.query || requestQueryPreview || item.title || 'No title supplied';
   const queryStatus = displayData?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview';
   // Image review changes the displayed asking-price summary as soon as its
@@ -1116,9 +1130,9 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}
       {displayData?.preVisionFilter?.excludedCount > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200"><summary className="cursor-pointer font-semibold">{displayData.preVisionFilter.excludedCount} active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison</summary><div className="mt-1 space-y-1 text-amber-100/80">{displayData.preVisionFilter.excludedListings.map((listing: any, index: number) => <p key={`${listing.itemUrl || listing.title}-${index}`}><strong>{listing.title}</strong>{listing.visualReviewRationale ? ` — ${listing.visualReviewRationale}` : ''}</p>)}</div></details>}
       {displayData?.debug && !displayData.debug.targetIsGraded && (displayData.debug.rawTargetExcludedGradedCount ?? 0) > 0 && <p className="text-cyan-200/70 text-[9px]">Raw/ungraded target rule: {displayData.debug.rawTargetExcludedGradedCount} listing{displayData.debug.rawTargetExcludedGradedCount === 1 ? '' : 's'} with an explicit grading/slab signal were excluded before display and image review.</p>}
-      {displayData?.listings && displayData.listings.length > 0 && (
+      {visibleListings.length > 0 && (
         <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
-          {displayData.listings.map((l: any, i: number) => (
+          {visibleListings.map((l: any, i: number) => (
             <div key={i} className="flex items-start justify-between gap-2 py-1.5 border-b border-gray-700/20 last:border-b-0">
               <div className="flex min-w-0 flex-1 items-start gap-2">
                 {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
@@ -1133,7 +1147,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           ))}
         </div>
       )}
-      {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">No listings found.</p>}
+      {displayData && !visibleListings.length && !displayData.error && <p className="text-gray-500 text-xs">No eligible active listings remain after the metadata safety filters.</p>}
     </div>
   );
 }
