@@ -2122,6 +2122,126 @@ function TcgDexSection({ item, side }: { item: SelectedItem; side: 'left' | 'rig
   </div>;
 }
 
+type CatalogExtendedFact = { label: string; value: string };
+
+function catalogRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null;
+}
+
+function catalogText(value: unknown): string | null {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  const record = catalogRecord(value);
+  if (!record) return null;
+  for (const key of ['name', 'title', 'human', 'url', 'slug', 'image_id']) {
+    const candidate = record[key];
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+  const nested = ['company', 'platform', 'language', 'language_support_type'].map((key) => catalogText(record[key])).find(Boolean);
+  return nested ?? null;
+}
+
+function catalogList(value: unknown): string | null {
+  if (!Array.isArray(value)) return catalogText(value);
+  // Numeric arrays are opaque provider IDs, not reviewer-facing facts. Keep
+  // them in the complete payload disclosure but do not present them as labels.
+  const values = value.map((entry) => typeof entry === 'number' ? null : catalogText(entry)).filter((entry): entry is string => Boolean(entry));
+  const unique = [...new Set(values)];
+  return unique.length ? unique.join(', ') : null;
+}
+
+function catalogCount(value: unknown): number {
+  return Array.isArray(value) ? value.length : value ? 1 : 0;
+}
+
+const IGDB_RELEASE_REGIONS: Record<number, string> = {
+  1: 'Europe', 2: 'North America', 3: 'Australia', 4: 'New Zealand', 5: 'Japan',
+  6: 'China', 7: 'Asia', 8: 'Worldwide', 9: 'Korea', 10: 'Brazil',
+};
+
+function catalogReleaseDates(value: unknown): string | null {
+  if (!Array.isArray(value)) return catalogList(value);
+  const values = value.map((entry) => {
+    const release = catalogRecord(entry);
+    if (!release) return null;
+    const date = catalogText(release.human) ?? catalogText(release.date);
+    if (!date) return null;
+    const platform = catalogText(release.platform);
+    const regionRecord = catalogRecord(release.release_region);
+    const rawRegion = regionRecord?.region;
+    const region = typeof rawRegion === 'number' ? IGDB_RELEASE_REGIONS[rawRegion]
+      : typeof rawRegion === 'string' ? rawRegion.replace(/_/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+      : null;
+    const status = catalogText(release.status);
+    return [date, platform, region, status].filter(Boolean).join(' · ');
+  }).filter((entry): entry is string => Boolean(entry));
+  const unique = [...new Set(values)];
+  return unique.length ? unique.join(', ') : null;
+}
+
+function catalogPlainText(value: unknown): string | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  return value.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function trimCatalogFact(value: string, limit = 480): string {
+  return value.length > limit ? `${value.slice(0, limit).trimEnd()}…` : value;
+}
+
+function CatalogExtendedFacts({ metadata }: { metadata: Record<string, unknown> }) {
+  const facts = useMemo<CatalogExtendedFact[]>(() => {
+    const found: CatalogExtendedFact[] = [];
+    const add = (label: string, value: string | null | undefined) => {
+      if (value) found.push({ label, value: trimCatalogFact(value) });
+    };
+    const first = (...keys: string[]) => keys.map((key) => metadata[key]).map(catalogPlainText).find(Boolean) ?? null;
+    const list = (...keys: string[]) => keys.map((key) => catalogList(metadata[key])).find(Boolean) ?? null;
+
+    add('Summary', first('summary', 'description_raw', 'description'));
+    add('Storyline', first('storyline'));
+    add('Alternative titles', list('alternative_names'));
+    add('Franchises', list('franchises'));
+    add('Collections', list('collections'));
+    add('Game engines', list('game_engines'));
+    add('Player perspectives', list('player_perspectives'));
+    add('Languages', list('language_supports'));
+    add('Regional releases', catalogReleaseDates(metadata.release_dates));
+    add('Related games', list('dlcs', 'expanded_games', 'expansions', 'forks', 'ports', 'remakes', 'remasters', 'standalone_expansions', 'similar_games'));
+    add('Tags / keywords', list('tags', 'keywords'));
+
+    const screenshots = catalogCount(metadata.screenshots ?? metadata.short_screenshots);
+    const artworks = catalogCount(metadata.artworks);
+    const videos = catalogCount(metadata.videos);
+    const hasCover = Boolean(metadata.cover ?? metadata.background_image ?? metadata.background_image_additional);
+    const media = [hasCover ? 'cover image' : null, screenshots ? `${screenshots} screenshot${screenshots === 1 ? '' : 's'}` : null, artworks ? `${artworks} artwork${artworks === 1 ? '' : 's'}` : null, videos ? `${videos} video${videos === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
+    add('Cover & media', media || null);
+
+    const websites = catalogCount(metadata.websites ?? metadata.website);
+    const stores = catalogCount(metadata.stores);
+    const links = [websites ? `${websites} website${websites === 1 ? '' : 's'}` : null, stores ? `${stores} store${stores === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
+    add('Links & stores', links || null);
+
+    const rating = typeof metadata.total_rating === 'number' ? metadata.total_rating : typeof metadata.rating === 'number' ? metadata.rating : null;
+    const ratingCount = typeof metadata.total_rating_count === 'number' ? metadata.total_rating_count : typeof metadata.ratings_count === 'number' ? metadata.ratings_count : null;
+    const score = [rating !== null ? `rating ${rating.toFixed(1)}` : null, ratingCount !== null ? `${ratingCount.toLocaleString()} ratings` : null, typeof metadata.metacritic === 'number' ? `Metacritic ${metadata.metacritic}` : null, typeof metadata.hypes === 'number' ? `${metadata.hypes.toLocaleString()} hypes` : null].filter(Boolean).join(' · ');
+    add('Catalog ratings', score || null);
+
+    return found;
+  }, [metadata]);
+
+  if (!facts.length) return null;
+  return <div className="space-y-1.5">
+    <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-400">Extended catalog facts</p>
+    <div className="grid grid-cols-1 gap-1.5 text-[10px] sm:grid-cols-2">
+      {facts.map((fact) => <div key={fact.label} className={`rounded bg-slate-800/50 p-1.5 ${fact.label === 'Summary' || fact.label === 'Storyline' ? 'sm:col-span-2' : ''}`}>
+        <p className="text-[8px] uppercase text-slate-500">{fact.label}</p>
+        <p className="mt-0.5 break-words font-medium leading-relaxed text-slate-200">{fact.value}</p>
+      </div>)}
+    </div>
+    <p className="text-[9px] text-slate-500">Full linked objects are included below in the complete provider payload.</p>
+  </div>;
+}
+
 function RawgSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const supported = item.category === 'video_games';
@@ -2137,7 +2257,7 @@ function RawgSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
     <p className="text-gray-500 text-[10px]">User-approved read-only Video Game catalog metadata · Game Title is the only search criterion. Platform and release year remain item context only · Not a price, grading, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
-    {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}{data.data.metadata && <details className="rounded border border-slate-700/40 bg-slate-950/30 p-2 text-[10px]"><summary className="cursor-pointer font-semibold text-slate-300">Show all returned RAWG metadata ({Object.keys(data.data.metadata).length} top-level fields)</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/25 p-2 text-[9px] leading-relaxed text-slate-300">{JSON.stringify(data.data.metadata, null, 2)}</pre><p className="mt-1 text-[9px] text-slate-500">Read-only catalog payload; it does not establish price, condition, grade, authenticity, ownership, or valuation eligibility.</p></details>}</div>}
+    {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}{data.data.metadata && <CatalogExtendedFacts metadata={data.data.metadata} />}{data.data.metadata && <details className="rounded border border-slate-700/40 bg-slate-950/30 p-2 text-[10px]"><summary className="cursor-pointer font-semibold text-slate-300">Show all returned RAWG metadata ({Object.keys(data.data.metadata).length} top-level fields)</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/25 p-2 text-[9px] leading-relaxed text-slate-300">{JSON.stringify(data.data.metadata, null, 2)}</pre><p className="mt-1 text-[9px] text-slate-500">Read-only catalog payload; it does not establish price, condition, grade, authenticity, ownership, or valuation eligibility.</p></details>}</div>}
   </div>;
 }
 
@@ -2156,7 +2276,7 @@ function IgdbSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
     <p className="text-gray-500 text-[10px]">Commercially approved read-only game identification metadata · Game Title is the only search criterion. Platform and release year remain item context only · Not a price, grading, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
-    {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}{data.data.metadata && <details className="rounded border border-slate-700/40 bg-slate-950/30 p-2 text-[10px]"><summary className="cursor-pointer font-semibold text-slate-300">Show all returned IGDB metadata ({Object.keys(data.data.metadata).length} top-level fields)</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/25 p-2 text-[9px] leading-relaxed text-slate-300">{JSON.stringify(data.data.metadata, null, 2)}</pre><p className="mt-1 text-[9px] text-slate-500">Read-only catalog payload; it does not establish price, condition, grade, authenticity, ownership, or valuation eligibility.</p></details>}</div>}
+    {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}{data.data.metadata && <CatalogExtendedFacts metadata={data.data.metadata} />}{data.data.metadata && <details className="rounded border border-slate-700/40 bg-slate-950/30 p-2 text-[10px]"><summary className="cursor-pointer font-semibold text-slate-300">Show all returned IGDB metadata ({Object.keys(data.data.metadata).length} top-level fields)</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/25 p-2 text-[9px] leading-relaxed text-slate-300">{JSON.stringify(data.data.metadata, null, 2)}</pre><p className="mt-1 text-[9px] text-slate-500">Read-only catalog payload; it does not establish price, condition, grade, authenticity, ownership, or valuation eligibility.</p></details>}</div>}
   </div>;
 }
 

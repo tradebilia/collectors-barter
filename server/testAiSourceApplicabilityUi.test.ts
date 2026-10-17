@@ -66,6 +66,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Show all returned RAWG metadata');
     expect(source).toContain('Show all returned IGDB metadata');
     expect(source).toContain('JSON.stringify(data.data.metadata, null, 2)');
+    expect(source).toContain('function CatalogExtendedFacts');
+    expect(source).toContain('Extended catalog facts');
+    expect(source).toContain('Cover & media');
+    expect(source).toContain('Regional releases');
+    expect(source).toContain('Related games');
+    expect(source).toContain('Full linked objects are included below');
     expect(source).not.toContain('RawgSetupSection');
     expect(source).toContain("label: 'Discogs Music Catalog'");
     expect(source).toContain('getDiscogsReleases.useQuery');
