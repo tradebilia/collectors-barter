@@ -265,7 +265,8 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   const includeComicYear = options.includeComicYear !== false;
   const includeSigners = options.includeSigners !== false;
   const category = normalize(input.category).replace(/_/g, ' ');
-  const includeGradingCriteria = category !== 'video games';
+  const isVideoGameCategory = /^video games?$/.test(category);
+  const includeGradingCriteria = !isVideoGameCategory;
   const parts: string[] = [];
   const add = (...values: string[]) => values.forEach((value) => {
     const cleaned = value.trim();
@@ -286,7 +287,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['cardName', 'pokemonName', 'name']) || input.title);
     add(firstDetail(details, ['setName', 'set', 'cardSet']));
     add(firstDetail(details, ['cardNumber', 'cardNo', 'number']));
-  } else if (category === 'video games') {
+  } else if (isVideoGameCategory) {
     add(firstDetail(details, ['gameTitle', 'title']) || input.title);
     add(firstDetail(details, ['platform', 'console', 'consoleName']));
     add(firstDetail(details, ['releaseYear', 'year']));

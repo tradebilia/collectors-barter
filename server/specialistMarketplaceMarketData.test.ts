@@ -93,6 +93,10 @@ describe('bounded specialist marketplace adapters', () => {
     expect(queries[0]).toBe('Super Mario Bros. 3 NES 1990');
     expect(queries).toEqual(['Super Mario Bros. 3 NES 1990', 'Super Mario Bros. 3 sealed game']);
     expect(queries.join(' ')).not.toMatch(/\b(?:PSA|WATA)\s*9(?:\.\d+)?\b/i);
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin', title: 'Super Mario Bros. 3 sealed game', category: 'video game', grade: '9', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 3', platform: 'NES', year: '1990' }),
+    })).toBe('Super Mario Bros. 3 NES 1990');
   });
 
   it('accepts PSA and WATA as equivalent only for video-game identity', () => {
