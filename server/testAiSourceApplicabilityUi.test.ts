@@ -138,6 +138,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('omitGradingCriteria');
     expect(source).toContain("source.id === 'goldin'");
     expect(source).toContain("refetchOnMount: 'always'");
+    expect(source).toContain('const visibleQuery = omitGradingCriteria ? gradeFreeGoldinQuery : data?.query');
+    expect(source).toContain('const visibleMessages = data?.messages?.map');
   });
 
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {

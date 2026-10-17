@@ -3077,6 +3077,9 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   const omitGradingCriteria = source.id === 'goldin' && /^video games?$/.test(normalizedCategory);
   const refreshOnMount = source.id === 'goldin';
+  const gradeFreeGoldinQuery = omitGradingCriteria
+    ? buildStructuredItemQuery(item.category, item.itemDetails, [], item.itemType ?? '')
+    : '';
   const [sourceUrl, setSourceUrl] = useState('');
   const [historyWindow, setHistoryWindow] = useState<'recent_12_months' | 'historical' | 'all'>('recent_12_months');
   const normalizedSourceUrl = useMemo(() => {
@@ -3106,6 +3109,10 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
     { enabled: enabled && !blocked, retry: false, ...(refreshOnMount ? { staleTime: 0, refetchOnMount: 'always' as const } : {}) },
   );
   const data = lookup.data;
+  const visibleQuery = omitGradingCriteria ? gradeFreeGoldinQuery : data?.query;
+  const visibleMessages = data?.messages?.map((message: string) => omitGradingCriteria
+    ? message.replace(/(used “)[^”]*(”)/, `$1${gradeFreeGoldinQuery}$2`)
+    : message);
   const records = useMemo(() => [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, data?.recordCap ?? 12), [data]);
   useEffect(() => { onSales?.(data?.sales ?? []); }, [data]);
   useEffect(() => {
@@ -3136,7 +3143,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
       <div className="flex items-center justify-between gap-2"><p className={`flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}{source.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
-      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={lookup.isFetching} omitGradingCriteria={omitGradingCriteria} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
+      <MarketplaceQueryBanner item={item} query={visibleQuery} isLoading={lookup.isFetching} omitGradingCriteria={omitGradingCriteria} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
       <p className="text-[9px] text-sky-200/80">Transport: {source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: context-only</p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
         <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>
@@ -3153,7 +3160,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
       </div>}
       {blocked && <p className="rounded border border-amber-700/30 bg-amber-950/20 p-2 text-[9px] text-amber-100">No request is sent. This source stays visible for audit, but Tradebilia will not guess a query URL or bypass source protections.</p>}
       {!blocked && lookup.isFetching && <p className="text-[10px] text-sky-200">Reading one bounded public page…</p>}
-      {!blocked && data?.messages?.map((message: string, index: number) => <p key={`${message}-${index}`} className={`rounded p-1.5 text-[9px] ${data.status === 'success' ? 'bg-sky-950/40 text-sky-100' : 'bg-amber-950/25 text-amber-100'}`}>{message}</p>)}
+      {!blocked && visibleMessages?.map((message: string, index: number) => <p key={`${message}-${index}`} className={`rounded p-1.5 text-[9px] ${data?.status === 'success' ? 'bg-sky-950/40 text-sky-100' : 'bg-amber-950/25 text-amber-100'}`}>{message}</p>)}
       {records.length > 0 && <div className="space-y-1.5">
         <p className="text-[9px] text-gray-400">✓ {data?.sales?.length ?? 0} identity-matched completed context record{(data?.sales?.length ?? 0) === 1 ? '' : 's'} · ✕ {data?.context?.length ?? 0} retained mismatch/incomplete record{(data?.context?.length ?? 0) === 1 ? '' : 's'}</p>
         {records.map((record: any, index: number) => <div key={`${record.lotId ?? record.url ?? record.title}-${index}`} className="rounded border border-slate-700/50 bg-slate-950/40 p-2"><div className="flex items-start justify-between gap-2"><p className="text-[10px] font-medium text-slate-100">{record.title}</p><span className="shrink-0 text-[10px] text-emerald-300">{formatPrice(record.price)}</span></div><p className="mt-0.5 text-[9px] text-slate-500">{record.lotId ? `Lot ${record.lotId} · ` : ''}{record.date ? new Date(record.date).toLocaleDateString() : 'Date unavailable'} · {record.priceBasis.replace(/_/g, ' ')}</p>{record.winningBid != null && <p className="mt-0.5 text-[9px] text-slate-400">Winning bid {formatPrice(record.winningBid)}{record.buyerPremiumPercentage != null ? ` + ${record.buyerPremiumPercentage}% buyer premium = all-in context` : ''}</p>}<p className={`mt-0.5 text-[9px] ${record.identityMatched ? 'text-emerald-300/80' : 'text-rose-300/90'}`}>{record.identityMatched && record.completed ? '✓ Identity matched — retained for admission review' : `✕ ${record.exclusionReason ?? 'Identity or completed-sale state not confirmed'}`}</p>{record.url && <a className="mt-1 inline-block text-[9px] text-sky-400 underline" href={record.url} target="_blank" rel="noreferrer">Open public record</a>}</div>)}
