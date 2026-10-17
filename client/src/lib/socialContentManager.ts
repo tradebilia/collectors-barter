@@ -11,6 +11,8 @@ export type SocialPromotionFact = {
 
 export type SocialPromotionDetails = {
   itemTitle: string;
+  sellerName?: string | null;
+  buyerName?: string | null;
   listingId?: number | null;
   itemPath?: string | null;
   /** Public-safe metadata used only for choosing an abstract visual environment. */
@@ -49,6 +51,8 @@ export type SocialVideoPlan = {
   voiceProfile: "american-female-news-anchor";
   requesterName: string;
   recipientName: string;
+  sellerName?: string;
+  buyerName?: string;
   exchangeLine: string;
   commentary: string;
   script: string;
@@ -264,7 +268,10 @@ export function createSocialDraft(id: string, now = new Date().toISOString()): S
 export function buildCompletedTradeVideoPlan({
   requesterName,
   recipientName,
+  sellerName,
+  buyerName,
   itemTitle,
+  tradeItemTitles = [],
   cashOnly,
   commentary,
   officialLogoUrl,
@@ -272,7 +279,10 @@ export function buildCompletedTradeVideoPlan({
 }: {
   requesterName: string;
   recipientName: string;
+  sellerName?: string;
+  buyerName?: string;
   itemTitle: string;
+  tradeItemTitles?: string[];
   cashOnly: boolean;
   commentary: string;
   officialLogoUrl: string;
@@ -280,11 +290,21 @@ export function buildCompletedTradeVideoPlan({
 }): SocialVideoPlan {
   const cleanRequester = requesterName.trim() || "Collector One";
   const cleanRecipient = recipientName.trim() || "Collector Two";
+  const cleanSeller = sellerName?.trim() || cleanRecipient;
+  const cleanBuyer = buyerName?.trim() || cleanRequester;
   const cleanItemTitle = itemTitle.trim() || "the collectible";
-  const exchangeLine = cashOnly
-    ? `${cleanRequester} is selling ${cleanItemTitle} to ${cleanRecipient} for cash.`
-    : `${cleanRequester} is trading ${cleanItemTitle} to ${cleanRecipient}.`;
-  const cleanCommentary = commentary.trim() || "A notable collector-to-collector exchange for the Tradebilia community.";
+  const cleanTradeItems = Array.from(new Set([cleanItemTitle, ...tradeItemTitles].map((title) => title.trim()).filter(Boolean)));
+  const itemSummary = cleanTradeItems.join(", ");
+  const exchangeLine = sellerName || buyerName
+    ? cashOnly
+      ? `${cleanSeller} is selling ${itemSummary} to ${cleanBuyer} for cash.`
+      : `${cleanSeller} and ${cleanBuyer} completed a collector trade involving ${itemSummary}.`
+    : cashOnly
+      ? `${cleanRequester} is selling ${cleanItemTitle} to ${cleanRecipient} for cash.`
+      : `${cleanRequester} is trading ${cleanItemTitle} to ${cleanRecipient}.`;
+  const cleanCommentary = commentary.trim() || (cashOnly
+    ? `Breaking trade news: ${cleanSeller} and ${cleanBuyer} completed a cash sale featuring ${itemSummary}.`
+    : `Breaking trade news: ${cleanSeller} and ${cleanBuyer} completed a collector exchange featuring ${itemSummary}.`);
   return {
     format: "16:9",
     durationSeconds: 25,
@@ -292,6 +312,8 @@ export function buildCompletedTradeVideoPlan({
     voiceProfile: "american-female-news-anchor",
     requesterName: cleanRequester,
     recipientName: cleanRecipient,
+    sellerName: cleanSeller,
+    buyerName: cleanBuyer,
     exchangeLine,
     commentary: cleanCommentary,
     script: `BREAKING NEWS. ${exchangeLine} ${cleanCommentary} This is Tradebilia, where collectors connect.`,

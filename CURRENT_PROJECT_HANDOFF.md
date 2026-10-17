@@ -270,3 +270,12 @@ The server builds a 16:9, 25-second breaking-news anchor brief with the complete
 Video generation does not publish to Facebook, Instagram, X, YouTube, or any other external platform. Approval and manual publishing remain separate; signed Manus artifact URLs are treated as runtime outputs and are not presented as permanent storage identity.
 
 Validation: Manus credential/payload tests passed **2/2**, focused social-content regressions passed **21/21**, TypeScript passed, production build passed, and `git diff --check` passed. No database writes, migrations, seed scripts, destructive actions, or automatic social publishing were performed.
+
+
+## Completed-trade breaking-news video autofill — October 17, 2026
+
+The admin Social Content Configure Video workflow now receives seller and buyer display names from the protected completed-trade opportunity query. The listing owner/recipient is represented as the **seller** and the trade proposer/requester as the **buyer**. These names are stored in the browser-local completed-trade draft and prefilled into the editable video studio fields; manual edits remain effective when generation starts.
+
+When the studio opens, blank anchor commentary is prepared from the actual completed trade: seller, buyer, cash-only versus item exchange, and the available traded-item titles. The commentary remains editable. The generation-status notice now explains the 16:9, 25-second American female news-anchor format, lip-synced dialogue, official Tradebilia logo, trade-item image references, asynchronous MP4 attachment, and manual-publishing safeguard.
+
+The Manus task prompt now uses explicit Seller and Buyer labels rather than ambiguous Requester and Recipient labels. No database schema or database records were changed. Focused coverage passed 36/36; the deterministic suite excluding the unrelated external The Card API probe passed 324 files / 1,563 tests with 3 files / 6 tests skipped; TypeScript, production build, build-fingerprint manifest, diff hygiene, and production audit passed. The production audit retains the existing two low findings and no high/critical findings.

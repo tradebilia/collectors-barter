@@ -519,6 +519,8 @@ export function SocialContentManagerTab() {
       destinationUrl,
       promotion: {
         itemTitle: trade.title,
+        sellerName: trade.sellerName ?? null,
+        buyerName: trade.buyerName ?? null,
         listingId: trade.listingId ?? null,
         itemPath: trade.itemPath ?? null,
         tradeItems,
@@ -539,9 +541,22 @@ export function SocialContentManagerTab() {
   function openCompletedTradeVideoStudio() {
     if (!selectedDraft || selectedDraft.source !== "Completed Trade") return;
     const existing = selectedDraft.videoPlan;
-    setVideoRequesterName(existing?.requesterName ?? "");
-    setVideoRecipientName(existing?.recipientName ?? "");
-    setVideoCommentary(existing?.commentary ?? "");
+    const sellerName = selectedDraft.promotion?.sellerName?.trim() || existing?.sellerName || existing?.recipientName || "";
+    const buyerName = selectedDraft.promotion?.buyerName?.trim() || existing?.buyerName || existing?.requesterName || "";
+    setVideoRequesterName(buyerName);
+    setVideoRecipientName(sellerName);
+    const preparedPlan = buildCompletedTradeVideoPlan({
+      requesterName: buyerName,
+      recipientName: sellerName,
+      sellerName,
+      buyerName,
+      itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
+      tradeItemTitles: (selectedDraft.promotion?.tradeItems ?? []).map((item) => item.title),
+      cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
+      commentary: existing?.commentary ?? "",
+      officialLogoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
+    });
+    setVideoCommentary(preparedPlan.commentary);
     setIsVideoStudioOpen(true);
   }
 
@@ -550,7 +565,10 @@ export function SocialContentManagerTab() {
     const plan = buildCompletedTradeVideoPlan({
       requesterName: videoRequesterName,
       recipientName: videoRecipientName,
+      sellerName: videoRecipientName,
+      buyerName: videoRequesterName,
       itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
+      tradeItemTitles: (selectedDraft.promotion?.tradeItems ?? []).map((item) => item.title),
       cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
       commentary: videoCommentary,
       officialLogoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
@@ -566,6 +584,8 @@ export function SocialContentManagerTab() {
         itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
         requesterName: plan.requesterName,
         recipientName: plan.recipientName,
+        sellerName: plan.sellerName,
+        buyerName: plan.buyerName,
         commentary: plan.commentary,
         logoUrl: plan.officialLogoUrl,
         imageUrls,
@@ -906,11 +926,11 @@ export function SocialContentManagerTab() {
                 </DialogHeader>
                 <div className="space-y-4 py-2">
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller / requester name<Input value={videoRequesterName} onChange={(event) => setVideoRequesterName(event.target.value)} placeholder="Example: Alex" className="mt-1" /></label>
-                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer / recipient name<Input value={videoRecipientName} onChange={(event) => setVideoRecipientName(event.target.value)} placeholder="Example: Jordan" className="mt-1" /></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name<Input value={videoRecipientName} onChange={(event) => setVideoRecipientName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name<Input value={videoRequesterName} onChange={(event) => setVideoRequesterName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
                   </div>
-                  <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor commentary<Textarea value={videoCommentary} onChange={(event) => setVideoCommentary(event.target.value)} placeholder="Example: The exchange gives the buyer a strong addition while the seller converts a collectible into cash." className="mt-1 min-h-24" /></label>
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950"><strong>Generation status:</strong> saving starts an asynchronous Manus video task. The video uses the configured American female news-anchor style, lip-synced dialogue, trade-item references, and the official Tradebilia logo. It will be attached here when ready and will not be published automatically.</div>
+                  <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor commentary<Textarea value={videoCommentary} onChange={(event) => setVideoCommentary(event.target.value)} placeholder="Trade-specific commentary will be prepared automatically." className="mt-1 min-h-24" /><span className="block text-xs font-normal text-slate-500">Prepared from the completed trade details. Edit it before generation if needed.</span></label>
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950"><strong>Generation status:</strong> Generate Video creates one 16:9, 25-second breaking-news segment with an American female news anchor, lip-synced dialogue, the seller and buyer names, the completed-trade commentary, the trade-item images, and the official Tradebilia logo. Generation runs in the background; the finished MP4 will attach to this draft for review. Nothing is published automatically.</div>
                   {selectedDraft?.videoPlan ? <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current script</p><p className="mt-2 text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p><p className="mt-2 text-xs text-slate-500">Logo asset: {selectedDraft.videoPlan.officialLogoUrl}</p></div> : null}
                 </div>
                 <DialogFooter><Button variant="outline" onClick={() => setIsVideoStudioOpen(false)}>Cancel</Button><Button onClick={() => void createCompletedTradeVideoPlan()} disabled={startCompletedTradeVideoGeneration.isPending} className="bg-violet-700 text-white hover:bg-violet-800"><Sparkles className="mr-2 h-4 w-4" />{startCompletedTradeVideoGeneration.isPending ? "Starting Video…" : "Generate Video"}</Button></DialogFooter>
