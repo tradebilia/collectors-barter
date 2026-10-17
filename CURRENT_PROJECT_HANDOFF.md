@@ -257,3 +257,16 @@ Live browser verification against the Resident Evil 2 test record passed: IGDB r
 The reviewer-facing extended-facts summary intentionally omits **Cover & Media** and **Links & Stores** at the user's request. Their underlying provider fields remain available in the expandable complete RAWG/IGDB payload, so no source metadata was discarded.
 
 The reviewer-facing summary now also omits **Tags / Keywords** at the user's request. The complete provider payload remains unchanged. The source-coverage tracker records **Video Games → IGDB Video Game Catalog** and **Video Games → RAWG Video Game Catalog** as confirmed matches; both remain factual reference sources only and do not contribute valuation evidence.
+
+
+## Manus breaking-news video generation for Social Content — October 17, 2026
+
+The Completed Trade Social Content card's **Configure Video** button now starts an asynchronous Manus task instead of only saving a production brief. The browser polls the protected status procedure and attaches the returned MP4 URL to the browser-local draft when the task completes.
+
+The server builds a 16:9, 25-second breaking-news anchor brief with the completed-trade script, requester and recipient names, commentary, official Tradebilia logo URL, and up to six public trade-item image references. Image attachments use the documented Manus `file` content-part schema.
+
+`MANUS_API_KEY` is stored as a WebDev project secret and is read only by the server-side adapter. It is not bundled into client code, logged, or sent to the browser. A read-only `/v2/user.me` credential validation passed, and a mocked payload regression confirms the documented image attachment shape without starting a paid generation task.
+
+Video generation does not publish to Facebook, Instagram, X, YouTube, or any other external platform. Approval and manual publishing remain separate; signed Manus artifact URLs are treated as runtime outputs and are not presented as permanent storage identity.
+
+Validation: Manus credential/payload tests passed **2/2**, focused social-content regressions passed **21/21**, TypeScript passed, production build passed, and `git diff --check` passed. No database writes, migrations, seed scripts, destructive actions, or automatic social publishing were performed.

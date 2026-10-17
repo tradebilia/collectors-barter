@@ -77,6 +77,7 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("lip-sync");
     expect(componentSource).toContain("official Tradebilia logo");
     expect(componentSource).toContain("final-video-attached");
-    expect(componentSource).toContain("Save Production Brief");
+    expect(componentSource).toContain("Generate Video");
+    expect(componentSource).toContain("startCompletedTradeVideoGeneration");
   });
 });

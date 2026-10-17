@@ -8,6 +8,7 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  manusApiKey: process.env.MANUS_API_KEY ?? "",
   // eBay API
   ebayClientId: process.env.EBAY_PROD_CLIENT_ID ?? "",
   ebayClientSecret: process.env.EBAY_PROD_CLIENT_SECRET ?? "",

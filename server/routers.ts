@@ -153,6 +153,7 @@ import { createProviderOauthState, setProviderOauthStateCookie } from "./_core/p
 import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
+import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
 import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { MISSING_TRADE_PAYMENTS_FALLBACK_MESSAGE, isMissingTradePaymentsTableError } from "./paymentAdminCompatibility";
@@ -3029,6 +3030,36 @@ export const appRouter = router({
         const safeFileName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-").slice(-120) || "social-media";
         const { url } = await storagePut(`social-content/admin-${ctx.user.id}/${Date.now()}-${safeFileName}`, bytes, input.contentType);
         return { url, fileName: safeFileName, contentType: input.contentType };
+      }),
+    startCompletedTradeVideoGeneration: protectedProcedure
+      .input(z.object({
+        script: z.string().trim().min(20).max(3000),
+        itemTitle: z.string().trim().min(1).max(180),
+        requesterName: z.string().trim().min(1).max(160),
+        recipientName: z.string().trim().min(1).max(160),
+        commentary: z.string().trim().min(1).max(1200),
+        logoUrl: z.string().url().max(2000),
+        imageUrls: z.array(z.string().url().max(2000)).max(6).default([]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        try {
+          return await createTradeVideoTask(input);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Manus video generation could not be started.";
+          throw new TRPCError({ code: "BAD_GATEWAY", message });
+        }
+      }),
+    getCompletedTradeVideoGeneration: protectedProcedure
+      .input(z.object({ taskId: z.string().trim().min(1).max(200) }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        try {
+          return await getTradeVideoTaskStatus(input.taskId);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "Manus video status could not be read.";
+          throw new TRPCError({ code: "BAD_GATEWAY", message });
+        }
       }),
     prepareSocialGraphicImage: protectedProcedure
       .input(z.object({ sourceUrls: z.array(z.string().min(1).max(2_000)).min(1).max(12) }))
