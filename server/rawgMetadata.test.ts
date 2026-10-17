@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 
 const originalRawgKey = process.env.RAWG_API_KEY;
@@ -43,6 +43,19 @@ describe('RAWG game metadata', () => {
     expect(result.data?.metadata).toMatchObject({ id: 42, name: 'Super Mario Bros. 3' });
     expect(urls[0]).toContain('search=Super+Mario+Bros.+3');
     expect(JSON.stringify(result)).not.toContain('secret-test-key');
+  });
+
+  it('fetches and retains the selected game detail payload', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(rawgFixture), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ...rawgFixture.results[0], description_raw: 'Full detail description', tags: [{ name: 'classic' }] }), { status: 200 }));
+
+    const result = await lookupRawgGameMetadata('Super Mario Bros. 3', {}, fetchMock, { RAWG_API_KEY: 'detail-test-key' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.metadata).toMatchObject({ id: 42, description_raw: 'Full detail description', tags: [{ name: 'classic' }] });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/api/games/42?');
   });
 
   it('reports a global first-release year discrepancy but rejects a same-title platform conflict', async () => {
