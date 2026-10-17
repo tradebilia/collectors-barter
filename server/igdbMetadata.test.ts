@@ -26,8 +26,67 @@ describe('IGDB factual metadata adapter', () => {
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[1]?.[0]).toBe('https://api.igdb.com/v4/platforms');
     expect(fetchMock.mock.calls[2]?.[0]).toBe('https://api.igdb.com/v4/games');
-    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('fields *,platforms.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('fields *');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('platforms.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('cover.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('screenshots.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('release_dates.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('release_dates.platform.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('release_dates.release_region.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('dlcs.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('remakes.*');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('language_supports.language.*');
     expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('platforms = (18)');
+  });
+
+  it('requests linked catalog records as useful objects rather than leaving them as IDs', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: 'expanded-token', expires_in: 3600 }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify([{
+        id: 500,
+        name: 'Resident Evil 2',
+        cover: { id: 10, image_id: 'cover-image', url: '//images.igdb.com/cover.jpg', width: 264, height: 374 },
+        screenshots: [{ id: 11, image_id: 'screenshot-image', url: '//images.igdb.com/screenshot.jpg', width: 1920, height: 1080 }],
+        release_dates: [{ id: 12, human: 'January 21, 1998', platform: { id: 19, name: 'PlayStation' }, release_region: { id: 20, region: 2 }, status: { id: 21, name: 'Released' } }],
+        videos: [{ id: 13, name: 'Launch Trailer', video_id: 'trailer-id' }],
+        websites: [{ id: 14, category: 1, url: 'https://example.com' }],
+        language_supports: [{ id: 15, language: { id: 16, name: 'English' }, language_support_type: { id: 17, name: 'Audio' } }],
+        franchises: [{ id: 18, name: 'Resident Evil' }],
+        platforms: [{ id: 19, name: 'PlayStation' }],
+        dlcs: [{ id: 22, name: 'Resident Evil 2: The Ghost Survivors' }],
+        remakes: [{ id: 23, name: 'Resident Evil 2 (1998)' }],
+      }]), { status: 200 }));
+
+    const result = await lookupIgdbGameMetadata('Resident Evil 2', {}, fetchMock as typeof fetch, { TWITCH_CLIENT_ID: 'expanded-client', TWITCH_CLIENT_SECRET: 'test-secret' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.metadata).toMatchObject({
+      cover: { image_id: 'cover-image' },
+      screenshots: [{ image_id: 'screenshot-image' }],
+      release_dates: [{ human: 'January 21, 1998', platform: { name: 'PlayStation' }, release_region: { region: 2 } }],
+      language_supports: [{ language: { name: 'English' } }],
+    });
+    const query = String(fetchMock.mock.calls[1]?.[1]?.body);
+    expect(query).toContain('artworks.*');
+    expect(query).toContain('cover.*');
+    expect(query).toContain('external_games.*');
+    expect(query).toContain('dlcs.*');
+    expect(query).toContain('expanded_games.*');
+    expect(query).toContain('expansions.*');
+    expect(query).toContain('forks.*');
+    expect(query).toContain('ports.*');
+    expect(query).toContain('release_dates.*');
+    expect(query).toContain('release_dates.platform.*');
+    expect(query).toContain('release_dates.release_region.*');
+    expect(query).toContain('release_dates.status.*');
+    expect(query).toContain('remakes.*');
+    expect(query).toContain('remasters.*');
+    expect(query).toContain('screenshots.*');
+    expect(query).toContain('standalone_expansions.*');
+    expect(query).toContain('videos.*');
+    expect(query).toContain('websites.*');
+    expect(query).toContain('language_supports.language.*');
+    expect(query).toContain('similar_games.*');
   });
 
   it('reports not found when IGDB returns no matching game', async () => {

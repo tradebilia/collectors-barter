@@ -34,6 +34,20 @@ type IgdbPlatform = { id?: number; name?: string };
 
 const tokenCache = new Map<string, { value: string; expiresAt: number }>();
 
+// `fields *` preserves every root Game field but returns linked records as IDs.
+// Keep that complete root payload and explicitly expand the relationships that
+// make a catalog record useful for human review in the Test AI sandbox.
+const IGDB_LINKED_METADATA_FIELDS = [
+  'alternative_names.*', 'artworks.*', 'bundles.*', 'collections.*', 'cover.*', 'dlcs.*', 'executables.*',
+  'expanded_games.*', 'expansions.*', 'external_games.*', 'franchise.*', 'franchises.*', 'forks.*', 'game_engines.*', 'game_localizations.*', 'game_modes.*',
+  'game_type.*', 'genres.*', 'involved_companies.*', 'involved_companies.company.*', 'keywords.*',
+  'language_supports.*', 'language_supports.language.*', 'language_supports.language_support_type.*',
+  'parent_game.*', 'platforms.*', 'platforms.platform_family.*', 'player_perspectives.*', 'ports.*',
+  'release_dates.*', 'release_dates.date_format.*', 'release_dates.platform.*', 'release_dates.release_region.*', 'release_dates.status.*',
+  'remakes.*', 'remasters.*', 'screenshots.*', 'similar_games.*', 'standalone_expansions.*', 'themes.*', 'videos.*', 'websites.*',
+  'age_ratings.*', 'age_ratings.organization.*', 'age_ratings.rating_category.*',
+] as const;
+
 function normalize(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().replace(/\s+/g, ' ');
 }
@@ -136,7 +150,7 @@ export async function lookupIgdbGameMetadata(
     const accessToken = await getTwitchAppToken(env, fetchImpl);
     if (!clientId || !accessToken) return { status: 'error', message: 'IGDB credentials are unavailable. Confirm the server-side Twitch application settings.' };
 
-    const fields = '*,platforms.*,genres.*,game_modes.*,themes.*,involved_companies.*,involved_companies.company.*,age_ratings.*,age_ratings.organization.*,age_ratings.rating_category.*';
+    const fields = ['*', ...IGDB_LINKED_METADATA_FIELDS].join(',');
     let payload: unknown = [];
     let platformId: number | undefined;
     if (options.platform) {
