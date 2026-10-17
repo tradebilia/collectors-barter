@@ -9,6 +9,7 @@ import { numericGradesEquivalent } from '../shared/publicGradeValues';
 import { extractIdentityState, extractSignatureNames, identityStateConflicts } from './testAiIdentityState';
 import { ENV } from './_core/env';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { equivalentVideoGameGrader, videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 import { lookupHakes } from './hakesMarketData';
 import { lookupLcg, LCG_GALLERY_URL, LCG_MAX_RECORDS } from './lcgMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
@@ -301,8 +302,13 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
 }
 
 export function buildGoldinSearchQueries(input: SpecialistMarketplaceLookupInput): string[] {
+  const equivalentGrader = equivalentVideoGameGrader(input.category, input.certificationCompany);
+  const equivalentInput = equivalentGrader
+    ? { ...input, certificationCompany: equivalentGrader }
+    : null;
   const variants = [
     buildGoldinSearchQuery(input),
+    ...(equivalentInput ? [buildGoldinSearchQuery(equivalentInput)] : []),
     buildGoldinSearchQuery(input, { includeSigners: false }),
     buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false }),
     buildGoldinSearchQuery(input, { includeCertification: false, includeGrade: false, includeComicYear: false, includeSigners: false }),
@@ -488,7 +494,7 @@ function collectCandidateBlocks(sourceId: SandboxSpecialistSourceId, document: D
   return candidates;
 }
 
-function identityReview(input: SpecialistMarketplaceLookupInput, title: string, description: string, grade: string | null, certificationCompany: string | null) {
+export function identityReview(input: SpecialistMarketplaceLookupInput, title: string, description: string, grade: string | null, certificationCompany: string | null) {
   const details = parseDetails(input.itemDetails);
   const targetTokens = significantTokens([normalizePreservingSpelling(input.title), details.year, details.catalogNumber, details.cardNumber, details.issueNumber, details.model, details.edition].map(text).filter(Boolean).join(' '));
   const candidate = normalize(`${title} ${description}`);
@@ -536,7 +542,20 @@ function identityReview(input: SpecialistMarketplaceLookupInput, title: string, 
     extractIdentityState({ title, grade, certificationCompany, condition: null, itemDetails: description }),
     normalize(input.category).replace(/_/g, ' ') === 'comics',
   );
-  const conflict = stateConflicts.find((reason) => /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason)) ?? null;
+  const equivalentVideoGameGraders = normalizedCategory === 'video games'
+    && input.certificationCompany
+    && certificationCompany
+    && videoGameGradersEquivalent(normalizedCategory, input.certificationCompany, certificationCompany);
+  const graderConflict = normalizedCategory === 'video games'
+    && input.certificationCompany
+    && certificationCompany
+    && !videoGameGradersEquivalent(normalizedCategory, input.certificationCompany, certificationCompany);
+  const conflict = graderConflict
+    ? `Grading company conflicts with the selected video game (${certificationCompany} vs ${input.certificationCompany}); PSA and WATA are equivalent only for video games.`
+    : stateConflicts.find((reason) => {
+      if (equivalentVideoGameGraders && /grading company differs/i.test(reason)) return false;
+      return /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason);
+    }) ?? null;
   const targetCoinYear = normalizedCategory === 'coins' ? text(details.year) : '';
   const candidateCoinYears = normalizedCategory === 'coins' ? extractCoinYears(title) : [];
   const coinYearConflict = targetCoinYear && candidateCoinYears.length > 0 && !candidateCoinYears.includes(targetCoinYear)
