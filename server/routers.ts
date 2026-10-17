@@ -154,6 +154,7 @@ import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
+import { draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft } from "./tnnVideoScript";
 import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { MISSING_TRADE_PAYMENTS_FALLBACK_MESSAGE, isMissingTradePaymentsTableError } from "./paymentAdminCompatibility";
@@ -183,6 +184,55 @@ const SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES = new Set([
   "image/gif",
   "image/svg+xml",
 ]);
+const TNN_MIN_COMPLETED_TRADE_VALUE = 1_000;
+const tnnScriptItemSchema = z.object({
+  listingId: z.number().int().positive().nullable().optional(),
+  title: z.string().trim().min(1).max(180),
+  imageUrl: z.string().url().max(2_000).nullable().optional(),
+  category: z.string().trim().max(80).nullable().optional(),
+  itemType: z.string().trim().max(80).nullable().optional(),
+  grade: z.union([z.string().trim().max(32), z.number()]).nullable().optional(),
+  certificationCompany: z.string().trim().max(80).nullable().optional(),
+  customGradingCompany: z.string().trim().max(80).nullable().optional(),
+  facts: z.array(z.object({ label: z.string().trim().min(1).max(48), value: z.string().trim().min(1).max(120) })).max(4).default([]),
+});
+const tnnScriptDraftSchema = z.object({
+  tradeId: z.number().int().positive(),
+  durationSeconds: z.union([z.literal(30), z.literal(45), z.literal(60)]),
+  anchorMode: z.enum(["max", "sidney", "duo"]),
+  sellerName: z.string().trim().min(1).max(120),
+  buyerName: z.string().trim().min(1).max(120),
+  cashOnly: z.boolean(),
+  selectedItems: z.array(tnnScriptItemSchema).min(1).max(6),
+  additionalItemsCount: z.number().int().min(0).max(99).default(0),
+  tickerText: z.string().trim().min(1).max(120),
+});
+
+async function assertTnnCompletedTradeEligibility(tradeId: number) {
+  const db = await requireDb();
+  const [rows] = await db.execute(sql`SELECT
+      tp.id AS tradeId,
+      (SELECT COALESCE(SUM(ol.estimatedValue), 0)
+        FROM listings ol
+        JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
+        WHERE tpi.proposalId = tp.id)
+        + COALESCE(requested.estimatedValue, 0) AS itemValue
+    FROM tradeProposals tp
+    LEFT JOIN listings requested ON requested.id = tp.requestedListingId
+    WHERE tp.id = ${tradeId}
+      AND tp.status = 'completed'
+      AND tp.completedAt IS NOT NULL
+    LIMIT 1`);
+  const trade = (rows as unknown as Array<{ tradeId?: number; itemValue?: number | string }>)[0];
+  const itemValue = Number(trade?.itemValue ?? 0);
+  if (!trade || !Number.isFinite(itemValue) || itemValue < TNN_MIN_COMPLETED_TRADE_VALUE) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "TNN videos are available only for completed trades with at least $1,000 in estimated item value.",
+    });
+  }
+  return { tradeId: Number(trade.tradeId), itemValue };
+}
 
 function cleanSocialScenePromptValue(value: unknown, maximumLength: number) {
   return String(value ?? "")
@@ -3031,22 +3081,40 @@ export const appRouter = router({
         const { url } = await storagePut(`social-content/admin-${ctx.user.id}/${Date.now()}-${safeFileName}`, bytes, input.contentType);
         return { url, fileName: safeFileName, contentType: input.contentType };
       }),
+    draftCompletedTradeTnnScript: protectedProcedure
+      .input(tnnScriptDraftSchema)
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await assertTnnCompletedTradeEligibility(input.tradeId);
+        try {
+          return await draftTnnScript(input satisfies TnnScriptDraftInput);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "The TNN script could not be drafted.";
+          throw new TRPCError({ code: "BAD_GATEWAY", message });
+        }
+      }),
     startCompletedTradeVideoGeneration: protectedProcedure
-      .input(z.object({
-        script: z.string().trim().min(20).max(3000),
-        itemTitle: z.string().trim().min(1).max(180),
-        requesterName: z.string().trim().min(1).max(160),
-        recipientName: z.string().trim().min(1).max(160),
-        sellerName: z.string().trim().min(1).max(160).optional(),
-        buyerName: z.string().trim().min(1).max(160).optional(),
-        commentary: z.string().trim().min(1).max(1200),
-        logoUrl: z.string().url().max(2000),
-        imageUrls: z.array(z.string().url().max(2000)).max(6).default([]),
+      .input(tnnScriptDraftSchema.extend({
+        script: z.string().trim().min(1).max(2_000),
+        logoUrl: z.string().url().max(2_000),
+        imageUrls: z.array(z.string().url().max(2_000)).max(6).default([]),
+        generationAttempt: z.union([z.literal(1), z.literal(2)]),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        await assertTnnCompletedTradeEligibility(input.tradeId);
+        let validatedScript;
         try {
-          return await createTradeVideoTask(input);
+          validatedScript = validateTnnScriptDraft(input.script, input satisfies TnnScriptDraftInput);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : "The TNN script did not pass the required safety checks.";
+          throw new TRPCError({ code: "BAD_REQUEST", message });
+        }
+        try {
+          return await createTradeVideoTask({
+            ...input,
+            script: validatedScript.script,
+          });
         } catch (error) {
           const message = error instanceof Error ? error.message : "Manus video generation could not be started.";
           throw new TRPCError({ code: "BAD_GATEWAY", message });
@@ -3160,6 +3228,7 @@ export const appRouter = router({
             ORDER BY l.createdAt DESC
             LIMIT ${historicalOpportunityLimit}`),
           db.execute(sql`SELECT
+              tp.id AS tradeId,
               tp.completedAt,
               COALESCE(NULLIF(recipientProfile.displayName, ''), NULLIF(recipient.name, ''), recipient.username, CONCAT('Collector ', tp.recipientId)) AS sellerName,
               COALESCE(NULLIF(requesterProfile.displayName, ''), NULLIF(requester.name, ''), requester.username, CONCAT('Collector ', tp.requesterId)) AS buyerName,
@@ -3344,6 +3413,7 @@ export const appRouter = router({
             const customGradingCompany = getCustomGradingCompany(trade.requestedListingItemDetails);
             return {
               source: "Completed Trade" as const,
+              tradeId: Number(trade.tradeId),
               listingId: trade.requestedListingId ? Number(trade.requestedListingId) : null,
               itemPath: trade.requestedListingId ? `/listings/${Number(trade.requestedListingId)}` : null,
               title: trade.requestedListingTitle || "Collector exchange",
@@ -3365,6 +3435,7 @@ export const appRouter = router({
                 customGradingCompany,
               }),
               itemCount: Number(trade.itemCount ?? 0),
+              estimatedValue: Number(trade.itemValue ?? 0),
               completedAt: trade.completedAt,
               imageUrl: trade.imageUrl ?? null,
               tradeItems: (() => { try { const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson; return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => { const itemCustomGradingCompany = getCustomGradingCompany(item.itemDetails); return { listingId: Number.isFinite(Number(item.listingId)) ? Number(item.listingId) : null, title: String(item.title), imageUrl: item.imageUrl ?? null, estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null, direction: item.direction === "offered" ? "offered" : "requested", category: item.category ?? null, itemType: item.itemType ?? null, visualHints: getTradeAlertVisualHints({ category: item.category, itemType: item.itemType, title: item.title, itemDetails: item.itemDetails }), facts: getSocialPromotionFacts({ category: item.category, itemType: item.itemType, itemDetails: item.itemDetails, grade: item.grade, certificationCompany: item.certificationCompany, customGradingCompany: itemCustomGradingCompany }), grade: item.grade ?? null, certificationCompany: item.certificationCompany ?? null, customGradingCompany: itemCustomGradingCompany }; }) : []; } catch { return []; } })(),

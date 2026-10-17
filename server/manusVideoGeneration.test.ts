@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ENV } from "./_core/env";
-import { buildTradeVideoInstruction, createTradeVideoTask } from "./manusVideoGeneration";
+import { buildTnnVideoInstruction, createTradeVideoTask } from "./manusVideoGeneration";
 
 describe("Manus API configuration", () => {
   it("authenticates the configured server-side API key with the read-only user endpoint", async () => {
@@ -22,13 +22,18 @@ describe("Manus API configuration", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
     try {
       await createTradeVideoTask({
-        script: "BREAKING NEWS. Alex is trading a collectible to Jordan. This is Tradebilia.",
-        itemTitle: "Test collectible",
-        requesterName: "Alex",
-        recipientName: "Jordan",
-        commentary: "A notable collector exchange.",
+        script: "Breaking News from Tradebilia. TNN reports a completed collector trade. Where collectors connect.",
+        durationSeconds: 30,
+        anchorMode: "sidney",
+        sellerName: "Jordan",
+        buyerName: "Alex",
+        cashOnly: false,
+        selectedItems: [{ title: "Test collectible", facts: [{ label: "Year", value: "1986" }] }],
+        additionalItemsCount: 0,
+        tickerText: "Where collectors connect.",
         logoUrl: "https://tradebilia.manus.space/logo.png",
         imageUrls: ["https://tradebilia.manus.space/item.jpg"],
+        generationAttempt: 1,
       });
       const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
       expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
@@ -37,20 +42,27 @@ describe("Manus API configuration", () => {
     }
   });
 
-  it("writes explicit seller and buyer roles into the anchor instruction", () => {
-    const instruction = buildTradeVideoInstruction({
-      script: "BREAKING NEWS. Seller Smith completed a trade with Buyer Jones.",
-      itemTitle: "Test collectible",
-      requesterName: "Buyer Jones",
-      recipientName: "Seller Smith",
+  it("writes the approved privacy-safe TNN newsroom contract into the anchor instruction", () => {
+    const instruction = buildTnnVideoInstruction({
+      script: "Breaking News from Tradebilia. TNN reports Seller Smith and Buyer Jones completed a collector trade. Where collectors connect.",
+      durationSeconds: 45,
+      anchorMode: "duo",
       sellerName: "Seller Smith",
       buyerName: "Buyer Jones",
-      commentary: "A notable collector exchange.",
+      cashOnly: false,
+      selectedItems: [{ title: "Test collectible", grade: "9", certificationCompany: "PSA" }],
+      additionalItemsCount: 1,
+      tickerText: "Where collectors connect.",
       logoUrl: "https://tradebilia.manus.space/logo.png",
+      imageUrls: ["https://tradebilia.manus.space/item.jpg"],
+      generationAttempt: 1,
     });
-    expect(instruction).toContain("Seller: Seller Smith");
-    expect(instruction).toContain("Buyer: Buyer Jones");
-    expect(instruction).not.toContain("Requester:");
-    expect(instruction).not.toContain("Recipient:");
+    expect(instruction).toContain("45-second, 16:9 Tradebilia News Network");
+    expect(instruction).toContain("Max Tradebloski and Sidney Tradewell");
+    expect(instruction).toContain("picture-in-picture panel in the upper corner");
+    expect(instruction).toContain("headline strap reading 'BREAKING NEWS FROM TRADEBILIA'");
+    expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
+    expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
+    expect(instruction).toContain("Where collectors connect.");
   });
 });

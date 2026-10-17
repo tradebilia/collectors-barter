@@ -70,14 +70,18 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("fall back to its reviewed category/item-type/subject scene instead.");
   });
 
-  it("offers a completed-trade breaking-news video studio with real lip-sync and official-logo guardrails", () => {
-    expect(componentSource).toContain("Breaking-news trade video");
+  it("offers the approval-gated TNN breaking-news video studio with newsroom, review, and privacy guardrails", () => {
+    expect(componentSource).toContain("TNN Breaking News");
     expect(componentSource).toContain("Configure Video");
-    expect(componentSource).toContain("buildCompletedTradeVideoPlan");
+    expect(componentSource).toContain("buildTnnCompletedTradeVideoPlan");
     expect(componentSource).toContain("lip-sync");
     expect(componentSource).toContain("official Tradebilia logo");
     expect(componentSource).toContain("final-video-attached");
-    expect(componentSource).toContain("Generate Video");
+    expect(componentSource).toContain("Prepare TNN Script");
+    expect(componentSource).toContain("Approve & Generate");
+    expect(componentSource).toContain("Approve Video");
+    expect(componentSource).toContain("Download Video");
+    expect(componentSource).toContain("No captions, values, cash amounts, or private transaction details");
     expect(componentSource).toContain("startCompletedTradeVideoGeneration");
   });
 });

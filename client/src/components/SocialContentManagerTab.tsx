@@ -32,6 +32,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -60,11 +62,14 @@ import {
   SOCIAL_PLATFORMS,
   TRADEBILIA_PUBLIC_ORIGIN,
   buildListingSocialCopy,
-  buildCompletedTradeVideoPlan,
+  buildTnnCompletedTradeVideoPlan,
+  chooseNextTnnAnchor,
   formatSocialCategory,
   getCompletedTradePostLabel,
+  getSocialFooterPhrase,
   getSocialPromotionItemTitle,
   isCashOnlyCompletedTrade,
+  isTnnEligibleCompletedTrade,
   normalizeSocialDraftPlatforms,
   reconcileSocialDraftVisualHints,
   toggleSocialPlatform,
@@ -74,6 +79,9 @@ import {
   type SocialPlatform,
   type SocialPromotionFact,
   type SocialVideoPlan,
+  type TnnAnchorMode,
+  type TnnVideoDuration,
+  withTnnVideoScript,
 } from "@/lib/socialContentManager";
 import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/SocialPromotionGraphic";
 
@@ -229,9 +237,14 @@ export function SocialContentManagerTab() {
   const [previewPlatform, setPreviewPlatform] = useState<SocialPlatform | null>(null);
   const [isExportingGraphic, setIsExportingGraphic] = useState(false);
   const [isVideoStudioOpen, setIsVideoStudioOpen] = useState(false);
-  const [videoRequesterName, setVideoRequesterName] = useState("");
-  const [videoRecipientName, setVideoRecipientName] = useState("");
-  const [videoCommentary, setVideoCommentary] = useState("");
+  const [isTnnGenerationConfirmOpen, setIsTnnGenerationConfirmOpen] = useState(false);
+  const [videoSellerName, setVideoSellerName] = useState("");
+  const [videoBuyerName, setVideoBuyerName] = useState("");
+  const [videoDuration, setVideoDuration] = useState<TnnVideoDuration>(30);
+  const [videoAnchorMode, setVideoAnchorMode] = useState<TnnAnchorMode>("sidney");
+  const [videoSelectedItemIndexes, setVideoSelectedItemIndexes] = useState<number[]>([]);
+  const [videoTickerText, setVideoTickerText] = useState("Where collectors connect.");
+  const [lastTnnSoloAnchor, setLastTnnSoloAnchor] = useState<Exclude<TnnAnchorMode, "duo"> | null>(null);
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
   // Keep these positions aligned to promotion.tradeItems. Filtering a missing
   // photo would otherwise assign a later item's photo to the wrong caption.
@@ -252,6 +265,7 @@ export function SocialContentManagerTab() {
     [promotionQuery.data?.categoryTestListings, promotionQuery.data?.highValueListings],
   );
   const uploadSocialMedia = trpc.admin.uploadSocialContentMedia.useMutation();
+  const draftCompletedTradeTnnScript = trpc.admin.draftCompletedTradeTnnScript.useMutation();
   const startCompletedTradeVideoGeneration = trpc.admin.startCompletedTradeVideoGeneration.useMutation();
   const prepareSocialGraphicImage = trpc.admin.prepareSocialGraphicImage.useMutation();
   const generateHighValueListingScene = trpc.admin.generateHighValueListingScene.useMutation();
@@ -266,6 +280,7 @@ export function SocialContentManagerTab() {
       setDrafts(initial);
       setSelectedId(initial[0]?.id ?? null);
       setAutoListEnabled(typeof parsedPreferences?.autoListEnabled === "boolean" ? parsedPreferences.autoListEnabled : true);
+      setLastTnnSoloAnchor(parsedPreferences?.lastTnnSoloAnchor === "max" || parsedPreferences?.lastTnnSoloAnchor === "sidney" ? parsedPreferences.lastTnnSoloAnchor : null);
     } catch {
       setDrafts([starterDraft]);
       setSelectedId(starterDraft.id);
@@ -288,28 +303,32 @@ export function SocialContentManagerTab() {
   }, [currentVisualOpportunities, hydrated]);
 
   useEffect(() => {
-    if (hydrated && autoListEnabled !== null) window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ autoListEnabled }));
-  }, [autoListEnabled, hydrated]);
+    if (hydrated && autoListEnabled !== null) window.localStorage.setItem(PREFERENCES_KEY, JSON.stringify({ autoListEnabled, lastTnnSoloAnchor }));
+  }, [autoListEnabled, hydrated, lastTnnSoloAnchor]);
 
   const selectedDraft = drafts.find((draft) => draft.id === selectedId) ?? null;
-  const videoTaskId = selectedDraft?.videoPlan?.status === "generating" ? selectedDraft.videoPlan.taskId : null;
+  const videoTaskId = selectedDraft?.videoPlan?.generationStatus === "generating" ? selectedDraft.videoPlan.taskId : null;
   const completedTradeVideoStatus = trpc.admin.getCompletedTradeVideoGeneration.useQuery(
     videoTaskId ? { taskId: videoTaskId } : skipToken,
     { enabled: Boolean(videoTaskId), refetchInterval: videoTaskId ? 5000 : false },
   );
   useEffect(() => {
-    if (!selectedDraft?.videoPlan || selectedDraft.videoPlan.status !== "generating" || !completedTradeVideoStatus.data) return;
+    if (!selectedDraft?.videoPlan || selectedDraft.videoPlan.generationStatus !== "generating" || !completedTradeVideoStatus.data) return;
     const result = completedTradeVideoStatus.data;
     if (result.status === "completed" && result.videoUrl) {
       setDrafts((current) => current.map((draft) => draft.id === selectedDraft.id
-        ? { ...draft, mediaUrl: result.videoUrl ?? draft.mediaUrl, videoPlan: { ...draft.videoPlan!, videoUrl: result.videoUrl, status: "final-video-attached" }, updatedAt: new Date().toISOString() }
+        ? { ...draft, mediaUrl: result.videoUrl ?? draft.mediaUrl, videoPlan: { ...draft.videoPlan!, videoUrl: result.videoUrl, generationStatus: "final-video-attached", videoReviewStatus: "needs-review", statusMessage: result.message }, updatedAt: new Date().toISOString() }
         : draft));
-      toast.success("The generated breaking-news video is attached to this draft");
+      toast.success("The TNN video is attached and ready for private review.");
     } else if (result.status === "failed") {
       setDrafts((current) => current.map((draft) => draft.id === selectedDraft.id
-        ? { ...draft, videoPlan: { ...draft.videoPlan!, status: "generation-failed", errorMessage: result.message }, updatedAt: new Date().toISOString() }
+        ? { ...draft, videoPlan: { ...draft.videoPlan!, generationStatus: "generation-failed", errorMessage: result.message, statusMessage: result.message }, updatedAt: new Date().toISOString() }
         : draft));
       toast.error(result.message);
+    } else if (selectedDraft.videoPlan.statusMessage !== result.message) {
+      setDrafts((current) => current.map((draft) => draft.id === selectedDraft.id
+        ? { ...draft, videoPlan: { ...draft.videoPlan!, statusMessage: result.message }, updatedAt: new Date().toISOString() }
+        : draft));
     }
   }, [completedTradeVideoStatus.data, selectedDraft]);
   const selectedPreviewPlatform = selectedDraft?.platforms.includes(previewPlatform as SocialPlatform)
@@ -505,7 +524,7 @@ export function SocialContentManagerTab() {
   function createCompletedTradeDraft(trade: any) {
     const facts = buildPromotionFacts(trade);
     const destinationUrl = TRADEBILIA_PUBLIC_ORIGIN;
-    const tradeItems = Array.isArray(trade.tradeItems) ? trade.tradeItems.filter((item: any) => item?.title).slice(0, 4) : [];
+    const tradeItems = Array.isArray(trade.tradeItems) ? trade.tradeItems.filter((item: any) => item?.title) : [];
     const cashIncluded = Boolean(trade.cashIncluded);
     const postLabel = getCompletedTradePostLabel({ ...trade, tradeItems, cashIncluded });
     const isCashOnlySale = isCashOnlyCompletedTrade({ ...trade, tradeItems, cashIncluded });
@@ -521,6 +540,7 @@ export function SocialContentManagerTab() {
         itemTitle: trade.title,
         sellerName: trade.sellerName ?? null,
         buyerName: trade.buyerName ?? null,
+        tradeId: Number.isFinite(Number(trade.tradeId)) ? Number(trade.tradeId) : null,
         listingId: trade.listingId ?? null,
         itemPath: trade.itemPath ?? null,
         tradeItems,
@@ -528,7 +548,7 @@ export function SocialContentManagerTab() {
         category: trade.category ?? null,
         itemType: trade.itemType ?? null,
         facts,
-        estimatedValue: null,
+        estimatedValue: Number.isFinite(Number(trade.estimatedValue)) ? Number(trade.estimatedValue) : null,
         createdAt: trade.completedAt ?? null,
         isNew: false,
       },
@@ -541,61 +561,127 @@ export function SocialContentManagerTab() {
   function openCompletedTradeVideoStudio() {
     if (!selectedDraft || selectedDraft.source !== "Completed Trade") return;
     const existing = selectedDraft.videoPlan;
-    const sellerName = selectedDraft.promotion?.sellerName?.trim() || existing?.sellerName || existing?.recipientName || "";
-    const buyerName = selectedDraft.promotion?.buyerName?.trim() || existing?.buyerName || existing?.requesterName || "";
-    setVideoRequesterName(buyerName);
-    setVideoRecipientName(sellerName);
-    const preparedPlan = buildCompletedTradeVideoPlan({
-      requesterName: buyerName,
-      recipientName: sellerName,
-      sellerName,
-      buyerName,
-      itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
-      tradeItemTitles: (selectedDraft.promotion?.tradeItems ?? []).map((item) => item.title),
-      cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
-      commentary: existing?.commentary ?? "",
-      officialLogoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
-    });
-    setVideoCommentary(preparedPlan.commentary);
+    const tradeItems = selectedDraft.promotion?.tradeItems ?? [];
+    const anchorMode = existing?.anchorMode ?? chooseNextTnnAnchor(lastTnnSoloAnchor);
+    const indexes = existing?.selectedItemIndexes?.filter((index) => index >= 0 && index < tradeItems.length)
+      ?? tradeItems.slice(0, 6).map((_, index) => index);
+    setVideoSellerName(selectedDraft.promotion?.sellerName?.trim() || existing?.sellerName || "");
+    setVideoBuyerName(selectedDraft.promotion?.buyerName?.trim() || existing?.buyerName || "");
+    setVideoDuration(existing?.durationSeconds ?? 30);
+    setVideoAnchorMode(anchorMode);
+    setVideoSelectedItemIndexes(indexes);
+    setVideoTickerText(existing?.tickerText || getSocialFooterPhrase(selectedDraft.id));
     setIsVideoStudioOpen(true);
   }
 
-  async function createCompletedTradeVideoPlan() {
-    if (!selectedDraft || selectedDraft.source !== "Completed Trade") return;
-    const plan = buildCompletedTradeVideoPlan({
-      requesterName: videoRequesterName,
-      recipientName: videoRecipientName,
-      sellerName: videoRecipientName,
-      buyerName: videoRequesterName,
-      itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
-      tradeItemTitles: (selectedDraft.promotion?.tradeItems ?? []).map((item) => item.title),
-      cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
-      commentary: videoCommentary,
-      officialLogoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
+  function toggleTnnSelectedItem(index: number) {
+    setVideoSelectedItemIndexes((current) => {
+      if (current.includes(index)) return current.filter((value) => value !== index);
+      if (current.length >= 6) {
+        toast.error("Select up to six items for one TNN video.");
+        return current;
+      }
+      return [...current, index].sort((left, right) => left - right);
     });
-    updateDraft({ videoPlan: plan });
+  }
+
+  function buildCurrentTnnPlan() {
+    if (!selectedDraft?.promotion) return null;
+    return buildTnnCompletedTradeVideoPlan({
+      sellerName: videoSellerName,
+      buyerName: videoBuyerName,
+      tradeItems: selectedDraft.promotion.tradeItems ?? [],
+      selectedItemIndexes: videoSelectedItemIndexes,
+      cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
+      durationSeconds: videoDuration,
+      anchorMode: videoAnchorMode,
+      tickerText: videoTickerText,
+    });
+  }
+
+  async function draftCompletedTradeTnnVideoScript() {
+    if (!selectedDraft || selectedDraft.source !== "Completed Trade") return;
+    if (!isTnnEligibleCompletedTrade(selectedDraft.promotion)) {
+      toast.error("TNN videos are available only for completed trades with at least $1,000 in estimated item value.");
+      return;
+    }
+    const plan = buildCurrentTnnPlan();
+    if (!plan || plan.selectedItems.length === 0) {
+      toast.error("Select at least one completed-trade item for the TNN report.");
+      return;
+    }
+    const previousDraftAttempts = selectedDraft.videoPlan?.scriptDraftAttempts ?? 0;
+    updateDraft({ videoPlan: { ...plan, scriptStatus: "drafting", scriptDraftAttempts: previousDraftAttempts } });
     try {
-      const imageUrls = (selectedDraft.promotion?.tradeItems ?? [])
+      const result = await draftCompletedTradeTnnScript.mutateAsync({
+        tradeId: Number(selectedDraft.promotion?.tradeId),
+        durationSeconds: plan.durationSeconds,
+        anchorMode: plan.anchorMode,
+        sellerName: plan.sellerName,
+        buyerName: plan.buyerName,
+        cashOnly: plan.cashOnly,
+        selectedItems: plan.selectedItems.map(({ facts, ...item }) => ({ ...item, facts: facts ?? [] })),
+        additionalItemsCount: plan.additionalItemsCount,
+        tickerText: plan.tickerText,
+      });
+      updateDraft({ videoPlan: withTnnVideoScript(plan, result.script, previousDraftAttempts + 1) });
+      toast.success("A fact-locked TNN script draft is ready for your review.");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "The TNN script could not be drafted.";
+      updateDraft({ videoPlan: { ...plan, scriptStatus: "draft-failed", errorMessage: message } });
+      toast.error(message);
+    }
+  }
+
+  function requestTnnGenerationApproval() {
+    if (!selectedDraft?.videoPlan || selectedDraft.videoPlan.scriptStatus !== "draft-ready") {
+      toast.error("Prepare a TNN script draft before starting video generation.");
+      return;
+    }
+    if (drafts.some((draft) => draft.videoPlan?.generationStatus === "starting" || draft.videoPlan?.generationStatus === "generating")) {
+      toast.error("Only one TNN video may generate at a time in this admin workspace.");
+      return;
+    }
+    if (selectedDraft.videoPlan.generationAttempt >= 2) {
+      toast.error("The initial TNN video and one replacement have already been used for this draft.");
+      return;
+    }
+    setIsTnnGenerationConfirmOpen(true);
+  }
+
+  async function startApprovedTnnGeneration() {
+    if (!selectedDraft?.videoPlan || selectedDraft.source !== "Completed Trade") return;
+    const plan = selectedDraft.videoPlan;
+    if (plan.scriptStatus !== "draft-ready" || plan.generationAttempt >= 2 || !selectedDraft.promotion?.tradeId) return;
+    setIsTnnGenerationConfirmOpen(false);
+    updateDraft({ videoPlan: { ...plan, generationStatus: "starting", errorMessage: undefined, statusMessage: "Starting the approved TNN video task…" } });
+    try {
+      const imageUrls = plan.selectedItems
         .map((item) => item.imageUrl)
         .filter((url): url is string => Boolean(url && /^https?:\/\//i.test(url)))
         .slice(0, 6);
       const task = await startCompletedTradeVideoGeneration.mutateAsync({
-        script: plan.script,
-        itemTitle: getSocialPromotionItemTitle(selectedDraft.promotion?.itemTitle ?? selectedDraft.title),
-        requesterName: plan.requesterName,
-        recipientName: plan.recipientName,
+        tradeId: Number(selectedDraft.promotion.tradeId),
+        durationSeconds: plan.durationSeconds,
+        anchorMode: plan.anchorMode,
         sellerName: plan.sellerName,
         buyerName: plan.buyerName,
-        commentary: plan.commentary,
-        logoUrl: plan.officialLogoUrl,
+        cashOnly: plan.cashOnly,
+        selectedItems: plan.selectedItems.map(({ facts, ...item }) => ({ ...item, facts: facts ?? [] })),
+        additionalItemsCount: plan.additionalItemsCount,
+        tickerText: plan.tickerText,
+        script: plan.script,
+        logoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
         imageUrls,
+        generationAttempt: (plan.generationAttempt + 1) as 1 | 2,
       });
-      updateDraft({ videoPlan: { ...plan, taskId: task.taskId, taskUrl: task.taskUrl, status: "generating" } });
+      if (plan.anchorMode !== "duo") setLastTnnSoloAnchor(plan.anchorMode);
+      updateDraft({ videoPlan: { ...plan, taskId: task.taskId, taskUrl: task.taskUrl, generationAttempt: plan.generationAttempt + 1, generationStatus: "generating", statusMessage: "Manus accepted the TNN video task. Rendering is in progress.", videoReviewStatus: "not-ready" } });
       setIsVideoStudioOpen(false);
-      toast.success("Breaking-news video generation started");
+      toast.success("Your approved TNN video is generating in the background.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Video generation could not be started.";
-      updateDraft({ videoPlan: { ...plan, status: "generation-failed", errorMessage: message } });
+      updateDraft({ videoPlan: { ...plan, generationStatus: "generation-failed", errorMessage: message, statusMessage: "The TNN video task did not start. No generation attempt was used." } });
       toast.error(message);
     }
   }
@@ -729,7 +815,7 @@ export function SocialContentManagerTab() {
       setDrafts((current) => current.map((draft) => draft.id === draftId ? {
         ...draft,
         mediaUrl: upload.url,
-        videoPlan: draft.videoPlan && file.type.startsWith("video/") ? { ...draft.videoPlan, status: "final-video-attached" } : draft.videoPlan,
+        videoPlan: draft.videoPlan && file.type.startsWith("video/") ? { ...draft.videoPlan, generationStatus: "final-video-attached", videoReviewStatus: "needs-review", statusMessage: "A video file is attached and ready for private review." } : draft.videoPlan,
         updatedAt: new Date().toISOString(),
       } : draft));
       toast.success("Original media attached to this draft");
@@ -878,7 +964,21 @@ export function SocialContentManagerTab() {
               <div className="grid gap-4 sm:grid-cols-2"><label className="space-y-2 text-sm font-semibold text-slate-700 sm:col-span-2">Internal post title<Input value={selectedDraft.title} onChange={(event) => updateDraft({ title: event.target.value })} placeholder="Example: Welcome to Tradebilia" className="mt-1.5" /></label><label className="space-y-2 text-sm font-semibold text-slate-700 sm:col-span-2">Post copy<Textarea value={selectedDraft.copy} onChange={(event) => updateDraft({ copy: event.target.value })} placeholder="Write the message your audience should see..." className="mt-1.5 min-h-32 resize-y" /><span className="block text-right text-xs font-normal text-slate-400">{selectedDraft.copy.length} characters</span></label></div>
               <div className="space-y-2"><p className="text-sm font-semibold text-slate-700">Target platforms</p><div className="grid gap-2 sm:grid-cols-2">{platforms.map((platform) => <button key={platform} type="button" onClick={() => togglePlatform(platform)} className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${selectedDraft.platforms.includes(platform) ? platformStyles[platform] : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"}`}><span className="flex items-center gap-2">{platformIcon(platform)}{platform}</span>{selectedDraft.platforms.includes(platform) ? <CheckCircle2 className="h-4 w-4" /> : <span className="h-4 w-4 rounded-full border border-current" />}</button>)}</div></div>
               <div className="grid gap-4 sm:grid-cols-2"><div className="space-y-2 text-sm font-semibold text-slate-700"><p>Original media</p><div className="mt-1.5 flex flex-wrap items-center gap-2"><label className={`inline-flex h-10 cursor-pointer items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-800 transition hover:bg-indigo-100 ${uploadSocialMedia.isPending ? "cursor-wait opacity-70" : ""}`}><Upload className="h-4 w-4" />{uploadSocialMedia.isPending ? "Uploading…" : "Upload image or video"}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime" className="sr-only" disabled={uploadSocialMedia.isPending} onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadOriginalMedia(file); event.currentTarget.value = ""; }} /></label>{selectedDraft.mediaUrl ? <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700"><CheckCircle2 className="h-3.5 w-3.5" />Media attached</span> : null}</div><div className="relative mt-2"><ImageIcon className="absolute left-3 top-3 h-4 w-4 text-slate-400" /><Input value={selectedDraft.mediaUrl} onChange={(event) => updateDraft({ mediaUrl: event.target.value })} placeholder="Optional existing image or video URL" className="pl-9" /></div><span className="block text-xs font-normal text-slate-500">JPG, PNG, WEBP, GIF, MP4, WEBM, or MOV up to 6 MB. Uploads attach to this browser-local draft.</span></div><label className="space-y-2 text-sm font-semibold text-slate-700">Planned date<input type="date" value={selectedDraft.plannedDate} onChange={(event) => updateDraft({ plannedDate: event.target.value, status: event.target.value ? "Scheduled" : selectedDraft.status })} className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" /><span className="block text-xs font-normal text-slate-500">Planning only; no automated post will be sent.</span></label></div>
-              {selectedDraft.source === "Completed Trade" ? <section className="rounded-xl border border-violet-200 bg-violet-50/70 p-4" aria-label="Breaking-news trade video studio"><div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-700 text-white"><Youtube className="h-4 w-4" /></span><div><p className="text-sm font-bold text-violet-950">Breaking-news trade video</p><p className="mt-1 text-xs leading-5 text-violet-900/80">Configure the 16:9, 25-second anchor video. Manus will generate it in the background and attach the MP4 here when ready. Nothing is published automatically.</p></div></div><Button type="button" size="sm" onClick={openCompletedTradeVideoStudio} disabled={startCompletedTradeVideoGeneration.isPending} className="shrink-0 bg-violet-700 text-white hover:bg-violet-800"><Megaphone className="mr-1.5 h-4 w-4" />{startCompletedTradeVideoGeneration.isPending ? "Starting…" : "Configure Video"}</Button></div>{selectedDraft.videoPlan ? <div className="mt-3 rounded-lg border border-violet-200 bg-white p-3 text-xs text-violet-950"><div className="flex flex-wrap items-center justify-between gap-2"><span className="font-bold">{selectedDraft.videoPlan.status === "final-video-attached" ? "Final video attached" : selectedDraft.videoPlan.status === "generating" ? "Generating video…" : selectedDraft.videoPlan.status === "generation-failed" ? "Video generation failed" : "Ready to generate"}</span><Badge className="border border-violet-200 bg-violet-50 text-violet-800">16:9 · 25 sec</Badge></div><p className="mt-2 leading-5"><strong>{selectedDraft.videoPlan.requesterName}</strong> → <strong>{selectedDraft.videoPlan.recipientName}</strong>: {selectedDraft.videoPlan.exchangeLine}</p>{selectedDraft.videoPlan.errorMessage ? <p className="mt-1 text-rose-700">{selectedDraft.videoPlan.errorMessage}</p> : null}{selectedDraft.videoPlan.videoUrl ? <video className="mt-3 aspect-video w-full rounded-lg border border-violet-100 bg-black" src={selectedDraft.videoPlan.videoUrl} controls preload="metadata" aria-label="Generated breaking-news trade video" /> : <p className="mt-1 text-violet-900/70">Manus is generating the anchor video. This draft remains in the manual review workflow.</p>}</div> : null}</section> : null}
+              {selectedDraft.source === "Completed Trade" ? <section className="rounded-xl border border-violet-200 bg-violet-50/70 p-4" aria-label="TNN completed-trade video studio">
+                {isTnnEligibleCompletedTrade(selectedDraft.promotion) ? <>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-violet-700 text-white"><Megaphone className="h-4 w-4" /></span><div><p className="text-sm font-bold text-violet-950">TNN Breaking News</p><p className="mt-1 text-xs leading-5 text-violet-900/80">Create a fact-locked Tradebilia News Network report: choose the approved format, prepare an AI-written script, review it, then explicitly approve one video task. Nothing publishes automatically.</p></div></div>
+                    <Button type="button" size="sm" onClick={openCompletedTradeVideoStudio} disabled={startCompletedTradeVideoGeneration.isPending || draftCompletedTradeTnnScript.isPending} className="shrink-0 bg-violet-700 text-white hover:bg-violet-800"><Megaphone className="mr-1.5 h-4 w-4" />Configure Video</Button>
+                  </div>
+                  {selectedDraft.videoPlan ? <div className="mt-3 space-y-3 rounded-lg border border-violet-200 bg-white p-3 text-xs text-violet-950">
+                    <div className="flex flex-wrap items-center justify-between gap-2"><span className="font-bold">{selectedDraft.videoPlan.generationStatus === "final-video-attached" ? selectedDraft.videoPlan.videoReviewStatus === "approved" ? "TNN video approved" : "TNN video ready for private review" : selectedDraft.videoPlan.generationStatus === "generating" ? "TNN video is generating" : selectedDraft.videoPlan.generationStatus === "starting" ? "Starting TNN video" : selectedDraft.videoPlan.generationStatus === "generation-failed" ? "TNN video generation failed" : selectedDraft.videoPlan.scriptStatus === "drafting" ? "Preparing TNN script" : selectedDraft.videoPlan.scriptStatus === "draft-ready" ? "TNN script ready for approval" : "TNN video not started"}</span><Badge className="border border-violet-200 bg-violet-50 text-violet-800">16:9 · {selectedDraft.videoPlan.durationSeconds} sec · {selectedDraft.videoPlan.anchorNames.join(" & ")}</Badge></div>
+                    <p className="leading-5">Selected items: {selectedDraft.videoPlan.selectedItems.length}{selectedDraft.videoPlan.additionalItemsCount ? ` shown; ${selectedDraft.videoPlan.additionalItemsCount} additional item${selectedDraft.videoPlan.additionalItemsCount === 1 ? "" : "s"} acknowledged in the script.` : "."}</p>
+                    <p className="leading-5 text-violet-900/75">{selectedDraft.videoPlan.statusMessage || "Prepare a script, review it, and explicitly approve generation. The completed-trade value is never shown or narrated."}</p>
+                    {selectedDraft.videoPlan.errorMessage ? <p className="leading-5 text-rose-700">{selectedDraft.videoPlan.errorMessage}</p> : null}
+                    {selectedDraft.videoPlan.videoUrl ? <><video className="aspect-video w-full rounded-lg border border-violet-100 bg-black" src={selectedDraft.videoPlan.videoUrl} controls preload="metadata" aria-label="Generated TNN completed-trade video" /><div className="flex flex-wrap gap-2"><a href={selectedDraft.videoPlan.videoUrl} download className="inline-flex h-8 items-center rounded-md border border-violet-200 bg-white px-3 text-xs font-semibold text-violet-800 hover:bg-violet-50"><Download className="mr-1.5 h-3.5 w-3.5" />Download Video</a>{selectedDraft.videoPlan.videoReviewStatus !== "approved" ? <Button type="button" size="sm" onClick={() => updateDraft({ videoPlan: { ...selectedDraft.videoPlan!, videoReviewStatus: "approved", statusMessage: "TNN video approved for the existing manual publishing workflow." } })} className="h-8 bg-emerald-600 text-xs text-white hover:bg-emerald-700"><CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />Approve Video</Button> : null}</div></> : null}
+                  </div> : null}
+                </> : <div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-200 text-slate-600"><Youtube className="h-4 w-4" /></span><div><p className="text-sm font-bold text-slate-800">TNN Breaking News is unavailable for this trade</p><p className="mt-1 text-xs leading-5 text-slate-600">A completed trade must have at least $1,000 in aggregate estimated item value before the studio can prepare a TNN video. Values are used only for this eligibility gate and are never displayed or narrated.</p></div></div>}
+              </section> : null}
               <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 p-4"><div className="flex items-start gap-3"><Link2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" /><div><p className="text-sm font-bold text-indigo-950">Manual publishing safeguard</p><p className="mt-1 text-xs leading-5 text-indigo-900/80">Approved means the copy is ready for a person to publish on the selected sites. It does not connect an account, send a post, or grant an external platform permission.</p></div></div></div>
               <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between"><span className="text-xs text-slate-500">Last edited {formatUpdatedAt(selectedDraft.updatedAt)}</span><div className="flex flex-wrap gap-2">{selectedDraft.source === "Completed Trade" ? <Button variant="outline" onClick={openCompletedTradeVideoStudio}><Youtube className="mr-2 h-4 w-4" />Video Studio</Button> : null}<Button variant="outline" onClick={openPreview}><Eye className="mr-2 h-4 w-4" />Preview Post</Button><Button variant="outline" onClick={() => updateDraft({ status: "Draft" })}><Save className="mr-2 h-4 w-4" />Save Draft</Button>{selectedDraft.status === "Needs Review" ? <Button onClick={approveDraft} className="bg-emerald-600 text-white hover:bg-emerald-700"><CheckCircle2 className="mr-2 h-4 w-4" />Approve</Button> : <Button onClick={requestReview} className="bg-indigo-600 text-white hover:bg-indigo-700"><Send className="mr-2 h-4 w-4" />Request Review</Button>}</div></div>
             </CardContent>
@@ -919,23 +1019,30 @@ export function SocialContentManagerTab() {
               </DialogContent>
             </Dialog>
             <Dialog open={isVideoStudioOpen} onOpenChange={setIsVideoStudioOpen}>
-              <DialogContent className="max-h-[calc(100vh-2rem)] max-w-2xl overflow-y-auto" aria-describedby="trade-video-studio-description">
+              <DialogContent className="max-h-[calc(100vh-2rem)] max-w-3xl overflow-y-auto" aria-describedby="trade-video-studio-description">
                 <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2"><Youtube className="h-5 w-5 text-violet-700" />Breaking-News Trade Video Studio</DialogTitle>
-                  <DialogDescription id="trade-video-studio-description">Configure the 16:9 anchor video. Saving starts Manus generation; the resulting MP4 will be attached to this draft when the background task completes.</DialogDescription>
+                  <DialogTitle className="flex items-center gap-2"><Megaphone className="h-5 w-5 text-violet-700" />TNN Breaking News Video Studio</DialogTitle>
+                  <DialogDescription id="trade-video-studio-description">Prepare a private Tradebilia News Network script from the completed trade, review it, then approve a single background video task. The finished MP4 stays in this draft for manual review; nothing is published automatically.</DialogDescription>
                 </DialogHeader>
-                <div className="space-y-4 py-2">
+                <div className="space-y-5 py-2">
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step asks AI to draft a fact-locked 30, 45, or 60-second newsroom script. You review that script before a separate approval starts video generation. Manus then renders one 16:9 TNN newsroom MP4 in the background with professional lip-sync, the supplied Tradebilia logo, a breaking-news strap, item picture-in-picture panels, and one rotating generic homepage tagline in the ticker. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name<Input value={videoRecipientName} onChange={(event) => setVideoRecipientName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
-                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name<Input value={videoRequesterName} onChange={(event) => setVideoRequesterName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name <Input value={videoSellerName} onChange={(event) => setVideoSellerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name <Input value={videoBuyerName} onChange={(event) => setVideoBuyerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Report length <select value={String(videoDuration)} onChange={(event) => setVideoDuration(Number(event.target.value) as TnnVideoDuration)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="30">30 seconds · concise report</option><option value="45">45 seconds · expanded report</option><option value="60">60 seconds · full report</option></select></label>
+                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor presentation <select value={videoAnchorMode} onChange={(event) => setVideoAnchorMode(event.target.value as TnnAnchorMode)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="max">Max Tradebloski · solo</option><option value="sidney">Sidney Tradewell · solo</option><option value="duo">Max &amp; Sidney · duo report</option></select></label>
                   </div>
-                  <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor commentary<Textarea value={videoCommentary} onChange={(event) => setVideoCommentary(event.target.value)} placeholder="Trade-specific commentary will be prepared automatically." className="mt-1 min-h-24" /><span className="block text-xs font-normal text-slate-500">Prepared from the completed trade details. Edit it before generation if needed.</span></label>
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-950"><strong>Generation status:</strong> Generate Video creates one 16:9, 25-second breaking-news segment with an American female news anchor, lip-synced dialogue, the seller and buyer names, the completed-trade commentary, the trade-item images, and the official Tradebilia logo. Generation runs in the background; the finished MP4 will attach to this draft for review. Nothing is published automatically.</div>
-                  {selectedDraft?.videoPlan ? <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Current script</p><p className="mt-2 text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p><p className="mt-2 text-xs text-slate-500">Logo asset: {selectedDraft.videoPlan.officialLogoUrl}</p></div> : null}
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Completed-trade items</p><p className="mt-1 text-xs leading-5 text-slate-600">Select up to six items to show in the corner during the matching part of the report. Every other completed-trade item is acknowledged generically, without invented details.</p></div><Badge variant="outline" className="border-slate-300 bg-white text-slate-700">{videoSelectedItemIndexes.length} / 6 selected</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{(selectedDraft?.promotion?.tradeItems ?? []).map((item, index) => <label key={`${item.listingId ?? "item"}-${index}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-700 hover:border-violet-300"><Checkbox checked={videoSelectedItemIndexes.includes(index)} onCheckedChange={() => toggleTnnSelectedItem(index)} aria-label={`Include ${item.title} in TNN video`} /><span><span className="block font-semibold">{item.title}</span>{item.grade || item.certificationCompany || item.customGradingCompany ? <span className="mt-0.5 block text-xs text-slate-500">{[item.certificationCompany || item.customGradingCompany, item.grade].filter(Boolean).join(" ")}</span> : null}</span></label>)}</div></div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Ticker tagline</p><p className="mt-1 text-sm font-semibold text-slate-800">{videoTickerText}</p><p className="mt-1 text-xs leading-5 text-slate-500">Chosen from the 12 homepage taglines and used as a generic lower ticker only.</p></div>
+                  {selectedDraft?.videoPlan?.script ? <div className="rounded-lg border border-violet-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">AI-written script draft</p><p className="mt-1 text-xs text-slate-500">{selectedDraft.videoPlan.scriptWordCount} words · approximately {selectedDraft.videoPlan.estimatedSpeechSeconds} seconds · review before generation</p></div><Badge className="border border-violet-200 bg-violet-50 text-violet-800">Draft {selectedDraft.videoPlan.scriptDraftAttempts}</Badge></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p></div> : null}
+                  {selectedDraft?.videoPlan?.errorMessage ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-800">{selectedDraft.videoPlan.errorMessage}</p> : null}
                 </div>
-                <DialogFooter><Button variant="outline" onClick={() => setIsVideoStudioOpen(false)}>Cancel</Button><Button onClick={() => void createCompletedTradeVideoPlan()} disabled={startCompletedTradeVideoGeneration.isPending} className="bg-violet-700 text-white hover:bg-violet-800"><Sparkles className="mr-2 h-4 w-4" />{startCompletedTradeVideoGeneration.isPending ? "Starting Video…" : "Generate Video"}</Button></DialogFooter>
+                <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between"><Button variant="outline" onClick={() => setIsVideoStudioOpen(false)}>Close Studio</Button><div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" onClick={() => void draftCompletedTradeTnnVideoScript()} disabled={draftCompletedTradeTnnScript.isPending || startCompletedTradeVideoGeneration.isPending}><Sparkles className="mr-2 h-4 w-4" />{draftCompletedTradeTnnScript.isPending ? "Drafting Script…" : selectedDraft?.videoPlan?.script ? "Regenerate Script" : "Prepare TNN Script"}</Button><Button type="button" onClick={requestTnnGenerationApproval} disabled={selectedDraft?.videoPlan?.scriptStatus !== "draft-ready" || startCompletedTradeVideoGeneration.isPending || (selectedDraft?.videoPlan?.generationAttempt ?? 0) >= 2} className="bg-violet-700 text-white hover:bg-violet-800"><Youtube className="mr-2 h-4 w-4" />{(selectedDraft?.videoPlan?.generationAttempt ?? 0) === 1 ? "Approve Replacement" : "Approve & Generate"}</Button></div></DialogFooter>
               </DialogContent>
             </Dialog>
+            <AlertDialog open={isTnnGenerationConfirmOpen} onOpenChange={setIsTnnGenerationConfirmOpen}>
+              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Approve this TNN video task?</AlertDialogTitle><AlertDialogDescription>This will send the reviewed script to Manus for one {selectedDraft?.videoPlan?.durationSeconds ?? videoDuration}-second, 16:9 TNN newsroom video. It will use the selected trade-item images and official Tradebilia logo, then return an MP4 here for private review. This does not publish, schedule, or connect to any social platform.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep Reviewing</AlertDialogCancel><AlertDialogAction onClick={() => void startApprovedTnnGeneration()} className="bg-violet-700 hover:bg-violet-800">Approve &amp; Generate Video</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+            </AlertDialog>
           </>}
         </Card>
       </div>
