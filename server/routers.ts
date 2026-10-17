@@ -155,9 +155,11 @@ import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
 import { draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft } from "./tnnVideoScript";
+import { TNN_VIDEO_DURATION_SECONDS } from "../shared/tnnVideoPolicy";
 
-const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png";
+const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png";
 const TNN_NEWSROOM_REFERENCE_URL = "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
+const TNN_OPENING_REFERENCE_URL = "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png";
 import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { MISSING_TRADE_PAYMENTS_FALLBACK_MESSAGE, isMissingTradePaymentsTableError } from "./paymentAdminCompatibility";
@@ -201,7 +203,7 @@ const tnnScriptItemSchema = z.object({
 });
 const tnnScriptDraftSchema = z.object({
   tradeId: z.number().int().positive(),
-  durationSeconds: z.union([z.literal(30), z.literal(45), z.literal(60)]),
+  durationSeconds: z.literal(TNN_VIDEO_DURATION_SECONDS),
   anchorMode: z.enum(["max", "sidney", "duo"]),
   sellerName: z.string().trim().min(1).max(120),
   buyerName: z.string().trim().min(1).max(120),
@@ -3118,6 +3120,7 @@ export const appRouter = router({
             script: validatedScript.script,
             logoUrl: TNN_VIDEO_LOGO_URL,
             newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL,
+            openingReferenceUrl: TNN_OPENING_REFERENCE_URL,
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : "Manus video generation could not be started.";

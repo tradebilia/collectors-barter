@@ -20,7 +20,7 @@ import {
 } from "../client/src/lib/socialContentManager";
 
 const input = {
-  durationSeconds: 30 as const,
+  durationSeconds: 45 as const,
   anchorMode: "duo" as const,
   sellerName: "Morgan Seller",
   buyerName: "Taylor Buyer",
@@ -30,10 +30,10 @@ const input = {
     { title: "PSA 9 Trading Card", certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
   ],
   additionalItemsCount: 1,
-  tickerText: "Where collectors connect.",
+  tickerText: "WWW.Tradebilia.com",
 };
 
-const validScript = "Breaking News from Tradebilia. TNN reports that Morgan Seller and Taylor Buyer have completed a collector trade featuring 1989 Nintendo Game and a PSA 9 Trading Card. The selected pieces highlight NES and 1986 collector context for this memorable exchange. Additional collector items changed hands as part of the completed transaction. Tradebilia brings collectors together. Where collectors connect.";
+const validScript = "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell. Tonight, Morgan Seller and Taylor Buyer have completed a collector trade featuring 1989 Nintendo Game and PSA 9 Trading Card. The exchange highlights a classic NES collectible alongside a 1986 graded card, with each selected piece presented as part of this completed collector transaction. I'm Sidney Tradewell. Additional collector items changed hands as part of the completed transaction. This is another moment for collectors to celebrate thoughtful exchanges and the shared passion behind every item. Tradebilia.";
 const mockedInvokeLLM = vi.mocked(invokeLLM);
 
 const responseFor = (script: string) => ({
@@ -69,7 +69,7 @@ describe("TNN completed-trade video policy", () => {
     });
     expect(plan).toMatchObject({
       format: "16:9",
-      durationSeconds: 30,
+      durationSeconds: 45,
       anchorNames: ["Max Tradebloski", "Sidney Tradewell"],
       sellerName: "Morgan Seller",
       buyerName: "Taylor Buyer",
@@ -89,23 +89,27 @@ describe("TNN completed-trade video policy", () => {
 describe("TNN fact-locked script contract", () => {
   it("instructs the model to use a TNN newsroom, preserve privacy, and avoid on-screen names or values", () => {
     const prompt = buildTnnScriptPrompt(input);
-    expect(prompt).toContain("Tradebilia News Network");
+    expect(prompt).toContain("the TNN Network");
+    expect(prompt).toContain("trade-bil-lee-uh");
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
     expect(prompt).toContain("names must never be proposed as on-screen text");
     expect(prompt).toContain("State every approved selected item title exactly as written");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
     expect(prompt).toContain("Additional collector items changed hands");
-    expect(prompt).toContain("Where collectors connect.");
+    expect(prompt).toContain("WWW.Tradebilia.com");
+    expect(validScript.endsWith("Tradebilia.")).toBe(true);
   });
 
   it("accepts a bounded compliant script and rejects private or financial details", () => {
     const validated = validateTnnScriptDraft(validScript, input);
-    expect(validated.wordCount).toBeGreaterThanOrEqual(36);
-    expect(validated.wordCount).toBeLessThanOrEqual(60);
+    expect(validated.wordCount).toBeGreaterThanOrEqual(80);
+    expect(validated.wordCount).toBeLessThanOrEqual(100);
     expect(validated.estimatedSpeechSeconds).toBeGreaterThan(0);
     expect(() => validateTnnScriptDraft(validScript.replace("collector trade", "$1,200 collector trade"), input)).toThrow(/disallowed/i);
     expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", ""), input)).toThrow(/acknowledge/i);
     expect(() => validateTnnScriptDraft(validScript.replace("PSA 9 Trading Card", "graded card"), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
+    expect(() => validateTnnScriptDraft(validScript.replace("the TNN Network", "TNN"), input)).toThrow(/TNN Network/i);
+    expect(() => validateTnnScriptDraft(validScript.replace("I'm Sidney Tradewell. ", ""), input)).toThrow(/every selected anchor/i);
   });
 
   it("uses minimal reasoning and a sufficient completion budget, accepting a documented text-part response", () => {
@@ -119,7 +123,7 @@ describe("TNN fact-locked script contract", () => {
 
   it("runs one corrective script-only retry when, and only when, the first draft omits a selected title", async () => {
     const incompleteButOtherwiseCompliant = validScript
-      .replace("1989 Nintendo Game and a PSA 9 Trading Card", "a video game and a graded trading card");
+      .replace("1989 Nintendo Game and PSA 9 Trading Card", "a video game and a graded trading card");
     mockedInvokeLLM
       .mockResolvedValueOnce(responseFor(incompleteButOtherwiseCompliant) as any)
       .mockResolvedValueOnce(responseFor(validScript) as any);

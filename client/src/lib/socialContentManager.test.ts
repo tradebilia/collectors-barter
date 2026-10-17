@@ -8,6 +8,7 @@ import {
   createPromotionSocialDraft,
   createSocialDraft,
   filterSocialDrafts,
+  formatTnnGrade,
   getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
   isCashOnlyCompletedTrade,
@@ -16,6 +17,8 @@ import {
   requestSocialReview,
   toggleSocialPlatform,
   SOCIAL_PLATFORMS,
+  TNN_VIDEO_DURATION_SECONDS,
+  TNN_WEBSITE_TICKER,
 } from "@/lib/socialContentManager";
 
 describe("social content manager draft workflow", () => {
@@ -108,14 +111,15 @@ describe("social content manager draft workflow", () => {
       buyerName: "Alex",
       tradeItems: [{ title: "1985 Topps Traded Set" }],
       cashOnly: true,
-      durationSeconds: 30,
+      durationSeconds: TNN_VIDEO_DURATION_SECONDS,
       anchorMode: "sidney",
-      tickerText: "Where collectors connect.",
+      tickerText: TNN_WEBSITE_TICKER,
       now: "2026-09-26T20:00:00.000Z",
     });
-    expect(plan).toMatchObject({ format: "16:9", durationSeconds: 30, voiceProfile: "tnn-professional-american-news-anchor", anchorNames: ["Sidney Tradewell"], scriptStatus: "not-drafted", generationStatus: "not-started", videoReviewStatus: "not-ready" });
+    expect(plan).toMatchObject({ format: "16:9", durationSeconds: 45, voiceProfile: "tnn-professional-american-news-anchor", anchorNames: ["Sidney Tradewell"], scriptStatus: "not-drafted", generationStatus: "not-started", videoReviewStatus: "not-ready" });
     expect(plan.selectedItems[0]?.title).toBe("1985 Topps Traded Set");
-    expect(plan.tickerText).toBe("Where collectors connect.");
+    expect(plan.tickerText).toBe(TNN_WEBSITE_TICKER);
+    expect(formatTnnGrade("PSA", null, "10.00")).toBe("PSA 10");
   });
 
   it("preserves explicit seller and buyer roles and rotates solo anchors without repetition", () => {

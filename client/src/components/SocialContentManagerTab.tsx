@@ -64,14 +64,16 @@ import {
   buildListingSocialCopy,
   buildTnnCompletedTradeVideoPlan,
   chooseNextTnnAnchor,
+  formatTnnGrade,
   formatSocialCategory,
   getCompletedTradePostLabel,
-  getSocialFooterPhrase,
   getSocialPromotionItemTitle,
   isCashOnlyCompletedTrade,
   isTnnEligibleCompletedTrade,
   normalizeSocialDraftPlatforms,
   reconcileSocialDraftVisualHints,
+  TNN_VIDEO_DURATION_SECONDS,
+  TNN_WEBSITE_TICKER,
   toggleSocialPlatform,
   type DraftStatus,
   type SocialDraft,
@@ -87,10 +89,12 @@ import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/Socia
 
 const STORAGE_KEY = "tradebilia-admin-social-drafts-v1";
 const PREFERENCES_KEY = "tradebilia-admin-social-preferences-v1";
-/** Rich-supplied TNN identity mark for completed-trade newsroom videos. */
-const TNN_VIDEO_LOGO_PATH = "/manus-storage/TNNlogo_da53263e.png";
+/** Rich-supplied transparent glossy TNN identity mark for completed-trade newsroom videos. */
+const TNN_VIDEO_LOGO_PATH = "/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png";
 /** Rich-approved bright broadcast studio reference for completed-trade TNN videos. */
 const TNN_NEWSROOM_REFERENCE_PATH = "/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
+/** Rich-approved seamless globe-and-ribbon opening treatment for the first two seconds. */
+const TNN_OPENING_REFERENCE_PATH = "/manus-storage/TNNOpeningGlobeReference_f90474c7.png";
 const platforms = SOCIAL_PLATFORMS;
 const statuses = SOCIAL_DRAFT_STATUSES;
 
@@ -244,10 +248,10 @@ export function SocialContentManagerTab() {
   const [isTnnGenerationConfirmOpen, setIsTnnGenerationConfirmOpen] = useState(false);
   const [videoSellerName, setVideoSellerName] = useState("");
   const [videoBuyerName, setVideoBuyerName] = useState("");
-  const [videoDuration, setVideoDuration] = useState<TnnVideoDuration>(30);
+  const [videoDuration] = useState<TnnVideoDuration>(TNN_VIDEO_DURATION_SECONDS);
   const [videoAnchorMode, setVideoAnchorMode] = useState<TnnAnchorMode>("sidney");
   const [videoSelectedItemIndexes, setVideoSelectedItemIndexes] = useState<number[]>([]);
-  const [videoTickerText, setVideoTickerText] = useState("Where collectors connect.");
+  const [videoTickerText] = useState(TNN_WEBSITE_TICKER);
   const [lastTnnSoloAnchor, setLastTnnSoloAnchor] = useState<Exclude<TnnAnchorMode, "duo"> | null>(null);
   const [preparedGraphicImageUrl, setPreparedGraphicImageUrl] = useState<string | null>(null);
   // Keep these positions aligned to promotion.tradeItems. Filtering a missing
@@ -571,10 +575,8 @@ export function SocialContentManagerTab() {
       ?? tradeItems.slice(0, 6).map((_, index) => index);
     setVideoSellerName(selectedDraft.promotion?.sellerName?.trim() || existing?.sellerName || "");
     setVideoBuyerName(selectedDraft.promotion?.buyerName?.trim() || existing?.buyerName || "");
-    setVideoDuration(existing?.durationSeconds ?? 30);
     setVideoAnchorMode(anchorMode);
     setVideoSelectedItemIndexes(indexes);
-    setVideoTickerText(existing?.tickerText || getSocialFooterPhrase(selectedDraft.id));
     setIsVideoStudioOpen(true);
   }
 
@@ -1028,17 +1030,18 @@ export function SocialContentManagerTab() {
                   <DialogDescription id="trade-video-studio-description">Prepare a private Tradebilia News Network script from the completed trade, review it, then approve a single background video task. The finished MP4 stays in this draft for manual review; nothing is published automatically.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-5 py-2">
-                  <div className="flex items-center gap-3 rounded-lg border border-violet-200 bg-white p-3"><img src={TNN_VIDEO_LOGO_PATH} alt="TNN — Tradebilia News Network logo" className="h-14 w-auto rounded border border-slate-200 object-contain" /><p className="text-xs leading-5 text-violet-950"><strong>Official TNN visual identity:</strong> this supplied Tradebilia News Network mark is attached to the generation task and used for the opening, newsroom identifier, and branded graphics.</p></div>
+                  <div className="flex items-center gap-3 rounded-lg border border-violet-200 bg-white p-3"><img src={TNN_VIDEO_LOGO_PATH} alt="TNN — transparent glossy Tradebilia News Network logo" className="h-auto max-h-20 w-auto object-contain" /><p className="text-xs leading-5 text-violet-950"><strong>Official TNN visual identity:</strong> this transparent glossy mark is embedded in the opening motion and the center newsroom displays only. It is never used as a square card or upper-corner logo.</p></div>
                   <figure className="overflow-hidden rounded-lg border border-violet-200 bg-white"><img src={TNN_NEWSROOM_REFERENCE_PATH} alt="Approved TNN bright broadcast newsroom reference" className="aspect-video w-full bg-slate-100 object-contain" /><figcaption className="border-t border-violet-100 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-950"><strong>Approved newsroom set:</strong> bright white/ice-gray network studio, navy/cobalt light, red and navy diagonal accents, world-map graphics, curved TNN desk, and a polished desk-shot composition. This reference is attached to every TNN video task.</figcaption></figure>
-                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step asks AI to draft a fact-locked 30, 45, or 60-second newsroom script. You review that script before a separate approval starts video generation. Manus then renders one 16:9 TNN newsroom MP4 in the background with professional lip-sync, the supplied dedicated TNN logo and approved newsroom set reference, a breaking-news strap, item picture-in-picture panels, and one rotating generic homepage tagline in the ticker. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
+                  <figure className="overflow-hidden rounded-lg border border-violet-200 bg-slate-950"><img src={TNN_OPENING_REFERENCE_PATH} alt="Approved seamless TNN globe-and-ribbon opening reference" className="aspect-video w-full object-contain" /><figcaption className="border-t border-violet-100 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-950"><strong>Approved opening motion:</strong> a full-frame globe-and-ribbon reveal with the transparent TNN mark embedded in the scene—not a flat, square, or pasted logo image.</figcaption></figure>
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step drafts a fact-locked 45-second newsroom script with the anchors’ self-introductions. You review it before a separate approval starts generation. Manus then renders one 16:9 TNN newsroom MP4 with professional lip-sync, the transparent TNN opening motion, the approved newsroom set, face-safe item panels, and a continuously scrolling <strong>WWW.Tradebilia.com</strong> ticker. “Tradebilia” is directed as “trade-bil-lee-uh”; the report calls it the TNN Network and ends with Tradebilia. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name <Input value={videoSellerName} onChange={(event) => setVideoSellerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name <Input value={videoBuyerName} onChange={(event) => setVideoBuyerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
-                    <label className="space-y-1.5 text-sm font-semibold text-slate-700">Report length <select value={String(videoDuration)} onChange={(event) => setVideoDuration(Number(event.target.value) as TnnVideoDuration)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="30">30 seconds · concise report</option><option value="45">45 seconds · expanded report</option><option value="60">60 seconds · full report</option></select></label>
+                    <div className="space-y-1.5 text-sm font-semibold text-slate-700">Report length <div className="mt-1 flex h-10 items-center rounded-md border border-input bg-slate-50 px-3 text-sm font-medium text-slate-700">45 seconds · standard TNN report</div></div>
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor presentation <select value={videoAnchorMode} onChange={(event) => setVideoAnchorMode(event.target.value as TnnAnchorMode)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="max">Max Tradebloski · solo</option><option value="sidney">Sidney Tradewell · solo</option><option value="duo">Max &amp; Sidney · duo report</option></select></label>
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Completed-trade items</p><p className="mt-1 text-xs leading-5 text-slate-600">Select up to six items to show in the corner during the matching part of the report. Every other completed-trade item is acknowledged generically, without invented details.</p></div><Badge variant="outline" className="border-slate-300 bg-white text-slate-700">{videoSelectedItemIndexes.length} / 6 selected</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{(selectedDraft?.promotion?.tradeItems ?? []).map((item, index) => <label key={`${item.listingId ?? "item"}-${index}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-700 hover:border-violet-300"><Checkbox checked={videoSelectedItemIndexes.includes(index)} onCheckedChange={() => toggleTnnSelectedItem(index)} aria-label={`Include ${item.title} in TNN video`} /><span><span className="block font-semibold">{item.title}</span>{item.grade || item.certificationCompany || item.customGradingCompany ? <span className="mt-0.5 block text-xs text-slate-500">{[item.certificationCompany || item.customGradingCompany, item.grade].filter(Boolean).join(" ")}</span> : null}</span></label>)}</div></div>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Ticker tagline</p><p className="mt-1 text-sm font-semibold text-slate-800">{videoTickerText}</p><p className="mt-1 text-xs leading-5 text-slate-500">Chosen from the 12 homepage taglines and used as a generic lower ticker only.</p></div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Completed-trade items</p><p className="mt-1 text-xs leading-5 text-slate-600">Select up to six items to show in the upper-right panel during the matching part of the report. Every other completed-trade item is acknowledged generically, without invented details.</p></div><Badge variant="outline" className="border-slate-300 bg-white text-slate-700">{videoSelectedItemIndexes.length} / 6 selected</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{(selectedDraft?.promotion?.tradeItems ?? []).map((item, index) => <label key={`${item.listingId ?? "item"}-${index}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-700 hover:border-violet-300"><Checkbox checked={videoSelectedItemIndexes.includes(index)} onCheckedChange={() => toggleTnnSelectedItem(index)} aria-label={`Include ${item.title} in TNN video`} /><span><span className="block font-semibold">{item.title}</span>{item.grade || item.certificationCompany || item.customGradingCompany ? <span className="mt-0.5 block text-xs text-slate-500">{formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)}</span> : null}</span></label>)}</div></div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Lower ticker</p><p className="mt-1 text-sm font-semibold text-slate-800">{videoTickerText}</p><p className="mt-1 text-xs leading-5 text-slate-500">Locked website address; it scrolls on screen and is not read by the anchors.</p></div>
                   {selectedDraft?.videoPlan?.script ? <div className="rounded-lg border border-violet-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">AI-written script draft</p><p className="mt-1 text-xs text-slate-500">{selectedDraft.videoPlan.scriptWordCount} words · approximately {selectedDraft.videoPlan.estimatedSpeechSeconds} seconds · review before generation</p></div><Badge className="border border-violet-200 bg-violet-50 text-violet-800">Draft {selectedDraft.videoPlan.scriptDraftAttempts}</Badge></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p></div> : null}
                   {selectedDraft?.videoPlan?.errorMessage ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-800">{selectedDraft.videoPlan.errorMessage}</p> : null}
                 </div>

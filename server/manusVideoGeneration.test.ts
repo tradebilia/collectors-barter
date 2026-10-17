@@ -25,24 +25,26 @@ describe("Manus API configuration", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
     try {
       await createTradeVideoTask({
-        script: "Breaking News from Tradebilia. TNN reports a completed collector trade. Where collectors connect.",
-        durationSeconds: 30,
+        script: "Breaking News from Tradebilia. I'm Sidney Tradewell with the TNN Network. Jordan and Alex completed a collector trade featuring Test collectible. Tradebilia.",
+        durationSeconds: 45,
         anchorMode: "sidney",
         sellerName: "Jordan",
         buyerName: "Alex",
         cashOnly: false,
         selectedItems: [{ title: "Test collectible", facts: [{ label: "Year", value: "1986" }] }],
         additionalItemsCount: 0,
-        tickerText: "Where collectors connect.",
-        logoUrl: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png",
+        tickerText: "WWW.Tradebilia.com",
+        logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
         newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
+        openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
         imageUrls: ["https://tradebilia.manus.space/item.jpg"],
         generationAttempt: 1,
       });
       const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
-      expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png", filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" });
+      expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png", filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" });
       expect(body.message.content[2]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png", filename: "tnn-approved-newsroom-set-reference.png", mime_type: "image/png" });
-      expect(body.message.content[3]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
+      expect(body.message.content[3]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png", filename: "tnn-approved-opening-globe-reference.png", mime_type: "image/png" });
+      expect(body.message.content[4]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
     } finally {
       fetchMock.mockRestore();
     }
@@ -50,7 +52,7 @@ describe("Manus API configuration", () => {
 
   it("writes the approved privacy-safe TNN newsroom contract into the anchor instruction", () => {
     const instruction = buildTnnVideoInstruction({
-      script: "Breaking News from Tradebilia. TNN reports Seller Smith and Buyer Jones completed a collector trade. Where collectors connect.",
+      script: "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network. Seller Smith and Buyer Jones completed a collector trade featuring Test collectible. This completed exchange celebrates collecting with care and shared enthusiasm across the community. Every selected piece is presented as part of the completed transaction. The report keeps the focus on the collector story, accurate item context, and the people behind the exchange. Tradebilia.",
       durationSeconds: 45,
       anchorMode: "duo",
       sellerName: "Seller Smith",
@@ -58,35 +60,42 @@ describe("Manus API configuration", () => {
       cashOnly: false,
       selectedItems: [{ title: "Test collectible", grade: "9", certificationCompany: "PSA" }],
       additionalItemsCount: 1,
-      tickerText: "Where collectors connect.",
-      logoUrl: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png",
+      tickerText: "WWW.Tradebilia.com",
+      logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
       newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
+      openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
       imageUrls: ["https://tradebilia.manus.space/item.jpg"],
       generationAttempt: 1,
     });
     expect(instruction).toContain("45-second, 16:9 Tradebilia News Network");
     expect(instruction).toContain("Max Tradebloski and Sidney Tradewell");
     expect(instruction).toContain("picture-in-picture panel in the upper-right corner");
-    expect(instruction).toContain("headline strap reading 'BREAKING NEWS FROM TRADEBILIA'");
-    expect(instruction).toContain("attached, supplied dedicated TNN (Tradebilia News Network) logo");
-    expect(instruction).toContain("do not substitute a generic Tradebilia wordmark");
-    expect(instruction).toContain("TNNlogo_da53263e.png");
+    expect(instruction).toContain("BREAKING NEWS FROM TRADEBILIA");
+    expect(instruction).toContain("transparent glossy TNN (Tradebilia News Network) mark");
+    expect(instruction).toContain("upper-left or upper-corner logo");
+    expect(instruction).toContain("GlossyTNNTradebiliaNewsLogo_2c671156.png");
     expect(instruction).toContain("Approved newsroom visual reference");
     expect(instruction).toContain("clean white and ice-gray studio");
     expect(instruction).toContain("glossy curved white-and-navy anchor desk");
     expect(instruction).toContain("TNNTradebiliaNewsroomStudio_7f73bd45.png");
+    expect(instruction).toContain("TNNOpeningGlobeReference_f90474c7.png");
+    expect(instruction).toContain("never as a square, rectangular, flat, or pasted logo card");
     expect(instruction).toContain("attached approved TNN newsroom visual-reference image");
     expect(instruction).toContain("stable polished medium desk shot");
     expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
     expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
-    expect(instruction).toContain("Where collectors connect.");
+    expect(instruction).toContain("WWW.Tradebilia.com");
+    expect(instruction).toContain("trade-bil-lee-uh");
+    expect(instruction).toContain("the TNN Network");
   });
 
   it("keeps the approved TNN logo and newsroom reference server-owned", () => {
     const videoProcedure = routerSource.slice(routerSource.indexOf("startCompletedTradeVideoGeneration:"), routerSource.indexOf("getCompletedTradeVideoGeneration:"));
     expect(videoProcedure).toContain('logoUrl: TNN_VIDEO_LOGO_URL');
     expect(videoProcedure).toContain('newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL');
+    expect(videoProcedure).toContain('openingReferenceUrl: TNN_OPENING_REFERENCE_URL');
     expect(videoProcedure).not.toContain('logoUrl: z.string()');
     expect(videoProcedure).not.toContain('newsroomReferenceUrl: z.string()');
+    expect(videoProcedure).not.toContain('openingReferenceUrl: z.string()');
   });
 });

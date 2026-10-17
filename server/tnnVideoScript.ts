@@ -1,12 +1,18 @@
 import { invokeLLM } from "./_core/llm";
+import {
+  TNN_NETWORK_SPOKEN_NAME,
+  TNN_REQUIRED_CLOSING,
+  TNN_TRADEBILIA_PRONUNCIATION,
+  TNN_VIDEO_DURATION_SECONDS,
+  TNN_WEBSITE_TICKER,
+  formatTnnGrade,
+} from "../shared/tnnVideoPolicy";
 
 export const TNN_SCRIPT_MODEL = "gpt-5-mini";
 export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
 export const TNN_SELECTED_ITEM_COVERAGE_ERROR = "The TNN script did not mention every approved selected item.";
 export const TNN_SCRIPT_WORD_BUDGET = {
-  30: { minimum: 36, maximum: 60 },
-  45: { minimum: 60, maximum: 90 },
-  60: { minimum: 84, maximum: 120 },
+  45: { minimum: 80, maximum: 100 },
 } as const;
 
 export type TnnScriptDuration = keyof typeof TNN_SCRIPT_WORD_BUDGET;
@@ -48,6 +54,10 @@ const BLOCKED_SCRIPT_PATTERNS = [
 
 const cleanText = (value: unknown, maximum = 180) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, maximum);
 
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 export function countTnnScriptWords(script: string | null | undefined) {
   return String(script ?? "").trim().match(/\S+/g)?.length ?? 0;
 }
@@ -58,9 +68,9 @@ export function getTnnScriptAnchorNames(mode: TnnScriptAnchorMode) {
 }
 
 export function normalizeTnnScriptInput(input: TnnScriptDraftInput): TnnScriptDraftInput {
-  const durationSeconds = ([30, 45, 60] as const).includes(input.durationSeconds)
+  const durationSeconds = input.durationSeconds === TNN_VIDEO_DURATION_SECONDS
     ? input.durationSeconds
-    : 30;
+    : TNN_VIDEO_DURATION_SECONDS;
   const selectedItems = input.selectedItems
     .map((item) => ({
       title: cleanText(item.title),
@@ -84,15 +94,13 @@ export function normalizeTnnScriptInput(input: TnnScriptDraftInput): TnnScriptDr
     cashOnly: Boolean(input.cashOnly),
     selectedItems,
     additionalItemsCount: Math.max(0, Math.min(99, Math.trunc(Number(input.additionalItemsCount) || 0))),
-    tickerText: cleanText(input.tickerText, 120),
+    tickerText: TNN_WEBSITE_TICKER,
   };
 }
 
 function publicFactLines(items: readonly TnnScriptItem[]) {
   return items.map((item, index) => {
-    const grade = [item.certificationCompany || item.customGradingCompany, item.grade]
-      .filter(Boolean)
-      .join(" ");
+    const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
     const facts = (item.facts ?? []).map((fact) => `${fact.label}: ${fact.value}`);
     return `${index + 1}. ${item.title}${item.category ? ` | category: ${item.category}` : ""}${item.itemType ? ` | type: ${item.itemType}` : ""}${grade ? ` | grade: ${grade}` : ""}${facts.length ? ` | approved background facts: ${facts.join("; ")}` : ""}`;
   }).join("\n");
@@ -104,16 +112,16 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
   const anchors = getTnnScriptAnchorNames(input.anchorMode);
   const tradeType = input.cashOnly ? "cash sale" : "collector trade";
   return [
-    "Write one original, credible, energetic TNN (Tradebilia News Network) breaking-news anchor script for a completed Tradebilia transaction.",
+    "Write one original, credible, energetic TNN breaking-news anchor script for a completed Tradebilia transaction.",
     "This is a private admin draft for human approval before any video task is started. Return only strict JSON that matches the supplied schema.",
     `Target spoken length: ${budget.minimum}-${budget.maximum} words, approximately ${input.durationSeconds} seconds at a professional newsroom pace.`,
-    `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line.` : `${anchors[0]} delivers the solo report.`}`,
-    "Begin with the words 'Breaking News from Tradebilia.' Mention TNN once naturally. End with the approved Tradebilia tagline exactly once.",
+    `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line and each says their own name when introducing themselves.` : `${anchors[0]} delivers the solo report and introduces themselves by name immediately after the opening line.`}`,
+    `Begin with the words 'Breaking News from Tradebilia.' State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. End the final spoken sentence exactly with '${TNN_REQUIRED_CLOSING}' Do not narrate the ticker or any other website text.`,
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
     "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written at least once; you may paraphrase its facts but not its title. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
     "Do not include captions, production directions, scene directions, speaker labels, markdown, bullet points, or quoted visual text in the script. The video-production layer handles the newsroom visuals.",
     `If the selected items do not cover the entire transaction, say one time: '${input.additionalItemsCount === 1 ? "Additional collector items changed hands as part of the completed transaction." : "Additional collector items changed hands as part of the completed transaction."}' Do not name unselected items.`,
-    `Approved closing tagline: ${input.tickerText || "Where collectors connect."}`,
+    `Lower-screen ticker text is fixed to '${TNN_WEBSITE_TICKER}' and is never spoken.`,
     "Approved item facts:",
     publicFactLines(input.selectedItems) || "No item facts were supplied; refer only to the completed collector transaction.",
   ].join("\n");
@@ -131,8 +139,8 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
   if (!/^breaking news from tradebilia\b/i.test(script)) {
     throw new Error("The TNN script must begin with 'Breaking News from Tradebilia.'");
   }
-  if (!/\bTNN\b|Tradebilia News Network/i.test(script)) {
-    throw new Error("The TNN script must identify Tradebilia News Network.");
+  if (!/\bthe\s+TNN\s+Network\b/i.test(script)) {
+    throw new Error("The TNN script must identify the TNN Network.");
   }
   if (BLOCKED_SCRIPT_PATTERNS.some((pattern) => pattern.test(script))) {
     throw new Error("The TNN script included disallowed private, price, value, delivery, or certificate information.");
@@ -147,8 +155,12 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
   if (normalizedInput.additionalItemsCount > 0 && !/additional collector items changed hands/i.test(script)) {
     throw new Error("The TNN script must acknowledge additional collector items when the selection is capped.");
   }
-  if (normalizedInput.tickerText && !script.toLowerCase().includes(normalizedInput.tickerText.toLowerCase())) {
-    throw new Error("The TNN script must include the selected homepage tagline.");
+  const anchors = getTnnScriptAnchorNames(normalizedInput.anchorMode);
+  if (anchors.some((anchor) => !new RegExp(`\\b(?:I'm|I am)\\s+${escapeRegExp(anchor)}\\b`, "i").test(script))) {
+    throw new Error("The TNN script must include an on-air self-introduction from every selected anchor.");
+  }
+  if (!new RegExp(`${escapeRegExp(TNN_REQUIRED_CLOSING)}$`, "i").test(script)) {
+    throw new Error("The TNN script must end with 'Tradebilia.'");
   }
   return { script, wordCount, estimatedSpeechSeconds: Math.ceil(wordCount / 2) };
 }

@@ -1,5 +1,12 @@
 import { ENV } from "./_core/env";
 import { type TnnScriptAnchorMode, type TnnScriptDuration } from "./tnnVideoScript";
+import {
+  TNN_NETWORK_SPOKEN_NAME,
+  TNN_REQUIRED_CLOSING,
+  TNN_TRADEBILIA_PRONUNCIATION,
+  TNN_WEBSITE_TICKER,
+  formatTnnGrade,
+} from "../shared/tnnVideoPolicy";
 
 type ManusContentPart =
   | { type: "text"; text: string }
@@ -42,6 +49,7 @@ export type TnnVideoTaskInput = {
   tickerText: string;
   logoUrl: string;
   newsroomReferenceUrl: string;
+  openingReferenceUrl: string;
   imageUrls: string[];
   generationAttempt: 1 | 2;
 };
@@ -80,7 +88,7 @@ function anchorDirection(anchorMode: TnnScriptAnchorMode) {
 
 function itemReferenceLines(items: readonly TnnVideoTaskItem[]) {
   return items.map((item, index) => {
-    const grading = [item.certificationCompany || item.customGradingCompany, item.grade].filter(Boolean).join(" ");
+    const grading = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
     const facts = (item.facts ?? []).map((fact) => `${fact.label}: ${fact.value}`).join("; ");
     return `${index + 1}. ${item.title}${grading ? ` | spoken grade context: ${grading}` : ""}${facts ? ` | spoken factual context: ${facts}` : ""}`;
   }).join("\n");
@@ -107,18 +115,19 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     `Anchors: ${anchorNames}. ${anchorDirection(input.anchorMode)}`,
     "Approved newsroom visual reference: use the attached TNN broadcast-studio reference as the set-design source of truth. Match its polished bright network-news feel: a clean white and ice-gray studio, deep navy/cobalt illumination, restrained red and navy diagonal/ribbon broadcast accents, subtle world-map/globe graphics, curved architectural light bands, and a glossy curved white-and-navy anchor desk. Put the supplied exact TNN logo on the central wall display and desk-front screen; use supporting side screens only for abstract world-map/news imagery, never a different outlet’s brand. A subtle generic dusk-city skyline may sit behind the set screens, but do not identify a city.",
     "Anchors and camera: for solo reports, one selected anchor is centered behind the glossy TNN desk; for duo reports, Max and Sidney sit together as in the supplied newsroom reference. Max wears a tailored navy suit with a restrained red/blue tie; Sidney wears a tailored navy or jewel-blue suit with a restrained red accent. Do not show anchor names as text. Use a stable polished medium desk shot with restrained broadcast-style camera movement—no rapid montage or handheld camera.",
-    "Opening (first 2 seconds): create a concise original animated TNN logo reveal over a luminous world-map/globe field, supported by a brief professional newsroom stinger and no commercial music bed. Then cut cleanly to the anchor desk. Keep the approved set, anchor identity, wardrobe, lighting, desk, and TNN visual language consistent through the finished video.",
-    `Graphics: use the attached, supplied dedicated TNN (Tradebilia News Network) logo as the only primary network identity mark. Include it in the opening sting, upper-corner TNN identifier, and newsroom graphics; do not substitute a generic Tradebilia wordmark. Add a high newsroom headline strap reading 'BREAKING NEWS FROM TRADEBILIA'. Use one understated scrolling lower ticker that repeats only this generic approved homepage tagline: '${input.tickerText}'. Do not place participant names, item values, prices, cash amounts, dates, locations, addresses, contact details, tracking/shipping information, certificate/serial numbers, or captions/subtitles on screen.`,
+    "Opening (first 2 seconds): use the attached approved globe-and-ribbon reference to create a seamless full-frame TNN opening animation: the supplied transparent glossy TNN mark is integrated into luminous globe/world-map motion, metallic red-and-blue broadcast ribbons, and a brief professional newsroom stinger. It must appear embedded in the moving scene—never as a square, rectangular, flat, or pasted logo card. Then cut cleanly to the anchor desk. Keep the approved set, anchor identity, wardrobe, lighting, desk, and TNN visual language consistent through the finished video.",
+    `Graphics: use the attached supplied transparent glossy TNN (Tradebilia News Network) mark as the only primary network identity mark. It appears only in the opening motion and integrated into the central wall display and desk-front screen. Do not show any upper-left or upper-corner logo, bug, icon, or headline; do not cover an anchor's face. Put the high newsroom headline strap 'BREAKING NEWS FROM TRADEBILIA' only in the lower-third safe area, never above or over an anchor. Use one visibly scrolling lower ticker that repeats exactly '${TNN_WEBSITE_TICKER}' and no other ticker copy. Do not place participant names, item values, prices, cash amounts, dates, locations, addresses, contact details, tracking/shipping information, certificate/serial numbers, or captions/subtitles on screen.`,
     itemInsetInstruction,
     extraItemsInstruction,
-    "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade or value.",
-    "Use only the exact spoken script below. Preserve it verbatim, with natural pauses and speaker handoff for a duo report. Do not add any speech, call to action beyond the script, disclaimer, price, cash amount, or personal/private detail.",
+    "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade or value. When a grade is spoken, use only the exact normalized grade context below; PSA numbers must never receive artificial extra decimal places.",
+    `Use only the exact spoken script below. Preserve it verbatim, with natural pauses and speaker handoff for a duo report. Pronounce every Tradebilia occurrence as '${TNN_TRADEBILIA_PRONUNCIATION}', identify the network as '${TNN_NETWORK_SPOKEN_NAME}', and preserve the script's final spoken '${TNN_REQUIRED_CLOSING}'. Do not add any speech, call to action beyond the script, disclaimer, price, cash amount, or personal/private detail.`,
     `Transaction type for visual context only: ${input.cashOnly ? "cash sale" : "collector trade"}. Do not display or speak any amount. The names are allowed in the spoken script only; never render them as text.`,
     "Approved selected-item context (reference only; do not add facts beyond the script):",
     itemReferenceLines(input.selectedItems) || "No item details supplied.",
     `Exact spoken script:\n${input.script}`,
     `The attached dedicated TNN logo asset is the visual source of truth and must be used exactly as supplied: ${input.logoUrl}`,
     `The attached approved TNN newsroom visual-reference image is the set-design source of truth and must guide the full studio look: ${input.newsroomReferenceUrl}`,
+    `The attached approved TNN opening globe-and-ribbon reference is the motion-design source of truth for the opening only: ${input.openingReferenceUrl}`,
     "Return one finished MP4 artifact suitable for private preview and manual review in the Tradebilia admin Social Content page. Do not publish it, contact social platforms, or perform any external action.",
   ].join("\n\n");
 }
@@ -131,6 +140,7 @@ export async function createTradeVideoTask(input: TnnVideoTaskInput) {
     { type: "text", text: buildTnnVideoInstruction(input) },
     { type: "file", file_url: input.logoUrl, filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" },
     { type: "file", file_url: input.newsroomReferenceUrl, filename: "tnn-approved-newsroom-set-reference.png", mime_type: "image/png" },
+    { type: "file", file_url: input.openingReferenceUrl, filename: "tnn-approved-opening-globe-reference.png", mime_type: "image/png" },
     ...input.imageUrls.slice(0, 6).map((file_url, index) => ({ type: "file" as const, file_url, filename: `trade-item-${index + 1}.jpg`, mime_type: "image/jpeg" })),
   ];
   const result = await manusRequest<{ task_id: string; task_url?: string }>("/v2/task.create", {
