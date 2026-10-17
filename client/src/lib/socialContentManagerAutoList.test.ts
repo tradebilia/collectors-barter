@@ -48,7 +48,11 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).toContain('const TNN_VIDEO_LOGO_PATH = "/manus-storage/TNNlogo_da53263e.png"');
     expect(componentSource).toContain("TNN — Tradebilia News Network logo");
     expect(componentSource).toContain("Official TNN visual identity:");
-    expect(componentSource).toContain("logoUrl: TNN_VIDEO_LOGO_URL");
+    expect(componentSource).toContain('const TNN_NEWSROOM_REFERENCE_PATH = "/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png"');
+    expect(componentSource).toContain("Approved TNN bright broadcast newsroom reference");
+    expect(componentSource).toContain("Approved newsroom set:");
+    expect(componentSource).not.toContain("logoUrl: TNN_VIDEO_LOGO_URL");
+    expect(componentSource).not.toContain("newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL");
   });
 
   it("refreshes saved high-value draft visual hints from current opportunity metadata", () => {

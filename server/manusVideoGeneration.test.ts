@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { ENV } from "./_core/env";
 import { buildTnnVideoInstruction, createTradeVideoTask } from "./manusVideoGeneration";
+
+const routerSource = readFileSync(new URL("./routers.ts", import.meta.url), "utf8");
 
 describe("Manus API configuration", () => {
   it("authenticates the configured server-side API key with the read-only user endpoint", async () => {
@@ -32,12 +35,14 @@ describe("Manus API configuration", () => {
         additionalItemsCount: 0,
         tickerText: "Where collectors connect.",
         logoUrl: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png",
+        newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
         imageUrls: ["https://tradebilia.manus.space/item.jpg"],
         generationAttempt: 1,
       });
       const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
       expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png", filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" });
-      expect(body.message.content[2]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
+      expect(body.message.content[2]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png", filename: "tnn-approved-newsroom-set-reference.png", mime_type: "image/png" });
+      expect(body.message.content[3]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
     } finally {
       fetchMock.mockRestore();
     }
@@ -55,18 +60,33 @@ describe("Manus API configuration", () => {
       additionalItemsCount: 1,
       tickerText: "Where collectors connect.",
       logoUrl: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png",
+      newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
       imageUrls: ["https://tradebilia.manus.space/item.jpg"],
       generationAttempt: 1,
     });
     expect(instruction).toContain("45-second, 16:9 Tradebilia News Network");
     expect(instruction).toContain("Max Tradebloski and Sidney Tradewell");
-    expect(instruction).toContain("picture-in-picture panel in the upper corner");
+    expect(instruction).toContain("picture-in-picture panel in the upper-right corner");
     expect(instruction).toContain("headline strap reading 'BREAKING NEWS FROM TRADEBILIA'");
     expect(instruction).toContain("attached, supplied dedicated TNN (Tradebilia News Network) logo");
     expect(instruction).toContain("do not substitute a generic Tradebilia wordmark");
     expect(instruction).toContain("TNNlogo_da53263e.png");
+    expect(instruction).toContain("Approved newsroom visual reference");
+    expect(instruction).toContain("clean white and ice-gray studio");
+    expect(instruction).toContain("glossy curved white-and-navy anchor desk");
+    expect(instruction).toContain("TNNTradebiliaNewsroomStudio_7f73bd45.png");
+    expect(instruction).toContain("attached approved TNN newsroom visual-reference image");
+    expect(instruction).toContain("stable polished medium desk shot");
     expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
     expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
     expect(instruction).toContain("Where collectors connect.");
+  });
+
+  it("keeps the approved TNN logo and newsroom reference server-owned", () => {
+    const videoProcedure = routerSource.slice(routerSource.indexOf("startCompletedTradeVideoGeneration:"), routerSource.indexOf("getCompletedTradeVideoGeneration:"));
+    expect(videoProcedure).toContain('logoUrl: TNN_VIDEO_LOGO_URL');
+    expect(videoProcedure).toContain('newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL');
+    expect(videoProcedure).not.toContain('logoUrl: z.string()');
+    expect(videoProcedure).not.toContain('newsroomReferenceUrl: z.string()');
   });
 });
