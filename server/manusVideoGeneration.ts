@@ -105,7 +105,7 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     "Editorial goal: celebrate a completed collector transaction and promote Tradebilia in a credible modern newsroom. This is not a financial report, sales pitch, valuation, or news claim outside the approved transaction.",
     `Anchors: ${anchorNames}. ${anchorDirection(input.anchorMode)}`,
     "Opening (first 2 seconds): one concise original TNN breaking-news sting with newsroom ambience and no commercial music bed. Then cut cleanly to the anchor desk. Keep the modern realistic newsroom, anchor identity, wardrobe, lighting, desk, and blue/red TNN visual language consistent through the finished video.",
-    `Graphics: include the supplied official Tradebilia logo, a high newsroom headline strap reading 'BREAKING NEWS FROM TRADEBILIA', and an upper-corner TNN identifier. Use one understated scrolling lower ticker that repeats only this generic approved homepage tagline: '${input.tickerText}'. Do not place participant names, item values, prices, cash amounts, dates, locations, addresses, contact details, tracking/shipping information, certificate/serial numbers, or captions/subtitles on screen.`,
+    `Graphics: use the attached, supplied dedicated TNN (Tradebilia News Network) logo as the only primary network identity mark. Include it in the opening sting, upper-corner TNN identifier, and newsroom graphics; do not substitute a generic Tradebilia wordmark. Add a high newsroom headline strap reading 'BREAKING NEWS FROM TRADEBILIA'. Use one understated scrolling lower ticker that repeats only this generic approved homepage tagline: '${input.tickerText}'. Do not place participant names, item values, prices, cash amounts, dates, locations, addresses, contact details, tracking/shipping information, certificate/serial numbers, or captions/subtitles on screen.`,
     itemInsetInstruction,
     extraItemsInstruction,
     "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade or value.",
@@ -114,7 +114,7 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     "Approved selected-item context (reference only; do not add facts beyond the script):",
     itemReferenceLines(input.selectedItems) || "No item details supplied.",
     `Exact spoken script:\n${input.script}`,
-    `Use this official Tradebilia logo asset as a visual reference whenever available: ${input.logoUrl}`,
+    `The attached dedicated TNN logo asset is the visual source of truth and must be used exactly as supplied: ${input.logoUrl}`,
     "Return one finished MP4 artifact suitable for private preview and manual review in the Tradebilia admin Social Content page. Do not publish it, contact social platforms, or perform any external action.",
   ].join("\n\n");
 }
@@ -125,6 +125,7 @@ export const buildTradeVideoInstruction = buildTnnVideoInstruction;
 export async function createTradeVideoTask(input: TnnVideoTaskInput) {
   const content: ManusContentPart[] = [
     { type: "text", text: buildTnnVideoInstruction(input) },
+    { type: "file", file_url: input.logoUrl, filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" },
     ...input.imageUrls.slice(0, 6).map((file_url, index) => ({ type: "file" as const, file_url, filename: `trade-item-${index + 1}.jpg`, mime_type: "image/jpeg" })),
   ];
   const result = await manusRequest<{ task_id: string; task_url?: string }>("/v2/task.create", {
