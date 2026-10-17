@@ -81,7 +81,7 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('Ken Griffey Jr. 1989 1 PSA 9');
   });
 
-  it('adds the equivalent WATA Goldin query for a PSA video-game target', () => {
+  it('omits grading company and grade from every Goldin video-game search query', () => {
     const queries = buildGoldinSearchQueries({
       sourceId: 'goldin',
       title: 'Super Mario Bros. 3 sealed game',
@@ -90,8 +90,9 @@ describe('bounded specialist marketplace adapters', () => {
       certificationCompany: 'PSA',
       itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 3', platform: 'NES', year: '1990' }),
     });
-    expect(queries[0]).toContain('PSA 9');
-    expect(queries[1]).toContain('WATA 9');
+    expect(queries[0]).toBe('Super Mario Bros. 3 NES 1990');
+    expect(queries).toEqual(['Super Mario Bros. 3 NES 1990', 'Super Mario Bros. 3 sealed game']);
+    expect(queries.join(' ')).not.toMatch(/\b(?:PSA|WATA)\s*9(?:\.\d+)?\b/i);
   });
 
   it('accepts PSA and WATA as equivalent only for video-game identity', () => {
@@ -422,7 +423,7 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
     expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990 WATA 9.6', size: 30, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
+      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990', size: 30, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
     }));
   });
 
