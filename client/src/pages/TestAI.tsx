@@ -2209,18 +2209,6 @@ function CatalogExtendedFacts({ metadata }: { metadata: Record<string, unknown> 
     add('Related games', list('dlcs', 'expanded_games', 'expansions', 'forks', 'ports', 'remakes', 'remasters', 'standalone_expansions', 'similar_games'));
     add('Tags / keywords', list('tags', 'keywords'));
 
-    const screenshots = catalogCount(metadata.screenshots ?? metadata.short_screenshots);
-    const artworks = catalogCount(metadata.artworks);
-    const videos = catalogCount(metadata.videos);
-    const hasCover = Boolean(metadata.cover ?? metadata.background_image ?? metadata.background_image_additional);
-    const media = [hasCover ? 'cover image' : null, screenshots ? `${screenshots} screenshot${screenshots === 1 ? '' : 's'}` : null, artworks ? `${artworks} artwork${artworks === 1 ? '' : 's'}` : null, videos ? `${videos} video${videos === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
-    add('Cover & media', media || null);
-
-    const websites = catalogCount(metadata.websites ?? metadata.website);
-    const stores = catalogCount(metadata.stores);
-    const links = [websites ? `${websites} website${websites === 1 ? '' : 's'}` : null, stores ? `${stores} store${stores === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ');
-    add('Links & stores', links || null);
-
     const rating = typeof metadata.total_rating === 'number' ? metadata.total_rating : typeof metadata.rating === 'number' ? metadata.rating : null;
     const ratingCount = typeof metadata.total_rating_count === 'number' ? metadata.total_rating_count : typeof metadata.ratings_count === 'number' ? metadata.ratings_count : null;
     const score = [rating !== null ? `rating ${rating.toFixed(1)}` : null, ratingCount !== null ? `${ratingCount.toLocaleString()} ratings` : null, typeof metadata.metacritic === 'number' ? `Metacritic ${metadata.metacritic}` : null, typeof metadata.hypes === 'number' ? `${metadata.hypes.toLocaleString()} hypes` : null].filter(Boolean).join(' · ');
