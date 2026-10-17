@@ -68,7 +68,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('JSON.stringify(data.data.metadata, null, 2)');
     expect(source).toContain('function CatalogExtendedFacts');
     expect(source).toContain('Extended catalog facts');
-    expect(source).toContain('Cover & media');
+    expect(source).not.toContain("add('Cover & media'");
+    expect(source).not.toContain("add('Links & stores'");
     expect(source).toContain('Regional releases');
     expect(source).toContain('Related games');
     expect(source).toContain('Full linked objects are included below');
