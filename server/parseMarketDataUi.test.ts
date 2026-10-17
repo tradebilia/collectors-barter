@@ -31,12 +31,19 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('coinQuery.refetch()');
   });
 
-  it('does not generate a PriceCharting video-game request without a real UPC', () => {
+  it('retains exact UPC lookup and enables bounded title-and-platform candidates when a video game has no UPC', () => {
     expect(testAiSource).toContain('function getPriceChartingVideoGameUpc(item: SelectedItem | null)');
     expect(testAiSource).toContain('getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken');
+    expect(testAiSource).toContain('searchPriceChartingVideoGames.useQuery(');
+    expect(testAiSource).toContain('!priceChartingVideoGameUpc && canSearchVideoGamesByTitle ? videoGameSearchInput : skipToken');
+    expect(testAiSource).toContain('function getPriceChartingVideoGameSearchIdentity(item: SelectedItem | null)');
+    expect(testAiSource).toContain('missingPriceChartingVideoGameIdentity');
+    expect(testAiSource).toContain('!priceChartingVideoGameUpc\n                  && !priceChartingVideoGameSearchIdentity');
     expect(testAiSource).not.toContain("upc: '00000000'");
-    expect(testAiSource).toContain('No PriceCharting game request was generated.');
-    expect(testAiSource).toContain('disabled until a valid video-game UPC or barcode is supplied');
+    expect(testAiSource).toContain('Add both the structured Game Title and Platform to search PriceCharting without a UPC');
+    expect(testAiSource).toContain('Select the exact edition — no PriceCharting price context until selected');
+    expect(testAiSource).toContain('Single exact match selected automatically');
+    expect(testAiSource).toContain('PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.');
   });
 
   it('uses only exact certified-grade PriceCharting coin values as a capped analyzer guide', () => {

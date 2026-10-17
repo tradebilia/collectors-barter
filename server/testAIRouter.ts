@@ -9,7 +9,7 @@ import { lookupUspsTracking } from "./uspsTracking";
 import { lookupUpsTracking } from "./upsTracking";
 import { lookupFedexTracking } from "./fedexTracking";
 import { lookupDhlTracking } from "./dhlTracking";
-import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification } from './parseMarketData';
+import { lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification, searchPriceChartingVideoGames } from './parseMarketData';
 import { lookupPcgsAuctionResults, lookupPcgsCertification } from './pcgsMarketData';
 import { lookupNgcCertification } from './ngcCertification';
 import { lookupNumistaCoin } from './numistaMetadata';
@@ -2569,6 +2569,18 @@ export const testAIRouter = router({
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       return lookupPriceChartingVideoGame(input.upc);
+    }),
+  // UPC remains the exact path. Games without a barcode receive bounded title
+  // candidates that must pass exact identity checks and, when ambiguous, an
+  // explicit reviewer selection in the Test AI sandbox.
+  searchPriceChartingVideoGames: protectedProcedure
+    .input(z.object({
+      query: z.string().trim().min(2).max(240),
+      platform: z.string().trim().min(1).max(120).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return searchPriceChartingVideoGames(input);
     }),
   getPriceChartingCardDetail: protectedProcedure
     .input(z.object({ setSlug: z.string().trim().min(1).max(180), cardSlug: z.string().trim().min(1).max(240) }))

@@ -3,6 +3,10 @@ import { classifyApiFailure, recordApiFailure } from "./apiHealth";
 
 const SGC_SCRAPER_ID = 'f63ad1cb-5b08-4e33-9ea8-573b416e936d';
 const PRICECHARTING_SCRAPER_ID = 'bbbbdc36-6d99-4a7a-8115-cf766b2497e3';
+// User-authorized, read-only Parse.bot fork that exposes a bounded PriceCharting
+// video-game candidate search. The established canonical scraper remains the
+// source for UPC detail lookups below.
+const PRICECHARTING_VIDEO_GAME_SEARCH_SCRAPER_ID = '47b2f542-930c-40f0-a2f0-42673e998204';
 const ONE_THIRTY_POINT_SCRAPER_ID = '28d873f5-47d5-4c01-a275-e80c6b3fc610';
 const PWCC_SCRAPER_ID = '6f75fc48-78a3-4fa4-a96a-937d35bf9385';
 const PRICECHARTING_REQUEST_TIMEOUT_MS = 30_000;
@@ -257,6 +261,126 @@ export async function lookupPriceChartingVideoGame(upc: string, env: ParseEnv = 
     return { upc: normalizedUpc, status: 'success' as const, data: { title: game.title ?? game.name ?? null, platform: game.platform ?? game.console ?? null, platformSlug: game.platform_slug ?? null, gameSlug: game.game_slug ?? null, priceChartingId: game.pricecharting_id ?? game.id ?? null, associatedUpcs: Array.isArray(game.upcs) ? game.upcs : [], url: game.url ?? null, prices: asObject(game.prices) } };
   } catch {
     return { upc: normalizedUpc, status: 'error' as const, message: 'Parse PriceCharting video-game lookup could not be reached. Try again shortly.', data: null };
+  }
+}
+
+export type PriceChartingVideoGameSearchInput = {
+  query: string;
+  platform?: string | undefined;
+};
+
+function normalizePriceChartingGameIdentity(value: unknown): string {
+  return String(value ?? '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function priceChartingPlatformsMatch(target: string, candidate: string): boolean {
+  const normalizedTarget = normalizePriceChartingGameIdentity(target);
+  const normalizedCandidate = normalizePriceChartingGameIdentity(candidate);
+  if (!normalizedTarget || !normalizedCandidate) return false;
+  const aliases: Record<string, string> = {
+    nes: 'nes', 'nintendo entertainment system': 'nes',
+    snes: 'snes', 'super nintendo': 'snes', 'super nintendo entertainment system': 'snes',
+    n64: 'n64', 'nintendo 64': 'n64',
+    gamecube: 'gamecube', 'nintendo gamecube': 'gamecube',
+    wiiu: 'wiiu', 'wii u': 'wiiu',
+    ps1: 'ps1', psx: 'ps1', playstation: 'ps1', 'playstation 1': 'ps1',
+    ps2: 'ps2', 'playstation 2': 'ps2',
+    ps3: 'ps3', 'playstation 3': 'ps3',
+    ps4: 'ps4', 'playstation 4': 'ps4',
+    ps5: 'ps5', 'playstation 5': 'ps5',
+    xbox360: 'xbox360', 'xbox 360': 'xbox360',
+    xboxone: 'xboxone', 'xbox one': 'xboxone',
+    switch: 'switch', 'nintendo switch': 'switch',
+  };
+  return (aliases[normalizedTarget] ?? normalizedTarget) === (aliases[normalizedCandidate] ?? normalizedCandidate);
+}
+
+/**
+ * Searches only the user-authorized, bounded PriceCharting video-game endpoint.
+ * This never selects a result by fuzzy title alone: a compatible candidate has
+ * an exact normalized title and, when supplied, an exact normalized platform.
+ * The browser must make the final choice whenever one safe automatic candidate
+ * is not available.
+ */
+export async function searchPriceChartingVideoGames(input: PriceChartingVideoGameSearchInput, env: ParseEnv = process.env) {
+  const query = input.query.trim().replace(/\s+/g, ' ');
+  const platform = input.platform?.trim().replace(/\s+/g, ' ') || undefined;
+  const apiKey = env.PARSE_BOT_API_KEY;
+  if (!apiKey) return { query, platform: platform ?? null, status: 'error' as const, message: 'Parse.bot API key not configured', data: null };
+  if (query.length < 2) return { query, platform: platform ?? null, status: 'error' as const, message: 'Enter a video-game title before searching PriceCharting candidates.', data: null };
+
+  try {
+    const params = new URLSearchParams({ query, limit: '10' });
+    if (platform) params.set('platform', platform);
+    const { response, payload } = await fetchPriceChartingJson(
+      `${PARSE_API_BASE}/${PRICECHARTING_VIDEO_GAME_SEARCH_SCRAPER_ID}/search_video_games?${params.toString()}`,
+      { headers: { 'X-API-Key': apiKey } },
+      'search_video_games',
+    );
+    if (!response.ok) {
+      await recordParseFailure('PriceCharting video-game candidate search', response.status);
+      return { query, platform: platform ?? null, status: 'error' as const, message: parseErrorMessage(response.status, 'Parse PriceCharting', payload), data: null };
+    }
+
+    const result = asObject(asObject(payload).data ?? payload);
+    const rawCandidates = Array.isArray(result.results)
+      ? result.results
+      : Array.isArray(result.games)
+        ? result.games
+        : Array.isArray(result.items)
+          ? result.items
+          : [];
+    const candidates = rawCandidates.slice(0, 10).map((entry: unknown) => {
+      const game = asObject(entry);
+      const title = String(game.title ?? game.name ?? '').trim();
+      const candidatePlatform = String(game.platform ?? game.console ?? '').trim();
+      const titleMatches = normalizePriceChartingGameIdentity(title) === normalizePriceChartingGameIdentity(query);
+      const platformMatches = platform ? priceChartingPlatformsMatch(platform, candidatePlatform) : false;
+      return {
+        title: title || null,
+        platform: candidatePlatform || null,
+        platformSlug: game.platform_slug ?? null,
+        gameSlug: game.game_slug ?? null,
+        priceChartingId: game.pricecharting_id ?? game.id ?? null,
+        associatedUpcs: Array.isArray(game.associated_upcs) ? game.associated_upcs : Array.isArray(game.upcs) ? game.upcs : [],
+        url: game.url ?? null,
+        prices: asObject(game.prices),
+        titleMatches,
+        platformMatches,
+        identityCompatible: titleMatches && (platform ? platformMatches : true),
+      };
+    }).filter(candidate => candidate.title && candidate.priceChartingId);
+    const compatibleCandidates = candidates.filter(candidate => candidate.identityCompatible);
+    const selectionRequired = !platform || compatibleCandidates.length !== 1;
+    const selectionMessage = compatibleCandidates.length === 0
+      ? 'No returned PriceCharting candidate matched the exact game title and platform. No price context was selected.'
+      : selectionRequired
+        ? 'Select the exact compatible PriceCharting game before its price context is displayed. No cross-platform or edition candidate is selected automatically.'
+        : 'One exact title-and-platform PriceCharting candidate was selected automatically.';
+    if (!candidates.length) return { query, platform: platform ?? null, status: 'not_found' as const, message: 'No PriceCharting video-game candidates were found for this bounded title search.', data: null };
+    return {
+      query,
+      platform: platform ?? null,
+      status: 'success' as const,
+      data: {
+        candidateCount: candidates.length,
+        candidates,
+        compatibleCandidates,
+        selectionRequired,
+        selectionMessage,
+        source: 'PriceCharting video-game title and platform candidate context',
+      },
+    };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'PriceChartingTimeoutError') {
+      return { query, platform: platform ?? null, status: 'error' as const, message: `${error.message} after 30 seconds. No PriceCharting game candidate was selected; retry when the provider is responsive.`, data: null };
+    }
+    return { query, platform: platform ?? null, status: 'error' as const, message: 'Parse PriceCharting video-game candidate search could not be reached. Try again shortly.', data: null };
   }
 }
 
