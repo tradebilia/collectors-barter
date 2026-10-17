@@ -1,6 +1,7 @@
 import { invokeLLM } from "./_core/llm";
 
 export const TNN_SCRIPT_MODEL = "gpt-5-mini";
+export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
 export const TNN_SCRIPT_WORD_BUDGET = {
   30: { minimum: 36, maximum: 60 },
   45: { minimum: 60, maximum: 90 },
@@ -151,6 +152,16 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
   return { script, wordCount, estimatedSpeechSeconds: Math.ceil(wordCount / 2) };
 }
 
+export function getStructuredResponseText(content: unknown): string | null {
+  if (typeof content === "string") return content;
+  if (!Array.isArray(content)) return null;
+  const text = content
+    .filter((part): part is { type?: unknown; text: string } => typeof part === "object" && part !== null && (part as { type?: unknown }).type === "text" && typeof (part as { text?: unknown }).text === "string")
+    .map((part) => part.text)
+    .join("");
+  return text || null;
+}
+
 export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScriptDraft> {
   const response = await invokeLLM({
     model: TNN_SCRIPT_MODEL,
@@ -159,7 +170,8 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
       { role: "user", content: buildTnnScriptPrompt(input) },
     ],
     temperature: 0.85,
-    max_completion_tokens: 380,
+    reasoning: { effort: "minimal" },
+    max_completion_tokens: TNN_SCRIPT_MAX_COMPLETION_TOKENS,
     response_format: {
       type: "json_schema",
       json_schema: {
@@ -174,8 +186,14 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
       },
     },
   });
-  const content = response.choices[0]?.message.content;
-  if (typeof content !== "string") throw new Error("The TNN script service returned an unsupported response.");
+  const choice = response.choices[0];
+  const content = getStructuredResponseText(choice?.message.content);
+  if (!content) {
+    if (choice?.finish_reason === "length") {
+      throw new Error("The TNN script draft reached its response limit before returning content. Please retry.");
+    }
+    throw new Error("The TNN script service returned no usable structured content. Please retry.");
+  }
   let parsed: { script?: unknown };
   try {
     parsed = JSON.parse(content) as { script?: unknown };
