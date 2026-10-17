@@ -1,10 +1,19 @@
+import {
+  TNN_VIDEO_DURATION_SECONDS,
+  TNN_VIDEO_DURATIONS as APPROVED_TNN_VIDEO_DURATIONS,
+  TNN_WEBSITE_TICKER,
+  formatTnnGrade,
+} from "@shared/tnnVideoPolicy";
+
+export { TNN_VIDEO_DURATION_SECONDS, TNN_WEBSITE_TICKER, formatTnnGrade } from "@shared/tnnVideoPolicy";
+
 export type SocialPlatform = "Facebook" | "Instagram" | "X" | "Pinterest" | "LinkedIn" | "YouTube";
 export type DraftStatus = "Draft" | "Needs Review" | "Approved" | "Scheduled" | "Published";
 export type SocialDraftSource = "Original" | "High-Value Listing" | "Completed Trade" | "Verified Merchant";
 
 export const TRADEBILIA_PUBLIC_ORIGIN = "https://tradebilia.manus.space";
 export const TNN_MIN_COMPLETED_TRADE_VALUE = 1_000;
-export const TNN_VIDEO_DURATIONS = [30, 45, 60] as const;
+export const TNN_VIDEO_DURATIONS = APPROVED_TNN_VIDEO_DURATIONS;
 export type TnnVideoDuration = typeof TNN_VIDEO_DURATIONS[number];
 export type TnnAnchorMode = "max" | "sidney" | "duo";
 export type TnnScriptStatus = "not-drafted" | "drafting" | "draft-ready" | "draft-failed";
@@ -25,16 +34,12 @@ export const TNN_ANCHORS = {
 } as const;
 
 export const TNN_SCRIPT_WORD_BUDGET: Record<TnnVideoDuration, { minimum: number; maximum: number }> = {
-  30: { minimum: 36, maximum: 60 },
-  45: { minimum: 60, maximum: 90 },
-  60: { minimum: 84, maximum: 120 },
+  45: { minimum: 80, maximum: 100 },
 };
 
 /** The narrated item-detail limit preserves clear pacing; remaining selected items are acknowledged generically. */
 export const TNN_NARRATED_ITEM_LIMIT: Record<TnnVideoDuration, number> = {
-  30: 2,
   45: 4,
-  60: 6,
 };
 
 export type SocialPromotionFact = {
@@ -185,7 +190,7 @@ export function buildTnnCompletedTradeVideoPlan({
   tradeItems = [],
   selectedItemIndexes,
   cashOnly,
-  durationSeconds = 30,
+  durationSeconds = TNN_VIDEO_DURATION_SECONDS,
   anchorMode,
   tickerText,
   now = new Date().toISOString(),
@@ -216,7 +221,7 @@ export function buildTnnCompletedTradeVideoPlan({
     buyerName: cleanBuyer,
     cashOnly,
     headline: "Breaking News from Tradebilia",
-    tickerText: tickerText.trim() || "Where collectors connect.",
+    tickerText: TNN_WEBSITE_TICKER,
     selectedItemIndexes: indexes,
     selectedItems,
     additionalItemsCount: Math.max(0, cleanItems.length - selectedItems.length),
@@ -274,9 +279,9 @@ export function buildCompletedTradeVideoPlan({
     buyerName: buyerName?.trim() || requesterName,
     tradeItems: [itemTitle, ...tradeItemTitles].map((title) => ({ title })),
     cashOnly,
-    durationSeconds: 30,
+    durationSeconds: TNN_VIDEO_DURATION_SECONDS,
     anchorMode: "sidney",
-    tickerText: "Where collectors connect.",
+    tickerText: TNN_WEBSITE_TICKER,
     now,
   });
   return withTnnVideoScript(plan, commentary, 1);

@@ -37,3 +37,5 @@
 - [x] TNN script response compatibility: accept supported structured text response shapes from the configured Manus LLM and provide safe failure details when no usable script is returned.
 
 - [x] TNN selected-item coverage: require each selected title verbatim and allow one bounded corrective script-only retry only for title-coverage validation failures.
+
+- [x] TNN render correction: replaced the old logo with the supplied transparent glossy TNN mark; attached the approved globe-and-ribbon opening reference; required a seamless embedded opening—not a square card—plus a face-safe set, 45-second format, `WWW.Tradebilia.com` ticker, `the TNN Network` wording, `trade-bil-lee-uh` pronunciation, anchor introductions, a final spoken `Tradebilia.`, and normalized PSA numeric grades. Fact locking, selected item images, privacy, manual generation approval, and no auto-publishing remain preserved. Focused 63/63 and complete deterministic 326 files / 1,573 passed (3 credential-optional files / 6 tests skipped; known external The Card API probe excluded).

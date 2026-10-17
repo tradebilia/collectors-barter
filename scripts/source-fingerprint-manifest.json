@@ -817,6 +817,8 @@
   "shared/testAiSelectedItem.ts",
   "shared/testAiSoldCompSafety.ts",
   "shared/testAiSourceApplicability.ts",
+  "shared/tnnVideoPolicy.test.ts",
+  "shared/tnnVideoPolicy.ts",
   "shared/tradeAlertThemes.ts",
   "shared/types.ts",
   "shared/uspsTrackingLink.ts",
