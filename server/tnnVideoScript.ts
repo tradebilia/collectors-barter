@@ -2,6 +2,7 @@ import { invokeLLM } from "./_core/llm";
 
 export const TNN_SCRIPT_MODEL = "gpt-5-mini";
 export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
+export const TNN_SELECTED_ITEM_COVERAGE_ERROR = "The TNN script did not mention every approved selected item.";
 export const TNN_SCRIPT_WORD_BUDGET = {
   30: { minimum: 36, maximum: 60 },
   45: { minimum: 60, maximum: 90 },
@@ -109,7 +110,7 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
     `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line.` : `${anchors[0]} delivers the solo report.`}`,
     "Begin with the words 'Breaking News from Tradebilia.' Mention TNN once naturally. End with the approved Tradebilia tagline exactly once.",
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
-    "Use only the item names, grades, and approved background facts listed below. You may paraphrase facts without adding claims. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
+    "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written at least once; you may paraphrase its facts but not its title. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
     "Do not include captions, production directions, scene directions, speaker labels, markdown, bullet points, or quoted visual text in the script. The video-production layer handles the newsroom visuals.",
     `If the selected items do not cover the entire transaction, say one time: '${input.additionalItemsCount === 1 ? "Additional collector items changed hands as part of the completed transaction." : "Additional collector items changed hands as part of the completed transaction."}' Do not name unselected items.`,
     `Approved closing tagline: ${input.tickerText || "Where collectors connect."}`,
@@ -137,8 +138,8 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
     throw new Error("The TNN script included disallowed private, price, value, delivery, or certificate information.");
   }
   const itemTitles = normalizedInput.selectedItems.map((item) => item.title.toLowerCase());
-  if (itemTitles.length && !itemTitles.some((title) => script.toLowerCase().includes(title))) {
-    throw new Error("The TNN script did not mention an approved selected item.");
+  if (itemTitles.some((title) => !script.toLowerCase().includes(title))) {
+    throw new Error(TNN_SELECTED_ITEM_COVERAGE_ERROR);
   }
   if (!script.toLowerCase().includes(normalizedInput.sellerName.toLowerCase()) || !script.toLowerCase().includes(normalizedInput.buyerName.toLowerCase())) {
     throw new Error("The TNN script must name both completed-trade parties in speech.");
@@ -162,12 +163,23 @@ export function getStructuredResponseText(content: unknown): string | null {
   return text || null;
 }
 
-export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScriptDraft> {
+function buildCorrectiveTnnItemCoveragePrompt(input: TnnScriptDraftInput) {
+  const titles = normalizeTnnScriptInput(input).selectedItems.map((item) => item.title);
+  return [
+    "Corrective retry: the prior TNN draft did not state every approved selected item title verbatim.",
+    "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
+    `You must include each of these titles exactly as written: ${titles.join(" | ") || "No selected titles supplied"}.`,
+    "Keep every original privacy, factual-boundary, duration, party-name, and closing-tagline rule from the user request.",
+  ].join("\n");
+}
+
+async function requestTnnScript(input: TnnScriptDraftInput, correctiveInstruction?: string) {
   const response = await invokeLLM({
     model: TNN_SCRIPT_MODEL,
     messages: [
       { role: "system", content: "You are a precise newsroom copywriter. Follow the supplied factual boundaries exactly." },
       { role: "user", content: buildTnnScriptPrompt(input) },
+      ...(correctiveInstruction ? [{ role: "user" as const, content: correctiveInstruction }] : []),
     ],
     temperature: 0.85,
     reasoning: { effort: "minimal" },
@@ -194,11 +206,22 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
     }
     throw new Error("The TNN script service returned no usable structured content. Please retry.");
   }
-  let parsed: { script?: unknown };
   try {
-    parsed = JSON.parse(content) as { script?: unknown };
+    const parsed = JSON.parse(content) as { script?: unknown };
+    return String(parsed.script ?? "");
   } catch {
     throw new Error("The TNN script service returned invalid structured content.");
   }
-  return validateTnnScriptDraft(String(parsed.script ?? ""), input);
+}
+
+export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScriptDraft> {
+  try {
+    return validateTnnScriptDraft(await requestTnnScript(input), input);
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== TNN_SELECTED_ITEM_COVERAGE_ERROR) throw error;
+    return validateTnnScriptDraft(
+      await requestTnnScript(input, buildCorrectiveTnnItemCoveragePrompt(input)),
+      input
+    );
+  }
 }

@@ -35,3 +35,5 @@
 - [x] TNN newsroom art direction: preserved the approved broadcast-studio reference and attached it to every TNN video task, with detailed logo-matched set, opening, camera, anchor, graphic, and item-panel direction.
 
 - [x] TNN script response compatibility: accept supported structured text response shapes from the configured Manus LLM and provide safe failure details when no usable script is returned.
+
+- [x] TNN selected-item coverage: require each selected title verbatim and allow one bounded corrective script-only retry only for title-coverage validation failures.

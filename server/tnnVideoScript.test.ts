@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
+import { invokeLLM } from "./_core/llm";
 import {
   buildTnnScriptPrompt,
   countTnnScriptWords,
+  draftTnnScript,
   getStructuredResponseText,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
+  TNN_SELECTED_ITEM_COVERAGE_ERROR,
   validateTnnScriptDraft,
 } from "./tnnVideoScript";
 import {
@@ -30,6 +34,18 @@ const input = {
 };
 
 const validScript = "Breaking News from Tradebilia. TNN reports that Morgan Seller and Taylor Buyer have completed a collector trade featuring 1989 Nintendo Game and a PSA 9 Trading Card. The selected pieces highlight NES and 1986 collector context for this memorable exchange. Additional collector items changed hands as part of the completed transaction. Tradebilia brings collectors together. Where collectors connect.";
+const mockedInvokeLLM = vi.mocked(invokeLLM);
+
+const responseFor = (script: string) => ({
+  id: "test",
+  created: 0,
+  model: "gpt-5-mini",
+  choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant" as const, content: JSON.stringify({ script }) } }],
+});
+
+beforeEach(() => {
+  mockedInvokeLLM.mockReset();
+});
 
 describe("TNN completed-trade video policy", () => {
   it("requires an aggregate completed-trade value of at least $1,000 before the TNN studio is available", () => {
@@ -76,6 +92,7 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain("Tradebilia News Network");
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
     expect(prompt).toContain("names must never be proposed as on-screen text");
+    expect(prompt).toContain("State every approved selected item title exactly as written");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
     expect(prompt).toContain("Additional collector items changed hands");
     expect(prompt).toContain("Where collectors connect.");
@@ -88,6 +105,7 @@ describe("TNN fact-locked script contract", () => {
     expect(validated.estimatedSpeechSeconds).toBeGreaterThan(0);
     expect(() => validateTnnScriptDraft(validScript.replace("collector trade", "$1,200 collector trade"), input)).toThrow(/disallowed/i);
     expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", ""), input)).toThrow(/acknowledge/i);
+    expect(() => validateTnnScriptDraft(validScript.replace("PSA 9 Trading Card", "graded card"), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
   });
 
   it("uses minimal reasoning and a sufficient completion budget, accepting a documented text-part response", () => {
@@ -97,5 +115,22 @@ describe("TNN fact-locked script contract", () => {
     expect(source).toContain("max_completion_tokens: TNN_SCRIPT_MAX_COMPLETION_TOKENS");
     expect(getStructuredResponseText([{ type: "text", text: JSON.stringify({ script: validScript }) }])).toBe(JSON.stringify({ script: validScript }));
     expect(getStructuredResponseText(undefined)).toBeNull();
+  });
+
+  it("runs one corrective script-only retry when, and only when, the first draft omits a selected title", async () => {
+    const incompleteButOtherwiseCompliant = validScript
+      .replace("1989 Nintendo Game and a PSA 9 Trading Card", "a video game and a graded trading card");
+    mockedInvokeLLM
+      .mockResolvedValueOnce(responseFor(incompleteButOtherwiseCompliant) as any)
+      .mockResolvedValueOnce(responseFor(validScript) as any);
+
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    const [initial, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
+    expect(initial.messages).toHaveLength(2);
+    expect(corrective.messages).toHaveLength(3);
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("1989 Nintendo Game | PSA 9 Trading Card"),
+    });
   });
 });
