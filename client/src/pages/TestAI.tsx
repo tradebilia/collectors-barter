@@ -757,6 +757,14 @@ function MarketplaceQueryBanner({ item, query, isLoading }: { item: SelectedItem
   </div>;
 }
 
+function CatalogTitleQueryBanner({ title, isLoading }: { title: string; isLoading?: boolean }) {
+  return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
+    <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({isLoading ? 'pending response' : 'title-only catalog request'})</span></p>
+    <p className="mt-0.5 break-words text-[9px] text-cyan-200/80"><span className="font-semibold">Game Title:</span> {title || 'Missing'}</p>
+    <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">&quot;{title || 'No game title supplied'}&quot;</p>
+  </div>;
+}
+
 function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condition, currency, duplicate, and comparable gates still apply.' }: { eligible: boolean; reason?: string }) {
   return <p className={`mt-1 text-[8px] font-semibold ${eligible ? 'text-emerald-300' : 'text-amber-300'}`}>{eligible ? 'Analyzer: YES — submitted as a valuation candidate; ' : 'Analyzer: NO — context/review only; '}{reason}</p>;
 }
@@ -2119,20 +2127,14 @@ function RawgSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   const supported = item.category === 'video_games';
   const lookupInput = useMemo(() => {
     const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
-    const rawYear = details.releaseYear || details.year || details.release_date_year;
-    const releaseYear = Number(rawYear);
-    return {
-      title: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
-      releaseYear: Number.isInteger(releaseYear) && releaseYear > 0 ? releaseYear : undefined,
-      platform: details.platform || details.console || details.system || undefined,
-    };
+    return { title: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim() };
   }, [item.itemDetails, item.title]);
   const { data, isLoading } = trpc.testAI.getRawgGameMetadata.useQuery(lookupInput, { enabled: supported && lookupInput.title.length >= 2 });
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Video Game items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🎮 RAWG Video Game Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
-    <MarketplaceQueryBanner item={item} query={undefined} isLoading={isLoading} />
-    <p className="text-gray-500 text-[10px]">User-approved read-only Video Game catalog metadata · Query: {lookupInput.title} · Not a price, grading, certification, authenticity, condition, or ownership source</p>
+    <CatalogTitleQueryBanner title={lookupInput.title} isLoading={isLoading} />
+    <p className="text-gray-500 text-[10px]">User-approved read-only Video Game catalog metadata · Game Title is the only search criterion. Platform and release year remain item context only · Not a price, grading, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
     {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}{data.data.metadata && <details className="rounded border border-slate-700/40 bg-slate-950/30 p-2 text-[10px]"><summary className="cursor-pointer font-semibold text-slate-300">Show all returned RAWG metadata ({Object.keys(data.data.metadata).length} top-level fields)</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/25 p-2 text-[9px] leading-relaxed text-slate-300">{JSON.stringify(data.data.metadata, null, 2)}</pre><p className="mt-1 text-[9px] text-slate-500">Read-only catalog payload; it does not establish price, condition, grade, authenticity, ownership, or valuation eligibility.</p></details>}</div>}
@@ -2144,20 +2146,14 @@ function IgdbSection({ item, side }: { item: SelectedItem; side: 'left' | 'right
   const supported = item.category === 'video_games';
   const lookupInput = useMemo(() => {
     const details = item.itemDetails ? (() => { try { return JSON.parse(item.itemDetails); } catch { return {}; } })() : {};
-    const rawYear = details.releaseYear || details.year || details.release_date_year;
-    const releaseYear = Number(rawYear);
-    return {
-      title: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim(),
-      releaseYear: Number.isInteger(releaseYear) && releaseYear > 0 ? releaseYear : undefined,
-      platform: details.platform || details.console || details.system || undefined,
-    };
+    return { title: String(details.gameTitle || details.videoGameTitle || details.title || item.title).trim() };
   }, [item.itemDetails, item.title]);
   const { data, isLoading } = trpc.testAI.getIgdbGameMetadata.useQuery(lookupInput, { enabled: supported && lookupInput.title.length >= 2 });
   if (!supported) return <div className="bg-gray-800/30 rounded-lg p-3 border border-dashed border-gray-700/40 space-y-2"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🕹️ IGDB Video Game Catalog</p><p className="text-gray-500 text-[10px]">This read-only reference source currently supports Video Game items only.</p></div>;
   return <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
     <div className="flex items-center justify-between"><p className={`text-[11px] font-bold uppercase ${accentColor}`}>🕹️ IGDB Video Game Catalog</p>{isLoading && <Spinner className="w-3 h-3" />}</div>
-    <MarketplaceQueryBanner item={item} query={undefined} isLoading={isLoading} />
-    <p className="text-gray-500 text-[10px]">Commercially approved read-only game identification metadata · Search criteria: {lookupInput.title}{lookupInput.platform ? ` + ${lookupInput.platform}` : ''} · Release year is reference context only · Not a price, grading, certification, authenticity, condition, or ownership source</p>
+    <CatalogTitleQueryBanner title={lookupInput.title} isLoading={isLoading} />
+    <p className="text-gray-500 text-[10px]">Commercially approved read-only game identification metadata · Game Title is the only search criterion. Platform and release year remain item context only · Not a price, grading, certification, authenticity, condition, or ownership source</p>
     {data?.status === 'error' && <p className="rounded border border-red-700/30 bg-red-900/20 p-2 text-[10px] text-red-400">{data.message}</p>}
     {data?.status === 'not_found' && <p className="rounded border border-amber-700/30 bg-amber-900/20 p-2 text-[10px] text-amber-300">{data.message}</p>}
     {data?.status === 'success' && data.data && <div className="space-y-2 rounded bg-gray-900/40 p-2"><a href={data.data.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[12px] font-semibold text-blue-300 hover:underline">{data.data.title}</a><p className="text-[10px] text-amber-200/90">{data.data.matchNote}</p>{data.data.facts.length > 0 && <div className="grid grid-cols-2 gap-1.5 text-[10px]">{data.data.facts.map((fact: any) => <div key={fact.label} className="rounded bg-gray-800/60 p-1.5"><p className="text-[8px] uppercase text-gray-500">{fact.label}</p><p className="break-words font-semibold text-white">{fact.value}</p></div>)}</div>}{data.data.metadata && <details className="rounded border border-slate-700/40 bg-slate-950/30 p-2 text-[10px]"><summary className="cursor-pointer font-semibold text-slate-300">Show all returned IGDB metadata ({Object.keys(data.data.metadata).length} top-level fields)</summary><pre className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/25 p-2 text-[9px] leading-relaxed text-slate-300">{JSON.stringify(data.data.metadata, null, 2)}</pre><p className="mt-1 text-[9px] text-slate-500">Read-only catalog payload; it does not establish price, condition, grade, authenticity, ownership, or valuation eligibility.</p></details>}</div>}
@@ -2413,8 +2409,9 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const certNumber = item.certId || '';
 
   const tcgdexQuery = trpc.testAI.getTcgDexCatalog.useQuery(tcgdexInput, { enabled: enabledSources.has('tcgdex') && item.category === 'pokemon' && tcgdexInput.query.length >= 2 });
-  const rawgQuery = trpc.testAI.getRawgGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('rawg') && item.category === 'video_games' && gameInput.title.length >= 2 });
-  const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(gameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && gameInput.title.length >= 2 });
+  const catalogGameInput = useMemo(() => ({ title: gameInput.title }), [gameInput.title]);
+  const rawgQuery = trpc.testAI.getRawgGameMetadata.useQuery(catalogGameInput, { enabled: enabledSources.has('rawg') && item.category === 'video_games' && catalogGameInput.title.length >= 2 });
+  const igdbQuery = trpc.testAI.getIgdbGameMetadata.useQuery(catalogGameInput, { enabled: enabledSources.has('igdb') && item.category === 'video_games' && catalogGameInput.title.length >= 2 });
   const priceChartingQuery = trpc.testAI.getPriceChartingData.useQuery({ query: item.title }, { enabled: enabledSources.has('pricecharting') && item.category === 'pokemon' && !!item.title });
   const priceChartingCoinQuery = trpc.testAI.getPriceChartingCoinData.useQuery(priceChartingCoinQueryInput, { enabled: enabledSources.has('pricecharting') && item.category === 'coins' && hasPriceChartingCoinQueryInput, retry: false, staleTime: 0, refetchOnMount: 'always' });
   const priceChartingVideoGameQuery = trpc.testAI.getPriceChartingVideoGameData.useQuery(priceChartingVideoGameUpc ? { upc: priceChartingVideoGameUpc } : skipToken, { enabled: enabledSources.has('pricecharting') && item.category === 'video_games' && Boolean(priceChartingVideoGameUpc) });
