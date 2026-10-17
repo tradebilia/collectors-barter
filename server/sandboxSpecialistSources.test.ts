@@ -38,6 +38,8 @@ describe('sandbox specialist source activation', () => {
       expect(['automatic_title_search', 'public_locator_required', 'price_table_locator_required', 'public_contract_unverified']).toContain(source.searchContract);
     }
     expect(getSandboxSpecialistSource('goldin')?.searchContract).toBe('automatic_title_search');
+    expect(getSandboxSpecialistSource('goldin')?.searchInstruction).toContain('maximum 30 candidates');
+    expect(getSandboxSpecialistSource('goldin')?.searchInstruction).not.toContain('maximum 12 candidates');
     expect(getSandboxSpecialistSource('weiss')?.searchContract).toBe('automatic_title_search');
     expect(getSandboxSpecialistSource('morphy')?.searchContract).toBe('public_locator_required');
     expect(getSandboxSpecialistSource('bertoia')?.searchContract).toBe('price_table_locator_required');
