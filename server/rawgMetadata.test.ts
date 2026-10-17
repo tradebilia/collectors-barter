@@ -40,6 +40,7 @@ describe('RAWG game metadata', () => {
 
     expect(result).toMatchObject({ status: 'success', data: { id: 42, title: 'Super Mario Bros. 3', sourceUrl: 'https://rawg.io/games/super-mario-bros-3' } });
     expect(result.data?.facts).toContainEqual({ label: 'Platforms', value: 'Nintendo Entertainment System' });
+    expect(result.data?.metadata).toMatchObject({ id: 42, name: 'Super Mario Bros. 3' });
     expect(urls[0]).toContain('search=Super+Mario+Bros.+3');
     expect(JSON.stringify(result)).not.toContain('secret-test-key');
   });

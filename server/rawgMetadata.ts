@@ -12,10 +12,11 @@ type RawgLookup = {
     sourceUrl: string;
     matchNote: string;
     facts: RawgFact[];
+    metadata: Record<string, unknown>;
   };
 };
 
-type RawgGame = {
+type RawgGame = Record<string, unknown> & {
   id?: number;
   slug?: string;
   name?: string;
@@ -125,17 +126,22 @@ export async function lookupRawgGameMetadata(
     const game = [...(platformConstrained.length ? platformConstrained : candidates)].sort((a, b) => scoreGame(b, lookupTitle, options.releaseYear, options.platform) - scoreGame(a, lookupTitle, options.releaseYear, options.platform))[0];
     if (!game?.id || !game.name || !game.slug) return { status: 'not_found', message: 'No usable RAWG game record was found.' };
 
+    const detailQuery = new URLSearchParams({ key });
+    const detailResponse = await fetchImpl(`https://api.rawg.io/api/games/${encodeURIComponent(String(game.id))}?${detailQuery}`, { signal: AbortSignal.timeout(12_000) });
+    const detailPayload = await detailResponse.json().catch(() => null) as Record<string, unknown> | null;
+    const detailedGame: RawgGame = detailResponse.ok && detailPayload && typeof detailPayload === 'object' ? { ...game, ...detailPayload } : game;
+
     const facts: RawgFact[] = [];
     const add = (label: string, value: string | number | null | undefined) => {
       if (value !== null && value !== undefined && String(value).trim()) facts.push({ label, value: String(value) });
     };
-    const year = releaseYear(game);
+    const year = releaseYear(detailedGame);
     add('Release year', year);
-    add('Platforms', platformNames(game.platforms));
-    add('Developers', names(game.developers));
-    add('Publishers', names(game.publishers));
-    add('Genres', names(game.genres));
-    add('ESRB rating', game.esrb_rating?.name ?? null);
+    add('Platforms', platformNames(detailedGame.platforms));
+    add('Developers', names(detailedGame.developers));
+    add('Publishers', names(detailedGame.publishers));
+    add('Genres', names(detailedGame.genres));
+    add('ESRB rating', detailedGame.esrb_rating?.name ?? null);
 
     const exactName = normalize(game.name) === normalize(lookupTitle);
     const yearMatches = Boolean(options.releaseYear && year === options.releaseYear);
@@ -148,10 +154,11 @@ export async function lookupRawgGameMetadata(
       status: 'success',
       data: {
         id: game.id,
-        title: game.name,
-        sourceUrl: `https://rawg.io/games/${encodeURIComponent(game.slug)}`,
+        title: String(detailedGame.name ?? game.name),
+        sourceUrl: `https://rawg.io/games/${encodeURIComponent(String(detailedGame.slug ?? game.slug))}`,
         matchNote: `Matched by ${matchParts.join(', ')}. Confirm the exact release, platform, and edition before using a separate market source.${yearDiscrepancy}`,
         facts,
+        metadata: detailedGame,
       },
     };
   } catch {
