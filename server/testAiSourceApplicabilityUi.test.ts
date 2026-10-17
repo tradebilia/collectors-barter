@@ -138,6 +138,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('omitGradingCriteria');
     expect(source).toContain("source.id === 'goldin'");
     expect(source).toContain("refetchOnMount: 'always'");
+    expect(source).toContain('function buildGoldinVideoGameDisplayQuery');
+    expect(source).toContain("firstText('releaseYear', 'year')");
     expect(source).toContain('const visibleQuery = omitGradingCriteria ? gradeFreeGoldinQuery : data?.query');
     expect(source).toContain('const visibleMessages = data?.messages?.map');
   });

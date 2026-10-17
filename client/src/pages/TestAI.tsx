@@ -755,6 +755,17 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
 }
 
 // ─── Sold-Comps Sold History Section ─────────────────────────────────────────
+function buildGoldinVideoGameDisplayQuery(item: SelectedItem): string {
+  const details = parseTestAiDetails(item.itemDetails);
+  const firstText = (...keys: string[]) => keys.map((key) => String(details[key] ?? '').trim()).find(Boolean) ?? '';
+  return [...new Set([
+    firstText('gameTitle', 'videoGameTitle', 'title') || item.title.trim(),
+    firstText('releaseYear', 'year'),
+    firstText('platform', 'console', 'system'),
+    firstText('edition', 'version'),
+  ].filter(Boolean))].join(' ').slice(0, 240).trim();
+}
+
 function MarketplaceQueryBanner({ item, query, isLoading, omitGradingCriteria = false }: { item: SelectedItem; query?: string | null; isLoading?: boolean; omitGradingCriteria?: boolean }) {
   const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
   const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany, item.category);
@@ -3077,9 +3088,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   const omitGradingCriteria = source.id === 'goldin' && /^video games?$/.test(normalizedCategory);
   const refreshOnMount = source.id === 'goldin';
-  const gradeFreeGoldinQuery = omitGradingCriteria
-    ? buildStructuredItemQuery(item.category, item.itemDetails, [], item.itemType ?? '')
-    : '';
+  const gradeFreeGoldinQuery = omitGradingCriteria ? buildGoldinVideoGameDisplayQuery(item) : '';
   const [sourceUrl, setSourceUrl] = useState('');
   const [historyWindow, setHistoryWindow] = useState<'recent_12_months' | 'historical' | 'all'>('recent_12_months');
   const normalizedSourceUrl = useMemo(() => {

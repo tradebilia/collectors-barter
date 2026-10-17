@@ -396,3 +396,9 @@ Focused validation passed **67/67** tests; the full deterministic suite passed *
 A second runtime inspection showed that an older Goldin response could still be rendered verbatim through `data.query` and the provider status message, even when the local preview was grader-free. The UI now constructs the visible Goldin Video Game query locally from title/platform/year fields and rewrites the displayed Goldin status query to that same grader-free value. This is display-only protection against stale responses; the server query remains grader-free, while grader/grade continue to be used only for downstream identity/admission checks.
 
 Focused validation passed **61/61** tests; the full deterministic suite passed **327 files / 1,582 tests**, with **3 credential-optional files / 6 tests skipped**; TypeScript, production build, and `git diff --check` passed. No database writes, migrations, seeders, credentials, or provider configuration changes.
+
+
+## Goldin embedded-grader display correction — October 17, 2026
+The remaining PSA text was traced to `buildStructuredItemQuery`: that shared helper always appended the resolved grading company even when its extra grading arguments were empty. Goldin Video Game display criteria now use a dedicated explicit allowlist builder containing only game title, release year, platform/console/system, and edition/version. The Goldin visible query and status message therefore cannot inherit grading company or grade from `itemDetails` or an older provider response. Downstream grader identity/admission checks are unchanged.
+
+Focused validation passed **61/61** tests; the full deterministic suite passed **327 files / 1,582 tests**, with **3 credential-optional files / 6 tests skipped**; TypeScript, production build, and `git diff --check` passed. No database writes, migrations, seeders, credentials, or provider configuration changes.
