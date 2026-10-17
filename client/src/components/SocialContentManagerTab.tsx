@@ -87,6 +87,9 @@ import { SOCIAL_GRAPHIC_SPECS, SocialPromotionGraphic } from "@/components/Socia
 
 const STORAGE_KEY = "tradebilia-admin-social-drafts-v1";
 const PREFERENCES_KEY = "tradebilia-admin-social-preferences-v1";
+/** Rich-supplied TNN identity mark for completed-trade newsroom videos. */
+const TNN_VIDEO_LOGO_PATH = "/manus-storage/TNNlogo_da53263e.png";
+const TNN_VIDEO_LOGO_URL = `${TRADEBILIA_PUBLIC_ORIGIN}${TNN_VIDEO_LOGO_PATH}`;
 const platforms = SOCIAL_PLATFORMS;
 const statuses = SOCIAL_DRAFT_STATUSES;
 
@@ -671,7 +674,7 @@ export function SocialContentManagerTab() {
         additionalItemsCount: plan.additionalItemsCount,
         tickerText: plan.tickerText,
         script: plan.script,
-        logoUrl: SOCIAL_GRAPHIC_BRAND_LOGO_URL,
+        logoUrl: TNN_VIDEO_LOGO_URL,
         imageUrls,
         generationAttempt: (plan.generationAttempt + 1) as 1 | 2,
       });
@@ -1025,7 +1028,8 @@ export function SocialContentManagerTab() {
                   <DialogDescription id="trade-video-studio-description">Prepare a private Tradebilia News Network script from the completed trade, review it, then approve a single background video task. The finished MP4 stays in this draft for manual review; nothing is published automatically.</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-5 py-2">
-                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step asks AI to draft a fact-locked 30, 45, or 60-second newsroom script. You review that script before a separate approval starts video generation. Manus then renders one 16:9 TNN newsroom MP4 in the background with professional lip-sync, the supplied Tradebilia logo, a breaking-news strap, item picture-in-picture panels, and one rotating generic homepage tagline in the ticker. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
+                  <div className="flex items-center gap-3 rounded-lg border border-violet-200 bg-white p-3"><img src={TNN_VIDEO_LOGO_PATH} alt="TNN — Tradebilia News Network logo" className="h-14 w-auto rounded border border-slate-200 object-contain" /><p className="text-xs leading-5 text-violet-950"><strong>Official TNN visual identity:</strong> this supplied Tradebilia News Network mark is attached to the generation task and used for the opening, newsroom identifier, and branded graphics.</p></div>
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step asks AI to draft a fact-locked 30, 45, or 60-second newsroom script. You review that script before a separate approval starts video generation. Manus then renders one 16:9 TNN newsroom MP4 in the background with professional lip-sync, the supplied dedicated TNN logo, a breaking-news strap, item picture-in-picture panels, and one rotating generic homepage tagline in the ticker. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name <Input value={videoSellerName} onChange={(event) => setVideoSellerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name <Input value={videoBuyerName} onChange={(event) => setVideoBuyerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
@@ -1041,7 +1045,7 @@ export function SocialContentManagerTab() {
               </DialogContent>
             </Dialog>
             <AlertDialog open={isTnnGenerationConfirmOpen} onOpenChange={setIsTnnGenerationConfirmOpen}>
-              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Approve this TNN video task?</AlertDialogTitle><AlertDialogDescription>This will send the reviewed script to Manus for one {selectedDraft?.videoPlan?.durationSeconds ?? videoDuration}-second, 16:9 TNN newsroom video. It will use the selected trade-item images and official Tradebilia logo, then return an MP4 here for private review. This does not publish, schedule, or connect to any social platform.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep Reviewing</AlertDialogCancel><AlertDialogAction onClick={() => void startApprovedTnnGeneration()} className="bg-violet-700 hover:bg-violet-800">Approve &amp; Generate Video</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Approve this TNN video task?</AlertDialogTitle><AlertDialogDescription>This will send the reviewed script to Manus for one {selectedDraft?.videoPlan?.durationSeconds ?? videoDuration}-second, 16:9 TNN newsroom video. It will use the supplied dedicated TNN logo and selected trade-item images, then return an MP4 here for private review. This does not publish, schedule, or connect to any social platform.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep Reviewing</AlertDialogCancel><AlertDialogAction onClick={() => void startApprovedTnnGeneration()} className="bg-violet-700 hover:bg-violet-800">Approve &amp; Generate Video</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
             </AlertDialog>
           </>}
         </Card>

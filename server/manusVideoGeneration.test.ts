@@ -31,12 +31,13 @@ describe("Manus API configuration", () => {
         selectedItems: [{ title: "Test collectible", facts: [{ label: "Year", value: "1986" }] }],
         additionalItemsCount: 0,
         tickerText: "Where collectors connect.",
-        logoUrl: "https://tradebilia.manus.space/logo.png",
+        logoUrl: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png",
         imageUrls: ["https://tradebilia.manus.space/item.jpg"],
         generationAttempt: 1,
       });
       const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
-      expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
+      expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png", filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" });
+      expect(body.message.content[2]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
     } finally {
       fetchMock.mockRestore();
     }
@@ -53,7 +54,7 @@ describe("Manus API configuration", () => {
       selectedItems: [{ title: "Test collectible", grade: "9", certificationCompany: "PSA" }],
       additionalItemsCount: 1,
       tickerText: "Where collectors connect.",
-      logoUrl: "https://tradebilia.manus.space/logo.png",
+      logoUrl: "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png",
       imageUrls: ["https://tradebilia.manus.space/item.jpg"],
       generationAttempt: 1,
     });
@@ -61,6 +62,9 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("Max Tradebloski and Sidney Tradewell");
     expect(instruction).toContain("picture-in-picture panel in the upper corner");
     expect(instruction).toContain("headline strap reading 'BREAKING NEWS FROM TRADEBILIA'");
+    expect(instruction).toContain("attached, supplied dedicated TNN (Tradebilia News Network) logo");
+    expect(instruction).toContain("do not substitute a generic Tradebilia wordmark");
+    expect(instruction).toContain("TNNlogo_da53263e.png");
     expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
     expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
     expect(instruction).toContain("Where collectors connect.");

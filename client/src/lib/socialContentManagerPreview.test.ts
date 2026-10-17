@@ -75,7 +75,8 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("Configure Video");
     expect(componentSource).toContain("buildTnnCompletedTradeVideoPlan");
     expect(componentSource).toContain("lip-sync");
-    expect(componentSource).toContain("official Tradebilia logo");
+    expect(componentSource).toContain("supplied dedicated TNN logo");
+    expect(componentSource).toContain("TNN — Tradebilia News Network logo");
     expect(componentSource).toContain("final-video-attached");
     expect(componentSource).toContain("Prepare TNN Script");
     expect(componentSource).toContain("Approve & Generate");

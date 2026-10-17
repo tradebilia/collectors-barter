@@ -45,6 +45,10 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).toContain("Completed-trade items");
     expect(componentSource).toContain("AI-written script draft");
     expect(componentSource).toContain("One initial video and one explicitly approved replacement");
+    expect(componentSource).toContain('const TNN_VIDEO_LOGO_PATH = "/manus-storage/TNNlogo_da53263e.png"');
+    expect(componentSource).toContain("TNN — Tradebilia News Network logo");
+    expect(componentSource).toContain("Official TNN visual identity:");
+    expect(componentSource).toContain("logoUrl: TNN_VIDEO_LOGO_URL");
   });
 
   it("refreshes saved high-value draft visual hints from current opportunity metadata", () => {
