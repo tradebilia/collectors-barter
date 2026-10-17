@@ -265,6 +265,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   const includeComicYear = options.includeComicYear !== false;
   const includeSigners = options.includeSigners !== false;
   const category = normalize(input.category).replace(/_/g, ' ');
+  const includeGradingCriteria = category !== 'video games';
   const parts: string[] = [];
   const add = (...values: string[]) => values.forEach((value) => {
     const cleaned = value.trim();
@@ -296,8 +297,11 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   }
 
   const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
-  if (includeCertification) add(gradingCompany);
-  if (includeGrade) add(formatSearchGrade(input.grade, gradingCompany));
+  // Video-game grading is a post-search identity/admission gate, not a Goldin
+  // query criterion. Goldin's game titles often omit or inconsistently label
+  // the grader, so sending PSA/WATA and the grade can hide valid candidates.
+  if (includeGradingCriteria && includeCertification) add(gradingCompany);
+  if (includeGradingCriteria && includeGrade) add(formatSearchGrade(input.grade, gradingCompany));
   return parts.join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
 }
 
