@@ -155,6 +155,9 @@ import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
 import { draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft } from "./tnnVideoScript";
+
+const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/TNNlogo_da53263e.png";
+const TNN_NEWSROOM_REFERENCE_URL = "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
 import { resolveProfileTimeZone } from "./profileTimeZone";
 import { EXTERNAL_PAYMENT_METHODS, type ExternalPaymentMethod, getEnabledExternalPaymentMethods, getExternalPaymentIdentifier, getExternalPaymentMethodLabel, getSharedExternalPaymentMethods, maskExternalPaymentIdentifier } from "./externalPaymentMethods";
 import { MISSING_TRADE_PAYMENTS_FALLBACK_MESSAGE, isMissingTradePaymentsTableError } from "./paymentAdminCompatibility";
@@ -3096,7 +3099,6 @@ export const appRouter = router({
     startCompletedTradeVideoGeneration: protectedProcedure
       .input(tnnScriptDraftSchema.extend({
         script: z.string().trim().min(1).max(2_000),
-        logoUrl: z.string().url().max(2_000),
         imageUrls: z.array(z.string().url().max(2_000)).max(6).default([]),
         generationAttempt: z.union([z.literal(1), z.literal(2)]),
       }))
@@ -3114,6 +3116,8 @@ export const appRouter = router({
           return await createTradeVideoTask({
             ...input,
             script: validatedScript.script,
+            logoUrl: TNN_VIDEO_LOGO_URL,
+            newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL,
           });
         } catch (error) {
           const message = error instanceof Error ? error.message : "Manus video generation could not be started.";

@@ -89,7 +89,8 @@ const STORAGE_KEY = "tradebilia-admin-social-drafts-v1";
 const PREFERENCES_KEY = "tradebilia-admin-social-preferences-v1";
 /** Rich-supplied TNN identity mark for completed-trade newsroom videos. */
 const TNN_VIDEO_LOGO_PATH = "/manus-storage/TNNlogo_da53263e.png";
-const TNN_VIDEO_LOGO_URL = `${TRADEBILIA_PUBLIC_ORIGIN}${TNN_VIDEO_LOGO_PATH}`;
+/** Rich-approved bright broadcast studio reference for completed-trade TNN videos. */
+const TNN_NEWSROOM_REFERENCE_PATH = "/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
 const platforms = SOCIAL_PLATFORMS;
 const statuses = SOCIAL_DRAFT_STATUSES;
 
@@ -674,7 +675,6 @@ export function SocialContentManagerTab() {
         additionalItemsCount: plan.additionalItemsCount,
         tickerText: plan.tickerText,
         script: plan.script,
-        logoUrl: TNN_VIDEO_LOGO_URL,
         imageUrls,
         generationAttempt: (plan.generationAttempt + 1) as 1 | 2,
       });
@@ -1029,7 +1029,8 @@ export function SocialContentManagerTab() {
                 </DialogHeader>
                 <div className="space-y-5 py-2">
                   <div className="flex items-center gap-3 rounded-lg border border-violet-200 bg-white p-3"><img src={TNN_VIDEO_LOGO_PATH} alt="TNN — Tradebilia News Network logo" className="h-14 w-auto rounded border border-slate-200 object-contain" /><p className="text-xs leading-5 text-violet-950"><strong>Official TNN visual identity:</strong> this supplied Tradebilia News Network mark is attached to the generation task and used for the opening, newsroom identifier, and branded graphics.</p></div>
-                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step asks AI to draft a fact-locked 30, 45, or 60-second newsroom script. You review that script before a separate approval starts video generation. Manus then renders one 16:9 TNN newsroom MP4 in the background with professional lip-sync, the supplied dedicated TNN logo, a breaking-news strap, item picture-in-picture panels, and one rotating generic homepage tagline in the ticker. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
+                  <figure className="overflow-hidden rounded-lg border border-violet-200 bg-white"><img src={TNN_NEWSROOM_REFERENCE_PATH} alt="Approved TNN bright broadcast newsroom reference" className="aspect-video w-full bg-slate-100 object-contain" /><figcaption className="border-t border-violet-100 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-950"><strong>Approved newsroom set:</strong> bright white/ice-gray network studio, navy/cobalt light, red and navy diagonal accents, world-map graphics, curved TNN desk, and a polished desk-shot composition. This reference is attached to every TNN video task.</figcaption></figure>
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step asks AI to draft a fact-locked 30, 45, or 60-second newsroom script. You review that script before a separate approval starts video generation. Manus then renders one 16:9 TNN newsroom MP4 in the background with professional lip-sync, the supplied dedicated TNN logo and approved newsroom set reference, a breaking-news strap, item picture-in-picture panels, and one rotating generic homepage tagline in the ticker. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name <Input value={videoSellerName} onChange={(event) => setVideoSellerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name <Input value={videoBuyerName} onChange={(event) => setVideoBuyerName(event.target.value)} placeholder="Filled from the completed trade" className="mt-1" /></label>

@@ -41,6 +41,7 @@ export type TnnVideoTaskInput = {
   additionalItemsCount: number;
   tickerText: string;
   logoUrl: string;
+  newsroomReferenceUrl: string;
   imageUrls: string[];
   generationAttempt: 1 | 2;
 };
@@ -93,7 +94,7 @@ function itemReferenceLines(items: readonly TnnVideoTaskItem[]) {
 export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
   const anchorNames = input.anchorMode === "duo" ? "Max Tradebloski and Sidney Tradewell" : input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell";
   const itemInsetInstruction = input.selectedItems.length
-    ? "Starting when the anchor first begins describing each selected item, show that exact supplied item image in a clean picture-in-picture panel in the upper corner. Keep the anchor visible and do not cover the face. Advance the panel only as the script moves to the next item."
+    ? "Starting when the anchor first begins describing each selected item, show that exact supplied item image in a clean picture-in-picture panel in the upper-right corner. Keep the anchor visible and do not cover the face. Advance the panel only as the script moves to the next item."
     : "Keep the anchor in the TNN newsroom for the report; no item insert is available.";
   const extraItemsInstruction = input.additionalItemsCount > 0
     ? `The script acknowledges ${input.additionalItemsCount} additional collector item${input.additionalItemsCount === 1 ? "" : "s"}. Do not invent or display any unprovided item for those additional items.`
@@ -104,7 +105,9 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     "Use Seedance 2.5 Pro when available; otherwise use the best available Manus video model. Generate the final video with embedded professional newsroom dialogue and natural, accurate lip synchronization. Do not use external TTS.",
     "Editorial goal: celebrate a completed collector transaction and promote Tradebilia in a credible modern newsroom. This is not a financial report, sales pitch, valuation, or news claim outside the approved transaction.",
     `Anchors: ${anchorNames}. ${anchorDirection(input.anchorMode)}`,
-    "Opening (first 2 seconds): one concise original TNN breaking-news sting with newsroom ambience and no commercial music bed. Then cut cleanly to the anchor desk. Keep the modern realistic newsroom, anchor identity, wardrobe, lighting, desk, and blue/red TNN visual language consistent through the finished video.",
+    "Approved newsroom visual reference: use the attached TNN broadcast-studio reference as the set-design source of truth. Match its polished bright network-news feel: a clean white and ice-gray studio, deep navy/cobalt illumination, restrained red and navy diagonal/ribbon broadcast accents, subtle world-map/globe graphics, curved architectural light bands, and a glossy curved white-and-navy anchor desk. Put the supplied exact TNN logo on the central wall display and desk-front screen; use supporting side screens only for abstract world-map/news imagery, never a different outlet’s brand. A subtle generic dusk-city skyline may sit behind the set screens, but do not identify a city.",
+    "Anchors and camera: for solo reports, one selected anchor is centered behind the glossy TNN desk; for duo reports, Max and Sidney sit together as in the supplied newsroom reference. Max wears a tailored navy suit with a restrained red/blue tie; Sidney wears a tailored navy or jewel-blue suit with a restrained red accent. Do not show anchor names as text. Use a stable polished medium desk shot with restrained broadcast-style camera movement—no rapid montage or handheld camera.",
+    "Opening (first 2 seconds): create a concise original animated TNN logo reveal over a luminous world-map/globe field, supported by a brief professional newsroom stinger and no commercial music bed. Then cut cleanly to the anchor desk. Keep the approved set, anchor identity, wardrobe, lighting, desk, and TNN visual language consistent through the finished video.",
     `Graphics: use the attached, supplied dedicated TNN (Tradebilia News Network) logo as the only primary network identity mark. Include it in the opening sting, upper-corner TNN identifier, and newsroom graphics; do not substitute a generic Tradebilia wordmark. Add a high newsroom headline strap reading 'BREAKING NEWS FROM TRADEBILIA'. Use one understated scrolling lower ticker that repeats only this generic approved homepage tagline: '${input.tickerText}'. Do not place participant names, item values, prices, cash amounts, dates, locations, addresses, contact details, tracking/shipping information, certificate/serial numbers, or captions/subtitles on screen.`,
     itemInsetInstruction,
     extraItemsInstruction,
@@ -115,6 +118,7 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     itemReferenceLines(input.selectedItems) || "No item details supplied.",
     `Exact spoken script:\n${input.script}`,
     `The attached dedicated TNN logo asset is the visual source of truth and must be used exactly as supplied: ${input.logoUrl}`,
+    `The attached approved TNN newsroom visual-reference image is the set-design source of truth and must guide the full studio look: ${input.newsroomReferenceUrl}`,
     "Return one finished MP4 artifact suitable for private preview and manual review in the Tradebilia admin Social Content page. Do not publish it, contact social platforms, or perform any external action.",
   ].join("\n\n");
 }
@@ -126,6 +130,7 @@ export async function createTradeVideoTask(input: TnnVideoTaskInput) {
   const content: ManusContentPart[] = [
     { type: "text", text: buildTnnVideoInstruction(input) },
     { type: "file", file_url: input.logoUrl, filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" },
+    { type: "file", file_url: input.newsroomReferenceUrl, filename: "tnn-approved-newsroom-set-reference.png", mime_type: "image/png" },
     ...input.imageUrls.slice(0, 6).map((file_url, index) => ({ type: "file" as const, file_url, filename: `trade-item-${index + 1}.jpg`, mime_type: "image/jpeg" })),
   ];
   const result = await manusRequest<{ task_id: string; task_url?: string }>("/v2/task.create", {
