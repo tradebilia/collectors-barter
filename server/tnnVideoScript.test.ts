@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   buildTnnScriptPrompt,
   countTnnScriptWords,
+  getStructuredResponseText,
+  TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   validateTnnScriptDraft,
 } from "./tnnVideoScript";
 import {
@@ -85,5 +88,14 @@ describe("TNN fact-locked script contract", () => {
     expect(validated.estimatedSpeechSeconds).toBeGreaterThan(0);
     expect(() => validateTnnScriptDraft(validScript.replace("collector trade", "$1,200 collector trade"), input)).toThrow(/disallowed/i);
     expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", ""), input)).toThrow(/acknowledge/i);
+  });
+
+  it("uses minimal reasoning and a sufficient completion budget, accepting a documented text-part response", () => {
+    const source = readFileSync(new URL("./tnnVideoScript.ts", import.meta.url), "utf8");
+    expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(700);
+    expect(source).toContain('reasoning: { effort: "minimal" }');
+    expect(source).toContain("max_completion_tokens: TNN_SCRIPT_MAX_COMPLETION_TOKENS");
+    expect(getStructuredResponseText([{ type: "text", text: JSON.stringify({ script: validScript }) }])).toBe(JSON.stringify({ script: validScript }));
+    expect(getStructuredResponseText(undefined)).toBeNull();
   });
 });
