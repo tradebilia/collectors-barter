@@ -54,7 +54,11 @@ export type SocialVideoPlan = {
   script: string;
   officialLogoUrl: string;
   lipSyncRequired: true;
-  status: "brief-ready" | "final-video-attached";
+  taskId?: string;
+  taskUrl?: string;
+  videoUrl?: string;
+  status: "brief-ready" | "generating" | "generation-failed" | "final-video-attached";
+  errorMessage?: string;
   createdAt: string;
 };
 

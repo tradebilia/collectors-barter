@@ -17,6 +17,15 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).not.toContain("publishSocialPost");
   });
 
+  it("starts asynchronous Manus video generation and keeps publishing manual", () => {
+    expect(componentSource).toContain("startCompletedTradeVideoGeneration");
+    expect(componentSource).toContain("getCompletedTradeVideoGeneration");
+    expect(componentSource).toContain("status: \"generating\"");
+    expect(componentSource).toContain("Generated breaking-news trade video");
+    expect(componentSource).toContain("Nothing is published automatically");
+    expect(componentSource).not.toContain("does not render a video in the isolated sandbox");
+  });
+
   it("refreshes saved high-value draft visual hints from current opportunity metadata", () => {
     expect(componentSource).toContain("currentVisualOpportunities");
     expect(componentSource).toContain("reconcileSocialDraftVisualHints(current, currentVisualOpportunities)");
