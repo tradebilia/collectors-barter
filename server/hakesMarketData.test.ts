@@ -9,6 +9,13 @@ const target = {
   certificationCompany: 'CGC',
   itemDetails: JSON.stringify({ comicTitle: 'Star Wars', issueNumber: '1', publicationYear: '1977' }),
 };
+const videoGameTarget = {
+  title: 'Super Mario Bros. 3 sealed game PSA 9',
+  category: 'video_games',
+  grade: '9',
+  certificationCompany: 'PSA',
+  itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 3', platform: 'NES', releaseYear: '1990' }),
+};
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -64,5 +71,16 @@ describe('Hake’s full public catalog adapter', () => {
     expect(result.sales).toHaveLength(0);
     expect(result.context).toHaveLength(1);
     expect(result.context[0]).toMatchObject({ completed: false, price: null, valuationEligible: false });
+  });
+
+  it('accepts a WATA lot for a PSA video-game target', async () => {
+    const pastHtml = `<a href="/auctions/hakes-auctions/september-2026-pop-culture-auction-24709/catalog">View Catalog</a>`;
+    const catalogHtml = `<div class="gtm-visible_item" id="stl-7654321"><a href="/online-auctions/hakes-auctions/super-mario-bros-3-wata-9-7654321">1990 NES Super Mario Bros. 3 Sealed Video Game WATA 9</a> Lot 2 Sold for $900 September 30, 2026</div>`;
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(pastHtml, { status: 200, headers: { 'content-type': 'text/html' } }))
+      .mockResolvedValueOnce(new Response(catalogHtml, { status: 200, headers: { 'content-type': 'text/html' } }));
+
+    const result = await lookupHakes(videoGameTarget);
+    expect(result.sales[0]).toMatchObject({ certificationCompany: 'WATA', identityMatched: true, valuationEligible: false });
   });
 });

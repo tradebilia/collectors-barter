@@ -4,6 +4,7 @@ import type {
   SpecialistMarketplaceLookupResult,
   SpecialistMarketplaceRecord,
 } from './specialistMarketplaceMarketData';
+import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
 
 const HAKES_BASE = 'https://www.hakes.com';
 const HAKES_PAST_AUCTIONS = `${HAKES_BASE}/auctions/past`;
@@ -84,17 +85,25 @@ function extractLotId(card: Element, url: string | null, body: string): string |
     ?? body.match(/\bLot\s+(\d+)\b/i)?.[1];
   return id ?? null;
 }
+function extractCertificationCompany(value: string): string | null {
+  return value.match(/\b(PSA|WATA|VGA|CGC|BGS|SGC|AFA)\b/i)?.[1]?.toUpperCase() ?? null;
+}
 function extractTitle(card: Element, body: string): string {
   const title = text(card.querySelector('.item-title, .item_name, .title, h2, h3, a[href*="/online-auctions/"]')?.textContent);
   if (title) return title.replace(/^Lot\s+\d+\s*/i, '').trim();
   return body.replace(/^Lot\s+\d+\s*/i, '').split(/Estimate:|Current Bid|Sold for|Price Realized/i)[0].trim();
 }
-function identity(input: SpecialistMarketplaceLookupInput, title: string): { matched: boolean; tokens: string[] } {
+function identity(input: SpecialistMarketplaceLookupInput, title: string): { matched: boolean; tokens: string[]; certificationCompany: string | null } {
   const candidate = normalized(title);
   const tokens = significantQueryTokens(input);
   const matched = tokens.filter((token) => candidate.includes(token));
   const distinctive = tokens.filter((token) => token.length >= 6);
-  return { matched: (distinctive.length ? distinctive.some((token) => matched.includes(token)) : matched.length >= 2), tokens: matched };
+  const certificationCompany = extractCertificationCompany(title);
+  const targetCertificationCompany = input.category === 'video_games' ? input.certificationCompany : null;
+  const graderCompatible = !targetCertificationCompany || !certificationCompany
+    || videoGameGradersEquivalent(input.category, targetCertificationCompany, certificationCompany)
+    || targetCertificationCompany.trim().toUpperCase() === certificationCompany.trim().toUpperCase();
+  return { matched: (distinctive.length ? distinctive.some((token) => matched.includes(token)) : matched.length >= 2) && graderCompatible, tokens: matched, certificationCompany };
 }
 async function getHtml(url: string): Promise<{ html: string; finalUrl: string } | { error: string }> {
   try {
@@ -134,7 +143,7 @@ export async function lookupHakes(input: SpecialistMarketplaceLookupInput): Prom
       const review = identity(input, title);
       const completed = explicitCompleted(body);
       const price = completed ? extractPrice(body) : null;
-      records.push({ sourceId: 'hakes', provider: "Hake's Auction Results", title, description: body.slice(0, 2_000) || null, lotId: extractLotId(card, lotUrl, body), auctionName: text(document.querySelector('h1')?.textContent || document.title) || null, url: lotUrl ?? catalog.finalUrl, imageUrl: canonicalUrl(card.querySelector('img[src]')?.getAttribute('src') ?? '') ?? null, saleStatus: completed && price ? 'completed' : 'unknown', completed: Boolean(completed && price), price, currency: price ? 'USD' : null, date: extractDate(body) ?? eventDate, grade: null, certificationCompany: null, priceBasis: price ? 'closed' : 'unknown', buyerPremiumIncluded: null, winningBid: price, buyerPremiumPercentage: null, identityMatched: review.matched, matchedTokens: review.tokens, exclusionReason: !completed || !price ? 'The public Hake’s catalog record did not expose an explicit completed-sale status and realized price.' : !review.matched ? 'The structured Hake’s identity fields did not meet the deterministic title-match threshold.' : 'Context-only pending source activation, buyer-premium verification, and category-specific admission review.', valuationEligible: false });
+      records.push({ sourceId: 'hakes', provider: "Hake's Auction Results", title, description: body.slice(0, 2_000) || null, lotId: extractLotId(card, lotUrl, body), auctionName: text(document.querySelector('h1')?.textContent || document.title) || null, url: lotUrl ?? catalog.finalUrl, imageUrl: canonicalUrl(card.querySelector('img[src]')?.getAttribute('src') ?? '') ?? null, saleStatus: completed && price ? 'completed' : 'unknown', completed: Boolean(completed && price), price, currency: price ? 'USD' : null, date: extractDate(body) ?? eventDate, grade: null, certificationCompany: review.certificationCompany, priceBasis: price ? 'closed' : 'unknown', buyerPremiumIncluded: null, winningBid: price, buyerPremiumPercentage: null, identityMatched: review.matched, matchedTokens: review.tokens, exclusionReason: !completed || !price ? 'The public Hake’s catalog record did not expose an explicit completed-sale status and realized price.' : !review.matched ? 'The structured Hake’s identity fields did not meet the deterministic identity or video-game grader-equivalence threshold.' : 'Context-only pending source activation, buyer-premium verification, and category-specific admission review.', valuationEligible: false });
     }
     if (records.length >= MAX_RECORDS) break;
   }

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { buildGoldinSearchQueries, buildGoldinSearchQuery, buildSpecialistMarketplaceRequest, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
+import { buildGoldinSearchQueries, buildGoldinSearchQuery, buildSpecialistMarketplaceRequest, identityReview, lookupSpecialistMarketplace, parseSpecialistMarketplaceHtml, resolveComicBookRealmAnalyzerUrl } from './specialistMarketplaceMarketData';
 
 const goldinMarioLotUrl = 'https://goldin.co/item/1990-nes-nintendo-usa-super-mario-bros-3-right-variation-late-producti9parx';
 const videoGame = {
@@ -79,6 +79,40 @@ describe('bounded specialist marketplace adapters', () => {
       sourceId: 'goldin', title: 'Ken Griffey Jr. card', category: 'sports_cards', grade: '9.0', certificationCompany: 'PSA',
       itemDetails: JSON.stringify({ player: 'Ken Griffey Jr.', year: '1989', cardNumber: '1' }),
     })).toBe('Ken Griffey Jr. 1989 1 PSA 9');
+  });
+
+  it('adds the equivalent WATA Goldin query for a PSA video-game target', () => {
+    const queries = buildGoldinSearchQueries({
+      sourceId: 'goldin',
+      title: 'Super Mario Bros. 3 sealed game',
+      category: 'video_games',
+      grade: '9',
+      certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 3', platform: 'NES', year: '1990' }),
+    });
+    expect(queries[0]).toContain('PSA 9');
+    expect(queries[1]).toContain('WATA 9');
+  });
+
+  it('accepts PSA and WATA as equivalent only for video-game identity', () => {
+    const psaTarget = { ...videoGame, title: '1990 Super Mario Bros. 3 Sealed Video Game PSA 9', grade: '9', certificationCompany: 'PSA' as const };
+    const wataCandidate = identityReview(
+      psaTarget,
+      '1990 NES Super Mario Bros. 3 sealed video game WATA 9',
+      'Encapsulated game graded by WATA.',
+      '9',
+      'WATA',
+    );
+    expect(wataCandidate.matched).toBe(true);
+
+    const cardCandidate = identityReview(
+      { ...weissComic, sourceId: 'goldin', title: 'Super Mario card', category: 'sports_cards', certificationCompany: 'PSA', grade: '9' },
+      'Super Mario card WATA 9',
+      '',
+      '9',
+      'WATA',
+    );
+    expect(cardCandidate.matched).toBe(false);
   });
 
   it('ignores condition words between the grading company and numeric grade', async () => {
