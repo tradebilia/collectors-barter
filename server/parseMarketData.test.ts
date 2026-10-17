@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { buildPriceChartingCoinQuery, classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification, parseErrorMessage } from './parseMarketData';
+import { buildPriceChartingCoinQuery, classifySaleRecency, isPriceChartingCoinIdentityCompatible, lookup130PointSales, lookupPriceCharting, lookupPriceChartingBigMovers, lookupPriceChartingCardBySlugs, lookupPriceChartingCoin, lookupPriceChartingVideoGame, lookupPwccSales, lookupSgcCertification, parseErrorMessage, searchPriceChartingVideoGames } from './parseMarketData';
 
 const originalFetch = global.fetch;
 
@@ -112,6 +112,48 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect(fetchMock.mock.calls[0][0]).toContain('/lookup_video_game_by_upc?upc=045496630025');
   });
 
+  it('uses the authorized bounded title-and-platform endpoint and keeps edition candidates out of automatic selection', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
+      { title: 'Super Mario Bros 3', platform: 'NES', platform_slug: 'nes', game_slug: 'super-mario-bros-3', pricecharting_id: '9891', associated_upcs: ['045496630094'], prices: { cib: 80 } },
+      { title: 'Super Mario Bros. 3 [Red Label]', platform: 'NES', platform_slug: 'nes', game_slug: 'super-mario-bros-3-red-label', pricecharting_id: '8879325', prices: { cib: 120 } },
+      { title: 'Super Mario Bros 3', platform: 'SNES', platform_slug: 'snes', game_slug: 'super-mario-bros-3-snes', pricecharting_id: '9999', prices: { cib: 60 } },
+    ] } }) });
+    global.fetch = fetchMock as typeof fetch;
+
+    const result = await searchPriceChartingVideoGames({ query: 'Super Mario Bros. 3', platform: 'NES' }, { PARSE_BOT_API_KEY: 'configured-key' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.candidates).toHaveLength(3);
+    expect(result.data?.compatibleCandidates).toHaveLength(1);
+    expect(result.data?.compatibleCandidates[0]).toMatchObject({ title: 'Super Mario Bros 3', platform: 'NES', priceChartingId: '9891' });
+    expect(result.data?.selectionRequired).toBe(false);
+    expect(fetchMock.mock.calls[0][0]).toContain('/47b2f542-930c-40f0-a2f0-42673e998204/search_video_games?query=Super+Mario+Bros.+3&limit=10&platform=NES');
+  });
+
+  it('requires explicit selection when a video-game title search has no supplied platform', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
+      { title: 'Metroid', platform: 'NES', pricecharting_id: '1', prices: {} },
+      { title: 'Metroid', platform: 'Game Boy', pricecharting_id: '2', prices: {} },
+    ] } }) }) as typeof fetch;
+
+    const result = await searchPriceChartingVideoGames({ query: 'Metroid' }, { PARSE_BOT_API_KEY: 'configured-key' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.selectionRequired).toBe(true);
+    expect(result.data?.selectionMessage).toContain('Select the exact compatible PriceCharting game');
+  });
+
+  it('treats common structured console aliases as the same platform during candidate identity checks', async () => {
+    global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { results: [
+      { title: 'Resident Evil', platform: 'PS1', pricecharting_id: '1', prices: {} },
+    ] } }) }) as typeof fetch;
+
+    const result = await searchPriceChartingVideoGames({ query: 'Resident Evil', platform: 'PlayStation 1' }, { PARSE_BOT_API_KEY: 'configured-key' });
+
+    expect(result.status).toBe('success');
+    expect(result.data?.compatibleCandidates).toHaveLength(1);
+  });
+
   it('supports compatible TCG detail lookups when item metadata provides exact slugs', async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { name: 'Blue-Eyes White Dragon', set: 'Legend of Blue Eyes', card_number: 'LOB-001', prices: { ungraded: 40 } } }) });
     global.fetch = fetchMock as typeof fetch;
@@ -138,6 +180,7 @@ describe('Parse SGC and PriceCharting adapters', () => {
     expect((await lookupPriceCharting('charizard', {})).status).toBe('error');
     expect((await lookupPriceChartingCoin({ year: '1909', variety: 'VDB' }, {})).status).toBe('error');
     expect((await lookupPriceChartingVideoGame('045496630025', {})).status).toBe('error');
+    expect((await searchPriceChartingVideoGames({ query: 'Metroid', platform: 'NES' }, {})).status).toBe('error');
     expect((await lookupPriceChartingCardBySlugs('set', 'card', {})).status).toBe('error');
     expect((await lookupPriceChartingBigMovers({})).status).toBe('error');
     expect((await lookup130PointSales('Michael Jordan', {})).status).toBe('error');
