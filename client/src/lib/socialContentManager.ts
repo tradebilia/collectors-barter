@@ -3,16 +3,66 @@ export type DraftStatus = "Draft" | "Needs Review" | "Approved" | "Scheduled" | 
 export type SocialDraftSource = "Original" | "High-Value Listing" | "Completed Trade" | "Verified Merchant";
 
 export const TRADEBILIA_PUBLIC_ORIGIN = "https://tradebilia.manus.space";
+export const TNN_MIN_COMPLETED_TRADE_VALUE = 1_000;
+export const TNN_VIDEO_DURATIONS = [30, 45, 60] as const;
+export type TnnVideoDuration = typeof TNN_VIDEO_DURATIONS[number];
+export type TnnAnchorMode = "max" | "sidney" | "duo";
+export type TnnScriptStatus = "not-drafted" | "drafting" | "draft-ready" | "draft-failed";
+export type TnnGenerationStatus = "not-started" | "starting" | "generating" | "generation-failed" | "final-video-attached";
+export type TnnVideoReviewStatus = "not-ready" | "needs-review" | "approved";
+
+export const TNN_ANCHORS = {
+  max: {
+    id: "max" as const,
+    name: "Max Tradebloski",
+    description: "middle-aged American male TNN news anchor; calm, authoritative, professional",
+  },
+  sidney: {
+    id: "sidney" as const,
+    name: "Sidney Tradewell",
+    description: "middle-aged American female TNN news anchor; poised, credible, professional",
+  },
+} as const;
+
+export const TNN_SCRIPT_WORD_BUDGET: Record<TnnVideoDuration, { minimum: number; maximum: number }> = {
+  30: { minimum: 36, maximum: 60 },
+  45: { minimum: 60, maximum: 90 },
+  60: { minimum: 84, maximum: 120 },
+};
+
+/** The narrated item-detail limit preserves clear pacing; remaining selected items are acknowledged generically. */
+export const TNN_NARRATED_ITEM_LIMIT: Record<TnnVideoDuration, number> = {
+  30: 2,
+  45: 4,
+  60: 6,
+};
 
 export type SocialPromotionFact = {
   label: string;
   value: string;
 };
 
+export type TnnTradeItem = {
+  listingId?: number | null;
+  title: string;
+  imageUrl?: string | null;
+  estimatedValue?: number | null;
+  direction?: "offered" | "requested";
+  category?: string | null;
+  itemType?: string | null;
+  visualHints?: string[] | null;
+  facts?: SocialPromotionFact[] | null;
+  grade?: string | number | null;
+  certificationCompany?: string | null;
+  customGradingCompany?: string | null;
+};
+
 export type SocialPromotionDetails = {
   itemTitle: string;
   sellerName?: string | null;
   buyerName?: string | null;
+  /** Admin-only opaque reference used by the server to re-check TNN eligibility. Never sent to the video model. */
+  tradeId?: number | null;
   listingId?: number | null;
   itemPath?: string | null;
   /** Public-safe metadata used only for choosing an abstract visual environment. */
@@ -21,24 +71,12 @@ export type SocialPromotionDetails = {
   generatedBackgroundUrl?: string | null;
   /** Scene-generation prompt version; v12 supplies item-associated context only while the exact listing image is rendered once by the canvas. */
   generatedBackgroundVersion?: number | null;
-  tradeItems?: Array<{
-    listingId?: number | null;
-    title: string;
-    imageUrl?: string | null;
-    estimatedValue?: number | null;
-    direction?: "offered" | "requested";
-    category?: string | null;
-    itemType?: string | null;
-    visualHints?: string[] | null;
-    facts?: SocialPromotionFact[] | null;
-    grade?: string | number | null;
-    certificationCompany?: string | null;
-    customGradingCompany?: string | null;
-  }>;
+  tradeItems?: TnnTradeItem[];
   cashIncluded?: boolean;
   category: string | null;
   itemType: string | null;
   facts: SocialPromotionFact[];
+  /** For a completed trade, this is the aggregate estimated item value and remains admin-only. */
   estimatedValue: number | null;
   createdAt: string | null;
   isNew: boolean;
@@ -46,23 +84,32 @@ export type SocialPromotionDetails = {
 
 export type SocialVideoPlan = {
   format: "16:9";
-  durationSeconds: 20 | 25 | 30;
-  hostStyle: "breaking-news-anchor";
-  voiceProfile: "american-female-news-anchor";
-  requesterName: string;
-  recipientName: string;
-  sellerName?: string;
-  buyerName?: string;
-  exchangeLine: string;
-  commentary: string;
+  durationSeconds: TnnVideoDuration;
+  hostStyle: "tnn-breaking-news-anchor";
+  voiceProfile: "tnn-professional-american-news-anchor";
+  anchorMode: TnnAnchorMode;
+  anchorNames: string[];
+  sellerName: string;
+  buyerName: string;
+  cashOnly: boolean;
+  headline: "Breaking News from Tradebilia";
+  tickerText: string;
+  selectedItemIndexes: number[];
+  selectedItems: TnnTradeItem[];
+  additionalItemsCount: number;
   script: string;
-  officialLogoUrl: string;
-  lipSyncRequired: true;
+  scriptWordCount: number;
+  estimatedSpeechSeconds: number;
+  scriptDraftAttempts: number;
+  scriptStatus: TnnScriptStatus;
+  generationAttempt: number;
+  generationStatus: TnnGenerationStatus;
+  videoReviewStatus: TnnVideoReviewStatus;
   taskId?: string;
   taskUrl?: string;
   videoUrl?: string;
-  status: "brief-ready" | "generating" | "generation-failed" | "final-video-attached";
   errorMessage?: string;
+  statusMessage?: string;
   createdAt: string;
 };
 
@@ -79,6 +126,160 @@ export function isCashOnlyCompletedTrade(promotion: CashTradePromotion | null | 
 
 export function getCompletedTradePostLabel(promotion: CashTradePromotion | null | undefined) {
   return isCashOnlyCompletedTrade(promotion) ? "SOLD" : "TRADE ALERT";
+}
+
+export function isTnnEligibleCompletedTrade(promotion: SocialPromotionDetails | null | undefined) {
+  return Number(promotion?.estimatedValue ?? 0) >= TNN_MIN_COMPLETED_TRADE_VALUE
+    && Number(promotion?.tradeId ?? 0) > 0;
+}
+
+export function countTnnScriptWords(script: string | null | undefined) {
+  return String(script ?? "").trim().match(/\S+/g)?.length ?? 0;
+}
+
+export function estimateTnnSpeechSeconds(script: string | null | undefined) {
+  return Math.ceil(countTnnScriptWords(script) / 2);
+}
+
+export function getTnnAnchorNames(mode: TnnAnchorMode) {
+  if (mode === "duo") return [TNN_ANCHORS.max.name, TNN_ANCHORS.sidney.name];
+  return [TNN_ANCHORS[mode].name];
+}
+
+/**
+ * Selects a roughly one-in-four duo report; solo reports alternate so the same
+ * solo anchor is never selected twice in succession. The caller persists the
+ * returned solo anchor in its browser-local admin preferences.
+ */
+export function chooseNextTnnAnchor(lastSoloAnchor: Exclude<TnnAnchorMode, "duo"> | null | undefined, randomValue = Math.random()): TnnAnchorMode {
+  const normalizedRandom = Number.isFinite(randomValue) ? Math.min(Math.max(randomValue, 0), 0.999999) : 0.5;
+  if (normalizedRandom < 0.25) return "duo";
+  if (lastSoloAnchor === "max") return "sidney";
+  if (lastSoloAnchor === "sidney") return "max";
+  return normalizedRandom < 0.625 ? "max" : "sidney";
+}
+
+function normalizedTnnItem(item: TnnTradeItem): TnnTradeItem | null {
+  const title = String(item.title ?? "").trim();
+  if (!title) return null;
+  return {
+    ...item,
+    title: title.slice(0, 180),
+    facts: (item.facts ?? [])
+      .filter((fact): fact is SocialPromotionFact => Boolean(fact?.label?.trim() && fact?.value?.trim()))
+      .slice(0, 4)
+      .map((fact) => ({ label: fact.label.trim().slice(0, 48), value: fact.value.trim().slice(0, 120) })),
+  };
+}
+
+function normalizedItemIndexes(items: readonly TnnTradeItem[], requestedIndexes: readonly number[] | undefined) {
+  const valid = Array.from(new Set((requestedIndexes ?? [])
+    .filter((index) => Number.isInteger(index) && index >= 0 && index < items.length)))
+    .slice(0, 6);
+  return valid.length ? valid : items.slice(0, 6).map((_, index) => index);
+}
+
+export function buildTnnCompletedTradeVideoPlan({
+  sellerName,
+  buyerName,
+  tradeItems = [],
+  selectedItemIndexes,
+  cashOnly,
+  durationSeconds = 30,
+  anchorMode,
+  tickerText,
+  now = new Date().toISOString(),
+}: {
+  sellerName: string;
+  buyerName: string;
+  tradeItems?: TnnTradeItem[];
+  selectedItemIndexes?: number[];
+  cashOnly: boolean;
+  durationSeconds?: TnnVideoDuration;
+  anchorMode: TnnAnchorMode;
+  tickerText: string;
+  now?: string;
+}): SocialVideoPlan {
+  const cleanItems = tradeItems.map(normalizedTnnItem).filter((item): item is TnnTradeItem => Boolean(item));
+  const indexes = normalizedItemIndexes(cleanItems, selectedItemIndexes);
+  const selectedItems = indexes.map((index) => cleanItems[index]).filter((item): item is TnnTradeItem => Boolean(item));
+  const cleanSeller = sellerName.trim() || "Seller";
+  const cleanBuyer = buyerName.trim() || "Buyer";
+  return {
+    format: "16:9",
+    durationSeconds,
+    hostStyle: "tnn-breaking-news-anchor",
+    voiceProfile: "tnn-professional-american-news-anchor",
+    anchorMode,
+    anchorNames: getTnnAnchorNames(anchorMode),
+    sellerName: cleanSeller,
+    buyerName: cleanBuyer,
+    cashOnly,
+    headline: "Breaking News from Tradebilia",
+    tickerText: tickerText.trim() || "Where collectors connect.",
+    selectedItemIndexes: indexes,
+    selectedItems,
+    additionalItemsCount: Math.max(0, cleanItems.length - selectedItems.length),
+    script: "",
+    scriptWordCount: 0,
+    estimatedSpeechSeconds: 0,
+    scriptDraftAttempts: 0,
+    scriptStatus: "not-drafted",
+    generationAttempt: 0,
+    generationStatus: "not-started",
+    videoReviewStatus: "not-ready",
+    createdAt: now,
+  };
+}
+
+export function withTnnVideoScript(plan: SocialVideoPlan, script: string, scriptDraftAttempts = plan.scriptDraftAttempts) {
+  const cleanScript = script.trim();
+  return {
+    ...plan,
+    script: cleanScript,
+    scriptWordCount: countTnnScriptWords(cleanScript),
+    estimatedSpeechSeconds: estimateTnnSpeechSeconds(cleanScript),
+    scriptDraftAttempts,
+    scriptStatus: cleanScript ? "draft-ready" as const : "not-drafted" as const,
+    errorMessage: undefined,
+  };
+}
+
+/** Backward-compatible plan factory retained for browser-local drafts created before the TNN studio. */
+export function buildCompletedTradeVideoPlan({
+  requesterName,
+  recipientName,
+  sellerName,
+  buyerName,
+  itemTitle,
+  tradeItemTitles = [],
+  cashOnly,
+  commentary,
+  officialLogoUrl: _officialLogoUrl,
+  now = new Date().toISOString(),
+}: {
+  requesterName: string;
+  recipientName: string;
+  sellerName?: string;
+  buyerName?: string;
+  itemTitle: string;
+  tradeItemTitles?: string[];
+  cashOnly: boolean;
+  commentary: string;
+  officialLogoUrl: string;
+  now?: string;
+}): SocialVideoPlan {
+  const plan = buildTnnCompletedTradeVideoPlan({
+    sellerName: sellerName?.trim() || recipientName,
+    buyerName: buyerName?.trim() || requesterName,
+    tradeItems: [itemTitle, ...tradeItemTitles].map((title) => ({ title })),
+    cashOnly,
+    durationSeconds: 30,
+    anchorMode: "sidney",
+    tickerText: "Where collectors connect.",
+    now,
+  });
+  return withTnnVideoScript(plan, commentary, 1);
 }
 
 export type SocialDraft = {
@@ -262,65 +463,6 @@ export function createSocialDraft(id: string, now = new Date().toISOString()): S
     status: "Draft",
     updatedAt: now,
     videoPlan: null,
-  };
-}
-
-export function buildCompletedTradeVideoPlan({
-  requesterName,
-  recipientName,
-  sellerName,
-  buyerName,
-  itemTitle,
-  tradeItemTitles = [],
-  cashOnly,
-  commentary,
-  officialLogoUrl,
-  now = new Date().toISOString(),
-}: {
-  requesterName: string;
-  recipientName: string;
-  sellerName?: string;
-  buyerName?: string;
-  itemTitle: string;
-  tradeItemTitles?: string[];
-  cashOnly: boolean;
-  commentary: string;
-  officialLogoUrl: string;
-  now?: string;
-}): SocialVideoPlan {
-  const cleanRequester = requesterName.trim() || "Collector One";
-  const cleanRecipient = recipientName.trim() || "Collector Two";
-  const cleanSeller = sellerName?.trim() || cleanRecipient;
-  const cleanBuyer = buyerName?.trim() || cleanRequester;
-  const cleanItemTitle = itemTitle.trim() || "the collectible";
-  const cleanTradeItems = Array.from(new Set([cleanItemTitle, ...tradeItemTitles].map((title) => title.trim()).filter(Boolean)));
-  const itemSummary = cleanTradeItems.join(", ");
-  const exchangeLine = sellerName || buyerName
-    ? cashOnly
-      ? `${cleanSeller} is selling ${itemSummary} to ${cleanBuyer} for cash.`
-      : `${cleanSeller} and ${cleanBuyer} completed a collector trade involving ${itemSummary}.`
-    : cashOnly
-      ? `${cleanRequester} is selling ${cleanItemTitle} to ${cleanRecipient} for cash.`
-      : `${cleanRequester} is trading ${cleanItemTitle} to ${cleanRecipient}.`;
-  const cleanCommentary = commentary.trim() || (cashOnly
-    ? `Breaking trade news: ${cleanSeller} and ${cleanBuyer} completed a cash sale featuring ${itemSummary}.`
-    : `Breaking trade news: ${cleanSeller} and ${cleanBuyer} completed a collector exchange featuring ${itemSummary}.`);
-  return {
-    format: "16:9",
-    durationSeconds: 25,
-    hostStyle: "breaking-news-anchor",
-    voiceProfile: "american-female-news-anchor",
-    requesterName: cleanRequester,
-    recipientName: cleanRecipient,
-    sellerName: cleanSeller,
-    buyerName: cleanBuyer,
-    exchangeLine,
-    commentary: cleanCommentary,
-    script: `BREAKING NEWS. ${exchangeLine} ${cleanCommentary} This is Tradebilia, where collectors connect.`,
-    officialLogoUrl,
-    lipSyncRequired: true,
-    status: "brief-ready",
-    createdAt: now,
   };
 }
 

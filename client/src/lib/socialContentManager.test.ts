@@ -3,7 +3,8 @@ import {
   TRADEBILIA_PUBLIC_ORIGIN,
   approveSocialDraft,
   buildListingSocialCopy,
-  buildCompletedTradeVideoPlan,
+  buildTnnCompletedTradeVideoPlan,
+  chooseNextTnnAnchor,
   createPromotionSocialDraft,
   createSocialDraft,
   filterSocialDrafts,
@@ -101,38 +102,37 @@ describe("social content manager draft workflow", () => {
     expect(getCompletedTradePostLabel(itemForItemPlusCash)).toBe("TRADE ALERT");
   });
 
-  it("builds a synchronized breaking-news video brief with the official logo asset", () => {
-    const plan = buildCompletedTradeVideoPlan({
-      requesterName: "Alex",
-      recipientName: "Jordan",
-      itemTitle: "1985 Topps Traded Set",
+  it("builds an approval-gated TNN breaking-news video plan with no generated script yet", () => {
+    const plan = buildTnnCompletedTradeVideoPlan({
+      sellerName: "Jordan",
+      buyerName: "Alex",
+      tradeItems: [{ title: "1985 Topps Traded Set" }],
       cashOnly: true,
-      commentary: "A clean cash-only move for both collectors.",
-      officialLogoUrl: "/manus-storage/official-tradebilia-logo.png",
+      durationSeconds: 30,
+      anchorMode: "sidney",
+      tickerText: "Where collectors connect.",
       now: "2026-09-26T20:00:00.000Z",
     });
-    expect(plan).toMatchObject({ format: "16:9", durationSeconds: 25, voiceProfile: "american-female-news-anchor", lipSyncRequired: true, officialLogoUrl: "/manus-storage/official-tradebilia-logo.png", status: "brief-ready" });
-    expect(plan.exchangeLine).toContain("selling 1985 Topps Traded Set to Jordan for cash");
-    expect(plan.script).toContain("BREAKING NEWS");
+    expect(plan).toMatchObject({ format: "16:9", durationSeconds: 30, voiceProfile: "tnn-professional-american-news-anchor", anchorNames: ["Sidney Tradewell"], scriptStatus: "not-drafted", generationStatus: "not-started", videoReviewStatus: "not-ready" });
+    expect(plan.selectedItems[0]?.title).toBe("1985 Topps Traded Set");
+    expect(plan.tickerText).toBe("Where collectors connect.");
   });
 
-  it("prepares seller/buyer-aware commentary from the completed trade when commentary is blank", () => {
-    const plan = buildCompletedTradeVideoPlan({
-      requesterName: "Buyer fallback",
-      recipientName: "Seller fallback",
+  it("preserves explicit seller and buyer roles and rotates solo anchors without repetition", () => {
+    const plan = buildTnnCompletedTradeVideoPlan({
       sellerName: "Seller Smith",
       buyerName: "Buyer Jones",
-      itemTitle: "1989 Nintendo Game",
-      tradeItemTitles: ["1989 Nintendo Game", "PSA 9 Trading Card"],
+      tradeItems: [{ title: "1989 Nintendo Game" }, { title: "PSA 9 Trading Card" }],
       cashOnly: false,
-      commentary: "",
-      officialLogoUrl: "/manus-storage/official-tradebilia-logo.png",
+      durationSeconds: 45,
+      anchorMode: "duo",
+      tickerText: "Collect with confidence.",
     });
     expect(plan.sellerName).toBe("Seller Smith");
     expect(plan.buyerName).toBe("Buyer Jones");
-    expect(plan.exchangeLine).toContain("Seller Smith and Buyer Jones");
-    expect(plan.commentary).toContain("1989 Nintendo Game, PSA 9 Trading Card");
-    expect(plan.script).toContain("Buyer Jones");
+    expect(plan.anchorNames).toEqual(["Max Tradebloski", "Sidney Tradewell"]);
+    expect(chooseNextTnnAnchor("max", 0.5)).toBe("sidney");
+    expect(chooseNextTnnAnchor("sidney", 0.5)).toBe("max");
   });
 
   it("refreshes only visual hints on stale high-value drafts when the current listing has a specific sport", () => {

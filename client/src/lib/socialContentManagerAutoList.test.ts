@@ -17,23 +17,34 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).not.toContain("publishSocialPost");
   });
 
-  it("starts asynchronous Manus video generation and keeps publishing manual", () => {
+  it("uses the approval-gated asynchronous TNN video workflow and keeps publishing manual", () => {
+    expect(componentSource).toContain("draftCompletedTradeTnnScript");
     expect(componentSource).toContain("startCompletedTradeVideoGeneration");
     expect(componentSource).toContain("getCompletedTradeVideoGeneration");
-    expect(componentSource).toContain("status: \"generating\"");
-    expect(componentSource).toContain("Generated breaking-news trade video");
-    expect(componentSource).toContain("Nothing is published automatically");
-    expect(componentSource).not.toContain("does not render a video in the isolated sandbox");
+    expect(componentSource).toContain("generationStatus: \"generating\"");
+    expect(componentSource).toContain("Approve this TNN video task?");
+    expect(componentSource).toContain("Only one TNN video may generate at a time");
+    expect(componentSource).toContain("generationAttempt >= 2");
+    expect(componentSource).toContain("TNN video is attached and ready for private review.");
+    expect(componentSource).toContain("nothing is published automatically");
+    expect(componentSource).not.toContain("publishSocialPost");
   });
 
-  it("prefills the completed-trade video studio with seller, buyer, and prepared commentary", () => {
+  it("prefills the TNN studio with seller, buyer, selected items, and the approved generation settings", () => {
     expect(componentSource).toContain("sellerName: trade.sellerName ?? null");
     expect(componentSource).toContain("buyerName: trade.buyerName ?? null");
-    expect(componentSource).toContain("const preparedPlan = buildCompletedTradeVideoPlan");
-    expect(componentSource).toContain("setVideoCommentary(preparedPlan.commentary)");
+    expect(componentSource).toContain("tradeId: Number.isFinite(Number(trade.tradeId))");
+    expect(componentSource).toContain("buildTnnCompletedTradeVideoPlan");
+    expect(componentSource).toContain("chooseNextTnnAnchor(lastTnnSoloAnchor)");
     expect(componentSource).toContain("Seller name");
     expect(componentSource).toContain("Buyer name");
-    expect(componentSource).toContain("Generate Video creates one 16:9, 25-second breaking-news segment");
+    expect(componentSource).toContain("30 seconds · concise report");
+    expect(componentSource).toContain("Max Tradebloski · solo");
+    expect(componentSource).toContain("Sidney Tradewell · solo");
+    expect(componentSource).toContain("Max &amp; Sidney · duo report");
+    expect(componentSource).toContain("Completed-trade items");
+    expect(componentSource).toContain("AI-written script draft");
+    expect(componentSource).toContain("One initial video and one explicitly approved replacement");
   });
 
   it("refreshes saved high-value draft visual hints from current opportunity metadata", () => {

@@ -102,16 +102,19 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("https://tradebilia.manus.space/listings/${listingId}");
   });
 
-  it("returns admin-only seller/buyer display names while excluding sensitive trade details", () => {
+  it("returns admin-only seller/buyer names and only the internal TNN eligibility fields while excluding sensitive trade details", () => {
     expect(promotionSection).toContain("AS sellerName");
     expect(promotionSection).toContain("AS buyerName");
+    expect(promotionSection).toContain("tp.id AS tradeId");
+    expect(promotionSection).toContain("AS itemValue");
     expect(returnedOpportunityMappings).toContain("sellerName: trade.sellerName ?? null");
     expect(returnedOpportunityMappings).toContain("buyerName: trade.buyerName ?? null");
+    expect(returnedOpportunityMappings).toContain("tradeId: Number(trade.tradeId)");
+    expect(returnedOpportunityMappings).toContain("estimatedValue: Number(trade.itemValue ?? 0)");
     expect(returnedOpportunityMappings).not.toContain("cashFromRequester");
     expect(returnedOpportunityMappings).not.toContain("cashFromRecipient");
     expect(returnedOpportunityMappings).not.toContain("trackingNumber");
     expect(returnedOpportunityMappings).not.toContain("tradeMessages");
-    expect(returnedOpportunityMappings).not.toContain("tp.id");
     expect(returnedOpportunityMappings).not.toContain("ownerId");
     expect(returnedOpportunityMappings).not.toContain("merchantVerifiedBy");
     expect(returnedOpportunityMappings).not.toContain("businessLicense");
