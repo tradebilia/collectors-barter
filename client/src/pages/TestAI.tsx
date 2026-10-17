@@ -418,6 +418,8 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'vintage toys:sold_comps': 'match',
   'video games:ebay_active': 'match',
   'video games:sold_comps': 'match',
+  'video games:igdb': 'match',
+  'video games:rawg': 'match',
   'comics:comic_book_realm': 'match',
   'comics:comicconnect': 'match',
 	'comics:goldin': 'match',
@@ -2207,8 +2209,6 @@ function CatalogExtendedFacts({ metadata }: { metadata: Record<string, unknown> 
     add('Languages', list('language_supports'));
     add('Regional releases', catalogReleaseDates(metadata.release_dates));
     add('Related games', list('dlcs', 'expanded_games', 'expansions', 'forks', 'ports', 'remakes', 'remasters', 'standalone_expansions', 'similar_games'));
-    add('Tags / keywords', list('tags', 'keywords'));
-
     const rating = typeof metadata.total_rating === 'number' ? metadata.total_rating : typeof metadata.rating === 'number' ? metadata.rating : null;
     const ratingCount = typeof metadata.total_rating_count === 'number' ? metadata.total_rating_count : typeof metadata.ratings_count === 'number' ? metadata.ratings_count : null;
     const score = [rating !== null ? `rating ${rating.toFixed(1)}` : null, ratingCount !== null ? `${ratingCount.toLocaleString()} ratings` : null, typeof metadata.metacritic === 'number' ? `Metacritic ${metadata.metacritic}` : null, typeof metadata.hypes === 'number' ? `${metadata.hypes.toLocaleString()} hypes` : null].filter(Boolean).join(' · ');

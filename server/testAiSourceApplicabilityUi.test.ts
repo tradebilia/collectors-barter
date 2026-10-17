@@ -70,6 +70,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Extended catalog facts');
     expect(source).not.toContain("add('Cover & media'");
     expect(source).not.toContain("add('Links & stores'");
+    expect(source).not.toContain("add('Tags / keywords'");
+    expect(source).toContain("'video games:igdb': 'match'");
+    expect(source).toContain("'video games:rawg': 'match'");
     expect(source).toContain('Regional releases');
     expect(source).toContain('Related games');
     expect(source).toContain('Full linked objects are included below');
