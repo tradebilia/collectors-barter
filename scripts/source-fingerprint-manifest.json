@@ -822,6 +822,7 @@
   "shared/tradeAlertThemes.ts",
   "shared/types.ts",
   "shared/uspsTrackingLink.ts",
+  "shared/videoGameGraderEquivalence.ts",
   "tsconfig.json",
   "vite.config.ts",
   "vitest.config.ts"
