@@ -116,6 +116,25 @@ describe("social content manager draft workflow", () => {
     expect(plan.script).toContain("BREAKING NEWS");
   });
 
+  it("prepares seller/buyer-aware commentary from the completed trade when commentary is blank", () => {
+    const plan = buildCompletedTradeVideoPlan({
+      requesterName: "Buyer fallback",
+      recipientName: "Seller fallback",
+      sellerName: "Seller Smith",
+      buyerName: "Buyer Jones",
+      itemTitle: "1989 Nintendo Game",
+      tradeItemTitles: ["1989 Nintendo Game", "PSA 9 Trading Card"],
+      cashOnly: false,
+      commentary: "",
+      officialLogoUrl: "/manus-storage/official-tradebilia-logo.png",
+    });
+    expect(plan.sellerName).toBe("Seller Smith");
+    expect(plan.buyerName).toBe("Buyer Jones");
+    expect(plan.exchangeLine).toContain("Seller Smith and Buyer Jones");
+    expect(plan.commentary).toContain("1989 Nintendo Game, PSA 9 Trading Card");
+    expect(plan.script).toContain("Buyer Jones");
+  });
+
   it("refreshes only visual hints on stale high-value drafts when the current listing has a specific sport", () => {
     const staleDraft = createPromotionSocialDraft("rickey-draft", {
       source: "High-Value Listing",

@@ -102,9 +102,11 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("https://tradebilia.manus.space/listings/${listingId}");
   });
 
-  it("excludes participant, cash, shipping, message, and trade identifiers", () => {
-    expect(returnedOpportunityMappings).not.toContain("requesterDisplayName");
-    expect(returnedOpportunityMappings).not.toContain("recipientDisplayName");
+  it("returns admin-only seller/buyer display names while excluding sensitive trade details", () => {
+    expect(promotionSection).toContain("AS sellerName");
+    expect(promotionSection).toContain("AS buyerName");
+    expect(returnedOpportunityMappings).toContain("sellerName: trade.sellerName ?? null");
+    expect(returnedOpportunityMappings).toContain("buyerName: trade.buyerName ?? null");
     expect(returnedOpportunityMappings).not.toContain("cashFromRequester");
     expect(returnedOpportunityMappings).not.toContain("cashFromRecipient");
     expect(returnedOpportunityMappings).not.toContain("trackingNumber");

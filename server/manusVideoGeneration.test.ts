@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ENV } from "./_core/env";
-import { createTradeVideoTask } from "./manusVideoGeneration";
+import { buildTradeVideoInstruction, createTradeVideoTask } from "./manusVideoGeneration";
 
 describe("Manus API configuration", () => {
   it("authenticates the configured server-side API key with the read-only user endpoint", async () => {
@@ -35,5 +35,22 @@ describe("Manus API configuration", () => {
     } finally {
       fetchMock.mockRestore();
     }
+  });
+
+  it("writes explicit seller and buyer roles into the anchor instruction", () => {
+    const instruction = buildTradeVideoInstruction({
+      script: "BREAKING NEWS. Seller Smith completed a trade with Buyer Jones.",
+      itemTitle: "Test collectible",
+      requesterName: "Buyer Jones",
+      recipientName: "Seller Smith",
+      sellerName: "Seller Smith",
+      buyerName: "Buyer Jones",
+      commentary: "A notable collector exchange.",
+      logoUrl: "https://tradebilia.manus.space/logo.png",
+    });
+    expect(instruction).toContain("Seller: Seller Smith");
+    expect(instruction).toContain("Buyer: Buyer Jones");
+    expect(instruction).not.toContain("Requester:");
+    expect(instruction).not.toContain("Recipient:");
   });
 });

@@ -26,6 +26,16 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).not.toContain("does not render a video in the isolated sandbox");
   });
 
+  it("prefills the completed-trade video studio with seller, buyer, and prepared commentary", () => {
+    expect(componentSource).toContain("sellerName: trade.sellerName ?? null");
+    expect(componentSource).toContain("buyerName: trade.buyerName ?? null");
+    expect(componentSource).toContain("const preparedPlan = buildCompletedTradeVideoPlan");
+    expect(componentSource).toContain("setVideoCommentary(preparedPlan.commentary)");
+    expect(componentSource).toContain("Seller name");
+    expect(componentSource).toContain("Buyer name");
+    expect(componentSource).toContain("Generate Video creates one 16:9, 25-second breaking-news segment");
+  });
+
   it("refreshes saved high-value draft visual hints from current opportunity metadata", () => {
     expect(componentSource).toContain("currentVisualOpportunities");
     expect(componentSource).toContain("reconcileSocialDraftVisualHints(current, currentVisualOpportunities)");

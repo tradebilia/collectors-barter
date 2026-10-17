@@ -3037,6 +3037,8 @@ export const appRouter = router({
         itemTitle: z.string().trim().min(1).max(180),
         requesterName: z.string().trim().min(1).max(160),
         recipientName: z.string().trim().min(1).max(160),
+        sellerName: z.string().trim().min(1).max(160).optional(),
+        buyerName: z.string().trim().min(1).max(160).optional(),
         commentary: z.string().trim().min(1).max(1200),
         logoUrl: z.string().url().max(2000),
         imageUrls: z.array(z.string().url().max(2000)).max(6).default([]),
@@ -3159,6 +3161,8 @@ export const appRouter = router({
             LIMIT ${historicalOpportunityLimit}`),
           db.execute(sql`SELECT
               tp.completedAt,
+              COALESCE(NULLIF(recipientProfile.displayName, ''), NULLIF(recipient.name, ''), recipient.username, CONCAT('Collector ', tp.recipientId)) AS sellerName,
+              COALESCE(NULLIF(requesterProfile.displayName, ''), NULLIF(requester.name, ''), requester.username, CONCAT('Collector ', tp.requesterId)) AS buyerName,
               l.id AS requestedListingId,
               l.title AS requestedListingTitle,
               l.category AS requestedListingCategory,
@@ -3181,6 +3185,10 @@ export const appRouter = router({
                 + COALESCE(l.estimatedValue, 0) AS itemValue
             FROM tradeProposals tp
             LEFT JOIN listings l ON l.id = tp.requestedListingId
+            LEFT JOIN users requester ON requester.id = tp.requesterId
+            LEFT JOIN userProfiles requesterProfile ON requesterProfile.userId = requester.id
+            LEFT JOIN users recipient ON recipient.id = tp.recipientId
+            LEFT JOIN userProfiles recipientProfile ON recipientProfile.userId = recipient.id
             WHERE tp.status = 'completed'
               AND tp.completedAt IS NOT NULL
             ORDER BY tp.completedAt DESC
@@ -3339,6 +3347,8 @@ export const appRouter = router({
               listingId: trade.requestedListingId ? Number(trade.requestedListingId) : null,
               itemPath: trade.requestedListingId ? `/listings/${Number(trade.requestedListingId)}` : null,
               title: trade.requestedListingTitle || "Collector exchange",
+              sellerName: trade.sellerName ?? null,
+              buyerName: trade.buyerName ?? null,
               category: trade.requestedListingCategory ?? null,
               itemType: trade.requestedListingItemType ?? null,
               condition: trade.requestedListingCondition ?? null,

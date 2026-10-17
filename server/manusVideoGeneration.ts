@@ -50,9 +50,13 @@ export function buildTradeVideoInstruction(input: {
   itemTitle: string;
   requesterName: string;
   recipientName: string;
+  sellerName?: string;
+  buyerName?: string;
   commentary: string;
   logoUrl: string;
 }) {
+  const sellerName = input.sellerName?.trim() || input.recipientName;
+  const buyerName = input.buyerName?.trim() || input.requesterName;
   return [
     "Create one finished 25-second 16:9 breaking-news social video for Tradebilia.",
     "Use Seedance 2.5 Pro or the best available video model.",
@@ -60,7 +64,7 @@ export function buildTradeVideoInstruction(input: {
     "Use the attached trade-item images only as visual references for brief supporting B-roll or an inset display; do not invent item facts, grades, prices, or identities.",
     "Use energetic but credible breaking-news pacing, tasteful studio graphics, readable lower thirds, and subtle newsroom motion.",
     "Do not publish the video, contact any social platform, or expose private account data.",
-    `Trade item: ${input.itemTitle}. Requester: ${input.requesterName}. Recipient: ${input.recipientName}. Commentary: ${input.commentary}.`,
+    `Trade item: ${input.itemTitle}. Seller: ${sellerName}. Buyer: ${buyerName}. Commentary: ${input.commentary}.`,
     `Exact spoken script: ${input.script}`,
     `Use this official Tradebilia logo as the brand reference when available: ${input.logoUrl}`,
     "Return a finished MP4 artifact suitable for preview in the Tradebilia admin Social Content page.",
@@ -72,6 +76,8 @@ export async function createTradeVideoTask(input: {
   itemTitle: string;
   requesterName: string;
   recipientName: string;
+  sellerName?: string;
+  buyerName?: string;
   commentary: string;
   logoUrl: string;
   imageUrls: string[];
