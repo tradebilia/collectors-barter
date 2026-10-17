@@ -134,6 +134,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('buyer premium = all-in context');
   });
 
+  it('keeps Goldin video-game search criteria grader-free and refreshes stale specialist responses', () => {
+    expect(source).toContain('omitGradingCriteria');
+    expect(source).toContain("source.id === 'goldin'");
+    expect(source).toContain("refetchOnMount: 'always'");
+    expect(source).toContain('function buildGoldinVideoGameDisplayQuery');
+    expect(source).toContain("firstText('releaseYear', 'year')");
+    expect(source).toContain('const visibleQuery = omitGradingCriteria ? gradeFreeGoldinQuery : data?.query');
+    expect(source).toContain('const visibleMessages = data?.messages?.map');
+  });
+
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
     expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
     expect(source).toContain('function EvidenceNormalizationSummary');

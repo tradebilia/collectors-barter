@@ -93,6 +93,10 @@ describe('bounded specialist marketplace adapters', () => {
     expect(queries[0]).toBe('Super Mario Bros. 3 NES 1990');
     expect(queries).toEqual(['Super Mario Bros. 3 NES 1990', 'Super Mario Bros. 3 sealed game']);
     expect(queries.join(' ')).not.toMatch(/\b(?:PSA|WATA)\s*9(?:\.\d+)?\b/i);
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin', title: 'Super Mario Bros. 3 sealed game', category: 'video game', grade: '9', certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 3', platform: 'NES', year: '1990' }),
+    })).toBe('Super Mario Bros. 3 NES 1990');
   });
 
   it('accepts PSA and WATA as equivalent only for video-game identity', () => {
@@ -408,7 +412,7 @@ describe('bounded specialist marketplace adapters', () => {
 
     const result = await lookupSpecialistMarketplace(videoGame);
     expect(result.status).toBe('success');
-    expect(result.recordCap).toBe(30);
+    expect(result.recordCap).toBe(50);
     expect(result.sales).toHaveLength(1);
     expect(result.sales[0]).toMatchObject({
       completed: true,
@@ -423,7 +427,7 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
     expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990', size: 30, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
+      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990', size: 50, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
     }));
   });
 

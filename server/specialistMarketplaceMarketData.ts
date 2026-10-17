@@ -111,7 +111,7 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   bonhams: { hosts: ['bonhams.com', 'www.bonhams.com'], linkPattern: /\/auction\//i, recordCap: 8 },
   university_archives: { hosts: ['universityarchives.com', 'www.universityarchives.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   alexander_historical: { hosts: ['alexautographs.com', 'www.alexautographs.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
-  goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 30 },
+  goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 50 },
   weiss: { hosts: ['api-frontend.nextlot.net'], linkPattern: /\/api\/frontend\/v1\/sites\/2218285\/search\/lots/i, recordCap: 12 },
   nate_sanders: { hosts: ['natedsanders.com', 'www.natedsanders.com'], linkPattern: /\/(?:catalog\.aspx|[^/]+-LOT\d+\.aspx)/i, recordCap: 12 },
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },
@@ -265,7 +265,8 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   const includeComicYear = options.includeComicYear !== false;
   const includeSigners = options.includeSigners !== false;
   const category = normalize(input.category).replace(/_/g, ' ');
-  const includeGradingCriteria = category !== 'video games';
+  const isVideoGameCategory = /^video games?$/.test(category);
+  const includeGradingCriteria = !isVideoGameCategory;
   const parts: string[] = [];
   const add = (...values: string[]) => values.forEach((value) => {
     const cleaned = value.trim();
@@ -286,7 +287,7 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['cardName', 'pokemonName', 'name']) || input.title);
     add(firstDetail(details, ['setName', 'set', 'cardSet']));
     add(firstDetail(details, ['cardNumber', 'cardNo', 'number']));
-  } else if (category === 'video games') {
+  } else if (isVideoGameCategory) {
     add(firstDetail(details, ['gameTitle', 'title']) || input.title);
     add(firstDetail(details, ['platform', 'console', 'consoleName']));
     add(firstDetail(details, ['releaseYear', 'year']));
