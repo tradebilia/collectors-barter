@@ -111,7 +111,7 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   bonhams: { hosts: ['bonhams.com', 'www.bonhams.com'], linkPattern: /\/auction\//i, recordCap: 8 },
   university_archives: { hosts: ['universityarchives.com', 'www.universityarchives.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   alexander_historical: { hosts: ['alexautographs.com', 'www.alexautographs.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
-  goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 12 },
+  goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 30 },
   weiss: { hosts: ['api-frontend.nextlot.net'], linkPattern: /\/api\/frontend\/v1\/sites\/2218285\/search\/lots/i, recordCap: 12 },
   nate_sanders: { hosts: ['natedsanders.com', 'www.natedsanders.com'], linkPattern: /\/(?:catalog\.aspx|[^/]+-LOT\d+\.aspx)/i, recordCap: 12 },
   tcgplayer_reef: { hosts: ['api.reefapi.com', 'www.tcgplayer.com'], linkPattern: /(?:api\.reefapi\.com\/tcgplayer\/v1|www\.tcgplayer\.com\/product\/\d+)/i, recordCap: 12 },

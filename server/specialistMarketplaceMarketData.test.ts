@@ -407,7 +407,7 @@ describe('bounded specialist marketplace adapters', () => {
 
     const result = await lookupSpecialistMarketplace(videoGame);
     expect(result.status).toBe('success');
-    expect(result.recordCap).toBe(12);
+    expect(result.recordCap).toBe(30);
     expect(result.sales).toHaveLength(1);
     expect(result.sales[0]).toMatchObject({
       completed: true,
@@ -422,7 +422,7 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
     expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990 WATA 9.6', size: 12, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
+      body: JSON.stringify({ search: { queryType: 'Highest_Bids', keyword: 'Super Mario Bros. 3 NES 1990 WATA 9.6', size: 30, from: 0, show_only: 'Sold', hasAnalyticsConsent: false } }),
     }));
   });
 
