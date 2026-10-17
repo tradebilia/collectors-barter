@@ -21,10 +21,12 @@ describe('IGDB factual metadata adapter', () => {
     expect(result.data?.title).toBe('Super Mario Bros. 3');
     expect(result.data?.matchNote).toContain('platform');
     expect(result.data?.facts).toEqual(expect.arrayContaining([{ label: 'Platforms', value: 'Nintendo Entertainment System' }, { label: 'Developers', value: 'Nintendo EAD' }]));
+    expect(result.data?.metadata).toMatchObject({ id: 100, name: 'Super Mario Bros. 3' });
     expect(JSON.stringify(result.data)).not.toMatch(/price|valuation|condition|grade/i);
     expect(fetchMock).toHaveBeenCalledTimes(3);
     expect(fetchMock.mock.calls[1]?.[0]).toBe('https://api.igdb.com/v4/platforms');
     expect(fetchMock.mock.calls[2]?.[0]).toBe('https://api.igdb.com/v4/games');
+    expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('fields *,platforms.*');
     expect(fetchMock.mock.calls[2]?.[1]?.body).toContain('platforms = (18)');
   });
 

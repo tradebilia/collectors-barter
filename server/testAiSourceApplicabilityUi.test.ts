@@ -63,6 +63,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("description: 'User-approved read-only Video Game catalog metadata");
     expect(source).toContain('getRawgGameMetadata.useQuery');
     expect(source).toContain('function RawgSection');
+    expect(source).toContain('Show all returned RAWG metadata');
+    expect(source).toContain('Show all returned IGDB metadata');
+    expect(source).toContain('JSON.stringify(data.data.metadata, null, 2)');
     expect(source).not.toContain('RawgSetupSection');
     expect(source).toContain("label: 'Discogs Music Catalog'");
     expect(source).toContain('getDiscogsReleases.useQuery');

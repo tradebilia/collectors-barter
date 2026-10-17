@@ -14,10 +14,11 @@ type IgdbLookup = {
     sourceUrl: string;
     matchNote: string;
     facts: IgdbFact[];
+    metadata: Record<string, unknown>;
   };
 };
 
-type IgdbGame = {
+type IgdbGame = Record<string, unknown> & {
   id?: number;
   name?: string;
   first_release_date?: number;
@@ -135,7 +136,7 @@ export async function lookupIgdbGameMetadata(
     const accessToken = await getTwitchAppToken(env, fetchImpl);
     if (!clientId || !accessToken) return { status: 'error', message: 'IGDB credentials are unavailable. Confirm the server-side Twitch application settings.' };
 
-    const fields = 'id,name,first_release_date,platforms.name,genres.name,game_modes.name,themes.name,involved_companies.developer,involved_companies.publisher,involved_companies.company.name,age_ratings.organization.name,age_ratings.rating_category.rating';
+    const fields = '*,platforms.*,genres.*,game_modes.*,themes.*,involved_companies.*,involved_companies.company.*,age_ratings.*,age_ratings.organization.*,age_ratings.rating_category.*';
     let payload: unknown = [];
     let platformId: number | undefined;
     if (options.platform) {
@@ -220,6 +221,7 @@ export async function lookupIgdbGameMetadata(
         sourceUrl: `https://www.igdb.com/games/${game.id}`,
         matchNote: `Matched by ${matchParts.join(', ')}.${yearNote} Confirm the exact release, platform, and edition before using a separate market source.`,
         facts,
+        metadata: game,
       },
     };
   } catch {
