@@ -46,6 +46,16 @@ describe('Test AI Parse provider controls', () => {
     expect(testAiSource).toContain('PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.');
   });
 
+
+  it('makes the PriceCharting product page explicit and discloses an identity-only video-game response', () => {
+    expect(testAiSource).toContain('Open full PriceCharting product page ↗');
+    expect(testAiSource).toContain('Verified game identity; provider price details unavailable');
+    expect(testAiSource).toContain('condition prices, sales volume, or separate Loose, CIB, New, Graded New, Box Only, and Manual Only sold-listing groups');
+    expect(testAiSource).toContain('Tradebilia does not bypass PriceCharting access controls.');
+    expect(testAiSource).toContain('PriceCharting identity context only — no condition-price, sales-volume, or historical-sale data was returned, and nothing can enter Tradebilia valuation.');
+    expect(testAiSource).toContain('const hasPriceFields = priceEntries.length > 0;');
+  });
+
   it('uses only exact certified-grade PriceCharting coin values as a capped analyzer guide', () => {
     expect(testAiSource).toContain("import { selectExactPriceChartingCoinGuide } from '@shared/priceChartingCoinGuide'");
     expect(testAiSource).toContain("role: priceChartingCoinGuide ? 'valuation_guide' : 'asking_price_context'");

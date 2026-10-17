@@ -1743,6 +1743,8 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
   const data = isCoin ? effectiveCoinData : isVideoGame ? (effectiveVideoGameData ?? selectedVideoGameData ?? candidateSearchData) : (setSlug !== 'unavailable' && cardSlug !== 'unavailable') ? effectiveSlugData : effectiveCardData;
   const isLoading = data === undefined || (isCoin && coinQuery.isFetching) || (isVideoGame && videoGameCandidateQuery.isFetching);
   const prices = selectedVideoGameData?.data?.prices ?? data?.data?.prices ?? {};
+  const priceEntries = Object.entries(prices);
+  const hasPriceFields = priceEntries.length > 0;
   const coinGuide = isCoin ? selectExactPriceChartingCoinGuide({ category: item.category, grade: item.grade, prices }) : null;
   const movers = effectiveMoversData?.data?.movers ?? [];
   const lookupMode = isCoin ? 'US coin price-guide context' : isVideoGame ? (priceChartingVideoGameUpc ? 'exact video-game UPC lookup' : 'bounded video-game title-and-platform candidate context') : isPokemonOrTcg ? 'Pokémon / compatible TCG price-guide context' : 'available only for compatible PriceCharting records';
@@ -1767,15 +1769,17 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
           {data.data.url ? <a href={data.data.url} target="_blank" rel="noopener noreferrer" className="block text-[12px] font-semibold text-blue-300 hover:underline">{data.data.name || data.data.title || item.title}</a> : <p className="text-[12px] font-semibold text-white">{data.data.name || data.data.title || item.title}</p>}
           <p className="text-[10px] text-gray-400">{[data.data.set, data.data.cardNumber, data.data.platform, data.data.mint, data.data.mintage].filter(Boolean).join(' · ')}</p>
           {data.data.associatedUpcs?.length > 0 && <p className="text-[9px] text-gray-500">Associated UPCs: {data.data.associatedUpcs.join(', ')}</p>}
-          <div className="grid grid-cols-3 gap-2 text-[10px]">
-            {Object.entries(prices).slice(0, 6).map(([grade, value]) => (
+          {data.data.url && <a href={data.data.url} target="_blank" rel="noopener noreferrer" className="inline-flex w-fit items-center rounded border border-blue-700/40 bg-blue-950/20 px-2 py-1 text-[9px] font-semibold text-blue-200 hover:bg-blue-900/30">Open full PriceCharting product page ↗</a>}
+          {isVideoGame && !hasPriceFields && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2 text-[9px] text-amber-100"><p className="font-semibold text-amber-200">Verified game identity; provider price details unavailable</p><p className="mt-1 text-amber-100/80">The configured Parse.bot response confirmed this game’s title, platform, identifier, and UPCs, but it did not return PriceCharting’s condition prices, sales volume, or separate Loose, CIB, New, Graded New, Box Only, and Manual Only sold-listing groups. Use the linked product page for those provider details; Tradebilia does not bypass PriceCharting access controls.</p></div>}
+          {hasPriceFields && <div className="grid grid-cols-3 gap-2 text-[10px]">
+            {priceEntries.slice(0, 6).map(([grade, value]) => (
               <div key={grade} className="rounded bg-gray-800/60 p-1.5 text-center">
                 <p className="text-[8px] uppercase text-gray-500">{grade.replace(/_/g, ' ')}</p>
                 <p className="font-semibold text-green-400">{typeof value === 'number' ? formatWholeDollar(value) : String(value ?? 'N/A')}</p>
               </div>
             ))}
-          </div>
-          {isVideoGame && <p className="text-[9px] text-amber-200/90">PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.</p>}
+          </div>}
+          {isVideoGame && <p className="text-[9px] text-amber-200/90">{hasPriceFields ? 'PriceCharting game-price context only — it is not a completed sale and cannot enter Tradebilia valuation.' : 'PriceCharting identity context only — no condition-price, sales-volume, or historical-sale data was returned, and nothing can enter Tradebilia valuation.'}</p>}
         </div>
       )}
       {isPokemonOrTcg && !cardData && !slugData && <p className="text-[10px] text-gray-500">For a compatible non-Pokémon TCG, add PriceCharting setSlug and cardSlug fields to item details.</p>}
