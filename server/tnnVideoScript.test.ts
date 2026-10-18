@@ -22,6 +22,7 @@ import {
   isTnnEligibleCompletedTrade,
   withTnnVideoScript,
 } from "../client/src/lib/socialContentManager";
+import { TNN_DUO_OPENING_STYLES, TNN_DUO_OPENING_STYLE_VALUES } from "../shared/tnnVideoPolicy";
 
 const input = {
   durationSeconds: 45 as const,
@@ -126,11 +127,22 @@ describe("TNN fact-locked script contract", () => {
 
   it("requires the resolved selected opening style rather than accepting any duo handoff", () => {
     const alongsideInput = { ...input, duoOpeningStyle: "alongside" as const };
-    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell", ", alongside Sidney Tradewell");
-    expect(buildTnnScriptPrompt(alongsideInput)).toContain("Alongside handoff");
-    expect(buildTnnScriptPrompt(alongsideInput)).toContain("I'm Max Tradebloski, alongside Sidney Tradewell.");
+    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell.", ", and I'm Sidney Tradewell, joining you from the TNN Network.");
+    expect(buildTnnScriptPrompt(alongsideInput)).toContain("Newsroom handoff");
+    expect(buildTnnScriptPrompt(alongsideInput)).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network.");
     expect(() => validateTnnScriptDraft(alongsideScript, alongsideInput)).not.toThrow();
     expect(() => validateTnnScriptDraft(validScript, alongsideInput)).toThrow(TNN_DUO_OPENING_ERROR);
+  });
+
+  it("keeps the natural Max-to-Sidney exchange in every approved duo opening style", () => {
+    for (const duoOpeningStyle of TNN_DUO_OPENING_STYLE_VALUES) {
+      const selectedOpening = TNN_DUO_OPENING_STYLES[duoOpeningStyle].script;
+      const styleScript = validScript.replace("I'm Max Tradebloski, and I'm Sidney Tradewell.", selectedOpening);
+      expect(styleScript).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
+      expect(() => validateTnnScriptDraft(styleScript, { ...input, duoOpeningStyle })).not.toThrow();
+      const typographicStyleScript = styleScript.replaceAll("I'm", "I’m");
+      expect(() => validateTnnScriptDraft(typographicStyleScript, { ...input, duoOpeningStyle })).not.toThrow();
+    }
   });
 
   it("does not infer additional exchanged items from unselected entries in a one-for-one trade", () => {
@@ -232,7 +244,7 @@ describe("TNN fact-locked script contract", () => {
   it("retains the selected alternative duo opening style during the bounded corrective retry", async () => {
     const alongsideInput = { ...input, duoOpeningStyle: "alongside" as const };
     const disconnectedDuoOpening = validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell");
-    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell", ", alongside Sidney Tradewell");
+    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell.", ", and I'm Sidney Tradewell, joining you from the TNN Network.");
     mockedInvokeLLM
       .mockResolvedValueOnce(responseFor(disconnectedDuoOpening) as any)
       .mockResolvedValueOnce(responseFor(alongsideScript) as any);
@@ -240,7 +252,7 @@ describe("TNN fact-locked script contract", () => {
     await expect(draftTnnScript(alongsideInput)).resolves.toMatchObject({ script: alongsideScript });
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("I'm Max Tradebloski, alongside Sidney Tradewell"),
+      content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network"),
     });
   });
 
@@ -266,6 +278,9 @@ describe("TNN fact-locked script contract", () => {
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
       content: expect.stringContaining("repeated an anchor's full-name introduction or callout"),
+    });
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("Max speaks only the \"I'm Max Tradebloski\" portion; Sidney immediately answers"),
     });
     expect(corrective.messages[2]).toMatchObject({
       content: expect.stringContaining("at most one or two brief, fact-locked broadcast ad-lib comments"),

@@ -271,11 +271,15 @@ function buildCorrectiveTnnDuoOpeningPrompt(input: TnnScriptDraftInput) {
 }
 
 function buildCorrectiveTnnAnchorRepetitionPrompt(input: TnnScriptDraftInput) {
-  const anchors = getTnnScriptAnchorNames(normalizeTnnScriptInput(input).anchorMode);
+  const normalizedInput = normalizeTnnScriptInput(input);
+  const anchors = getTnnScriptAnchorNames(normalizedInput.anchorMode);
+  const duoOpening = TNN_DUO_OPENING_STYLES[normalizedInput.duoOpeningStyle];
   return [
     "Corrective retry: the prior TNN draft repeated an anchor's full-name introduction or callout.",
     "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
-    `Introduce each selected anchor exactly once: ${anchors.map((anchor) => `"I'm ${anchor}" or "I’m ${anchor}" or "I am ${anchor}"`).join("; ")}. After each introduction, use first names, roles, or no name; do not repeat a full name, say "again," or re-introduce an anchor.`,
+    normalizedInput.anchorMode === "duo"
+      ? `Use the selected ${duoOpening.label} at the start: "${duoOpening.script}" (or the equivalent I’m/I am apostrophe form). Max speaks only the "I'm Max Tradebloski" portion; Sidney immediately answers with the "and I'm Sidney Tradewell" portion. After that, use first names, roles, or no name; do not repeat either full name, say "again," or re-introduce an anchor.`
+      : `Introduce the selected anchor exactly once: ${anchors.map((anchor) => `"I'm ${anchor}" or "I’m ${anchor}" or "I am ${anchor}"`).join("; ")}. After the introduction, use a first name, role, or no name; do not repeat the full name, say "again," or re-introduce the anchor.`,
     "Keep at most one or two brief, fact-locked broadcast ad-lib comments only if they fit the 45-second word budget, and keep every original privacy, factual-boundary, duration, selected-item-coverage, network-wording, party-name, and closing-tagline rule.",
   ].join("\\n");
 }

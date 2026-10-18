@@ -18,16 +18,16 @@ export const TNN_DUO_OPENING_STYLES: Record<TnnDuoOpeningStyle, { label: string;
     script: "I'm Max Tradebloski, and I'm Sidney Tradewell.",
   },
   alongside: {
-    label: "Alongside handoff",
-    script: "I'm Max Tradebloski, alongside Sidney Tradewell.",
+    label: "Newsroom handoff",
+    script: "I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network.",
   },
   joined: {
-    label: "Joined-by handoff",
-    script: "I'm Max Tradebloski, joined by Sidney Tradewell.",
+    label: "Reporting handoff",
+    script: "I'm Max Tradebloski, and I'm Sidney Tradewell, reporting for the TNN Network.",
   },
   here_with: {
-    label: "Here-with handoff",
-    script: "I'm Max Tradebloski, here with Sidney Tradewell.",
+    label: "Welcome handoff",
+    script: "I'm Max Tradebloski, and I'm Sidney Tradewell. Welcome to the TNN Network.",
   },
 } as const;
 
