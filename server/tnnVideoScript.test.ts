@@ -93,8 +93,8 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain("the TNN Network");
     expect(prompt).toContain("trade-bil-lee-uh");
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
-    expect(prompt).toContain('"I\'m Max Tradebloski" or "I am Max Tradebloski"');
-    expect(prompt).toContain('"I\'m Sidney Tradewell" or "I am Sidney Tradewell"');
+    expect(prompt).toContain('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"');
+    expect(prompt).toContain('"I\'m Sidney Tradewell" or "I’m Sidney Tradewell" or "I am Sidney Tradewell"');
     expect(prompt).toContain("names must never be proposed as on-screen text");
     expect(prompt).toContain("State every approved selected item title exactly as written");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
@@ -108,6 +108,7 @@ describe("TNN fact-locked script contract", () => {
     expect(validated.wordCount).toBeGreaterThanOrEqual(80);
     expect(validated.wordCount).toBeLessThanOrEqual(100);
     expect(validated.estimatedSpeechSeconds).toBeGreaterThan(0);
+    expect(validateTnnScriptDraft(validScript.replace("I'm Max Tradebloski", "I’m Max Tradebloski").replace("I'm Sidney Tradewell", "I’m Sidney Tradewell"), input)).toMatchObject({ script: expect.stringContaining("I’m Max Tradebloski") });
     expect(() => validateTnnScriptDraft(validScript.replace("collector trade", "$1,200 collector trade"), input)).toThrow(/disallowed/i);
     expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", ""), input)).toThrow(/acknowledge/i);
     expect(() => validateTnnScriptDraft(validScript.replace("PSA 9 Trading Card", "graded card"), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
@@ -167,7 +168,7 @@ describe("TNN fact-locked script contract", () => {
     expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining('"I\'m Max Tradebloski" or "I am Max Tradebloski"'),
+      content: expect.stringContaining('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"'),
     });
   });
 });
