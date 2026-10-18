@@ -20,8 +20,10 @@ describe('sandbox specialist source activation', () => {
 
   it('keeps category mapping source-specific', () => {
     const allTradebiliaCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'];
-    for (const category of allTradebiliaCategories.filter((category) => category !== 'stamps')) expect(isSandboxSpecialistSourceApplicable('goldin', category), `Goldin should be available for ${category}`).toBe(true);
+    for (const category of allTradebiliaCategories.filter((category) => !['stamps', 'music', 'disney_pins'].includes(category))) expect(isSandboxSpecialistSourceApplicable('goldin', category), `Goldin should be available for ${category}`).toBe(true);
     expect(isSandboxSpecialistSourceApplicable('goldin', 'stamps')).toBe(false);
+    expect(isSandboxSpecialistSourceApplicable('goldin', 'music')).toBe(false);
+    expect(isSandboxSpecialistSourceApplicable('goldin', 'disney_pins')).toBe(false);
     for (const category of allTradebiliaCategories.filter((category) => category !== 'video_games')) expect(isSandboxSpecialistSourceApplicable('weiss', category), `Weiss should be available for ${category}`).toBe(true);
     expect(isSandboxSpecialistSourceApplicable('weiss', 'video_games')).toBe(false);
     expect(isSandboxSpecialistSourceApplicable('rr_auction', 'music')).toBe(false);

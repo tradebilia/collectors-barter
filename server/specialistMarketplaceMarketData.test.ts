@@ -285,7 +285,7 @@ describe('bounded specialist marketplace adapters', () => {
     const accepted = buildSpecialistMarketplaceRequest({ ...videoGame, sourceUrl: goldinMarioLotUrl });
     expect(accepted).toEqual({ url: goldinMarioLotUrl, error: null });
 
-    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'coins', 'pokemon', 'movies', 'autographs']) {
       expect(buildSpecialistMarketplaceRequest({ ...videoGame, category }), `Goldin should automatically search ${category}`).toEqual({ url: 'https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', error: null });
     }
   });
@@ -304,11 +304,13 @@ describe('bounded specialist marketplace adapters', () => {
     }
   });
 
-  it('blocks Goldin Stamps plus Weiss and Hake’s Video Games lookups as not applicable', async () => {
-    const goldinResult = await lookupSpecialistMarketplace({ ...videoGame, category: 'stamps' });
-    expect(goldinResult.status).toBe('not_applicable');
-    expect(goldinResult.sales).toEqual([]);
-    expect(goldinResult.context).toEqual([]);
+  it('blocks Goldin Stamps, Music, and Disney Pins plus Weiss and Hake’s Video Games lookups as not applicable', async () => {
+    for (const category of ['stamps', 'music', 'disney_pins']) {
+      const goldinResult = await lookupSpecialistMarketplace({ ...videoGame, category });
+      expect(goldinResult.status, `Goldin should not run for ${category}`).toBe('not_applicable');
+      expect(goldinResult.sales).toEqual([]);
+      expect(goldinResult.context).toEqual([]);
+    }
 
     const weissResult = await lookupSpecialistMarketplace({ ...weissComic, category: 'video_games' });
     expect(weissResult.status).toBe('not_applicable');
