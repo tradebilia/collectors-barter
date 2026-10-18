@@ -137,4 +137,19 @@ describe("TNN fact-locked script contract", () => {
       content: expect.stringContaining("1989 Nintendo Game | PSA 9 Trading Card"),
     });
   });
+
+  it("runs one corrective script-only retry when the first 45-second draft is too short", async () => {
+    const shortButOtherwiseCompliant = "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell. Morgan Seller and Taylor Buyer completed a collector trade featuring 1989 Nintendo Game and PSA 9 Trading Card. I'm Sidney Tradewell. Additional collector items changed hands as part of the completed transaction. Tradebilia.";
+    expect(countTnnScriptWords(shortButOtherwiseCompliant)).toBeLessThan(80);
+    mockedInvokeLLM
+      .mockResolvedValueOnce(responseFor(shortButOtherwiseCompliant) as any)
+      .mockResolvedValueOnce(responseFor(validScript) as any);
+
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("must contain 80-100 spoken words"),
+    });
+  });
 });
