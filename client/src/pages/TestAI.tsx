@@ -82,6 +82,24 @@ const DATA_SOURCES: Record<string, DataSourceDefinition> = {
     status: 'live' as const,
     description: 'Real eBay completed/sold listings via Sold-Comps API',
   },
+  mercari_sold_comps: {
+    id: 'mercari_sold_comps',
+    label: 'Sold-Comps (Mercari Sold)',
+    group: 'Marketplace',
+    icon: '🟠',
+    provides: ['historic_prices'],
+    status: 'live' as const,
+    description: 'Real Mercari sold listings via Sold-Comps API; context-only during provider-specific testing',
+  },
+  tcgplayer_sold_comps: {
+    id: 'tcgplayer_sold_comps',
+    label: 'Sold-Comps (TCGplayer Sold)',
+    group: 'Marketplace',
+    icon: '🃏',
+    provides: ['historic_prices', 'recent_sales'],
+    status: 'live' as const,
+    description: 'Pokémon TCGplayer completed-sale history via Sold-Comps API; separate from ReefAPI and context-only during testing',
+  },
   hipstamp: {
     id: 'hipstamp',
     label: 'HIPStamp Active Listings',
@@ -925,6 +943,33 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
       )}
       {auditLedger.length > 0 && <details className="rounded border border-gray-700/30 bg-gray-950/35 p-2"><summary className="cursor-pointer text-[10px] font-semibold text-gray-300">Evidence ledger ({auditLedger.length}) — retained, review, and objective-conflict records</summary><div className="mt-2 max-h-64 space-y-1 overflow-y-auto">{auditLedger.map((row: any, index: number) => <div key={`${row.saleId || row.itemUrl || row.title}-${index}`} className="rounded bg-gray-900/60 p-1.5 text-[9px]"><p className="truncate font-semibold text-gray-200">{row.title || 'Untitled record'}</p><p className={row.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : row.evidenceDisposition === 'rejected_objective_conflict' ? 'text-red-300' : 'text-amber-300'}>{String(row.evidenceDisposition || 'warning_review').replace(/_/g, ' ')}</p><p className="mt-0.5 text-gray-500">{(row.evidenceReasons ?? []).join('; ') || 'No additional warning supplied.'}</p></div>)}</div></details>}
       {data && !data.listings.length && !data.error && <p className="text-gray-500 text-xs">No sold listings found.</p>}
+    </div>
+  );
+}
+
+function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, marketplace }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean; sourceLabel: string; marketplace: string }) {
+  const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
+  const listings = data?.listings ?? [];
+  return (
+    <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className={`text-[11px] font-bold uppercase ${accentColor}`}>💰 {sourceLabel}</p>
+        {isLoading && <Spinner className="w-3 h-3" />}
+      </div>
+      <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
+      <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">Data type: Completed {marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.</p>
+      {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+      {data && <p className="text-gray-400 text-[10px]">{listings.length} completed record{listings.length === 1 ? '' : 's'} returned.</p>}
+      {listings.length > 0 && <div className="space-y-1 max-h-64 overflow-y-auto">{listings.map((listing: any, index: number) => (
+        <div key={`${listing.saleId || listing.itemUrl || listing.title}-${index}`} className="flex items-center justify-between gap-2 py-1 border-b border-gray-700/20 last:border-b-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {listing.imageUrl && <img src={listing.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
+            <div className="min-w-0"><a href={listing.itemUrl || undefined} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{listing.title}</a><p className="text-[10px] text-gray-500">{listing.condition || 'Condition unavailable'} · {listing.endedAt ? `Sold ${listing.endedAt}` : 'Date unavailable'}</p><AnalyzerUseLine eligible={false} reason={(listing.evidenceReasons ?? ['Context-only provider result']).join('; ')} /></div>
+          </div>
+          <p className="text-amber-300 font-semibold text-sm flex-shrink-0">{formatWholeDollar(listing.price)}</p>
+        </div>
+      ))}</div>}
+      {data && !data.error && listings.length === 0 && <p className="text-gray-500 text-xs">No completed {marketplace} records found.</p>}
     </div>
   );
 }
@@ -4085,7 +4130,7 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
-function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
+function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, mercariSoldCompsData, mercariSoldCompsLoading, tcgplayerSoldCompsData, tcgplayerSoldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
   side: 'left' | 'right';
@@ -4096,6 +4141,10 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvid
   onEbayVisualReview?: (data: any | null) => void;
   soldCompsData: any;
   soldCompsLoading: boolean;
+  mercariSoldCompsData: any;
+  mercariSoldCompsLoading: boolean;
+  tcgplayerSoldCompsData: any;
+  tcgplayerSoldCompsLoading: boolean;
   hipstampData: any;
   hipstampSoldData: any;
   pokemonPriceTrackerData: any;
@@ -4177,6 +4226,8 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvid
               <p className="text-gray-500 text-[10px]">Enable <strong>{gradingSourceLabel}</strong> first to auto-build the search query from cert details</p>
             </div>
       )}
+      {enabledSources.has('mercari_sold_comps') && <AdditionalSoldCompsSection item={queryItem} side={side} data={mercariSoldCompsData} isLoading={mercariSoldCompsLoading} sourceLabel="Sold-Comps — Mercari Sold History" marketplace="Mercari" />}
+      {enabledSources.has('tcgplayer_sold_comps') && <AdditionalSoldCompsSection item={queryItem} side={side} data={tcgplayerSoldCompsData} isLoading={tcgplayerSoldCompsLoading} sourceLabel="Sold-Comps — TCGplayer Pokémon Sales" marketplace="TCGplayer" />}
       {enabledSources.has('ebay_sold') && <PlaceholderSection sourceId="ebay_sold" side={side} />}
       {enabledSources.has('cgc') && <CgcComicsSection item={item} side={side} />}
       {enabledSources.has('psa') && <PSASection item={item} side={side} />}
@@ -4478,6 +4529,22 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
+  const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    { enabled: !!leftSearchItem && leftSources.has('mercari_sold_comps'), retry: false }
+  );
+  const rightMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    { enabled: !!rightSearchItem && rightSources.has('mercari_sold_comps'), retry: false }
+  );
+  const leftTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    { enabled: !!leftSearchItem && leftSources.has('tcgplayer_sold_comps') && normalizeCoverageCategory(leftSearchItem.category) === 'pokemon', retry: false }
+  );
+  const rightTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    { enabled: !!rightSearchItem && rightSources.has('tcgplayer_sold_comps') && normalizeCoverageCategory(rightSearchItem.category) === 'pokemon', retry: false }
+  );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
     { query: leftSearchItem?.title, title: leftSearchItem?.title, category: leftSearchItem?.category || '', grade: leftSearchItem?.grade, condition: leftSearchItem?.condition, certificationCompany: leftSearchItem?.certificationCompany ?? '', itemType: leftSearchItem?.itemType, itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl },
     { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
@@ -4525,8 +4592,8 @@ export default function TestAI() {
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isLoading} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
+            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isLoading} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 

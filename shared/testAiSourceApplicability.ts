@@ -1,6 +1,6 @@
 import { isSandboxSiteBlockedSource } from './sandboxBlockedSources';
 
-export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'numista' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'lcg' | 'nate_sanders' | 'tcgplayer_reef';
+export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'mercari_sold_comps' | 'tcgplayer_sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'numista' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'lcg' | 'nate_sanders' | 'tcgplayer_reef';
 
 export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
 
@@ -15,6 +15,8 @@ export type SourceApplicability = {
 export const TEST_AI_SOURCE_APPLICABILITY: readonly SourceApplicability[] = [
   { sourceId: 'ebay_active', categories: '*', requires: 'title', purpose: 'Current asking-price research across all Tradebilia categories.' },
   { sourceId: 'sold_comps', categories: '*', requires: 'title', purpose: 'Completed eBay-sale research across all Tradebilia categories.' },
+  { sourceId: 'mercari_sold_comps', categories: '*', requires: 'title', purpose: 'Completed Mercari-sale research across all Tradebilia categories through SoldComps; provider-specific identity review remains required and results are context-only during testing.' },
+  { sourceId: 'tcgplayer_sold_comps', categories: ['pokemon'], requires: 'title', purpose: 'Completed Pokémon TCGplayer-sale research through SoldComps; only dated positive-price sales are returned and results remain context-only during testing.' },
   { sourceId: 'hipstamp', categories: ['stamps'], requires: 'title', purpose: 'HIPStamp current asking-price and supply context for Stamps items; not completed-sale evidence.' },
   { sourceId: 'hipstamp_sold', categories: ['stamps'], requires: 'title', purpose: 'HIPStamp store-scoped closed listings marked sold; historical context, not marketplace-wide sales evidence.' },
   { sourceId: 'pokemon_price_tracker', categories: ['pokemon'], requires: 'title', purpose: 'Pokémon Price Tracker catalog, guide-price, history, eBay, Cardmarket, and plan-gated population context. Source-attributed sandbox context only; it never changes Tradebilia valuation or verdicts.' },

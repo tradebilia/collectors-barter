@@ -48,6 +48,7 @@ import { lookupSpecialistMarketplace } from './specialistMarketplaceMarketData';
 import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
+import { lookupMercariSoldComps, lookupTcgplayerSoldComps } from './soldCompsAdditionalMarketData';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 const EBAY_OAUTH_TIMEOUT_MS = 8_000;
@@ -2256,6 +2257,35 @@ export const testAIRouter = router({
       } catch (err: any) {
         return { query, listings: [], metrics: null, error: err.message };
       }
+    }),
+
+  // SoldComps Mercari coverage is deliberately separate from eBay. It is
+  // available for every category but remains context-only until its provider-
+  // specific identity and signed-admission review is complete.
+  getMercariSoldCompsData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().optional(), condition: z.string().optional(),
+      certificationCompany: z.string().optional(), itemDetails: z.string().optional(), itemType: z.string().optional(),
+      statedTradeValue: z.number().finite().nonnegative().optional(), imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupMercariSoldComps(input);
+    }),
+
+  // SoldComps TCGplayer coverage is intentionally Pokémon-only and separate
+  // from the existing ReefAPI adapter. Search results are followed by a
+  // bounded number of recent-sales calls, with no active/guide prices treated
+  // as completed sales.
+  getTcgplayerSoldCompsData: protectedProcedure
+    .input(z.object({
+      title: z.string(), category: z.string(), grade: z.string().optional(), condition: z.string().optional(),
+      certificationCompany: z.string().optional(), itemDetails: z.string().optional(), itemType: z.string().optional(),
+      statedTradeValue: z.number().finite().nonnegative().optional(), imageUrl: z.string().url().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      return lookupTcgplayerSoldComps(input);
     }),
 
   // Review-only certificate-label OCR/vision — it never writes listing data.
