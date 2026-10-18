@@ -275,12 +275,31 @@ describe('bounded specialist marketplace adapters', () => {
       error: null,
     });
 
-    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
       expect(buildSpecialistMarketplaceRequest({ ...weissComic, category }), `Weiss should automatically search ${category}`).toEqual({
         url: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots',
         error: null,
       });
     }
+  });
+
+  it('blocks Weiss and Hake’s Video Games lookups as not applicable', async () => {
+    const weissResult = await lookupSpecialistMarketplace({ ...weissComic, category: 'video_games' });
+    expect(weissResult.status).toBe('not_applicable');
+    expect(weissResult.sales).toEqual([]);
+    expect(weissResult.context).toEqual([]);
+
+    const hakesResult = await lookupSpecialistMarketplace({
+      sourceId: 'hakes',
+      title: videoGame.title,
+      category: 'video_games',
+      grade: videoGame.grade,
+      certificationCompany: videoGame.certificationCompany,
+      itemDetails: videoGame.itemDetails,
+    });
+    expect(hakesResult.status).toBe('not_applicable');
+    expect(hakesResult.sales).toEqual([]);
+    expect(hakesResult.context).toEqual([]);
   });
 
   it('runs one capped public Weiss completed-lot search, admits matched hammer bids, and retains non-completed rows as context-only', async () => {

@@ -28,9 +28,10 @@ describe('Hake’s full public catalog adapter', () => {
   it('maps every applicable pop-culture Tradebilia category and remains context-only', () => {
     const source = getSandboxSpecialistSource('hakes');
     expect(source?.searchContract).toBe('automatic_title_search');
-    for (const category of ['comics', 'sports cards', 'vintage toys', 'video games', 'movies', 'music', 'autographs', 'disney pins', 'pokemon']) {
+    for (const category of ['comics', 'sports cards', 'vintage toys', 'movies', 'music', 'autographs', 'disney pins', 'pokemon']) {
       expect(isSandboxSpecialistSourceApplicable('hakes', category), category).toBe(true);
     }
+    expect(isSandboxSpecialistSourceApplicable('hakes', 'video games')).toBe(false);
     expect(isSandboxSpecialistSourceApplicable('hakes', 'coins')).toBe(false);
     expect(source?.evidenceMode).toBe('context_only_until_adapter');
   });

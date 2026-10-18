@@ -412,3 +412,8 @@ Live read-only verification of `Super Mario Bros. 3 NES 1990` received **50** Go
 Goldin is now recorded as a confirmed **Match** for **Video Games** in the Test AI source coverage tracker. This is a tracker/status correction based on the validated one-query Goldin result path; it does not change Goldin’s existing context-only treatment, identity gates, PSA/WATA video-game equivalence, 50-candidate cap, or valuation policy. Other Goldin category statuses are unchanged.
 
 Focused tracker/source validation passed **75/75** tests; TypeScript, production build, and `git diff --check` passed. The shared Goldin applicability description was also corrected from the stale 12-candidate wording to the implemented 50-candidate cap. No database writes, migrations, seeders, secrets, provider configuration, or valuation-policy changes were made.
+
+## Weiss and Hake’s removed from Video Games — October 17, 2026
+Weiss Auctions and Hake’s Auction Results are no longer applicable, selectable, or queryable for **Video Games**. They remain available only for their previously supported non-game categories. The shared Test AI applicability registry, visible specialist-source registry, and permission-pending Hake’s registry were updated together, and the specialist router now returns `not_applicable` before any provider fetch when either source is requested for a video game.
+
+Focused applicability and adapter validation passed **57/57** tests; TypeScript, production build, `git diff --check`, and stale-mapping checks passed. No database writes, migrations, seeds, provider configuration, valuation-policy changes, or adapter deletions were made.

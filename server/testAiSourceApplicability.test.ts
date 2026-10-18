@@ -41,7 +41,7 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
   });
 
-  it('shows active specialist sources in their researched categories while making Goldin and Weiss automatic context searches available everywhere', () => {
+  it('shows active specialist sources in their researched categories while keeping Goldin broad and excluding Weiss and Hake’s from Video Games', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', gradingCompany: 'NGC', hasTitle: true }).map((source) => source.sourceId);
     expect(coinIds).not.toContain('coin_archives');
     expect(coinIds).not.toContain('cng');
@@ -54,7 +54,9 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(stampIds).toContain('goldin');
 
     const gameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
-    expect(gameIds).toEqual(expect.arrayContaining(['goldin', 'hakes']));
+    expect(gameIds).toContain('goldin');
+    expect(gameIds).not.toContain('weiss');
+    expect(gameIds).not.toContain('hakes');
     expect(getEligibleTestAiSources({ category: 'vintage_toys', hasTitle: true }).map((source) => source.sourceId)).toContain('lcg');
     expect(gameIds).not.toContain('lcg');
     expect(gameIds).not.toContain('heritage');
@@ -62,7 +64,7 @@ describe('internal Test AI source-category applicability policy', () => {
     const autographIds = getEligibleTestAiSources({ category: 'autographs', hasTitle: true }).map((source) => source.sourceId);
     for (const removed of ['university_archives', 'swann', 'rr_auction', 'alexander_historical', 'heritage']) expect(autographIds).not.toContain(removed);
 
-    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
       const sourceIds = getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId);
       expect(sourceIds, `Goldin should be eligible for ${category}`).toContain('goldin');
       expect(sourceIds, `Weiss should be eligible for ${category}`).toContain('weiss');
