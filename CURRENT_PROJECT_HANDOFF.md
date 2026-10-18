@@ -433,3 +433,8 @@ Focused Goldin/source validation passed **64/64**; TypeScript, production build,
 
 ## Goldin Vintage Toys criteria correction — October 17, 2026
 The prior Goldin Vintage Toys rule included year. Per the owner’s correction, year is now excluded. Goldin’s one-query Vintage Toys criteria are only **brand, line, and toy name**, in that order; grading company, grade, condition, and free-form title remain excluded. The visible Test AI Structured fields preview uses the same three-field order. Downstream identity/admission checks and valuation policy are unchanged.
+
+## Goldin Vintage Toys coverage tracker — October 17, 2026
+**Vintage Toys → Goldin Auction Results** is confirmed as a **Match** in the Test AI source coverage tracker. This is a tracker-only confirmation of the user-verified source/category pairing. It does not alter Goldin retrieval, the approved three-field Goldin Vintage Toys search criteria (brand, line, toy name), candidate cap, identity gates, evidence disposition, valuation policy, database data, or provider configuration.
+
+Validation: focused source-tracker tests **25/25**, deterministic suite **327 files / 1,587 tests passed** with 3 credential-optional files / 6 tests skipped; TypeScript, production build, and diff hygiene passed. Production audit remains two pre-existing low DOMPurify advisories through jspdf. The fresh database baseline was read-only: 3 users, 3 user profiles, 55 listings, 81 listing photos, 1 inquiry reply, and 6 trade proposals.
