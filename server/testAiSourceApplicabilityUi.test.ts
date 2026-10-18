@@ -54,6 +54,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain('new Set(categories.flatMap((entry) => entry.pendingSourceIds)).size');
   });
 
+  it('never duplicates a confirmed category/source match in the pending tracker', () => {
+    expect(source).toContain("'vintage toys:goldin': 'match'");
+    expect(source).toContain(".filter((sourceId) => SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match')");
+    expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
+  });
+
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {
     expect(source).toContain("label: 'TCGdex Pokémon Catalog'");
     expect(source).toContain("status: 'live' as const");
