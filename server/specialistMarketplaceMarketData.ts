@@ -443,7 +443,7 @@ function extractCertificationCompany(value: string): string | null {
   return value.match(/\b(NGC|PCGS|CGC|PSA|BGS|SGC|WATA|VGA|AFA)\b/i)?.[1]?.toUpperCase() ?? null;
 }
 
-function extractCoinYears(value: string): string[] {
+function extractExplicitItemYears(value: string): string[] {
   return [...value.matchAll(/\b((?:17|18|19|20)\d{2})\b/g)].map((match) => match[1]);
 }
 
@@ -568,18 +568,18 @@ export function identityReview(input: SpecialistMarketplaceLookupInput, title: s
       if (equivalentVideoGameGraders && /grading company differs/i.test(reason)) return false;
       return /raw\/graded|grading company|grade differs|autograph|signature not declared|signature name|single item versus lot|negative listing/i.test(reason);
     }) ?? null;
-  const targetCoinYear = normalizedCategory === 'coins' ? text(details.year) : '';
-  const candidateCoinYears = normalizedCategory === 'coins' ? extractCoinYears(title) : [];
-  const coinYearConflict = targetCoinYear && candidateCoinYears.length > 0 && !candidateCoinYears.includes(targetCoinYear)
-    ? `Year conflicts with the selected coin (${candidateCoinYears.join(', ')} vs ${targetCoinYear}).`
+  const targetItemYear = text(details.year).match(/^(?:17|18|19|20)\d{2}$/)?.[0] ?? '';
+  const candidateItemYears = targetItemYear ? extractExplicitItemYears(title) : [];
+  const itemYearConflict = targetItemYear && candidateItemYears.length > 0 && !candidateItemYears.includes(targetItemYear)
+    ? `Year conflicts with the selected item (${candidateItemYears.join(', ')} vs ${targetItemYear}).`
     : null;
   return {
     matchedTokens,
-    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict && !variationConflict && !coinYearConflict,
+    matched: (structuredSportsMatch || tokenMatch) && gradeMatch && !conflict && !variationConflict && !itemYearConflict,
     reason: variationConflict
       ? variationConflict
-      : coinYearConflict
-      ? coinYearConflict
+      : itemYearConflict
+      ? itemYearConflict
       : normalizedCategory === 'sports cards' && !structuredSportsMatch
       ? 'Sports-card player, card number, and year/set identity fields did not match the Goldin title.'
       : !tokenMatch

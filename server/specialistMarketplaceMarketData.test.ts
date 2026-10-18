@@ -414,6 +414,46 @@ describe('bounded specialist marketplace adapters', () => {
     expect(result.context).toHaveLength(0);
   });
 
+  it('holds out explicit Weiss title-year conflicts while retaining candidates with no title year for review', async () => {
+    const response = new Response(JSON.stringify({
+      total_count: 2,
+      data: [{
+        id: 48137410,
+        auction_id: 1803423,
+        number: '88',
+        name: 'Star Wars (1982) VHS CGC 9.4 A+ Sealed',
+        is_completed: true,
+        leading_bid_amount_cents: 1_000_000,
+        auction: { id: 1803423, name: 'Media Auction', is_completed: true, completes_at: 1788998400, currency_code: 'USD' },
+      }, {
+        id: 48137411,
+        auction_id: 1803423,
+        number: '89',
+        name: 'Star Wars VHS CGC 9.4 A+ Sealed',
+        is_completed: true,
+        leading_bid_amount_cents: 900_000,
+        auction: { id: 1803423, name: 'Media Auction', is_completed: true, completes_at: 1788998400, currency_code: 'USD' },
+      }],
+    }), { status: 200, headers: { 'content-type': 'application/json' } });
+    Object.defineProperty(response, 'url', { value: 'https://api-frontend.nextlot.net/api/frontend/v1/sites/2218285/search/lots' });
+    vi.stubGlobal('fetch', vi.fn(async () => response));
+
+    const result = await lookupSpecialistMarketplace({
+      sourceId: 'weiss',
+      title: 'Star Wars Graded CGC 9.4',
+      category: 'movies',
+      grade: '9.4',
+      certificationCompany: 'CGC',
+      itemDetails: JSON.stringify({ year: '1990' }),
+    });
+
+    expect(result.sales).toHaveLength(1);
+    expect(result.sales[0]).toMatchObject({ title: 'Star Wars VHS CGC 9.4 A+ Sealed', identityMatched: true, valuationEligible: true });
+    expect(result.context).toHaveLength(1);
+    expect(result.context[0]).toMatchObject({ title: 'Star Wars (1982) VHS CGC 9.4 A+ Sealed', identityMatched: false, valuationEligible: false });
+    expect(result.context[0]?.exclusionReason).toMatch(/Year conflicts with the selected item \(1982 vs 1990\)/i);
+  });
+
   it('reports Weiss HTTP 403 without retrying or displaying a synthetic result', async () => {
     const fetchMock = vi.fn(async () => new Response('Forbidden', { status: 403, headers: { 'content-type': 'text/plain' } }));
     vi.stubGlobal('fetch', fetchMock);
