@@ -155,7 +155,8 @@ import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
 import { createTnnScriptFactLock, draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft, verifyTnnScriptFactLock } from "./tnnVideoScript";
-import { TNN_DEFAULT_DUO_OPENING_STYLE, TNN_DUO_OPENING_STYLE_VALUES, TNN_VIDEO_DURATION_SECONDS } from "../shared/tnnVideoPolicy";
+import { resolveTnnCompletedTradeSelection } from "./tnnCompletedTrade";
+import { TNN_DEFAULT_DUO_OPENING_STYLE, TNN_DUO_OPENING_STYLE_VALUES, TNN_VIDEO_DURATION_SECONDS, TNN_WEBSITE_TICKER } from "../shared/tnnVideoPolicy";
 
 const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png";
 const TNN_NEWSROOM_REFERENCE_URL = "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
@@ -189,55 +190,34 @@ const SOCIAL_GRAPHIC_IMAGE_CONTENT_TYPES = new Set([
   "image/gif",
   "image/svg+xml",
 ]);
-const TNN_MIN_COMPLETED_TRADE_VALUE = 1_000;
-const tnnScriptItemSchema = z.object({
-  listingId: z.number().int().positive().nullable().optional(),
-  title: z.string().trim().min(1).max(180),
-  imageUrl: z.string().url().max(2_000).nullable().optional(),
-  category: z.string().trim().max(80).nullable().optional(),
-  itemType: z.string().trim().max(80).nullable().optional(),
-  grade: z.union([z.string().trim().max(32), z.number()]).nullable().optional(),
-  certificationCompany: z.string().trim().max(80).nullable().optional(),
-  customGradingCompany: z.string().trim().max(80).nullable().optional(),
-  facts: z.array(z.object({ label: z.string().trim().min(1).max(48), value: z.string().trim().min(1).max(120) })).max(4).default([]),
+const tnnSelectedItemSelectionSchema = z.object({
+  listingId: z.number().int().positive(),
+  // Do not trim: the server deliberately verifies exact canonical title equality.
+  title: z.string().min(1).max(180),
 });
-const tnnScriptDraftSchema = z.object({
+const tnnPresentationSchema = z.object({
   tradeId: z.number().int().positive(),
   durationSeconds: z.literal(TNN_VIDEO_DURATION_SECONDS),
   anchorMode: z.enum(["max", "sidney", "duo"]),
   duoOpeningStyle: z.enum(TNN_DUO_OPENING_STYLE_VALUES).default(TNN_DEFAULT_DUO_OPENING_STYLE),
-  sellerName: z.string().trim().min(1).max(120),
-  buyerName: z.string().trim().min(1).max(120),
-  cashOnly: z.boolean(),
-  selectedItems: z.array(tnnScriptItemSchema).min(1).max(6),
-  additionalItemsCount: z.number().int().min(0).max(99).default(0),
-  tickerText: z.string().trim().min(1).max(120),
+  selectedItems: z.array(tnnSelectedItemSelectionSchema).min(1).max(6),
 });
 
-async function assertTnnCompletedTradeEligibility(tradeId: number) {
-  const db = await requireDb();
-  const [rows] = await db.execute(sql`SELECT
-      tp.id AS tradeId,
-      (SELECT COALESCE(SUM(ol.estimatedValue), 0)
-        FROM listings ol
-        JOIN tradeProposalItems tpi ON tpi.offeredListingId = ol.id
-        WHERE tpi.proposalId = tp.id)
-        + COALESCE(requested.estimatedValue, 0) AS itemValue
-    FROM tradeProposals tp
-    LEFT JOIN listings requested ON requested.id = tp.requestedListingId
-    WHERE tp.id = ${tradeId}
-      AND tp.status = 'completed'
-      AND tp.completedAt IS NOT NULL
-    LIMIT 1`);
-  const trade = (rows as unknown as Array<{ tradeId?: number; itemValue?: number | string }>)[0];
-  const itemValue = Number(trade?.itemValue ?? 0);
-  if (!trade || !Number.isFinite(itemValue) || itemValue < TNN_MIN_COMPLETED_TRADE_VALUE) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "TNN videos are available only for completed trades with at least $1,000 in estimated item value.",
-    });
-  }
-  return { tradeId: Number(trade.tradeId), itemValue };
+function canonicalTnnScriptInput(
+  presentation: z.infer<typeof tnnPresentationSchema>,
+  completedTrade: Awaited<ReturnType<typeof resolveTnnCompletedTradeSelection>>,
+): TnnScriptDraftInput {
+  return {
+    durationSeconds: presentation.durationSeconds,
+    anchorMode: presentation.anchorMode,
+    duoOpeningStyle: presentation.duoOpeningStyle,
+    sellerName: completedTrade.sellerName,
+    buyerName: completedTrade.buyerName,
+    cashOnly: completedTrade.cashOnly,
+    selectedItems: completedTrade.selectedItems,
+    additionalItemsCount: completedTrade.additionalItemsCount,
+    tickerText: TNN_WEBSITE_TICKER,
+  };
 }
 
 function cleanSocialScenePromptValue(value: unknown, maximumLength: number) {
@@ -3088,15 +3068,23 @@ export const appRouter = router({
         return { url, fileName: safeFileName, contentType: input.contentType };
       }),
     draftCompletedTradeTnnScript: protectedProcedure
-      .input(tnnScriptDraftSchema)
+      .input(tnnPresentationSchema)
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        await assertTnnCompletedTradeEligibility(input.tradeId);
+        let canonicalInput: TnnScriptDraftInput;
+        let canonicalCompletedTrade: Awaited<ReturnType<typeof resolveTnnCompletedTradeSelection>>;
         try {
-          const draft = await draftTnnScript(input satisfies TnnScriptDraftInput);
+          canonicalCompletedTrade = await resolveTnnCompletedTradeSelection(input.tradeId, input.selectedItems);
+          canonicalInput = canonicalTnnScriptInput(input, canonicalCompletedTrade);
+        } catch (error) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "The completed trade could not be verified." });
+        }
+        try {
+          const draft = await draftTnnScript(canonicalInput);
           return {
             ...draft,
-            factLock: createTnnScriptFactLock(input.tradeId, draft, input satisfies TnnScriptDraftInput),
+            factLock: createTnnScriptFactLock(input.tradeId, draft, canonicalInput),
+            canonical: canonicalCompletedTrade,
           };
         } catch (error) {
           const message = error instanceof Error ? error.message : "The TNN script could not be drafted.";
@@ -3104,34 +3092,41 @@ export const appRouter = router({
         }
       }),
     startCompletedTradeVideoGeneration: protectedProcedure
-      .input(tnnScriptDraftSchema.extend({
+      .input(tnnPresentationSchema.extend({
         turns: z.array(z.object({ speaker: z.enum(["max", "sidney"]), text: z.string().trim().min(1).max(700) })).min(2).max(5),
         factLock: z.string().trim().min(16).max(8_000),
         generationAttempt: z.union([z.literal(1), z.literal(2)]),
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        await assertTnnCompletedTradeEligibility(input.tradeId);
+        let canonicalInput: TnnScriptDraftInput;
+        let canonicalCompletedTrade: Awaited<ReturnType<typeof resolveTnnCompletedTradeSelection>>;
+        try {
+          canonicalCompletedTrade = await resolveTnnCompletedTradeSelection(input.tradeId, input.selectedItems);
+          canonicalInput = canonicalTnnScriptInput(input, canonicalCompletedTrade);
+        } catch (error) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: error instanceof Error ? error.message : "The completed trade could not be verified." });
+        }
         let validatedScript;
         try {
-          validatedScript = validateTnnScriptDraft(input.turns, input satisfies TnnScriptDraftInput);
+          validatedScript = validateTnnScriptDraft(input.turns, canonicalInput);
         } catch (error) {
           const message = error instanceof Error ? error.message : "The TNN script did not pass the required safety checks.";
           throw new TRPCError({ code: "BAD_REQUEST", message });
         }
-        if (!verifyTnnScriptFactLock(input.factLock, input.tradeId, validatedScript, input satisfies TnnScriptDraftInput)) {
+        if (!verifyTnnScriptFactLock(input.factLock, input.tradeId, validatedScript, canonicalInput)) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "The TNN transcript must be regenerated because its server fact lock is missing, expired, or does not match this completed trade." });
         }
-        if (input.selectedItems.some((item) => !item.listingId || !item.imageUrl)) {
+        if (canonicalCompletedTrade.selectedItems.some((item) => !item.imageUrl)) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Every selected completed-trade item needs its own trusted listing image before TNN video generation can begin." });
         }
         try {
           return await createTradeVideoTask({
-            ...input,
+            ...canonicalInput,
             turns: validatedScript.turns,
-            selectedItems: input.selectedItems.map((item) => ({
+            generationAttempt: input.generationAttempt,
+            selectedItems: canonicalCompletedTrade.selectedItems.map((item) => ({
               ...item,
-              listingId: item.listingId!,
               imageUrl: item.imageUrl!,
             })),
             logoUrl: TNN_VIDEO_LOGO_URL,

@@ -87,4 +87,21 @@ describe("admin social-content media upload contract", () => {
     expect(llmSource).toContain("maxCompletionTokens?: number");
     expect(llmSource).toContain("payload.max_completion_tokens = resolvedMaxCompletionTokens");
   });
+
+  it("rebuilds TNN draft and video inputs from the completed trade rather than browser-supplied names, facts, counts, or image URLs", () => {
+    const tnnSection = routerSource.slice(
+      routerSource.indexOf("const tnnSelectedItemSelectionSchema"),
+      routerSource.indexOf("function cleanSocialScenePromptValue"),
+    ) + routerSource.slice(
+      routerSource.indexOf("draftCompletedTradeTnnScript:"),
+      routerSource.indexOf("getCompletedTradeVideoGeneration:"),
+    );
+    expect(tnnSection).toContain("const tnnPresentationSchema");
+    expect(tnnSection).toContain("resolveTnnCompletedTradeSelection");
+    expect(tnnSection).toContain("canonicalTnnScriptInput");
+    expect(tnnSection).toContain("canonicalCompletedTrade.selectedItems");
+    expect(tnnSection).toContain("verifyTnnScriptFactLock");
+    expect(tnnSection).not.toContain("imageUrls:");
+    expect(tnnSection).not.toContain("tnnScriptDraftSchema");
+  });
 });
