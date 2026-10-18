@@ -12,6 +12,7 @@ export const TNN_SCRIPT_MODEL = "gpt-5-mini";
 export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
 export const TNN_SELECTED_ITEM_COVERAGE_ERROR = "The TNN script did not mention every approved selected item.";
 export const TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX = "The TNN script must contain ";
+export const TNN_ANCHOR_INTRODUCTION_ERROR = "The TNN script must include an on-air self-introduction from every selected anchor.";
 export const TNN_SCRIPT_WORD_BUDGET = {
   45: { minimum: 80, maximum: 100 },
 } as const;
@@ -116,7 +117,7 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
     "Write one original, credible, energetic TNN breaking-news anchor script for a completed Tradebilia transaction.",
     "This is a private admin draft for human approval before any video task is started. Return only strict JSON that matches the supplied schema.",
     `Target spoken length: ${budget.minimum}-${budget.maximum} words, approximately ${input.durationSeconds} seconds at a professional newsroom pace.`,
-    `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line and each says their own name when introducing themselves.` : `${anchors[0]} delivers the solo report and introduces themselves by name immediately after the opening line.`}`,
+    `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line. Each must introduce themselves using one of these exact forms: "I'm ${anchors[0]}" or "I am ${anchors[0]}"; and "I'm ${anchors[1]}" or "I am ${anchors[1]}".` : `${anchors[0]} delivers the solo report and introduces themselves using one of these exact forms: "I'm ${anchors[0]}" or "I am ${anchors[0]}" immediately after the opening line.`}`,
     `Begin with the words 'Breaking News from Tradebilia.' State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. End the final spoken sentence exactly with '${TNN_REQUIRED_CLOSING}' Do not narrate the ticker or any other website text.`,
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
     "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written at least once; you may paraphrase its facts but not its title. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
@@ -158,7 +159,7 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
   }
   const anchors = getTnnScriptAnchorNames(normalizedInput.anchorMode);
   if (anchors.some((anchor) => !new RegExp(`\\b(?:I'm|I am)\\s+${escapeRegExp(anchor)}\\b`, "i").test(script))) {
-    throw new Error("The TNN script must include an on-air self-introduction from every selected anchor.");
+    throw new Error(TNN_ANCHOR_INTRODUCTION_ERROR);
   }
   if (!new RegExp(`${escapeRegExp(TNN_REQUIRED_CLOSING)}$`, "i").test(script)) {
     throw new Error("The TNN script must end with 'Tradebilia.'");
@@ -194,6 +195,16 @@ function buildCorrectiveTnnWordCountPrompt(input: TnnScriptDraftInput) {
     "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
     `The replacement script must contain ${budget.minimum}-${budget.maximum} spoken words, inclusive. Count every spoken word, including the opening and closing; do not count punctuation as words.`,
     "Keep every original privacy, factual-boundary, anchor-introduction, selected-item-coverage, network-wording, and closing-tagline rule from the user request.",
+  ].join("\n");
+}
+
+function buildCorrectiveTnnAnchorIntroductionPrompt(input: TnnScriptDraftInput) {
+  const anchors = getTnnScriptAnchorNames(normalizeTnnScriptInput(input).anchorMode);
+  return [
+    "Corrective retry: the prior TNN draft did not include the required on-air self-introduction from every selected anchor.",
+    "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
+    `Include these exact self-introduction forms in spoken text: "I'm ${anchors[0]}" or "I am ${anchors[0]}"${anchors.length > 1 ? `; and "I'm ${anchors[1]}" or "I am ${anchors[1]}"` : ""}.`,
+    "Keep every original privacy, factual-boundary, duration, selected-item-coverage, network-wording, party-name, and closing-tagline rule from the user request.",
   ].join("\n");
 }
 
@@ -247,6 +258,8 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
       ? buildCorrectiveTnnItemCoveragePrompt(input)
       : error.message.startsWith(TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX)
         ? buildCorrectiveTnnWordCountPrompt(input)
+        : error.message === TNN_ANCHOR_INTRODUCTION_ERROR
+          ? buildCorrectiveTnnAnchorIntroductionPrompt(input)
         : null;
     if (!correctiveInstruction) throw error;
     return validateTnnScriptDraft(
