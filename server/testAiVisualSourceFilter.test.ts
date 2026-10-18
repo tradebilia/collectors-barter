@@ -10,6 +10,7 @@ import {
   disneyPinsVisualInstruction,
   embedPromotedEbayImageForReview,
   enforceDisneyPinsExactEvidence,
+  hasCompletedDisneyPinsAdjudication,
   hasExplicitlyUngradedTarget,
   hasTitleDeclaredGradeVisualRawConflict,
   isDisneyPinsMetadata,
@@ -138,7 +139,7 @@ describe("visual source filter", () => {
     ], [{ title: "Disney Mickey D23 Pin" }], metadata)[0]).toMatchObject({ verdict: "match" });
   });
 
-  it("requires an exact visual match before Disney Pins can enter analyzer evidence", () => {
+  it("requires completed independent high-resolution evidence before Disney Pins can enter analyzer evidence", () => {
     const listings = [{ title: "Disney Mickey D23 Pin" }, { title: "Disney Minnie D23 Pin" }, { title: "Disney Mickey D23 Pin" }];
     const reviews = [
       { candidateIndex: 0, verdict: "rough_match" as const, confidence: "high" as const, rationale: "Character and colors are plausible, but the pin artwork is partly obscured." },
@@ -148,8 +149,29 @@ describe("visual source filter", () => {
     const result = applyVisualSourceReviews(listings, reviews, listings.length, { requireExactMatch: true });
     expect(result.listings[0]).toMatchObject({ visualReviewStatus: "rough_match", evidenceDisposition: "warning_review" });
     expect(result.listings[1]).toMatchObject({ visualReviewStatus: "mismatch", evidenceDisposition: "warning_review" });
-    expect(result.listings[2]).toMatchObject({ visualReviewStatus: "match" });
-    expect(result.listings[2]).not.toHaveProperty("evidenceDisposition");
+    expect(result.listings[2]).toMatchObject({ visualReviewStatus: "match", evidenceDisposition: "warning_review" });
+
+    const confirmed = applyVisualSourceReviews(listings, [{
+      ...reviews[2]!,
+      candidateIndex: 0,
+      visualAudit: {
+        imageCount: 1,
+        initialVerdict: "match",
+        initialConfidence: "high",
+        retryStatus: "performed",
+        finalPass: "high_resolution_retry",
+        finalEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: false, characterMatches: true, artworkMatches: true, silhouetteMatches: true, backingCardMatches: true, setDesignMatches: true },
+      },
+    }], 1, { requireExactMatch: true });
+    expect(hasCompletedDisneyPinsAdjudication({ ...reviews[2]!, visualAudit: undefined })).toBe(false);
+    expect(hasCompletedDisneyPinsAdjudication({ ...reviews[2]!, visualAudit: confirmed.listings[0]?.visualAudit })).toBe(true);
+    expect(confirmed.listings[0]).not.toHaveProperty("evidenceDisposition");
+  });
+
+  it("does not let generic raw/ungraded reconciliation promote a Disney Pin", () => {
+    const metadata = "title=Disney Eeyore Pin; category=disney_pins; isGraded=No";
+    const review = { candidateIndex: 0, verdict: "unreadable" as const, confidence: "medium" as const, rationale: "Both pins are raw and the artwork matches exactly." };
+    expect(normalizeExplicitUngradedVisualReviews([review], metadata)[0]).toMatchObject({ verdict: "unreadable" });
   });
 
   it("fails closed when Disney Pin artwork or backing evidence is incomplete", () => {

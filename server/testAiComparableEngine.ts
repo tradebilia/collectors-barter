@@ -1660,9 +1660,16 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
   const title = String(sale.title ?? '').trim();
   const price = Number(sale.price);
   const details = parseDetails(target);
-  const targetIdentityState = extractIdentityState(target);
-  const saleIdentityState = extractIdentityState({ title, grade: null, certificationCompany: null, itemDetails: null });
-  const universalIdentityConflicts = identityStateConflicts(targetIdentityState, saleIdentityState, String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_') === 'comics');
+  const categoryKey = String(target.category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  const isDisneyPins = categoryKey === 'disney_pins';
+  // Disney Pins do not use a graded/raw state in this marketplace workflow.
+  // Ignore both explicit stale fields and any grade-related itemDetails here;
+  // their identity is adjudicated by the category-specific visual gate instead.
+  const targetIdentityState = isDisneyPins ? null : extractIdentityState(target);
+  const saleIdentityState = isDisneyPins ? null : extractIdentityState({ title, grade: null, certificationCompany: null, itemDetails: null });
+  const universalIdentityConflicts = targetIdentityState && saleIdentityState
+    ? identityStateConflicts(targetIdentityState, saleIdentityState, categoryKey === 'comics')
+    : [];
   const identity = buildTestAiP0Identity(target);
   const targetTokens = new Set(textTokens(target.title));
   const saleTokens = new Set(textTokens(title));
@@ -1723,18 +1730,18 @@ export function scoreComparable(target: ComparableTarget, sale: MarketSale): Com
     reasons.push('visual comparison flagged a mismatch; manual review required');
   }
 
-  const targetCompany = normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
-  const saleCompanyMatch = title.match(/\b(psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\b/i)?.[1];
+  const targetCompany = isDisneyPins ? '' : normalizeCompany(target.certificationCompany || firstString(details, ['certificationCompany', 'gradingCompany', 'authenticationCompany']));
+  const saleCompanyMatch = isDisneyPins ? undefined : title.match(/\b(psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\b/i)?.[1];
   const saleCompany = normalizeCompany(saleCompanyMatch);
   const isPcgsCoin = target.category === 'coins' && targetCompany === 'pcgs';
   const targetPcgsGrade = isPcgsCoin ? normalizePcgsCoinGrade(target.grade) : null;
   const salePcgsGrade = isPcgsCoin && saleCompany === 'pcgs' ? extractPcgsCoinGrade(title) : null;
-  const targetGrade = numericGrade(target.grade);
-  const saleGrade = numericGrade(title.match(/(?:psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\s*(?:graded?\s*)?(?:[A-Za-z]{1,8}\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
+  const targetGrade = isDisneyPins ? null : numericGrade(target.grade);
+  const saleGrade = isDisneyPins ? null : numericGrade(title.match(/(?:psa|cgc|bgs|sgc|pcgs|ngc|afa|wata|vga)\s*(?:graded?\s*)?(?:[A-Za-z]{1,8}\s*)?(\d+(?:\.\d+)?)/i)?.[1]);
   let materialGradeConflict = false;
   let materialCompanyConflict = false;
-  const hasKnownGradeState = targetGrade !== null || Boolean(target.grade) || Boolean(targetCompany);
-  const hasObservedGradeState = saleGrade !== null || Boolean(saleCompany);
+  const hasKnownGradeState = !isDisneyPins && (targetGrade !== null || Boolean(target.grade) || Boolean(targetCompany));
+  const hasObservedGradeState = !isDisneyPins && (saleGrade !== null || Boolean(saleCompany));
   if (isPcgsCoin && targetPcgsGrade) {
     if (salePcgsGrade === targetPcgsGrade) {
       score += 12;

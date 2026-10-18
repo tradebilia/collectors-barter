@@ -200,6 +200,17 @@ export function enforceDisneyPinsExactEvidence(review: VisualSourceReview, targe
   };
 }
 
+/** A Disney Pin may reach analyzer evidence only after the independent high-resolution pass—not a primary-pass guess—confirms every gate. */
+export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
+  return Boolean(
+    review?.verdict === "match"
+    && review.confidence === "high"
+    && review.visualAudit?.retryStatus === "performed"
+    && review.visualAudit.finalPass === "high_resolution_retry"
+    && disneyPinsEvidenceIsExact(review.visualAudit.finalEvidence),
+  );
+}
+
 export function hasTitleDeclaredGradeVisualRawConflict(args: Omit<GradingConflictArgs, "imageCount">): boolean {
   if (!args.review) return false;
   if (isDisneyPinsMetadata(args.targetMetadata)) return false;
@@ -538,6 +549,9 @@ export function normalizeExplicitUngradedVisualReviews(
   reviews: VisualSourceReview[],
   targetMetadata: string,
 ): VisualSourceReview[] {
+  // Disney Pins are intentionally visual-only. Their exact-match policy must
+  // never be overwritten by the generic raw/ungraded reconciliation below.
+  if (isDisneyPinsMetadata(targetMetadata)) return reviews;
   if (!hasExplicitlyUngradedTarget(targetMetadata)) return reviews;
   return reviews.map((review) => {
     if (review.verdict !== "unreadable") return review;
@@ -574,7 +588,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && review.verdict !== "match"))
+        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review)))
           ? { evidenceDisposition: "warning_review" }
           : {}),
       } as T;

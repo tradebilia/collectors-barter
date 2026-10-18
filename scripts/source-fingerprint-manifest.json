@@ -726,6 +726,8 @@
   "server/theCardApiMarketData.test.ts",
   "server/thirdDeepAuditP0Regression.test.ts",
   "server/thirdPassReliabilityRepairs.test.ts",
+  "server/tnnCompletedTrade.test.ts",
+  "server/tnnCompletedTrade.ts",
   "server/tnnVideoScript.test.ts",
   "server/tnnVideoScript.ts",
   "server/topBarAnimatedLogoSizing.test.ts",

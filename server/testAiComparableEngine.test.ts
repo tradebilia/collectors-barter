@@ -411,6 +411,23 @@ describe('Trade Analyzer 2.0 comparable engine', () => {
     expect(limitedEdition.classification).not.toBe('rejected');
     expect(limitedEdition.reasons).not.toContain('explicit sale variant or release detail differs from the target');
   });
+
+  it('ignores stale grading and raw-versus-graded signals for Disney Pins', () => {
+    const pinTarget = {
+      title: 'Disney Pin Mickey Mouse D23 2020',
+      category: 'disney_pins',
+      grade: '9.8',
+      certificationCompany: 'PSA',
+      itemDetails: JSON.stringify({ character: 'Mickey Mouse', event: 'D23', year: '2020', grade: '9.8', gradingCompany: 'PSA', isGraded: 'Yes' }),
+    };
+    const result = scoreComparable(pinTarget, sale('Disney Pin Mickey Mouse D23 2020 PSA 10 Raw', 85, '2026-09-15'));
+
+    expect(result.reasons).not.toContain('grade matches');
+    expect(result.reasons).not.toContain('grade differs');
+    expect(result.reasons).not.toContain('grading or authentication company matches');
+    expect(result.reasons).not.toContain('grading or authentication company differs; retained as certification-adjacent evidence');
+    expect(result.reasons.some((reason) => reason.includes('raw/graded state differs'))).toBe(false);
+  });
 });
 
 export {};
