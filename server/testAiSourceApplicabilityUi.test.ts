@@ -145,6 +145,16 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('const visibleMessages = data?.messages?.map');
   });
 
+  it('uses year, brand, line, and toy name for Goldin Vintage Toys criteria', () => {
+    expect(source).toContain('function buildGoldinVintageToyDisplayQuery');
+    expect(source).toContain("firstText('year', 'manufactureYear')");
+    expect(source).toContain("firstText('brand', 'brandName', 'manufacturer')");
+    expect(source).toContain("firstText('line', 'franchise')");
+    expect(source).toContain("firstText('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName')");
+    expect(source).toContain("const goldinVintageToy = sourceId === 'goldin' && normalizedCategory === 'vintage toys'");
+    expect(source).toContain('sourceId={source.id}');
+  });
+
   it('renders a deterministic evidence review beside the existing provider panels without changing manual source selection', () => {
     expect(source).toContain("from '@shared/testAiEvidenceNormalization'");
     expect(source).toContain('function EvidenceNormalizationSummary');

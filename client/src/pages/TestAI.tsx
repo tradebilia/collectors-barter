@@ -767,14 +767,28 @@ function buildGoldinVideoGameDisplayQuery(item: SelectedItem): string {
   ].filter(Boolean))].join(' ').slice(0, 240).trim();
 }
 
-function MarketplaceQueryBanner({ item, query, isLoading, omitGradingCriteria = false }: { item: SelectedItem; query?: string | null; isLoading?: boolean; omitGradingCriteria?: boolean }) {
+function buildGoldinVintageToyDisplayQuery(item: SelectedItem): string {
+  const details = parseTestAiDetails(item.itemDetails);
+  const firstText = (...keys: string[]) => keys.map((key) => String(details[key] ?? '').trim()).find(Boolean) ?? '';
+  return [...new Set([
+    firstText('year', 'manufactureYear'),
+    firstText('brand', 'brandName', 'manufacturer'),
+    firstText('line', 'franchise'),
+    firstText('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName'),
+  ].filter(Boolean))].join(' ').slice(0, 240).trim();
+}
+
+function MarketplaceQueryBanner({ item, query, isLoading, omitGradingCriteria = false, sourceId }: { item: SelectedItem; query?: string | null; isLoading?: boolean; omitGradingCriteria?: boolean; sourceId?: string }) {
   const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
   const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany, item.category);
   const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
   const isUnopenedProduct = item.category === 'sports_cards' && (normalizedItemType === 'unopened_product' || Boolean((parseTestAiDetails(item.itemDetails) as Record<string, unknown>).productFormat));
   const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   const suppressGradingCriteria = omitGradingCriteria && /^video games?$/.test(normalizedCategory);
-  const structuredQuery = buildStructuredItemQuery(item.category, item.itemDetails, isUnopenedProduct || suppressGradingCriteria ? [] : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition], item.itemType ?? '');
+  const goldinVintageToy = sourceId === 'goldin' && normalizedCategory === 'vintage toys';
+  const structuredQuery = goldinVintageToy
+    ? buildGoldinVintageToyDisplayQuery(item)
+    : buildStructuredItemQuery(item.category, item.itemDetails, isUnopenedProduct || suppressGradingCriteria ? [] : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition], item.itemType ?? '');
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>
@@ -3153,7 +3167,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
       <div className="flex items-center justify-between gap-2"><p className={`flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}{source.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
-      <MarketplaceQueryBanner item={item} query={visibleQuery} isLoading={lookup.isFetching} omitGradingCriteria={omitGradingCriteria} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
+      <MarketplaceQueryBanner item={item} query={visibleQuery} isLoading={lookup.isFetching} omitGradingCriteria={omitGradingCriteria} sourceId={source.id} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
       <p className="text-[9px] text-sky-200/80">Transport: {source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: context-only</p>
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
         <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>

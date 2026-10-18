@@ -99,6 +99,27 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('Super Mario Bros. 3 NES 1990');
   });
 
+  it('uses only year, brand, line, and toy name for Goldin Vintage Toys queries', () => {
+    const input = {
+      sourceId: 'goldin' as const,
+      title: '1985 Transformers G1 Optimus Prime Hasbro MISB',
+      category: 'vintage_toys',
+      grade: '9.0',
+      certificationCompany: 'AFA',
+      itemDetails: JSON.stringify({
+        year: '1985',
+        brand: 'Hasbro',
+        line: 'Transformers G1',
+        toyName: 'Optimus Prime',
+        condition: 'Mint',
+        gradingCompany: 'AFA',
+      }),
+    };
+    expect(buildGoldinSearchQuery(input)).toBe('1985 Hasbro Transformers G1 Optimus Prime');
+    expect(buildGoldinSearchQueries(input)).toEqual(['1985 Hasbro Transformers G1 Optimus Prime']);
+    expect(buildGoldinSearchQuery(input)).not.toMatch(/AFA|9\.0|MISB|Mint/i);
+  });
+
   it('accepts PSA and WATA as equivalent only for video-game identity', () => {
     const psaTarget = { ...videoGame, title: '1990 Super Mario Bros. 3 Sealed Video Game PSA 9', grade: '9', certificationCompany: 'PSA' as const };
     const wataCandidate = identityReview(
