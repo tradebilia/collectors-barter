@@ -13,6 +13,7 @@ export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
 export const TNN_SELECTED_ITEM_COVERAGE_ERROR = "The TNN script did not mention every approved selected item.";
 export const TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX = "The TNN script must contain ";
 export const TNN_ANCHOR_INTRODUCTION_ERROR = "The TNN script must include an on-air self-introduction from every selected anchor.";
+export const TNN_ANCHOR_REPETITION_ERROR = "The TNN script must not repeat an anchor's full-name introduction or callout.";
 export const TNN_SCRIPT_WORD_BUDGET = {
   45: { minimum: 80, maximum: 100 },
 } as const;
@@ -58,6 +59,15 @@ const cleanText = (value: unknown, maximum = 180) => String(value ?? "").trim().
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function countTnnAnchorSelfIntroductions(script: string, anchor: string) {
+  return [...script.matchAll(new RegExp(`\\b(?:I'm|I['’]m|I am)\\s+${escapeRegExp(anchor)}\\b`, "gi"))].length;
+}
+
+function hasRepeatedTnnAnchorCallout(script: string, anchor: string) {
+  const name = escapeRegExp(anchor);
+  return new RegExp(`(?:\\b(?:again|once more|back to|returning to)\\b[^.!?]{0,48}\\b${name}\\b|\\b${name}\\b[^.!?]{0,48}\\b(?:again|once more)\\b)`, "i").test(script);
 }
 
 export function countTnnScriptWords(script: string | null | undefined) {
@@ -117,7 +127,7 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
     "Write one original, credible, energetic TNN breaking-news anchor script for a completed Tradebilia transaction.",
     "This is a private admin draft for human approval before any video task is started. Return only strict JSON that matches the supplied schema.",
     `Target spoken length: ${budget.minimum}-${budget.maximum} words, approximately ${input.durationSeconds} seconds at a professional newsroom pace.`,
-    `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line. Each must introduce themselves using one of these exact forms: "I'm ${anchors[0]}" or "I’m ${anchors[0]}" or "I am ${anchors[0]}"; and "I'm ${anchors[1]}" or "I’m ${anchors[1]}" or "I am ${anchors[1]}".` : `${anchors[0]} delivers the solo report and introduces themselves using one of these exact forms: "I'm ${anchors[0]}" or "I’m ${anchors[0]}" or "I am ${anchors[0]}" immediately after the opening line.`}`,
+    `On-air presentation: ${input.anchorMode === "duo" ? `${anchors[0]} and ${anchors[1]} share the report, each with at least one natural spoken line. Each must introduce themselves exactly once using one of these exact forms: "I'm ${anchors[0]}" or "I’m ${anchors[0]}" or "I am ${anchors[0]}"; and "I'm ${anchors[1]}" or "I’m ${anchors[1]}" or "I am ${anchors[1]}". After those introductions, continue the handoff naturally using first names, roles, or no name; never repeat either full name, say "again," or re-introduce an anchor.` : `${anchors[0]} delivers the solo report and introduces themselves exactly once using one of these exact forms: "I'm ${anchors[0]}" or "I’m ${anchors[0]}" or "I am ${anchors[0]}" immediately after the opening line. After that introduction, do not repeat the full name or re-introduce the anchor.`} If the 45-second word budget has room, add at most one or two brief, natural newsroom ad-lib comments grounded in the approved transaction and item facts; never add a new fact, value, opinion presented as fact, or private detail.`,
     `Begin with the words 'Breaking News from Tradebilia.' State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. End the final spoken sentence exactly with '${TNN_REQUIRED_CLOSING}' Do not narrate the ticker or any other website text.`,
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
     "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written at least once; you may paraphrase its facts but not its title. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
@@ -160,6 +170,9 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
   const anchors = getTnnScriptAnchorNames(normalizedInput.anchorMode);
   if (anchors.some((anchor) => !new RegExp(`\\b(?:I['’]m|I am)\\s+${escapeRegExp(anchor)}\\b`, "i").test(script))) {
     throw new Error(TNN_ANCHOR_INTRODUCTION_ERROR);
+  }
+  if (anchors.some((anchor) => countTnnAnchorSelfIntroductions(script, anchor) !== 1 || hasRepeatedTnnAnchorCallout(script, anchor))) {
+    throw new Error(TNN_ANCHOR_REPETITION_ERROR);
   }
   if (!new RegExp(`${escapeRegExp(TNN_REQUIRED_CLOSING)}$`, "i").test(script)) {
     throw new Error("The TNN script must end with 'Tradebilia.'");
@@ -205,7 +218,17 @@ function buildCorrectiveTnnAnchorIntroductionPrompt(input: TnnScriptDraftInput) 
     "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
     `Include these exact self-introduction forms in spoken text: "I'm ${anchors[0]}" or "I’m ${anchors[0]}" or "I am ${anchors[0]}"${anchors.length > 1 ? `; and "I'm ${anchors[1]}" or "I’m ${anchors[1]}" or "I am ${anchors[1]}"` : ""}.`,
     "Keep every original privacy, factual-boundary, duration, selected-item-coverage, network-wording, party-name, and closing-tagline rule from the user request.",
-  ].join("\n");
+  ].join("\\n");
+}
+
+function buildCorrectiveTnnAnchorRepetitionPrompt(input: TnnScriptDraftInput) {
+  const anchors = getTnnScriptAnchorNames(normalizeTnnScriptInput(input).anchorMode);
+  return [
+    "Corrective retry: the prior TNN draft repeated an anchor's full-name introduction or callout.",
+    "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
+    `Introduce each selected anchor exactly once: ${anchors.map((anchor) => `"I'm ${anchor}" or "I’m ${anchor}" or "I am ${anchor}"`).join("; ")}. After each introduction, use first names, roles, or no name; do not repeat a full name, say "again," or re-introduce an anchor.`,
+    "Keep at most one or two brief, fact-locked broadcast ad-lib comments only if they fit the 45-second word budget, and keep every original privacy, factual-boundary, duration, selected-item-coverage, network-wording, party-name, and closing-tagline rule.",
+  ].join("\\n");
 }
 
 async function requestTnnScript(input: TnnScriptDraftInput, correctiveInstruction?: string) {
@@ -260,7 +283,9 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
         ? buildCorrectiveTnnWordCountPrompt(input)
         : error.message === TNN_ANCHOR_INTRODUCTION_ERROR
           ? buildCorrectiveTnnAnchorIntroductionPrompt(input)
-        : null;
+          : error.message === TNN_ANCHOR_REPETITION_ERROR
+            ? buildCorrectiveTnnAnchorRepetitionPrompt(input)
+            : null;
     if (!correctiveInstruction) throw error;
     return validateTnnScriptDraft(
       await requestTnnScript(input, correctiveInstruction),
