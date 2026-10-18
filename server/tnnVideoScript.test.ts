@@ -8,6 +8,7 @@ import {
   draftTnnScript,
   getStructuredResponseText,
   TNN_ANCHOR_INTRODUCTION_ERROR,
+  TNN_ANCHOR_REPETITION_ERROR,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
   validateTnnScriptDraft,
@@ -95,6 +96,8 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
     expect(prompt).toContain('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"');
     expect(prompt).toContain('"I\'m Sidney Tradewell" or "I’m Sidney Tradewell" or "I am Sidney Tradewell"');
+    expect(prompt).toContain("introduce themselves exactly once");
+    expect(prompt).toContain("at most one or two brief, natural newsroom ad-lib comments");
     expect(prompt).toContain("names must never be proposed as on-screen text");
     expect(prompt).toContain("State every approved selected item title exactly as written");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
@@ -169,6 +172,34 @@ describe("TNN fact-locked script contract", () => {
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
       content: expect.stringContaining('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"'),
+    });
+  });
+
+  it("rejects repeated anchor callouts and runs one corrective retry", async () => {
+    const repeatedCalloutScript = validScript.replace(
+      "Max Tradebloski again: Also included",
+      "Max Tradebloski again: Also included",
+    ).replace(
+      "I'm Sidney Tradewell. Additional",
+      "I'm Sidney Tradewell. Sidney Tradewell again: additional",
+    );
+    expect(() => validateTnnScriptDraft(repeatedCalloutScript, input)).toThrow(TNN_ANCHOR_REPETITION_ERROR);
+    expect(() => validateTnnScriptDraft(
+      validScript.replace("I'm Sidney Tradewell. Additional", "I'm Sidney Tradewell. Max Tradebloski again: additional"),
+      input,
+    )).toThrow(TNN_ANCHOR_REPETITION_ERROR);
+    mockedInvokeLLM
+      .mockResolvedValueOnce(responseFor(repeatedCalloutScript) as any)
+      .mockResolvedValueOnce(responseFor(validScript) as any);
+
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("repeated an anchor's full-name introduction or callout"),
+    });
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("at most one or two brief, fact-locked broadcast ad-lib comments"),
     });
   });
 });
