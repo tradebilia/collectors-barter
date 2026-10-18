@@ -247,7 +247,7 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
   {
     id: 'goldin',
     label: 'Goldin Auction Results',
-    categories: ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'],
+    categories: ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'],
     sourceUrl: 'https://goldin.co/buy/?show_only=Sold%20Items',
     purpose: 'High-end public sold-lot context across all Tradebilia collectible categories.',
     priceBasis: 'including_buyers_premium',

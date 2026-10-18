@@ -100,6 +100,14 @@ describe('permission-pending market-source adapters', () => {
     expect(status.message).toMatch(/not applicable/i);
   });
 
+  it('does not retain Goldin as a pending Stamps source', () => {
+    const goldin = PERMISSION_PENDING_MARKET_SOURCES.find((source) => source.id === 'goldin');
+    expect(goldin?.categories).not.toContain('stamps');
+    const status = getPermissionPendingLookupStatus('goldin', { title: 'United States Stamp Scott 572', category: 'stamps' });
+    expect(status.applicable).toBe(false);
+    expect(status.message).toMatch(/not applicable/i);
+  });
+
   it('keeps every visible pending source mapped to each of its researched categories', () => {
     // NGC Auction Central is retained only as an internal permission audit record.
     // The owner removed it from the visible pending sandbox sources because its

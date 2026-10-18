@@ -451,18 +451,18 @@ function formatCoverageCategory(category: string): string {
 }
 
 function SourceCoverageTracker() {
-  const categories = useMemo(() => SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {
+  const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {
     const applicableSources = TEST_AI_SOURCE_APPLICABILITY.filter((source) => {
       const applies = source.categories === '*' || source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category);
       return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
     const activeSources = applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
-      const pendingSourceIds = Array.from(new Set([
+    const pendingSourceIds = Array.from(new Set([
       ...applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match').map((source) => source.sourceId),
       ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
-    ]));
+    ])).filter((sourceId) => SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match');
     return { category, activeSources, pendingSourceIds };
-  }), []);
+  });
 
   const sourceLabel = (sourceId: string, fallback: string) => DATA_SOURCES[sourceId]?.label ?? PERMISSION_PENDING_SOURCE_REGISTRY[sourceId]?.label ?? SANDBOX_SPECIALIST_SOURCES.find((source) => source.id === sourceId)?.label ?? fallback;
 
