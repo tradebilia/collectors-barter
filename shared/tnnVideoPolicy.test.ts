@@ -17,10 +17,13 @@ describe("TNN video render policy", () => {
     expect(TNN_REQUIRED_CLOSING).toBe("Tradebilia.");
   });
 
-  it("removes only redundant trailing zeros from numeric PSA grades", () => {
+  it("removes redundant trailing zeros from purely numeric grades across grading companies", () => {
     expect(formatTnnGrade("PSA", null, "10.00")).toBe("PSA 10");
     expect(formatTnnGrade("PSA", null, "9.0")).toBe("PSA 9");
     expect(formatTnnGrade("PSA", null, "7.5")).toBe("PSA 7.5");
+    expect(formatTnnGrade("AFA", null, "80.00")).toBe("AFA 80");
+    expect(formatTnnGrade("WATA", null, "9.6")).toBe("WATA 9.6");
+    expect(formatTnnGrade(null, "Custom Grader", "8.50")).toBe("Custom Grader 8.5");
     expect(formatTnnGrade("WATA", null, "9.0 A")).toBe("WATA 9.0 A");
   });
 });
