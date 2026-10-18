@@ -266,7 +266,8 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
   const includeSigners = options.includeSigners !== false;
   const category = normalize(input.category).replace(/_/g, ' ');
   const isVideoGameCategory = /^video games?$/.test(category);
-  const includeGradingCriteria = !isVideoGameCategory;
+  const isVintageToyCategory = category === 'vintage toys';
+  const includeGradingCriteria = !isVideoGameCategory && !isVintageToyCategory;
   const parts: string[] = [];
   const add = (...values: string[]) => values.forEach((value) => {
     const cleaned = value.trim();
@@ -292,6 +293,11 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['platform', 'console', 'consoleName']));
     add(firstDetail(details, ['releaseYear', 'year']));
     add(firstDetail(details, ['edition', 'version']));
+  } else if (category === 'vintage toys') {
+    add(firstDetail(details, ['year', 'manufactureYear']));
+    add(firstDetail(details, ['brand', 'brandName', 'manufacturer']));
+    add(firstDetail(details, ['line', 'franchise']));
+    add(firstDetail(details, ['toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName']));
   } else {
     add(input.title);
     add(firstDetail(details, ['year', 'releaseYear', 'issueYear', 'catalogNumber', 'cardNumber', 'edition', 'variant', 'country', 'denomination', 'platform', 'format']));
@@ -307,6 +313,8 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
 }
 
 export function buildGoldinSearchQueries(input: SpecialistMarketplaceLookupInput): string[] {
+  const category = normalize(input.category).replace(/_/g, ' ');
+  if (category === 'vintage toys') return [buildGoldinSearchQuery(input)];
   const equivalentGrader = equivalentVideoGameGrader(input.category, input.certificationCompany);
   const equivalentInput = equivalentGrader
     ? { ...input, certificationCompany: equivalentGrader }
