@@ -9,6 +9,7 @@ import {
   getStructuredResponseText,
   TNN_ANCHOR_INTRODUCTION_ERROR,
   TNN_ANCHOR_REPETITION_ERROR,
+  TNN_DUO_OPENING_ERROR,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
   TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR,
@@ -36,7 +37,7 @@ const input = {
   tickerText: "www.Tradebilia.com",
 };
 
-const validScript = "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell. Tonight, Morgan Seller and Taylor Buyer have completed a collector trade featuring 1989 Nintendo Game and PSA 9 Trading Card. The exchange highlights a classic NES collectible alongside a 1986 graded card, with each selected piece presented as part of this completed collector transaction. I'm Sidney Tradewell. Additional collector items changed hands as part of the completed transaction. This is another moment for collectors to celebrate thoughtful exchanges and the shared passion behind every item. Tradebilia.";
+const validScript = "Breaking News from Tradebilia. I'm Max Tradebloski, and I'm Sidney Tradewell. Today the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer featuring 1989 Nintendo Game and PSA 9 Trading Card. The exchange highlights a classic NES collectible alongside a 1986 graded card, with each selected piece presented as part of this completed collector transaction. Additional collector items changed hands as part of the completed transaction. This is another moment for collectors to celebrate thoughtful exchanges and the shared passion behind every item. Tradebilia.";
 const mockedInvokeLLM = vi.mocked(invokeLLM);
 
 const responseFor = (script: string) => ({
@@ -96,10 +97,9 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain("the TNN Network");
     expect(prompt).toContain("trade-bil-lee-uh");
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
-    expect(prompt).toContain('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"');
-    expect(prompt).toContain('"I\'m Sidney Tradewell" or "I’m Sidney Tradewell" or "I am Sidney Tradewell"');
-    expect(prompt).toContain("introduce themselves exactly once");
+    expect(prompt).toContain("Use one combined introduction");
     expect(prompt).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
+    expect(prompt).toContain("Do not use two disconnected introductions");
     expect(prompt).toContain("at most one or two brief, natural newsroom ad-lib comments");
     expect(prompt).toContain("names must never be proposed as on-screen text");
     expect(prompt).toContain("State every approved selected item title exactly as written");
@@ -116,10 +116,11 @@ describe("TNN fact-locked script contract", () => {
     expect(validated.estimatedSpeechSeconds).toBeGreaterThan(0);
     expect(validateTnnScriptDraft(validScript.replace("I'm Max Tradebloski", "I’m Max Tradebloski").replace("I'm Sidney Tradewell", "I’m Sidney Tradewell"), input)).toMatchObject({ script: expect.stringContaining("I’m Max Tradebloski") });
     expect(() => validateTnnScriptDraft(validScript.replace("collector trade", "$1,200 collector trade"), input)).toThrow(/disallowed/i);
-    expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", ""), input)).toThrow(/acknowledge/i);
+    expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", "The selected items accurately represent this completed collector trade without added details. "), input)).toThrow(/acknowledge/i);
     expect(() => validateTnnScriptDraft(validScript.replace("PSA 9 Trading Card", "graded card"), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
     expect(() => validateTnnScriptDraft(validScript.replace("the TNN Network", "TNN"), input)).toThrow(/TNN Network/i);
     expect(() => validateTnnScriptDraft(validScript.replace("I'm Sidney Tradewell. ", ""), input)).toThrow(/every selected anchor/i);
+    expect(() => validateTnnScriptDraft(validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell"), input)).toThrow(TNN_DUO_OPENING_ERROR);
   });
 
   it("does not infer additional exchanged items from unselected entries in a one-for-one trade", () => {
@@ -135,9 +136,10 @@ describe("TNN fact-locked script contract", () => {
     });
     expect(plan.additionalItemsCount).toBe(0);
 
-    const oneForOneScript = validScript
-      .replace("1989 Nintendo Game and PSA 9 Trading Card", "1989 Nintendo Game and PSA 9 Trading Card")
-      .replace("Additional collector items changed hands as part of the completed transaction. ", "");
+    const oneForOneScript = validScript.replace(
+      "Additional collector items changed hands as part of the completed transaction. ",
+      "The selected items accurately represent this completed collector trade without added details. ",
+    );
     expect(() => validateTnnScriptDraft(oneForOneScript, { ...input, additionalItemsCount: 0 })).not.toThrow();
     expect(() => validateTnnScriptDraft(validScript, { ...input, additionalItemsCount: 0 })).toThrow(TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR);
   });
@@ -184,7 +186,7 @@ describe("TNN fact-locked script contract", () => {
   });
 
   it("runs one corrective script-only retry when a duo draft omits one anchor self-introduction", async () => {
-    const missingMaxIntroduction = validScript.replace("I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell.", "Max Tradebloski reports for the TNN Network, joined by Sidney Tradewell.");
+    const missingMaxIntroduction = validScript.replace("I'm Max Tradebloski, and I'm Sidney Tradewell.", "Max Tradebloski reports for the TNN Network, joined by Sidney Tradewell.");
     expect(() => validateTnnScriptDraft(missingMaxIntroduction, input)).toThrow(TNN_ANCHOR_INTRODUCTION_ERROR);
     mockedInvokeLLM
       .mockResolvedValueOnce(responseFor(missingMaxIntroduction) as any)
@@ -198,17 +200,36 @@ describe("TNN fact-locked script contract", () => {
     });
   });
 
+  it("rejects the reported disconnected duo opening and runs one natural-handoff corrective retry", async () => {
+    const disconnectedDuoOpening = validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell");
+    expect(() => validateTnnScriptDraft(disconnectedDuoOpening, input)).toThrow(TNN_DUO_OPENING_ERROR);
+    const typographicDisconnectedDuoOpening = validScript
+      .replace("I'm Max Tradebloski", "I’m Max Tradebloski")
+      .replace(", and I'm Sidney Tradewell", ". I’m Sidney Tradewell");
+    expect(() => validateTnnScriptDraft(typographicDisconnectedDuoOpening, input)).toThrow(TNN_DUO_OPENING_ERROR);
+    mockedInvokeLLM
+      .mockResolvedValueOnce(responseFor(disconnectedDuoOpening) as any)
+      .mockResolvedValueOnce(responseFor(validScript) as any);
+
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell"),
+    });
+  });
+
   it("rejects repeated anchor callouts and runs one corrective retry", async () => {
     const repeatedCalloutScript = validScript.replace(
       "Max Tradebloski again: Also included",
       "Max Tradebloski again: Also included",
     ).replace(
-      "I'm Sidney Tradewell. Additional",
-      "I'm Sidney Tradewell. Sidney Tradewell again: additional",
+      "and I'm Sidney Tradewell. Today",
+      "and I'm Sidney Tradewell. Sidney Tradewell again: today",
     );
     expect(() => validateTnnScriptDraft(repeatedCalloutScript, input)).toThrow(TNN_ANCHOR_REPETITION_ERROR);
     expect(() => validateTnnScriptDraft(
-      validScript.replace("I'm Sidney Tradewell. Additional", "I'm Sidney Tradewell. Max Tradebloski again: additional"),
+      validScript.replace("and I'm Sidney Tradewell. Today", "and I'm Sidney Tradewell. Max Tradebloski again: today"),
       input,
     )).toThrow(TNN_ANCHOR_REPETITION_ERROR);
     mockedInvokeLLM
