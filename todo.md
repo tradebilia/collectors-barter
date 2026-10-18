@@ -34,7 +34,7 @@
 
 - [x] TNN newsroom art direction: preserved the approved broadcast-studio reference and attached it to every TNN video task, with detailed logo-matched set, opening, camera, anchor, graphic, and item-panel direction.
 
-- [x] TNN script response compatibility: accept supported structured text response shapes from the configured Manus LLM, automatically make one bounded corrective script-only retry when a 45-second draft falls outside the required 80-100 spoken-word range, and provide safe failure details when no usable script is returned. The under-length retry regression is covered.
+- [x] TNN script response compatibility: accept supported structured text response shapes from the configured Manus LLM, automatically make one bounded corrective script-only retry when a 45-second draft falls outside the required 80-100 spoken-word range or omits a selected anchor's exact self-introduction, and provide safe failure details when no usable script is returned. Under-length and duo-anchor retry regressions are covered.
 
 - [x] TNN selected-item coverage: require each selected title verbatim and allow one bounded corrective script-only retry only for title-coverage validation failures.
 

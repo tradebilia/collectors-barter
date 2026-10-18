@@ -7,6 +7,7 @@ import {
   countTnnScriptWords,
   draftTnnScript,
   getStructuredResponseText,
+  TNN_ANCHOR_INTRODUCTION_ERROR,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
   validateTnnScriptDraft,
@@ -92,6 +93,8 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain("the TNN Network");
     expect(prompt).toContain("trade-bil-lee-uh");
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
+    expect(prompt).toContain('"I\'m Max Tradebloski" or "I am Max Tradebloski"');
+    expect(prompt).toContain('"I\'m Sidney Tradewell" or "I am Sidney Tradewell"');
     expect(prompt).toContain("names must never be proposed as on-screen text");
     expect(prompt).toContain("State every approved selected item title exactly as written");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
@@ -150,6 +153,21 @@ describe("TNN fact-locked script contract", () => {
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
       content: expect.stringContaining("must contain 80-100 spoken words"),
+    });
+  });
+
+  it("runs one corrective script-only retry when a duo draft omits one anchor self-introduction", async () => {
+    const missingMaxIntroduction = validScript.replace("I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell.", "Max Tradebloski reports for the TNN Network, joined by Sidney Tradewell.");
+    expect(() => validateTnnScriptDraft(missingMaxIntroduction, input)).toThrow(TNN_ANCHOR_INTRODUCTION_ERROR);
+    mockedInvokeLLM
+      .mockResolvedValueOnce(responseFor(missingMaxIntroduction) as any)
+      .mockResolvedValueOnce(responseFor(validScript) as any);
+
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining('"I\'m Max Tradebloski" or "I am Max Tradebloski"'),
     });
   });
 });
