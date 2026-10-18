@@ -9,6 +9,7 @@ import {
   conservativeGradedVisualReviews,
   disneyPinsVisualInstruction,
   embedPromotedEbayImageForReview,
+  enforceDisneyPinsExactEvidence,
   hasExplicitlyUngradedTarget,
   hasTitleDeclaredGradeVisualRawConflict,
   isDisneyPinsMetadata,
@@ -149,6 +150,46 @@ describe("visual source filter", () => {
     expect(result.listings[1]).toMatchObject({ visualReviewStatus: "mismatch", evidenceDisposition: "warning_review" });
     expect(result.listings[2]).toMatchObject({ visualReviewStatus: "match" });
     expect(result.listings[2]).not.toHaveProperty("evidenceDisposition");
+  });
+
+  it("fails closed when Disney Pin artwork or backing evidence is incomplete", () => {
+    const metadata = "title=Disney Eeyore Around the World Pin; category=disney_pins";
+    const baseEvidence = {
+      slabVisible: false,
+      gradingLabelVisible: false,
+      graderVisible: false,
+      numericGradeVisible: false,
+      gradeMatches: false,
+      rawOrLooseVisible: false,
+      characterMatches: true,
+      artworkMatches: false,
+      silhouetteMatches: true,
+      backingCardMatches: true,
+      setDesignMatches: true,
+    };
+    const review = enforceDisneyPinsExactEvidence({
+      candidateIndex: 0,
+      verdict: "match",
+      confidence: "high",
+      rationale: "Same Eeyore character and colors, but the artwork differs.",
+      visualEvidence: baseEvidence,
+    }, metadata);
+    expect(review).toMatchObject({ verdict: "unreadable", confidence: "low" });
+    expect(review.rationale).toContain("exact artwork");
+    expect(enforceDisneyPinsExactEvidence({
+      ...review,
+      verdict: "match",
+      confidence: "high",
+      visualEvidence: { ...baseEvidence, artworkMatches: true },
+    }, metadata)).toMatchObject({ verdict: "match", confidence: "high" });
+  });
+
+  it("requires an independent Disney Pins adjudication for every apparent match", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("needsDisneyAdjudication");
+    expect(source).toContain("INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION");
+    expect(source).toContain("Disney Pins require an independent second visual adjudication");
+    expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("Same character, similar colors, or a shared series is never sufficient");
   });
 
   it("requires a focused escalation for every initial mismatch against a graded target", () => {
