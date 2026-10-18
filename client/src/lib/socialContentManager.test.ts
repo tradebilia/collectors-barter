@@ -139,6 +139,25 @@ describe("social content manager draft workflow", () => {
     expect(chooseNextTnnAnchor("sidney", 0.5)).toBe("max");
   });
 
+  it("preserves a resolved random duo opening style in the browser-local video plan", () => {
+    const plan = buildTnnCompletedTradeVideoPlan({
+      sellerName: "Seller Smith",
+      buyerName: "Buyer Jones",
+      tradeItems: [{ title: "1989 Nintendo Game" }],
+      cashOnly: false,
+      durationSeconds: 45,
+      anchorMode: "duo",
+      duoOpeningStyleSelection: "random",
+      duoOpeningStyle: "joined",
+      tickerText: "www.Tradebilia.com",
+    });
+    expect(plan).toMatchObject({
+      anchorMode: "duo",
+      duoOpeningStyleSelection: "random",
+      duoOpeningStyle: "joined",
+    });
+  });
+
   it("refreshes only visual hints on stale high-value drafts when the current listing has a specific sport", () => {
     const staleDraft = createPromotionSocialDraft("rickey-draft", {
       source: "High-Value Listing",

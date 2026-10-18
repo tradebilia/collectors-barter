@@ -53,6 +53,14 @@ import {
 } from "@/lib/socialGraphicExport";
 import { getTradeAlertThemeAssetKeys, type TradeAlertThemeAssetKey } from "@shared/tradeAlertThemes";
 import {
+  TNN_DEFAULT_DUO_OPENING_STYLE,
+  TNN_DUO_OPENING_STYLES,
+  TNN_DUO_OPENING_STYLE_VALUES,
+  chooseTnnDuoOpeningStyle,
+  type TnnDuoOpeningStyle,
+  type TnnDuoOpeningStyleSelection,
+} from "@shared/tnnVideoPolicy";
+import {
   approveSocialDraft,
   createPromotionSocialDraft,
   createSocialDraft,
@@ -250,6 +258,8 @@ export function SocialContentManagerTab() {
   const [videoBuyerName, setVideoBuyerName] = useState("");
   const [videoDuration] = useState<TnnVideoDuration>(TNN_VIDEO_DURATION_SECONDS);
   const [videoAnchorMode, setVideoAnchorMode] = useState<TnnAnchorMode>("sidney");
+  const [videoDuoOpeningStyleSelection, setVideoDuoOpeningStyleSelection] = useState<TnnDuoOpeningStyleSelection>("random");
+  const [videoDuoOpeningStyle, setVideoDuoOpeningStyle] = useState<TnnDuoOpeningStyle>("classic");
   const [videoSelectedItemIndexes, setVideoSelectedItemIndexes] = useState<number[]>([]);
   const [videoTickerText] = useState(TNN_WEBSITE_TICKER);
   const [lastTnnSoloAnchor, setLastTnnSoloAnchor] = useState<Exclude<TnnAnchorMode, "duo"> | null>(null);
@@ -573,9 +583,12 @@ export function SocialContentManagerTab() {
     const anchorMode = existing?.anchorMode ?? chooseNextTnnAnchor(lastTnnSoloAnchor);
     const indexes = existing?.selectedItemIndexes?.filter((index) => index >= 0 && index < tradeItems.length)
       ?? tradeItems.slice(0, 6).map((_, index) => index);
+    const openingStyle = existing?.duoOpeningStyle ?? (existing ? TNN_DEFAULT_DUO_OPENING_STYLE : chooseTnnDuoOpeningStyle());
     setVideoSellerName(selectedDraft.promotion?.sellerName?.trim() || existing?.sellerName || "");
     setVideoBuyerName(selectedDraft.promotion?.buyerName?.trim() || existing?.buyerName || "");
     setVideoAnchorMode(anchorMode);
+    setVideoDuoOpeningStyleSelection(existing?.duoOpeningStyleSelection ?? (existing ? openingStyle : "random"));
+    setVideoDuoOpeningStyle(openingStyle);
     setVideoSelectedItemIndexes(indexes);
     setIsVideoStudioOpen(true);
   }
@@ -591,6 +604,11 @@ export function SocialContentManagerTab() {
     });
   }
 
+  function selectTnnDuoOpeningStyle(selection: TnnDuoOpeningStyleSelection) {
+    setVideoDuoOpeningStyleSelection(selection);
+    setVideoDuoOpeningStyle(selection === "random" ? chooseTnnDuoOpeningStyle() : selection);
+  }
+
   function buildCurrentTnnPlan() {
     if (!selectedDraft?.promotion) return null;
     return buildTnnCompletedTradeVideoPlan({
@@ -601,6 +619,8 @@ export function SocialContentManagerTab() {
       cashOnly: isCashOnlyCompletedTrade(selectedDraft.promotion),
       durationSeconds: videoDuration,
       anchorMode: videoAnchorMode,
+      duoOpeningStyle: videoDuoOpeningStyle,
+      duoOpeningStyleSelection: videoDuoOpeningStyleSelection,
       tickerText: videoTickerText,
     });
   }
@@ -623,6 +643,7 @@ export function SocialContentManagerTab() {
         tradeId: Number(selectedDraft.promotion?.tradeId),
         durationSeconds: plan.durationSeconds,
         anchorMode: plan.anchorMode,
+        duoOpeningStyle: plan.duoOpeningStyle,
         sellerName: plan.sellerName,
         buyerName: plan.buyerName,
         cashOnly: plan.cashOnly,
@@ -670,6 +691,7 @@ export function SocialContentManagerTab() {
         tradeId: Number(selectedDraft.promotion.tradeId),
         durationSeconds: plan.durationSeconds,
         anchorMode: plan.anchorMode,
+        duoOpeningStyle: plan.duoOpeningStyle,
         sellerName: plan.sellerName,
         buyerName: plan.buyerName,
         cashOnly: plan.cashOnly,
@@ -1040,6 +1062,7 @@ export function SocialContentManagerTab() {
                     <div className="space-y-1.5 text-sm font-semibold text-slate-700">Report length <div className="mt-1 flex h-10 items-center rounded-md border border-input bg-slate-50 px-3 text-sm font-medium text-slate-700">45 seconds · standard TNN report</div></div>
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor presentation <select value={videoAnchorMode} onChange={(event) => setVideoAnchorMode(event.target.value as TnnAnchorMode)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="max">Max Tradebloski · solo</option><option value="sidney">Sidney Tradewell · solo</option><option value="duo">Max &amp; Sidney · duo report</option></select></label>
                   </div>
+                  {videoAnchorMode === "duo" ? <label className="block rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm font-semibold text-violet-950">Duo opening style <select value={videoDuoOpeningStyleSelection} onChange={(event) => selectTnnDuoOpeningStyle(event.target.value as TnnDuoOpeningStyleSelection)} className="mt-1.5 flex h-10 w-full rounded-md border border-violet-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="random">Random — resolved to {TNN_DUO_OPENING_STYLES[videoDuoOpeningStyle].label}</option>{TNN_DUO_OPENING_STYLE_VALUES.map((style) => <option key={style} value={style}>{TNN_DUO_OPENING_STYLES[style].label}</option>)}</select><p className="mt-2 text-xs font-normal leading-5 text-violet-900">The resolved opening remains fixed in this draft, including when you regenerate its script or approve the video. “{TNN_DUO_OPENING_STYLES[videoDuoOpeningStyle].script}”</p></label> : null}
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Completed-trade items</p><p className="mt-1 text-xs leading-5 text-slate-600">Select up to six items that were actually exchanged and should appear in the upper-right panel. Unselected entries are omitted from the script; they are not treated as additional items.</p></div><Badge variant="outline" className="border-slate-300 bg-white text-slate-700">{videoSelectedItemIndexes.length} / 6 selected</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{(selectedDraft?.promotion?.tradeItems ?? []).map((item, index) => <label key={`${item.listingId ?? "item"}-${index}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-700 hover:border-violet-300"><Checkbox checked={videoSelectedItemIndexes.includes(index)} onCheckedChange={() => toggleTnnSelectedItem(index)} aria-label={`Include ${item.title} in TNN video`} /><span><span className="block font-semibold">{item.title}</span>{item.grade || item.certificationCompany || item.customGradingCompany ? <span className="mt-0.5 block text-xs text-slate-500">{formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)}</span> : null}</span></label>)}</div></div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Lower ticker</p><p className="mt-1 text-sm font-semibold text-slate-800">{videoTickerText}</p><p className="mt-1 text-xs leading-5 text-slate-500">Locked website address; it scrolls on screen and is not read by the anchors.</p></div>
                   {selectedDraft?.videoPlan?.script ? <div className="rounded-lg border border-violet-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">AI-written script draft</p><p className="mt-1 text-xs text-slate-500">{selectedDraft.videoPlan.scriptWordCount} words · approximately {selectedDraft.videoPlan.estimatedSpeechSeconds} seconds · review before generation</p></div><Badge className="border border-violet-200 bg-violet-50 text-violet-800">Draft {selectedDraft.videoPlan.scriptDraftAttempts}</Badge></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p></div> : null}

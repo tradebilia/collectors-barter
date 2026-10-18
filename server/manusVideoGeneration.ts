@@ -82,7 +82,7 @@ async function manusRequest<T>(path: string, init: RequestInit = {}) {
 function anchorDirection(anchorMode: TnnScriptAnchorMode) {
   const max = "Max Tradebloski: middle-aged American male TNN anchor, tailored navy suit, professional calm authority.";
   const sidney = "Sidney Tradewell: middle-aged American female TNN anchor, tailored jewel-tone newsroom suit, poised professional credibility.";
-  if (anchorMode === "duo") return `${max}\n${sidney}\nThey are seated together at the anchor desk and each delivers at least one consecutive part of the supplied script.`;
+  if (anchorMode === "duo") return `${max}\n${sidney}\nThey are seated together at the anchor desk and each delivers at least one consecutive part of the supplied script. In the supplied combined opening, Max speaks only the “I'm Max Tradebloski” phrase; Sidney immediately delivers the “and I'm Sidney Tradewell” response. Do not assign both halves to one voice or add dialogue.`;
   return anchorMode === "max" ? max : sidney;
 }
 

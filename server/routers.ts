@@ -155,7 +155,7 @@ import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
 import { draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft } from "./tnnVideoScript";
-import { TNN_VIDEO_DURATION_SECONDS } from "../shared/tnnVideoPolicy";
+import { TNN_DEFAULT_DUO_OPENING_STYLE, TNN_DUO_OPENING_STYLE_VALUES, TNN_VIDEO_DURATION_SECONDS } from "../shared/tnnVideoPolicy";
 
 const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png";
 const TNN_NEWSROOM_REFERENCE_URL = "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
@@ -205,6 +205,7 @@ const tnnScriptDraftSchema = z.object({
   tradeId: z.number().int().positive(),
   durationSeconds: z.literal(TNN_VIDEO_DURATION_SECONDS),
   anchorMode: z.enum(["max", "sidney", "duo"]),
+  duoOpeningStyle: z.enum(TNN_DUO_OPENING_STYLE_VALUES).default(TNN_DEFAULT_DUO_OPENING_STYLE),
   sellerName: z.string().trim().min(1).max(120),
   buyerName: z.string().trim().min(1).max(120),
   cashOnly: z.boolean(),

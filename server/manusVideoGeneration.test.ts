@@ -52,7 +52,7 @@ describe("Manus API configuration", () => {
 
   it("writes the approved privacy-safe TNN newsroom contract into the anchor instruction", () => {
     const instruction = buildTnnVideoInstruction({
-      script: "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network. Seller Smith and Buyer Jones completed a collector trade featuring Test collectible. This completed exchange celebrates collecting with care and shared enthusiasm across the community. Every selected piece is presented as part of the completed transaction. The report keeps the focus on the collector story, accurate item context, and the people behind the exchange. Tradebilia.",
+      script: "Breaking News from Tradebilia. I'm Max Tradebloski, and I'm Sidney Tradewell. Today the TNN Network confirms that Seller Smith and Buyer Jones completed a collector trade featuring Test collectible. This completed exchange celebrates collecting with care and shared enthusiasm across the community. Every selected piece is presented as part of the completed transaction. The report keeps the focus on the collector story, accurate item context, and the people behind the exchange. Tradebilia.",
       durationSeconds: 45,
       anchorMode: "duo",
       sellerName: "Seller Smith",
@@ -82,6 +82,8 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("never as a square, rectangular, flat, or pasted logo card");
     expect(instruction).toContain("attached approved TNN newsroom visual-reference image");
     expect(instruction).toContain("stable polished medium desk shot");
+    expect(instruction).toContain("Max speaks only the “I'm Max Tradebloski” phrase; Sidney immediately delivers the “and I'm Sidney Tradewell” response");
+    expect(instruction).toContain("Do not assign both halves to one voice or add dialogue");
     expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
     expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
     expect(instruction).toContain("www.Tradebilia.com");
