@@ -7,9 +7,11 @@ import {
   buildDeclaredIdentityReviews,
   conservativeComicVisualReviews,
   conservativeGradedVisualReviews,
+  disneyPinsVisualInstruction,
   embedPromotedEbayImageForReview,
   hasExplicitlyUngradedTarget,
   hasTitleDeclaredGradeVisualRawConflict,
+  isDisneyPinsMetadata,
   normalizeExplicitUngradedVisualReviews,
   normalizeSingleCandidateVisualReview,
   normalizeVisualSourceReviews,
@@ -113,6 +115,40 @@ describe("visual source filter", () => {
         rationale: "The candidate image shows a loose, un-slabbed cartridge with no holder or visible grade.",
       },
     })).toBe(true);
+  });
+
+  it("treats Disney Pins as ungraded and does not escalate stale grading fields", () => {
+    const metadata = "title=Disney Mickey D23 Pin; category=disney_pins; grade=9.8; certificationCompany=PSA";
+    expect(isDisneyPinsMetadata(metadata)).toBe(true);
+    expect(hasTitleDeclaredGradeVisualRawConflict({
+      title: "Disney Mickey D23 Pin PSA 9.8",
+      targetMetadata: metadata,
+      review: { verdict: "mismatch", confidence: "high", rationale: "The candidate appears raw and the holder is not visible." },
+    })).toBe(false);
+    expect(shouldReviewAdditionalVisualImages({
+      imageCount: 1,
+      title: "Disney Mickey D23 Pin PSA 9.8",
+      targetMetadata: metadata,
+      review: { verdict: "mismatch", confidence: "high", rationale: "The candidate appears raw and the holder is not visible." },
+    })).toBe(false);
+    expect(disneyPinsVisualInstruction(metadata)).toContain("Ignore grader, certification-company, slab");
+    expect(conservativeGradedVisualReviews([
+      { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The pin artwork matches, but no numeric grade is visible." },
+    ], [{ title: "Disney Mickey D23 Pin" }], metadata)[0]).toMatchObject({ verdict: "match" });
+  });
+
+  it("requires an exact visual match before Disney Pins can enter analyzer evidence", () => {
+    const listings = [{ title: "Disney Mickey D23 Pin" }, { title: "Disney Minnie D23 Pin" }, { title: "Disney Mickey D23 Pin" }];
+    const reviews = [
+      { candidateIndex: 0, verdict: "rough_match" as const, confidence: "high" as const, rationale: "Character and colors are plausible, but the pin artwork is partly obscured." },
+      { candidateIndex: 1, verdict: "mismatch" as const, confidence: "high" as const, rationale: "Different character and pin silhouette." },
+      { candidateIndex: 2, verdict: "match" as const, confidence: "high" as const, rationale: "The character, artwork, silhouette, colors, and backing card visibly match." },
+    ];
+    const result = applyVisualSourceReviews(listings, reviews, listings.length, { requireExactMatch: true });
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "rough_match", evidenceDisposition: "warning_review" });
+    expect(result.listings[1]).toMatchObject({ visualReviewStatus: "mismatch", evidenceDisposition: "warning_review" });
+    expect(result.listings[2]).toMatchObject({ visualReviewStatus: "match" });
+    expect(result.listings[2]).not.toHaveProperty("evidenceDisposition");
   });
 
   it("requires a focused escalation for every initial mismatch against a graded target", () => {
