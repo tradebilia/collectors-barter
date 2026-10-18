@@ -52,7 +52,7 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).toContain('const TNN_OPENING_REFERENCE_PATH = "/manus-storage/TNNOpeningGlobeReference_f90474c7.png"');
     expect(componentSource).toContain("Approved TNN bright broadcast newsroom reference");
     expect(componentSource).toContain("Approved newsroom set:");
-    expect(componentSource).toContain("WWW.Tradebilia.com");
+    expect(componentSource).toContain("www.Tradebilia.com");
     expect(componentSource).toContain("trade-bil-lee-uh");
     expect(componentSource).not.toContain("logoUrl: TNN_VIDEO_LOGO_URL");
     expect(componentSource).not.toContain("newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL");

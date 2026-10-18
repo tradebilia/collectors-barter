@@ -33,7 +33,7 @@ describe("Manus API configuration", () => {
         cashOnly: false,
         selectedItems: [{ title: "Test collectible", facts: [{ label: "Year", value: "1986" }] }],
         additionalItemsCount: 0,
-        tickerText: "WWW.Tradebilia.com",
+        tickerText: "www.Tradebilia.com",
         logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
         newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
         openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
@@ -60,7 +60,7 @@ describe("Manus API configuration", () => {
       cashOnly: false,
       selectedItems: [{ title: "Test collectible", grade: "9", certificationCompany: "PSA" }],
       additionalItemsCount: 1,
-      tickerText: "WWW.Tradebilia.com",
+      tickerText: "www.Tradebilia.com",
       logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
       newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
       openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
@@ -84,7 +84,7 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("stable polished medium desk shot");
     expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
     expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
-    expect(instruction).toContain("WWW.Tradebilia.com");
+    expect(instruction).toContain("www.Tradebilia.com");
     expect(instruction).toContain("trade-bil-lee-uh");
     expect(instruction).toContain("the TNN Network");
   });

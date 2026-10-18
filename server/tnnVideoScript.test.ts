@@ -32,7 +32,7 @@ const input = {
     { title: "PSA 9 Trading Card", certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
   ],
   additionalItemsCount: 1,
-  tickerText: "WWW.Tradebilia.com",
+  tickerText: "www.Tradebilia.com",
 };
 
 const validScript = "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell. Tonight, Morgan Seller and Taylor Buyer have completed a collector trade featuring 1989 Nintendo Game and PSA 9 Trading Card. The exchange highlights a classic NES collectible alongside a 1986 graded card, with each selected piece presented as part of this completed collector transaction. I'm Sidney Tradewell. Additional collector items changed hands as part of the completed transaction. This is another moment for collectors to celebrate thoughtful exchanges and the shared passion behind every item. Tradebilia.";
@@ -97,12 +97,13 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"');
     expect(prompt).toContain('"I\'m Sidney Tradewell" or "I’m Sidney Tradewell" or "I am Sidney Tradewell"');
     expect(prompt).toContain("introduce themselves exactly once");
+    expect(prompt).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
     expect(prompt).toContain("at most one or two brief, natural newsroom ad-lib comments");
     expect(prompt).toContain("names must never be proposed as on-screen text");
     expect(prompt).toContain("State every approved selected item title exactly as written");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
     expect(prompt).toContain("Additional collector items changed hands");
-    expect(prompt).toContain("WWW.Tradebilia.com");
+    expect(prompt).toContain("www.Tradebilia.com");
     expect(validScript.endsWith("Tradebilia.")).toBe(true);
   });
 
