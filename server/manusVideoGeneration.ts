@@ -1,12 +1,6 @@
 import { ENV } from "./_core/env";
 import { type TnnScriptAnchorMode, type TnnScriptDuration } from "./tnnVideoScript";
-import {
-  TNN_NETWORK_SPOKEN_NAME,
-  TNN_REQUIRED_CLOSING,
-  TNN_TRADEBILIA_PRONUNCIATION,
-  TNN_WEBSITE_TICKER,
-  formatTnnGrade,
-} from "../shared/tnnVideoPolicy";
+import { type TnnTranscriptTurn, TNN_NETWORK_SPOKEN_NAME, TNN_REQUIRED_CLOSING, TNN_TRADEBILIA_PRONUNCIATION, TNN_WEBSITE_TICKER, formatTnnGrade } from "../shared/tnnVideoPolicy";
 
 type ManusContentPart =
   | { type: "text"; text: string }
@@ -29,8 +23,10 @@ type ManusMessage = {
 };
 
 export type TnnVideoTaskItem = {
+  listingId: number;
   title: string;
-  imageUrl?: string | null;
+  /** Authoritative primary listing image resolved server-side for this exact item. */
+  imageUrl: string;
   grade?: string | number | null;
   certificationCompany?: string | null;
   customGradingCompany?: string | null;
@@ -38,7 +34,7 @@ export type TnnVideoTaskItem = {
 };
 
 export type TnnVideoTaskInput = {
-  script: string;
+  turns: TnnTranscriptTurn[];
   durationSeconds: TnnScriptDuration;
   anchorMode: TnnScriptAnchorMode;
   sellerName: string;
@@ -50,7 +46,6 @@ export type TnnVideoTaskInput = {
   logoUrl: string;
   newsroomReferenceUrl: string;
   openingReferenceUrl: string;
-  imageUrls: string[];
   generationAttempt: 1 | 2;
 };
 
@@ -82,7 +77,7 @@ async function manusRequest<T>(path: string, init: RequestInit = {}) {
 function anchorDirection(anchorMode: TnnScriptAnchorMode) {
   const max = "Max Tradebloski: middle-aged American male TNN anchor, tailored navy suit, professional calm authority.";
   const sidney = "Sidney Tradewell: middle-aged American female TNN anchor, tailored jewel-tone newsroom suit, poised professional credibility.";
-  if (anchorMode === "duo") return `${max}\n${sidney}\nThey are seated together at the anchor desk and each delivers at least one consecutive part of the supplied script. In the supplied combined opening, Max speaks only the “I'm Max Tradebloski” phrase; Sidney immediately delivers the “and I'm Sidney Tradewell” response. Do not assign both halves to one voice or add dialogue.`;
+  if (anchorMode === "duo") return `${max}\n${sidney}\nThe supplied structured transcript is authoritative: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. The first MAX turn introduces Max; the immediately following SIDNEY turn says “And I'm Sidney Tradewell.” Do not combine turns, reassign words, add dialogue, captions, or any speaker-name text.`;
   return anchorMode === "max" ? max : sidney;
 }
 
@@ -90,22 +85,25 @@ function itemReferenceLines(items: readonly TnnVideoTaskItem[]) {
   return items.map((item, index) => {
     const grading = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
     const facts = (item.facts ?? []).map((fact) => `${fact.label}: ${fact.value}`).join("; ");
-    return `${index + 1}. ${item.title}${grading ? ` | spoken grade context: ${grading}` : ""}${facts ? ` | spoken factual context: ${facts}` : ""}`;
+    return `${index + 1}. ${item.title}${grading ? ` | spoken grade context: ${grading}` : ""}${facts ? ` | spoken factual context: ${facts}` : ""} | exact matching image attachment: trade-item-${index + 1}-listing-${item.listingId}.jpg`;
   }).join("\n");
+}
+
+function structuredTranscript(turns: readonly TnnTranscriptTurn[]) {
+  return turns.map((turn, index) => `${index + 1}. ${turn.speaker.toUpperCase()}: ${turn.text}`).join("\n");
 }
 
 /**
  * Builds a complete 16:9 TNN newsroom brief. The calling route validates the
- * trade eligibility and script before this reaches Manus; no price/value or
- * private logistics data is accepted by this contract.
+ * completed trade, transcript lock, and exact item/image bindings before this reaches Manus.
  */
 export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
   const anchorNames = input.anchorMode === "duo" ? "Max Tradebloski and Sidney Tradewell" : input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell";
   const itemInsetInstruction = input.selectedItems.length
-    ? "Starting when the anchor first begins describing each selected item, show that exact supplied item image in a clean picture-in-picture panel in the upper-right corner. Keep the anchor visible and do not cover the face. Advance the panel only as the script moves to the next item."
+    ? "Starting when the assigned anchor first begins describing each selected item, show only that item’s exact matching supplied image attachment in a clean picture-in-picture panel in the upper-right corner. Never substitute, reorder, reuse, or infer another item image. Keep the anchor visible and do not cover the face. Advance the panel only as the assigned transcript turns move to the next item."
     : "Keep the anchor in the TNN newsroom for the report; no item insert is available.";
   const extraItemsInstruction = input.additionalItemsCount > 0
-    ? `The script acknowledges ${input.additionalItemsCount} additional collector item${input.additionalItemsCount === 1 ? "" : "s"}. Do not invent or display any unprovided item for those additional items.`
+    ? `The transcript acknowledges ${input.additionalItemsCount} additional collector item${input.additionalItemsCount === 1 ? "" : "s"}. Do not invent or display any unprovided item for those additional items.`
     : "All selected item references are the complete visible item set for this report.";
 
   return [
@@ -120,11 +118,11 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     itemInsetInstruction,
     extraItemsInstruction,
     "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade or value. When a grade is spoken, use only the exact normalized grade context below; PSA numbers must never receive artificial extra decimal places.",
-    `Use only the exact spoken script below. Preserve it verbatim, with natural pauses and speaker handoff for a duo report. Pronounce every Tradebilia occurrence as '${TNN_TRADEBILIA_PRONUNCIATION}', identify the network as '${TNN_NETWORK_SPOKEN_NAME}', and preserve the script's final spoken '${TNN_REQUIRED_CLOSING}'. Do not add any speech, call to action beyond the script, disclaimer, price, cash amount, or personal/private detail.`,
-    `Transaction type for visual context only: ${input.cashOnly ? "cash sale" : "collector trade"}. Do not display or speak any amount. The names are allowed in the spoken script only; never render them as text.`,
-    "Approved selected-item context (reference only; do not add facts beyond the script):",
+    `Use only the exact structured transcript below. Speaker labels are internal turn assignments, not spoken words or captions. Preserve every assigned turn verbatim: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. Pronounce every Tradebilia occurrence as '${TNN_TRADEBILIA_PRONUNCIATION}', identify the network as '${TNN_NETWORK_SPOKEN_NAME}', and preserve the final standalone spoken '${TNN_REQUIRED_CLOSING}'. Do not add any speech, call to action beyond the transcript, disclaimer, price, cash amount, or personal/private detail.`,
+    `Transaction type for visual context only: ${input.cashOnly ? "cash sale" : "collector trade"}. Do not display or speak any amount. The names are allowed in the spoken transcript only; never render them as text.`,
+    "Approved selected-item context and exact image bindings (reference only; do not add facts beyond the transcript):",
     itemReferenceLines(input.selectedItems) || "No item details supplied.",
-    `Exact spoken script:\n${input.script}`,
+    `Structured speaker transcript:\n${structuredTranscript(input.turns)}`,
     `The attached dedicated TNN logo asset is the visual source of truth and must be used exactly as supplied: ${input.logoUrl}`,
     `The attached approved TNN newsroom visual-reference image is the set-design source of truth and must guide the full studio look: ${input.newsroomReferenceUrl}`,
     `The attached approved TNN opening globe-and-ribbon reference is the motion-design source of truth for the opening only: ${input.openingReferenceUrl}`,
@@ -141,7 +139,7 @@ export async function createTradeVideoTask(input: TnnVideoTaskInput) {
     { type: "file", file_url: input.logoUrl, filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" },
     { type: "file", file_url: input.newsroomReferenceUrl, filename: "tnn-approved-newsroom-set-reference.png", mime_type: "image/png" },
     { type: "file", file_url: input.openingReferenceUrl, filename: "tnn-approved-opening-globe-reference.png", mime_type: "image/png" },
-    ...input.imageUrls.slice(0, 6).map((file_url, index) => ({ type: "file" as const, file_url, filename: `trade-item-${index + 1}.jpg`, mime_type: "image/jpeg" })),
+    ...input.selectedItems.map((item, index) => ({ type: "file" as const, file_url: item.imageUrl, filename: `trade-item-${index + 1}-listing-${item.listingId}.jpg`, mime_type: "image/jpeg" })),
   ];
   const result = await manusRequest<{ task_id: string; task_url?: string }>("/v2/task.create", {
     method: "POST",

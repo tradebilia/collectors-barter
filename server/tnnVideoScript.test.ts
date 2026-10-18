@@ -1,25 +1,24 @@
-import { readFileSync } from "node:fs";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
 import { invokeLLM } from "./_core/llm";
 import {
   buildTnnScriptPrompt,
   countTnnScriptWords,
+  createTnnScriptFactLock,
   draftTnnScript,
-  getStructuredResponseText,
-  TNN_ANCHOR_INTRODUCTION_ERROR,
-  TNN_ANCHOR_REPETITION_ERROR,
+  flattenTnnScriptTurns,
   TNN_DUO_OPENING_ERROR,
+  TNN_FACT_LOCK_ERROR,
+  TNN_FINAL_CLOSING_ERROR,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
   TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR,
   validateTnnScriptDraft,
+  verifyTnnScriptFactLock,
+  type TnnScriptTurn,
 } from "./tnnVideoScript";
 import {
-  TNN_MIN_COMPLETED_TRADE_VALUE,
   buildTnnCompletedTradeVideoPlan,
-  chooseNextTnnAnchor,
-  isTnnEligibleCompletedTrade,
   withTnnVideoScript,
 } from "../client/src/lib/socialContentManager";
 import { TNN_DUO_OPENING_STYLES, TNN_DUO_OPENING_STYLE_VALUES } from "../shared/tnnVideoPolicy";
@@ -32,258 +31,137 @@ const input = {
   buyerName: "Taylor Buyer",
   cashOnly: false,
   selectedItems: [
-    { title: "1989 Nintendo Game", category: "Video Games", facts: [{ label: "Platform", value: "NES" }] },
-    { title: "PSA 9 Trading Card", certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
+    { listingId: 101, title: "1989 Nintendo Game", category: "Video Games", facts: [{ label: "Platform", value: "NES" }] },
+    { listingId: 102, title: "PSA 9 Trading Card", certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
   ],
-  additionalItemsCount: 1,
+  additionalItemsCount: 0,
   tickerText: "www.Tradebilia.com",
 };
 
-const validScript = "Breaking News from Tradebilia. I'm Max Tradebloski, and I'm Sidney Tradewell. Today the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer featuring 1989 Nintendo Game and PSA 9 Trading Card. The exchange highlights a classic NES collectible alongside a 1986 graded card, with each selected piece presented as part of this completed collector transaction. Additional collector items changed hands as part of the completed transaction. This is another moment for collectors to celebrate thoughtful exchanges and the shared passion behind every item. Tradebilia.";
-const mockedInvokeLLM = vi.mocked(invokeLLM);
+const validTurns: TnnScriptTurn[] = [
+  { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
+  { speaker: "sidney", text: "And I'm Sidney Tradewell." },
+  { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game and PSA 9 Trading Card, each selected precisely for this finished collector transaction and presented with care." },
+  { speaker: "sidney", text: "The 1989 Nintendo Game brings its approved NES platform context to the exchange, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." },
+  { speaker: "max", text: "Tradebilia." },
+];
 
-const responseFor = (script: string) => ({
+const mockedInvokeLLM = vi.mocked(invokeLLM);
+const structuredResponse = (value: unknown) => ({
   id: "test",
   created: 0,
   model: "gpt-5-mini",
-  choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant" as const, content: JSON.stringify({ script }) } }],
+  choices: [{ index: 0, finish_reason: "stop", message: { role: "assistant" as const, content: JSON.stringify(value) } }],
 });
 
-beforeEach(() => {
-  mockedInvokeLLM.mockReset();
-});
+beforeEach(() => mockedInvokeLLM.mockReset());
 
-describe("TNN completed-trade video policy", () => {
-  it("requires an aggregate completed-trade value of at least $1,000 before the TNN studio is available", () => {
-    expect(isTnnEligibleCompletedTrade({ tradeId: 44, estimatedValue: TNN_MIN_COMPLETED_TRADE_VALUE } as any)).toBe(true);
-    expect(isTnnEligibleCompletedTrade({ tradeId: 44, estimatedValue: TNN_MIN_COMPLETED_TRADE_VALUE - 1 } as any)).toBe(false);
-    expect(isTnnEligibleCompletedTrade({ tradeId: null, estimatedValue: TNN_MIN_COMPLETED_TRADE_VALUE + 1 } as any)).toBe(false);
+describe("TNN structured speaker transcript", () => {
+  it("requires an unambiguous five-turn Max/Sidney newsroom handoff, one introduction each, and a single clean final sign-off", () => {
+    const draft = validateTnnScriptDraft(validTurns, input);
+    expect(draft.turns).toEqual(validTurns);
+    expect(draft.wordCount).toBeGreaterThanOrEqual(80);
+    expect(draft.wordCount).toBeLessThanOrEqual(100);
+    expect(draft.turns.map((turn) => turn.speaker)).toEqual(["max", "sidney", "max", "sidney", "max"]);
+    expect(draft.turns[0]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.maxLine);
+    expect(draft.turns[1]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.sidneyLine);
+    expect(draft.turns.at(-1)?.text).toBe("Tradebilia.");
+    expect(draft.turns.slice(1, -1).join(" ")).not.toMatch(/Tradebilia/i);
+    expect(countTnnScriptWords(flattenTnnScriptTurns(draft.turns))).toBe(draft.wordCount);
   });
 
-  it("uses the agreed solo alternation and occasional duo-report schedule", () => {
-    expect(chooseNextTnnAnchor("max", 0.4)).toBe("sidney");
-    expect(chooseNextTnnAnchor("sidney", 0.4)).toBe("max");
-    expect(chooseNextTnnAnchor("max", 0.1)).toBe("duo");
+  it("rejects disconnected, delayed, same-speaker, or repeated-name duo introductions", () => {
+    expect(() => validateTnnScriptDraft([{ ...validTurns[0]!, text: "Breaking News from Tradebilia. I'm Max Tradebloski, and I'm Sidney Tradewell." }, ...validTurns.slice(1)], input)).toThrow(TNN_DUO_OPENING_ERROR);
+    expect(() => validateTnnScriptDraft([{ ...validTurns[0]!, speaker: "sidney" }, ...validTurns.slice(1)], input)).toThrow(/five alternating turns/i);
+    expect(() => validateTnnScriptDraft([{ ...validTurns[0]!, text: "Breaking News from Tradebilia. I'm Max Tradebloski." }, { ...validTurns[1]!, text: "I'm Sidney Tradewell." }, ...validTurns.slice(2)], input)).toThrow(TNN_DUO_OPENING_ERROR);
+    expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 2 ? { ...turn, text: `${turn.text} Max Tradebloski says the report remains focused.` } : turn), input)).toThrow(/must not repeat/i);
   });
 
-  it("builds a 16:9 plan with selected items and generic acknowledgement of the remainder", () => {
-    const plan = buildTnnCompletedTradeVideoPlan({
-      ...input,
-      tradeItems: [...input.selectedItems, { title: "Comic Book" }, { title: "Coin" }],
-      selectedItemIndexes: [0, 2],
-      additionalItemsCount: 2,
-      now: "2026-10-17T12:00:00.000Z",
-    });
-    expect(plan).toMatchObject({
-      format: "16:9",
-      durationSeconds: 45,
-      anchorNames: ["Max Tradebloski", "Sidney Tradewell"],
-      sellerName: "Morgan Seller",
-      buyerName: "Taylor Buyer",
-      additionalItemsCount: 2,
-      scriptStatus: "not-drafted",
-      generationAttempt: 0,
-      generationStatus: "not-started",
-      videoReviewStatus: "not-ready",
-    });
-    expect(plan.selectedItems.map((item) => item.title)).toEqual(["1989 Nintendo Game", "Comic Book"]);
-    const withScript = withTnnVideoScript(plan, validScript, 1);
-    expect(withScript.scriptStatus).toBe("draft-ready");
-    expect(withScript.scriptWordCount).toBe(countTnnScriptWords(validScript));
-  });
-});
-
-describe("TNN fact-locked script contract", () => {
-  it("instructs the model to use a TNN newsroom, preserve privacy, and avoid on-screen names or values", () => {
-    const prompt = buildTnnScriptPrompt(input);
-    expect(prompt).toContain("the TNN Network");
-    expect(prompt).toContain("trade-bil-lee-uh");
-    expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
-    expect(prompt).toContain("Use this required Classic co-anchor handoff");
-    expect(prompt).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
-    expect(prompt).toContain("Do not use two disconnected introductions");
-    expect(prompt).toContain("at most one or two brief, natural newsroom ad-lib comments");
-    expect(prompt).toContain("names must never be proposed as on-screen text");
-    expect(prompt).toContain("State every approved selected item title exactly as written");
-    expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
-    expect(prompt).toContain("Additional collector items changed hands");
-    expect(prompt).toContain("www.Tradebilia.com");
-    expect(validScript.endsWith("Tradebilia.")).toBe(true);
-  });
-
-  it("accepts a bounded compliant script and rejects private or financial details", () => {
-    const validated = validateTnnScriptDraft(validScript, input);
-    expect(validated.wordCount).toBeGreaterThanOrEqual(80);
-    expect(validated.wordCount).toBeLessThanOrEqual(100);
-    expect(validated.estimatedSpeechSeconds).toBeGreaterThan(0);
-    expect(validateTnnScriptDraft(validScript.replace("I'm Max Tradebloski", "I’m Max Tradebloski").replace("I'm Sidney Tradewell", "I’m Sidney Tradewell"), input)).toMatchObject({ script: expect.stringContaining("I’m Max Tradebloski") });
-    expect(() => validateTnnScriptDraft(validScript.replace("collector trade", "$1,200 collector trade"), input)).toThrow(/disallowed/i);
-    expect(() => validateTnnScriptDraft(validScript.replace("Additional collector items changed hands as part of the completed transaction. ", "The selected items accurately represent this completed collector trade without added details. "), input)).toThrow(/acknowledge/i);
-    expect(() => validateTnnScriptDraft(validScript.replace("PSA 9 Trading Card", "graded card"), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
-    expect(() => validateTnnScriptDraft(validScript.replace("the TNN Network", "TNN"), input)).toThrow(/TNN Network/i);
-    expect(() => validateTnnScriptDraft(validScript.replace("I'm Sidney Tradewell. ", ""), input)).toThrow(/every selected anchor/i);
-    expect(() => validateTnnScriptDraft(validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell"), input)).toThrow(TNN_DUO_OPENING_ERROR);
-  });
-
-  it("requires the resolved selected opening style rather than accepting any duo handoff", () => {
-    const alongsideInput = { ...input, duoOpeningStyle: "alongside" as const };
-    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell.", ", and I'm Sidney Tradewell, joining you from the TNN Network.");
-    expect(buildTnnScriptPrompt(alongsideInput)).toContain("Newsroom handoff");
-    expect(buildTnnScriptPrompt(alongsideInput)).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network.");
-    expect(() => validateTnnScriptDraft(alongsideScript, alongsideInput)).not.toThrow();
-    expect(() => validateTnnScriptDraft(validScript, alongsideInput)).toThrow(TNN_DUO_OPENING_ERROR);
-  });
-
-  it("keeps the natural Max-to-Sidney exchange in every approved duo opening style", () => {
+  it("uses every approved opening style as two separate assigned lines, accepting smart apostrophes", () => {
     for (const duoOpeningStyle of TNN_DUO_OPENING_STYLE_VALUES) {
-      const selectedOpening = TNN_DUO_OPENING_STYLES[duoOpeningStyle].script;
-      const styleScript = validScript.replace("I'm Max Tradebloski, and I'm Sidney Tradewell.", selectedOpening);
-      expect(styleScript).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
-      expect(() => validateTnnScriptDraft(styleScript, { ...input, duoOpeningStyle })).not.toThrow();
-      const typographicStyleScript = styleScript.replaceAll("I'm", "I’m");
-      expect(() => validateTnnScriptDraft(typographicStyleScript, { ...input, duoOpeningStyle })).not.toThrow();
+      const opening = TNN_DUO_OPENING_STYLES[duoOpeningStyle];
+      const turns = validTurns.map((turn, index) => index === 0
+        ? { ...turn, text: opening.maxLine }
+        : index === 1 ? { ...turn, text: opening.sidneyLine } : turn);
+      expect(() => validateTnnScriptDraft(turns, { ...input, duoOpeningStyle })).not.toThrow();
+      const smartTurns = turns.map((turn) => ({ ...turn, text: turn.text.replaceAll("I'm", "I’m") }));
+      expect(() => validateTnnScriptDraft(smartTurns, { ...input, duoOpeningStyle })).not.toThrow();
     }
   });
 
-  it("does not infer additional exchanged items from unselected entries in a one-for-one trade", () => {
+  it("enforces literal item titles, one-for-one truthfulness, and a standalone final closing", () => {
+    expect(() => validateTnnScriptDraft(validTurns.map((turn) => ({ ...turn, text: turn.text.replaceAll("PSA 9 Trading Card", "the trading card") })), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
+    expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 3 ? { ...turn, text: `${turn.text} Other collector pieces also joined this completed transaction.` } : turn), input)).toThrow(TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR);
+    expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 4 ? { ...turn, text: "NotTradebilia." } : turn), input)).toThrow(TNN_FINAL_CLOSING_ERROR);
+    expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 3 ? { ...turn, text: `${turn.text} This happened on Tradebilia.` } : turn), input)).toThrow(TNN_FINAL_CLOSING_ERROR);
+  });
+
+  it("states the structured JSON, fact, privacy, item, and non-repetitive-closing requirements in the drafting prompt", () => {
+    const prompt = buildTnnScriptPrompt(input);
+    expect(prompt).toContain("speaker sequence: max, sidney, max, sidney, max");
+    expect(prompt).toContain("Speaker labels are review-only");
+    expect(prompt).toContain("Turn 1 speaker must be 'max'");
+    expect(prompt).toContain("Turn 2 speaker must be 'sidney'");
+    expect(prompt).toContain("Turn 5 speaker must be 'max' and its text must be exactly 'Tradebilia.'");
+    expect(prompt).toContain("Do not say or imply that any other collector item");
+    expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
+    expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(900);
+  });
+
+  it("stores review-only turns rather than ambiguous prose in the browser-local video plan", () => {
     const plan = buildTnnCompletedTradeVideoPlan({
-      sellerName: "Morgan Seller",
-      buyerName: "Taylor Buyer",
-      tradeItems: [{ title: "Item A" }, { title: "Item B" }, { title: "Unrelated Entry" }],
+      sellerName: input.sellerName,
+      buyerName: input.buyerName,
+      tradeItems: input.selectedItems,
       selectedItemIndexes: [0, 1],
       cashOnly: false,
       durationSeconds: 45,
       anchorMode: "duo",
-      tickerText: "www.Tradebilia.com",
+      tickerText: input.tickerText,
     });
-    expect(plan.additionalItemsCount).toBe(0);
-
-    const oneForOneScript = validScript.replace(
-      "Additional collector items changed hands as part of the completed transaction. ",
-      "The selected items accurately represent this completed collector trade without added details. ",
-    );
-    expect(() => validateTnnScriptDraft(oneForOneScript, { ...input, additionalItemsCount: 0 })).not.toThrow();
-    expect(() => validateTnnScriptDraft(validScript, { ...input, additionalItemsCount: 0 })).toThrow(TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR);
+    const withTranscript = withTnnVideoScript(plan, validTurns, 1, "fact-lock");
+    expect(withTranscript.scriptTurns).toEqual(validTurns);
+    expect(withTranscript.script).toBe(flattenTnnScriptTurns(validTurns));
+    expect(withTranscript.factLock).toBe("fact-lock");
   });
 
-  it("uses minimal reasoning and a sufficient completion budget, accepting a documented text-part response", () => {
-    const source = readFileSync(new URL("./tnnVideoScript.ts", import.meta.url), "utf8");
-    expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(700);
-    expect(source).toContain('reasoning: { effort: "minimal" }');
-    expect(source).toContain("max_completion_tokens: TNN_SCRIPT_MAX_COMPLETION_TOKENS");
-    expect(getStructuredResponseText([{ type: "text", text: JSON.stringify({ script: validScript }) }])).toBe(JSON.stringify({ script: validScript }));
-    expect(getStructuredResponseText(undefined)).toBeNull();
+  it("creates a short-lived immutable fact lock for the exact transcript and input", () => {
+    const draft = validateTnnScriptDraft(validTurns, input);
+    const lock = createTnnScriptFactLock(44, draft, input, { now: 10_000, signingKey: "test-key" });
+    expect(verifyTnnScriptFactLock(lock, 44, draft, input, { now: 10_001, signingKey: "test-key" })).toBe(true);
+    expect(verifyTnnScriptFactLock(lock, 44, { ...draft, turns: [...draft.turns.slice(0, -1), { speaker: "max", text: "Tradebilia now." }] }, input, { now: 10_001, signingKey: "test-key" })).toBe(false);
+    expect(verifyTnnScriptFactLock(lock, 44, draft, input, { now: 1_900_001, signingKey: "test-key" })).toBe(false);
   });
 
-  it("runs one corrective script-only retry when, and only when, the first draft omits a selected title", async () => {
-    const incompleteButOtherwiseCompliant = validScript
-      .replace("1989 Nintendo Game and PSA 9 Trading Card", "a video game and a graded trading card");
+  it("does one bounded corrective replacement before fact locking a transcript", async () => {
+    const unsupportedTurns = validTurns.map((turn, index) => index === 3 ? { ...turn, text: `${turn.text} Other collector pieces also joined this completed transaction.` } : turn);
     mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(incompleteButOtherwiseCompliant) as any)
-      .mockResolvedValueOnce(responseFor(validScript) as any);
+      .mockResolvedValueOnce(structuredResponse({ turns: unsupportedTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: validTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: true, reason: "Approved facts only." }) as any);
 
-    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
-    const [initial, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
-    expect(initial.messages).toHaveLength(2);
-    expect(corrective.messages).toHaveLength(3);
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("1989 Nintendo Game | PSA 9 Trading Card"),
-    });
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ turns: validTurns });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
+    expect(mockedInvokeLLM.mock.calls[1]?.[0].messages).toHaveLength(3);
+    expect(mockedInvokeLLM.mock.calls[1]?.[0].messages[2]).toMatchObject({ content: expect.stringContaining("Remove every statement or implication") });
   });
 
-  it("runs one corrective script-only retry when the first 45-second draft is too short", async () => {
-    const shortButOtherwiseCompliant = "Breaking News from Tradebilia. I'm Max Tradebloski with the TNN Network, joined by Sidney Tradewell. Morgan Seller and Taylor Buyer completed a collector trade featuring 1989 Nintendo Game and PSA 9 Trading Card. I'm Sidney Tradewell. Additional collector items changed hands as part of the completed transaction. Tradebilia.";
-    expect(countTnnScriptWords(shortButOtherwiseCompliant)).toBeLessThan(80);
+  it("retries once when the bounded fact-lock review rejects unsupported wording, then fails closed", async () => {
     mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(shortButOtherwiseCompliant) as any)
-      .mockResolvedValueOnce(responseFor(validScript) as any);
+      .mockResolvedValueOnce(structuredResponse({ turns: validTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: false, reason: "Unsupported collection-history claim." }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: validTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: true, reason: "Approved facts only." }) as any);
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ turns: validTurns });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(4);
+    expect(mockedInvokeLLM.mock.calls[2]?.[0].messages[2]).toMatchObject({ content: expect.stringContaining("Unsupported collection-history claim") });
 
-    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
-    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("must contain 80-100 spoken words"),
-    });
-  });
-
-  it("runs one corrective script-only retry when a duo draft omits an anchor from the combined opening", async () => {
-    const missingSidneyIntroduction = validScript.replace("Sidney Tradewell", "the co-anchor");
-    expect(() => validateTnnScriptDraft(missingSidneyIntroduction, input)).toThrow(TNN_ANCHOR_INTRODUCTION_ERROR);
+    mockedInvokeLLM.mockReset();
     mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(missingSidneyIntroduction) as any)
-      .mockResolvedValueOnce(responseFor(validScript) as any);
-
-    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
-    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell"),
-    });
-  });
-
-  it("rejects the reported disconnected duo opening and runs one natural-handoff corrective retry", async () => {
-    const disconnectedDuoOpening = validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell");
-    expect(() => validateTnnScriptDraft(disconnectedDuoOpening, input)).toThrow(TNN_DUO_OPENING_ERROR);
-    const typographicDisconnectedDuoOpening = validScript
-      .replace("I'm Max Tradebloski", "I’m Max Tradebloski")
-      .replace(", and I'm Sidney Tradewell", ". I’m Sidney Tradewell");
-    expect(() => validateTnnScriptDraft(typographicDisconnectedDuoOpening, input)).toThrow(TNN_DUO_OPENING_ERROR);
-    mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(disconnectedDuoOpening) as any)
-      .mockResolvedValueOnce(responseFor(validScript) as any);
-
-    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
-    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell"),
-    });
-  });
-
-  it("retains the selected alternative duo opening style during the bounded corrective retry", async () => {
-    const alongsideInput = { ...input, duoOpeningStyle: "alongside" as const };
-    const disconnectedDuoOpening = validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell");
-    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell.", ", and I'm Sidney Tradewell, joining you from the TNN Network.");
-    mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(disconnectedDuoOpening) as any)
-      .mockResolvedValueOnce(responseFor(alongsideScript) as any);
-
-    await expect(draftTnnScript(alongsideInput)).resolves.toMatchObject({ script: alongsideScript });
-    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network"),
-    });
-  });
-
-  it("rejects repeated anchor callouts and runs one corrective retry", async () => {
-    const repeatedCalloutScript = validScript.replace(
-      "Max Tradebloski again: Also included",
-      "Max Tradebloski again: Also included",
-    ).replace(
-      "and I'm Sidney Tradewell. Today",
-      "and I'm Sidney Tradewell. Sidney Tradewell again: today",
-    );
-    expect(() => validateTnnScriptDraft(repeatedCalloutScript, input)).toThrow(TNN_ANCHOR_REPETITION_ERROR);
-    expect(() => validateTnnScriptDraft(
-      validScript.replace("and I'm Sidney Tradewell. Today", "and I'm Sidney Tradewell. Max Tradebloski again: today"),
-      input,
-    )).toThrow(TNN_ANCHOR_REPETITION_ERROR);
-    mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(repeatedCalloutScript) as any)
-      .mockResolvedValueOnce(responseFor(validScript) as any);
-
-    await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
-    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
-    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("repeated an anchor's full-name introduction or callout"),
-    });
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("Max speaks only the \"I'm Max Tradebloski\" portion; Sidney immediately answers"),
-    });
-    expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining("at most one or two brief, fact-locked broadcast ad-lib comments"),
-    });
+      .mockResolvedValueOnce(structuredResponse({ turns: validTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: false, reason: "Unsupported claim." }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: validTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: false, reason: "Still unsupported." }) as any);
+    await expect(draftTnnScript(input)).rejects.toThrow(TNN_FACT_LOCK_ERROR);
   });
 });

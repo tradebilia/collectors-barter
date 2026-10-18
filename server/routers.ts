@@ -154,7 +154,7 @@ import { getEtsyAuthUrl, createEtsyPkceVerifier } from "./_core/etsy";
 import { clearUserPayPalIdentity, getUserPayPalIdentity } from "./db";
 import { getPaymentVerificationObligation, getPaymentVerificationObligations, isAuthorizedPaymentVerification } from "./paymentAuthorization";
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
-import { draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft } from "./tnnVideoScript";
+import { createTnnScriptFactLock, draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft, verifyTnnScriptFactLock } from "./tnnVideoScript";
 import { TNN_DEFAULT_DUO_OPENING_STYLE, TNN_DUO_OPENING_STYLE_VALUES, TNN_VIDEO_DURATION_SECONDS } from "../shared/tnnVideoPolicy";
 
 const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png";
@@ -3093,7 +3093,11 @@ export const appRouter = router({
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
         await assertTnnCompletedTradeEligibility(input.tradeId);
         try {
-          return await draftTnnScript(input satisfies TnnScriptDraftInput);
+          const draft = await draftTnnScript(input satisfies TnnScriptDraftInput);
+          return {
+            ...draft,
+            factLock: createTnnScriptFactLock(input.tradeId, draft, input satisfies TnnScriptDraftInput),
+          };
         } catch (error) {
           const message = error instanceof Error ? error.message : "The TNN script could not be drafted.";
           throw new TRPCError({ code: "BAD_GATEWAY", message });
@@ -3101,8 +3105,8 @@ export const appRouter = router({
       }),
     startCompletedTradeVideoGeneration: protectedProcedure
       .input(tnnScriptDraftSchema.extend({
-        script: z.string().trim().min(1).max(2_000),
-        imageUrls: z.array(z.string().url().max(2_000)).max(6).default([]),
+        turns: z.array(z.object({ speaker: z.enum(["max", "sidney"]), text: z.string().trim().min(1).max(700) })).min(2).max(5),
+        factLock: z.string().trim().min(16).max(8_000),
         generationAttempt: z.union([z.literal(1), z.literal(2)]),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -3110,15 +3114,26 @@ export const appRouter = router({
         await assertTnnCompletedTradeEligibility(input.tradeId);
         let validatedScript;
         try {
-          validatedScript = validateTnnScriptDraft(input.script, input satisfies TnnScriptDraftInput);
+          validatedScript = validateTnnScriptDraft(input.turns, input satisfies TnnScriptDraftInput);
         } catch (error) {
           const message = error instanceof Error ? error.message : "The TNN script did not pass the required safety checks.";
           throw new TRPCError({ code: "BAD_REQUEST", message });
         }
+        if (!verifyTnnScriptFactLock(input.factLock, input.tradeId, validatedScript, input satisfies TnnScriptDraftInput)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "The TNN transcript must be regenerated because its server fact lock is missing, expired, or does not match this completed trade." });
+        }
+        if (input.selectedItems.some((item) => !item.listingId || !item.imageUrl)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Every selected completed-trade item needs its own trusted listing image before TNN video generation can begin." });
+        }
         try {
           return await createTradeVideoTask({
             ...input,
-            script: validatedScript.script,
+            turns: validatedScript.turns,
+            selectedItems: input.selectedItems.map((item) => ({
+              ...item,
+              listingId: item.listingId!,
+              imageUrl: item.imageUrl!,
+            })),
             logoUrl: TNN_VIDEO_LOGO_URL,
             newsroomReferenceUrl: TNN_NEWSROOM_REFERENCE_URL,
             openingReferenceUrl: TNN_OPENING_REFERENCE_URL,

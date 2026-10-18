@@ -40,8 +40,12 @@ describe("TNN video render policy", () => {
     expect(isTnnDuoOpeningStyle("joined")).toBe(true);
     expect(isTnnDuoOpeningStyle("freeform")).toBe(false);
     for (const style of TNN_DUO_OPENING_STYLE_VALUES) {
-      expect(TNN_DUO_OPENING_STYLES[style].script).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
+      const opening = TNN_DUO_OPENING_STYLES[style];
+      expect(opening.maxLine).toBe("Breaking News from Tradebilia. I'm Max Tradebloski.");
+      expect(opening.sidneyLine).toMatch(/^And I'm Sidney Tradewell[,.]/);
+      expect(opening.script).toContain(opening.maxLine);
+      expect(opening.script).toContain(opening.sidneyLine);
     }
-    expect(TNN_DUO_OPENING_STYLES.alongside.script).toBe("I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network.");
+    expect(TNN_DUO_OPENING_STYLES.alongside.sidneyLine).toBe("And I'm Sidney Tradewell, joining you from the TNN Network.");
   });
 });

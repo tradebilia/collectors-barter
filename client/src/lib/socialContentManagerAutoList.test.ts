@@ -43,7 +43,8 @@ describe("social content manager auto-list control", () => {
     expect(componentSource).toContain("Sidney Tradewell · solo");
     expect(componentSource).toContain("Max &amp; Sidney · duo report");
     expect(componentSource).toContain("Completed-trade items");
-    expect(componentSource).toContain("AI-written script draft");
+    expect(componentSource).toContain("AI-written broadcast transcript");
+    expect(componentSource).toContain("Speaker labels are review-only assignments");
     expect(componentSource).toContain("One initial video and one explicitly approved replacement");
     expect(componentSource).toContain('const TNN_VIDEO_LOGO_PATH = "/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png"');
     expect(componentSource).toContain("TNN — transparent glossy Tradebilia News Network logo");

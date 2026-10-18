@@ -10,24 +10,41 @@ export const TNN_REQUIRED_CLOSING = "Tradebilia.";
 export const TNN_DUO_OPENING_STYLE_VALUES = ["classic", "alongside", "joined", "here_with"] as const;
 export type TnnDuoOpeningStyle = typeof TNN_DUO_OPENING_STYLE_VALUES[number];
 export type TnnDuoOpeningStyleSelection = TnnDuoOpeningStyle | "random";
+/** Review-only assignment; speaker labels are never spoken or rendered as captions. */
+export type TnnTranscriptTurn = { speaker: "max" | "sidney"; text: string };
+export type TnnDuoOpening = {
+  label: string;
+  /** Review-only combined preview; never rendered as a single speaker's line. */
+  script: string;
+  maxLine: string;
+  sidneyLine: string;
+};
 
-/** Approved, fact-neutral handoffs for a duo TNN report. */
-export const TNN_DUO_OPENING_STYLES: Record<TnnDuoOpeningStyle, { label: string; script: string }> = {
+/** Approved, fact-neutral two-voice exchanges for a duo TNN report. */
+export const TNN_DUO_OPENING_STYLES: Record<TnnDuoOpeningStyle, TnnDuoOpening> = {
   classic: {
     label: "Classic co-anchor handoff",
-    script: "I'm Max Tradebloski, and I'm Sidney Tradewell.",
+    maxLine: "Breaking News from Tradebilia. I'm Max Tradebloski.",
+    sidneyLine: "And I'm Sidney Tradewell.",
+    script: "Breaking News from Tradebilia. I'm Max Tradebloski. And I'm Sidney Tradewell.",
   },
   alongside: {
     label: "Newsroom handoff",
-    script: "I'm Max Tradebloski, and I'm Sidney Tradewell, joining you from the TNN Network.",
+    maxLine: "Breaking News from Tradebilia. I'm Max Tradebloski.",
+    sidneyLine: "And I'm Sidney Tradewell, joining you from the TNN Network.",
+    script: "Breaking News from Tradebilia. I'm Max Tradebloski. And I'm Sidney Tradewell, joining you from the TNN Network.",
   },
   joined: {
     label: "Reporting handoff",
-    script: "I'm Max Tradebloski, and I'm Sidney Tradewell, reporting for the TNN Network.",
+    maxLine: "Breaking News from Tradebilia. I'm Max Tradebloski.",
+    sidneyLine: "And I'm Sidney Tradewell, reporting for the TNN Network.",
+    script: "Breaking News from Tradebilia. I'm Max Tradebloski. And I'm Sidney Tradewell, reporting for the TNN Network.",
   },
   here_with: {
     label: "Welcome handoff",
-    script: "I'm Max Tradebloski, and I'm Sidney Tradewell. Welcome to the TNN Network.",
+    maxLine: "Breaking News from Tradebilia. I'm Max Tradebloski.",
+    sidneyLine: "And I'm Sidney Tradewell. Welcome to the TNN Network.",
+    script: "Breaking News from Tradebilia. I'm Max Tradebloski. And I'm Sidney Tradewell. Welcome to the TNN Network.",
   },
 } as const;
 

@@ -7,6 +7,7 @@ import {
   isTnnDuoOpeningStyle,
   type TnnDuoOpeningStyle,
   type TnnDuoOpeningStyleSelection,
+  type TnnTranscriptTurn,
 } from "@shared/tnnVideoPolicy";
 
 export { TNN_VIDEO_DURATION_SECONDS, TNN_WEBSITE_TICKER, formatTnnGrade } from "@shared/tnnVideoPolicy";
@@ -20,7 +21,7 @@ export const TNN_MIN_COMPLETED_TRADE_VALUE = 1_000;
 export const TNN_VIDEO_DURATIONS = APPROVED_TNN_VIDEO_DURATIONS;
 export type TnnVideoDuration = typeof TNN_VIDEO_DURATIONS[number];
 export type TnnAnchorMode = "max" | "sidney" | "duo";
-export type { TnnDuoOpeningStyle, TnnDuoOpeningStyleSelection } from "@shared/tnnVideoPolicy";
+export type { TnnDuoOpeningStyle, TnnDuoOpeningStyleSelection, TnnTranscriptTurn } from "@shared/tnnVideoPolicy";
 export type TnnScriptStatus = "not-drafted" | "drafting" | "draft-ready" | "draft-failed";
 export type TnnGenerationStatus = "not-started" | "starting" | "generating" | "generation-failed" | "final-video-attached";
 export type TnnVideoReviewStatus = "not-ready" | "needs-review" | "approved";
@@ -111,9 +112,13 @@ export type SocialVideoPlan = {
   selectedItemIndexes: number[];
   selectedItems: TnnTradeItem[];
   additionalItemsCount: number;
+  /** Review-only turn assignments. Speaker labels are not spoken or captioned in video. */
+  scriptTurns: TnnTranscriptTurn[];
   script: string;
   scriptWordCount: number;
   estimatedSpeechSeconds: number;
+  /** Server-issued short-lived binding for an approved fact-locked transcript. */
+  factLock?: string;
   scriptDraftAttempts: number;
   scriptStatus: TnnScriptStatus;
   generationAttempt: number;
@@ -245,6 +250,7 @@ export function buildTnnCompletedTradeVideoPlan({
     selectedItemIndexes: indexes,
     selectedItems,
     additionalItemsCount: Math.max(0, Math.min(99, Math.trunc(Number(additionalItemsCount) || 0))),
+    scriptTurns: [],
     script: "",
     scriptWordCount: 0,
     estimatedSpeechSeconds: 0,
@@ -257,15 +263,21 @@ export function buildTnnCompletedTradeVideoPlan({
   };
 }
 
-export function withTnnVideoScript(plan: SocialVideoPlan, script: string, scriptDraftAttempts = plan.scriptDraftAttempts) {
-  const cleanScript = script.trim();
+export function withTnnVideoScript(plan: SocialVideoPlan, scriptTurns: readonly TnnTranscriptTurn[], scriptDraftAttempts = plan.scriptDraftAttempts, factLock?: string) {
+  const cleanTurns = scriptTurns
+    .filter((turn) => turn?.speaker === "max" || turn?.speaker === "sidney")
+    .map((turn) => ({ speaker: turn.speaker, text: String(turn.text ?? "").trim() }))
+    .filter((turn) => turn.text);
+  const cleanScript = cleanTurns.map((turn) => turn.text).join(" ");
   return {
     ...plan,
+    scriptTurns: cleanTurns,
     script: cleanScript,
     scriptWordCount: countTnnScriptWords(cleanScript),
     estimatedSpeechSeconds: estimateTnnSpeechSeconds(cleanScript),
     scriptDraftAttempts,
     scriptStatus: cleanScript ? "draft-ready" as const : "not-drafted" as const,
+    factLock: cleanScript && factLock ? factLock : undefined,
     errorMessage: undefined,
   };
 }
@@ -304,7 +316,7 @@ export function buildCompletedTradeVideoPlan({
     tickerText: TNN_WEBSITE_TICKER,
     now,
   });
-  return withTnnVideoScript(plan, commentary, 1);
+  return withTnnVideoScript(plan, [{ speaker: "sidney", text: commentary }], 1);
 }
 
 export type SocialDraft = {

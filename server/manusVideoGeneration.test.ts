@@ -25,26 +25,25 @@ describe("Manus API configuration", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
     try {
       await createTradeVideoTask({
-        script: "Breaking News from Tradebilia. I'm Sidney Tradewell with the TNN Network. Jordan and Alex completed a collector trade featuring Test collectible. Tradebilia.",
+        turns: [{ speaker: "sidney", text: "Breaking News from Tradebilia. I'm Sidney Tradewell with the TNN Network. Jordan and Alex completed a collector trade featuring Test collectible. Tradebilia." }],
         durationSeconds: 45,
         anchorMode: "sidney",
         sellerName: "Jordan",
         buyerName: "Alex",
         cashOnly: false,
-        selectedItems: [{ title: "Test collectible", facts: [{ label: "Year", value: "1986" }] }],
+        selectedItems: [{ listingId: 42, title: "Test collectible", imageUrl: "https://tradebilia.manus.space/item.jpg", facts: [{ label: "Year", value: "1986" }] }],
         additionalItemsCount: 0,
         tickerText: "www.Tradebilia.com",
         logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
         newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
         openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
-        imageUrls: ["https://tradebilia.manus.space/item.jpg"],
         generationAttempt: 1,
       });
       const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
       expect(body.message.content[1]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png", filename: "tnn-tradebilia-news-network-logo.png", mime_type: "image/png" });
       expect(body.message.content[2]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png", filename: "tnn-approved-newsroom-set-reference.png", mime_type: "image/png" });
       expect(body.message.content[3]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png", filename: "tnn-approved-opening-globe-reference.png", mime_type: "image/png" });
-      expect(body.message.content[4]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", mime_type: "image/jpeg" });
+      expect(body.message.content[4]).toMatchObject({ type: "file", file_url: "https://tradebilia.manus.space/item.jpg", filename: "trade-item-1-listing-42.jpg", mime_type: "image/jpeg" });
     } finally {
       fetchMock.mockRestore();
     }
@@ -52,19 +51,24 @@ describe("Manus API configuration", () => {
 
   it("writes the approved privacy-safe TNN newsroom contract into the anchor instruction", () => {
     const instruction = buildTnnVideoInstruction({
-      script: "Breaking News from Tradebilia. I'm Max Tradebloski, and I'm Sidney Tradewell. Today the TNN Network confirms that Seller Smith and Buyer Jones completed a collector trade featuring Test collectible. This completed exchange celebrates collecting with care and shared enthusiasm across the community. Every selected piece is presented as part of the completed transaction. The report keeps the focus on the collector story, accurate item context, and the people behind the exchange. Tradebilia.",
+      turns: [
+        { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
+        { speaker: "sidney", text: "And I'm Sidney Tradewell, reporting for the TNN Network." },
+        { speaker: "max", text: "Today the TNN Network confirms that Seller Smith and Buyer Jones completed a collector trade featuring Test collectible." },
+        { speaker: "sidney", text: "This completed exchange celebrates collecting with care and accurate item context." },
+        { speaker: "max", text: "Tradebilia." },
+      ],
       durationSeconds: 45,
       anchorMode: "duo",
       sellerName: "Seller Smith",
       buyerName: "Buyer Jones",
       cashOnly: false,
-      selectedItems: [{ title: "Test collectible", grade: "9", certificationCompany: "PSA" }],
+      selectedItems: [{ listingId: 42, title: "Test collectible", imageUrl: "https://tradebilia.manus.space/item.jpg", grade: "9", certificationCompany: "PSA" }],
       additionalItemsCount: 1,
       tickerText: "www.Tradebilia.com",
       logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
       newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
       openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
-      imageUrls: ["https://tradebilia.manus.space/item.jpg"],
       generationAttempt: 1,
     });
     expect(instruction).toContain("45-second, 16:9 Tradebilia News Network");
@@ -82,10 +86,13 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("never as a square, rectangular, flat, or pasted logo card");
     expect(instruction).toContain("attached approved TNN newsroom visual-reference image");
     expect(instruction).toContain("stable polished medium desk shot");
-    expect(instruction).toContain("Max speaks only the “I'm Max Tradebloski” phrase; Sidney immediately delivers the “and I'm Sidney Tradewell” response");
-    expect(instruction).toContain("Do not assign both halves to one voice or add dialogue");
+    expect(instruction).toContain("Max speaks only MAX turns and Sidney speaks only SIDNEY turns");
+    expect(instruction).toContain("Structured speaker transcript");
+    expect(instruction).toContain("MAX: Breaking News from Tradebilia. I'm Max Tradebloski.");
+    expect(instruction).toContain("SIDNEY: And I'm Sidney Tradewell, reporting for the TNN Network.");
+    expect(instruction).toContain("trade-item-1-listing-42.jpg");
     expect(instruction).toContain("Do not place participant names, item values, prices, cash amounts");
-    expect(instruction).toContain("names are allowed in the spoken script only; never render them as text");
+    expect(instruction).toContain("names are allowed in the spoken transcript only; never render them as text");
     expect(instruction).toContain("www.Tradebilia.com");
     expect(instruction).toContain("trade-bil-lee-uh");
     expect(instruction).toContain("the TNN Network");

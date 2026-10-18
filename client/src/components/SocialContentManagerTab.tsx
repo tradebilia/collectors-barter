@@ -179,6 +179,20 @@ function normalizeDraft(draft: Partial<SocialDraft> & { id: string }): SocialDra
   } else if (normalized.source === "High-Value Listing" && promotionPath && !/View this item:\s*https?:\/\//i.test(normalized.copy)) {
     normalized.copy = `${normalized.copy.trim()}\n\nView this item:\n${promotionUrl}`.trim();
   }
+  // Old browser-local prose drafts lack explicit speaker assignments and a
+  // server fact lock, so they must be regenerated before video approval.
+  if (normalized.videoPlan?.script && (!Array.isArray(normalized.videoPlan.scriptTurns) || !normalized.videoPlan.factLock)) {
+    normalized.videoPlan = {
+      ...normalized.videoPlan,
+      scriptTurns: [],
+      script: "",
+      scriptWordCount: 0,
+      estimatedSpeechSeconds: 0,
+      scriptStatus: "not-drafted",
+      factLock: undefined,
+      errorMessage: "Regenerate this older TNN draft so it receives assigned speaker turns and a fresh fact lock.",
+    };
+  }
   return normalized;
 }
 
@@ -651,7 +665,7 @@ export function SocialContentManagerTab() {
         additionalItemsCount: plan.additionalItemsCount,
         tickerText: plan.tickerText,
       });
-      updateDraft({ videoPlan: withTnnVideoScript(plan, result.script, previousDraftAttempts + 1) });
+      updateDraft({ videoPlan: withTnnVideoScript(plan, result.turns, previousDraftAttempts + 1, result.factLock) });
       toast.success("A fact-locked TNN script draft is ready for your review.");
     } catch (error) {
       const message = error instanceof Error ? error.message : "The TNN script could not be drafted.";
@@ -679,14 +693,10 @@ export function SocialContentManagerTab() {
   async function startApprovedTnnGeneration() {
     if (!selectedDraft?.videoPlan || selectedDraft.source !== "Completed Trade") return;
     const plan = selectedDraft.videoPlan;
-    if (plan.scriptStatus !== "draft-ready" || plan.generationAttempt >= 2 || !selectedDraft.promotion?.tradeId) return;
+    if (plan.scriptStatus !== "draft-ready" || !plan.factLock || plan.generationAttempt >= 2 || !selectedDraft.promotion?.tradeId) return;
     setIsTnnGenerationConfirmOpen(false);
     updateDraft({ videoPlan: { ...plan, generationStatus: "starting", errorMessage: undefined, statusMessage: "Starting the approved TNN video task…" } });
     try {
-      const imageUrls = plan.selectedItems
-        .map((item) => item.imageUrl)
-        .filter((url): url is string => Boolean(url && /^https?:\/\//i.test(url)))
-        .slice(0, 6);
       const task = await startCompletedTradeVideoGeneration.mutateAsync({
         tradeId: Number(selectedDraft.promotion.tradeId),
         durationSeconds: plan.durationSeconds,
@@ -698,8 +708,8 @@ export function SocialContentManagerTab() {
         selectedItems: plan.selectedItems.map(({ facts, ...item }) => ({ ...item, facts: facts ?? [] })),
         additionalItemsCount: plan.additionalItemsCount,
         tickerText: plan.tickerText,
-        script: plan.script,
-        imageUrls,
+        turns: plan.scriptTurns,
+        factLock: plan.factLock,
         generationAttempt: (plan.generationAttempt + 1) as 1 | 2,
       });
       if (plan.anchorMode !== "duo") setLastTnnSoloAnchor(plan.anchorMode);
@@ -1065,7 +1075,7 @@ export function SocialContentManagerTab() {
                   {videoAnchorMode === "duo" ? <label className="block rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm font-semibold text-violet-950">Duo opening style <select value={videoDuoOpeningStyleSelection} onChange={(event) => selectTnnDuoOpeningStyle(event.target.value as TnnDuoOpeningStyleSelection)} className="mt-1.5 flex h-10 w-full rounded-md border border-violet-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="random">Random — resolved to {TNN_DUO_OPENING_STYLES[videoDuoOpeningStyle].label}</option>{TNN_DUO_OPENING_STYLE_VALUES.map((style) => <option key={style} value={style}>{TNN_DUO_OPENING_STYLES[style].label}</option>)}</select><p className="mt-2 text-xs font-normal leading-5 text-violet-900">The resolved opening remains fixed in this draft, including when you regenerate its script or approve the video. “{TNN_DUO_OPENING_STYLES[videoDuoOpeningStyle].script}”</p></label> : null}
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Completed-trade items</p><p className="mt-1 text-xs leading-5 text-slate-600">Select up to six items that were actually exchanged and should appear in the upper-right panel. Unselected entries are omitted from the script; they are not treated as additional items.</p></div><Badge variant="outline" className="border-slate-300 bg-white text-slate-700">{videoSelectedItemIndexes.length} / 6 selected</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{(selectedDraft?.promotion?.tradeItems ?? []).map((item, index) => <label key={`${item.listingId ?? "item"}-${index}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-700 hover:border-violet-300"><Checkbox checked={videoSelectedItemIndexes.includes(index)} onCheckedChange={() => toggleTnnSelectedItem(index)} aria-label={`Include ${item.title} in TNN video`} /><span><span className="block font-semibold">{item.title}</span>{item.grade || item.certificationCompany || item.customGradingCompany ? <span className="mt-0.5 block text-xs text-slate-500">{formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)}</span> : null}</span></label>)}</div></div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Lower ticker</p><p className="mt-1 text-sm font-semibold text-slate-800">{videoTickerText}</p><p className="mt-1 text-xs leading-5 text-slate-500">Locked website address; it scrolls on screen and is not read by the anchors.</p></div>
-                  {selectedDraft?.videoPlan?.script ? <div className="rounded-lg border border-violet-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">AI-written script draft</p><p className="mt-1 text-xs text-slate-500">{selectedDraft.videoPlan.scriptWordCount} words · approximately {selectedDraft.videoPlan.estimatedSpeechSeconds} seconds · review before generation</p></div><Badge className="border border-violet-200 bg-violet-50 text-violet-800">Draft {selectedDraft.videoPlan.scriptDraftAttempts}</Badge></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-800">{selectedDraft.videoPlan.script}</p></div> : null}
+                  {selectedDraft?.videoPlan?.scriptTurns?.length ? <div className="rounded-lg border border-violet-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">AI-written broadcast transcript</p><p className="mt-1 text-xs text-slate-500">{selectedDraft.videoPlan.scriptWordCount} spoken words · approximately {selectedDraft.videoPlan.estimatedSpeechSeconds} seconds · review before generation</p></div><Badge className="border border-violet-200 bg-violet-50 text-violet-800">Draft {selectedDraft.videoPlan.scriptDraftAttempts}</Badge></div><p className="mt-2 text-xs leading-5 text-violet-900/80">Speaker labels are review-only assignments. They are not spoken or displayed in the finished video.</p><div className="mt-3 space-y-2">{selectedDraft.videoPlan.scriptTurns.map((turn, index) => <div key={`${turn.speaker}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3"><Badge className={turn.speaker === "max" ? "border border-sky-200 bg-sky-50 text-sky-800" : "border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800"}>{turn.speaker === "max" ? "MAX" : "SIDNEY"}</Badge><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">{turn.text}</p></div>)}</div></div> : null}
                   {selectedDraft?.videoPlan?.errorMessage ? <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs leading-5 text-rose-800">{selectedDraft.videoPlan.errorMessage}</p> : null}
                 </div>
                 <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between"><Button variant="outline" onClick={() => setIsVideoStudioOpen(false)}>Close Studio</Button><div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="outline" onClick={() => void draftCompletedTradeTnnVideoScript()} disabled={draftCompletedTradeTnnScript.isPending || startCompletedTradeVideoGeneration.isPending}><Sparkles className="mr-2 h-4 w-4" />{draftCompletedTradeTnnScript.isPending ? "Drafting Script…" : selectedDraft?.videoPlan?.script ? "Regenerate Script" : "Prepare TNN Script"}</Button><Button type="button" onClick={requestTnnGenerationApproval} disabled={selectedDraft?.videoPlan?.scriptStatus !== "draft-ready" || startCompletedTradeVideoGeneration.isPending || (selectedDraft?.videoPlan?.generationAttempt ?? 0) >= 2} className="bg-violet-700 text-white hover:bg-violet-800"><Youtube className="mr-2 h-4 w-4" />{(selectedDraft?.videoPlan?.generationAttempt ?? 0) === 1 ? "Approve Replacement" : "Approve & Generate"}</Button></div></DialogFooter>
