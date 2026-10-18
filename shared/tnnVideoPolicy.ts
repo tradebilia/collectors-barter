@@ -8,9 +8,10 @@ export const TNN_TRADEBILIA_PRONUNCIATION = "trade-bil-lee-uh";
 export const TNN_REQUIRED_CLOSING = "Tradebilia.";
 
 /**
- * PSA numeric grades are editorially rendered without meaningless trailing
- * zeros (for example, `10.00` becomes `10` and `9.0` becomes `9`). Other
- * companies' grade strings may encode meaningful qualifiers and remain intact.
+ * Purely numeric grades are editorially rendered without meaningless trailing
+ * zeros (for example, `10.00` becomes `10` and `9.0` becomes `9`). Grade
+ * strings with qualifiers such as `9.0 A` remain intact because their suffix
+ * carries grading meaning.
  */
 export function formatTnnGrade(
   certificationCompany: string | null | undefined,
@@ -21,9 +22,8 @@ export function formatTnnGrade(
   const rawGrade = String(grade ?? "").trim();
   if (!rawGrade) return company;
 
-  const isPsa = /(?:^|\b)PSA(?:\b|$)/i.test(company);
   const numericGrade = /^([+-]?\d+(?:\.\d+)?)$/.exec(rawGrade);
-  const normalizedGrade = isPsa && numericGrade
+  const normalizedGrade = numericGrade
     ? String(Number(numericGrade[1]))
     : rawGrade;
 
