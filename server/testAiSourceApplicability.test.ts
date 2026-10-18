@@ -41,7 +41,7 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(getEligibleTestAiSources({ category: 'vinyl', hasTitle: true }).map((source) => source.sourceId)).not.toContain('discogs');
   });
 
-  it('shows active specialist sources in their researched categories while excluding Goldin from Stamps and Weiss/Hake’s from Video Games', () => {
+  it('shows active specialist sources in their researched categories while excluding Goldin from Stamps, Music, and Disney Pins plus Weiss/Hake’s from Video Games', () => {
     const coinIds = getEligibleTestAiSources({ category: 'coins', gradingCompany: 'NGC', hasTitle: true }).map((source) => source.sourceId);
     expect(coinIds).not.toContain('coin_archives');
     expect(coinIds).not.toContain('cng');
@@ -52,6 +52,13 @@ describe('internal Test AI source-category applicability policy', () => {
     expect(stampIds).toEqual(expect.arrayContaining(['rumsey', 'cherrystone', 'raritan']));
     expect(stampIds).not.toContain('heritage');
     expect(stampIds).not.toContain('goldin');
+
+    const musicIds = getEligibleTestAiSources({ category: 'music', hasTitle: true }).map((source) => source.sourceId);
+    expect(musicIds).toContain('discogs');
+    expect(musicIds).not.toContain('goldin');
+
+    const disneyPinsIds = getEligibleTestAiSources({ category: 'disney pins', hasTitle: true }).map((source) => source.sourceId);
+    expect(disneyPinsIds).not.toContain('goldin');
 
     const gameIds = getEligibleTestAiSources({ category: 'video_games', hasTitle: true }).map((source) => source.sourceId);
     expect(gameIds).toContain('goldin');
@@ -64,7 +71,7 @@ describe('internal Test AI source-category applicability policy', () => {
     const autographIds = getEligibleTestAiSources({ category: 'autographs', hasTitle: true }).map((source) => source.sourceId);
     for (const removed of ['university_archives', 'swann', 'rr_auction', 'alexander_historical', 'heritage']) expect(autographIds).not.toContain(removed);
 
-    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins']) {
+    for (const category of ['comics', 'sports_cards', 'vintage_toys', 'coins', 'pokemon', 'movies', 'autographs']) {
       const sourceIds = getEligibleTestAiSources({ category, hasTitle: true }).map((source) => source.sourceId);
       expect(sourceIds, `Goldin should be eligible for ${category}`).toContain('goldin');
       expect(sourceIds, `Weiss should be eligible for ${category}`).toContain('weiss');

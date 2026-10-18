@@ -100,12 +100,16 @@ describe('permission-pending market-source adapters', () => {
     expect(status.message).toMatch(/not applicable/i);
   });
 
-  it('does not retain Goldin as a pending Stamps source', () => {
+  it('does not retain Goldin as a pending Stamps, Music, or Disney Pins source', () => {
     const goldin = PERMISSION_PENDING_MARKET_SOURCES.find((source) => source.id === 'goldin');
     expect(goldin?.categories).not.toContain('stamps');
-    const status = getPermissionPendingLookupStatus('goldin', { title: 'United States Stamp Scott 572', category: 'stamps' });
-    expect(status.applicable).toBe(false);
-    expect(status.message).toMatch(/not applicable/i);
+    expect(goldin?.categories).not.toContain('music');
+    expect(goldin?.categories).not.toContain('disney_pins');
+    for (const [title, category] of [['United States Stamp Scott 572', 'stamps'], ['The Beatles Abbey Road', 'music'], ['Mickey Mouse Disney Pin', 'disney_pins']] as const) {
+      const status = getPermissionPendingLookupStatus('goldin', { title, category });
+      expect(status.applicable, `Goldin should not be pending for ${category}`).toBe(false);
+      expect(status.message).toMatch(/not applicable/i);
+    }
   });
 
   it('keeps every visible pending source mapped to each of its researched categories', () => {
