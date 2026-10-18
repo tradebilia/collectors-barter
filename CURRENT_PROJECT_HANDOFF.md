@@ -417,3 +417,11 @@ Focused tracker/source validation passed **75/75** tests; TypeScript, production
 Weiss Auctions and Hake’s Auction Results are no longer applicable, selectable, or queryable for **Video Games**. They remain available only for their previously supported non-game categories. The shared Test AI applicability registry, visible specialist-source registry, and permission-pending Hake’s registry were updated together, and the specialist router now returns `not_applicable` before any provider fetch when either source is requested for a video game.
 
 Focused applicability and adapter validation passed **57/57** tests; TypeScript, production build, `git diff --check`, and stale-mapping checks passed. No database writes, migrations, seeds, provider configuration, valuation-policy changes, or adapter deletions were made.
+
+## Hake’s historical-search correction — October 17, 2026
+
+The Hake’s adapter previously fetched only the first four unfiltered catalog pages from `/auctions/past`, which caused unrelated current-auction lots such as G.I. Joe to appear for unrelated searches. It now sends the structured query through each bounded past-auction catalog’s public `?search=` parameter, admits only deterministic identity-compatible lots, and inspects a bounded number of matching lot pages for explicit realized-price text. Unrelated catalog lots are no longer displayed. Matching lots with `Login for Price` remain context-only with an explicit hidden-price reason; no value is fabricated and Hake’s remains 0% valuation weight.
+
+Verified live with the user’s Amazing Spider-Man example: query `The Amazing Spider-Man 238 1983` found the matching `AMAZING SPIDER-MAN #238 MARCH 1983 CGC 9.8 NM/MINT` lot, excluded unrelated G.I. Joe lots, and reported that Hake’s hides the realized price behind `Login for Price`.
+
+Focused Hake’s tests passed 7/7; TypeScript and live bounded reproduction passed. No database writes, migrations, seed scripts, destructive scripts, credential changes, or valuation-policy changes were made.

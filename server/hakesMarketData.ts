@@ -8,8 +8,9 @@ import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence
 
 const HAKES_BASE = 'https://www.hakes.com';
 const HAKES_PAST_AUCTIONS = `${HAKES_BASE}/auctions/past`;
-const MAX_CATALOGS = 4;
+const MAX_CATALOGS = 12;
 const MAX_RECORDS = 24;
+const MAX_DETAIL_PAGES = 12;
 const REQUEST_TIMEOUT_MS = 10_000;
 
 function text(value: unknown): string {
@@ -79,6 +80,21 @@ function explicitCompleted(value: string): boolean {
   return /\b(?:sold\s+for|price\s+realized|realized\s+price|final\s+price|winning\s+bid|sold)\b/i.test(value)
     && !/\b(?:current\s+bid|starting\s+bid|register\s+to\s+bid|upcoming)\b/i.test(value);
 }
+function catalogSearchUrl(catalogUrl: string, query: string): string {
+  const url = new URL(catalogUrl);
+  url.hash = '';
+  url.searchParams.set('search', query);
+  return url.toString();
+}
+function hiddenPrice(value: string): boolean {
+  return /\b(?:login|log in)\s+for\s+price\b/i.test(value);
+}
+function buyerPremiumPercentage(value: string): number | null {
+  const match = value.match(/(?:buyer.?s?\s+premium|includes?)\D{0,40}(\d+(?:\.\d+)?)\s*%/i);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  return Number.isFinite(amount) ? amount : null;
+}
 function extractLotId(card: Element, url: string | null, body: string): string | null {
   const id = text(card.getAttribute('id')).match(/(?:stl-|ba_)?(\d{5,})/i)?.[1]
     ?? url?.match(/-(\d{6,})(?:\?|$)/)?.[1]
@@ -89,7 +105,9 @@ function extractCertificationCompany(value: string): string | null {
   return value.match(/\b(PSA|WATA|VGA|CGC|BGS|SGC|AFA)\b/i)?.[1]?.toUpperCase() ?? null;
 }
 function extractTitle(card: Element, body: string): string {
-  const title = text(card.querySelector('.item-title, .item_name, .title, h2, h3, a[href*="/online-auctions/"]')?.textContent);
+  const title = text(card.querySelector('.item-title, .item_name, .title, h2, h3')?.textContent)
+    || Array.from(card.querySelectorAll('a[href*="/online-auctions/"]')).map((anchor) => text(anchor.textContent)).find(Boolean)
+    || '';
   if (title) return title.replace(/^Lot\s+\d+\s*/i, '').trim();
   return body.replace(/^Lot\s+\d+\s*/i, '').split(/Estimate:|Current Bid|Sold for|Price Realized/i)[0].trim();
 }
@@ -127,8 +145,10 @@ export async function lookupHakes(input: SpecialistMarketplaceLookupInput): Prom
   const catalogUrls = [...new Set(Array.from(pastDocument.querySelectorAll('a[href]')).map((anchor) => canonicalUrl(anchor.getAttribute('href') ?? '')).filter((url): url is string => Boolean(url && /\/auctions\/hakes-auctions\/[^/?#]+\/catalog$/i.test(url))))].slice(0, MAX_CATALOGS);
   if (!catalogUrls.length) return { ...empty, status: 'success', messages: ['Hake’s public past-auction page exposed no catalog links; no records were created.'] };
   const records: SpecialistMarketplaceRecord[] = [];
+  let detailPages = 0;
   for (const catalogUrl of catalogUrls) {
-    const catalog = await getHtml(catalogUrl);
+    const searchUrl = catalogSearchUrl(catalogUrl, empty.query);
+    const catalog = await getHtml(searchUrl);
     if ('error' in catalog) continue;
     const document = new JSDOM(catalog.html, { url: catalog.finalUrl }).window.document;
     const eventText = text(document.body?.textContent);
@@ -141,9 +161,26 @@ export async function lookupHakes(input: SpecialistMarketplaceLookupInput): Prom
       const title = extractTitle(card, body);
       if (!title) continue;
       const review = identity(input, title);
+      if (!review.matched) continue;
       const completed = explicitCompleted(body);
       const price = completed ? extractPrice(body) : null;
-      records.push({ sourceId: 'hakes', provider: "Hake's Auction Results", title, description: body.slice(0, 2_000) || null, lotId: extractLotId(card, lotUrl, body), auctionName: text(document.querySelector('h1')?.textContent || document.title) || null, url: lotUrl ?? catalog.finalUrl, imageUrl: canonicalUrl(card.querySelector('img[src]')?.getAttribute('src') ?? '') ?? null, saleStatus: completed && price ? 'completed' : 'unknown', completed: Boolean(completed && price), price, currency: price ? 'USD' : null, date: extractDate(body) ?? eventDate, grade: null, certificationCompany: review.certificationCompany, priceBasis: price ? 'closed' : 'unknown', buyerPremiumIncluded: null, winningBid: price, buyerPremiumPercentage: null, identityMatched: review.matched, matchedTokens: review.tokens, exclusionReason: !completed || !price ? 'The public Hake’s catalog record did not expose an explicit completed-sale status and realized price.' : !review.matched ? 'The structured Hake’s identity fields did not meet the deterministic identity or video-game grader-equivalence threshold.' : 'Context-only pending source activation, buyer-premium verification, and category-specific admission review.', valuationEligible: false });
+      let detailBody = body;
+      let detailCompleted = completed;
+      let detailPrice = price;
+      let detailPremium: number | null = null;
+      if (lotUrl && detailPages < MAX_DETAIL_PAGES && (!detailCompleted || detailPrice === null)) {
+        detailPages += 1;
+        const lot = await getHtml(lotUrl);
+        if (!('error' in lot)) {
+          const lotDocument = new JSDOM(lot.html, { url: lot.finalUrl }).window.document;
+          detailBody = text(lotDocument.body?.textContent) || body;
+          detailCompleted = explicitCompleted(detailBody);
+          detailPrice = detailCompleted ? extractPrice(detailBody) : null;
+          detailPremium = buyerPremiumPercentage(detailBody);
+        }
+      }
+      const priceHidden = hiddenPrice(detailBody) && detailPrice === null;
+      records.push({ sourceId: 'hakes', provider: "Hake's Auction Results", title, description: detailBody.slice(0, 2_000) || null, lotId: extractLotId(card, lotUrl, detailBody), auctionName: text(document.querySelector('h1')?.textContent || document.title) || null, url: lotUrl ?? catalog.finalUrl, imageUrl: canonicalUrl(card.querySelector('img[src]')?.getAttribute('src') ?? '') ?? null, saleStatus: detailCompleted && detailPrice ? 'completed' : 'unknown', completed: Boolean(detailCompleted && detailPrice), price: detailPrice, currency: detailPrice ? 'USD' : null, date: extractDate(detailBody) ?? extractDate(body) ?? eventDate, grade: null, certificationCompany: review.certificationCompany, priceBasis: detailPrice ? 'closed' : 'unknown', buyerPremiumIncluded: detailPremium !== null ? detailBody.match(/includes?\s+\d+(?:\.\d+)?%\s+buyer.?s?\s+premium/i) !== null : null, winningBid: detailPrice, buyerPremiumPercentage: detailPremium, identityMatched: true, matchedTokens: review.tokens, exclusionReason: !detailCompleted || !detailPrice ? (priceHidden ? 'The matching Hake’s lot is closed, but its realized price is hidden behind Login for Price.' : 'The matching Hake’s lot did not expose an explicit completed-sale status and realized price.') : 'Context-only pending source activation and category-specific admission review.', valuationEligible: false });
     }
     if (records.length >= MAX_RECORDS) break;
   }

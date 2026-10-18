@@ -53,6 +53,7 @@ describe('Hake’s full public catalog adapter', () => {
     const result = await lookupHakes(target);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(HAKES_TEST_URLS.pastAuctions);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain('/catalog?search=Star+Wars+1+1977');
     expect(result.status).toBe('success');
     expect(result.query).toBe('Star Wars 1 1977');
     expect(result.sales).toHaveLength(1);
@@ -72,6 +73,34 @@ describe('Hake’s full public catalog adapter', () => {
     expect(result.sales).toHaveLength(0);
     expect(result.context).toHaveLength(1);
     expect(result.context[0]).toMatchObject({ completed: false, price: null, valuationEligible: false });
+  });
+
+  it('does not display unrelated lots returned by a catalog search', async () => {
+    const pastHtml = `<a href="/auctions/hakes-auctions/september-2026-pop-culture-auction-24709/catalog">View Catalog</a>`;
+    const catalogHtml = `<div class="gtm-visible_item" id="stl-1234567"><a href="/online-auctions/hakes-auctions/gi-joe-1234567">G.I. JOE COBRA VEHICLE</a> Lot 1 Sold for $500 September 30, 2026</div>`;
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(pastHtml, { status: 200, headers: { 'content-type': 'text/html' } }))
+      .mockResolvedValueOnce(new Response(catalogHtml, { status: 200, headers: { 'content-type': 'text/html' } }));
+
+    const result = await lookupHakes(target);
+    expect(result.sales).toHaveLength(0);
+    expect(result.context).toHaveLength(0);
+    expect(result.messages[0]).toMatch(/0 passed completed-sale and identity checks/i);
+  });
+
+  it('retains a matching closed lot when Hake’s hides the realized price', async () => {
+    const pastHtml = `<a href="/auctions/hakes-auctions/september-2026-pop-culture-auction-24709/catalog">View Catalog</a>`;
+    const catalogHtml = `<div class="gtm-visible_item" id="stl-1234567"><a href="/online-auctions/hakes-auctions/star-wars-1-1234567">STAR WARS #1 CGC 9.8</a> Lot 1 Login for Price September 30, 2026</div>`;
+    const detailHtml = `<html><body><h1>STAR WARS #1 CGC 9.8</h1><p>Auction ended. Bidding has ended for this item. Login for Price.</p></body></html>`;
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(pastHtml, { status: 200, headers: { 'content-type': 'text/html' } }))
+      .mockResolvedValueOnce(new Response(catalogHtml, { status: 200, headers: { 'content-type': 'text/html' } }))
+      .mockResolvedValueOnce(new Response(detailHtml, { status: 200, headers: { 'content-type': 'text/html' } }));
+
+    const result = await lookupHakes(target);
+    expect(result.sales).toHaveLength(0);
+    expect(result.context[0]).toMatchObject({ title: 'STAR WARS #1 CGC 9.8', price: null, completed: false, valuationEligible: false });
+    expect(result.context[0]?.exclusionReason).toMatch(/hidden behind Login for Price/i);
   });
 
   it('accepts a WATA lot for a PSA video-game target', async () => {
