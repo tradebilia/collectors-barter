@@ -26,6 +26,7 @@ import {
 const input = {
   durationSeconds: 45 as const,
   anchorMode: "duo" as const,
+  duoOpeningStyle: "classic" as const,
   sellerName: "Morgan Seller",
   buyerName: "Taylor Buyer",
   cashOnly: false,
@@ -97,7 +98,7 @@ describe("TNN fact-locked script contract", () => {
     expect(prompt).toContain("the TNN Network");
     expect(prompt).toContain("trade-bil-lee-uh");
     expect(prompt).toContain("Max Tradebloski and Sidney Tradewell");
-    expect(prompt).toContain("Use one combined introduction");
+    expect(prompt).toContain("Use this required Classic co-anchor handoff");
     expect(prompt).toContain("I'm Max Tradebloski, and I'm Sidney Tradewell");
     expect(prompt).toContain("Do not use two disconnected introductions");
     expect(prompt).toContain("at most one or two brief, natural newsroom ad-lib comments");
@@ -121,6 +122,15 @@ describe("TNN fact-locked script contract", () => {
     expect(() => validateTnnScriptDraft(validScript.replace("the TNN Network", "TNN"), input)).toThrow(/TNN Network/i);
     expect(() => validateTnnScriptDraft(validScript.replace("I'm Sidney Tradewell. ", ""), input)).toThrow(/every selected anchor/i);
     expect(() => validateTnnScriptDraft(validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell"), input)).toThrow(TNN_DUO_OPENING_ERROR);
+  });
+
+  it("requires the resolved selected opening style rather than accepting any duo handoff", () => {
+    const alongsideInput = { ...input, duoOpeningStyle: "alongside" as const };
+    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell", ", alongside Sidney Tradewell");
+    expect(buildTnnScriptPrompt(alongsideInput)).toContain("Alongside handoff");
+    expect(buildTnnScriptPrompt(alongsideInput)).toContain("I'm Max Tradebloski, alongside Sidney Tradewell.");
+    expect(() => validateTnnScriptDraft(alongsideScript, alongsideInput)).not.toThrow();
+    expect(() => validateTnnScriptDraft(validScript, alongsideInput)).toThrow(TNN_DUO_OPENING_ERROR);
   });
 
   it("does not infer additional exchanged items from unselected entries in a one-for-one trade", () => {
@@ -185,18 +195,18 @@ describe("TNN fact-locked script contract", () => {
     });
   });
 
-  it("runs one corrective script-only retry when a duo draft omits one anchor self-introduction", async () => {
-    const missingMaxIntroduction = validScript.replace("I'm Max Tradebloski, and I'm Sidney Tradewell.", "Max Tradebloski reports for the TNN Network, joined by Sidney Tradewell.");
-    expect(() => validateTnnScriptDraft(missingMaxIntroduction, input)).toThrow(TNN_ANCHOR_INTRODUCTION_ERROR);
+  it("runs one corrective script-only retry when a duo draft omits an anchor from the combined opening", async () => {
+    const missingSidneyIntroduction = validScript.replace("Sidney Tradewell", "the co-anchor");
+    expect(() => validateTnnScriptDraft(missingSidneyIntroduction, input)).toThrow(TNN_ANCHOR_INTRODUCTION_ERROR);
     mockedInvokeLLM
-      .mockResolvedValueOnce(responseFor(missingMaxIntroduction) as any)
+      .mockResolvedValueOnce(responseFor(missingSidneyIntroduction) as any)
       .mockResolvedValueOnce(responseFor(validScript) as any);
 
     await expect(draftTnnScript(input)).resolves.toMatchObject({ script: validScript });
     expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
-      content: expect.stringContaining('"I\'m Max Tradebloski" or "I’m Max Tradebloski" or "I am Max Tradebloski"'),
+      content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell"),
     });
   });
 
@@ -216,6 +226,21 @@ describe("TNN fact-locked script contract", () => {
     const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
     expect(corrective.messages[2]).toMatchObject({
       content: expect.stringContaining("I'm Max Tradebloski, and I'm Sidney Tradewell"),
+    });
+  });
+
+  it("retains the selected alternative duo opening style during the bounded corrective retry", async () => {
+    const alongsideInput = { ...input, duoOpeningStyle: "alongside" as const };
+    const disconnectedDuoOpening = validScript.replace(", and I'm Sidney Tradewell", ". I'm Sidney Tradewell");
+    const alongsideScript = validScript.replace(", and I'm Sidney Tradewell", ", alongside Sidney Tradewell");
+    mockedInvokeLLM
+      .mockResolvedValueOnce(responseFor(disconnectedDuoOpening) as any)
+      .mockResolvedValueOnce(responseFor(alongsideScript) as any);
+
+    await expect(draftTnnScript(alongsideInput)).resolves.toMatchObject({ script: alongsideScript });
+    const [, corrective] = mockedInvokeLLM.mock.calls.map(([request]) => request);
+    expect(corrective.messages[2]).toMatchObject({
+      content: expect.stringContaining("I'm Max Tradebloski, alongside Sidney Tradewell"),
     });
   });
 
