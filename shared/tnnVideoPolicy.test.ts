@@ -11,7 +11,7 @@ import {
 describe("TNN video render policy", () => {
   it("locks the approved length, network wording, phonetic guide, closing, and website ticker", () => {
     expect(TNN_VIDEO_DURATION_SECONDS).toBe(45);
-    expect(TNN_WEBSITE_TICKER).toBe("WWW.Tradebilia.com");
+    expect(TNN_WEBSITE_TICKER).toBe("www.Tradebilia.com");
     expect(TNN_NETWORK_SPOKEN_NAME).toBe("the TNN Network");
     expect(TNN_TRADEBILIA_PRONUNCIATION).toBe("trade-bil-lee-uh");
     expect(TNN_REQUIRED_CLOSING).toBe("Tradebilia.");

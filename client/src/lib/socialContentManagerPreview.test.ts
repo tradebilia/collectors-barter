@@ -78,7 +78,7 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("transparent glossy mark");
     expect(componentSource).toContain("TNN — transparent glossy Tradebilia News Network logo");
     expect(componentSource).toContain("full-frame globe-and-ribbon reveal");
-    expect(componentSource).toContain("WWW.Tradebilia.com");
+    expect(componentSource).toContain("www.Tradebilia.com");
     expect(componentSource).toContain("final-video-attached");
     expect(componentSource).toContain("Prepare TNN Script");
     expect(componentSource).toContain("Approve & Generate");
