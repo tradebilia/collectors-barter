@@ -259,7 +259,7 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
   {
     id: 'hakes',
     label: 'Hake’s Auction Results',
-    categories: ['disney_pins', 'video_games', 'vintage_toys'],
+    categories: ['disney_pins', 'vintage_toys'],
     sourceUrl: 'https://www.hakes.com/auctionresults.aspx',
     purpose: 'Provenance-rich realized-price records for specialist collectible lots.',
     priceBasis: 'including_buyers_premium',
