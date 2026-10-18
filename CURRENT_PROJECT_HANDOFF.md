@@ -430,3 +430,6 @@ Focused Hake’s tests passed 7/7; TypeScript and live bounded reproduction pass
 For Goldin searches where the item category is **Vintage Toys**, the automatic one-query search now uses only the structured fields in this order: **year, brand, line, toy name**. Grading company, grade, condition, and the free-form item title are not sent as Goldin search criteria for this category. The same four-field query is used in the visible Test AI Structured fields preview, while downstream identity/admission checks remain unchanged.
 
 Focused Goldin/source validation passed **64/64**; TypeScript, production build, and `git diff --check` passed. No database writes, migrations, seeders, secrets, provider configuration, or valuation-policy changes were made.
+
+## Goldin Vintage Toys criteria correction — October 17, 2026
+The prior Goldin Vintage Toys rule included year. Per the owner’s correction, year is now excluded. Goldin’s one-query Vintage Toys criteria are only **brand, line, and toy name**, in that order; grading company, grade, condition, and free-form title remain excluded. The visible Test AI Structured fields preview uses the same three-field order. Downstream identity/admission checks and valuation policy are unchanged.

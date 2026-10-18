@@ -294,7 +294,6 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['releaseYear', 'year']));
     add(firstDetail(details, ['edition', 'version']));
   } else if (category === 'vintage toys') {
-    add(firstDetail(details, ['year', 'manufactureYear']));
     add(firstDetail(details, ['brand', 'brandName', 'manufacturer']));
     add(firstDetail(details, ['line', 'franchise']));
     add(firstDetail(details, ['toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName']));
