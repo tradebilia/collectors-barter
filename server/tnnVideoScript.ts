@@ -11,6 +11,7 @@ import {
 export const TNN_SCRIPT_MODEL = "gpt-5-mini";
 export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
 export const TNN_SELECTED_ITEM_COVERAGE_ERROR = "The TNN script did not mention every approved selected item.";
+export const TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR = "The TNN script must not claim that additional collector items changed hands when no additional items were approved.";
 export const TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX = "The TNN script must contain ";
 export const TNN_ANCHOR_INTRODUCTION_ERROR = "The TNN script must include an on-air self-introduction from every selected anchor.";
 export const TNN_ANCHOR_REPETITION_ERROR = "The TNN script must not repeat an anchor's full-name introduction or callout.";
@@ -132,7 +133,9 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
     "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written at least once; you may paraphrase its facts but not its title. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
     "Do not include captions, production directions, scene directions, speaker labels, markdown, bullet points, or quoted visual text in the script. The video-production layer handles the newsroom visuals.",
-    `If the selected items do not cover the entire transaction, say one time: '${input.additionalItemsCount === 1 ? "Additional collector items changed hands as part of the completed transaction." : "Additional collector items changed hands as part of the completed transaction."}' Do not name unselected items.`,
+    input.additionalItemsCount > 0
+      ? `Only because ${input.additionalItemsCount} additional exchanged item${input.additionalItemsCount === 1 ? "" : "s"} was explicitly approved, say one time: 'Additional collector items changed hands as part of the completed transaction.' Do not name unselected items.`
+      : "The approved selected items are the complete set of items exchanged in this report. Do not say or imply that additional collector items changed hands.",
     `Lower-screen ticker text is fixed to '${TNN_WEBSITE_TICKER}' and is never spoken.`,
     "Approved item facts:",
     publicFactLines(input.selectedItems) || "No item facts were supplied; refer only to the completed collector transaction.",
@@ -166,6 +169,9 @@ export function validateTnnScriptDraft(rawScript: string, input: TnnScriptDraftI
   }
   if (normalizedInput.additionalItemsCount > 0 && !/additional collector items changed hands/i.test(script)) {
     throw new Error("The TNN script must acknowledge additional collector items when the selection is capped.");
+  }
+  if (normalizedInput.additionalItemsCount === 0 && /additional collector items changed hands/i.test(script)) {
+    throw new Error(TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR);
   }
   const anchors = getTnnScriptAnchorNames(normalizedInput.anchorMode);
   if (anchors.some((anchor) => !new RegExp(`\\b(?:I['’]m|I am)\\s+${escapeRegExp(anchor)}\\b`, "i").test(script))) {

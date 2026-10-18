@@ -11,6 +11,7 @@ import {
   TNN_ANCHOR_REPETITION_ERROR,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
+  TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR,
   validateTnnScriptDraft,
 } from "./tnnVideoScript";
 import {
@@ -67,6 +68,7 @@ describe("TNN completed-trade video policy", () => {
       ...input,
       tradeItems: [...input.selectedItems, { title: "Comic Book" }, { title: "Coin" }],
       selectedItemIndexes: [0, 2],
+      additionalItemsCount: 2,
       now: "2026-10-17T12:00:00.000Z",
     });
     expect(plan).toMatchObject({
@@ -118,6 +120,26 @@ describe("TNN fact-locked script contract", () => {
     expect(() => validateTnnScriptDraft(validScript.replace("PSA 9 Trading Card", "graded card"), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
     expect(() => validateTnnScriptDraft(validScript.replace("the TNN Network", "TNN"), input)).toThrow(/TNN Network/i);
     expect(() => validateTnnScriptDraft(validScript.replace("I'm Sidney Tradewell. ", ""), input)).toThrow(/every selected anchor/i);
+  });
+
+  it("does not infer additional exchanged items from unselected entries in a one-for-one trade", () => {
+    const plan = buildTnnCompletedTradeVideoPlan({
+      sellerName: "Morgan Seller",
+      buyerName: "Taylor Buyer",
+      tradeItems: [{ title: "Item A" }, { title: "Item B" }, { title: "Unrelated Entry" }],
+      selectedItemIndexes: [0, 1],
+      cashOnly: false,
+      durationSeconds: 45,
+      anchorMode: "duo",
+      tickerText: "www.Tradebilia.com",
+    });
+    expect(plan.additionalItemsCount).toBe(0);
+
+    const oneForOneScript = validScript
+      .replace("1989 Nintendo Game and PSA 9 Trading Card", "1989 Nintendo Game and PSA 9 Trading Card")
+      .replace("Additional collector items changed hands as part of the completed transaction. ", "");
+    expect(() => validateTnnScriptDraft(oneForOneScript, { ...input, additionalItemsCount: 0 })).not.toThrow();
+    expect(() => validateTnnScriptDraft(validScript, { ...input, additionalItemsCount: 0 })).toThrow(TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR);
   });
 
   it("uses minimal reasoning and a sufficient completion budget, accepting a documented text-part response", () => {
