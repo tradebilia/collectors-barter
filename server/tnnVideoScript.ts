@@ -11,6 +11,7 @@ import {
 export const TNN_SCRIPT_MODEL = "gpt-5-mini";
 export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 700;
 export const TNN_SELECTED_ITEM_COVERAGE_ERROR = "The TNN script did not mention every approved selected item.";
+export const TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX = "The TNN script must contain ";
 export const TNN_SCRIPT_WORD_BUDGET = {
   45: { minimum: 80, maximum: 100 },
 } as const;
@@ -185,6 +186,17 @@ function buildCorrectiveTnnItemCoveragePrompt(input: TnnScriptDraftInput) {
   ].join("\n");
 }
 
+function buildCorrectiveTnnWordCountPrompt(input: TnnScriptDraftInput) {
+  const normalizedInput = normalizeTnnScriptInput(input);
+  const budget = TNN_SCRIPT_WORD_BUDGET[normalizedInput.durationSeconds];
+  return [
+    "Corrective retry: the prior TNN draft was outside the required spoken word range.",
+    "Return one complete replacement script only as the required strict JSON. Do not explain the correction.",
+    `The replacement script must contain ${budget.minimum}-${budget.maximum} spoken words, inclusive. Count every spoken word, including the opening and closing; do not count punctuation as words.`,
+    "Keep every original privacy, factual-boundary, anchor-introduction, selected-item-coverage, network-wording, and closing-tagline rule from the user request.",
+  ].join("\n");
+}
+
 async function requestTnnScript(input: TnnScriptDraftInput, correctiveInstruction?: string) {
   const response = await invokeLLM({
     model: TNN_SCRIPT_MODEL,
@@ -230,9 +242,15 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
   try {
     return validateTnnScriptDraft(await requestTnnScript(input), input);
   } catch (error) {
-    if (!(error instanceof Error) || error.message !== TNN_SELECTED_ITEM_COVERAGE_ERROR) throw error;
+    if (!(error instanceof Error)) throw error;
+    const correctiveInstruction = error.message === TNN_SELECTED_ITEM_COVERAGE_ERROR
+      ? buildCorrectiveTnnItemCoveragePrompt(input)
+      : error.message.startsWith(TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX)
+        ? buildCorrectiveTnnWordCountPrompt(input)
+        : null;
+    if (!correctiveInstruction) throw error;
     return validateTnnScriptDraft(
-      await requestTnnScript(input, buildCorrectiveTnnItemCoveragePrompt(input)),
+      await requestTnnScript(input, correctiveInstruction),
       input
     );
   }
