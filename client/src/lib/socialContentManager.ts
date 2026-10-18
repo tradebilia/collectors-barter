@@ -189,6 +189,7 @@ export function buildTnnCompletedTradeVideoPlan({
   buyerName,
   tradeItems = [],
   selectedItemIndexes,
+  additionalItemsCount,
   cashOnly,
   durationSeconds = TNN_VIDEO_DURATION_SECONDS,
   anchorMode,
@@ -199,6 +200,8 @@ export function buildTnnCompletedTradeVideoPlan({
   buyerName: string;
   tradeItems?: TnnTradeItem[];
   selectedItemIndexes?: number[];
+  /** Explicit count only; unselected UI entries are not assumed to be exchanged items. */
+  additionalItemsCount?: number;
   cashOnly: boolean;
   durationSeconds?: TnnVideoDuration;
   anchorMode: TnnAnchorMode;
@@ -224,7 +227,7 @@ export function buildTnnCompletedTradeVideoPlan({
     tickerText: TNN_WEBSITE_TICKER,
     selectedItemIndexes: indexes,
     selectedItems,
-    additionalItemsCount: Math.max(0, cleanItems.length - selectedItems.length),
+    additionalItemsCount: Math.max(0, Math.min(99, Math.trunc(Number(additionalItemsCount) || 0))),
     script: "",
     scriptWordCount: 0,
     estimatedSpeechSeconds: 0,
