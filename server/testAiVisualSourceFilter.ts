@@ -32,6 +32,7 @@ export type VisualSourceReview = {
     initialVerdict: VisualSourceReview["verdict"] | "no_decision";
     initialConfidence: VisualSourceReview["confidence"] | "no_decision";
     retryStatus: "not_needed" | "performed" | "failed";
+    adjudicationStatus?: "confirmed" | "unavailable";
     retryReason?: string;
     finalPass: "initial" | "high_resolution_retry";
     initialEvidence?: VisualEvidence;
@@ -66,6 +67,7 @@ export const VISUAL_REVIEW_OVERALL_DEADLINE_MS = 120_000;
 const VERDICTS = new Set(["match", "rough_match", "mismatch", "unreadable"]);
 const CONFIDENCES = new Set(["high", "medium", "low"]);
 const RETRY_STATUSES = new Set(["not_needed", "performed", "failed"]);
+const ADJUDICATION_STATUSES = new Set(["confirmed", "unavailable"]);
 const FINAL_PASSES = new Set(["initial", "high_resolution_retry"]);
 
 function safeHttps(value: unknown): string | null {
@@ -200,7 +202,7 @@ export function enforceDisneyPinsExactEvidence(review: VisualSourceReview, targe
   };
 }
 
-/** A Disney Pin may reach analyzer evidence only after the independent high-resolution pass—not a primary-pass guess—confirms every gate. */
+/** A Disney Pin may reach analyzer evidence after confirmed adjudication or a complete primary match whose independent retry was unavailable. */
 export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
   return Boolean(
     review?.verdict === "match"
@@ -208,6 +210,23 @@ export function hasCompletedDisneyPinsAdjudication(review: VisualSourceReview | 
     && review.visualAudit?.retryStatus === "performed"
     && review.visualAudit.finalPass === "high_resolution_retry"
     && disneyPinsEvidenceIsExact(review.visualAudit.finalEvidence),
+  );
+}
+
+/**
+ * A provider/model failure is not an identity mismatch. Preserve a complete,
+ * high-confidence primary Disney match as provisional evidence, while keeping
+ * the unavailable adjudication visible in the audit trail for manual review.
+ */
+export function hasUnavailableDisneyPinsAdjudication(review: VisualSourceReview | undefined): boolean {
+  return Boolean(
+    review?.verdict === "match"
+    && review.confidence === "high"
+    && review.visualAudit?.retryStatus === "failed"
+    && review.visualAudit.adjudicationStatus === "unavailable"
+    && review.visualAudit.finalPass === "initial"
+    && disneyPinsEvidenceIsExact(review.visualAudit.initialEvidence)
+    && disneyPinsEvidenceIsExact(review.visualEvidence),
   );
 }
 
@@ -278,6 +297,7 @@ export function normalizeVisualSourceReviews(
             initialVerdict: VERDICTS.has(row.visualAudit.initialVerdict) ? row.visualAudit.initialVerdict : "no_decision",
             initialConfidence: CONFIDENCES.has(row.visualAudit.initialConfidence) ? row.visualAudit.initialConfidence : "no_decision",
             retryStatus: row.visualAudit.retryStatus,
+            adjudicationStatus: ADJUDICATION_STATUSES.has(row.visualAudit.adjudicationStatus) ? row.visualAudit.adjudicationStatus : undefined,
             retryReason: typeof row.visualAudit.retryReason === "string" ? row.visualAudit.retryReason.trim() : undefined,
             finalPass: row.visualAudit.finalPass,
             initialEvidence: row.visualAudit.initialEvidence && typeof row.visualAudit.initialEvidence === "object"
@@ -588,7 +608,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review)))
+        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)))
           ? { evidenceDisposition: "warning_review" }
           : {}),
       } as T;
@@ -1050,7 +1070,8 @@ export async function filterVisualSourceCandidates<
                 visualAudit: {
                   ...initialAudit,
                   retryStatus: "failed",
-                  retryReason: "The high-resolution retry did not return a usable structured decision; manual image review is required.",
+                  adjudicationStatus: "unavailable",
+                  retryReason: "The high-resolution retry did not return a usable structured decision; the complete primary visual match is retained provisionally and manual confirmation is recommended.",
                   finalPass: "initial",
                 } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
               }
@@ -1070,6 +1091,7 @@ export async function filterVisualSourceCandidates<
               ...enforceDisneyPinsExactEvidence(review, args.targetMetadata),
               visualAudit: {
                 ...initialAudit,
+                adjudicationStatus: needsDisneyAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
                 finalPass: galleryReviews.length ? "high_resolution_retry" : "initial",
                 finalEvidence: review.visualEvidence,
               } satisfies NonNullable<VisualSourceReview["visualAudit"]>,

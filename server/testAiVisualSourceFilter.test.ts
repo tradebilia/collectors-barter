@@ -11,6 +11,7 @@ import {
   embedPromotedEbayImageForReview,
   enforceDisneyPinsExactEvidence,
   hasCompletedDisneyPinsAdjudication,
+  hasUnavailableDisneyPinsAdjudication,
   hasExplicitlyUngradedTarget,
   hasTitleDeclaredGradeVisualRawConflict,
   isDisneyPinsMetadata,
@@ -166,6 +167,50 @@ describe("visual source filter", () => {
     expect(hasCompletedDisneyPinsAdjudication({ ...reviews[2]!, visualAudit: undefined })).toBe(false);
     expect(hasCompletedDisneyPinsAdjudication({ ...reviews[2]!, visualAudit: confirmed.listings[0]?.visualAudit })).toBe(true);
     expect(confirmed.listings[0]).not.toHaveProperty("evidenceDisposition");
+  });
+
+  it("preserves a complete primary Disney match when the independent retry is unavailable", () => {
+    const exactEvidence = {
+      slabVisible: false,
+      gradingLabelVisible: false,
+      graderVisible: false,
+      numericGradeVisible: false,
+      gradeMatches: false,
+      rawOrLooseVisible: false,
+      characterMatches: true,
+      artworkMatches: true,
+      silhouetteMatches: true,
+      backingCardMatches: true,
+      setDesignMatches: true,
+    };
+    const review = {
+      candidateIndex: 0,
+      verdict: "match" as const,
+      confidence: "high" as const,
+      rationale: "The primary visual review confirms the exact character, artwork, silhouette, backing card, and set design.",
+      visualEvidence: exactEvidence,
+      visualAudit: {
+        imageCount: 1,
+        initialVerdict: "match" as const,
+        initialConfidence: "high" as const,
+        retryStatus: "failed" as const,
+        adjudicationStatus: "unavailable" as const,
+        retryReason: "The high-resolution retry did not return a usable structured decision.",
+        finalPass: "initial" as const,
+        initialEvidence: exactEvidence,
+        finalEvidence: exactEvidence,
+      },
+    };
+    expect(hasUnavailableDisneyPinsAdjudication(review)).toBe(true);
+    const result = applyVisualSourceReviews(
+      [{ title: "Disney Eeyore Around the World Pin" }],
+      [review],
+      1,
+      { requireExactMatch: true },
+    );
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match" });
+    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+    expect(result.listings[0]).toMatchObject({ visualAudit: { adjudicationStatus: "unavailable" } });
   });
 
   it("does not let generic raw/ungraded reconciliation promote a Disney Pin", () => {
