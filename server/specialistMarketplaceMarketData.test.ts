@@ -99,7 +99,7 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('Super Mario Bros. 3 NES 1990');
   });
 
-  it('uses only year, brand, line, and toy name for Goldin Vintage Toys queries', () => {
+  it('uses only brand, line, and toy name for Goldin Vintage Toys queries', () => {
     const input = {
       sourceId: 'goldin' as const,
       title: '1985 Transformers G1 Optimus Prime Hasbro MISB',
@@ -115,9 +115,9 @@ describe('bounded specialist marketplace adapters', () => {
         gradingCompany: 'AFA',
       }),
     };
-    expect(buildGoldinSearchQuery(input)).toBe('1985 Hasbro Transformers G1 Optimus Prime');
-    expect(buildGoldinSearchQueries(input)).toEqual(['1985 Hasbro Transformers G1 Optimus Prime']);
-    expect(buildGoldinSearchQuery(input)).not.toMatch(/AFA|9\.0|MISB|Mint/i);
+    expect(buildGoldinSearchQuery(input)).toBe('Hasbro Transformers G1 Optimus Prime');
+    expect(buildGoldinSearchQueries(input)).toEqual(['Hasbro Transformers G1 Optimus Prime']);
+    expect(buildGoldinSearchQuery(input)).not.toMatch(/1985|AFA|9\.0|MISB|Mint/i);
   });
 
   it('accepts PSA and WATA as equivalent only for video-game identity', () => {

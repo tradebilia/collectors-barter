@@ -771,7 +771,6 @@ function buildGoldinVintageToyDisplayQuery(item: SelectedItem): string {
   const details = parseTestAiDetails(item.itemDetails);
   const firstText = (...keys: string[]) => keys.map((key) => String(details[key] ?? '').trim()).find(Boolean) ?? '';
   return [...new Set([
-    firstText('year', 'manufactureYear'),
     firstText('brand', 'brandName', 'manufacturer'),
     firstText('line', 'franchise'),
     firstText('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName'),

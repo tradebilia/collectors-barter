@@ -145,9 +145,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('const visibleMessages = data?.messages?.map');
   });
 
-  it('uses year, brand, line, and toy name for Goldin Vintage Toys criteria', () => {
+  it('uses brand, line, and toy name for Goldin Vintage Toys criteria', () => {
     expect(source).toContain('function buildGoldinVintageToyDisplayQuery');
-    expect(source).toContain("firstText('year', 'manufactureYear')");
     expect(source).toContain("firstText('brand', 'brandName', 'manufacturer')");
     expect(source).toContain("firstText('line', 'franchise')");
     expect(source).toContain("firstText('toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName')");
