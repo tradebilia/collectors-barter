@@ -25,9 +25,14 @@ export const TNN_DUO_OPENING_ERROR = "The TNN duo transcript must open with Max'
 export const TNN_ANCHOR_REPETITION_ERROR = "The TNN transcript must not repeat an anchor's full name after their one self-introduction.";
 export const TNN_FINAL_CLOSING_ERROR = "The TNN transcript must end with one standalone final spoken sentence: 'Tradebilia.'.";
 export const TNN_FACT_LOCK_ERROR = "The TNN transcript introduced a fact that is not approved for this completed trade.";
+export const TNN_SCRIPT_INPUT_TOO_LONG_ERROR = "The selected exact names and item titles cannot fit the 45-second TNN format. Select fewer items or use shorter listing titles.";
 export const TNN_SCRIPT_WORD_BUDGET = {
   45: { minimum: 80, maximum: 100 },
 } as const;
+/** Aim away from either hard boundary so normal newsroom pacing survives model tokenization differences. */
+export const TNN_SCRIPT_TARGET_SPOKEN_WORDS = 90;
+/** Initial draft plus bounded automatic length repairs; the user never has to retry a normal short draft manually. */
+export const TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS = 4;
 
 export type TnnScriptDuration = keyof typeof TNN_SCRIPT_WORD_BUDGET;
 export type TnnScriptAnchorMode = "max" | "sidney" | "duo";
@@ -67,6 +72,22 @@ export type TnnScriptDraft = {
 };
 
 type TnnFactAudit = { approved: boolean; reason: string };
+
+export class TnnWordBudgetError extends Error {
+  readonly actualWordCount: number;
+  readonly minimumWordCount: number;
+  readonly maximumWordCount: number;
+  readonly durationSeconds: TnnScriptDuration;
+
+  constructor(actualWordCount: number, durationSeconds: TnnScriptDuration, minimumWordCount: number, maximumWordCount: number) {
+    super(`The TNN script must contain ${minimumWordCount}-${maximumWordCount} words for the selected ${durationSeconds}-second format.`);
+    this.name = "TnnWordBudgetError";
+    this.actualWordCount = actualWordCount;
+    this.minimumWordCount = minimumWordCount;
+    this.maximumWordCount = maximumWordCount;
+    this.durationSeconds = durationSeconds;
+  }
+}
 
 type TnnDraftLockPayload = { v: 1; exp: number; tradeId: number; digest: string };
 
@@ -182,7 +203,7 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
   return [
     "Write one original, credible, energetic TNN breaking-news transcript for a completed Tradebilia transaction.",
     "This is a private admin draft for human approval before any video task is started. Return only strict JSON matching the supplied schema; never include markdown, labels in text, captions, production directions, or extra fields.",
-    `Target spoken length: ${budget.minimum}-${budget.maximum} words, approximately ${input.durationSeconds} seconds at a professional newsroom pace. Count only the spoken text in turns, never speaker labels.`,
+    `Write exactly ${TNN_SCRIPT_TARGET_SPOKEN_WORDS} spoken words where natural; the accepted range is ${budget.minimum}-${budget.maximum} words, approximately ${input.durationSeconds} seconds at a professional newsroom pace. Count only the spoken text in turns, never speaker labels.`,
     transcriptShapeInstruction(input),
     `On-air presentation: ${anchors.join(" and ")}. If the word budget has room, use at most one or two brief, natural newsroom ad-lib comments only when grounded in approved transaction and item facts. Do not present an opinion, rarity, provenance, condition, date, place, ownership history, or collection history as fact unless it is explicitly listed below.`,
     `State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. Use Tradebilia only in the required opening and the standalone final '${TNN_REQUIRED_CLOSING}'; never say 'on Tradebilia', 'Tradebilia platform', or repeat the brand in the closing. Do not narrate the ticker or any website text.`,
@@ -252,6 +273,87 @@ function assertFactBoundaries(script: string, input: TnnScriptDraftInput) {
   if (!/\bthe\s+TNN\s+Network\b/i.test(script)) throw new Error("The TNN transcript must identify the TNN Network.");
 }
 
+function wordBudgetFloor(input: TnnScriptDraftInput) {
+  const opening = input.anchorMode === "duo"
+    ? `${selectedDuoOpening(input).maxLine} ${selectedDuoOpening(input).sidneyLine}`
+    : `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.`;
+  const requiredText = [
+    opening,
+    "the TNN Network",
+    input.sellerName,
+    input.buyerName,
+    ...input.selectedItems.flatMap((item) => {
+      const grade = item.certificationCompany || item.customGradingCompany
+        ? formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)
+        : "";
+      return ["The exchange includes", item.title, grade ? `graded ${grade}` : ""];
+    }),
+    input.additionalItemsCount > 0 ? "Additional collector items changed hands as part of the completed transaction." : "",
+    TNN_REQUIRED_CLOSING,
+  ].filter(Boolean).join(" ");
+  return countTnnScriptWords(requiredText);
+}
+
+export function assertTnnWordBudgetFeasible(rawInput: TnnScriptDraftInput) {
+  const input = normalizeTnnScriptInput(rawInput);
+  const budget = TNN_SCRIPT_WORD_BUDGET[input.durationSeconds];
+  if (wordBudgetFloor(input) > budget.maximum) throw new Error(TNN_SCRIPT_INPUT_TOO_LONG_ERROR);
+}
+
+function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTurn[] | null {
+  const input = normalizeTnnScriptInput(rawInput);
+  const budget = TNN_SCRIPT_WORD_BUDGET[input.durationSeconds];
+  const tradeType = input.cashOnly ? "completed cash sale" : "completed collector trade";
+  const itemLines = input.selectedItems.map((item) => {
+    const grade = item.certificationCompany || item.customGradingCompany
+      ? formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)
+      : "";
+    return grade
+      ? `The exchange includes ${item.title}, graded ${grade}.`
+      : `The exchange includes ${item.title}.`;
+  });
+  const openingText = input.anchorMode === "duo"
+    ? `${selectedDuoOpening(input).maxLine} ${selectedDuoOpening(input).sidneyLine}`
+    : `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.`;
+  const requiredLines = [
+    `The TNN Network confirms a ${tradeType} between seller ${input.sellerName} and buyer ${input.buyerName}.`,
+    ...itemLines,
+    ...(input.additionalItemsCount > 0 ? ["Additional collector items changed hands as part of the completed transaction."] : []),
+  ];
+  const optionalLines = [
+    "This report recognizes the completed exchange and names each selected item for viewers.",
+    "Tonight's update keeps the focus on the confirmed collector transaction and its selected items.",
+    "The report provides a clear newsroom account of this completed exchange.",
+    "For collectors following the story, the focus remains on the documented transaction.",
+    "The completed exchange is presented here as a concise collector update.",
+  ];
+  const flexibleLines = [...requiredLines];
+  for (const line of optionalLines) {
+    const nextCount = countTnnScriptWords(`${openingText} ${flexibleLines.join(" ")} ${line} ${TNN_REQUIRED_CLOSING}`);
+    if (nextCount > budget.maximum) continue;
+    flexibleLines.push(line);
+    if (nextCount >= TNN_SCRIPT_TARGET_SPOKEN_WORDS) break;
+  }
+  const opening = input.anchorMode === "duo"
+    ? selectedDuoOpening(input)
+    : null;
+  const turns: TnnScriptTurn[] = input.anchorMode === "duo"
+    ? [
+        { speaker: "max", text: opening!.maxLine },
+        { speaker: "sidney", text: opening!.sidneyLine },
+        { speaker: "max", text: flexibleLines.splice(0, Math.max(2, Math.ceil(flexibleLines.length / 2))).join(" ") },
+        { speaker: "sidney", text: flexibleLines.join(" ") },
+        { speaker: "max", text: TNN_REQUIRED_CLOSING },
+      ]
+    : [
+        { speaker: input.anchorMode, text: `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.` },
+        { speaker: input.anchorMode, text: flexibleLines.join(" ") },
+        { speaker: input.anchorMode, text: TNN_REQUIRED_CLOSING },
+      ];
+  const wordCount = countTnnScriptWords(flattenTnnScriptTurns(turns));
+  return wordCount >= budget.minimum && wordCount <= budget.maximum ? turns : null;
+}
+
 export function validateTnnScriptDraft(rawTurns: unknown, rawInput: TnnScriptDraftInput): TnnScriptDraft {
   const input = normalizeTnnScriptInput(rawInput);
   const turns = normalizeTnnTurns(rawTurns);
@@ -260,7 +362,7 @@ export function validateTnnScriptDraft(rawTurns: unknown, rawInput: TnnScriptDra
   const wordCount = countTnnScriptWords(script);
   if (!turns.length || !script) throw new Error("The TNN transcript draft was empty.");
   if (wordCount < budget.minimum || wordCount > budget.maximum) {
-    throw new Error(`The TNN script must contain ${budget.minimum}-${budget.maximum} words for the selected ${input.durationSeconds}-second format.`);
+    throw new TnnWordBudgetError(wordCount, input.durationSeconds, budget.minimum, budget.maximum);
   }
   assertSpeakerTurnStructure(turns, input);
   if (!/^Breaking News from Tradebilia\./i.test(turns[0]!.text)) {
@@ -290,9 +392,18 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
   if (error.message === TNN_SELECTED_ITEM_COVERAGE_ERROR) {
     return `Corrective retry: include each selected title exactly as written: ${normalized.selectedItems.map((item) => item.title).join(" | ")}. ${common}`;
   }
-  if (error.message.startsWith(TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX)) {
+  if (error instanceof TnnWordBudgetError || error.message.startsWith(TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX)) {
     const budget = TNN_SCRIPT_WORD_BUDGET[normalized.durationSeconds];
-    return `Corrective retry: the replacement must contain ${budget.minimum}-${budget.maximum} spoken words excluding speaker labels. ${common}`;
+    const actual = error instanceof TnnWordBudgetError ? error.actualWordCount : "an invalid number of";
+    const direction = error instanceof TnnWordBudgetError && error.actualWordCount < budget.minimum
+      ? "Expand only the flexible report turns with fact-locked, neutral newsroom detail."
+      : error instanceof TnnWordBudgetError && error.actualWordCount > budget.maximum
+      ? "Trim only the flexible report turns while retaining every required title and fact."
+      : "Adjust only the flexible report turns.";
+    const flexibleTurns = normalized.anchorMode === "duo"
+      ? "Keep exact turns 1, 2, and 5 unchanged; revise only turns 3 and 4."
+      : "Keep the required opening and final sign-off unchanged; revise only the flexible middle turns.";
+    return `Automatic length repair: the prior transcript contained ${actual} spoken words. Rewrite it to exactly ${TNN_SCRIPT_TARGET_SPOKEN_WORDS} spoken words; ${budget.minimum}-${budget.maximum} spoken words is the accepted range and speaker labels never count. ${flexibleTurns} ${direction} ${common}`;
   }
   if (error.message === TNN_DUO_OPENING_ERROR || error.message === TNN_ANCHOR_INTRODUCTION_ERROR || error.message === TNN_ANCHOR_REPETITION_ERROR) {
     return normalized.anchorMode === "duo"
@@ -404,21 +515,42 @@ async function auditTnnScriptFacts(draft: TnnScriptDraft, rawInput: TnnScriptDra
 }
 
 export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScriptDraft> {
+  assertTnnWordBudgetFeasible(input);
   let correctiveInstruction: string | undefined;
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  let standardCorrectiveRetryUsed = false;
+  let lastWordBudgetError: TnnWordBudgetError | null = null;
+  for (let attempt = 0; attempt < TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS; attempt += 1) {
     try {
       const draft = validateTnnScriptDraft(await requestTnnScript(input, correctiveInstruction), input);
       const factAudit = await auditTnnScriptFacts(draft, input);
       if (factAudit.approved) return draft;
-      if (attempt === 1) throw new Error(`${TNN_FACT_LOCK_ERROR} ${factAudit.reason}`);
+      if (standardCorrectiveRetryUsed) throw new Error(`${TNN_FACT_LOCK_ERROR} ${factAudit.reason}`);
+      standardCorrectiveRetryUsed = true;
       correctiveInstruction = `Corrective retry: the bounded fact-lock review rejected the prior draft: ${factAudit.reason} Remove or rewrite every unsupported claim. ${transcriptShapeInstruction(normalizeTnnScriptInput(input))} Return one complete replacement transcript only as the required strict JSON.`;
     } catch (error) {
       if (!(error instanceof Error)) throw error;
-      if (attempt === 1 || error.message.startsWith(TNN_FACT_LOCK_ERROR)) throw error;
+      if (error instanceof TnnWordBudgetError) {
+        lastWordBudgetError = error;
+        if (attempt < TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS - 1) {
+          correctiveInstruction = correctiveInstructionFor(error, input) ?? correctiveInstruction;
+          continue;
+        }
+        break;
+      }
+      if (standardCorrectiveRetryUsed || error.message.startsWith(TNN_FACT_LOCK_ERROR)) throw error;
       const nextInstruction = correctiveInstructionFor(error, input);
       if (!nextInstruction) throw error;
+      standardCorrectiveRetryUsed = true;
       correctiveInstruction = nextInstruction;
     }
+  }
+  if (lastWordBudgetError) {
+    const fallbackTurns = createTnnWordBudgetFallback(input);
+    if (!fallbackTurns) throw new Error(TNN_SCRIPT_INPUT_TOO_LONG_ERROR);
+    const fallback = validateTnnScriptDraft(fallbackTurns, input);
+    const factAudit = await auditTnnScriptFacts(fallback, input);
+    if (factAudit.approved) return fallback;
+    throw new Error(`${TNN_FACT_LOCK_ERROR} ${factAudit.reason}`);
   }
   throw new Error("The TNN transcript could not be fact-locked.");
 }

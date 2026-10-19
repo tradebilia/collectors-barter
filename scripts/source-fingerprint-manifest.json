@@ -658,6 +658,8 @@
   "server/smithsonianMetadataUi.test.ts",
   "server/socialPromotionFacts.test.ts",
   "server/sold-comps.test.ts",
+  "server/soldCompsAdditionalMarketData.test.ts",
+  "server/soldCompsAdditionalMarketData.ts",
   "server/specialistMarketplaceMarketData.test.ts",
   "server/specialistMarketplaceMarketData.ts",
   "server/sportsManufacturerOptions.test.ts",

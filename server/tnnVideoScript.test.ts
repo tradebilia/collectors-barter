@@ -10,7 +10,10 @@ import {
   TNN_DUO_OPENING_ERROR,
   TNN_FACT_LOCK_ERROR,
   TNN_FINAL_CLOSING_ERROR,
+  TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
+  TNN_SCRIPT_TARGET_SPOKEN_WORDS,
+  TNN_SCRIPT_INPUT_TOO_LONG_ERROR,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
   TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR,
   validateTnnScriptDraft,
@@ -43,6 +46,14 @@ const validTurns: TnnScriptTurn[] = [
   { speaker: "sidney", text: "And I'm Sidney Tradewell." },
   { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game and PSA 9 Trading Card, each selected precisely for this finished collector transaction and presented with care." },
   { speaker: "sidney", text: "The 1989 Nintendo Game brings its approved NES platform context to the exchange, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." },
+  { speaker: "max", text: "Tradebilia." },
+];
+
+const underLengthTurns: TnnScriptTurn[] = [
+  { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
+  { speaker: "sidney", text: "And I'm Sidney Tradewell." },
+  { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer featuring 1989 Nintendo Game and PSA 9 Trading Card." },
+  { speaker: "sidney", text: "Both selected pieces are included in this completed exchange for collectors following the report." },
   { speaker: "max", text: "Tradebilia." },
 ];
 
@@ -144,6 +155,80 @@ describe("TNN structured speaker transcript", () => {
     expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
     expect(mockedInvokeLLM.mock.calls[1]?.[0].messages).toHaveLength(3);
     expect(mockedInvokeLLM.mock.calls[1]?.[0].messages[2]).toMatchObject({ content: expect.stringContaining("Remove every statement or implication") });
+  });
+
+  it("quietly performs measured automatic rewrites until an in-range transcript is ready", async () => {
+    const actualWordCount = countTnnScriptWords(flattenTnnScriptTurns(underLengthTurns));
+    expect(actualWordCount).toBeLessThan(80);
+    mockedInvokeLLM
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: validTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: true, reason: "Approved facts only." }) as any);
+
+    await expect(draftTnnScript(input)).resolves.toMatchObject({ turns: validTurns });
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(4);
+    for (const callIndex of [1, 2]) {
+      expect(mockedInvokeLLM.mock.calls[callIndex]?.[0].messages[2]).toMatchObject({
+        content: expect.stringContaining(`prior transcript contained ${actualWordCount} spoken words`),
+      });
+      expect(mockedInvokeLLM.mock.calls[callIndex]?.[0].messages[2]).toMatchObject({
+        content: expect.stringContaining(`exactly ${TNN_SCRIPT_TARGET_SPOKEN_WORDS} spoken words`),
+      });
+    }
+  });
+
+  it("uses a deterministic fact-locked safe transcript rather than exposing a normal repeated length failure", async () => {
+    mockedInvokeLLM
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ approved: true, reason: "Approved facts only." }) as any);
+
+    const draft = await draftTnnScript(input);
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS + 1);
+    expect(draft.wordCount).toBeGreaterThanOrEqual(80);
+    expect(draft.wordCount).toBeLessThanOrEqual(100);
+    expect(draft.turns.map((turn) => turn.speaker)).toEqual(["max", "sidney", "max", "sidney", "max"]);
+    expect(draft.turns[0]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.maxLine);
+    expect(draft.turns[1]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.sidneyLine);
+    expect(draft.turns.at(-1)?.text).toBe("Tradebilia.");
+  });
+
+  it("keeps every approved duo opening intact when the automatic safe fallback is needed", async () => {
+    for (const duoOpeningStyle of TNN_DUO_OPENING_STYLE_VALUES) {
+      mockedInvokeLLM.mockReset();
+      const opening = TNN_DUO_OPENING_STYLES[duoOpeningStyle];
+      const shortVariant = underLengthTurns.map((turn, index) => index === 0
+        ? { ...turn, text: opening.maxLine }
+        : index === 1 ? { ...turn, text: opening.sidneyLine } : turn);
+      mockedInvokeLLM
+        .mockResolvedValueOnce(structuredResponse({ turns: shortVariant }) as any)
+        .mockResolvedValueOnce(structuredResponse({ turns: shortVariant }) as any)
+        .mockResolvedValueOnce(structuredResponse({ turns: shortVariant }) as any)
+        .mockResolvedValueOnce(structuredResponse({ turns: shortVariant }) as any)
+        .mockResolvedValueOnce(structuredResponse({ approved: true, reason: "Approved facts only." }) as any);
+
+      const draft = await draftTnnScript({ ...input, duoOpeningStyle });
+      expect(draft.wordCount).toBeGreaterThanOrEqual(80);
+      expect(draft.wordCount).toBeLessThanOrEqual(100);
+      expect(draft.turns[0]?.text).toBe(opening.maxLine);
+      expect(draft.turns[1]?.text).toBe(opening.sidneyLine);
+    }
+  });
+
+  it("fails before calling the model when required literal titles cannot fit the 45-second format", async () => {
+    const impossibleInput = {
+      ...input,
+      selectedItems: Array.from({ length: 6 }, (_, index) => ({
+        listingId: index + 1,
+        title: Array.from({ length: 36 }, (_, wordIndex) => `collector${index}${wordIndex}`).join(" "),
+      })),
+    };
+
+    await expect(draftTnnScript(impossibleInput)).rejects.toThrow(TNN_SCRIPT_INPUT_TOO_LONG_ERROR);
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
   });
 
   it("retries once when the bounded fact-lock review rejects unsupported wording, then fails closed", async () => {
