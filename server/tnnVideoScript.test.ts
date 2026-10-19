@@ -8,6 +8,9 @@ import {
   draftTnnScript,
   flattenTnnScriptTurns,
   TNN_DUO_OPENING_ERROR,
+  TNN_DUPLICATE_GRADE_DETAIL_ERROR,
+  TNN_ORDINAL_ITEM_REFERENCE_ERROR,
+  TNN_REPEATED_ITEM_SUBJECT_ERROR,
   TNN_EDITORIAL_META_LANGUAGE_ERROR,
   TNN_EDITORIAL_REPETITION_ERROR,
   TNN_FINAL_CLOSING_ERROR,
@@ -44,8 +47,8 @@ const input = {
   buyerName: "Taylor Buyer",
   cashOnly: false,
   selectedItems: [
-    { listingId: 101, title: "1989 Nintendo Game", category: "Video Games", gradingStatus: "raw" as const, condition: "Excellent", grade: "0", certificationCompany: "WATA", facts: [{ label: "Platform", value: "NES" }] },
-    { listingId: 102, title: "PSA 9 Trading Card", gradingStatus: "graded" as const, certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
+    { listingId: 101, title: "1989 Nintendo Game", category: "Video Games", itemType: "video_game", gradingStatus: "raw" as const, condition: "Excellent", grade: "0", certificationCompany: "WATA", facts: [{ label: "Platform", value: "NES" }] },
+    { listingId: 102, title: "PSA 9 Trading Card", itemType: "trading_card", gradingStatus: "graded" as const, certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
   ],
   additionalItemsCount: 0,
   tickerText: "www.Tradebilia.com",
@@ -57,7 +60,7 @@ const validTurns: TnnScriptTurn[] = [
   { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
   { speaker: "sidney", text: "And I'm Sidney Tradewell." },
   { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game and PSA 9 Trading Card in this finished collector transaction. The transaction is complete, and both collectors are represented in this exchange." },
-  { speaker: "sidney", text: "The first item is listed in Excellent condition, while the trading card carries a PSA 9 grade and 1986 context. That gives viewers the key item details without repeating the trade headline." },
+  { speaker: "sidney", text: "The original game is in Excellent condition, while the trading card carries a PSA 9 grade and 1986 context. That gives viewers the key item details without repeating the trade headline." },
   { speaker: "max", text: requiredClosing },
 ];
 
@@ -109,7 +112,7 @@ describe("TNN structured speaker transcript", () => {
 
   it("rejects Sidney when she repeats Max's complete item list despite having unused detail available", () => {
     const repeatedTurns = validTurns.map((turn, index) => index === 3
-      ? { ...turn, text: "The 1989 Nintendo Game and PSA 9 Trading Card are both part of this completed collector trade, with each selected item acknowledged for viewers. The first item remains in Excellent condition." }
+      ? { ...turn, text: "The 1989 Nintendo Game and PSA 9 Trading Card are both part of this completed collector trade, with each selected item acknowledged for viewers. The original game remains in Excellent condition." }
       : turn);
     expect(() => validateTnnScriptDraft(repeatedTurns, input)).toThrow(TNN_EDITORIAL_REPETITION_ERROR);
   });
@@ -119,6 +122,27 @@ describe("TNN structured speaker transcript", () => {
       ? { ...turn, text: "The approved record lists Platform: NES and Condition: Excellent for the selected items. The PSA 9 Trading Card is also part of this completed exchange for viewers." }
       : turn);
     expect(() => validateTnnScriptDraft(fieldLabelTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
+  it("rejects duplicated company and numeric grade fragments in a graded item report", () => {
+    const duplicatedGradeTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The trading card is graded PSA 9. The vintage toy is in Excellent condition and is graded AFA 60. It is graded AFA. It is graded 60. The approved items remain part of this completed exchange." }
+      : turn);
+    expect(() => validateTnnScriptDraft(duplicatedGradeTurns, input)).toThrow(TNN_DUPLICATE_GRADE_DETAIL_ERROR);
+  });
+
+  it("rejects ordinal item labels in Sidney’s substantive report", () => {
+    const ordinalTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The first item is in Excellent condition, while the trading card carries a PSA 9 grade and 1986 context. The completed exchange is confirmed for viewers." }
+      : turn);
+    expect(() => validateTnnScriptDraft(ordinalTurns, input)).toThrow(TNN_ORDINAL_ITEM_REFERENCE_ERROR);
+  });
+
+  it("rejects repeating one natural item subject instead of combining its details", () => {
+    const repeatedSubjectTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The trading card carries a PSA 9 grade and 1986 context. The trading card remains part of the completed exchange, while the original game is in Excellent condition." }
+      : turn);
+    expect(() => validateTnnScriptDraft(repeatedSubjectTurns, input)).toThrow(TNN_REPEATED_ITEM_SUBJECT_ERROR);
   });
 
   it("requires each raw selected item’s stated condition and rejects a grade-zero narration", () => {
@@ -268,6 +292,57 @@ describe("TNN structured speaker transcript", () => {
     expect(draft.script).not.toMatch(/grade\s*(?:of\s*)?0(?:\.0+)?|WATA\s+0/i);
     expect(draft.wordCount).toBeGreaterThanOrEqual(80);
     expect(draft.wordCount).toBeLessThanOrEqual(100);
+  });
+
+  it("curates vintage-toy facts into natural item sentences instead of reading field values", async () => {
+    const vintageToyInput = {
+      ...input,
+      selectedItems: [
+        {
+          listingId: 201,
+          title: "McFarlane King Spawn Original Art",
+          category: "Vintage Toys",
+          gradingStatus: "raw" as const,
+          condition: "Mint",
+          facts: [
+            { label: "Brand", value: "Todd McFarlane" },
+            { label: "Cover Art", value: "Cover Art" },
+            { label: "Signed", value: "Yes" },
+            { label: "Limited Edition", value: "Yes" },
+          ],
+        },
+        {
+          listingId: 202,
+          title: "Transformers Megatron G1",
+          category: "Vintage Toys",
+          gradingStatus: "graded" as const,
+          certificationCompany: "AFA",
+          grade: "60",
+          facts: [
+            { label: "Toy Name / Character", value: "Megatron" },
+            { label: "Packaging", value: "Boxed" },
+            { label: "Grade", value: "60" },
+          ],
+        },
+      ],
+    };
+    const prompt = buildTnnScriptPrompt(vintageToyInput);
+    expect(prompt).toContain("comes from Todd McFarlane");
+    expect(prompt).not.toContain("identifies the character as Megatron");
+    expect(prompt).not.toContain("the listing notes");
+    expect(prompt).not.toContain("Signed: Yes");
+    expect(prompt).not.toContain("Grade: 60");
+
+    mockedInvokeLLM
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any);
+    const draft = await draftTnnScript(vintageToyInput);
+    expect(draft.script).toContain("comes from Todd McFarlane");
+    expect(draft.script).toContain("has boxed packaging");
+    expect(draft.script).not.toMatch(/the listing notes|identifies the character as Megatron|\bYes\b|It is graded 60/i);
+    expect(draft.script.match(/graded AFA 60/gi)?.length).toBe(1);
   });
 
   it("keeps every approved duo opening intact when the automatic safe fallback is needed", async () => {
