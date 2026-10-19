@@ -1,6 +1,6 @@
 import { ENV } from "./_core/env";
 import { type TnnScriptAnchorMode, type TnnScriptDuration } from "./tnnVideoScript";
-import { type TnnTranscriptTurn, TNN_NETWORK_SPOKEN_NAME, TNN_REQUIRED_CLOSING, TNN_TRADEBILIA_PRONUNCIATION, TNN_WEBSITE_TICKER, formatTnnGrade } from "../shared/tnnVideoPolicy";
+import { type TnnHomepageTaglineId, type TnnTranscriptTurn, TNN_NETWORK_SPOKEN_NAME, TNN_TRADEBILIA_PRONUNCIATION, TNN_WEBSITE_TICKER, formatTnnGrade, formatTnnRequiredClosing } from "../shared/tnnVideoPolicy";
 
 type ManusContentPart =
   | { type: "text"; text: string }
@@ -37,6 +37,7 @@ export type TnnVideoTaskInput = {
   turns: TnnTranscriptTurn[];
   durationSeconds: TnnScriptDuration;
   anchorMode: TnnScriptAnchorMode;
+  closingTaglineId: TnnHomepageTaglineId;
   sellerName: string;
   buyerName: string;
   cashOnly: boolean;
@@ -77,7 +78,7 @@ async function manusRequest<T>(path: string, init: RequestInit = {}) {
 function anchorDirection(anchorMode: TnnScriptAnchorMode) {
   const max = "Max Tradebloski: middle-aged American male TNN anchor, tailored navy suit, professional calm authority.";
   const sidney = "Sidney Tradewell: middle-aged American female TNN anchor, tailored jewel-tone newsroom suit, poised professional credibility.";
-  if (anchorMode === "duo") return `${max}\n${sidney}\nThe supplied structured transcript is authoritative: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. The first MAX turn introduces Max; the immediately following SIDNEY turn says “And I'm Sidney Tradewell.” Do not combine turns, reassign words, add dialogue, captions, or any speaker-name text.`;
+  if (anchorMode === "duo") return `${max}\n${sidney}\nThe supplied structured transcript is authoritative: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. The first MAX turn introduces Max; the immediately following SIDNEY turn delivers the selected assigned response verbatim. Do not combine turns, reassign words, add dialogue, captions, or any speaker-name text.`;
   return anchorMode === "max" ? max : sidney;
 }
 
@@ -99,6 +100,7 @@ function structuredTranscript(turns: readonly TnnTranscriptTurn[]) {
  */
 export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
   const anchorNames = input.anchorMode === "duo" ? "Max Tradebloski and Sidney Tradewell" : input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell";
+  const requiredClosing = formatTnnRequiredClosing(input.closingTaglineId);
   const itemInsetInstruction = input.selectedItems.length
     ? "Starting when the assigned anchor first begins describing each selected item, show only that item’s exact matching supplied image attachment in a clean picture-in-picture panel in the upper-right corner. Never substitute, reorder, reuse, or infer another item image. Keep the anchor visible and do not cover the face. Advance the panel only as the assigned transcript turns move to the next item."
     : "Keep the anchor in the TNN newsroom for the report; no item insert is available.";
@@ -118,7 +120,7 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     itemInsetInstruction,
     extraItemsInstruction,
     "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade or value. When a grade is spoken, use only the exact normalized grade context below; PSA numbers must never receive artificial extra decimal places.",
-    `Use only the exact structured transcript below. Speaker labels are internal turn assignments, not spoken words or captions. Preserve every assigned turn verbatim: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. Pronounce every Tradebilia occurrence as '${TNN_TRADEBILIA_PRONUNCIATION}', identify the network as '${TNN_NETWORK_SPOKEN_NAME}', and preserve the final standalone spoken '${TNN_REQUIRED_CLOSING}'. Do not add any speech, call to action beyond the transcript, disclaimer, price, cash amount, or personal/private detail.`,
+    `Use only the exact structured transcript below. Speaker labels are internal turn assignments, not spoken words or captions. Preserve every assigned turn verbatim: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. Pronounce every Tradebilia occurrence as '${TNN_TRADEBILIA_PRONUNCIATION}', identify the network as '${TNN_NETWORK_SPOKEN_NAME}', and preserve the exact final approved tagline and sign-off '${requiredClosing}'. Do not add any speech, call to action beyond the transcript, disclaimer, price, cash amount, or personal/private detail.`,
     `Transaction type for visual context only: ${input.cashOnly ? "cash sale" : "collector trade"}. Do not display or speak any amount. The names are allowed in the spoken transcript only; never render them as text.`,
     "Approved selected-item context and exact image bindings (reference only; do not add facts beyond the transcript):",
     itemReferenceLines(input.selectedItems) || "No item details supplied.",

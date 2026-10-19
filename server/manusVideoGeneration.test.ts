@@ -25,9 +25,10 @@ describe("Manus API configuration", () => {
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
     try {
       await createTradeVideoTask({
-        turns: [{ speaker: "sidney", text: "Breaking News from Tradebilia. I'm Sidney Tradewell with the TNN Network. Jordan and Alex completed a collector trade featuring Test collectible. Tradebilia." }],
+        turns: [{ speaker: "sidney", text: "Breaking News from Tradebilia. I'm Sidney Tradewell with the TNN Network. Jordan and Alex completed a collector trade featuring Test collectible. The smarter way to collect. Tradebilia." }],
         durationSeconds: 45,
         anchorMode: "sidney",
+        closingTaglineId: "smarter_way",
         sellerName: "Jordan",
         buyerName: "Alex",
         cashOnly: false,
@@ -56,10 +57,11 @@ describe("Manus API configuration", () => {
         { speaker: "sidney", text: "And I'm Sidney Tradewell, reporting for the TNN Network." },
         { speaker: "max", text: "Today the TNN Network confirms that Seller Smith and Buyer Jones completed a collector trade featuring Test collectible." },
         { speaker: "sidney", text: "This completed exchange celebrates collecting with care and accurate item context." },
-        { speaker: "max", text: "Tradebilia." },
+        { speaker: "max", text: "The smarter way to collect. Tradebilia." },
       ],
       durationSeconds: 45,
       anchorMode: "duo",
+      closingTaglineId: "smarter_way",
       sellerName: "Seller Smith",
       buyerName: "Buyer Jones",
       cashOnly: false,
@@ -87,6 +89,7 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("attached approved TNN newsroom visual-reference image");
     expect(instruction).toContain("stable polished medium desk shot");
     expect(instruction).toContain("Max speaks only MAX turns and Sidney speaks only SIDNEY turns");
+    expect(instruction).toContain("the immediately following SIDNEY turn delivers the selected assigned response verbatim");
     expect(instruction).toContain("Structured speaker transcript");
     expect(instruction).toContain("MAX: Breaking News from Tradebilia. I'm Max Tradebloski.");
     expect(instruction).toContain("SIDNEY: And I'm Sidney Tradewell, reporting for the TNN Network.");
@@ -96,6 +99,7 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("www.Tradebilia.com");
     expect(instruction).toContain("trade-bil-lee-uh");
     expect(instruction).toContain("the TNN Network");
+    expect(instruction).toContain("The smarter way to collect. Tradebilia.");
   });
 
   it("keeps the approved TNN logo and newsroom reference server-owned", () => {

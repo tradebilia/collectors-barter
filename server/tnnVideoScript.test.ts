@@ -24,12 +24,18 @@ import {
   buildTnnCompletedTradeVideoPlan,
   withTnnVideoScript,
 } from "../client/src/lib/socialContentManager";
-import { TNN_DUO_OPENING_STYLES, TNN_DUO_OPENING_STYLE_VALUES } from "../shared/tnnVideoPolicy";
+import {
+  TNN_DUO_OPENING_STYLES,
+  TNN_DUO_OPENING_STYLE_VALUES,
+  TNN_HOMEPAGE_TAGLINE_IDS,
+  formatTnnRequiredClosing,
+} from "../shared/tnnVideoPolicy";
 
 const input = {
   durationSeconds: 45 as const,
   anchorMode: "duo" as const,
   duoOpeningStyle: "classic" as const,
+  closingTaglineId: "smarter_way" as const,
   sellerName: "Morgan Seller",
   buyerName: "Taylor Buyer",
   cashOnly: false,
@@ -41,12 +47,14 @@ const input = {
   tickerText: "www.Tradebilia.com",
 };
 
+const requiredClosing = formatTnnRequiredClosing(input.closingTaglineId);
+
 const validTurns: TnnScriptTurn[] = [
   { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
   { speaker: "sidney", text: "And I'm Sidney Tradewell." },
   { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game and PSA 9 Trading Card, each selected precisely for this finished collector transaction and presented with care." },
   { speaker: "sidney", text: "The 1989 Nintendo Game brings its approved NES platform context to the exchange, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." },
-  { speaker: "max", text: "Tradebilia." },
+  { speaker: "max", text: requiredClosing },
 ];
 
 const underLengthTurns: TnnScriptTurn[] = [
@@ -54,7 +62,7 @@ const underLengthTurns: TnnScriptTurn[] = [
   { speaker: "sidney", text: "And I'm Sidney Tradewell." },
   { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer featuring 1989 Nintendo Game and PSA 9 Trading Card." },
   { speaker: "sidney", text: "Both selected pieces are included in this completed exchange for collectors following the report." },
-  { speaker: "max", text: "Tradebilia." },
+  { speaker: "max", text: requiredClosing },
 ];
 
 const mockedInvokeLLM = vi.mocked(invokeLLM);
@@ -68,7 +76,7 @@ const structuredResponse = (value: unknown) => ({
 beforeEach(() => mockedInvokeLLM.mockReset());
 
 describe("TNN structured speaker transcript", () => {
-  it("requires an unambiguous five-turn Max/Sidney newsroom handoff, one introduction each, and a single clean final sign-off", () => {
+  it("requires an unambiguous five-turn Max/Sidney newsroom handoff, one introduction each, and the selected final closing", () => {
     const draft = validateTnnScriptDraft(validTurns, input);
     expect(draft.turns).toEqual(validTurns);
     expect(draft.wordCount).toBeGreaterThanOrEqual(80);
@@ -76,7 +84,7 @@ describe("TNN structured speaker transcript", () => {
     expect(draft.turns.map((turn) => turn.speaker)).toEqual(["max", "sidney", "max", "sidney", "max"]);
     expect(draft.turns[0]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.maxLine);
     expect(draft.turns[1]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.sidneyLine);
-    expect(draft.turns.at(-1)?.text).toBe("Tradebilia.");
+    expect(draft.turns.at(-1)?.text).toBe(requiredClosing);
     expect(draft.turns.slice(1, -1).join(" ")).not.toMatch(/Tradebilia/i);
     expect(countTnnScriptWords(flattenTnnScriptTurns(draft.turns))).toBe(draft.wordCount);
   });
@@ -100,26 +108,28 @@ describe("TNN structured speaker transcript", () => {
     }
   });
 
-  it("enforces literal item titles, one-for-one truthfulness, and a standalone final closing", () => {
+  it("enforces literal item titles, one-for-one truthfulness, and the selected final tagline close", () => {
     expect(() => validateTnnScriptDraft(validTurns.map((turn) => ({ ...turn, text: turn.text.replaceAll("PSA 9 Trading Card", "the trading card") })), input)).toThrow(TNN_SELECTED_ITEM_COVERAGE_ERROR);
     expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 3 ? { ...turn, text: `${turn.text} Other collector pieces also joined this completed transaction.` } : turn), input)).toThrow(TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR);
     expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 4 ? { ...turn, text: "NotTradebilia." } : turn), input)).toThrow(TNN_FINAL_CLOSING_ERROR);
+    expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 4 ? { ...turn, text: formatTnnRequiredClosing("trade_your_way") } : turn), input)).toThrow(TNN_FINAL_CLOSING_ERROR);
     expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 3 ? { ...turn, text: `${turn.text} This happened on Tradebilia.` } : turn), input)).toThrow(TNN_FINAL_CLOSING_ERROR);
   });
 
-  it("states the structured JSON, fact, privacy, item, and non-repetitive-closing requirements in the drafting prompt", () => {
+  it("states the structured JSON, fact, privacy, natural-dialogue, item, and selected-closing requirements in the drafting prompt", () => {
     const prompt = buildTnnScriptPrompt(input);
     expect(prompt).toContain("speaker sequence: max, sidney, max, sidney, max");
     expect(prompt).toContain("Speaker labels are review-only");
     expect(prompt).toContain("Turn 1 speaker must be 'max'");
     expect(prompt).toContain("Turn 2 speaker must be 'sidney'");
-    expect(prompt).toContain("Turn 5 speaker must be 'max' and its text must be exactly 'Tradebilia.'");
+    expect(prompt).toContain(`Turn 5 speaker must be 'max' and its text must be exactly '${requiredClosing}'`);
+    expect(prompt).toContain("connected live broadcast");
     expect(prompt).toContain("Do not say or imply that any other collector item");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
     expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(900);
   });
 
-  it("stores review-only turns rather than ambiguous prose in the browser-local video plan", () => {
+  it("stores review-only turns and a resolved tagline rather than ambiguous prose in the browser-local video plan", () => {
     const plan = buildTnnCompletedTradeVideoPlan({
       sellerName: input.sellerName,
       buyerName: input.buyerName,
@@ -128,19 +138,22 @@ describe("TNN structured speaker transcript", () => {
       cashOnly: false,
       durationSeconds: 45,
       anchorMode: "duo",
+      closingTaglineId: input.closingTaglineId,
       tickerText: input.tickerText,
     });
     const withTranscript = withTnnVideoScript(plan, validTurns, 1, "fact-lock");
     expect(withTranscript.scriptTurns).toEqual(validTurns);
     expect(withTranscript.script).toBe(flattenTnnScriptTurns(validTurns));
+    expect(withTranscript.closingTaglineId).toBe(input.closingTaglineId);
     expect(withTranscript.factLock).toBe("fact-lock");
   });
 
-  it("creates a short-lived immutable fact lock for the exact transcript and input", () => {
+  it("creates a short-lived immutable fact lock for the exact transcript, input, and tagline", () => {
     const draft = validateTnnScriptDraft(validTurns, input);
     const lock = createTnnScriptFactLock(44, draft, input, { now: 10_000, signingKey: "test-key" });
     expect(verifyTnnScriptFactLock(lock, 44, draft, input, { now: 10_001, signingKey: "test-key" })).toBe(true);
     expect(verifyTnnScriptFactLock(lock, 44, { ...draft, turns: [...draft.turns.slice(0, -1), { speaker: "max", text: "Tradebilia now." }] }, input, { now: 10_001, signingKey: "test-key" })).toBe(false);
+    expect(verifyTnnScriptFactLock(lock, 44, draft, { ...input, closingTaglineId: "collect_connect_trade" }, { now: 10_001, signingKey: "test-key" })).toBe(false);
     expect(verifyTnnScriptFactLock(lock, 44, draft, input, { now: 1_900_001, signingKey: "test-key" })).toBe(false);
   });
 
@@ -193,7 +206,7 @@ describe("TNN structured speaker transcript", () => {
     expect(draft.turns.map((turn) => turn.speaker)).toEqual(["max", "sidney", "max", "sidney", "max"]);
     expect(draft.turns[0]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.maxLine);
     expect(draft.turns[1]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.sidneyLine);
-    expect(draft.turns.at(-1)?.text).toBe("Tradebilia.");
+    expect(draft.turns.at(-1)?.text).toBe(requiredClosing);
   });
 
   it("keeps every approved duo opening intact when the automatic safe fallback is needed", async () => {
@@ -215,6 +228,22 @@ describe("TNN structured speaker transcript", () => {
       expect(draft.wordCount).toBeLessThanOrEqual(100);
       expect(draft.turns[0]?.text).toBe(opening.maxLine);
       expect(draft.turns[1]?.text).toBe(opening.sidneyLine);
+    }
+  });
+
+  it("keeps every approved final homepage tagline intact when the automatic safe fallback is needed", async () => {
+    for (const closingTaglineId of TNN_HOMEPAGE_TAGLINE_IDS) {
+      mockedInvokeLLM.mockReset();
+      mockedInvokeLLM
+        .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+        .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+        .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+        .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+        .mockResolvedValueOnce(structuredResponse({ approved: true, reason: "Approved facts only." }) as any);
+      const draft = await draftTnnScript({ ...input, closingTaglineId });
+      expect(draft.wordCount).toBeGreaterThanOrEqual(80);
+      expect(draft.wordCount).toBeLessThanOrEqual(100);
+      expect(draft.turns.at(-1)?.text).toBe(formatTnnRequiredClosing(closingTaglineId));
     }
   });
 

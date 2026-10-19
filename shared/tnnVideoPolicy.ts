@@ -5,7 +5,69 @@ export type TnnVideoDuration = typeof TNN_VIDEO_DURATIONS[number];
 export const TNN_WEBSITE_TICKER = "www.Tradebilia.com";
 export const TNN_NETWORK_SPOKEN_NAME = "the TNN Network";
 export const TNN_TRADEBILIA_PRONUNCIATION = "trade-bil-lee-uh";
-export const TNN_REQUIRED_CLOSING = "Tradebilia.";
+
+/**
+ * The only approved Tradebilia homepage phrase loop and TNN closing-tagline
+ * source. Keep the entries in the exact homepage display order.
+ */
+export const TNN_HOMEPAGE_TAGLINES = {
+  why_buy_or_sell: "Why buy or sell when you can trade?",
+  trade_what_you_have: "Trade what you have. Get what you want.",
+  have_it_want_it: "Have it. Want it. Trade it.",
+  your_collection: "Your collection. Your trade. Your next find.",
+  dont_buy_or_sell: "Don’t buy it. Don’t sell it. Trade for it.",
+  turn_what_you_have: "Turn what you have into what you want.",
+  collect_connect_trade: "Collect. Connect. Trade.",
+  where_collectors_trade: "Where collectors trade what they love.",
+  one_collection: "One collection. Endless possibilities.",
+  smarter_way: "The smarter way to collect.",
+  whats_yours: "What’s yours could be someone else’s treasure.",
+  trade_your_way: "Trade your way to the collection you want",
+} as const;
+
+export const TNN_HOMEPAGE_TAGLINE_IDS = [
+  "why_buy_or_sell",
+  "trade_what_you_have",
+  "have_it_want_it",
+  "your_collection",
+  "dont_buy_or_sell",
+  "turn_what_you_have",
+  "collect_connect_trade",
+  "where_collectors_trade",
+  "one_collection",
+  "smarter_way",
+  "whats_yours",
+  "trade_your_way",
+] as const;
+
+export type TnnHomepageTaglineId = typeof TNN_HOMEPAGE_TAGLINE_IDS[number];
+/** Ordered text values consumed by the public homepage phrase loop. */
+export const TNN_HOMEPAGE_PHRASES = TNN_HOMEPAGE_TAGLINE_IDS.map((id) => TNN_HOMEPAGE_TAGLINES[id]);
+export const TNN_DEFAULT_CLOSING_TAGLINE_ID: TnnHomepageTaglineId = "why_buy_or_sell";
+
+export function isTnnHomepageTaglineId(value: unknown): value is TnnHomepageTaglineId {
+  return typeof value === "string" && TNN_HOMEPAGE_TAGLINE_IDS.includes(value as TnnHomepageTaglineId);
+}
+
+/** Pure, injectable random selection for one stable TNN draft closing. */
+export function chooseTnnClosingTaglineId(randomValue = Math.random()): TnnHomepageTaglineId {
+  const normalizedRandom = Number.isFinite(randomValue) ? Math.min(Math.max(randomValue, 0), 0.999999) : 0.5;
+  return TNN_HOMEPAGE_TAGLINE_IDS[Math.floor(normalizedRandom * TNN_HOMEPAGE_TAGLINE_IDS.length)] ?? TNN_DEFAULT_CLOSING_TAGLINE_ID;
+}
+
+export function getTnnHomepageTagline(taglineId: TnnHomepageTaglineId) {
+  return TNN_HOMEPAGE_TAGLINES[taglineId];
+}
+
+/**
+ * The tagline remains verbatim while the spoken close receives sentence
+ * punctuation when required, then ends with the required Tradebilia sign-off.
+ */
+export function formatTnnRequiredClosing(taglineId: TnnHomepageTaglineId) {
+  const tagline = getTnnHomepageTagline(taglineId).trim();
+  const completedTagline = /[.!?]$/.test(tagline) ? tagline : `${tagline}.`;
+  return `${completedTagline} Tradebilia.`;
+}
 
 export const TNN_DUO_OPENING_STYLE_VALUES = ["classic", "alongside", "joined", "here_with"] as const;
 export type TnnDuoOpeningStyle = typeof TNN_DUO_OPENING_STYLE_VALUES[number];

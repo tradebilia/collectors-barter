@@ -20,17 +20,15 @@ const approvedPhrases = [
 ];
 
 describe("homepage phrase loop", () => {
-  it("keeps all 12 approved phrases in the requested order", () => {
-    expect(componentSource).toContain("export const HOMEPAGE_PHRASES = [");
-    expect(componentSource.match(/  \"[^\"]+\",/g)).toEqual(
-      approvedPhrases.map(phrase => `  \"${phrase}\",`),
-    );
+  it("consumes all 12 approved phrases in the requested order from the shared TNN source", () => {
+    expect(componentSource).toContain('import { TNN_HOMEPAGE_PHRASES } from "@shared/tnnVideoPolicy";');
+    expect(componentSource).toContain("export const HOMEPAGE_PHRASES = TNN_HOMEPAGE_PHRASES;");
+    expect(HOMEPAGE_PHRASES).toEqual(approvedPhrases);
   });
 
   it("splits phrases into complete punctuation-delimited fragments", () => {
     expect(componentSource).toContain("export function splitPhraseIntoFragments");
     expect(componentSource).toContain("phrase.match(/[^.!?]+[.!?]+|[^.!?]+$/g)");
-    expect(componentSource).toContain("Have it. Want it. Trade it.");
     expect(splitPhraseIntoFragments("Have it. Want it. Trade it.")).toEqual(["Have it.", "Want it.", "Trade it."]);
     expect(splitPhraseIntoFragments(HOMEPAGE_PHRASES[1])).toEqual(["Trade what you have.", "Get what you want."]);
   });

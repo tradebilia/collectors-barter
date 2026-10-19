@@ -5,13 +5,15 @@ import {
   TNN_DEFAULT_DUO_OPENING_STYLE,
   TNN_DUO_OPENING_STYLES,
   TNN_NETWORK_SPOKEN_NAME,
-  TNN_REQUIRED_CLOSING,
   TNN_TRADEBILIA_PRONUNCIATION,
   TNN_VIDEO_DURATION_SECONDS,
   TNN_WEBSITE_TICKER,
+  formatTnnRequiredClosing,
   formatTnnGrade,
   isTnnDuoOpeningStyle,
   type TnnDuoOpeningStyle,
+  isTnnHomepageTaglineId,
+  type TnnHomepageTaglineId,
   type TnnTranscriptTurn,
 } from "../shared/tnnVideoPolicy";
 
@@ -23,7 +25,7 @@ export const TNN_SCRIPT_WORD_COUNT_ERROR_PREFIX = "The TNN script must contain "
 export const TNN_ANCHOR_INTRODUCTION_ERROR = "The TNN transcript must include the required on-air self-introduction from every selected anchor.";
 export const TNN_DUO_OPENING_ERROR = "The TNN duo transcript must open with Max's line followed immediately by Sidney's selected response.";
 export const TNN_ANCHOR_REPETITION_ERROR = "The TNN transcript must not repeat an anchor's full name after their one self-introduction.";
-export const TNN_FINAL_CLOSING_ERROR = "The TNN transcript must end with one standalone final spoken sentence: 'Tradebilia.'.";
+export const TNN_FINAL_CLOSING_ERROR = "The TNN transcript must end with its selected approved homepage tagline followed by one final spoken 'Tradebilia.'.";
 export const TNN_FACT_LOCK_ERROR = "The TNN transcript introduced a fact that is not approved for this completed trade.";
 export const TNN_SCRIPT_INPUT_TOO_LONG_ERROR = "The selected exact names and item titles cannot fit the 45-second TNN format. Select fewer items or use shorter listing titles.";
 export const TNN_SCRIPT_WORD_BUDGET = {
@@ -54,6 +56,7 @@ export type TnnScriptDraftInput = {
   durationSeconds: TnnScriptDuration;
   anchorMode: TnnScriptAnchorMode;
   duoOpeningStyle: TnnDuoOpeningStyle;
+  closingTaglineId: TnnHomepageTaglineId;
   sellerName: string;
   buyerName: string;
   cashOnly: boolean;
@@ -139,6 +142,10 @@ function selectedDuoOpening(input: TnnScriptDraftInput) {
   return TNN_DUO_OPENING_STYLES[input.duoOpeningStyle];
 }
 
+function selectedTnnClosing(input: TnnScriptDraftInput) {
+  return formatTnnRequiredClosing(input.closingTaglineId);
+}
+
 export function normalizeTnnScriptInput(input: TnnScriptDraftInput): TnnScriptDraftInput {
   const durationSeconds = input.durationSeconds === TNN_VIDEO_DURATION_SECONDS
     ? input.durationSeconds
@@ -163,6 +170,7 @@ export function normalizeTnnScriptInput(input: TnnScriptDraftInput): TnnScriptDr
     durationSeconds,
     anchorMode: input.anchorMode === "max" || input.anchorMode === "duo" ? input.anchorMode : "sidney",
     duoOpeningStyle: isTnnDuoOpeningStyle(input.duoOpeningStyle) ? input.duoOpeningStyle : TNN_DEFAULT_DUO_OPENING_STYLE,
+    closingTaglineId: isTnnHomepageTaglineId(input.closingTaglineId) ? input.closingTaglineId : "why_buy_or_sell",
     sellerName: cleanText(input.sellerName, 120),
     buyerName: cleanText(input.buyerName, 120),
     cashOnly: Boolean(input.cashOnly),
@@ -183,15 +191,15 @@ function publicFactLines(items: readonly TnnScriptItem[]) {
 function transcriptShapeInstruction(input: TnnScriptDraftInput) {
   if (input.anchorMode !== "duo") {
     const name = input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell";
-    return `Return 2-5 ordered turns. Every turn has speaker '${input.anchorMode}'. The first turn begins exactly 'Breaking News from Tradebilia.' and includes one self-introduction for ${name}; never repeat ${name} afterward. The final turn text must be exactly '${TNN_REQUIRED_CLOSING}'.`;
+    return `Return 2-5 ordered turns. Every turn has speaker '${input.anchorMode}'. The first turn begins exactly 'Breaking News from Tradebilia.' and includes one self-introduction for ${name}; never repeat ${name} afterward. The final turn text must be exactly '${selectedTnnClosing(input)}'.`;
   }
   const opening = selectedDuoOpening(input);
   return [
     "Return exactly 5 ordered turns with this speaker sequence: max, sidney, max, sidney, max.",
     `Turn 1 speaker must be 'max' and its text must be exactly: '${opening.maxLine}'.`,
     `Turn 2 speaker must be 'sidney' and its text must be exactly: '${opening.sidneyLine}'.`,
-    "Each later turn is a natural independent spoken sentence or paragraph for that named anchor. Speaker labels are review-only and never spoken.",
-    `Turn 5 speaker must be 'max' and its text must be exactly '${TNN_REQUIRED_CLOSING}'. The preceding Sidney turn must be an ordinary newsroom close and must not contain the word Tradebilia.`,
+    "Turns 3 and 4 must sound like a connected live broadcast: Max advances the confirmed report, then Sidney responds or bridges naturally with complementary detail rather than restating Max. Use at most one brief fact-locked ad-lib only when it sounds conversational and is grounded in approved facts. Speaker labels are review-only and never spoken.",
+    `Turn 5 speaker must be 'max' and its text must be exactly '${selectedTnnClosing(input)}'. The preceding Sidney turn must be an ordinary newsroom handoff and must not contain the word Tradebilia or any tagline wording.`,
   ].join(" ");
 }
 
@@ -205,8 +213,8 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
     "This is a private admin draft for human approval before any video task is started. Return only strict JSON matching the supplied schema; never include markdown, labels in text, captions, production directions, or extra fields.",
     `Write exactly ${TNN_SCRIPT_TARGET_SPOKEN_WORDS} spoken words where natural; the accepted range is ${budget.minimum}-${budget.maximum} words, approximately ${input.durationSeconds} seconds at a professional newsroom pace. Count only the spoken text in turns, never speaker labels.`,
     transcriptShapeInstruction(input),
-    `On-air presentation: ${anchors.join(" and ")}. If the word budget has room, use at most one or two brief, natural newsroom ad-lib comments only when grounded in approved transaction and item facts. Do not present an opinion, rarity, provenance, condition, date, place, ownership history, or collection history as fact unless it is explicitly listed below.`,
-    `State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. Use Tradebilia only in the required opening and the standalone final '${TNN_REQUIRED_CLOSING}'; never say 'on Tradebilia', 'Tradebilia platform', or repeat the brand in the closing. Do not narrate the ticker or any website text.`,
+    `On-air presentation: ${anchors.join(" and ")}. If the word budget has room, use at most one brief, natural newsroom ad-lib comment only when grounded in approved transaction and item facts. Do not present an opinion, rarity, provenance, condition, date, place, ownership history, or collection history as fact unless it is explicitly listed below.`,
+    `State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. Use Tradebilia only in the required opening and the final required closing '${selectedTnnClosing(input)}'; never say 'on Tradebilia', 'Tradebilia platform', or repeat the brand anywhere else. The selected closing tagline is approved brand copy, not a transaction claim, and may appear only in its final turn. Do not narrate the ticker or any website text.`,
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
     "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written, including casing, at least once. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
     input.additionalItemsCount > 0
@@ -289,7 +297,7 @@ function wordBudgetFloor(input: TnnScriptDraftInput) {
       return ["The exchange includes", item.title, grade ? `graded ${grade}` : ""];
     }),
     input.additionalItemsCount > 0 ? "Additional collector items changed hands as part of the completed transaction." : "",
-    TNN_REQUIRED_CLOSING,
+    selectedTnnClosing(input),
   ].filter(Boolean).join(" ");
   return countTnnScriptWords(requiredText);
 }
@@ -315,6 +323,7 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   const openingText = input.anchorMode === "duo"
     ? `${selectedDuoOpening(input).maxLine} ${selectedDuoOpening(input).sidneyLine}`
     : `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.`;
+  const duoBridge = input.anchorMode === "duo" ? "And here is the confirmed detail:" : "";
   const requiredLines = [
     `The TNN Network confirms a ${tradeType} between seller ${input.sellerName} and buyer ${input.buyerName}.`,
     ...itemLines,
@@ -329,7 +338,7 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   ];
   const flexibleLines = [...requiredLines];
   for (const line of optionalLines) {
-    const nextCount = countTnnScriptWords(`${openingText} ${flexibleLines.join(" ")} ${line} ${TNN_REQUIRED_CLOSING}`);
+    const nextCount = countTnnScriptWords(`${openingText} ${flexibleLines.join(" ")} ${duoBridge} ${line} ${selectedTnnClosing(input)}`);
     if (nextCount > budget.maximum) continue;
     flexibleLines.push(line);
     if (nextCount >= TNN_SCRIPT_TARGET_SPOKEN_WORDS) break;
@@ -337,18 +346,20 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   const opening = input.anchorMode === "duo"
     ? selectedDuoOpening(input)
     : null;
+  const maxTurnLines = flexibleLines.slice(0, Math.max(2, Math.ceil(flexibleLines.length / 2)));
+  const sidneyTurnLines = flexibleLines.slice(maxTurnLines.length);
   const turns: TnnScriptTurn[] = input.anchorMode === "duo"
     ? [
         { speaker: "max", text: opening!.maxLine },
         { speaker: "sidney", text: opening!.sidneyLine },
-        { speaker: "max", text: flexibleLines.splice(0, Math.max(2, Math.ceil(flexibleLines.length / 2))).join(" ") },
-        { speaker: "sidney", text: flexibleLines.join(" ") },
-        { speaker: "max", text: TNN_REQUIRED_CLOSING },
+        { speaker: "max", text: maxTurnLines.join(" ") },
+        { speaker: "sidney", text: [duoBridge, ...sidneyTurnLines].filter(Boolean).join(" ") },
+        { speaker: "max", text: selectedTnnClosing(input) },
       ]
     : [
         { speaker: input.anchorMode, text: `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.` },
         { speaker: input.anchorMode, text: flexibleLines.join(" ") },
-        { speaker: input.anchorMode, text: TNN_REQUIRED_CLOSING },
+        { speaker: input.anchorMode, text: selectedTnnClosing(input) },
       ];
   const wordCount = countTnnScriptWords(flattenTnnScriptTurns(turns));
   return wordCount >= budget.minimum && wordCount <= budget.maximum ? turns : null;
@@ -368,7 +379,7 @@ export function validateTnnScriptDraft(rawTurns: unknown, rawInput: TnnScriptDra
   if (!/^Breaking News from Tradebilia\./i.test(turns[0]!.text)) {
     throw new Error("The TNN transcript must begin with 'Breaking News from Tradebilia.'");
   }
-  if (turns.at(-1)?.text !== TNN_REQUIRED_CLOSING || turns.slice(1, -1).some((turn) => /\bTradebilia\b/i.test(turn.text))) {
+  if (!sameSpokenLine(turns.at(-1)?.text ?? "", selectedTnnClosing(input)) || turns.slice(1, -1).some((turn) => /\bTradebilia\b/i.test(turn.text))) {
     throw new Error(TNN_FINAL_CLOSING_ERROR);
   }
   assertFactBoundaries(script, input);
@@ -411,7 +422,7 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
       : `Corrective retry: put the selected anchor's single self-introduction in the first turn and do not repeat their full name. ${common}`;
   }
   if (error.message === TNN_FINAL_CLOSING_ERROR) {
-    return `Corrective retry: reserve Tradebilia for the opening and the final standalone turn only. The final turn text must be exactly '${TNN_REQUIRED_CLOSING}', and the prior turn must not mention Tradebilia. ${common}`;
+    return `Corrective retry: reserve Tradebilia for the opening and the final standalone turn only. The final turn text must be exactly '${selectedTnnClosing(normalized)}', and the prior turn must not mention Tradebilia or repeat the selected tagline. ${common}`;
   }
   if (error.message === TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR) {
     return `Corrective retry: the selected items are the entire completed trade set. Remove every statement or implication that any other item, piece, or collectible changed hands. ${common}`;
@@ -480,6 +491,7 @@ async function auditTnnScriptFacts(draft: TnnScriptDraft, rawInput: TnnScriptDra
         `Approved transaction type: ${input.cashOnly ? "cash sale" : "collector trade"}.`,
         `Approved seller: ${input.sellerName}; approved buyer: ${input.buyerName}.`,
         `Additional approved exchanged items: ${input.additionalItemsCount}.`,
+        `Approved final brand close (not a transaction claim and allowed only in the final turn): ${selectedTnnClosing(input)}`,
         "Approved selected item facts:",
         publicFactLines(input.selectedItems) || "No item facts supplied.",
         "Transcript turns:",

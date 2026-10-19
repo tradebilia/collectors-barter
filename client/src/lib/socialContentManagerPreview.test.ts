@@ -78,6 +78,9 @@ describe("Social Content Manager post preview", () => {
     expect(componentSource).toContain("Random — resolved to");
     expect(componentSource).toContain("selectTnnDuoOpeningStyle");
     expect(componentSource).toContain("The resolved opening remains fixed in this draft");
+    expect(componentSource).toContain("Random approved closing tagline");
+    expect(componentSource).toContain("Each newly prepared or regenerated script resolves one homepage tagline at random");
+    expect(componentSource).toContain("closingTaglineId: plan.closingTaglineId");
     expect(componentSource).toContain("lip-sync");
     expect(componentSource).toContain("transparent glossy mark");
     expect(componentSource).toContain("TNN — transparent glossy Tradebilia News Network logo");

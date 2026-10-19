@@ -156,7 +156,7 @@ import { getPaymentVerificationObligation, getPaymentVerificationObligations, is
 import { createTradeVideoTask, getTradeVideoTaskStatus } from "./manusVideoGeneration";
 import { createTnnScriptFactLock, draftTnnScript, type TnnScriptDraftInput, validateTnnScriptDraft, verifyTnnScriptFactLock } from "./tnnVideoScript";
 import { resolveTnnCompletedTradeSelection } from "./tnnCompletedTrade";
-import { TNN_DEFAULT_DUO_OPENING_STYLE, TNN_DUO_OPENING_STYLE_VALUES, TNN_VIDEO_DURATION_SECONDS, TNN_WEBSITE_TICKER } from "../shared/tnnVideoPolicy";
+import { TNN_DEFAULT_DUO_OPENING_STYLE, TNN_DUO_OPENING_STYLE_VALUES, TNN_HOMEPAGE_TAGLINE_IDS, TNN_VIDEO_DURATION_SECONDS, TNN_WEBSITE_TICKER } from "../shared/tnnVideoPolicy";
 
 const TNN_VIDEO_LOGO_URL = "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png";
 const TNN_NEWSROOM_REFERENCE_URL = "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png";
@@ -200,6 +200,7 @@ const tnnPresentationSchema = z.object({
   durationSeconds: z.literal(TNN_VIDEO_DURATION_SECONDS),
   anchorMode: z.enum(["max", "sidney", "duo"]),
   duoOpeningStyle: z.enum(TNN_DUO_OPENING_STYLE_VALUES).default(TNN_DEFAULT_DUO_OPENING_STYLE),
+  closingTaglineId: z.enum(TNN_HOMEPAGE_TAGLINE_IDS),
   selectedItems: z.array(tnnSelectedItemSelectionSchema).min(1).max(6),
 });
 
@@ -211,6 +212,7 @@ function canonicalTnnScriptInput(
     durationSeconds: presentation.durationSeconds,
     anchorMode: presentation.anchorMode,
     duoOpeningStyle: presentation.duoOpeningStyle,
+    closingTaglineId: presentation.closingTaglineId,
     sellerName: completedTrade.sellerName,
     buyerName: completedTrade.buyerName,
     cashOnly: completedTrade.cashOnly,
@@ -3084,7 +3086,7 @@ export const appRouter = router({
           return {
             ...draft,
             factLock: createTnnScriptFactLock(input.tradeId, draft, canonicalInput),
-            canonical: canonicalCompletedTrade,
+            canonical: { ...canonicalCompletedTrade, closingTaglineId: canonicalInput.closingTaglineId },
           };
         } catch (error) {
           const message = error instanceof Error ? error.message : "The TNN script could not be drafted.";

@@ -56,7 +56,12 @@ import {
   TNN_DEFAULT_DUO_OPENING_STYLE,
   TNN_DUO_OPENING_STYLES,
   TNN_DUO_OPENING_STYLE_VALUES,
+  chooseTnnClosingTaglineId,
   chooseTnnDuoOpeningStyle,
+  formatTnnRequiredClosing,
+  getTnnHomepageTagline,
+  isTnnHomepageTaglineId,
+  type TnnHomepageTaglineId,
   type TnnDuoOpeningStyle,
   type TnnDuoOpeningStyleSelection,
 } from "@shared/tnnVideoPolicy";
@@ -181,7 +186,7 @@ function normalizeDraft(draft: Partial<SocialDraft> & { id: string }): SocialDra
   }
   // Old browser-local prose drafts lack explicit speaker assignments and a
   // server fact lock, so they must be regenerated before video approval.
-  if (normalized.videoPlan?.script && (!Array.isArray(normalized.videoPlan.scriptTurns) || !normalized.videoPlan.factLock)) {
+  if (normalized.videoPlan?.script && (!Array.isArray(normalized.videoPlan.scriptTurns) || !normalized.videoPlan.factLock || !isTnnHomepageTaglineId(normalized.videoPlan.closingTaglineId))) {
     normalized.videoPlan = {
       ...normalized.videoPlan,
       scriptTurns: [],
@@ -274,6 +279,7 @@ export function SocialContentManagerTab() {
   const [videoAnchorMode, setVideoAnchorMode] = useState<TnnAnchorMode>("sidney");
   const [videoDuoOpeningStyleSelection, setVideoDuoOpeningStyleSelection] = useState<TnnDuoOpeningStyleSelection>("random");
   const [videoDuoOpeningStyle, setVideoDuoOpeningStyle] = useState<TnnDuoOpeningStyle>("classic");
+  const [videoClosingTaglineId, setVideoClosingTaglineId] = useState<TnnHomepageTaglineId>("why_buy_or_sell");
   const [videoSelectedItemIndexes, setVideoSelectedItemIndexes] = useState<number[]>([]);
   const [videoTickerText] = useState(TNN_WEBSITE_TICKER);
   const [lastTnnSoloAnchor, setLastTnnSoloAnchor] = useState<Exclude<TnnAnchorMode, "duo"> | null>(null);
@@ -598,11 +604,15 @@ export function SocialContentManagerTab() {
     const indexes = existing?.selectedItemIndexes?.filter((index) => index >= 0 && index < tradeItems.length)
       ?? tradeItems.slice(0, 6).map((_, index) => index);
     const openingStyle = existing?.duoOpeningStyle ?? (existing ? TNN_DEFAULT_DUO_OPENING_STYLE : chooseTnnDuoOpeningStyle());
+    const closingTaglineId = isTnnHomepageTaglineId(existing?.closingTaglineId)
+      ? existing.closingTaglineId
+      : chooseTnnClosingTaglineId();
     setVideoSellerName(selectedDraft.promotion?.sellerName?.trim() || existing?.sellerName || "");
     setVideoBuyerName(selectedDraft.promotion?.buyerName?.trim() || existing?.buyerName || "");
     setVideoAnchorMode(anchorMode);
     setVideoDuoOpeningStyleSelection(existing?.duoOpeningStyleSelection ?? (existing ? openingStyle : "random"));
     setVideoDuoOpeningStyle(openingStyle);
+    setVideoClosingTaglineId(closingTaglineId);
     setVideoSelectedItemIndexes(indexes);
     setIsVideoStudioOpen(true);
   }
@@ -623,7 +633,7 @@ export function SocialContentManagerTab() {
     setVideoDuoOpeningStyle(selection === "random" ? chooseTnnDuoOpeningStyle() : selection);
   }
 
-  function buildCurrentTnnPlan() {
+  function buildCurrentTnnPlan(closingTaglineId = videoClosingTaglineId) {
     if (!selectedDraft?.promotion) return null;
     return buildTnnCompletedTradeVideoPlan({
       sellerName: videoSellerName,
@@ -635,6 +645,7 @@ export function SocialContentManagerTab() {
       anchorMode: videoAnchorMode,
       duoOpeningStyle: videoDuoOpeningStyle,
       duoOpeningStyleSelection: videoDuoOpeningStyleSelection,
+      closingTaglineId,
       tickerText: videoTickerText,
     });
   }
@@ -645,7 +656,11 @@ export function SocialContentManagerTab() {
       toast.error("TNN videos are available only for completed trades with at least $1,000 in estimated item value.");
       return;
     }
-    const plan = buildCurrentTnnPlan();
+    // A newly drafted transcript—whether initial or regenerated—gets a fresh
+    // approved homepage closing. The result is then persisted and fact-locked.
+    const closingTaglineId = chooseTnnClosingTaglineId();
+    setVideoClosingTaglineId(closingTaglineId);
+    const plan = buildCurrentTnnPlan(closingTaglineId);
     if (!plan || plan.selectedItems.length === 0) {
       toast.error("Select at least one completed-trade item for the TNN report.");
       return;
@@ -658,6 +673,7 @@ export function SocialContentManagerTab() {
         durationSeconds: plan.durationSeconds,
         anchorMode: plan.anchorMode,
         duoOpeningStyle: plan.duoOpeningStyle,
+        closingTaglineId: plan.closingTaglineId,
         selectedItems: plan.selectedItems.flatMap((item) => Number.isInteger(item.listingId) && item.title ? [{ listingId: Number(item.listingId), title: item.title }] : []),
       });
       const canonicalPlan = {
@@ -706,6 +722,7 @@ export function SocialContentManagerTab() {
         durationSeconds: plan.durationSeconds,
         anchorMode: plan.anchorMode,
         duoOpeningStyle: plan.duoOpeningStyle,
+        closingTaglineId: plan.closingTaglineId,
         selectedItems: plan.selectedItems.flatMap((item) => Number.isInteger(item.listingId) && item.title ? [{ listingId: Number(item.listingId), title: item.title }] : []),
         turns: plan.scriptTurns,
         factLock: plan.factLock,
@@ -750,7 +767,7 @@ export function SocialContentManagerTab() {
 
   function duplicateDraft() {
     if (!selectedDraft) return;
-    const copy = { ...selectedDraft, id: `draft-${Date.now()}`, title: `${selectedDraft.title} — copy`, status: "Draft" as DraftStatus, updatedAt: new Date().toISOString() };
+    const copy = { ...selectedDraft, id: `draft-${Date.now()}`, title: `${selectedDraft.title} — copy`, status: "Draft" as DraftStatus, videoPlan: null, updatedAt: new Date().toISOString() };
     setDrafts((current) => [copy, ...current]);
     setSelectedId(copy.id);
     toast.success("Draft duplicated");
@@ -1064,7 +1081,7 @@ export function SocialContentManagerTab() {
                   <div className="flex items-center gap-3 rounded-lg border border-violet-200 bg-white p-3"><img src={TNN_VIDEO_LOGO_PATH} alt="TNN — transparent glossy Tradebilia News Network logo" className="h-auto max-h-20 w-auto object-contain" /><p className="text-xs leading-5 text-violet-950"><strong>Official TNN visual identity:</strong> this transparent glossy mark is embedded in the opening motion and the center newsroom displays only. It is never used as a square card or upper-corner logo.</p></div>
                   <figure className="overflow-hidden rounded-lg border border-violet-200 bg-white"><img src={TNN_NEWSROOM_REFERENCE_PATH} alt="Approved TNN bright broadcast newsroom reference" className="aspect-video w-full bg-slate-100 object-contain" /><figcaption className="border-t border-violet-100 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-950"><strong>Approved newsroom set:</strong> bright white/ice-gray network studio, navy/cobalt light, red and navy diagonal accents, world-map graphics, curved TNN desk, and a polished desk-shot composition. This reference is attached to every TNN video task.</figcaption></figure>
                   <figure className="overflow-hidden rounded-lg border border-violet-200 bg-slate-950"><img src={TNN_OPENING_REFERENCE_PATH} alt="Approved seamless TNN globe-and-ribbon opening reference" className="aspect-video w-full object-contain" /><figcaption className="border-t border-violet-100 bg-violet-50 px-3 py-2 text-xs leading-5 text-violet-950"><strong>Approved opening motion:</strong> a full-frame globe-and-ribbon reveal with the transparent TNN mark embedded in the scene—not a flat, square, or pasted logo image.</figcaption></figure>
-                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step drafts a fact-locked 45-second newsroom script with the anchors’ self-introductions. You review it before a separate approval starts generation. Manus then renders one 16:9 TNN newsroom MP4 with professional lip-sync, the transparent TNN opening motion, the approved newsroom set, face-safe item panels, and a continuously scrolling <strong>www.Tradebilia.com</strong> ticker. “Tradebilia” is directed as “trade-bil-lee-uh”; the report calls it the TNN Network and ends with Tradebilia. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-xs leading-5 text-violet-950"><strong>Generation status:</strong> The first step drafts a fact-locked 45-second newsroom script with the anchors’ self-introductions. You review it before a separate approval starts generation. Manus then renders one 16:9 TNN newsroom MP4 with professional lip-sync, the transparent TNN opening motion, the approved newsroom set, face-safe item panels, and a continuously scrolling <strong>www.Tradebilia.com</strong> ticker. “Tradebilia” is directed as “trade-bil-lee-uh”; the report calls it the TNN Network and ends with one approved homepage tagline followed by Tradebilia. No captions, values, cash amounts, or private transaction details are shown. One initial video and one explicitly approved replacement are allowed for this draft.</div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Seller name <Input value={videoSellerName} readOnly aria-readonly="true" placeholder="Verified from the completed trade" className="mt-1 bg-slate-50" /></label>
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Buyer name <Input value={videoBuyerName} readOnly aria-readonly="true" placeholder="Verified from the completed trade" className="mt-1 bg-slate-50" /></label>
@@ -1072,6 +1089,7 @@ export function SocialContentManagerTab() {
                     <label className="space-y-1.5 text-sm font-semibold text-slate-700">Anchor presentation <select value={videoAnchorMode} onChange={(event) => setVideoAnchorMode(event.target.value as TnnAnchorMode)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"><option value="max">Max Tradebloski · solo</option><option value="sidney">Sidney Tradewell · solo</option><option value="duo">Max &amp; Sidney · duo report</option></select></label>
                   </div>
                   {videoAnchorMode === "duo" ? <label className="block rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm font-semibold text-violet-950">Duo opening style <select value={videoDuoOpeningStyleSelection} onChange={(event) => selectTnnDuoOpeningStyle(event.target.value as TnnDuoOpeningStyleSelection)} className="mt-1.5 flex h-10 w-full rounded-md border border-violet-200 bg-white px-3 py-2 text-sm text-slate-800"><option value="random">Random — resolved to {TNN_DUO_OPENING_STYLES[videoDuoOpeningStyle].label}</option>{TNN_DUO_OPENING_STYLE_VALUES.map((style) => <option key={style} value={style}>{TNN_DUO_OPENING_STYLES[style].label}</option>)}</select><p className="mt-2 text-xs font-normal leading-5 text-violet-900">The resolved opening remains fixed in this draft, including when you regenerate its script or approve the video. “{TNN_DUO_OPENING_STYLES[videoDuoOpeningStyle].script}”</p></label> : null}
+                  <div className="rounded-lg border border-violet-200 bg-violet-50 p-3 text-sm font-semibold text-violet-950"><p>Random approved closing tagline</p><p className="mt-1.5 rounded-md border border-violet-100 bg-white px-3 py-2 font-normal leading-6 text-slate-800">“{formatTnnRequiredClosing(videoClosingTaglineId)}”</p><p className="mt-2 text-xs font-normal leading-5 text-violet-900">Each newly prepared or regenerated script resolves one homepage tagline at random. The selected line is then locked to the reviewed transcript and approved video.</p></div>
                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-bold text-slate-800">Completed-trade items</p><p className="mt-1 text-xs leading-5 text-slate-600">Select up to six items that were actually exchanged and should appear in the upper-right panel. The server re-verifies names, grades, facts, item count, and exact listing images against the completed trade before drafting or generating. Unselected entries are omitted from the script; they are not treated as additional items.</p></div><Badge variant="outline" className="border-slate-300 bg-white text-slate-700">{videoSelectedItemIndexes.length} / 6 selected</Badge></div><div className="mt-3 grid gap-2 sm:grid-cols-2">{(selectedDraft?.promotion?.tradeItems ?? []).map((item, index) => <label key={`${item.listingId ?? "item"}-${index}`} className="flex cursor-pointer items-start gap-2 rounded-md border border-slate-200 bg-white p-2.5 text-sm text-slate-700 hover:border-violet-300"><Checkbox checked={videoSelectedItemIndexes.includes(index)} onCheckedChange={() => toggleTnnSelectedItem(index)} aria-label={`Include ${item.title} in TNN video`} /><span><span className="block font-semibold">{item.title}</span>{item.grade || item.certificationCompany || item.customGradingCompany ? <span className="mt-0.5 block text-xs text-slate-500">{formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)}</span> : null}</span></label>)}</div></div>
                   <div className="rounded-lg border border-slate-200 bg-slate-50 p-3"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Lower ticker</p><p className="mt-1 text-sm font-semibold text-slate-800">{videoTickerText}</p><p className="mt-1 text-xs leading-5 text-slate-500">Locked website address; it scrolls on screen and is not read by the anchors.</p></div>
                   {selectedDraft?.videoPlan?.scriptTurns?.length ? <div className="rounded-lg border border-violet-200 bg-white p-4"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-violet-700">AI-written broadcast transcript</p><p className="mt-1 text-xs text-slate-500">{selectedDraft.videoPlan.scriptWordCount} spoken words · approximately {selectedDraft.videoPlan.estimatedSpeechSeconds} seconds · review before generation</p></div><Badge className="border border-violet-200 bg-violet-50 text-violet-800">Draft {selectedDraft.videoPlan.scriptDraftAttempts}</Badge></div><p className="mt-2 text-xs leading-5 text-violet-900/80">Speaker labels are review-only assignments. They are not spoken or displayed in the finished video.</p><div className="mt-3 space-y-2">{selectedDraft.videoPlan.scriptTurns.map((turn, index) => <div key={`${turn.speaker}-${index}`} className="rounded-lg border border-slate-200 bg-slate-50 p-3"><Badge className={turn.speaker === "max" ? "border border-sky-200 bg-sky-50 text-sky-800" : "border border-fuchsia-200 bg-fuchsia-50 text-fuchsia-800"}>{turn.speaker === "max" ? "MAX" : "SIDNEY"}</Badge><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-800">{turn.text}</p></div>)}</div></div> : null}

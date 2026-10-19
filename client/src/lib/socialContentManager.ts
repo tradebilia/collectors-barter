@@ -3,8 +3,12 @@ import {
   TNN_VIDEO_DURATION_SECONDS,
   TNN_VIDEO_DURATIONS as APPROVED_TNN_VIDEO_DURATIONS,
   TNN_WEBSITE_TICKER,
+  chooseTnnClosingTaglineId,
   formatTnnGrade,
+  getTnnHomepageTagline,
+  isTnnHomepageTaglineId,
   isTnnDuoOpeningStyle,
+  type TnnHomepageTaglineId,
   type TnnDuoOpeningStyle,
   type TnnDuoOpeningStyleSelection,
   type TnnTranscriptTurn,
@@ -21,7 +25,7 @@ export const TNN_MIN_COMPLETED_TRADE_VALUE = 1_000;
 export const TNN_VIDEO_DURATIONS = APPROVED_TNN_VIDEO_DURATIONS;
 export type TnnVideoDuration = typeof TNN_VIDEO_DURATIONS[number];
 export type TnnAnchorMode = "max" | "sidney" | "duo";
-export type { TnnDuoOpeningStyle, TnnDuoOpeningStyleSelection, TnnTranscriptTurn } from "@shared/tnnVideoPolicy";
+export type { TnnHomepageTaglineId, TnnDuoOpeningStyle, TnnDuoOpeningStyleSelection, TnnTranscriptTurn } from "@shared/tnnVideoPolicy";
 export type TnnScriptStatus = "not-drafted" | "drafting" | "draft-ready" | "draft-failed";
 export type TnnGenerationStatus = "not-started" | "starting" | "generating" | "generation-failed" | "final-video-attached";
 export type TnnVideoReviewStatus = "not-ready" | "needs-review" | "approved";
@@ -103,6 +107,10 @@ export type SocialVideoPlan = {
   duoOpeningStyle: TnnDuoOpeningStyle;
   /** Browser-local selector state; the server receives only the resolved approved style. */
   duoOpeningStyleSelection: TnnDuoOpeningStyleSelection;
+  /** Resolved once per TNN draft from the approved homepage phrase loop. */
+  closingTaglineId: TnnHomepageTaglineId;
+  /** Canonical text snapshot for clear review of this browser-local plan. */
+  closingTagline: string;
   anchorNames: string[];
   sellerName: string;
   buyerName: string;
@@ -209,6 +217,7 @@ export function buildTnnCompletedTradeVideoPlan({
   anchorMode,
   duoOpeningStyle,
   duoOpeningStyleSelection,
+  closingTaglineId,
   tickerText,
   now = new Date().toISOString(),
 }: {
@@ -223,6 +232,7 @@ export function buildTnnCompletedTradeVideoPlan({
   anchorMode: TnnAnchorMode;
   duoOpeningStyle?: TnnDuoOpeningStyle | null;
   duoOpeningStyleSelection?: TnnDuoOpeningStyleSelection | null;
+  closingTaglineId?: TnnHomepageTaglineId | null;
   tickerText: string;
   now?: string;
 }): SocialVideoPlan {
@@ -231,6 +241,9 @@ export function buildTnnCompletedTradeVideoPlan({
   const selectedItems = indexes.map((index) => cleanItems[index]).filter((item): item is TnnTradeItem => Boolean(item));
   const cleanSeller = sellerName.trim() || "Seller";
   const cleanBuyer = buyerName.trim() || "Buyer";
+  const resolvedClosingTaglineId = isTnnHomepageTaglineId(closingTaglineId)
+    ? closingTaglineId
+    : chooseTnnClosingTaglineId();
   return {
     format: "16:9",
     durationSeconds,
@@ -241,6 +254,8 @@ export function buildTnnCompletedTradeVideoPlan({
     duoOpeningStyleSelection: duoOpeningStyleSelection === "random" || isTnnDuoOpeningStyle(duoOpeningStyleSelection)
       ? duoOpeningStyleSelection
       : TNN_DEFAULT_DUO_OPENING_STYLE,
+    closingTaglineId: resolvedClosingTaglineId,
+    closingTagline: getTnnHomepageTagline(resolvedClosingTaglineId),
     anchorNames: getTnnAnchorNames(anchorMode),
     sellerName: cleanSeller,
     buyerName: cleanBuyer,

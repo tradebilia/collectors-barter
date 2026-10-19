@@ -113,12 +113,15 @@ describe("social content manager draft workflow", () => {
       cashOnly: true,
       durationSeconds: TNN_VIDEO_DURATION_SECONDS,
       anchorMode: "sidney",
+      closingTaglineId: "have_it_want_it",
       tickerText: TNN_WEBSITE_TICKER,
       now: "2026-09-26T20:00:00.000Z",
     });
     expect(plan).toMatchObject({ format: "16:9", durationSeconds: 45, voiceProfile: "tnn-professional-american-news-anchor", anchorNames: ["Sidney Tradewell"], scriptStatus: "not-drafted", generationStatus: "not-started", videoReviewStatus: "not-ready" });
     expect(plan.selectedItems[0]?.title).toBe("1985 Topps Traded Set");
     expect(plan.tickerText).toBe(TNN_WEBSITE_TICKER);
+    expect(plan.closingTaglineId).toBe("have_it_want_it");
+    expect(plan.closingTagline).toBe("Have it. Want it. Trade it.");
     expect(formatTnnGrade("PSA", null, "10.00")).toBe("PSA 10");
   });
 
@@ -149,12 +152,15 @@ describe("social content manager draft workflow", () => {
       anchorMode: "duo",
       duoOpeningStyleSelection: "random",
       duoOpeningStyle: "joined",
+      closingTaglineId: "whats_yours",
       tickerText: "www.Tradebilia.com",
     });
     expect(plan).toMatchObject({
       anchorMode: "duo",
       duoOpeningStyleSelection: "random",
       duoOpeningStyle: "joined",
+      closingTaglineId: "whats_yours",
+      closingTagline: "What’s yours could be someone else’s treasure.",
     });
   });
 

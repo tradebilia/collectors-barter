@@ -1,20 +1,9 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import AnimatedLogoSmall70 from "@/components/AnimatedLogoSmall70";
+import { TNN_HOMEPAGE_PHRASES } from "@shared/tnnVideoPolicy";
 
-export const HOMEPAGE_PHRASES = [
-  "Why buy or sell when you can trade?",
-  "Trade what you have. Get what you want.",
-  "Have it. Want it. Trade it.",
-  "Your collection. Your trade. Your next find.",
-  "Don’t buy it. Don’t sell it. Trade for it.",
-  "Turn what you have into what you want.",
-  "Collect. Connect. Trade.",
-  "Where collectors trade what they love.",
-  "One collection. Endless possibilities.",
-  "The smarter way to collect.",
-  "What’s yours could be someone else’s treasure.",
-  "Trade your way to the collection you want",
-] as const;
+/** Re-exported for the homepage display; shared policy owns this approved list. */
+export const HOMEPAGE_PHRASES = TNN_HOMEPAGE_PHRASES;
 
 export const FRAGMENT_REVEAL_MS = 2000;
 export const PHRASE_HOLD_MS = 5000;

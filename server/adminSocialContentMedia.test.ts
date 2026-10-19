@@ -100,6 +100,9 @@ describe("admin social-content media upload contract", () => {
     expect(tnnSection).toContain("resolveTnnCompletedTradeSelection");
     expect(tnnSection).toContain("canonicalTnnScriptInput");
     expect(tnnSection).toContain("canonicalCompletedTrade.selectedItems");
+    expect(tnnSection).toContain("TNN_HOMEPAGE_TAGLINE_IDS");
+    expect(tnnSection).toContain("closingTaglineId: z.enum(TNN_HOMEPAGE_TAGLINE_IDS)");
+    expect(tnnSection).toContain("closingTaglineId: presentation.closingTaglineId");
     expect(tnnSection).toContain("verifyTnnScriptFactLock");
     expect(tnnSection).not.toContain("imageUrls:");
     expect(tnnSection).not.toContain("tnnScriptDraftSchema");
