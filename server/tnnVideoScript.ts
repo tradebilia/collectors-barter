@@ -35,6 +35,8 @@ export const TNN_SCRIPT_WORD_BUDGET = {
 export const TNN_SCRIPT_TARGET_SPOKEN_WORDS = 90;
 /** Initial draft plus bounded automatic length repairs; the user never has to retry a normal short draft manually. */
 export const TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS = 4;
+/** A fact-review disagreement receives bounded rewrites before canonical fallback. */
+export const TNN_MAX_AUTOMATIC_FACT_LOCK_REWRITES = 2;
 
 export type TnnScriptDuration = keyof typeof TNN_SCRIPT_WORD_BUDGET;
 export type TnnScriptAnchorMode = "max" | "sidney" | "duo";
@@ -102,6 +104,22 @@ const BLOCKED_SCRIPT_PATTERNS = [
 ];
 const EXTRA_ITEM_IMPLICATION_PATTERN = /\b(?:additional|other|more|further|remaining)\s+(?:collector\s+)?(?:items?|pieces?|collectibles?)\s+(?:also\s+)?(?:changed hands|joined|were included|moved|traded|exchanged)\b/i;
 const TNN_DRAFT_LOCK_MAX_AGE_MS = 30 * 60 * 1000;
+/**
+ * These phrases describe the already verified transaction; they add no item,
+ * condition, provenance, value, date, or private-detail claim. Keeping this
+ * vocabulary explicit prevents a secondary LLM reviewer from treating routine
+ * newsroom connective language as an invented fact.
+ */
+const TNN_APPROVED_NEUTRAL_NEWSROOM_LANGUAGE = [
+  "completed collector trade",
+  "completed exchange",
+  "completed transaction",
+  "between seller [approved seller] and buyer [approved buyer]",
+  "the TNN Network confirms the completed trade",
+  "the TNN Network reports the completed trade",
+  "this report recognizes the completed exchange",
+  "the selected items are acknowledged in this report",
+] as const;
 
 const cleanText = (value: unknown, maximum = 180) => String(value ?? "").trim().replace(/\s+/g, " ").slice(0, maximum);
 
@@ -365,6 +383,18 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   return wordCount >= budget.minimum && wordCount <= budget.maximum ? turns : null;
 }
 
+/**
+ * The fallback is assembled only from canonical server-resolved facts and
+ * fixed newsroom language, then passes the same structural validator as an AI
+ * response. It is safe to use when the secondary LLM fact reviewer is
+ * unavailable or contradicts its own approved neutral-language contract.
+ */
+function createValidatedTnnFallback(input: TnnScriptDraftInput): TnnScriptDraft {
+  const fallbackTurns = createTnnWordBudgetFallback(input);
+  if (!fallbackTurns) throw new Error(TNN_SCRIPT_INPUT_TOO_LONG_ERROR);
+  return validateTnnScriptDraft(fallbackTurns, input);
+}
+
 export function validateTnnScriptDraft(rawTurns: unknown, rawInput: TnnScriptDraftInput): TnnScriptDraft {
   const input = normalizeTnnScriptInput(rawInput);
   const turns = normalizeTnnTurns(rawTurns);
@@ -430,43 +460,73 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
   return null;
 }
 
+function factLockCorrectionInstruction(input: TnnScriptDraftInput) {
+  const normalized = normalizeTnnScriptInput(input);
+  return [
+    "Automatic fact-lock repair: return one complete replacement transcript only as the required strict JSON.",
+    "Use only the approved parties, selected titles, grades, explicit item facts, transaction type, required opening, TNN Network wording, and final brand close.",
+    `Ordinary neutral newsroom wording is expressly approved: ${TNN_APPROVED_NEUTRAL_NEWSROOM_LANGUAGE.join("; ")}.`,
+    "Do not add a value, price, date, place, condition, provenance, rarity, ownership history, contact detail, certificate detail, or any unselected item.",
+    transcriptShapeInstruction(normalized),
+  ].join(" ");
+}
+
+function isTnnFactReviewAvailabilityError(error: Error) {
+  return error.message.startsWith("The TNN fact-lock review returned");
+}
+
+/**
+ * These failures arise from generated transcript content or the model service,
+ * not from an impossible completed-trade selection. They can safely use the
+ * canonical deterministic transcript after one fixed repair request because
+ * that transcript is built only from server-verified facts.
+ */
+function isRecoverableTnnDraftError(error: Error) {
+  return /^(?:The TNN transcript|The TNN duo transcript|The TNN solo transcript)/.test(error.message);
+}
+
 async function requestTnnScript(input: TnnScriptDraftInput, correctiveInstruction?: string) {
-  const response = await invokeLLM({
-    model: TNN_SCRIPT_MODEL,
-    messages: [
-      { role: "system", content: "You are a precise newsroom copywriter. Follow the supplied factual boundaries and speaker-turn structure exactly." },
-      { role: "user", content: buildTnnScriptPrompt(input) },
-      ...(correctiveInstruction ? [{ role: "user" as const, content: correctiveInstruction }] : []),
-    ],
-    temperature: 0.65,
-    reasoning: { effort: "minimal" },
-    max_completion_tokens: TNN_SCRIPT_MAX_COMPLETION_TOKENS,
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "tnn_completed_trade_transcript",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            turns: {
-              type: "array",
-              minItems: 2,
-              maxItems: 5,
-              items: {
-                type: "object",
-                properties: { speaker: { type: "string", enum: ["max", "sidney"] }, text: { type: "string" } },
-                required: ["speaker", "text"],
-                additionalProperties: false,
+  let response: Awaited<ReturnType<typeof invokeLLM>>;
+  try {
+    response = await invokeLLM({
+      model: TNN_SCRIPT_MODEL,
+      messages: [
+        { role: "system", content: "You are a precise newsroom copywriter. Follow the supplied factual boundaries and speaker-turn structure exactly." },
+        { role: "user", content: buildTnnScriptPrompt(input) },
+        ...(correctiveInstruction ? [{ role: "user" as const, content: correctiveInstruction }] : []),
+      ],
+      temperature: 0.65,
+      reasoning: { effort: "minimal" },
+      max_completion_tokens: TNN_SCRIPT_MAX_COMPLETION_TOKENS,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "tnn_completed_trade_transcript",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              turns: {
+                type: "array",
+                minItems: 2,
+                maxItems: 5,
+                items: {
+                  type: "object",
+                  properties: { speaker: { type: "string", enum: ["max", "sidney"] }, text: { type: "string" } },
+                  required: ["speaker", "text"],
+                  additionalProperties: false,
+                },
               },
             },
+            required: ["turns"],
+            additionalProperties: false,
           },
-          required: ["turns"],
-          additionalProperties: false,
         },
       },
-    },
-  });
+    });
+  } catch {
+    throw new Error("The TNN transcript service is temporarily unavailable.");
+  }
   const choice = response.choices[0];
   const content = getStructuredResponseText(choice?.message.content);
   if (!content) {
@@ -482,39 +542,46 @@ async function requestTnnScript(input: TnnScriptDraftInput, correctiveInstructio
 
 async function auditTnnScriptFacts(draft: TnnScriptDraft, rawInput: TnnScriptDraftInput): Promise<TnnFactAudit> {
   const input = normalizeTnnScriptInput(rawInput);
-  const response = await invokeLLM({
-    model: TNN_SCRIPT_MODEL,
-    messages: [
-      { role: "system", content: "You are a strict completed-trade fact checker. Reject any claim not directly supported by the approved parties, selected titles, grades, explicit facts, transaction type, or allowed neutral newsroom language." },
-      { role: "user", content: [
-        "Audit this TNN transcript. Approve only if it adds no unapproved factual claim, provenance, rarity, condition, date, place, ownership history, collection history, value, privacy detail, or extra-item implication.",
-        `Approved transaction type: ${input.cashOnly ? "cash sale" : "collector trade"}.`,
-        `Approved seller: ${input.sellerName}; approved buyer: ${input.buyerName}.`,
-        `Additional approved exchanged items: ${input.additionalItemsCount}.`,
-        `Approved final brand close (not a transaction claim and allowed only in the final turn): ${selectedTnnClosing(input)}`,
-        "Approved selected item facts:",
-        publicFactLines(input.selectedItems) || "No item facts supplied.",
-        "Transcript turns:",
-        ...draft.turns.map((turn) => `${turn.speaker.toUpperCase()}: ${turn.text}`),
-      ].join("\n") },
-    ],
-    temperature: 0,
-    reasoning: { effort: "minimal" },
-    max_completion_tokens: 220,
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "tnn_transcript_fact_lock",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: { approved: { type: "boolean" }, reason: { type: "string" } },
-          required: ["approved", "reason"],
-          additionalProperties: false,
+  let response: Awaited<ReturnType<typeof invokeLLM>>;
+  try {
+    response = await invokeLLM({
+      model: TNN_SCRIPT_MODEL,
+      messages: [
+        { role: "system", content: "You are a strict completed-trade fact checker. Reject any claim not directly supported by the approved parties, selected titles, grades, explicit facts, transaction type, or allowed neutral newsroom language." },
+        { role: "user", content: [
+          "Audit this TNN transcript. Approve only if it adds no unapproved factual claim, provenance, rarity, condition, date, place, ownership history, collection history, value, privacy detail, or extra-item implication.",
+          `Approved transaction type: ${input.cashOnly ? "cash sale" : "collector trade"}.`,
+          `Approved seller: ${input.sellerName}; approved buyer: ${input.buyerName}.`,
+          `Additional approved exchanged items: ${input.additionalItemsCount}.`,
+          `Approved final brand close (not a transaction claim and allowed only in the final turn): ${selectedTnnClosing(input)}`,
+          `Approved neutral newsroom language (not additional factual claims): ${TNN_APPROVED_NEUTRAL_NEWSROOM_LANGUAGE.join("; ")}.`,
+          "Do not reject an otherwise compliant transcript merely because it combines the approved seller and buyer names with the approved completed transaction type in ordinary newsroom grammar.",
+          "Approved selected item facts:",
+          publicFactLines(input.selectedItems) || "No item facts supplied.",
+          "Transcript turns:",
+          ...draft.turns.map((turn) => `${turn.speaker.toUpperCase()}: ${turn.text}`),
+        ].join("\n") },
+      ],
+      temperature: 0,
+      reasoning: { effort: "minimal" },
+      max_completion_tokens: 220,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "tnn_transcript_fact_lock",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: { approved: { type: "boolean" }, reason: { type: "string" } },
+            required: ["approved", "reason"],
+            additionalProperties: false,
+          },
         },
       },
-    },
-  });
+    });
+  } catch {
+    throw new Error("The TNN fact-lock review returned no usable result.");
+  }
   const content = getStructuredResponseText(response.choices[0]?.message.content);
   if (!content) throw new Error("The TNN fact-lock review returned no usable result. Please retry.");
   try {
@@ -530,15 +597,19 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
   assertTnnWordBudgetFeasible(input);
   let correctiveInstruction: string | undefined;
   let standardCorrectiveRetryUsed = false;
+  let factLockRewriteCount = 0;
   let lastWordBudgetError: TnnWordBudgetError | null = null;
   for (let attempt = 0; attempt < TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS; attempt += 1) {
     try {
       const draft = validateTnnScriptDraft(await requestTnnScript(input, correctiveInstruction), input);
       const factAudit = await auditTnnScriptFacts(draft, input);
       if (factAudit.approved) return draft;
-      if (standardCorrectiveRetryUsed) throw new Error(`${TNN_FACT_LOCK_ERROR} ${factAudit.reason}`);
-      standardCorrectiveRetryUsed = true;
-      correctiveInstruction = `Corrective retry: the bounded fact-lock review rejected the prior draft: ${factAudit.reason} Remove or rewrite every unsupported claim. ${transcriptShapeInstruction(normalizeTnnScriptInput(input))} Return one complete replacement transcript only as the required strict JSON.`;
+      if (factLockRewriteCount < TNN_MAX_AUTOMATIC_FACT_LOCK_REWRITES && attempt < TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS - 1) {
+        factLockRewriteCount += 1;
+        correctiveInstruction = factLockCorrectionInstruction(input);
+        continue;
+      }
+      return createValidatedTnnFallback(input);
     } catch (error) {
       if (!(error instanceof Error)) throw error;
       if (error instanceof TnnWordBudgetError) {
@@ -549,20 +620,16 @@ export async function draftTnnScript(input: TnnScriptDraftInput): Promise<TnnScr
         }
         break;
       }
-      if (standardCorrectiveRetryUsed || error.message.startsWith(TNN_FACT_LOCK_ERROR)) throw error;
+      if (isTnnFactReviewAvailabilityError(error)) return createValidatedTnnFallback(input);
+      if (standardCorrectiveRetryUsed || error.message.startsWith(TNN_FACT_LOCK_ERROR)) return createValidatedTnnFallback(input);
       const nextInstruction = correctiveInstructionFor(error, input);
-      if (!nextInstruction) throw error;
+      if (!nextInstruction && !isRecoverableTnnDraftError(error)) throw error;
       standardCorrectiveRetryUsed = true;
-      correctiveInstruction = nextInstruction;
+      correctiveInstruction = nextInstruction ?? factLockCorrectionInstruction(input);
     }
   }
   if (lastWordBudgetError) {
-    const fallbackTurns = createTnnWordBudgetFallback(input);
-    if (!fallbackTurns) throw new Error(TNN_SCRIPT_INPUT_TOO_LONG_ERROR);
-    const fallback = validateTnnScriptDraft(fallbackTurns, input);
-    const factAudit = await auditTnnScriptFacts(fallback, input);
-    if (factAudit.approved) return fallback;
-    throw new Error(`${TNN_FACT_LOCK_ERROR} ${factAudit.reason}`);
+    return createValidatedTnnFallback(input);
   }
   throw new Error("The TNN transcript could not be fact-locked.");
 }
