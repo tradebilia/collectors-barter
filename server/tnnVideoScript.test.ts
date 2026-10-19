@@ -126,6 +126,13 @@ describe("TNN structured speaker transcript", () => {
     expect(() => validateTnnScriptDraft(fieldLabelTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
   });
 
+  it("rejects broadcast-internal labels, certification meta-language, and transaction-record wording", () => {
+    const internalCopyTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "Headline: Sidney here: the trading card carries the PSA 9 grade designation, confirming its certified grade, while the game is in Excellent condition; both grades were noted in the transaction record." }
+      : turn);
+    expect(() => validateTnnScriptDraft(internalCopyTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
   it("rejects internal transfer approval and matching rationale", () => {
     const rationaleTurns = validTurns.map((turn, index) => index === 3
       ? { ...turn, text: "The 1989 Nintendo Game is in Excellent condition and the PSA 9 Trading Card carries approved 1986 context. The pieces were approved for transfer after an approved factor helped secure agreement between the parties." }
