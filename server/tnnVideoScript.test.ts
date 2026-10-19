@@ -126,6 +126,13 @@ describe("TNN structured speaker transcript", () => {
     expect(() => validateTnnScriptDraft(fieldLabelTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
   });
 
+  it("rejects internal transfer approval and matching rationale", () => {
+    const rationaleTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The 1989 Nintendo Game is in Excellent condition and the PSA 9 Trading Card carries approved 1986 context. The pieces were approved for transfer after an approved factor helped secure agreement between the parties." }
+      : turn);
+    expect(() => validateTnnScriptDraft(rationaleTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
   it("rejects stacked review-summary filler after Sidney's approved item detail", () => {
     const stackedFillerTurns = validTurns.map((turn, index) => index === 3
       ? { ...turn, text: "The original game is in Excellent condition. Together, these details give collectors a concise view of the completed exchange. This gives viewers a clear, fact-based look at the finished exchange." }
