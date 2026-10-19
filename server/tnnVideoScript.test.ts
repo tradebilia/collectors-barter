@@ -11,6 +11,7 @@ import {
   TNN_DUPLICATE_GRADE_DETAIL_ERROR,
   TNN_ORDINAL_ITEM_REFERENCE_ERROR,
   TNN_REPEATED_ITEM_SUBJECT_ERROR,
+  TNN_REPEATED_SIDNEY_SENTENCE_ERROR,
   TNN_ITEM_LIST_PUNCTUATION_ERROR,
   TNN_EDITORIAL_META_LANGUAGE_ERROR,
   TNN_EDITORIAL_FILLER_REPETITION_ERROR,
@@ -131,6 +132,27 @@ describe("TNN structured speaker transcript", () => {
       ? { ...turn, text: "Headline: Sidney here: the trading card carries the PSA 9 grade designation, confirming its certified grade, while the game is in Excellent condition; both grades were noted in the transaction record." }
       : turn);
     expect(() => validateTnnScriptDraft(internalCopyTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
+  it("rejects commentary about the broadcast or audience instead of direct item facts", () => {
+    const broadcastMetaTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The original game is in Excellent condition. The card is noted by the broadcast for viewers and described in platform terms." }
+      : turn);
+    expect(() => validateTnnScriptDraft(broadcastMetaTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
+  it("rejects status-summary padding after Sidney's substantive item facts", () => {
+    const statusPaddingTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The original game is in Excellent condition. The trading card is graded PSA 9. Those item details stay tied to the confirmed exchange. Each score belongs to its named item." }
+      : turn);
+    expect(() => validateTnnScriptDraft(statusPaddingTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
+  it("rejects an identical Sidney sentence repeated in the same report", () => {
+    const duplicatedSentenceTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The original game is in Excellent condition. The item remains part of the exchange. The item remains part of the exchange." }
+      : turn);
+    expect(() => validateTnnScriptDraft(duplicatedSentenceTurns, input)).toThrow(TNN_REPEATED_SIDNEY_SENTENCE_ERROR);
   });
 
   it("rejects internal transfer approval and matching rationale", () => {
