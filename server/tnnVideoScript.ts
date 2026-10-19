@@ -33,6 +33,7 @@ export const TNN_EDITORIAL_META_LANGUAGE_ERROR = "The TNN transcript exposed dat
 export const TNN_DUPLICATE_GRADE_DETAIL_ERROR = "The TNN transcript repeats a graded item's company or numeric grade as separate fragments instead of one natural grade description.";
 export const TNN_ORDINAL_ITEM_REFERENCE_ERROR = "The TNN transcript uses ordinal item labels instead of natural item descriptors in Sidney's report.";
 export const TNN_REPEATED_ITEM_SUBJECT_ERROR = "The TNN transcript repeats the same item subject in Sidney's short report instead of combining its approved details.";
+export const TNN_ITEM_LIST_PUNCTUATION_ERROR = "The TNN transcript uses list punctuation in a two-item spoken headline instead of a natural conjunction.";
 export const TNN_RAW_CONDITION_ERROR = "The TNN transcript must state the approved condition for every raw selected item and must not describe it with a grade.";
 export const TNN_FACT_LOCK_ERROR = "The TNN transcript introduced a fact that is not approved for this completed trade.";
 export const TNN_SCRIPT_INPUT_TOO_LONG_ERROR = "The selected exact names and item titles cannot fit the 45-second TNN format. Select fewer items or use shorter listing titles.";
@@ -164,9 +165,24 @@ function humanizeTnnFact(label: string, value: string): string | null {
   if (/cover art|artwork|cover/.test(normalizedLabel)) return `features ${normalizedValue}`;
   if (/box|packaging|package/.test(normalizedLabel)) return `has ${normalizedValue.toLowerCase()} packaging`;
   if (/year|release/.test(normalizedLabel)) return `dates to ${normalizedValue}`;
-  if (/item type|format|edition/.test(normalizedLabel)) return `is identified as ${normalizedValue}`;
+  if (/item type|format|edition/.test(normalizedLabel)) return `is a ${normalizedValue.toLowerCase()}`;
   // Unknown fields are intentionally omitted rather than exposed as “the listing notes…”.
   return null;
+}
+
+function spokenTnnItemType(itemType: string | null | undefined) {
+  const normalized = cleanText(itemType, 60).toLowerCase().replace(/[_-]+/g, " ");
+  const labels: Record<string, string> = {
+    "single comic": "comic",
+    "signed item": "signed piece",
+    "action figure": "figure",
+    "original art": "original art",
+    "single coin": "coin",
+    "single card": "trading card",
+    "card set": "card set",
+    "video game": "video game",
+  };
+  return labels[normalized] ?? normalized;
 }
 
 function spokenTnnDetailOptions(item: TnnScriptItem) {
@@ -202,7 +218,7 @@ function spokenTnnItemSubject(item: TnnScriptItem) {
     return `The ${setName || "card set"}`;
   }
   if (/card/i.test(item.itemType ?? "") || /card/i.test(item.category ?? "")) return "The trading card";
-  const type = cleanText(item.itemType, 60).replace(/[_-]+/g, " ");
+  const type = spokenTnnItemType(item.itemType);
   return type ? `The ${type}` : "The item";
 }
 
@@ -290,7 +306,7 @@ function publicFactLines(items: readonly TnnScriptItem[]) {
     const itemState = item.gradingStatus === "raw"
       ? ` | raw/ungraded item | required condition: ${item.condition || "not supplied"}`
       : ` | graded item${grade ? ` | approved grade: ${grade}` : ""}`;
-    return `${index + 1}. ${item.title}${item.category ? ` | category: ${item.category}` : ""}${item.itemType ? ` | type: ${item.itemType}` : ""}${itemState}${facts.length ? ` | approved background facts: ${facts.join("; ")}` : ""}`;
+    return `${index + 1}. ${item.title}${item.category ? ` | category: ${item.category}` : ""}${item.itemType ? ` | type: ${spokenTnnItemType(item.itemType)}` : ""}${itemState}${facts.length ? ` | approved background facts: ${facts.join("; ")}` : ""}`;
   }).join("\n");
 }
 
@@ -382,6 +398,9 @@ function assertSpeakerTurnStructure(turns: readonly TnnScriptTurn[], input: TnnS
     }
   }
   const maxReport = turns[2]!.text;
+  if (input.selectedItems.length === 2 && new RegExp(`${escapeRegExp(input.selectedItems[0]!.title)}\\s*,\\s*and\\s*${escapeRegExp(input.selectedItems[1]!.title)}`, "i").test(maxReport)) {
+    throw new Error(TNN_ITEM_LIST_PUNCTUATION_ERROR);
+  }
   const sidneyDetailEvidence = input.selectedItems.flatMap((item) => spokenTnnDetailValues(item));
   if (!sidneyDetailEvidence.some((evidence) => sidneyText.includes(evidence))) {
     throw new Error(TNN_SIDNEY_DETAIL_ERROR);
@@ -461,7 +480,9 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
     : `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.`;
   const titleList = input.selectedItems.length === 1
     ? input.selectedItems[0]!.title
-    : `${input.selectedItems.slice(0, -1).map((item) => item.title).join(", ")}, and ${input.selectedItems.at(-1)!.title}`;
+    : input.selectedItems.length === 2
+      ? `${input.selectedItems[0]!.title} and ${input.selectedItems[1]!.title}`
+      : `${input.selectedItems.slice(0, -1).map((item) => item.title).join(", ")}, and ${input.selectedItems.at(-1)!.title}`;
   const detailLines = input.selectedItems.flatMap((item) => {
     const subject = spokenTnnItemSubject(item);
     const options = spokenTnnDetailOptions(item);
@@ -605,6 +626,9 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
   }
   if (error.message === TNN_REPEATED_ITEM_SUBJECT_ERROR) {
     return `Corrective retry: mention each natural item subject only once in Sidney's turn. Combine related approved details into one sentence, for example, 'the Megatron figure is graded AFA 60 and has boxed packaging.' Do not drop any approved detail. ${common}`;
+  }
+  if (error.message === TNN_ITEM_LIST_PUNCTUATION_ERROR) {
+    return `Corrective retry: this report names exactly two selected items, so join their titles with a normal spoken 'and' and no comma before it. Keep the wording conversational rather than formatted as a written list. ${common}`;
   }
   if (error.message === TNN_RAW_CONDITION_ERROR) {
     const rawItems = normalized.selectedItems.filter((item) => item.gradingStatus === "raw")

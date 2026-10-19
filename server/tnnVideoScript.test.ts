@@ -11,6 +11,7 @@ import {
   TNN_DUPLICATE_GRADE_DETAIL_ERROR,
   TNN_ORDINAL_ITEM_REFERENCE_ERROR,
   TNN_REPEATED_ITEM_SUBJECT_ERROR,
+  TNN_ITEM_LIST_PUNCTUATION_ERROR,
   TNN_EDITORIAL_META_LANGUAGE_ERROR,
   TNN_EDITORIAL_REPETITION_ERROR,
   TNN_FINAL_CLOSING_ERROR,
@@ -143,6 +144,13 @@ describe("TNN structured speaker transcript", () => {
       ? { ...turn, text: "The trading card carries a PSA 9 grade and 1986 context. The trading card remains part of the completed exchange, while the original game is in Excellent condition." }
       : turn);
     expect(() => validateTnnScriptDraft(repeatedSubjectTurns, input)).toThrow(TNN_REPEATED_ITEM_SUBJECT_ERROR);
+  });
+
+  it("rejects a written-list comma before and when exactly two titles are spoken", () => {
+    const listPunctuationTurns = validTurns.map((turn, index) => index === 2
+      ? { ...turn, text: "The TNN Network confirms a completed collector trade between seller Morgan Seller and buyer Taylor Buyer, featuring 1989 Nintendo Game, and PSA 9 Trading Card. The completed exchange is confirmed across both sides for viewers following the report." }
+      : turn);
+    expect(() => validateTnnScriptDraft(listPunctuationTurns, input)).toThrow(TNN_ITEM_LIST_PUNCTUATION_ERROR);
   });
 
   it("requires each raw selected item’s stated condition and rejects a grade-zero narration", () => {
