@@ -13,6 +13,7 @@ import {
   TNN_REPEATED_ITEM_SUBJECT_ERROR,
   TNN_ITEM_LIST_PUNCTUATION_ERROR,
   TNN_EDITORIAL_META_LANGUAGE_ERROR,
+  TNN_EDITORIAL_FILLER_REPETITION_ERROR,
   TNN_EDITORIAL_REPETITION_ERROR,
   TNN_FINAL_CLOSING_ERROR,
   TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS,
@@ -123,6 +124,13 @@ describe("TNN structured speaker transcript", () => {
       ? { ...turn, text: "The approved record lists Platform: NES and Condition: Excellent for the selected items. The PSA 9 Trading Card is also part of this completed exchange for viewers." }
       : turn);
     expect(() => validateTnnScriptDraft(fieldLabelTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
+  it("rejects stacked review-summary filler after Sidney's approved item detail", () => {
+    const stackedFillerTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The original game is in Excellent condition. Together, these details give collectors a concise view of the completed exchange. This gives viewers a clear, fact-based look at the finished exchange." }
+      : turn);
+    expect(() => validateTnnScriptDraft(stackedFillerTurns, input)).toThrow(TNN_EDITORIAL_FILLER_REPETITION_ERROR);
   });
 
   it("rejects duplicated company and numeric grade fragments in a graded item report", () => {

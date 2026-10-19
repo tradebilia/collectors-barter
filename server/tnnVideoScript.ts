@@ -30,6 +30,7 @@ export const TNN_FINAL_CLOSING_ERROR = "The TNN transcript must end with its sel
 export const TNN_SIDNEY_DETAIL_ERROR = "The TNN Sidney report turn must add approved item or trade detail rather than repeat a generic handoff.";
 export const TNN_EDITORIAL_REPETITION_ERROR = "The TNN transcript repeats Max's item report in Sidney's turn instead of adding unused detail.";
 export const TNN_EDITORIAL_META_LANGUAGE_ERROR = "The TNN transcript exposed database-style field or approval language instead of natural broadcast copy.";
+export const TNN_EDITORIAL_FILLER_REPETITION_ERROR = "The TNN transcript stacks multiple review-summary filler lines in Sidney's report instead of ending on substantive broadcast detail.";
 export const TNN_DUPLICATE_GRADE_DETAIL_ERROR = "The TNN transcript repeats a graded item's company or numeric grade as separate fragments instead of one natural grade description.";
 export const TNN_ORDINAL_ITEM_REFERENCE_ERROR = "The TNN transcript uses ordinal item labels instead of natural item descriptors in Sidney's report.";
 export const TNN_REPEATED_ITEM_SUBJECT_ERROR = "The TNN transcript repeats the same item subject in Sidney's short report instead of combining its approved details.";
@@ -117,7 +118,15 @@ const BLOCKED_SCRIPT_PATTERNS = [
 ];
 const EXTRA_ITEM_IMPLICATION_PATTERN = /\b(?:additional|other|more|further|remaining)\s+(?:collector\s+)?(?:items?|pieces?|collectibles?)\s+(?:also\s+)?(?:changed hands|joined|were included|moved|traded|exchanged)\b/i;
 const TNN_DRAFT_LOCK_MAX_AGE_MS = 30 * 60 * 1000;
-const TNN_EDITORIAL_META_LANGUAGE = /\b(?:for item context|approved record|approved background facts?|selected pieces? for viewers|selected items? for viewers|this report recognizes|the exchange includes|listing notes|listed in [^.!?]{1,40}\s+condition|records? [^.!?]{1,80}\s+as|here are the details)\b/i;
+const TNN_EDITORIAL_META_LANGUAGE = /\b(?:for item context|approved record|approved background facts?|selected pieces? for viewers|selected items? for viewers|this report recognizes|the exchange includes|listing notes|listed in [^.!?]{1,40}\s+condition|records? [^.!?]{1,80}\s+as|here are the details|adding a specific detail|listed certified grade|underscoring the .*grade noted|being referenced in the report|approved grade|designation is being referenced|clarify the .* approved grade)\b/i;
+const TNN_EDITORIAL_FILLER_PATTERNS = [
+  /both sides and each selected item identified for viewers/i,
+  /clear, fact-based look at the finished exchange/i,
+  /focus remains on what changed hands in this completed trade/i,
+  /together, these details give collectors/i,
+  /verified item details keep this report/i,
+  /completes the verified picture/i,
+];
 /**
  * These phrases describe the already verified transaction; they add no item,
  * condition, provenance, value, date, or private-detail claim. Keeping this
@@ -189,11 +198,16 @@ function spokenTnnItemType(itemType: string | null | undefined) {
 function spokenTnnBackgroundOptions(item: TnnScriptItem) {
   const facts = item.facts ?? [];
   const brandFact = facts.find((fact) => /brand|manufacturer|maker/i.test(fact.label) && !isRedundantTnnFact(item, fact));
+  const platformFact = facts.find((fact) => /platform|console|system/i.test(fact.label) && !isRedundantTnnFact(item, fact));
   const yearFact = facts.find((fact) => /year|release/i.test(fact.label) && !isRedundantTnnFact(item, fact));
-  const combined = brandFact && yearFact
-    ? `is a ${brandFact.value} ${spokenTnnItemType(item.itemType)} from ${yearFact.value}`
-    : "";
-  const consumedFacts = combined ? new Set([brandFact, yearFact]) : new Set<object>();
+  const combined = platformFact && yearFact
+    ? `is a ${yearFact.value} ${platformFact.value} ${spokenTnnItemType(item.itemType)}`
+    : brandFact && yearFact
+      ? `is a ${brandFact.value} ${spokenTnnItemType(item.itemType)} from ${yearFact.value}`
+      : "";
+  const consumedFacts = combined
+    ? new Set([platformFact, brandFact, yearFact])
+    : new Set<object>();
   return [
     combined,
     ...facts
@@ -236,7 +250,10 @@ function spokenTnnItemSubject(item: TnnScriptItem) {
   const titleWords = cleanText(item.title, 100).replace(/[#:(),]/g, " ").split(/\s+/).filter(Boolean).slice(0, 2).join(" ");
   if (/single[_ ]comic/i.test(item.itemType ?? "")) return `The ${titleWords || "comic"} comic`;
   if (/single[_ ]card/i.test(item.itemType ?? "") || /card/i.test(item.category ?? "")) return `The ${titleWords || "trading"} card`;
-  if (/signed[_ ]item/i.test(item.itemType ?? "")) return "The signed piece";
+  if (/signed[_ ]item/i.test(item.itemType ?? "")) {
+    const isPhoto = item.facts?.some((fact) => /item type|format/i.test(fact.label) && /photo/i.test(fact.value));
+    return isPhoto ? "The signed photo" : "The signed piece";
+  }
   const type = spokenTnnItemType(item.itemType);
   return type ? `The ${type}` : "The item";
 }
@@ -407,6 +424,9 @@ function assertSpeakerTurnStructure(turns: readonly TnnScriptTurn[], input: TnnS
   if (TNN_EDITORIAL_META_LANGUAGE.test(sidneyText) || input.selectedItems.some((item) => (item.facts ?? []).some((fact) => sidneyText.includes(`${fact.label}:`)))) {
     throw new Error(TNN_EDITORIAL_META_LANGUAGE_ERROR);
   }
+  if (TNN_EDITORIAL_FILLER_PATTERNS.filter((pattern) => pattern.test(sidneyText)).length >= 2) {
+    throw new Error(TNN_EDITORIAL_FILLER_REPETITION_ERROR);
+  }
   for (const item of input.selectedItems) {
     const subject = spokenTnnItemSubject(item);
     if (subject !== "The item" && (sidneyText.match(new RegExp(`\\b${escapeRegExp(subject)}\\b`, "gi"))?.length ?? 0) > 1) {
@@ -515,11 +535,16 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
     ...detailLines,
     ...(input.additionalItemsCount > 0 ? ["Additional collector items changed hands as part of the completed transaction."] : []),
   ];
+  const hasRawItems = input.selectedItems.some((item) => item.gradingStatus === "raw");
+  const hasGradedItems = input.selectedItems.some((item) => item.gradingStatus === "graded");
   const optionalLines = [
-    "The exchange is complete, with both sides and each selected item identified for viewers.",
-    "For collectors following the update, the focus remains on what changed hands in this completed trade.",
-    "That gives viewers a clear, fact-based look at the finished exchange.",
-    "The details stay focused on the items and the completed transaction.",
+    hasRawItems && hasGradedItems
+      ? "The approved condition, grade, and item details give viewers the key facts from this completed exchange."
+      : hasRawItems
+        ? "The approved condition and item details give viewers the key facts from this completed exchange."
+        : "The approved grades and item details give viewers the key facts from this completed exchange.",
+    "The report stays focused on those verified item details.",
+    "The completed exchange is now fully reported.",
   ];
   const flexibleLines = [...requiredLines];
   for (const line of optionalLines) {
@@ -635,7 +660,10 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
     return `Corrective retry: keep Max's headline in turn 3, but rewrite only Sidney's turn 4 so she uses one unused approved grade, raw condition, or background fact. Do not repeat Max's complete item list, transaction headline, or party names. Use natural broadcast language, not a recap of the database. ${common}`;
   }
   if (error.message === TNN_EDITORIAL_META_LANGUAGE_ERROR) {
-    return `Corrective retry: remove all database-style language from the flexible report turns. Never say 'for item context,' 'approved record,' 'the exchange includes,' 'here are the details,' 'this report recognizes,' or any field label such as Platform, Condition, Grade, or Toy Name. Rewrite the same approved facts as ordinary broadcast sentences. ${common}`;
+    return `Corrective retry: remove all database-style language and review-summary filler from the flexible report turns. Never say 'for item context,' 'approved record,' 'the exchange includes,' 'here are the details,' 'this report recognizes,' 'adding a specific detail,' 'being referenced in the report,' 'approved grade,' or any field label such as Platform, Condition, Grade, or Toy Name. Rewrite the same approved facts as ordinary broadcast sentences and end Sidney's turn on substantive item detail. ${common}`;
+  }
+  if (error.message === TNN_EDITORIAL_FILLER_REPETITION_ERROR) {
+    return `Corrective retry: keep Sidney's approved item facts, but remove stacked review-summary endings. Use at most one short transition after the substantive item sentences, then end the report naturally. Do not say 'together, these details give collectors,' 'verified item details keep this report,' 'clear, fact-based look at the finished exchange,' or 'the focus remains on what changed hands.' ${common}`;
   }
   if (error.message === TNN_DUPLICATE_GRADE_DETAIL_ERROR) {
     return `Corrective retry: describe each graded item with one natural phrase containing its complete approved company and grade, such as 'graded AFA 60'. Do not repeat the company or numeric grade as separate fragments afterward. ${common}`;
