@@ -242,11 +242,25 @@ function getValue(field: PromotionField, source: Record<string, unknown>): strin
   return null;
 }
 
-function isExplicitlyGraded(details: Record<string, unknown>, source: Record<string, unknown>): boolean {
+export type SocialPromotionGradingStatus = "graded" | "raw";
+
+/**
+ * An explicit raw listing choice is authoritative. Every other record counts
+ * as graded only when it carries a valid positive public grade; a stored zero
+ * is the raw-item placeholder and must never be narrated.
+ */
+export function getSocialPromotionGradingStatus(input: {
+  itemDetails?: unknown;
+  grade?: unknown;
+}): SocialPromotionGradingStatus {
+  const details = toDetailRecord(input.itemDetails);
   const state = normalizedValue(details.isGraded)?.toLowerCase();
-  if (state === "yes" || state === "true" || state === "1") return true;
-  if (state === "no" || state === "false" || state === "0") return false;
-  return Boolean(normalizedValue(source.$gradingCompany) || validGrade(source.grade));
+  if (state === "no" || state === "false" || state === "0") return "raw";
+  return validGrade(input.grade ?? details.grade) ? "graded" : "raw";
+}
+
+function isExplicitlyGraded(details: Record<string, unknown>, source: Record<string, unknown>): boolean {
+  return getSocialPromotionGradingStatus({ itemDetails: details, grade: source.grade }) === "graded";
 }
 
 function isExplicitlyAuthenticated(details: Record<string, unknown>): boolean {

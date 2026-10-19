@@ -72,6 +72,8 @@ describe("TNN video render policy", () => {
     expect(formatTnnGrade("WATA", null, "9.6")).toBe("WATA 9.6");
     expect(formatTnnGrade(null, "Custom Grader", "8.50")).toBe("Custom Grader 8.5");
     expect(formatTnnGrade("WATA", null, "9.0 A")).toBe("WATA 9.0 A");
+    expect(formatTnnGrade("PSA", null, "0.00")).toBe("");
+    expect(formatTnnGrade(null, null, "0")).toBe("");
   });
 
   it("offers only approved fact-neutral duo openings and deterministically resolves random selections", () => {

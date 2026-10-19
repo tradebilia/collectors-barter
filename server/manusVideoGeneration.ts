@@ -1,6 +1,7 @@
 import { ENV } from "./_core/env";
 import { type TnnScriptAnchorMode, type TnnScriptDuration } from "./tnnVideoScript";
 import { type TnnHomepageTaglineId, type TnnTranscriptTurn, TNN_NETWORK_SPOKEN_NAME, TNN_TRADEBILIA_PRONUNCIATION, TNN_WEBSITE_TICKER, formatTnnGrade, formatTnnRequiredClosing } from "../shared/tnnVideoPolicy";
+import type { SocialPromotionGradingStatus } from "../shared/socialPromotionFacts";
 
 type ManusContentPart =
   | { type: "text"; text: string }
@@ -30,6 +31,8 @@ export type TnnVideoTaskItem = {
   grade?: string | number | null;
   certificationCompany?: string | null;
   customGradingCompany?: string | null;
+  gradingStatus?: SocialPromotionGradingStatus;
+  condition?: string | null;
   facts?: Array<{ label: string; value: string }>;
 };
 
@@ -86,7 +89,12 @@ function itemReferenceLines(items: readonly TnnVideoTaskItem[]) {
   return items.map((item, index) => {
     const grading = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
     const facts = (item.facts ?? []).map((fact) => `${fact.label}: ${fact.value}`).join("; ");
-    return `${index + 1}. ${item.title}${grading ? ` | spoken grade context: ${grading}` : ""}${facts ? ` | spoken factual context: ${facts}` : ""} | exact matching image attachment: trade-item-${index + 1}-listing-${item.listingId}.jpg`;
+    const status = item.gradingStatus === "raw"
+      ? ` | raw/ungraded; spoken condition context only: ${item.condition || "not supplied"}; never render or infer a grade`
+      : grading
+        ? ` | graded; spoken grade context: ${grading}`
+        : " | graded status with no grade context";
+    return `${index + 1}. ${item.title}${status}${facts ? ` | spoken factual context: ${facts}` : ""} | exact matching image attachment: trade-item-${index + 1}-listing-${item.listingId}.jpg`;
   }).join("\n");
 }
 
@@ -119,7 +127,7 @@ export function buildTnnVideoInstruction(input: TnnVideoTaskInput) {
     `Graphics: use the attached supplied transparent glossy TNN (Tradebilia News Network) mark as the only primary network identity mark. It appears only in the opening motion and integrated into the central wall display and desk-front screen. Do not show any upper-left or upper-corner logo, bug, icon, or headline; do not cover an anchor's face. Put the high newsroom headline strap 'BREAKING NEWS FROM TRADEBILIA' only in the lower-third safe area, never above or over an anchor. Use one visibly scrolling lower ticker that repeats exactly '${TNN_WEBSITE_TICKER}' and no other ticker copy. Do not place participant names, item values, prices, cash amounts, dates, locations, addresses, contact details, tracking/shipping information, certificate/serial numbers, or captions/subtitles on screen.`,
     itemInsetInstruction,
     extraItemsInstruction,
-    "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade or value. When a grade is spoken, use only the exact normalized grade context below; PSA numbers must never receive artificial extra decimal places.",
+    "The visible item imagery must use only the supplied item reference images. Do not invent collectible items, labels, grades, brands, or facts. Item images may include their authentic visible packaging/labels; do not add synthetic text overlays that assert a grade, condition, or value. A raw/ungraded item uses only its supplied condition context and must never be shown or described as grade 0, graded, slabbed, or assigned a grading company. When an approved grade is spoken, use only the exact normalized grade context below; PSA numbers must never receive artificial extra decimal places.",
     `Use only the exact structured transcript below. Speaker labels are internal turn assignments, not spoken words or captions. Preserve every assigned turn verbatim: Max speaks only MAX turns and Sidney speaks only SIDNEY turns. Pronounce every Tradebilia occurrence as '${TNN_TRADEBILIA_PRONUNCIATION}', identify the network as '${TNN_NETWORK_SPOKEN_NAME}', and preserve the exact final approved tagline and sign-off '${requiredClosing}'. Do not add any speech, call to action beyond the transcript, disclaimer, price, cash amount, or personal/private detail.`,
     `Transaction type for visual context only: ${input.cashOnly ? "cash sale" : "collector trade"}. Do not display or speak any amount. The names are allowed in the spoken transcript only; never render them as text.`,
     "Approved selected-item context and exact image bindings (reference only; do not add facts beyond the transcript):",

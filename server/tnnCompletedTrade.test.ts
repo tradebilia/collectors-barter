@@ -40,6 +40,34 @@ describe("canonical completed-trade TNN resolver", () => {
     expect(resolveTnnCompletedTradeRows([{ ...completedTrade[0]!, cashIncluded: 0 }], oneSidedRows, [{ listingId: 11, title: "Requested Item" }]).cashOnly).toBe(false);
   });
 
+  it("classifies a raw listing from canonical metadata, narrating condition instead of its stored grade-zero placeholder", () => {
+    const rawRows = [{
+      listingId: 13,
+      title: "Raw Nintendo Game",
+      category: "video_games",
+      itemType: "game",
+      condition: "near_mint",
+      grade: "0.00",
+      certificationCompany: "WATA",
+      itemDetails: { isGraded: "no", platform: "NES", releaseYear: "1989" },
+      estimatedValue: 1200,
+      imageUrl: "/manus-storage/raw-game.png",
+      direction: "requested" as const,
+    }];
+    const [item] = resolveTnnCompletedTradeRows(completedTrade, rawRows, [{ listingId: 13, title: "Raw Nintendo Game" }]).selectedItems;
+
+    expect(item).toMatchObject({
+      gradingStatus: "raw",
+      condition: "Near Mint",
+      grade: null,
+      certificationCompany: null,
+      customGradingCompany: null,
+    });
+    expect(item?.facts).toContainEqual({ label: "Condition", value: "Near Mint" });
+    expect(JSON.stringify(item)).not.toContain("0.00");
+    expect(JSON.stringify(item)).not.toContain("WATA");
+  });
+
   it("allows only canonical HTTPS Tradebilia asset locations or controlled storage-relative images", () => {
     expect(normalizeCanonicalListingImageUrl("/manus-storage/item.png")).toBe("https://tradebilia.manus.space/manus-storage/item.png");
     expect(normalizeCanonicalListingImageUrl("https://media.tradebilia.com/items/1.jpg")).toBe("https://media.tradebilia.com/items/1.jpg");

@@ -137,6 +137,7 @@ export function formatTnnGrade(
   if (!rawGrade) return company;
 
   const numericGrade = /^([+-]?\d+(?:\.\d+)?)$/.exec(rawGrade);
+  if (numericGrade && Number(numericGrade[1]) <= 0) return "";
   const normalizedGrade = numericGrade
     ? String(Number(numericGrade[1]))
     : rawGrade;

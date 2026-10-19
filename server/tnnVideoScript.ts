@@ -16,6 +16,7 @@ import {
   type TnnHomepageTaglineId,
   type TnnTranscriptTurn,
 } from "../shared/tnnVideoPolicy";
+import { getSocialPromotionGradingStatus, type SocialPromotionGradingStatus } from "../shared/socialPromotionFacts";
 
 export const TNN_SCRIPT_MODEL = "gpt-5-mini";
 export const TNN_SCRIPT_MAX_COMPLETION_TOKENS = 900;
@@ -27,6 +28,7 @@ export const TNN_DUO_OPENING_ERROR = "The TNN duo transcript must open with Max'
 export const TNN_ANCHOR_REPETITION_ERROR = "The TNN transcript must not repeat an anchor's full name after their one self-introduction.";
 export const TNN_FINAL_CLOSING_ERROR = "The TNN transcript must end with its selected approved homepage tagline followed by one final spoken 'Tradebilia.'.";
 export const TNN_SIDNEY_DETAIL_ERROR = "The TNN Sidney report turn must add approved item or trade detail rather than repeat a generic handoff.";
+export const TNN_RAW_CONDITION_ERROR = "The TNN transcript must state the approved condition for every raw selected item and must not describe it with a grade.";
 export const TNN_FACT_LOCK_ERROR = "The TNN transcript introduced a fact that is not approved for this completed trade.";
 export const TNN_SCRIPT_INPUT_TOO_LONG_ERROR = "The selected exact names and item titles cannot fit the 45-second TNN format. Select fewer items or use shorter listing titles.";
 export const TNN_SCRIPT_WORD_BUDGET = {
@@ -52,6 +54,9 @@ export type TnnScriptItem = {
   grade?: string | number | null;
   certificationCompany?: string | null;
   customGradingCompany?: string | null;
+  /** Server-resolved classification; raw items use condition rather than grading language. */
+  gradingStatus?: SocialPromotionGradingStatus;
+  condition?: string | null;
   facts?: Array<{ label: string; value: string }>;
 };
 
@@ -170,19 +175,26 @@ export function normalizeTnnScriptInput(input: TnnScriptDraftInput): TnnScriptDr
     ? input.durationSeconds
     : TNN_VIDEO_DURATION_SECONDS;
   const selectedItems = input.selectedItems
-    .map((item) => ({
-      listingId: Number.isInteger(item.listingId) && Number(item.listingId) > 0 ? Number(item.listingId) : null,
-      title: cleanText(item.title),
-      category: cleanText(item.category, 80) || null,
-      itemType: cleanText(item.itemType, 80) || null,
-      grade: cleanText(item.grade, 32) || null,
-      certificationCompany: cleanText(item.certificationCompany, 80) || null,
-      customGradingCompany: cleanText(item.customGradingCompany, 80) || null,
-      facts: (item.facts ?? [])
+    .map((item) => {
+      const gradingStatus = item.gradingStatus === "graded" || item.gradingStatus === "raw"
+        ? item.gradingStatus
+        : getSocialPromotionGradingStatus({ grade: item.grade });
+      return {
+        listingId: Number.isInteger(item.listingId) && Number(item.listingId) > 0 ? Number(item.listingId) : null,
+        title: cleanText(item.title),
+        category: cleanText(item.category, 80) || null,
+        itemType: cleanText(item.itemType, 80) || null,
+        gradingStatus,
+        condition: gradingStatus === "raw" ? cleanText(item.condition, 80) || null : null,
+        grade: gradingStatus === "graded" ? cleanText(item.grade, 32) || null : null,
+        certificationCompany: gradingStatus === "graded" ? cleanText(item.certificationCompany, 80) || null : null,
+        customGradingCompany: gradingStatus === "graded" ? cleanText(item.customGradingCompany, 80) || null : null,
+        facts: (item.facts ?? [])
         .map((fact) => ({ label: cleanText(fact.label, 48), value: cleanText(fact.value, 120) }))
         .filter((fact) => fact.label && fact.value)
         .slice(0, 4),
-    }))
+      };
+    })
     .filter((item) => item.title)
     .slice(0, 6);
   return {
@@ -203,7 +215,10 @@ function publicFactLines(items: readonly TnnScriptItem[]) {
   return items.map((item, index) => {
     const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
     const facts = (item.facts ?? []).map((fact) => `${fact.label}: ${fact.value}`);
-    return `${index + 1}. ${item.title}${item.category ? ` | category: ${item.category}` : ""}${item.itemType ? ` | type: ${item.itemType}` : ""}${grade ? ` | grade: ${grade}` : ""}${facts.length ? ` | approved background facts: ${facts.join("; ")}` : ""}`;
+    const itemState = item.gradingStatus === "raw"
+      ? ` | raw/ungraded item | required condition: ${item.condition || "not supplied"}`
+      : ` | graded item${grade ? ` | approved grade: ${grade}` : ""}`;
+    return `${index + 1}. ${item.title}${item.category ? ` | category: ${item.category}` : ""}${item.itemType ? ` | type: ${item.itemType}` : ""}${itemState}${facts.length ? ` | approved background facts: ${facts.join("; ")}` : ""}`;
   }).join("\n");
 }
 
@@ -235,7 +250,7 @@ export function buildTnnScriptPrompt(rawInput: TnnScriptDraftInput) {
     `On-air presentation: ${anchors.join(" and ")}. If the word budget has room, use at most one brief, natural newsroom ad-lib comment only when grounded in approved transaction and item facts. Do not present an opinion, rarity, provenance, condition, date, place, ownership history, or collection history as fact unless it is explicitly listed below.`,
     `State the network exactly as '${TNN_NETWORK_SPOKEN_NAME}', never as an invented letter sequence. Every spoken occurrence of Tradebilia must be pronounced '${TNN_TRADEBILIA_PRONUNCIATION}'. Use Tradebilia only in the required opening and the final required closing '${selectedTnnClosing(input)}'; never say 'on Tradebilia', 'Tradebilia platform', or repeat the brand anywhere else. The selected closing tagline is approved brand copy, not a transaction claim, and may appear only in its final turn. Do not narrate the ticker or any website text.`,
     `Describe this only as a completed ${tradeType}. Name both sides exactly once in speech: seller ${input.sellerName || "Seller"}; buyer ${input.buyerName || "Buyer"}. Their names must never be proposed as on-screen text.`,
-    "Use only the item names, grades, and approved background facts listed below. State every approved selected item title exactly as written, including casing, at least once. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
+    "Use only the item names, stated graded/raw status, grades, required raw conditions, and approved background facts listed below. State every approved selected item title exactly as written, including casing, at least once. A raw/ungraded item must be described using its required condition and must never be assigned a grade, grading company, slab, or numeric grade. A graded item may use only its approved grade context; do not add its listing condition. Never invent provenance, rarity, condition, prices, values, dates, places, ownership history, certification numbers, personal contact details, shipping details, or a call to buy/sell.",
     input.additionalItemsCount > 0
       ? `Only because ${input.additionalItemsCount} additional exchanged item${input.additionalItemsCount === 1 ? "" : "s"} was explicitly approved, say one time: 'Additional collector items changed hands as part of the completed transaction.' Do not name unselected items.`
       : "The approved selected items are the complete set of items exchanged in this report. Do not say or imply that any other collector item, piece, or collectible changed hands, joined, moved, traded, or was exchanged.",
@@ -282,7 +297,8 @@ function assertSpeakerTurnStructure(turns: readonly TnnScriptTurn[], input: TnnS
   }
   const sidneyDetailEvidence = input.selectedItems.flatMap((item) => {
     const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
-    return [item.title, grade, ...(item.facts ?? []).flatMap((fact) => [fact.label, fact.value])].filter(Boolean);
+    return [item.title, grade, item.condition, ...(item.facts ?? []).flatMap((fact) => [fact.label, fact.value])]
+      .filter((evidence): evidence is string => Boolean(evidence));
   });
   if (!sidneyDetailEvidence.some((evidence) => turns[3]!.text.includes(evidence))) {
     throw new Error(TNN_SIDNEY_DETAIL_ERROR);
@@ -295,6 +311,13 @@ function assertFactBoundaries(script: string, input: TnnScriptDraftInput) {
   }
   const itemTitles = input.selectedItems.map((item) => item.title);
   if (itemTitles.some((title) => !script.includes(title))) throw new Error(TNN_SELECTED_ITEM_COVERAGE_ERROR);
+  const rawItems = input.selectedItems.filter((item) => item.gradingStatus === "raw");
+  if (rawItems.some((item) => !item.condition || !script.includes(item.condition))) {
+    throw new Error(TNN_RAW_CONDITION_ERROR);
+  }
+  if (/\b(?:grade|graded|grading company|slab)\s*(?:of\s*)?0(?:\.0+)?\b/i.test(script) || rawItems.some((item) => new RegExp(`${escapeRegExp(item.title)}\\s*,?\\s*(?:is|was|listed as|with|at)?\\s*(?:a )?(?:grade|graded|grading company|slab)\\b`, "i").test(script))) {
+    throw new Error(TNN_RAW_CONDITION_ERROR);
+  }
   if (!script.includes(input.sellerName) || !script.includes(input.buyerName)) {
     throw new Error("The TNN transcript must name both completed-trade parties exactly as approved.");
   }
@@ -317,10 +340,10 @@ function wordBudgetFloor(input: TnnScriptDraftInput) {
     input.sellerName,
     input.buyerName,
     ...input.selectedItems.flatMap((item) => {
-      const grade = item.certificationCompany || item.customGradingCompany
+      const grade = item.gradingStatus === "graded"
         ? formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)
         : "";
-      return ["The exchange includes", item.title, grade ? `graded ${grade}` : ""];
+      return ["The exchange includes", item.title, grade ? `graded ${grade}` : item.condition ? `in ${item.condition} condition` : ""];
     }),
     input.additionalItemsCount > 0 ? "Additional collector items changed hands as part of the completed transaction." : "",
     selectedTnnClosing(input),
@@ -339,12 +362,14 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   const budget = TNN_SCRIPT_WORD_BUDGET[input.durationSeconds];
   const tradeType = input.cashOnly ? "completed cash sale" : "completed collector trade";
   const itemLines = input.selectedItems.map((item) => {
-    const grade = item.certificationCompany || item.customGradingCompany
+    const grade = item.gradingStatus === "graded"
       ? formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)
       : "";
     return grade
       ? `The exchange includes ${item.title}, graded ${grade}.`
-      : `The exchange includes ${item.title}.`;
+      : item.condition
+        ? `The exchange includes ${item.title}, listed in ${item.condition} condition.`
+        : `The exchange includes ${item.title}.`;
   });
   const openingText = input.anchorMode === "duo"
     ? `${selectedDuoOpening(input).maxLine} ${selectedDuoOpening(input).sidneyLine}`
@@ -354,16 +379,20 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
     ...itemLines,
     ...(input.additionalItemsCount > 0 ? ["Additional collector items changed hands as part of the completed transaction."] : []),
   ];
-  const detailItem = input.selectedItems.find((item) => item.grade || item.certificationCompany || item.customGradingCompany)
+  const detailItem = input.selectedItems.find((item) => item.gradingStatus === "graded" && (item.grade || item.certificationCompany || item.customGradingCompany))
+    ?? input.selectedItems.find((item) => item.gradingStatus === "raw" && item.condition)
     ?? input.selectedItems.find((item) => item.facts?.length)
     ?? input.selectedItems[0];
   const detailGrade = detailItem ? formatTnnGrade(detailItem.certificationCompany, detailItem.customGradingCompany, detailItem.grade) : "";
+  const detailCondition = detailItem?.gradingStatus === "raw" ? detailItem.condition : null;
   const detailFact = detailItem?.facts?.[0];
   const sidneyDetail = detailItem
     ? detailGrade && detailFact
       ? `For item context, the approved record lists a ${detailGrade} grade and records ${detailFact.label} as ${detailFact.value}.`
       : detailGrade
         ? `For item context, the approved record lists a ${detailGrade} grade.`
+        : detailCondition
+          ? `For item context, the approved record lists its condition as ${detailCondition}.`
         : detailFact
           ? `For item context, its approved ${detailFact.label} is ${detailFact.value}.`
           : `For item context, the approved exchange includes ${detailItem.title}.`
@@ -481,9 +510,15 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
     const approvedDetail = normalized.selectedItems.map((item) => {
       const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
       const fact = item.facts?.[0];
-      return `${item.title}${grade ? ` (${grade})` : ""}${fact ? `; ${fact.label}: ${fact.value}` : ""}`;
+      return `${item.title}${grade ? ` (${grade})` : item.condition ? ` (raw; condition: ${item.condition})` : ""}${fact ? `; ${fact.label}: ${fact.value}` : ""}`;
     }).join(" | ");
     return `Corrective retry: keep the exact five-turn duo sequence and rewrite only Sidney's substantive fourth turn. She must explain at least one approved item detail from this list: ${approvedDetail}. Do not use a generic handoff such as 'here are the details' without immediately giving that detail. ${common}`;
+  }
+  if (error.message === TNN_RAW_CONDITION_ERROR) {
+    const rawItems = normalized.selectedItems.filter((item) => item.gradingStatus === "raw")
+      .map((item) => `${item.title}: raw/ungraded; condition ${item.condition || "not supplied"}`)
+      .join(" | ");
+    return `Corrective retry: these selected items are raw/ungraded and must be described only with their approved condition, never with a grade, grading company, or slab: ${rawItems}. Preserve all other rules. ${common}`;
   }
   if (error.message === TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR) {
     return `Corrective retry: the selected items are the entire completed trade set. Remove every statement or implication that any other item, piece, or collectible changed hands. ${common}`;
@@ -495,7 +530,7 @@ function factLockCorrectionInstruction(input: TnnScriptDraftInput) {
   const normalized = normalizeTnnScriptInput(input);
   return [
     "Automatic fact-lock repair: return one complete replacement transcript only as the required strict JSON.",
-    "Use only the approved parties, selected titles, grades, explicit item facts, transaction type, required opening, TNN Network wording, and final brand close.",
+    "Use only the approved parties, selected titles, explicit graded/raw status, grades, required raw conditions, explicit item facts, transaction type, required opening, TNN Network wording, and final brand close.",
     `Ordinary neutral newsroom wording is expressly approved: ${TNN_APPROVED_NEUTRAL_NEWSROOM_LANGUAGE.join("; ")}.`,
     "Do not add a value, price, date, place, condition, provenance, rarity, ownership history, contact detail, certificate detail, or any unselected item.",
     transcriptShapeInstruction(normalized),

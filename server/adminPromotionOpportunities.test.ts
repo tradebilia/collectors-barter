@@ -30,7 +30,7 @@ describe("admin promotion opportunities contract", () => {
   });
 
   it("returns concise public item facts and a canonical existing listing path", () => {
-    expect(routerSource).toContain('import { getSocialPromotionFacts } from "@shared/socialPromotionFacts"');
+    expect(routerSource).toContain('import { getSocialPromotionFacts, getSocialPromotionGradingStatus } from "@shared/socialPromotionFacts"');
     expect(returnedOpportunityMappings).toContain("itemPath: `/listings/${Number(listing.listingId)}`");
     expect(returnedOpportunityMappings).toContain("itemFacts: getSocialPromotionFacts({");
     expect(returnedOpportunityMappings).toContain("visualHints: getTradeAlertVisualHints({ category: listing.category");
@@ -67,7 +67,7 @@ describe("admin promotion opportunities contract", () => {
     expect(returnedOpportunityMappings).toContain("itemType: trade.requestedListingItemType");
   });
 
-  it("returns public grading company and one-decimal-ready grade metadata for every completed-trade item", () => {
+  it("returns raw condition or guarded public grade metadata for every completed-trade item", () => {
     expect(promotionSection).toContain("'category', swapItems.category");
     expect(promotionSection).toContain("'itemType', swapItems.itemType");
     expect(promotionSection).toContain("'listingId', swapItems.listingId");
@@ -75,14 +75,16 @@ describe("admin promotion opportunities contract", () => {
     expect(promotionSection).toContain("requested.itemType");
     expect(promotionSection).toContain("offered.category");
     expect(promotionSection).toContain("offered.itemType");
-    expect(promotionSection).toContain("requested.grade, requested.certificationCompany, requested.itemDetails");
-    expect(promotionSection).toContain("offered.grade, offered.certificationCompany, offered.itemDetails");
+    expect(promotionSection).toContain("requested.condition, requested.estimatedValue, requested.grade, requested.certificationCompany, requested.itemDetails");
+    expect(promotionSection).toContain("offered.condition, offered.estimatedValue, offered.grade, offered.certificationCompany, offered.itemDetails");
     expect(returnedOpportunityMappings).toContain("category: item.category ?? null");
     expect(returnedOpportunityMappings).toContain("itemType: item.itemType ?? null");
     expect(returnedOpportunityMappings).toContain("visualHints: getTradeAlertVisualHints");
     expect(returnedOpportunityMappings).toContain("facts: getSocialPromotionFacts({");
-    expect(returnedOpportunityMappings).toContain("grade: item.grade ?? null");
-    expect(returnedOpportunityMappings).toContain("certificationCompany: item.certificationCompany ?? null");
+    expect(returnedOpportunityMappings).toContain("const gradingStatus = getSocialPromotionGradingStatus");
+    expect(returnedOpportunityMappings).toContain("condition: item.condition ?? null");
+    expect(returnedOpportunityMappings).toContain('grade: gradingStatus === "graded" ? item.grade ?? null : null');
+    expect(returnedOpportunityMappings).toContain('certificationCompany: gradingStatus === "graded" ? item.certificationCompany ?? null : null');
     expect(returnedOpportunityMappings).toContain("const itemCustomGradingCompany = getCustomGradingCompany(item.itemDetails)");
     expect(returnedOpportunityMappings).toContain("customGradingCompany: itemCustomGradingCompany");
   });

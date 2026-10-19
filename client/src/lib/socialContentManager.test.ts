@@ -11,6 +11,7 @@ import {
   formatTnnGrade,
   getCompletedTradePostLabel,
   getSocialPromotionItemTitle,
+  getTnnTradeItemRecapLabel,
   isCashOnlyCompletedTrade,
   normalizeSocialDraftPlatforms,
   reconcileSocialDraftVisualHints,
@@ -123,6 +124,20 @@ describe("social content manager draft workflow", () => {
     expect(plan.closingTaglineId).toBe("have_it_want_it");
     expect(plan.closingTagline).toBe("Have it. Want it. Trade it.");
     expect(formatTnnGrade("PSA", null, "10.00")).toBe("PSA 10");
+  });
+
+  it("labels raw completed-trade items by condition rather than the stored grade-zero placeholder", () => {
+    const plan = buildTnnCompletedTradeVideoPlan({
+      sellerName: "Jordan",
+      buyerName: "Alex",
+      tradeItems: [{ title: "Raw Game", grade: "0.00", certificationCompany: "WATA", gradingStatus: "raw", condition: "near_mint" }],
+      cashOnly: false,
+      durationSeconds: 45,
+      anchorMode: "sidney",
+      tickerText: TNN_WEBSITE_TICKER,
+    });
+    expect(plan.selectedItems[0]).toMatchObject({ gradingStatus: "raw", condition: "Near Mint", grade: null, certificationCompany: null });
+    expect(getTnnTradeItemRecapLabel(plan.selectedItems[0]!)).toBe("Raw / ungraded · Condition: Near Mint");
   });
 
   it("preserves explicit seller and buyer roles and rotates solo anchors without repetition", () => {

@@ -3,7 +3,7 @@ import { verifyPayPalTransaction } from "./paypal";
 import { resolveDirectMessageDisplayName } from "./directMessageDisplayName";
 import { sendVerificationCode, checkVerificationCode, normalizePhone, maskPhone } from "./twilio";
 import { COOKIE_NAME } from "@shared/const";
-import { getSocialPromotionFacts } from "@shared/socialPromotionFacts";
+import { getSocialPromotionFacts, getSocialPromotionGradingStatus } from "@shared/socialPromotionFacts";
 import { getTradeAlertVisualHints } from "@shared/tradeAlertThemes";
 import { getTestedComicWorldScenePrompt, isProviderSceneSafetyRejection } from "./imageSceneRecovery";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
@@ -3261,11 +3261,11 @@ export const appRouter = router({
               l.certificationCompany AS requestedListingCertificationCompany,
               l.itemDetails AS requestedListingItemDetails,
               (SELECT imageUrl FROM listingPhotos WHERE listingId = l.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl,
-              (SELECT JSON_ARRAYAGG(JSON_OBJECT('listingId', swapItems.listingId, 'title', swapItems.title, 'imageUrl', swapItems.imageUrl, 'estimatedValue', swapItems.estimatedValue, 'direction', swapItems.direction, 'category', swapItems.category, 'itemType', swapItems.itemType, 'grade', swapItems.grade, 'certificationCompany', swapItems.certificationCompany, 'itemDetails', swapItems.itemDetails)) FROM (
-                SELECT requested.id AS listingId, requested.title, requested.category, requested.itemType, requested.estimatedValue, requested.grade, requested.certificationCompany, requested.itemDetails, (SELECT imageUrl FROM listingPhotos WHERE listingId = requested.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'requested' AS direction
+              (SELECT JSON_ARRAYAGG(JSON_OBJECT('listingId', swapItems.listingId, 'title', swapItems.title, 'imageUrl', swapItems.imageUrl, 'estimatedValue', swapItems.estimatedValue, 'direction', swapItems.direction, 'category', swapItems.category, 'itemType', swapItems.itemType, 'condition', swapItems.condition, 'grade', swapItems.grade, 'certificationCompany', swapItems.certificationCompany, 'itemDetails', swapItems.itemDetails)) FROM (
+                SELECT requested.id AS listingId, requested.title, requested.category, requested.itemType, requested.condition, requested.estimatedValue, requested.grade, requested.certificationCompany, requested.itemDetails, (SELECT imageUrl FROM listingPhotos WHERE listingId = requested.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'requested' AS direction
                 FROM listings requested WHERE requested.id = tp.requestedListingId
                 UNION ALL
-                SELECT offered.id AS listingId, offered.title, offered.category, offered.itemType, offered.estimatedValue, offered.grade, offered.certificationCompany, offered.itemDetails, (SELECT imageUrl FROM listingPhotos WHERE listingId = offered.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'offered' AS direction
+                SELECT offered.id AS listingId, offered.title, offered.category, offered.itemType, offered.condition, offered.estimatedValue, offered.grade, offered.certificationCompany, offered.itemDetails, (SELECT imageUrl FROM listingPhotos WHERE listingId = offered.id ORDER BY sortOrder ASC LIMIT 1) AS imageUrl, 'offered' AS direction
                 FROM tradeProposalItems swapItem JOIN listings offered ON offered.id = swapItem.offeredListingId WHERE swapItem.proposalId = tp.id
               ) swapItems) AS tradeItemsJson,
               EXISTS (SELECT 1 FROM tradePayments cashPayment WHERE cashPayment.proposalId = tp.id AND cashPayment.amount > 0) AS cashIncluded,
@@ -3458,7 +3458,33 @@ export const appRouter = router({
               estimatedValue: Number(trade.itemValue ?? 0),
               completedAt: trade.completedAt,
               imageUrl: trade.imageUrl ?? null,
-              tradeItems: (() => { try { const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson; return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => { const itemCustomGradingCompany = getCustomGradingCompany(item.itemDetails); return { listingId: Number.isFinite(Number(item.listingId)) ? Number(item.listingId) : null, title: String(item.title), imageUrl: item.imageUrl ?? null, estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null, direction: item.direction === "offered" ? "offered" : "requested", category: item.category ?? null, itemType: item.itemType ?? null, visualHints: getTradeAlertVisualHints({ category: item.category, itemType: item.itemType, title: item.title, itemDetails: item.itemDetails }), facts: getSocialPromotionFacts({ category: item.category, itemType: item.itemType, itemDetails: item.itemDetails, grade: item.grade, certificationCompany: item.certificationCompany, customGradingCompany: itemCustomGradingCompany }), grade: item.grade ?? null, certificationCompany: item.certificationCompany ?? null, customGradingCompany: itemCustomGradingCompany }; }) : []; } catch { return []; } })(),
+              tradeItems: (() => {
+                try {
+                  const parsed = typeof trade.tradeItemsJson === "string" ? JSON.parse(trade.tradeItemsJson) : trade.tradeItemsJson;
+                  return Array.isArray(parsed) ? parsed.filter((item: any) => item?.title).map((item: any) => {
+                    const itemCustomGradingCompany = getCustomGradingCompany(item.itemDetails);
+                    const gradingStatus = getSocialPromotionGradingStatus({ itemDetails: item.itemDetails, grade: item.grade });
+                    return {
+                      listingId: Number.isFinite(Number(item.listingId)) ? Number(item.listingId) : null,
+                      title: String(item.title),
+                      imageUrl: item.imageUrl ?? null,
+                      estimatedValue: Number.isFinite(Number(item.estimatedValue)) ? Number(item.estimatedValue) : null,
+                      direction: item.direction === "offered" ? "offered" : "requested",
+                      category: item.category ?? null,
+                      itemType: item.itemType ?? null,
+                      gradingStatus,
+                      condition: item.condition ?? null,
+                      visualHints: getTradeAlertVisualHints({ category: item.category, itemType: item.itemType, title: item.title, itemDetails: item.itemDetails }),
+                      facts: getSocialPromotionFacts({ category: item.category, itemType: item.itemType, itemDetails: item.itemDetails, condition: item.condition, grade: item.grade, certificationCompany: item.certificationCompany, customGradingCompany: itemCustomGradingCompany }),
+                      grade: gradingStatus === "graded" ? item.grade ?? null : null,
+                      certificationCompany: gradingStatus === "graded" ? item.certificationCompany ?? null : null,
+                      customGradingCompany: gradingStatus === "graded" ? itemCustomGradingCompany : null,
+                    };
+                  }) : [];
+                } catch {
+                  return [];
+                }
+              })(),
               cashIncluded: Boolean(Number(trade.cashIncluded ?? 0)),
             };
           });

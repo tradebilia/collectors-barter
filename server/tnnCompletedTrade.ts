@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
-import { getSocialPromotionFacts } from "../shared/socialPromotionFacts";
+import { getSocialPromotionFacts, getSocialPromotionGradingStatus } from "../shared/socialPromotionFacts";
+import { formatPublicFieldValue } from "../shared/publicFieldValues";
 import { requireDb } from "./db";
 import type { TnnScriptItem } from "./tnnVideoScript";
 
@@ -91,19 +92,24 @@ function canonicalItem(row: ItemRow): TnnCanonicalItem | null {
   if (!Number.isInteger(listingId) || listingId <= 0 || !title) return null;
   const details = parseItemDetails(row.itemDetails);
   const customCompany = customGradingCompany(details);
+  const gradingStatus = getSocialPromotionGradingStatus({ itemDetails: details, grade: row.grade });
+  const condition = cleanText(row.condition, 80);
   return {
     listingId,
     title,
     category: cleanText(row.category, 80) || null,
     itemType: cleanText(row.itemType, 80) || null,
-    grade: row.grade === null || row.grade === undefined ? null : cleanText(row.grade, 32),
-    certificationCompany: cleanText(row.certificationCompany, 80) || null,
-    customGradingCompany: customCompany,
+    gradingStatus,
+    // A stored "0" is the raw-listing placeholder, never a spoken grade.
+    condition: gradingStatus === "raw" && condition ? formatPublicFieldValue(condition) : null,
+    grade: gradingStatus === "graded" && row.grade !== null && row.grade !== undefined ? cleanText(row.grade, 32) : null,
+    certificationCompany: gradingStatus === "graded" ? cleanText(row.certificationCompany, 80) || null : null,
+    customGradingCompany: gradingStatus === "graded" ? customCompany : null,
     facts: getSocialPromotionFacts({
       category: cleanText(row.category, 80) || null,
       itemType: cleanText(row.itemType, 80) || null,
       itemDetails: details,
-      condition: cleanText(row.condition, 80) || null,
+      condition: condition || null,
       grade: row.grade ?? null,
       certificationCompany: cleanText(row.certificationCompany, 80) || null,
       customGradingCompany: customCompany,

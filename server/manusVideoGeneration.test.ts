@@ -102,6 +102,28 @@ describe("Manus API configuration", () => {
     expect(instruction).toContain("The smarter way to collect. Tradebilia.");
   });
 
+  it("passes a raw item’s condition to the video renderer and never a grade-zero placeholder", () => {
+    const instruction = buildTnnVideoInstruction({
+      turns: [{ speaker: "sidney", text: "Breaking News from Tradebilia. I'm Sidney Tradewell. The TNN Network confirms a collector trade for Raw Game in Near Mint condition. The smarter way to collect. Tradebilia." }],
+      durationSeconds: 45,
+      anchorMode: "sidney",
+      closingTaglineId: "smarter_way",
+      sellerName: "Seller Smith",
+      buyerName: "Buyer Jones",
+      cashOnly: false,
+      selectedItems: [{ listingId: 43, title: "Raw Game", imageUrl: "https://tradebilia.manus.space/item.jpg", gradingStatus: "raw", condition: "Near Mint", grade: "0.00", certificationCompany: "WATA" }],
+      additionalItemsCount: 0,
+      tickerText: "www.Tradebilia.com",
+      logoUrl: "https://tradebilia.manus.space/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png",
+      newsroomReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png",
+      openingReferenceUrl: "https://tradebilia.manus.space/manus-storage/TNNOpeningGlobeReference_f90474c7.png",
+      generationAttempt: 1,
+    });
+    expect(instruction).toContain("raw/ungraded; spoken condition context only: Near Mint");
+    expect(instruction).toContain("must never be shown or described as grade 0");
+    expect(instruction).not.toContain("spoken grade context: WATA 0");
+  });
+
   it("keeps the approved TNN logo and newsroom reference server-owned", () => {
     const videoProcedure = routerSource.slice(routerSource.indexOf("startCompletedTradeVideoGeneration:"), routerSource.indexOf("getCompletedTradeVideoGeneration:"));
     expect(videoProcedure).toContain('logoUrl: TNN_VIDEO_LOGO_URL');

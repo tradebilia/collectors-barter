@@ -11,6 +11,7 @@ import {
   TNN_FINAL_CLOSING_ERROR,
   TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS,
   TNN_MAX_AUTOMATIC_FACT_LOCK_REWRITES,
+  TNN_RAW_CONDITION_ERROR,
   TNN_SCRIPT_MAX_COMPLETION_TOKENS,
   TNN_SCRIPT_TARGET_SPOKEN_WORDS,
   TNN_SCRIPT_INPUT_TOO_LONG_ERROR,
@@ -41,8 +42,8 @@ const input = {
   buyerName: "Taylor Buyer",
   cashOnly: false,
   selectedItems: [
-    { listingId: 101, title: "1989 Nintendo Game", category: "Video Games", facts: [{ label: "Platform", value: "NES" }] },
-    { listingId: 102, title: "PSA 9 Trading Card", certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
+    { listingId: 101, title: "1989 Nintendo Game", category: "Video Games", gradingStatus: "raw" as const, condition: "Excellent", grade: "0", certificationCompany: "WATA", facts: [{ label: "Platform", value: "NES" }] },
+    { listingId: 102, title: "PSA 9 Trading Card", gradingStatus: "graded" as const, certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
   ],
   additionalItemsCount: 0,
   tickerText: "www.Tradebilia.com",
@@ -53,8 +54,8 @@ const requiredClosing = formatTnnRequiredClosing(input.closingTaglineId);
 const validTurns: TnnScriptTurn[] = [
   { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
   { speaker: "sidney", text: "And I'm Sidney Tradewell." },
-  { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game and PSA 9 Trading Card, each selected precisely for this finished collector transaction and presented with care." },
-  { speaker: "sidney", text: "The 1989 Nintendo Game brings its approved NES platform context to the exchange, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." },
+  { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game in Excellent condition and PSA 9 Trading Card, each selected precisely for this finished collector transaction." },
+  { speaker: "sidney", text: "The 1989 Nintendo Game is listed in Excellent condition with approved NES platform context, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." },
   { speaker: "max", text: requiredClosing },
 ];
 
@@ -104,6 +105,17 @@ describe("TNN structured speaker transcript", () => {
     expect(() => validateTnnScriptDraft(fillerTurns, input)).toThrow(TNN_SIDNEY_DETAIL_ERROR);
   });
 
+  it("requires each raw selected item’s stated condition and rejects a grade-zero narration", () => {
+    const missingRawCondition = validTurns.map((turn, index) => index === 2 || index === 3
+      ? { ...turn, text: turn.text.replaceAll("Excellent condition", "Mint condition") }
+      : turn);
+    const gradeZeroNarration = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The 1989 Nintendo Game has a grade 0, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." }
+      : turn);
+    expect(() => validateTnnScriptDraft(missingRawCondition, input)).toThrow(TNN_RAW_CONDITION_ERROR);
+    expect(() => validateTnnScriptDraft(gradeZeroNarration, input)).toThrow(TNN_RAW_CONDITION_ERROR);
+  });
+
   it("uses every approved opening style as two separate assigned lines, accepting smart apostrophes", () => {
     for (const duoOpeningStyle of TNN_DUO_OPENING_STYLE_VALUES) {
       const opening = TNN_DUO_OPENING_STYLES[duoOpeningStyle];
@@ -134,6 +146,8 @@ describe("TNN structured speaker transcript", () => {
     expect(prompt).toContain("substantive follow-up");
     expect(prompt).toContain("Do not say or imply that any other collector item");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
+    expect(prompt).toContain("raw/ungraded item must be described using its required condition");
+    expect(prompt).toContain("required condition: Excellent");
     expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(900);
   });
 
@@ -219,6 +233,21 @@ describe("TNN structured speaker transcript", () => {
     expect(draft.turns[3]?.text).toContain("PSA 9 grade");
     expect(draft.turns[3]?.text).not.toContain("PSA 9 Trading Card is graded");
     expect(draft.turns.at(-1)?.text).toBe(requiredClosing);
+  });
+
+  it("uses the raw item’s approved condition rather than its stored zero grade in the deterministic fallback", async () => {
+    const rawOnlyInput = { ...input, selectedItems: [input.selectedItems[0]!] };
+    mockedInvokeLLM
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any)
+      .mockResolvedValueOnce(structuredResponse({ turns: underLengthTurns }) as any);
+
+    const draft = await draftTnnScript(rawOnlyInput);
+    expect(draft.script).toContain("Excellent condition");
+    expect(draft.script).not.toMatch(/grade\s*(?:of\s*)?0(?:\.0+)?|WATA\s+0/i);
+    expect(draft.wordCount).toBeGreaterThanOrEqual(80);
+    expect(draft.wordCount).toBeLessThanOrEqual(100);
   });
 
   it("keeps every approved duo opening intact when the automatic safe fallback is needed", async () => {
@@ -353,7 +382,7 @@ describe("TNN structured speaker transcript", () => {
 
     await expect(draftTnnScript(input)).resolves.toMatchObject({ turns: validTurns });
     expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
-    expect(mockedInvokeLLM.mock.calls[1]?.[0].messages[2]).toMatchObject({ content: expect.stringContaining("Use only the approved parties, selected titles, grades") });
+    expect(mockedInvokeLLM.mock.calls[1]?.[0].messages[2]).toMatchObject({ content: expect.stringContaining("Use only the approved parties, selected titles, explicit graded/raw status") });
     expect(mockedInvokeLLM.mock.calls[1]?.[0].messages[2]).toMatchObject({ content: expect.not.stringContaining("$1000") });
   });
 

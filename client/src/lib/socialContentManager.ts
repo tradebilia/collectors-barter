@@ -13,6 +13,8 @@ import {
   type TnnDuoOpeningStyleSelection,
   type TnnTranscriptTurn,
 } from "@shared/tnnVideoPolicy";
+import { getSocialPromotionGradingStatus, type SocialPromotionGradingStatus } from "@shared/socialPromotionFacts";
+import { formatPublicFieldValue } from "@shared/publicFieldValues";
 
 export { TNN_VIDEO_DURATION_SECONDS, TNN_WEBSITE_TICKER, formatTnnGrade } from "@shared/tnnVideoPolicy";
 
@@ -70,6 +72,8 @@ export type TnnTradeItem = {
   grade?: string | number | null;
   certificationCompany?: string | null;
   customGradingCompany?: string | null;
+  gradingStatus?: SocialPromotionGradingStatus;
+  condition?: string | null;
 };
 
 export type SocialPromotionDetails = {
@@ -186,12 +190,33 @@ export function chooseNextTnnAnchor(lastSoloAnchor: Exclude<TnnAnchorMode, "duo"
   return normalizedRandom < 0.625 ? "max" : "sidney";
 }
 
+/** Clear review label: raw listings show their stated condition, never storage grade 0. */
+export function getTnnTradeItemRecapLabel(item: TnnTradeItem) {
+  const gradingStatus = item.gradingStatus === "graded" || item.gradingStatus === "raw"
+    ? item.gradingStatus
+    : getSocialPromotionGradingStatus({ grade: item.grade });
+  if (gradingStatus === "raw") {
+    const condition = String(item.condition ?? item.facts?.find((fact) => fact.label.toLowerCase() === "condition")?.value ?? "").trim();
+    return condition ? `Raw / ungraded · Condition: ${formatPublicFieldValue(condition)}` : "Raw / ungraded";
+  }
+  const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
+  return grade ? `Graded · ${grade}` : "Graded";
+}
+
 function normalizedTnnItem(item: TnnTradeItem): TnnTradeItem | null {
   const title = String(item.title ?? "").trim();
   if (!title) return null;
+  const gradingStatus = item.gradingStatus === "graded" || item.gradingStatus === "raw"
+    ? item.gradingStatus
+    : getSocialPromotionGradingStatus({ grade: item.grade });
   return {
     ...item,
     title: title.slice(0, 180),
+    gradingStatus,
+    condition: gradingStatus === "raw" && item.condition ? formatPublicFieldValue(String(item.condition)) : null,
+    grade: gradingStatus === "graded" ? item.grade ?? null : null,
+    certificationCompany: gradingStatus === "graded" ? item.certificationCompany ?? null : null,
+    customGradingCompany: gradingStatus === "graded" ? item.customGradingCompany ?? null : null,
     facts: (item.facts ?? [])
       .filter((fact): fact is SocialPromotionFact => Boolean(fact?.label?.trim() && fact?.value?.trim()))
       .slice(0, 4)
