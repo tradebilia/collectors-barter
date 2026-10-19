@@ -8,6 +8,8 @@ import {
   draftTnnScript,
   flattenTnnScriptTurns,
   TNN_DUO_OPENING_ERROR,
+  TNN_EDITORIAL_META_LANGUAGE_ERROR,
+  TNN_EDITORIAL_REPETITION_ERROR,
   TNN_FINAL_CLOSING_ERROR,
   TNN_MAX_AUTOMATIC_DRAFT_ATTEMPTS,
   TNN_MAX_AUTOMATIC_FACT_LOCK_REWRITES,
@@ -54,8 +56,8 @@ const requiredClosing = formatTnnRequiredClosing(input.closingTaglineId);
 const validTurns: TnnScriptTurn[] = [
   { speaker: "max", text: "Breaking News from Tradebilia. I'm Max Tradebloski." },
   { speaker: "sidney", text: "And I'm Sidney Tradewell." },
-  { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game in Excellent condition and PSA 9 Trading Card, each selected precisely for this finished collector transaction." },
-  { speaker: "sidney", text: "The 1989 Nintendo Game is listed in Excellent condition with approved NES platform context, while the PSA 9 Trading Card carries approved 1986 context. Both collectors completed this focused exchange, with every selected piece acknowledged in this report." },
+  { speaker: "max", text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The exchange features 1989 Nintendo Game and PSA 9 Trading Card in this finished collector transaction. The transaction is complete, and both collectors are represented in this exchange." },
+  { speaker: "sidney", text: "The first item is listed in Excellent condition, while the trading card carries a PSA 9 grade and 1986 context. That gives viewers the key item details without repeating the trade headline." },
   { speaker: "max", text: requiredClosing },
 ];
 
@@ -100,9 +102,23 @@ describe("TNN structured speaker transcript", () => {
 
   it("rejects Sidney filler when her substantive turn adds no approved item detail", () => {
     const fillerTurns = validTurns.map((turn, index) => index === 3
-      ? { ...turn, text: "And here are the details. This report recognizes the completed exchange and keeps the focus on the confirmed transaction for viewers following tonight's collector update without adding any item information." }
+      ? { ...turn, text: "And here are the details. This report recognizes the completed exchange and keeps the focus on the confirmed transaction for viewers following tonight's collector update without adding any item information. The first item remains in Excellent condition." }
       : turn);
-    expect(() => validateTnnScriptDraft(fillerTurns, input)).toThrow(TNN_SIDNEY_DETAIL_ERROR);
+    expect(() => validateTnnScriptDraft(fillerTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
+  });
+
+  it("rejects Sidney when she repeats Max's complete item list despite having unused detail available", () => {
+    const repeatedTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The 1989 Nintendo Game and PSA 9 Trading Card are both part of this completed collector trade, with each selected item acknowledged for viewers. The first item remains in Excellent condition." }
+      : turn);
+    expect(() => validateTnnScriptDraft(repeatedTurns, input)).toThrow(TNN_EDITORIAL_REPETITION_ERROR);
+  });
+
+  it("rejects internal field labels and approval language in otherwise fact-safe Sidney copy", () => {
+    const fieldLabelTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "The approved record lists Platform: NES and Condition: Excellent for the selected items. The PSA 9 Trading Card is also part of this completed exchange for viewers." }
+      : turn);
+    expect(() => validateTnnScriptDraft(fieldLabelTurns, input)).toThrow(TNN_EDITORIAL_META_LANGUAGE_ERROR);
   });
 
   it("requires each raw selected item’s stated condition and rejects a grade-zero narration", () => {
@@ -148,6 +164,9 @@ describe("TNN structured speaker transcript", () => {
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
     expect(prompt).toContain("raw/ungraded item must be described using its required condition");
     expect(prompt).toContain("required condition: Excellent");
+    expect(prompt).toContain("the listing identifies the platform as NES");
+    expect(prompt).not.toContain("Platform: NES");
+    expect(prompt).not.toContain("Toy Name / Character:");
     expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(900);
   });
 
@@ -230,8 +249,9 @@ describe("TNN structured speaker transcript", () => {
     expect(draft.turns.map((turn) => turn.speaker)).toEqual(["max", "sidney", "max", "sidney", "max"]);
     expect(draft.turns[0]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.maxLine);
     expect(draft.turns[1]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.sidneyLine);
-    expect(draft.turns[3]?.text).toContain("PSA 9 grade");
+    expect(draft.turns[3]?.text).toContain("graded PSA 9");
     expect(draft.turns[3]?.text).not.toContain("PSA 9 Trading Card is graded");
+    expect(draft.turns[3]?.text).not.toMatch(/approved record|for item context|the exchange includes/i);
     expect(draft.turns.at(-1)?.text).toBe(requiredClosing);
   });
 
@@ -372,7 +392,7 @@ describe("TNN structured speaker transcript", () => {
     const valueClaimTurns = validTurns.map((turn, index) => index === 2
       ? {
           ...turn,
-          text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The 1989 Nintendo Game is valued at $1000, alongside PSA 9 Trading Card.",
+          text: "Today, the TNN Network confirms a completed collector trade between Morgan Seller and Taylor Buyer. The 1989 Nintendo Game is valued at $1000, alongside PSA 9 Trading Card. The completed exchange is being reported with both selected items identified for viewers.",
         }
       : turn);
     mockedInvokeLLM
