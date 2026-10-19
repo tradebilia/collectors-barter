@@ -132,7 +132,8 @@ export function formatTnnGrade(
   customGradingCompany: string | null | undefined,
   grade: string | number | null | undefined,
 ) {
-  const company = String(certificationCompany || customGradingCompany || "").trim();
+  const rawCompany = String(certificationCompany || customGradingCompany || "").trim();
+  const company = /^(?:other|unknown|n\/a|none|null|not specified)$/i.test(rawCompany) ? "" : rawCompany;
   const rawGrade = String(grade ?? "").trim();
   if (!rawGrade) return company;
 

@@ -49,7 +49,7 @@ const input = {
   cashOnly: false,
   selectedItems: [
     { listingId: 101, title: "1989 Nintendo Game", category: "Video Games", itemType: "video_game", gradingStatus: "raw" as const, condition: "Excellent", grade: "0", certificationCompany: "WATA", facts: [{ label: "Platform", value: "NES" }] },
-    { listingId: 102, title: "PSA 9 Trading Card", itemType: "trading_card", gradingStatus: "graded" as const, certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
+    { listingId: 102, title: "PSA 9 Trading Card", itemType: "single_card", gradingStatus: "graded" as const, certificationCompany: "PSA", grade: "9", facts: [{ label: "Year", value: "1986" }] },
   ],
   additionalItemsCount: 0,
   tickerText: "www.Tradebilia.com",
@@ -141,7 +141,7 @@ describe("TNN structured speaker transcript", () => {
 
   it("rejects repeating one natural item subject instead of combining its details", () => {
     const repeatedSubjectTurns = validTurns.map((turn, index) => index === 3
-      ? { ...turn, text: "The trading card carries a PSA 9 grade and 1986 context. The trading card remains part of the completed exchange, while the original game is in Excellent condition." }
+      ? { ...turn, text: "The PSA 9 card carries a PSA 9 grade and 1986 context. The PSA 9 card remains part of the completed exchange, while the original game is in Excellent condition." }
       : turn);
     expect(() => validateTnnScriptDraft(repeatedSubjectTurns, input)).toThrow(TNN_REPEATED_ITEM_SUBJECT_ERROR);
   });

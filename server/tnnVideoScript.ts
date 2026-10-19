@@ -34,6 +34,7 @@ export const TNN_DUPLICATE_GRADE_DETAIL_ERROR = "The TNN transcript repeats a gr
 export const TNN_ORDINAL_ITEM_REFERENCE_ERROR = "The TNN transcript uses ordinal item labels instead of natural item descriptors in Sidney's report.";
 export const TNN_REPEATED_ITEM_SUBJECT_ERROR = "The TNN transcript repeats the same item subject in Sidney's short report instead of combining its approved details.";
 export const TNN_ITEM_LIST_PUNCTUATION_ERROR = "The TNN transcript uses list punctuation in a two-item spoken headline instead of a natural conjunction.";
+export const TNN_AWKWARD_FACT_CHAIN_ERROR = "The TNN transcript chains year and brand facts into an unnatural sentence instead of using one spoken item description.";
 export const TNN_RAW_CONDITION_ERROR = "The TNN transcript must state the approved condition for every raw selected item and must not describe it with a grade.";
 export const TNN_FACT_LOCK_ERROR = "The TNN transcript introduced a fact that is not approved for this completed trade.";
 export const TNN_SCRIPT_INPUT_TOO_LONG_ERROR = "The selected exact names and item titles cannot fit the 45-second TNN format. Select fewer items or use shorter listing titles.";
@@ -185,6 +186,23 @@ function spokenTnnItemType(itemType: string | null | undefined) {
   return labels[normalized] ?? normalized;
 }
 
+function spokenTnnBackgroundOptions(item: TnnScriptItem) {
+  const facts = item.facts ?? [];
+  const brandFact = facts.find((fact) => /brand|manufacturer|maker/i.test(fact.label) && !isRedundantTnnFact(item, fact));
+  const yearFact = facts.find((fact) => /year|release/i.test(fact.label) && !isRedundantTnnFact(item, fact));
+  const combined = brandFact && yearFact
+    ? `is a ${brandFact.value} ${spokenTnnItemType(item.itemType)} from ${yearFact.value}`
+    : "";
+  const consumedFacts = combined ? new Set([brandFact, yearFact]) : new Set<object>();
+  return [
+    combined,
+    ...facts
+      .filter((fact) => !consumedFacts.has(fact))
+      .filter((fact) => !isRedundantTnnFact(item, fact))
+      .map((fact) => humanizeTnnFact(fact.label, fact.value)),
+  ].filter((option): option is string => Boolean(option));
+}
+
 function spokenTnnDetailOptions(item: TnnScriptItem) {
   const grade = item.gradingStatus === "graded"
     ? formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade)
@@ -192,9 +210,7 @@ function spokenTnnDetailOptions(item: TnnScriptItem) {
   const options = [
     grade ? `graded ${grade}` : "",
     item.gradingStatus === "raw" && item.condition ? `in ${item.condition} condition` : "",
-    ...(item.facts ?? [])
-      .filter((fact) => !isRedundantTnnFact(item, fact))
-      .map((fact) => humanizeTnnFact(fact.label, fact.value)),
+    ...spokenTnnBackgroundOptions(item),
   ];
   return options.filter((option): option is string => Boolean(option));
 }
@@ -217,7 +233,10 @@ function spokenTnnItemSubject(item: TnnScriptItem) {
     const setName = item.facts?.find((fact) => /set name/i.test(fact.label))?.value;
     return `The ${setName || "card set"}`;
   }
-  if (/card/i.test(item.itemType ?? "") || /card/i.test(item.category ?? "")) return "The trading card";
+  const titleWords = cleanText(item.title, 100).replace(/[#:(),]/g, " ").split(/\s+/).filter(Boolean).slice(0, 2).join(" ");
+  if (/single[_ ]comic/i.test(item.itemType ?? "")) return `The ${titleWords || "comic"} comic`;
+  if (/single[_ ]card/i.test(item.itemType ?? "") || /card/i.test(item.category ?? "")) return `The ${titleWords || "trading"} card`;
+  if (/signed[_ ]item/i.test(item.itemType ?? "")) return "The signed piece";
   const type = spokenTnnItemType(item.itemType);
   return type ? `The ${type}` : "The item";
 }
@@ -299,10 +318,7 @@ export function normalizeTnnScriptInput(input: TnnScriptDraftInput): TnnScriptDr
 function publicFactLines(items: readonly TnnScriptItem[]) {
   return items.map((item, index) => {
     const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
-    const facts = (item.facts ?? [])
-      .filter((fact) => !isRedundantTnnFact(item, fact))
-      .map((fact) => humanizeTnnFact(fact.label, fact.value))
-      .filter((fact): fact is string => Boolean(fact));
+    const facts = spokenTnnBackgroundOptions(item);
     const itemState = item.gradingStatus === "raw"
       ? ` | raw/ungraded item | required condition: ${item.condition || "not supplied"}`
       : ` | graded item${grade ? ` | approved grade: ${grade}` : ""}`;
@@ -397,6 +413,13 @@ function assertSpeakerTurnStructure(turns: readonly TnnScriptTurn[], input: TnnS
       throw new Error(TNN_REPEATED_ITEM_SUBJECT_ERROR);
     }
   }
+  const gradedItemCount = input.selectedItems.filter((item) => item.gradingStatus === "graded").length;
+  if (gradedItemCount > 0 && (sidneyText.match(/\bgraded\b/gi)?.length ?? 0) > gradedItemCount) {
+    throw new Error(TNN_DUPLICATE_GRADE_DETAIL_ERROR);
+  }
+  if (/\b(?:dates to|is from)\s+\d{4}\s+and comes from\b/i.test(sidneyText)) {
+    throw new Error(TNN_AWKWARD_FACT_CHAIN_ERROR);
+  }
   const maxReport = turns[2]!.text;
   if (input.selectedItems.length === 2 && new RegExp(`${escapeRegExp(input.selectedItems[0]!.title)}\\s*,\\s*and\\s*${escapeRegExp(input.selectedItems[1]!.title)}`, "i").test(maxReport)) {
     throw new Error(TNN_ITEM_LIST_PUNCTUATION_ERROR);
@@ -437,10 +460,6 @@ function assertFactBoundaries(script: string, input: TnnScriptDraftInput) {
   if (!/\bthe\s+TNN\s+Network\b/i.test(script)) throw new Error("The TNN transcript must identify the TNN Network.");
   if (TNN_EDITORIAL_META_LANGUAGE.test(script) || input.selectedItems.some((item) => (item.facts ?? []).some((fact) => script.includes(`${fact.label}:`)))) {
     throw new Error(TNN_EDITORIAL_META_LANGUAGE_ERROR);
-  }
-  const gradedItemCount = input.selectedItems.filter((item) => item.gradingStatus === "graded").length;
-  if (gradedItemCount > 0 && (script.match(/\bgraded\b/gi)?.length ?? 0) > gradedItemCount) {
-    throw new Error(TNN_DUPLICATE_GRADE_DETAIL_ERROR);
   }
 }
 
@@ -629,6 +648,9 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
   }
   if (error.message === TNN_ITEM_LIST_PUNCTUATION_ERROR) {
     return `Corrective retry: this report names exactly two selected items, so join their titles with a normal spoken 'and' and no comma before it. Keep the wording conversational rather than formatted as a written list. ${common}`;
+  }
+  if (error.message === TNN_AWKWARD_FACT_CHAIN_ERROR) {
+    return `Corrective retry: do not say an item 'dates to [year] and comes from [brand].' Combine those approved facts naturally, for example, 'a Topps card from 1980.' Keep the exact fact values without sounding like a field-by-field list. ${common}`;
   }
   if (error.message === TNN_RAW_CONDITION_ERROR) {
     const rawItems = normalized.selectedItems.filter((item) => item.gradingStatus === "raw")
