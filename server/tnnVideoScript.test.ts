@@ -15,6 +15,7 @@ import {
   TNN_SCRIPT_TARGET_SPOKEN_WORDS,
   TNN_SCRIPT_INPUT_TOO_LONG_ERROR,
   TNN_SELECTED_ITEM_COVERAGE_ERROR,
+  TNN_SIDNEY_DETAIL_ERROR,
   TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR,
   validateTnnScriptDraft,
   verifyTnnScriptFactLock,
@@ -96,6 +97,13 @@ describe("TNN structured speaker transcript", () => {
     expect(() => validateTnnScriptDraft(validTurns.map((turn, index) => index === 2 ? { ...turn, text: `${turn.text} Max Tradebloski says the report remains focused.` } : turn), input)).toThrow(/must not repeat/i);
   });
 
+  it("rejects Sidney filler when her substantive turn adds no approved item detail", () => {
+    const fillerTurns = validTurns.map((turn, index) => index === 3
+      ? { ...turn, text: "And here are the details. This report recognizes the completed exchange and keeps the focus on the confirmed transaction for viewers following tonight's collector update without adding any item information." }
+      : turn);
+    expect(() => validateTnnScriptDraft(fillerTurns, input)).toThrow(TNN_SIDNEY_DETAIL_ERROR);
+  });
+
   it("uses every approved opening style as two separate assigned lines, accepting smart apostrophes", () => {
     for (const duoOpeningStyle of TNN_DUO_OPENING_STYLE_VALUES) {
       const opening = TNN_DUO_OPENING_STYLES[duoOpeningStyle];
@@ -123,7 +131,7 @@ describe("TNN structured speaker transcript", () => {
     expect(prompt).toContain("Turn 1 speaker must be 'max'");
     expect(prompt).toContain("Turn 2 speaker must be 'sidney'");
     expect(prompt).toContain(`Turn 5 speaker must be 'max' and its text must be exactly '${requiredClosing}'`);
-    expect(prompt).toContain("connected live broadcast");
+    expect(prompt).toContain("substantive follow-up");
     expect(prompt).toContain("Do not say or imply that any other collector item");
     expect(prompt).toContain("Never invent provenance, rarity, condition, prices, values");
     expect(TNN_SCRIPT_MAX_COMPLETION_TOKENS).toBe(900);
@@ -208,6 +216,8 @@ describe("TNN structured speaker transcript", () => {
     expect(draft.turns.map((turn) => turn.speaker)).toEqual(["max", "sidney", "max", "sidney", "max"]);
     expect(draft.turns[0]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.maxLine);
     expect(draft.turns[1]?.text).toBe(TNN_DUO_OPENING_STYLES.classic.sidneyLine);
+    expect(draft.turns[3]?.text).toContain("PSA 9 grade");
+    expect(draft.turns[3]?.text).not.toContain("PSA 9 Trading Card is graded");
     expect(draft.turns.at(-1)?.text).toBe(requiredClosing);
   });
 

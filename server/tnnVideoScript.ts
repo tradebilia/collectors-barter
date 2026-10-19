@@ -26,6 +26,7 @@ export const TNN_ANCHOR_INTRODUCTION_ERROR = "The TNN transcript must include th
 export const TNN_DUO_OPENING_ERROR = "The TNN duo transcript must open with Max's line followed immediately by Sidney's selected response.";
 export const TNN_ANCHOR_REPETITION_ERROR = "The TNN transcript must not repeat an anchor's full name after their one self-introduction.";
 export const TNN_FINAL_CLOSING_ERROR = "The TNN transcript must end with its selected approved homepage tagline followed by one final spoken 'Tradebilia.'.";
+export const TNN_SIDNEY_DETAIL_ERROR = "The TNN Sidney report turn must add approved item or trade detail rather than repeat a generic handoff.";
 export const TNN_FACT_LOCK_ERROR = "The TNN transcript introduced a fact that is not approved for this completed trade.";
 export const TNN_SCRIPT_INPUT_TOO_LONG_ERROR = "The selected exact names and item titles cannot fit the 45-second TNN format. Select fewer items or use shorter listing titles.";
 export const TNN_SCRIPT_WORD_BUDGET = {
@@ -216,7 +217,7 @@ function transcriptShapeInstruction(input: TnnScriptDraftInput) {
     "Return exactly 5 ordered turns with this speaker sequence: max, sidney, max, sidney, max.",
     `Turn 1 speaker must be 'max' and its text must be exactly: '${opening.maxLine}'.`,
     `Turn 2 speaker must be 'sidney' and its text must be exactly: '${opening.sidneyLine}'.`,
-    "Turns 3 and 4 must sound like a connected live broadcast: Max advances the confirmed report, then Sidney responds or bridges naturally with complementary detail rather than restating Max. Use at most one brief fact-locked ad-lib only when it sounds conversational and is grounded in approved facts. Speaker labels are review-only and never spoken.",
+    "Turn 3 is Max's headline report: identify the completed transaction, both parties, and the selected items. Turn 4 is Sidney's substantive follow-up, not a placeholder handoff: she must add at least one new approved item or trade detail by naming an approved item title, grade, or explicit approved fact, and should explain that detail in natural newsroom language. Do not write 'here are the details' or meta-commentary about the report unless the same turn immediately supplies the approved detail. Never merely restate Max's headline. Use at most one brief fact-locked ad-lib only when it sounds conversational and is grounded in approved facts. Speaker labels are review-only and never spoken.",
     `Turn 5 speaker must be 'max' and its text must be exactly '${selectedTnnClosing(input)}'. The preceding Sidney turn must be an ordinary newsroom handoff and must not contain the word Tradebilia or any tagline wording.`,
   ].join(" ");
 }
@@ -278,6 +279,13 @@ function assertSpeakerTurnStructure(turns: readonly TnnScriptTurn[], input: TnnS
   }
   if (/\bTradebilia\b/i.test(turns[3]!.text)) {
     throw new Error(TNN_FINAL_CLOSING_ERROR);
+  }
+  const sidneyDetailEvidence = input.selectedItems.flatMap((item) => {
+    const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
+    return [item.title, grade, ...(item.facts ?? []).flatMap((fact) => [fact.label, fact.value])].filter(Boolean);
+  });
+  if (!sidneyDetailEvidence.some((evidence) => turns[3]!.text.includes(evidence))) {
+    throw new Error(TNN_SIDNEY_DETAIL_ERROR);
   }
 }
 
@@ -341,12 +349,25 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   const openingText = input.anchorMode === "duo"
     ? `${selectedDuoOpening(input).maxLine} ${selectedDuoOpening(input).sidneyLine}`
     : `Breaking News from Tradebilia. I'm ${input.anchorMode === "max" ? "Max Tradebloski" : "Sidney Tradewell"}.`;
-  const duoBridge = input.anchorMode === "duo" ? "And here is the confirmed detail:" : "";
   const requiredLines = [
     `The TNN Network confirms a ${tradeType} between seller ${input.sellerName} and buyer ${input.buyerName}.`,
     ...itemLines,
     ...(input.additionalItemsCount > 0 ? ["Additional collector items changed hands as part of the completed transaction."] : []),
   ];
+  const detailItem = input.selectedItems.find((item) => item.grade || item.certificationCompany || item.customGradingCompany)
+    ?? input.selectedItems.find((item) => item.facts?.length)
+    ?? input.selectedItems[0];
+  const detailGrade = detailItem ? formatTnnGrade(detailItem.certificationCompany, detailItem.customGradingCompany, detailItem.grade) : "";
+  const detailFact = detailItem?.facts?.[0];
+  const sidneyDetail = detailItem
+    ? detailGrade && detailFact
+      ? `For item context, the approved record lists a ${detailGrade} grade and records ${detailFact.label} as ${detailFact.value}.`
+      : detailGrade
+        ? `For item context, the approved record lists a ${detailGrade} grade.`
+        : detailFact
+          ? `For item context, its approved ${detailFact.label} is ${detailFact.value}.`
+          : `For item context, the approved exchange includes ${detailItem.title}.`
+    : "For item context, the approved exchange includes the selected item.";
   const optionalLines = [
     "This report recognizes the completed exchange and names each selected item for viewers.",
     "Tonight's update keeps the focus on the confirmed collector transaction and its selected items.",
@@ -356,7 +377,7 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   ];
   const flexibleLines = [...requiredLines];
   for (const line of optionalLines) {
-    const nextCount = countTnnScriptWords(`${openingText} ${flexibleLines.join(" ")} ${duoBridge} ${line} ${selectedTnnClosing(input)}`);
+    const nextCount = countTnnScriptWords(`${openingText} ${flexibleLines.join(" ")} ${input.anchorMode === "duo" ? sidneyDetail : ""} ${line} ${selectedTnnClosing(input)}`);
     if (nextCount > budget.maximum) continue;
     flexibleLines.push(line);
     if (nextCount >= TNN_SCRIPT_TARGET_SPOKEN_WORDS) break;
@@ -364,14 +385,16 @@ function createTnnWordBudgetFallback(rawInput: TnnScriptDraftInput): TnnScriptTu
   const opening = input.anchorMode === "duo"
     ? selectedDuoOpening(input)
     : null;
-  const maxTurnLines = flexibleLines.slice(0, Math.max(2, Math.ceil(flexibleLines.length / 2)));
+  const maxTurnLines = input.anchorMode === "duo"
+    ? flexibleLines.slice(0, 1)
+    : flexibleLines.slice(0, Math.max(2, Math.ceil(flexibleLines.length / 2)));
   const sidneyTurnLines = flexibleLines.slice(maxTurnLines.length);
   const turns: TnnScriptTurn[] = input.anchorMode === "duo"
     ? [
         { speaker: "max", text: opening!.maxLine },
         { speaker: "sidney", text: opening!.sidneyLine },
         { speaker: "max", text: maxTurnLines.join(" ") },
-        { speaker: "sidney", text: [duoBridge, ...sidneyTurnLines].filter(Boolean).join(" ") },
+        { speaker: "sidney", text: [sidneyDetail, ...sidneyTurnLines].filter(Boolean).join(" ") },
         { speaker: "max", text: selectedTnnClosing(input) },
       ]
     : [
@@ -453,6 +476,14 @@ function correctiveInstructionFor(error: Error, input: TnnScriptDraftInput) {
   }
   if (error.message === TNN_FINAL_CLOSING_ERROR) {
     return `Corrective retry: reserve Tradebilia for the opening and the final standalone turn only. The final turn text must be exactly '${selectedTnnClosing(normalized)}', and the prior turn must not mention Tradebilia or repeat the selected tagline. ${common}`;
+  }
+  if (error.message === TNN_SIDNEY_DETAIL_ERROR) {
+    const approvedDetail = normalized.selectedItems.map((item) => {
+      const grade = formatTnnGrade(item.certificationCompany, item.customGradingCompany, item.grade);
+      const fact = item.facts?.[0];
+      return `${item.title}${grade ? ` (${grade})` : ""}${fact ? `; ${fact.label}: ${fact.value}` : ""}`;
+    }).join(" | ");
+    return `Corrective retry: keep the exact five-turn duo sequence and rewrite only Sidney's substantive fourth turn. She must explain at least one approved item detail from this list: ${approvedDetail}. Do not use a generic handoff such as 'here are the details' without immediately giving that detail. ${common}`;
   }
   if (error.message === TNN_UNSUPPORTED_ADDITIONAL_ITEMS_ERROR) {
     return `Corrective retry: the selected items are the entire completed trade set. Remove every statement or implication that any other item, piece, or collectible changed hands. ${common}`;
