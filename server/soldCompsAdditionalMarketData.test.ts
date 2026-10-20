@@ -34,6 +34,19 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(result.listings).toMatchObject([{ sourceId: 'mercari_sold_comps', price: 185, evidenceDisposition: 'warning_review', endedAt: '2026-09-01' }]);
   });
 
+  it('builds Disney Pins Mercari criteria from character, pin name, and category', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: 'Eeyore Around the World Pin Limited Edition',
+      category: 'disney_pins',
+      itemDetails: JSON.stringify({ character: 'Eeyore', pinName: 'Around the World', series: 'Around the World' }),
+    }, fetchMock as unknown as typeof fetch);
+    const requestedUrl = String(fetchMock.mock.calls[0][0]);
+    expect(result.query).toBe('Eeyore Around the World Disney Pin');
+    expect(new URL(requestedUrl).searchParams.get('keyword')).toBe('Eeyore Around the World Disney Pin');
+  });
+
   it('does not call TCGplayer for non-Pokémon categories', async () => {
     process.env.SOLD_COMPS_API_KEY = 'test-key';
     const fetchMock = vi.fn();

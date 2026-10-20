@@ -54,6 +54,26 @@ async function getJson(path: string, apiKey: string, fetchImpl: typeof fetch = f
 }
 
 function queryKeyword(input: AdditionalSoldCompsInput): string {
+  const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (normalizedCategory === 'disney_pins') {
+    let details: Record<string, unknown> = {};
+    if (typeof input.itemDetails === 'string') {
+      try {
+        const parsed = JSON.parse(input.itemDetails);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) details = parsed as Record<string, unknown>;
+      } catch {
+        // Fall back to the title when the stored detail payload is malformed.
+      }
+    }
+    const text = (...keys: string[]) => keys.map((key) => details[key]).find((value) => typeof value === 'string' && value.trim()) as string | undefined;
+    const character = text('character', 'characterName');
+    const pinName = text('pinName', 'name');
+    const disneyPinParts = [character, pinName, 'Disney Pin']
+      .map((value) => value?.trim() ?? '')
+      .filter(Boolean)
+      .filter((value, index, all) => all.findIndex((candidate) => candidate.toLowerCase() === value.toLowerCase()) === index);
+    if (disneyPinParts.length > 1) return disneyPinParts.join(' ');
+  }
   const title = input.title.trim();
   if (!title) return '';
   return title;
