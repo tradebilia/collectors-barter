@@ -2259,9 +2259,9 @@ export const testAIRouter = router({
       }
     }),
 
-  // SoldComps Mercari coverage is deliberately separate from eBay. It is
-  // available for every category but remains context-only until its provider-
-  // specific identity and signed-admission review is complete.
+  // SoldComps Mercari coverage is deliberately separate from eBay. Mercari
+  // remains context-only for every category except Disney Pins, whose records
+  // can enter valuation only after the shared strict visual-admission gate.
   getMercariSoldCompsData: protectedProcedure
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().optional(), condition: z.string().optional(),
@@ -2270,7 +2270,104 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupMercariSoldComps(input);
+      const result = await lookupMercariSoldComps(input);
+      const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
+      if (result.error || !result.listings.length || normalizedCategory !== 'disney_pins') return result;
+
+      const targetMetadata = `title=${input.title}; category=disney_pins; itemType=${input.itemType ?? 'unknown'}; grade=unknown; certificationCompany=unknown; fullItemDetails=${input.itemDetails ?? '{}'}`;
+      const safeTargetImage = (() => {
+        if (!input.imageUrl) return null;
+        try {
+          return new URL(input.imageUrl).protocol === 'https:' ? input.imageUrl : null;
+        } catch {
+          return null;
+        }
+      })();
+      if (!safeTargetImage) {
+        return {
+          ...result,
+          visualFilter: {
+            status: 'skipped_no_target_image' as const,
+            reviewedCount: 0,
+            removedCount: 0,
+            retainedUnreviewedCount: result.listings.length,
+            reviews: [],
+            note: 'Mercari Disney Pin records require a target image before strict visual admission; results remain context-only.',
+          },
+        };
+      }
+
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Mercari Disney Pins sold listings',
+        targetImageUrl: safeTargetImage,
+        targetMetadata,
+        listings: result.listings.map((listing) => ({
+          ...listing,
+          // The common sold-comparable annotator uses the eBay-shaped aliases;
+          // preserve the original Mercari fields while supplying those aliases
+          // only to the visual/evidence pipeline.
+          url: listing.itemUrl,
+          thumbnailUrl: listing.imageUrl,
+          soldPrice: listing.price,
+          soldCurrency: listing.currency,
+          imageUrls: listing.imageUrl ? [listing.imageUrl] : [],
+          // The adapter's warning is provisional. The strict visual result,
+          // not the adapter warning, decides whether a Disney Pin can enter
+          // valuation below.
+          evidenceDisposition: undefined,
+          evidenceReasons: [],
+        })),
+      });
+
+      const annotatedListings = visualFilter.listings.map((listing: any) => {
+        const annotated = annotateSoldComparableCandidate(listing, {
+          category: 'disney_pins',
+          targetItemType: input.itemType ?? '',
+          certificationCompany: '',
+          targetGrade: null,
+          targetNumber: null,
+          targetPlayer: null,
+          statedTradeValue: input.statedTradeValue,
+          visualReviewRequired: true,
+        });
+        return {
+          ...annotated,
+          itemUrl: annotated.url ?? listing.itemUrl ?? null,
+          imageUrl: annotated.thumbnailUrl ?? listing.imageUrl ?? null,
+          price: Number(annotated.soldPrice ?? listing.price),
+          currency: annotated.soldCurrency ?? listing.currency,
+          endedAt: annotated.endedAt ?? listing.endedAt ?? null,
+          sourceId: 'mercari_sold_comps' as const,
+          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          marketplace: 'Mercari' as const,
+        };
+      });
+      const valuationEligible = annotatedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible');
+      const eligiblePrices = valuationEligible.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0);
+      const metrics = eligiblePrices.length
+        ? {
+            avg: eligiblePrices.reduce((sum: number, price: number) => sum + price, 0) / eligiblePrices.length,
+            median: [...eligiblePrices].sort((a, b) => a - b)[Math.floor(eligiblePrices.length / 2)],
+            min: Math.min(...eligiblePrices),
+            max: Math.max(...eligiblePrices),
+            confidence: eligiblePrices.length >= 5 ? 'high' : eligiblePrices.length >= 2 ? 'medium' : 'low',
+          }
+        : null;
+      return {
+        ...result,
+        listings: annotatedListings,
+        metrics,
+        visualFilter: {
+          ...visualFilter,
+          note: `Mercari Disney Pin results use the strict Disney Pins visual gate. Only exact visual matches with complete identity evidence can enter analyzer valuation; all other records remain context-only. ${visualFilter.note}`,
+        },
+        audit: {
+          rawReceived: result.listings.length,
+          valuationEligible: valuationEligible.length,
+          warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length,
+          ledger: annotatedListings,
+        },
+      };
     }),
 
   // SoldComps TCGplayer coverage is intentionally Pokémon-only and separate

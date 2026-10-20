@@ -230,6 +230,16 @@ describe('Sold-Comps API key validation', () => {
     expect(genericSet.evidenceDisposition).toBe('warning_review');
   });
 
+  it('admits an exact Disney Pin visual match and keeps a mismatch out of valuation', () => {
+    const context = { category: 'disney_pins', targetItemType: 'single_pin', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, visualReviewRequired: true };
+    const exact = annotateSoldComparableCandidate({ title: 'Eeyore Around the World Eeyore Disney Pin', soldPrice: '18', visualReviewStatus: 'match', visualReviewRationale: 'All required Disney Pin identity details match.', visualAudit: { adjudicationStatus: 'confirmed', finalPass: 'high_resolution_retry' } }, context);
+    const mismatch = annotateSoldComparableCandidate({ title: 'Eeyore Around the World Eeyore Disney Pin', soldPrice: '18', visualReviewStatus: 'mismatch', visualReviewRationale: 'The backing card and artwork differ.' }, context);
+
+    expect(exact.evidenceDisposition).toBe('valuation_eligible');
+    expect(mismatch.evidenceDisposition).toBe('warning_review');
+    expect(mismatch.evidenceReasons?.[0]).toContain('visual comparison flag');
+  });
+
   it('keeps explicit multi-item lots out of source-level valuation acceptance', () => {
     expect(extractSoldCompLotQuantity('Hot Wheels 70 Plymouth AAR Cuda (Lot of 2 Short Card & Long Card)')).toBe(2);
     expect(extractSoldCompLotQuantity('Hot Wheels 70 Plymouth AAR Cuda 2026 P Case Lot of 3')).toBe(3);
