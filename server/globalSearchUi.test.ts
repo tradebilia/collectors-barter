@@ -59,6 +59,17 @@ describe("unified global search contracts", () => {
     expect(searchPage).not.toContain('border-b border-current/10 bg-white p-0');
   });
 
+  it("uses the compact category-aligned six-column format in List view", () => {
+    const searchPage = read("client/src/pages/SearchResults.tsx");
+
+    expect(searchPage).toContain('grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)]');
+    expect(searchPage).toContain('<span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="text-center">Action</span>');
+    expect(searchPage).toContain('col-start-1 row-start-1 ml-\[4.5rem\]');
+    expect(searchPage).toContain('col-start-5 row-start-1');
+    expect(searchPage).toContain('col-start-6 row-start-1');
+    expect(searchPage).not.toContain('grid min-h-44 grid-cols-[8rem_minmax(0,1fr)]');
+  });
+
   it("uses a typed, paginated all-category server contract and searches all persisted listing fields", () => {
     const router = read("server/routers.ts");
     const database = read("server/db.ts");

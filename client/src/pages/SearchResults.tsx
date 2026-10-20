@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Link, useLocation, useSearch } from "wouter";
-import { Filter, Grid2X2, Heart, List, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
+import { ArrowLeftRight, Filter, Grid2X2, Heart, List, Loader2, MapPin, MessageSquareText, Search, Sparkles, Star, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -310,15 +310,42 @@ export function SearchResults() {
             <div className={`mt-6 rounded-[2rem] border p-8 text-center ${searchTheme.panelClassName}`}><Sparkles className={`mx-auto h-10 w-10 ${searchTheme.accentClassName}`} /><h2 className="mt-4 text-2xl font-semibold" style={{ fontFamily: searchTheme.headingFont }}>No listings match this search yet.</h2><p className="mt-3 text-sm opacity-75">Try a broader term, remove a filter, or explore a specific category exchange.</p></div>
           ) : (
             <>
-              <div className={viewMode === "grid" ? "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "mt-6 space-y-3"}>
+              <div className={viewMode === "grid" ? "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm"}>
+                {viewMode === "list" && (
+                  <div className="mx-2 mt-2 grid min-w-[660px] grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)] items-center rounded-md bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
+                    <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="text-center">Action</span>
+                  </div>
+                )}
+                <div className={viewMode === "grid" ? "contents" : "block min-w-[660px] p-2"}>
                 {listings.map(listing => (
-                  <Card key={listing.id} className={`${viewMode === "list" ? "grid min-h-44 grid-cols-[8rem_minmax(0,1fr)] items-stretch" : "overflow-hidden"} rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}>
-                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "aspect-[7/9] w-full self-center" : "block aspect-[7/9]"} bg-white p-0`}><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
-                    <CardContent className={`${viewMode === "list" ? "flex min-w-0 flex-col justify-between p-5" : "space-y-1 p-1.5"}`}>
-                      <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
-                       <div className={`${viewMode === "list" ? "flex flex-wrap items-center gap-x-4 gap-y-1 border-0 bg-transparent p-0 text-xs" : "grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"}`}><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(resolvePublicGradeValue(listing.grade, listing.title, listing.category))}` : listing.conditionLabel}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue === null ? "—" : formatItemValue(listing.estimatedValue)}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Collector</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.owner.displayName}</p></div><div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Trader Rating</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.65rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
-                       {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}
-                       <div className="flex items-center gap-1">
+                  <Card key={listing.id} className={viewMode === "list" ? "grid grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)] items-center gap-0 overflow-hidden rounded-md border border-slate-200 bg-white py-1 text-black shadow-none mb-2 last:mb-0" : "overflow-hidden rounded-md border border-gray-200 bg-white text-[#153746] shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"}>
+                    <div className={viewMode === "list" ? "contents" : ""}>
+                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "col-start-1 row-start-1 ml-2 h-14 w-14 justify-self-start" : "block aspect-[7/9]"} bg-white p-0`}><img src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })} alt={listing.title} className="h-full w-full object-contain" /></Link>
+                    <CardContent className={viewMode === "list" ? "contents" : "space-y-1 p-1.5"}>
+                      {viewMode === "list" ? (
+                        <>
+                          <div className="col-start-1 row-start-1 ml-[4.5rem] min-w-0 px-0 py-1.5 pr-3">
+                            <Link href={`/listings/${listing.id}`} className="block truncate text-[0.8rem] font-bold leading-snug text-slate-900 hover:text-blue-700">{listing.title}</Link>
+                            <p className="mt-0.5 truncate text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-slate-500">{listing.categoryLabel}</p>
+                          </div>
+                          <div className="col-start-2 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700">
+                            <span className="inline-flex max-w-full truncate rounded-md bg-blue-50 px-2 py-1 text-[0.7rem] font-semibold text-blue-800">{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(resolvePublicGradeValue(listing.grade, listing.title, listing.category))}` : listing.conditionLabel}</span>
+                          </div>
+                          <div className="col-start-3 row-start-1 px-2 py-1.5 text-[0.85rem] font-bold text-slate-900">{listing.estimatedValue === null ? "—" : formatItemValue(listing.estimatedValue)}</div>
+                          <div className="col-start-4 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700">
+                            <p className="truncate text-[0.74rem] font-semibold text-slate-900">{listing.owner.displayName}</p>
+                            <p className="mt-0.5 flex items-center gap-1 text-[0.68rem] text-slate-500"><Star className="h-3 w-3 fill-amber-400 text-amber-400" /><span className="sr-only">Trader Rating:</span>{listing.ownerRating.averageRating.toFixed(1)}</p>
+                          </div>
+                          <div className="col-start-5 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700"><p className="flex min-w-0 items-center gap-1 truncate text-[0.68rem] text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" /><span className="sr-only">Location:</span>{listing.distanceBand || "Location unavailable"}</p></div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-start justify-between gap-2"><div className="min-w-0"><p className="truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600">{listing.categoryLabel}</p><Link href={`/listings/${listing.id}`} className="mt-1 block min-h-[2rem] line-clamp-2 text-xs font-semibold leading-tight hover:opacity-75">{listing.title}</Link></div>{listing.featured ? <Badge className="rounded-full bg-[#0f5563] px-1 py-0 text-[0.5rem] text-[#fff1d2]">Featured</Badge> : null}</div>
+                          <div className="grid grid-cols-2 gap-1 rounded-md border border-current/10 bg-black/5 p-1 text-[0.5rem]"><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? "Grade" : "Condition"}</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(resolvePublicGradeValue(listing.grade, listing.title, listing.category))}` : listing.conditionLabel}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Value</p><p className="mt-0 truncate text-[0.75rem] font-bold leading-tight">{listing.estimatedValue === null ? "—" : formatItemValue(listing.estimatedValue)}</p></div><div><p className="text-[0.55rem] font-semibold uppercase tracking-[0.08em] text-slate-600">Collector</p><p className="mt-0 truncate text-[0.65rem] font-semibold">{listing.owner.displayName}</p></div><div><p className="whitespace-nowrap text-[0.42rem] font-semibold uppercase tracking-[0.06em] text-slate-600">Trader Rating</p><p className="mt-0 flex items-center gap-0.5 font-semibold text-[0.65rem]"><Star className="h-2 w-2 fill-current" />{listing.ownerRating.averageRating.toFixed(1)}</p></div></div>
+                          {listing.distanceBand && <p className="flex items-center gap-1 text-[0.55rem] font-semibold text-teal-700"><MapPin className="h-2.5 w-2.5" /><span>{listing.distanceBand}</span></p>}
+                        </>
+                      )}
+                       <div className={`flex items-center gap-1 ${viewMode === "list" ? "col-start-6 row-start-1 justify-center flex-nowrap px-1" : ""}`}>
                          <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
                            setProposalListingId(open ? listing.id : null);
                            if (!open) setProposalNote("");
@@ -327,11 +354,11 @@ export function SearchResults() {
                            <Button
                              size="sm"
                              variant="outline"
-                             className="h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10"
+                             className={viewMode === "list" ? "h-9 rounded-md border-blue-600 bg-blue-600 px-3.5 text-[0.78rem] font-semibold text-white shadow-sm hover:bg-blue-700 hover:text-white" : "h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10"}
                              disabled={!isAuthenticated || listing.ownerId === user?.id}
                              title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
                            >
-                             <MessageSquareText className="mr-1 h-3 w-3" /> Trade
+                               {viewMode === "list" ? <ArrowLeftRight className="mr-1 h-3.5 w-3.5" /> : <MessageSquareText className="mr-1 h-3 w-3" />} Trade
                            </Button>
                          </DialogTrigger>
                          <DialogContent className="sm:max-w-lg">
@@ -352,7 +379,7 @@ export function SearchResults() {
                          <Button
                            size="sm"
                            variant="outline"
-                           className="h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50"
+                           className={viewMode === "list" ? "h-9 w-9 rounded-md border-red-200 bg-white p-0 text-red-500 hover:bg-red-50" : "h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50"}
                            disabled={isAuthenticated && listing.ownerId === user?.id}
                            title={listing.ownerId === user?.id ? "You cannot favorite your own item" : listing.savedToWatchlist ? "Remove from favorites" : "Save to favorites"}
                            onClick={() => {
@@ -363,12 +390,14 @@ export function SearchResults() {
                              watchlistMutation.mutate({ listingId: listing.id });
                            }}
                          >
-                           <Heart className={`h-4 w-4 ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
+                           <Heart className={`${viewMode === "list" ? "h-5 w-5" : "h-4 w-4"} ${listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"}`} />
                          </Button>
                        </div>
                     </CardContent>
+                    </div>
                   </Card>
                 ))}
+                </div>
               </div>
               <div className="mt-8 flex items-center justify-center gap-4 border-t border-current/10 pt-6"><Button onClick={() => setCurrentPage(page => Math.max(1, page - 1))} disabled={pagination.currentPage === 1} variant="outline" size="sm">← Previous</Button><span className="text-sm font-medium opacity-70">Page {pagination.currentPage} of {pagination.totalPages}</span><Button onClick={() => setCurrentPage(page => Math.min(pagination.totalPages, page + 1))} disabled={pagination.currentPage === pagination.totalPages} variant="outline" size="sm">Next →</Button></div>
             </>

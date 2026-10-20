@@ -48,7 +48,9 @@ describe("listing owner interaction safeguards", () => {
     expect(exploreAllSource).toContain('disabled={isAuthenticated && listing.ownerId === user?.id}');
     expect(exploreAllSource).toContain("You cannot favorite your own item");
     expect(exploreAllSource).toContain('listing.savedToWatchlist ? "fill-red-500 text-red-500" : "text-red-500"');
-    expect(exploreAllSource).toContain('className="h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30');
+    expect(exploreAllSource).toContain('viewMode === "list" ? "h-9 rounded-md border-blue-600 bg-blue-600');
+    expect(exploreAllSource).toContain('"h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30');
+    expect(exploreAllSource).toContain("ArrowLeftRight");
   });
 
   it("uses an ownership-aware personalized proposal dialog on item detail", () => {
