@@ -1483,13 +1483,13 @@ export default function CategoryPage() {
               <>
                 <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm"}>
                   {viewMode === "list" && (
-                    <div className="mx-2 mt-2 grid min-w-[640px] grid-cols-[minmax(12rem,2.1fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(10rem,1.6fr)_minmax(5.75rem,0.8fr)] items-center rounded-md bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
-                      <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span className="text-center">Action</span>
+                    <div className="mx-2 mt-2 grid min-w-[660px] grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)] items-center rounded-md bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
+                      <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="text-center">Action</span>
                     </div>
                   )}
-                  <div className={viewMode === "grid" ? "contents" : "block min-w-[640px] p-2"}>
+                  <div className={viewMode === "grid" ? "contents" : "block min-w-[660px] p-2"}>
                   {pageListings.map(listing => (
-                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[minmax(12rem,2.1fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(10rem,1.6fr)_minmax(5.75rem,0.8fr)] items-center gap-0 overflow-hidden rounded-md border-slate-200 bg-white py-1 text-black shadow-none" : "relative overflow-hidden border bg-white text-black"} ${viewMode === "grid" && isSportsCardsPage ? "rounded-md shadow-sm" : viewMode === "grid" ? "rounded-md shadow-sm sm:rounded-[2rem]" : "mb-2 last:mb-0"}`}>
+                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)] items-center gap-0 overflow-hidden rounded-md border-slate-200 bg-white py-1 text-black shadow-none" : "relative overflow-hidden border bg-white text-black"} ${viewMode === "grid" && isSportsCardsPage ? "rounded-md shadow-sm" : viewMode === "grid" ? "rounded-md shadow-sm sm:rounded-[2rem]" : "mb-2 last:mb-0"}`}>
                       <div className={`${viewMode === "list" ? "contents" : ""}`}>
                     {/* OnlineIndicator for grid view - positioned absolutely on top */}
                     {listing.ownerId && viewMode === "grid" && (
@@ -1522,12 +1522,14 @@ export default function CategoryPage() {
                           <div className="col-start-3 row-start-1 px-2 py-1.5 text-[0.85rem] font-bold text-slate-900">
                             {listing.estimatedValue ? formatItemValue(listing.estimatedValue) : "—"}
                           </div>
-                          <div className="col-start-4 row-start-1 flex min-w-0 items-center gap-5 px-2 py-1.5 text-xs text-slate-700">
+                          <div className="col-start-4 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700">
                             <div className="min-w-0 shrink-0">
                               <p className="truncate text-[0.74rem] font-semibold text-slate-900">{listing.owner.displayName}</p>
                               <p className="mt-0.5 flex items-center gap-1 text-[0.68rem] text-slate-500"><Star className="h-3 w-3 fill-amber-400 text-amber-400" /><span className="sr-only">Trader Rating:</span>{listing.ownerRating.averageRating.toFixed(1)}</p>
                             </div>
-                            <p className="flex min-w-0 items-center gap-1 truncate text-[0.68rem] text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" /><span className="sr-only">Nearby:</span>{listing.distanceBand || "Location unavailable"}</p>
+                          </div>
+                          <div className="col-start-5 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700">
+                            <p className="flex min-w-0 items-center gap-1 truncate text-[0.68rem] text-slate-600"><MapPin className="h-3.5 w-3.5 shrink-0 text-blue-600" /><span className="sr-only">Location:</span>{listing.distanceBand || "Location unavailable"}</p>
                           </div>
                         </>
                       ) : (
@@ -1573,7 +1575,7 @@ export default function CategoryPage() {
                           )}
                         </>
                       )}
-                      <div className={`flex items-center justify-end gap-2 ${viewMode === "list" ? "col-start-5 row-start-1 justify-center flex-nowrap px-1" : ""}`}>
+                      <div className={`flex items-center justify-end gap-2 ${viewMode === "list" ? "col-start-6 row-start-1 justify-center flex-nowrap px-1" : ""}`}>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
                           setProposalListingId(open ? listing.id : null);
                           if (!open) setProposalNote("");

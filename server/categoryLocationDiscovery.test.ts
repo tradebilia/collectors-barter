@@ -31,7 +31,8 @@ describe("Category Page location discovery", () => {
     expect(database).toContain("distanceFilter,");
     expect(database).not.toContain("distanceMiles: coordinates");
     expect(categoryPage).toContain("listing.distanceBand");
-    expect(categoryPage).toContain("Nearby:");
+    expect(categoryPage).toContain(">Location<");
+    expect(categoryPage).toContain("Location:");
     expect(categoryPage).not.toContain("listing.distanceMiles");
   });
 });
