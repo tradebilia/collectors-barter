@@ -1480,71 +1480,60 @@ export default function CategoryPage() {
               </div>
             ) : (
               <>
-                <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "space-y-3"}>
+                <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm"}>
+                  {viewMode === "list" && (
+                    <div className="grid min-w-[760px] grid-cols-[4.5rem_minmax(13rem,2fr)_minmax(8rem,0.9fr)_minmax(6.5rem,0.8fr)_minmax(10rem,1.15fr)_auto] items-center gap-0 border-b border-slate-200 bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
+                      <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="pr-2 text-right">Action</span>
+                    </div>
+                  )}
+                  <div className={viewMode === "grid" ? "contents" : "block min-w-[760px] p-2"}>
                   {pageListings.map(listing => (
-                    <Card key={listing.id} className={`${viewMode === "list" ? "flex flex-col" : "relative"} ${viewMode === "list" ? "" : "overflow-hidden"} border bg-white border-gray-200 text-black ${isSportsCardsPage ? "rounded-md shadow-sm" : "rounded-md shadow-sm sm:rounded-[2rem]"}`}>
-                      {listing.ownerId && viewMode === "list" && (
-                        <div className="px-3 py-0.5">
-                          <OnlineIndicator sellerId={listing.ownerId} />
-                        </div>
-                      )}
-                      <div className={`${viewMode === "list" ? "grid grid-cols-[auto_1fr] gap-4" : ""}`}>
+                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[4.5rem_minmax(13rem,2fr)_minmax(8rem,0.9fr)_minmax(6.5rem,0.8fr)_minmax(10rem,1.15fr)_auto] items-center gap-0 overflow-hidden rounded-md border-slate-200 bg-white text-black shadow-none" : "relative overflow-hidden border bg-white text-black"} ${viewMode === "grid" && isSportsCardsPage ? "rounded-md shadow-sm" : viewMode === "grid" ? "rounded-md shadow-sm sm:rounded-[2rem]" : "mb-2 last:mb-0"}`}>
+                      <div className={`${viewMode === "list" ? "contents" : ""}`}>
                     {/* OnlineIndicator for grid view - positioned absolutely on top */}
                     {listing.ownerId && viewMode === "grid" && (
                       <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10">
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "" : "block"} cursor-pointer transition hover:opacity-90 ${viewMode === "list" ? "w-32 flex-shrink-0" : ""} ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
+                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "col-start-1 row-start-1 h-16 w-16 justify-self-center" : "block"} cursor-pointer transition hover:opacity-90 ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
                       <img
                         src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                         alt={listing.title}
                         className="h-full w-full object-contain"
                       />
                     </Link>
-                      <CardContent className={`${viewMode === "list" ? "p-3 min-w-0 flex flex-col" : "space-y-1 p-1.5 text-[#153746]"}`}>
+                      <CardContent className={`${viewMode === "list" ? "contents" : "space-y-1 p-1.5 text-[#153746]"}`}>
                       {viewMode === "list" ? (
                         <>
-                          <div className="flex-1 min-w-0 flex flex-col">
-                            <Link href={`/listings/${listing.id}`} className="block font-bold leading-tight hover:opacity-75 text-base truncate">
+                          <div className="min-w-0 px-3 py-2">
+                            <Link href={`/listings/${listing.id}`} className="mt-0.5 block truncate text-sm font-bold leading-tight text-slate-900 hover:text-blue-700">
                               {listing.title}
                             </Link>
-                            <div className="flex items-center gap-3 text-xs mt-1 flex-nowrap overflow-x-auto">
-                              <div>
-                                <span className="font-semibold">{getDisplayGrade(listing) ? "Grade:" : "Condition:"}</span>{" "}
-                                {getDisplayGrade(listing)
-                                  ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(getDisplayGrade(listing))}`
-                                  : listing.conditionLabel}
-                              </div>
-                              {listing.estimatedValue && (
-                                <div>
-                                  <span className="font-semibold">Value:</span> {formatItemValue(listing.estimatedValue)}
-                                </div>
-                              )}
-                              <div>
-                                <span className="font-semibold">Seller:</span> {listing.owner.displayName}
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <span className="font-semibold">Trader Rating:</span>
-                                <Star className="fill-current h-3 w-3" />
-                                <span>{listing.ownerRating.averageRating.toFixed(1)}</span>
-                              </div>
-                              {listing.distanceBand && (
-                                <div className="flex items-center gap-1 text-teal-700">
-                                  <MapPin className="h-3 w-3" />
-                                  <span className="font-semibold">Nearby:</span>
-                                  <span>{listing.distanceBand}</span>
-                                </div>
-                              )}
-                            </div>
                           </div>
-
+                          <div className="min-w-0 px-3 py-2 text-xs text-slate-700">
+                            <span className="inline-flex max-w-full truncate rounded-md bg-blue-50 px-2 py-1 font-semibold text-blue-800">
+                              {getDisplayGrade(listing)
+                                ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(getDisplayGrade(listing))}`
+                                : listing.conditionLabel}
+                            </span>
+                          </div>
+                          <div className="px-3 py-2 text-sm font-bold text-slate-900">
+                            {listing.estimatedValue ? formatItemValue(listing.estimatedValue) : "—"}
+                          </div>
+                          <div className="min-w-0 px-3 py-2 text-xs text-slate-700">
+                            <p className="truncate font-semibold text-slate-900">{listing.owner.displayName}</p>
+                            <p className="mt-0.5 flex items-center gap-1 text-[0.65rem] text-slate-500"><Star className="h-3 w-3 fill-amber-400 text-amber-400" /><span className="sr-only">Trader Rating:</span>{listing.ownerRating.averageRating.toFixed(1)}</p>
+                          </div>
+                          <div className="min-w-0 px-3 py-2 text-xs text-slate-600">
+                            {listing.ownerId && <OnlineIndicator sellerId={listing.ownerId} />}
+                            <p className="mt-1 flex items-center gap-1 truncate"><MapPin className="h-3 w-3 shrink-0 text-blue-600" /><span className="font-semibold">Nearby:</span>{listing.distanceBand || "Location unavailable"}</p>
+                          </div>
                         </>
                       ) : (
                         <>
                           <div className="flex items-start justify-between gap-2 sm:gap-3">
                             <div className="min-w-0 flex-1">
-                              <p className="mb-1 truncate text-[0.55rem] font-bold uppercase tracking-[0.1em] text-slate-600 sm:hidden">{listing.categoryLabel}</p>
                               <Link href={`/listings/${listing.id}`} className="block min-h-[2rem] line-clamp-2 font-semibold leading-tight hover:opacity-75 text-xs">
                                 {listing.title}
                               </Link>
@@ -1642,7 +1631,8 @@ export default function CategoryPage() {
                       </div>
                     </Card>
                 ))}
-              </div>
+                  </div>
+                </div>
               {/* Pagination controls */}
               <div className="flex items-center justify-center gap-4 mt-8 pt-6 border-t border-current/10">
                 <Button
