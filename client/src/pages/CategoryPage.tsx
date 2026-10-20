@@ -24,6 +24,7 @@ import {
   type TradebiliaCategorySlug,
 } from "@/lib/tradebilia";
 import { ArrowRight, Grid2X2, Heart, List, Loader2, MapPin, MessageSquareText, Search, ShieldCheck, Sparkles, Star, Trophy } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 import { TopRightIcons } from "@/components/TopRightIcons";
 import { TopBar } from "@/components/TopBar";
 import { CategoryBar } from "@/components/CategoryBar";
@@ -1482,13 +1483,13 @@ export default function CategoryPage() {
               <>
                 <div className={viewMode === "grid" ? "grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm"}>
                   {viewMode === "list" && (
-                    <div className="grid min-w-[760px] grid-cols-[4.5rem_minmax(13rem,2fr)_minmax(8rem,0.9fr)_minmax(6.5rem,0.8fr)_minmax(10rem,1.15fr)_auto] items-center gap-0 border-b border-slate-200 bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
-                      <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="pr-2 text-right">Action</span>
+                    <div className="grid min-w-[680px] grid-cols-[4rem_minmax(12rem,2fr)_minmax(7rem,0.8fr)_minmax(10rem,1.2fr)_auto] items-center gap-0 border-b border-slate-200 bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
+                      <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span className="pr-2 text-right">Action</span>
                     </div>
                   )}
-                  <div className={viewMode === "grid" ? "contents" : "block min-w-[760px] p-2"}>
+                  <div className={viewMode === "grid" ? "contents" : "block min-w-[680px] p-2"}>
                   {pageListings.map(listing => (
-                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[4.5rem_minmax(13rem,2fr)_minmax(8rem,0.9fr)_minmax(6.5rem,0.8fr)_minmax(10rem,1.15fr)_auto] items-center gap-0 overflow-hidden rounded-md border-slate-200 bg-white text-black shadow-none" : "relative overflow-hidden border bg-white text-black"} ${viewMode === "grid" && isSportsCardsPage ? "rounded-md shadow-sm" : viewMode === "grid" ? "rounded-md shadow-sm sm:rounded-[2rem]" : "mb-2 last:mb-0"}`}>
+                    <Card key={listing.id} className={`${viewMode === "list" ? "grid grid-cols-[4rem_minmax(12rem,2fr)_minmax(7rem,0.8fr)_minmax(10rem,1.2fr)_auto] items-center gap-0 overflow-hidden rounded-md border-slate-200 bg-white text-black shadow-none" : "relative overflow-hidden border bg-white text-black"} ${viewMode === "grid" && isSportsCardsPage ? "rounded-md shadow-sm" : viewMode === "grid" ? "rounded-md shadow-sm sm:rounded-[2rem]" : "mb-2 last:mb-0"}`}>
                       <div className={`${viewMode === "list" ? "contents" : ""}`}>
                     {/* OnlineIndicator for grid view - positioned absolutely on top */}
                     {listing.ownerId && viewMode === "grid" && (
@@ -1496,7 +1497,7 @@ export default function CategoryPage() {
                         <OnlineIndicator sellerId={listing.ownerId} />
                       </div>
                     )}
-                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "col-start-1 row-start-1 h-16 w-16 justify-self-center" : "block"} cursor-pointer transition hover:opacity-90 ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
+                    <Link href={`/listings/${listing.id}`} className={`${viewMode === "list" ? "col-start-1 row-start-1 h-12 w-12 justify-self-center" : "block"} cursor-pointer transition hover:opacity-90 ${isSportsCardsPage ? "aspect-[7/9]" : "aspect-[7/9] sm:aspect-[4/5]"} bg-white p-0`}>
                       <img
                         src={resolveTradebiliaListingImage({ title: listing.title, category: listing.category, primaryPhotoUrl: listing.primaryPhotoUrl })}
                         alt={listing.title}
@@ -1524,8 +1525,6 @@ export default function CategoryPage() {
                           <div className="min-w-0 px-3 py-2 text-xs text-slate-700">
                             <p className="truncate font-semibold text-slate-900">{listing.owner.displayName}</p>
                             <p className="mt-0.5 flex items-center gap-1 text-[0.65rem] text-slate-500"><Star className="h-3 w-3 fill-amber-400 text-amber-400" /><span className="sr-only">Trader Rating:</span>{listing.ownerRating.averageRating.toFixed(1)}</p>
-                          </div>
-                          <div className="min-w-0 px-3 py-2 text-xs text-slate-600">
                             {listing.ownerId && <OnlineIndicator sellerId={listing.ownerId} />}
                             <p className="mt-1 flex items-center gap-1 truncate"><MapPin className="h-3 w-3 shrink-0 text-blue-600" /><span className="font-semibold">Nearby:</span>{listing.distanceBand || "Location unavailable"}</p>
                           </div>
@@ -1573,7 +1572,7 @@ export default function CategoryPage() {
                           )}
                         </>
                       )}
-                      <div className={`flex gap-1 ${viewMode === "list" ? "flex-wrap" : ""}`}>
+                      <div className={`flex items-center justify-end gap-2 ${viewMode === "list" ? "col-start-5 flex-nowrap pr-2" : ""}`}>
                         <Dialog open={proposalListingId === listing.id} onOpenChange={open => {
                           setProposalListingId(open ? listing.id : null);
                           if (!open) setProposalNote("");
@@ -1581,11 +1580,11 @@ export default function CategoryPage() {
                           <DialogTrigger asChild>
                             <Button
                               variant="outline"
-                              className={`${viewMode === "grid" ? "h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10 md:h-auto md:rounded-full md:border-current md:bg-transparent md:px-2 md:py-0 md:text-xs md:font-normal md:normal-case md:tracking-normal" : "h-auto rounded-full bg-transparent px-2 py-0 text-xs"}`}
+                              className={`${viewMode === "grid" ? "h-7 min-w-0 flex-1 rounded-full border-[#0f5563]/30 px-2 text-[10px] font-bold uppercase tracking-wider text-[#0f5563] hover:bg-[#0f5563]/10 md:h-auto md:rounded-full md:border-current md:bg-transparent md:px-2 md:py-0 md:text-xs md:font-normal md:normal-case md:tracking-normal" : "h-8 rounded-md border-blue-600 bg-blue-600 px-3 text-xs font-semibold text-white shadow-sm hover:bg-blue-700 hover:text-white"}`}
                               disabled={!isAuthenticated || listing.ownerId === user?.id}
                               title={listing.ownerId === user?.id ? "You cannot message or trade with your own item" : "Start a trade proposal"}
                             >
-                              <MessageSquareText className={`${viewMode === "grid" ? "mr-1 h-3 w-3 md:h-2 md:w-2" : "mr-1 h-2 w-2"}`} /> Trade
+                              {viewMode === "grid" ? <MessageSquareText className={`${viewMode === "grid" ? "mr-1 h-3 w-3 md:h-2 md:w-2" : "mr-1 h-2 w-2"}`} /> : <ArrowLeftRight className="mr-1 h-3.5 w-3.5" />} Trade
                             </Button>
                           </DialogTrigger>
                           <DialogContent>
@@ -1613,7 +1612,7 @@ export default function CategoryPage() {
                         </Dialog>
                         <Button
                           variant="outline"
-                          className={`${viewMode === "grid" ? "h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50 md:h-auto md:w-auto md:border-current md:bg-transparent md:px-1 md:py-0 md:text-xs" : "h-auto rounded-full bg-transparent px-1 py-0 text-xs"}`}
+                          className={`${viewMode === "grid" ? "h-7 w-7 rounded-full border-red-200 p-0 text-red-500 hover:bg-red-50 md:h-auto md:w-auto md:border-current md:bg-transparent md:px-1 md:py-0 md:text-xs" : "h-8 w-8 rounded-md border-red-200 bg-white p-0 text-red-500 hover:bg-red-50"}`}
                           disabled={isAuthenticated && listing.ownerId === user?.id}
                           title={listing.ownerId === user?.id ? "You cannot favorite your own item" : listing.savedToWatchlist ? "Remove from favorites" : "Save to favorites"}
                           onClick={() => {
