@@ -68,7 +68,6 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
   if (normalizedCategory === 'coins') {
     const coinParts = [
       text('year', 'issueYear', 'mintYear'),
-      text('denomination'),
       text('variety', 'varietyName', 'coinType', 'series'),
       input.certificationCompany,
       input.grade,
