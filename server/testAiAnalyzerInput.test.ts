@@ -110,6 +110,12 @@ describe('Test AI analyzer input compatibility', () => {
     expect(routerSource).toContain("formatHistoricalTrendContext('ITEM A', historicalTrendSales(normalizedLeftSales))");
   });
 
+  it('derives a coin variety from the PCGS name when the provider omits a dedicated variety field', () => {
+    expect(clientSource).toContain('function deriveCoinVariety(name: unknown, year: unknown, denomination: unknown)');
+    expect(clientSource).toContain("const variety = String(coin.variety ?? '').trim() || deriveCoinVariety(coin.name, coin.year, coin.denomination);");
+    expect(clientSource).toContain('variety: variety ?? testAiDetails(item).variety');
+  });
+
   it('passes material evidence conflicts as a deterministic identity gate', () => {
     expect(routerSource).toContain('leftIdentityGate: z.object');
     expect(routerSource).toContain('leftIdentityGate as ComparableIdentityGate');

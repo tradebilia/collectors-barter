@@ -4370,6 +4370,17 @@ export default function TestAI() {
   // Build an effective item for Sold-Comps/eBay queries:
   // If it's a cert-mode item AND Parse.bot returned card data, synthesize a searchable item.
   // Otherwise fall back to the item as-is (inventory mode).
+  function deriveCoinVariety(name: unknown, year: unknown, denomination: unknown): string | undefined {
+    let value = String(name ?? '').replace(/\s+/g, ' ').trim();
+    if (!value) return undefined;
+    for (const token of [year, denomination, 'United States', 'U.S.', 'US', 'Dollar', 'Dollars', 'Silver', 'Gold', 'Platinum', 'Copper', 'Coin']) {
+      const normalized = String(token ?? '').trim();
+      if (normalized) value = value.replace(new RegExp(`\\b${normalized.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&')}\\b`, 'ig'), ' ');
+    }
+    const variety = value.replace(/\s+/g, ' ').trim();
+    return variety || undefined;
+  }
+
   function buildSearchableItem(item: SelectedItem | null, psaData: any, beckettData: any, cgcData: any, pcgsData: any): SelectedItem | null {
     if (!item) return null;
     const company = item.gradingCompany;
@@ -4387,7 +4398,8 @@ export default function TestAI() {
       // search and analyzer identity; no listing data is written.
       if (!coin) return item;
       const grade = String(coin.grade ?? '').trim() || undefined;
-      const coinName = String(coin.name ?? '').trim() || [coin.year, coin.denomination, coin.variety].filter(Boolean).join(' ');
+      const variety = String(coin.variety ?? '').trim() || deriveCoinVariety(coin.name, coin.year, coin.denomination);
+      const coinName = String(coin.name ?? '').trim() || [coin.year, coin.denomination, variety].filter(Boolean).join(' ');
       const query = [coinName, 'PCGS', grade].filter(Boolean).join(' ');
       return {
         ...item,
@@ -4399,7 +4411,8 @@ export default function TestAI() {
           ...testAiDetails(item),
           year: coin.year ?? testAiDetails(item).year,
           denomination: coin.denomination ?? testAiDetails(item).denomination,
-          variety: coin.variety ?? testAiDetails(item).variety,
+          variety: variety ?? testAiDetails(item).variety,
+          coinName,
           pcgsNo: coin.pcgsNo ?? testAiDetails(item).pcgsNo,
           certificateNumber: coin.certNo ?? item.certId,
         }),
