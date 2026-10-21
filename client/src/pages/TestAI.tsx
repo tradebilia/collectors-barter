@@ -4398,7 +4398,9 @@ export default function TestAI() {
       // search and analyzer identity; no listing data is written.
       if (!coin) return item;
       const grade = String(coin.grade ?? '').trim() || undefined;
-      const variety = String(coin.variety ?? '').trim() || deriveCoinVariety(coin.name, coin.year, coin.denomination);
+      const savedDetails = testAiDetails(item);
+      const savedVariety = String(savedDetails.variety ?? savedDetails.varietyName ?? savedDetails.coinType ?? savedDetails.series ?? '').replace(/\s+/g, ' ').trim();
+      const variety = savedVariety || String(coin.variety ?? '').trim() || deriveCoinVariety(coin.name, coin.year, coin.denomination);
       const coinName = String(coin.name ?? '').trim() || [coin.year, coin.denomination, variety].filter(Boolean).join(' ');
       const query = [coinName, 'PCGS', grade].filter(Boolean).join(' ');
       return {

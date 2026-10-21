@@ -110,9 +110,10 @@ describe('Test AI analyzer input compatibility', () => {
     expect(routerSource).toContain("formatHistoricalTrendContext('ITEM A', historicalTrendSales(normalizedLeftSales))");
   });
 
-  it('derives a coin variety from the PCGS name when the provider omits a dedicated variety field', () => {
+  it('preserves the saved coin variety before using any PCGS fallback', () => {
     expect(clientSource).toContain('function deriveCoinVariety(name: unknown, year: unknown, denomination: unknown)');
-    expect(clientSource).toContain("const variety = String(coin.variety ?? '').trim() || deriveCoinVariety(coin.name, coin.year, coin.denomination);");
+    expect(clientSource).toContain('const savedDetails = testAiDetails(item);');
+    expect(clientSource).toContain("const variety = savedVariety || String(coin.variety ?? '').trim() || deriveCoinVariety(coin.name, coin.year, coin.denomination);");
     expect(clientSource).toContain('variety: variety ?? testAiDetails(item).variety');
   });
 
