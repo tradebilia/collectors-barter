@@ -47,6 +47,34 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(new URL(requestedUrl).searchParams.get('keyword')).toBe('Eeyore Around the World Disney Pin');
   });
 
+  it('builds coin Mercari criteria in year, denomination, variety, grader, grade order without country', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: '1896 $1 United States PCGS MS63',
+      category: 'coins',
+      grade: 'MS63',
+      certificationCompany: 'PCGS',
+      itemDetails: JSON.stringify({ year: 1896, country: 'United States', denomination: '$1', variety: 'Morgan' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(result.query).toBe('1896 $1 Morgan PCGS MS63');
+    expect(result.query).not.toContain('United States');
+    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('keyword')).toBe('1896 $1 Morgan PCGS MS63');
+  });
+
+  it('uses series as the coin variety fallback and does not duplicate repeated fields', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: '1896 Morgan PCGS MS63',
+      category: 'coins',
+      grade: 'MS63',
+      certificationCompany: 'PCGS',
+      itemDetails: JSON.stringify({ year: '1896', denomination: '$1', series: 'Morgan', variety: 'Morgan', country: 'United States' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(result.query).toBe('1896 $1 Morgan PCGS MS63');
+  });
+
   it('does not call TCGplayer for non-Pokémon categories', async () => {
     process.env.SOLD_COMPS_API_KEY = 'test-key';
     const fetchMock = vi.fn();
