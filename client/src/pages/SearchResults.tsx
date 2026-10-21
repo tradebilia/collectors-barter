@@ -312,8 +312,8 @@ export function SearchResults() {
             <>
               <div className={viewMode === "grid" ? "mt-6 grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-6" : "mt-6 overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm"}>
                 {viewMode === "list" && (
-                  <div className="mx-2 mt-2 grid min-w-[660px] grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)] items-center rounded-md bg-slate-100 px-2 py-2 text-[0.55rem] font-bold uppercase tracking-[0.12em] text-slate-600">
-                    <span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="text-center">Action</span>
+                  <div className="mx-2 mt-2 grid min-w-[660px] grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)] items-center rounded-md bg-slate-100 px-2 py-2 text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-600">
+                    <span className="pl-1">Item</span><span className="justify-self-center text-center">Details</span><span className="justify-self-center text-center">Price</span><span className="justify-self-center text-center">Seller</span><span className="justify-self-center text-center">Location</span><span className="justify-self-center text-center">Action</span>
                   </div>
                 )}
                 <div className={viewMode === "grid" ? "contents" : "block min-w-[660px] p-2"}>
@@ -329,7 +329,7 @@ export function SearchResults() {
                             <p className="mt-0.5 truncate text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-slate-500">{listing.categoryLabel}</p>
                           </div>
                           <div className="col-start-2 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700">
-                            <span className="inline-flex max-w-full truncate rounded-md bg-blue-50 px-2 py-1 text-[0.7rem] font-semibold text-blue-800">{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(resolvePublicGradeValue(listing.grade, listing.title, listing.category))}` : listing.conditionLabel}</span>
+                            <span className={`inline-flex max-w-full truncate rounded-md px-2 py-1 text-[0.72rem] ${hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? "bg-blue-100 font-bold text-blue-900" : "bg-emerald-50 font-semibold text-emerald-800"}`}>{hasPublicGradeValue(resolvePublicGradeValue(listing.grade, listing.title, listing.category)) ? `${getDisplayedGradingCompany(listing.certificationCompany, listing.customGradingCompany)} ${formatGrade(resolvePublicGradeValue(listing.grade, listing.title, listing.category))}` : listing.conditionLabel}</span>
                           </div>
                           <div className="col-start-3 row-start-1 px-2 py-1.5 text-[0.85rem] font-bold text-slate-900">{listing.estimatedValue === null ? "—" : formatItemValue(listing.estimatedValue)}</div>
                           <div className="col-start-4 row-start-1 min-w-0 px-2 py-1.5 text-xs text-slate-700">

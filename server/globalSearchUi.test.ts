@@ -63,10 +63,13 @@ describe("unified global search contracts", () => {
     const searchPage = read("client/src/pages/SearchResults.tsx");
 
     expect(searchPage).toContain('grid-cols-[minmax(12rem,2.05fr)_minmax(4.4rem,0.7fr)_minmax(4rem,0.65fr)_minmax(6.5rem,0.9fr)_minmax(8.5rem,1.25fr)_minmax(5.75rem,0.8fr)]');
-    expect(searchPage).toContain('<span className="pl-1">Item</span><span>Details</span><span>Price</span><span>Seller</span><span>Location</span><span className="text-center">Action</span>');
+    expect(searchPage).toContain('text-[0.62rem] font-bold uppercase tracking-[0.14em] text-slate-600');
+    expect(searchPage).toContain('<span className="pl-1">Item</span><span className="justify-self-center text-center">Details</span><span className="justify-self-center text-center">Price</span><span className="justify-self-center text-center">Seller</span><span className="justify-self-center text-center">Location</span><span className="justify-self-center text-center">Action</span>');
     expect(searchPage).toContain('col-start-1 row-start-1 ml-\[4.5rem\]');
     expect(searchPage).toContain('col-start-5 row-start-1');
     expect(searchPage).toContain('col-start-6 row-start-1');
+    expect(searchPage).toContain('"bg-blue-100 font-bold text-blue-900"');
+    expect(searchPage).toContain('"bg-emerald-50 font-semibold text-emerald-800"');
     expect(searchPage).not.toContain('grid min-h-44 grid-cols-[8rem_minmax(0,1fr)]');
   });
 
