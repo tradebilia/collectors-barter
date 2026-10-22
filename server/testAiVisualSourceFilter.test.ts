@@ -156,6 +156,13 @@ describe("visual source filter", () => {
     const exact = { candidateIndex: 0, verdict: "match" as const, confidence: "high" as const, rationale: "The coin identity, date, variety, slab, grader, and grade match.", visualEvidence: exactEvidence, visualAudit: { imageCount: 1, initialVerdict: "match" as const, initialConfidence: "high" as const, retryStatus: "performed" as const, adjudicationStatus: "confirmed" as const, finalPass: "high_resolution_retry" as const, finalEvidence: exactEvidence } };
     expect(hasCompletedCoinAdjudication(exact, metadata)).toBe(true);
     expect(conservativeCoinVisualReviews([exact], [{ title: "1896 Morgan Silver Dollar PCGS MS63" }], metadata)[0]).toMatchObject({ verdict: "match" });
+    const cropped = enforceCoinExactEvidence({
+      candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The crop does not show enough of the holder to determine raw-versus-graded status.",
+      visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: true, identityMatches: false, dateMatches: false, varietyMatches: false },
+    }, metadata, "1896 Morgan Silver Dollar PCGS MS63");
+    expect(cropped).toMatchObject({ verdict: "match", confidence: "high" });
+    const explicitRaw = enforceCoinExactEvidence({ ...cropped, rationale: "The listing is a raw ungraded coin with no slab." }, metadata, "1896 Morgan Silver Dollar PCGS MS63");
+    expect(explicitRaw.verdict).not.toBe("match");
   });
 
   it("requires completed independent high-resolution evidence before Disney Pins can enter analyzer evidence", () => {

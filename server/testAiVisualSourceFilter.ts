@@ -200,10 +200,28 @@ function titleConfirmsCoinGrade(title: string, targetMetadata: string): boolean 
     && !/\b(?:raw|ungraded|loose|no\s+(?:slab|holder|grade))\b/i.test(candidate);
 }
 
+function titleConfirmsCoinIdentity(title: string, targetMetadata: string): boolean {
+  const details = metadataDetails(targetMetadata);
+  const targetYear = String(details.year ?? details.issueYear ?? details.mintYear ?? "").trim()
+    || extractTargetTitle(targetMetadata).match(/\b(?:17|18|19|20)\d{2}\b/)?.[0]
+    || "";
+  const targetVariety = String(details.variety ?? details.varietyName ?? details.coinType ?? details.series ?? "").trim();
+  const candidate = String(title ?? "");
+  if (!targetYear || !new RegExp(`\\b${targetYear}\\b`, "i").test(candidate)) return false;
+  const escapedVariety = targetVariety.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return Boolean(targetVariety && new RegExp(`\\b${escapedVariety}\\b`, "i").test(candidate));
+}
+
+function hasExplicitCoinRawConflict(title: string, rationale = ""): boolean {
+  return /\b(?:raw|ungraded|loose)\s+(?:coin|item|listing)\b|\b(?:appears?|is|shown|identified|declared|labeled)\s+(?:as\s+)?(?:raw|ungraded|loose)\b|\bno\s+(?:slab|holder|grade)\b/i.test(`${title} ${rationale}`);
+}
+
 export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string, candidateTitle = ""): boolean {
   if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || review.confidence !== "high") return false;
   const evidence = review.visualEvidence;
-  if (!evidence?.identityMatches || !evidence.dateMatches || !evidence.varietyMatches) return false;
+  if (!evidence) return false;
+  const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
+  if (!(evidence?.identityMatches || titleIdentity) || !(evidence?.dateMatches || titleIdentity) || !(evidence?.varietyMatches || titleIdentity)) return false;
   if (coinTargetRequiresMintMark(targetMetadata) && evidence.mintMarkMatches !== true) return false;
   const targetIsGraded = !hasExplicitlyUngradedTarget(targetMetadata)
     && Boolean(metadataValue(targetMetadata, "grade") || metadataValue(targetMetadata, "certificationCompany"));
@@ -212,13 +230,26 @@ export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMeta
     // complete holder. The crop does not prove the item is raw; exact title
     // grade evidence may supplement absent holder pixels. An explicit raw
     // conflict still fails closed.
-    return Boolean(!evidence.rawOrLooseVisible && (evidence.gradeMatches || titleConfirmsCoinGrade(candidateTitle, targetMetadata)));
+    const explicitRawConflict = evidence.rawOrLooseVisible === true && hasExplicitCoinRawConflict(candidateTitle, review.rationale);
+    return Boolean(!explicitRawConflict && (evidence.gradeMatches || titleConfirmsCoinGrade(candidateTitle, targetMetadata)));
   }
   return evidence.rawOrLooseVisible === true;
 }
 
 export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetadata: string, candidateTitle = ""): VisualSourceReview {
-  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle)) return review;
+  if (!isCoinMetadata(targetMetadata)) return review;
+  const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
+  const titleGrade = titleConfirmsCoinGrade(candidateTitle, targetMetadata);
+  const explicitRawConflict = hasExplicitCoinRawConflict(candidateTitle, review.rationale);
+  if ((review.verdict === "unreadable" || review.verdict === "rough_match") && review.visualEvidence && titleIdentity && titleGrade && !explicitRawConflict) {
+    return {
+      ...review,
+      verdict: "match",
+      confidence: "high",
+      rationale: `${review.rationale} Exact coin identity, grader, and grade are confirmed by the completed-sale title; the holder crop is incomplete but does not conflict, so the result is admitted for the independent coin review.`,
+    };
+  }
+  if (review.verdict !== "match" || coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle)) return review;
   return {
     ...review,
     verdict: "unreadable",
@@ -1135,7 +1166,7 @@ export async function filterVisualSourceCandidates<
         ? [
             {
               type: "text",
-              text: `INDEPENDENT COIN IDENTITY ADJUDICATION: Ignore the preliminary verdict and compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Confirm the exact visible coin identity, date, denomination, variety/series, and any required mint mark. Confirm raw versus graded status. For a graded target, the candidate must visibly show the slab, grading label, grader, readable numeric grade, matching grade, and must not be raw/loose. For a raw target, the candidate must visibly be raw/ungraded with no slab or holder. Certificate numbers do not need to match. Generic stock imagery, unreadable dates or varieties, ambiguous holders, or any identity disagreement is unreadable/manual review. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object with identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches.`
+              text: `INDEPENDENT COIN IDENTITY ADJUDICATION: Ignore the preliminary verdict and compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Confirm the exact visible coin identity, date, denomination, variety/series, and any required mint mark. A close crop of the coin face does not prove the item is raw or ungraded. For a graded target, confirm the matching grader and grade from visible pixels when available or from the exact marketplace title when the holder label is cropped out; only an explicit raw, loose, ungraded, or no-holder conflict should fail the graded-state check. For a raw target, the candidate must visibly be raw/ungraded with no slab or holder. Certificate numbers do not need to match. Generic stock imagery, unreadable dates or varieties, ambiguous identity, or any disagreement is unreadable/manual review. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object with identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches.`
             },
             { type: "text", text: "TARGET COIN IMAGE:" },
             { type: "image_url", image_url: { url: target, detail: "high" } },

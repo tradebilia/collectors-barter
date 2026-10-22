@@ -950,7 +950,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
 function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, marketplace }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean; sourceLabel: string; marketplace: string }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const listings = data?.listings ?? [];
-  const strictVisualReview = item.category === 'disney_pins' && marketplace === 'Mercari';
+  const strictVisualReview = (item.category === 'disney_pins' || item.category === 'coins') && marketplace === 'Mercari';
   const acceptedListings = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
   const reviewedListings = listings.filter((listing: any) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   return (
@@ -960,7 +960,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
-      <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{strictVisualReview ? 'Data type: Completed Mercari sales · Disney Pins use strict two-pass visual identity admission. Only exact visual matches can affect valuation.' : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
+      <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{strictVisualReview ? `Data type: Completed Mercari sales · ${item.category === 'coins' ? 'Coins' : 'Disney Pins'} use strict two-pass visual identity admission. Only exact visual matches can affect valuation.` : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data && <p className="text-gray-400 text-[10px]">{listings.length} completed record{listings.length === 1 ? '' : 's'} returned.</p>}
       {data?.visualFilter?.note && <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-[10px] text-cyan-200"><p>{data.visualFilter.note}</p><p className="mt-0.5 text-cyan-100/80">{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} sent to analyzer</p></div>}
