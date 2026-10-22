@@ -66,11 +66,13 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
   }
   const text = (...keys: string[]) => keys.map((key) => details[key]).find((value) => (typeof value === 'string' || typeof value === 'number') && String(value).trim()) as string | number | undefined;
   if (normalizedCategory === 'coins') {
+    const rawGrade = String(input.grade ?? '').trim();
+    const usableGrade = /^(?:raw|ungraded|n\/a|none|null|undefined)$/i.test(rawGrade) || (Number.isFinite(Number(rawGrade)) && Number(rawGrade) <= 0) ? '' : rawGrade;
     const coinParts = [
       text('year', 'issueYear', 'mintYear'),
       text('variety', 'varietyName', 'coinType', 'series'),
       input.certificationCompany,
-      input.grade,
+      usableGrade,
     ]
       .map((value) => value == null ? '' : String(value).replace(/\s+/g, ' ').trim())
       .filter(Boolean)

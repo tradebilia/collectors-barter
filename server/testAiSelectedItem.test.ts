@@ -38,6 +38,17 @@ describe('Test AI selected item year normalization', () => {
     expect(JSON.parse(normalized.itemDetails).year).toBe('0');
   });
 
+  it('leaves an ungraded zero placeholder blank', () => {
+    const normalized = normalizeTestAiSelectedItem({
+      title: '1982 Mexican coin',
+      category: 'coins',
+      grade: '0.00',
+      itemDetails: JSON.stringify({ year: '1982', condition: 'near_mint' }),
+    });
+
+    expect(normalized.grade).toBeUndefined();
+  });
+
   it('preserves top-level card set, number, and variant fields for source identity lookups without changing the listing', () => {
     const normalized = normalizeTestAiSelectedItem({
       title: 'Pokemon Charizard',

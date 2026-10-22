@@ -76,6 +76,19 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(result.query).toBe('1896 Morgan PCGS MS63');
   });
 
+  it('omits a zero placeholder grade for an ungraded coin', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: '1982 Mexican coin',
+      category: 'coins',
+      grade: '0.00',
+      itemDetails: JSON.stringify({ year: '1982', country: 'Mexico', denomination: '1', mintMark: 'Mexican Mint', condition: 'near_mint' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(result.query).toBe('1982');
+    expect(result.query).not.toContain('0.00');
+  });
+
   it('does not call TCGplayer for non-Pokémon categories', async () => {
     process.env.SOLD_COMPS_API_KEY = 'test-key';
     const fetchMock = vi.fn();

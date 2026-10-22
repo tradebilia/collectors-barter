@@ -14,6 +14,13 @@ function firstText(...values: unknown[]): string {
   return value == null ? '' : String(value).trim();
 }
 
+function normalizedSelectedGrade(value: unknown): string | undefined {
+  const grade = firstText(value);
+  if (!grade || /^(?:raw|ungraded|n\/a|none|null|undefined)$/i.test(grade)) return undefined;
+  const numericGrade = Number(grade);
+  return Number.isFinite(numericGrade) && numericGrade <= 0 ? undefined : grade;
+}
+
 export function extractTestAiTitleYear(title: string): string {
   const match = title.match(/\b(?:18|19|20)\d{2}\b/);
   return match?.[0] ?? '';
@@ -54,6 +61,7 @@ export function normalizeTestAiSelectedItem<T extends TestAiSelectedItemInput>(i
     details,
     firstText(item.certificationCompany, item.gradingCompany, details.certificationCompany, details.gradingCompany),
   );
+  const grade = normalizedSelectedGrade(item.grade);
 
   return {
     ...item,
@@ -61,6 +69,7 @@ export function normalizeTestAiSelectedItem<T extends TestAiSelectedItemInput>(i
     certId: certId || undefined,
     certificationCompany: gradingCompany || item.certificationCompany || undefined,
     gradingCompany: gradingCompany || item.gradingCompany || undefined,
+    grade,
     itemDetails: JSON.stringify(details),
   } as T & { year?: string; certId?: string; certificationCompany?: string; gradingCompany?: string; itemDetails: string };
 }
