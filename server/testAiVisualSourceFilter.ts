@@ -189,19 +189,36 @@ function coinTargetRequiresMintMark(metadata: string): boolean {
   return Boolean(String(details.mintMark ?? details.mint ?? "").trim());
 }
 
-export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string): boolean {
+function titleConfirmsCoinGrade(title: string, targetMetadata: string): boolean {
+  const targetGrade = normalizedGrade(metadataValue(targetMetadata, "grade") || "");
+  const targetGrader = metadataValue(targetMetadata, "certificationCompany");
+  if (!targetGrade || !targetGrader || /^(?:unknown|none|raw|ungraded|n\/a)$/i.test(targetGrader)) return false;
+  const candidate = String(title ?? "");
+  const escapedGrader = targetGrader.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escapedGrader}\\b`, "i").test(candidate)
+    && new RegExp(`(?:^|[^0-9])${targetGrade.replace(".", "\\.")}(?:\\.0+)?(?:$|[^0-9])`, "i").test(candidate)
+    && !/\b(?:raw|ungraded|loose|no\s+(?:slab|holder|grade))\b/i.test(candidate);
+}
+
+export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string, candidateTitle = ""): boolean {
   if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || review.confidence !== "high") return false;
   const evidence = review.visualEvidence;
   if (!evidence?.identityMatches || !evidence.dateMatches || !evidence.varietyMatches) return false;
   if (coinTargetRequiresMintMark(targetMetadata) && evidence.mintMarkMatches !== true) return false;
   const targetIsGraded = !hasExplicitlyUngradedTarget(targetMetadata)
     && Boolean(metadataValue(targetMetadata, "grade") || metadataValue(targetMetadata, "certificationCompany"));
-  if (targetIsGraded) return Boolean(evidence.slabVisible && evidence.gradingLabelVisible && evidence.graderVisible && evidence.numericGradeVisible && evidence.gradeMatches && !evidence.rawOrLooseVisible);
+  if (targetIsGraded) {
+    // Mercari often supplies a close crop of the coin face rather than the
+    // complete holder. The crop does not prove the item is raw; exact title
+    // grade evidence may supplement absent holder pixels. An explicit raw
+    // conflict still fails closed.
+    return Boolean(!evidence.rawOrLooseVisible && (evidence.gradeMatches || titleConfirmsCoinGrade(candidateTitle, targetMetadata)));
+  }
   return evidence.rawOrLooseVisible === true;
 }
 
-export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetadata: string): VisualSourceReview {
-  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || coinVisualEvidenceIsExact(review, targetMetadata)) return review;
+export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetadata: string, candidateTitle = ""): VisualSourceReview {
+  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle)) return review;
   return {
     ...review,
     verdict: "unreadable",
@@ -210,11 +227,11 @@ export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetad
   };
 }
 
-export function hasCompletedCoinAdjudication(review: VisualSourceReview | undefined, targetMetadata: string): boolean {
+export function hasCompletedCoinAdjudication(review: VisualSourceReview | undefined, targetMetadata: string, candidateTitle = ""): boolean {
   return Boolean(review?.visualAudit?.retryStatus === "performed"
     && review.visualAudit.finalPass === "high_resolution_retry"
     && review.visualAudit.adjudicationStatus === "confirmed"
-    && coinVisualEvidenceIsExact(review, targetMetadata));
+    && coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle));
 }
 
 export function disneyPinsVisualInstruction(metadata: string): string {
@@ -619,10 +636,11 @@ export function conservativeGradedVisualReviews(
 
 export function conservativeCoinVisualReviews(
   reviews: VisualSourceReview[],
+  listings: VisualSourceCandidate[],
   targetMetadata: string,
 ): VisualSourceReview[] {
   if (!isCoinMetadata(targetMetadata)) return reviews;
-  return reviews.map((review) => enforceCoinExactEvidence(review, targetMetadata));
+  return reviews.map((review) => enforceCoinExactEvidence(review, targetMetadata, String(listings[review.candidateIndex]?.title ?? "")));
 }
 
 /**
@@ -673,7 +691,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata)))
+        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
           ? { evidenceDisposition: "warning_review" }
           : {}),
       } as T;
@@ -727,7 +745,7 @@ function coinVisualInstruction(metadata: string): string {
   const mintMarkRule = coinTargetRequiresMintMark(metadata)
     ? " The target declares a mint mark, so mintMarkMatches must also be true; if it is not visible or does not match, use unreadable/manual review."
     : "";
-  return ` COIN IDENTITY POLICY: A coin visual match requires exact visible identity confirmation, not merely a similar-looking round coin or a matching marketplace title. Set identityMatches, dateMatches, varietyMatches, and denominationMatches only from visible image evidence. Date and variety/series are mandatory. Compare raw-versus-graded status exactly; for a graded target, slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches must all be true and rawOrLooseVisible must be false. For a raw target, rawOrLooseVisible must be true and no slab/holder may be visible.${mintMarkRule} Generic stock photos, unreadable dates, obscured varieties, or ambiguous holder labels are unreadable/manual review, never match.`;
+  return ` COIN IDENTITY POLICY: A coin visual match requires exact visible identity confirmation, not merely a similar-looking round coin or a matching marketplace title. Set identityMatches, dateMatches, varietyMatches, and denominationMatches only from visible image evidence. Date and variety/series are mandatory. Compare raw-versus-graded status exactly. A close crop showing only the coin face does not prove the item is raw; set rawOrLooseVisible true only when the image explicitly shows an exposed raw/loose coin or clearly states there is no holder. For a graded target, a visible grade match or an exact grader-and-grade marketplace title may supplement a holder cropped out of frame, but an explicit raw conflict must fail. For a raw target, rawOrLooseVisible must be true and no slab/holder may be visible.${mintMarkRule} Generic stock photos, unreadable dates, obscured varieties, or ambiguous identity evidence are unreadable/manual review, never match.`;
 }
 
 export function sportsCardSetInstruction(metadata: string): string {
@@ -1159,7 +1177,7 @@ export async function filterVisualSourceCandidates<
         return {
           reviews: primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? {
-                ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata),
+                ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata, String(candidate.item.title ?? "")),
                 visualAudit: {
                   ...initialAudit,
                   retryStatus: "failed",
@@ -1181,7 +1199,7 @@ export async function filterVisualSourceCandidates<
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {
-              ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata),
+              ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata, String(candidate.item.title ?? "")),
               visualAudit: {
                 ...initialAudit,
                 adjudicationStatus: needsDisneyAdjudication || needsCoinAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
@@ -1210,7 +1228,7 @@ export async function filterVisualSourceCandidates<
           conservativeComicVisualReviews(reviews, args.listings, args.targetMetadata),
           args.listings,
           args.targetMetadata,
-          ), args.targetMetadata),
+          ), args.listings, args.targetMetadata),
           args.targetMetadata,
         ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
@@ -1228,7 +1246,7 @@ export async function filterVisualSourceCandidates<
         ),
         args.listings,
         args.targetMetadata,
-      ), args.targetMetadata),
+      ), args.listings, args.targetMetadata),
       args.targetMetadata,
     );
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
