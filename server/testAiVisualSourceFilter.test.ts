@@ -6,15 +6,19 @@ import {
   applyDeclaredIdentityFilter,
   buildDeclaredIdentityReviews,
   conservativeComicVisualReviews,
+  conservativeCoinVisualReviews,
   conservativeGradedVisualReviews,
   disneyPinsVisualInstruction,
   embedPromotedEbayImageForReview,
   enforceDisneyPinsExactEvidence,
   hasCompletedDisneyPinsAdjudication,
+  hasCompletedCoinAdjudication,
   hasUnavailableDisneyPinsAdjudication,
   hasExplicitlyUngradedTarget,
   hasTitleDeclaredGradeVisualRawConflict,
   isDisneyPinsMetadata,
+  isCoinMetadata,
+  enforceCoinExactEvidence,
   normalizeExplicitUngradedVisualReviews,
   normalizeSingleCandidateVisualReview,
   normalizeVisualSourceReviews,
@@ -138,6 +142,20 @@ describe("visual source filter", () => {
     expect(conservativeGradedVisualReviews([
       { candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The pin artwork matches, but no numeric grade is visible." },
     ], [{ title: "Disney Mickey D23 Pin" }], metadata)[0]).toMatchObject({ verdict: "match" });
+  });
+
+  it("requires exact coin identity evidence and confirmed adjudication before admission", () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    expect(isCoinMetadata(metadata)).toBe(true);
+    const incomplete = enforceCoinExactEvidence({
+      candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The slab and grade look similar.",
+      visualEvidence: { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: false },
+    }, metadata);
+    expect(incomplete.verdict).toBe("unreadable");
+    const exactEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
+    const exact = { candidateIndex: 0, verdict: "match" as const, confidence: "high" as const, rationale: "The coin identity, date, variety, slab, grader, and grade match.", visualEvidence: exactEvidence, visualAudit: { imageCount: 1, initialVerdict: "match" as const, initialConfidence: "high" as const, retryStatus: "performed" as const, adjudicationStatus: "confirmed" as const, finalPass: "high_resolution_retry" as const, finalEvidence: exactEvidence } };
+    expect(hasCompletedCoinAdjudication(exact, metadata)).toBe(true);
+    expect(conservativeCoinVisualReviews([exact], metadata)[0]).toMatchObject({ verdict: "match" });
   });
 
   it("requires completed independent high-resolution evidence before Disney Pins can enter analyzer evidence", () => {

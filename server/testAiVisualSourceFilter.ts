@@ -20,6 +20,11 @@ export type VisualEvidence = {
   silhouetteMatches?: boolean;
   backingCardMatches?: boolean;
   setDesignMatches?: boolean;
+  identityMatches?: boolean;
+  dateMatches?: boolean;
+  varietyMatches?: boolean;
+  mintMarkMatches?: boolean;
+  denominationMatches?: boolean;
 };
 export type VisualSourceReview = {
   candidateIndex: number;
@@ -175,6 +180,43 @@ export function isDisneyPinsMetadata(metadata: string): boolean {
   return metadataValue(metadata, "category").trim().toLowerCase().replace(/[\s-]+/g, "_") === "disney_pins";
 }
 
+export function isCoinMetadata(metadata: string): boolean {
+  return normalizedChoice(metadataValue(metadata, "category")) === "coins";
+}
+
+function coinTargetRequiresMintMark(metadata: string): boolean {
+  const details = metadataDetails(metadata);
+  return Boolean(String(details.mintMark ?? details.mint ?? "").trim());
+}
+
+export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string): boolean {
+  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || review.confidence !== "high") return false;
+  const evidence = review.visualEvidence;
+  if (!evidence?.identityMatches || !evidence.dateMatches || !evidence.varietyMatches) return false;
+  if (coinTargetRequiresMintMark(targetMetadata) && evidence.mintMarkMatches !== true) return false;
+  const targetIsGraded = !hasExplicitlyUngradedTarget(targetMetadata)
+    && Boolean(metadataValue(targetMetadata, "grade") || metadataValue(targetMetadata, "certificationCompany"));
+  if (targetIsGraded) return Boolean(evidence.slabVisible && evidence.gradingLabelVisible && evidence.graderVisible && evidence.numericGradeVisible && evidence.gradeMatches && !evidence.rawOrLooseVisible);
+  return evidence.rawOrLooseVisible === true;
+}
+
+export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetadata: string): VisualSourceReview {
+  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || coinVisualEvidenceIsExact(review, targetMetadata)) return review;
+  return {
+    ...review,
+    verdict: "unreadable",
+    confidence: "low",
+    rationale: `${review.rationale} Coin admission requires visible confirmation of the coin identity, date, variety, and raw/graded state; the required evidence was not complete, so this remains manual review.`,
+  };
+}
+
+export function hasCompletedCoinAdjudication(review: VisualSourceReview | undefined, targetMetadata: string): boolean {
+  return Boolean(review?.visualAudit?.retryStatus === "performed"
+    && review.visualAudit.finalPass === "high_resolution_retry"
+    && review.visualAudit.adjudicationStatus === "confirmed"
+    && coinVisualEvidenceIsExact(review, targetMetadata));
+}
+
 export function disneyPinsVisualInstruction(metadata: string): string {
   return isDisneyPinsMetadata(metadata)
     ? " DISNEY PINS POLICY: Disney Pins are not graded collectibles in this workflow. Ignore grader, certification-company, slab, label, numeric-grade, and raw-versus-graded signals completely, including stale structured fields or title wording. Do not mark a Disney Pin mismatch or unreadable because a grading field is absent or inconsistent. Same character, similar colors, or a shared series is never sufficient. Treat character, exact artwork, pose, silhouette, backing card/backing logo, event or set design, edition markings, and pin count/form as mandatory identity gates. Return match only when every applicable visible identity detail is confirmed and the structured evidence booleans characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches are all true. If any detail differs, is obscured, or cannot be independently confirmed, return rough_match, unreadable, or mismatch; those outcomes remain manual-review evidence and cannot enter analyzer valuation."
@@ -289,6 +331,11 @@ export function normalizeVisualSourceReviews(
             silhouetteMatches: row.visualEvidence.silhouetteMatches === true,
             backingCardMatches: row.visualEvidence.backingCardMatches === true,
             setDesignMatches: row.visualEvidence.setDesignMatches === true,
+            identityMatches: row.visualEvidence.identityMatches === true,
+            dateMatches: row.visualEvidence.dateMatches === true,
+            varietyMatches: row.visualEvidence.varietyMatches === true,
+            mintMarkMatches: row.visualEvidence.mintMarkMatches === true,
+            denominationMatches: row.visualEvidence.denominationMatches === true,
           }
         : undefined,
       visualAudit: row?.visualAudit && typeof row.visualAudit === "object" && RETRY_STATUSES.has(row.visualAudit.retryStatus) && FINAL_PASSES.has(row.visualAudit.finalPass)
@@ -313,6 +360,11 @@ export function normalizeVisualSourceReviews(
                   silhouetteMatches: row.visualAudit.initialEvidence.silhouetteMatches === true,
                   backingCardMatches: row.visualAudit.initialEvidence.backingCardMatches === true,
                   setDesignMatches: row.visualAudit.initialEvidence.setDesignMatches === true,
+                  identityMatches: row.visualAudit.initialEvidence.identityMatches === true,
+                  dateMatches: row.visualAudit.initialEvidence.dateMatches === true,
+                  varietyMatches: row.visualAudit.initialEvidence.varietyMatches === true,
+                  mintMarkMatches: row.visualAudit.initialEvidence.mintMarkMatches === true,
+                  denominationMatches: row.visualAudit.initialEvidence.denominationMatches === true,
                 }
               : undefined,
             finalEvidence: row.visualAudit.finalEvidence && typeof row.visualAudit.finalEvidence === "object"
@@ -328,6 +380,11 @@ export function normalizeVisualSourceReviews(
                   silhouetteMatches: row.visualAudit.finalEvidence.silhouetteMatches === true,
                   backingCardMatches: row.visualAudit.finalEvidence.backingCardMatches === true,
                   setDesignMatches: row.visualAudit.finalEvidence.setDesignMatches === true,
+                  identityMatches: row.visualAudit.finalEvidence.identityMatches === true,
+                  dateMatches: row.visualAudit.finalEvidence.dateMatches === true,
+                  varietyMatches: row.visualAudit.finalEvidence.varietyMatches === true,
+                  mintMarkMatches: row.visualAudit.finalEvidence.mintMarkMatches === true,
+                  denominationMatches: row.visualAudit.finalEvidence.denominationMatches === true,
                 }
               : undefined,
           }
@@ -560,6 +617,14 @@ export function conservativeGradedVisualReviews(
   });
 }
 
+export function conservativeCoinVisualReviews(
+  reviews: VisualSourceReview[],
+  targetMetadata: string,
+): VisualSourceReview[] {
+  if (!isCoinMetadata(targetMetadata)) return reviews;
+  return reviews.map((review) => enforceCoinExactEvidence(review, targetMetadata));
+}
+
 /**
  * Correct a contradictory model explanation for an explicitly ungraded target.
  * This remains narrow: both raw/ungraded states and a visual identity match must
@@ -593,7 +658,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
   listings: T[],
   reviews: VisualSourceReview[],
   reviewedCandidateCount: number,
-  options?: { requireExactMatch?: boolean },
+  options?: { requireExactMatch?: boolean; requireCoinExactMatch?: boolean; targetMetadata?: string },
 ) {
   const reviewsByIndex = new Map(reviews.map(review => [review.candidateIndex, review]));
   return {
@@ -608,7 +673,7 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewStatus: review.verdict,
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
-        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)))
+        ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata)))
           ? { evidenceDisposition: "warning_review" }
           : {}),
       } as T;
@@ -655,6 +720,14 @@ function gradedCoinInstruction(metadata: string): string {
   return category === "coins" && isGraded
     ? " For graded coins, certificate IDs/numbers are unique to each individual coin and must be ignored completely for visual matching: never mark a coin mismatch because the visible certificate ID differs, and never require the IDs to match. Compare the coin's visible design, date, mint mark, denomination, variety, holder/grading company, and grade instead."
     : "";
+}
+
+function coinVisualInstruction(metadata: string): string {
+  if (!isCoinMetadata(metadata)) return "";
+  const mintMarkRule = coinTargetRequiresMintMark(metadata)
+    ? " The target declares a mint mark, so mintMarkMatches must also be true; if it is not visible or does not match, use unreadable/manual review."
+    : "";
+  return ` COIN IDENTITY POLICY: A coin visual match requires exact visible identity confirmation, not merely a similar-looking round coin or a matching marketplace title. Set identityMatches, dateMatches, varietyMatches, and denominationMatches only from visible image evidence. Date and variety/series are mandatory. Compare raw-versus-graded status exactly; for a graded target, slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches must all be true and rawOrLooseVisible must be false. For a raw target, rawOrLooseVisible must be true and no slab/holder may be visible.${mintMarkRule} Generic stock photos, unreadable dates, obscured varieties, or ambiguous holder labels are unreadable/manual review, never match.`;
 }
 
 export function sportsCardSetInstruction(metadata: string): string {
@@ -905,8 +978,13 @@ export async function filterVisualSourceCandidates<
                       silhouetteMatches: { type: "boolean" },
                       backingCardMatches: { type: "boolean" },
                       setDesignMatches: { type: "boolean" },
+                      identityMatches: { type: "boolean" },
+                      dateMatches: { type: "boolean" },
+                      varietyMatches: { type: "boolean" },
+                      mintMarkMatches: { type: "boolean" },
+                      denominationMatches: { type: "boolean" },
                     },
-                    required: ["slabVisible", "gradingLabelVisible", "graderVisible", "numericGradeVisible", "gradeMatches", "rawOrLooseVisible"],
+                    required: ["slabVisible", "gradingLabelVisible", "graderVisible", "numericGradeVisible", "gradeMatches", "rawOrLooseVisible", "identityMatches", "dateMatches", "varietyMatches", "mintMarkMatches", "denominationMatches"],
                     additionalProperties: false,
                   },
                 },
@@ -952,7 +1030,7 @@ export async function filterVisualSourceCandidates<
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. If the candidate title explicitly declares a grader or numeric grade but the primary image appears raw, loose, un-slabbed, or missing its label, this is a grading-evidence conflict: do not finalize a hard mismatch from the primary image alone. Use the additional gallery images and high-detail view to verify the slab, grader, and grade; if they remain unclear or contradictory, return unreadable/manual review. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. Return visualEvidence booleans based only on visible pixels, never on title claims: slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches, rawOrLooseVisible, characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches. A graded match requires the first five fields true and rawOrLooseVisible false; otherwise use unreadable/manual review rather than match. If structured target metadata names a grade qualifier, label designation, or comic certification label status, that is also a mandatory identity fact: confirm the same explicit label evidence in the candidate title or images, otherwise use unreadable/manual review rather than infer it. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${disneyPinsVisualInstruction(args.targetMetadata)}${explicitUngradedTargetInstruction(args.targetMetadata)}${gradedCoinInstruction(args.targetMetadata)}${sportsCardSetInstruction(args.targetMetadata)}${vintageToyPackagingInstruction(args.targetMetadata)}${videoGameFormInstruction(args.targetMetadata)}${videoGameGraderEquivalenceInstruction(args.targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"...","visualEvidence":{"slabVisible":true,"gradingLabelVisible":true,"graderVisible":true,"numericGradeVisible":true,"gradeMatches":true,"rawOrLooseVisible":false,"characterMatches":true,"artworkMatches":true,"silhouetteMatches":true,"backingCardMatches":true,"setDesignMatches":true}}]}. Target metadata: ${args.targetMetadata}`,
+          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. If the candidate title explicitly declares a grader or numeric grade but the primary image appears raw, loose, un-slabbed, or missing its label, this is a grading-evidence conflict: do not finalize a hard mismatch from the primary image alone. Use the additional gallery images and high-detail view to verify the slab, grader, and grade; if they remain unclear or contradictory, return unreadable/manual review. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. Return visualEvidence booleans based only on visible pixels, never on title claims: slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches, rawOrLooseVisible, characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, setDesignMatches, identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches. A graded match requires the first five fields true and rawOrLooseVisible false; otherwise use unreadable/manual review rather than match. If structured target metadata names a grade qualifier, label designation, or comic certification label status, that is also a mandatory identity fact: confirm the same explicit label evidence in the candidate title or images, otherwise use unreadable/manual review rather than infer it. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${disneyPinsVisualInstruction(args.targetMetadata)}${explicitUngradedTargetInstruction(args.targetMetadata)}${gradedCoinInstruction(args.targetMetadata)}${coinVisualInstruction(args.targetMetadata)}${sportsCardSetInstruction(args.targetMetadata)}${vintageToyPackagingInstruction(args.targetMetadata)}${videoGameFormInstruction(args.targetMetadata)}${videoGameGraderEquivalenceInstruction(args.targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"...","visualEvidence":{"slabVisible":true,"gradingLabelVisible":true,"graderVisible":true,"numericGradeVisible":true,"gradeMatches":true,"rawOrLooseVisible":false,"characterMatches":true,"artworkMatches":true,"silhouetteMatches":true,"backingCardMatches":true,"setDesignMatches":true,"identityMatches":true,"dateMatches":true,"varietyMatches":true,"mintMarkMatches":true,"denominationMatches":true}}]}. Target metadata: ${args.targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "high" } },
@@ -980,12 +1058,13 @@ export async function filterVisualSourceCandidates<
       );
       const primaryReview = primaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
       const needsDisneyAdjudication = isDisneyPinsMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
+      const needsCoinAdjudication = isCoinMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
       const needsGalleryReview = shouldReviewAdditionalVisualImages({
         imageCount: candidate.imageUrls.length,
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
         targetMetadata: args.targetMetadata,
-      }) || needsDisneyAdjudication;
+      }) || needsDisneyAdjudication || needsCoinAdjudication;
       const needsFocusedGradeEscalation = hasTitleDeclaredGradeVisualRawConflict({
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
@@ -1003,6 +1082,8 @@ export async function filterVisualSourceCandidates<
         retryReason: needsGalleryReview
           ? needsDisneyAdjudication
             ? "Disney Pins require an independent second visual adjudication for every apparent match before analyzer admission."
+            : needsCoinAdjudication
+            ? "Coins require an independent second visual adjudication of date, variety, identity, and raw/graded state before analyzer admission."
             : needsFocusedGradeEscalation
             ? `The preliminary mismatch involved a graded target, so an independent high-resolution grader check was performed before finalizing the decision${embeddedFocusedCandidateImage ? " using the exact promoted eBay image bytes" : " using the promoted provider image URL"}.`
             : "The first pass found an image-evidence uncertainty or a title/visual grading conflict."
@@ -1029,6 +1110,18 @@ export async function filterVisualSourceCandidates<
             { type: "text", text: "TARGET LISTING IMAGE:" },
             { type: "image_url", image_url: { url: target, detail: "high" } },
             { type: "text", text: `CANDIDATE ${candidate.candidateIndex} INDEPENDENT HIGH-RESOLUTION IMAGE:` },
+            { type: "image_url", image_url: { url: focusedCandidateImage, detail: "high" } },
+            ...candidate.imageUrls.slice(1).map((url) => ({ type: "image_url" as const, image_url: { url: promoteEbayImageUrl(url) ?? url, detail: "high" as const }, })),
+          ]
+        : needsCoinAdjudication
+        ? [
+            {
+              type: "text",
+              text: `INDEPENDENT COIN IDENTITY ADJUDICATION: Ignore the preliminary verdict and compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Confirm the exact visible coin identity, date, denomination, variety/series, and any required mint mark. Confirm raw versus graded status. For a graded target, the candidate must visibly show the slab, grading label, grader, readable numeric grade, matching grade, and must not be raw/loose. For a raw target, the candidate must visibly be raw/ungraded with no slab or holder. Certificate numbers do not need to match. Generic stock imagery, unreadable dates or varieties, ambiguous holders, or any identity disagreement is unreadable/manual review. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object with identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches.`
+            },
+            { type: "text", text: "TARGET COIN IMAGE:" },
+            { type: "image_url", image_url: { url: target, detail: "high" } },
+            { type: "text", text: `CANDIDATE ${candidate.candidateIndex} INDEPENDENT HIGH-RESOLUTION COIN IMAGE:` },
             { type: "image_url", image_url: { url: focusedCandidateImage, detail: "high" } },
             ...candidate.imageUrls.slice(1).map((url) => ({ type: "image_url" as const, image_url: { url: promoteEbayImageUrl(url) ?? url, detail: "high" as const }, })),
           ]
@@ -1066,7 +1159,7 @@ export async function filterVisualSourceCandidates<
         return {
           reviews: primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? {
-                ...enforceDisneyPinsExactEvidence(review, args.targetMetadata),
+                ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata),
                 visualAudit: {
                   ...initialAudit,
                   retryStatus: "failed",
@@ -1088,10 +1181,10 @@ export async function filterVisualSourceCandidates<
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {
-              ...enforceDisneyPinsExactEvidence(review, args.targetMetadata),
+              ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata),
               visualAudit: {
                 ...initialAudit,
-                adjudicationStatus: needsDisneyAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
+                adjudicationStatus: needsDisneyAdjudication || needsCoinAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
                 finalPass: galleryReviews.length ? "high_resolution_retry" : "initial",
                 finalEvidence: review.visualEvidence,
               } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
@@ -1112,19 +1205,21 @@ export async function filterVisualSourceCandidates<
       }
       if (deadlineReached) break;
       const acceptedMatches = normalizeExplicitUngradedVisualReviews(
+          conservativeCoinVisualReviews(
           conservativeGradedVisualReviews(
           conservativeComicVisualReviews(reviews, args.listings, args.targetMetadata),
           args.listings,
           args.targetMetadata,
-        ),
-        args.targetMetadata,
-      ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
+          ), args.targetMetadata),
+          args.targetMetadata,
+        ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
     }
     if (!completedBatches && reviewQueue.length && !timedOutCount && !deadlineReached) {
       throw lastError instanceof Error ? lastError : new Error("The vision model returned no structured content");
     }
     const uniqueReviews = normalizeExplicitUngradedVisualReviews(
+      conservativeCoinVisualReviews(
       conservativeGradedVisualReviews(
         conservativeComicVisualReviews(
           reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
@@ -1133,7 +1228,7 @@ export async function filterVisualSourceCandidates<
         ),
         args.listings,
         args.targetMetadata,
-      ),
+      ), args.targetMetadata),
       args.targetMetadata,
     );
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
@@ -1185,7 +1280,7 @@ export async function filterVisualSourceCandidates<
       requirementAnnotatedListings,
       uniqueReviews,
       reviewedCandidateCount,
-      { requireExactMatch: isDisneyPinsMetadata(args.targetMetadata) },
+      { requireExactMatch: isDisneyPinsMetadata(args.targetMetadata), requireCoinExactMatch: isCoinMetadata(args.targetMetadata), targetMetadata: args.targetMetadata },
     );
     const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
     const contextListings = applied.listings.filter((_, index) => declaredConflictIndexes.has(index));

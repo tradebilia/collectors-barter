@@ -2260,8 +2260,8 @@ export const testAIRouter = router({
     }),
 
   // SoldComps Mercari coverage is deliberately separate from eBay. Mercari
-  // remains context-only for every category except Disney Pins, whose records
-  // can enter valuation only after the shared strict visual-admission gate.
+  // remains context-only for every category except Disney Pins and coins, whose
+  // records can enter valuation only after the shared strict visual-admission gate.
   getMercariSoldCompsData: protectedProcedure
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().optional(), condition: z.string().optional(),
@@ -2272,9 +2272,9 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupMercariSoldComps(input);
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
-      if (result.error || !result.listings.length || normalizedCategory !== 'disney_pins') return result;
+      if (result.error || !result.listings.length || !['disney_pins', 'coins'].includes(normalizedCategory)) return result;
 
-      const targetMetadata = `title=${input.title}; category=disney_pins; itemType=${input.itemType ?? 'unknown'}; grade=unknown; certificationCompany=unknown; fullItemDetails=${input.itemDetails ?? '{}'}`;
+      const targetMetadata = `title=${input.title}; category=${normalizedCategory}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; fullItemDetails=${input.itemDetails ?? '{}'}`;
       const safeTargetImage = (() => {
         if (!input.imageUrl) return null;
         try {
@@ -2292,13 +2292,13 @@ export const testAIRouter = router({
             removedCount: 0,
             retainedUnreviewedCount: result.listings.length,
             reviews: [],
-            note: 'Mercari Disney Pin records require a target image before strict visual admission; results remain context-only.',
+            note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : 'Disney Pin'} records require a target image before strict visual admission; results remain context-only.`,
           },
         };
       }
 
       const visualFilter = await filterVisualSourceCandidates({
-        sourceLabel: 'Mercari Disney Pins sold listings',
+        sourceLabel: normalizedCategory === 'coins' ? 'Mercari coin sold listings' : 'Mercari Disney Pins sold listings',
         targetImageUrl: safeTargetImage,
         targetMetadata,
         listings: result.listings.map((listing) => ({
@@ -2321,7 +2321,7 @@ export const testAIRouter = router({
 
       const annotatedListings = visualFilter.listings.map((listing: any) => {
         const annotated = annotateSoldComparableCandidate(listing, {
-          category: 'disney_pins',
+          category: normalizedCategory,
           targetItemType: input.itemType ?? '',
           certificationCompany: '',
           targetGrade: null,
@@ -2359,7 +2359,7 @@ export const testAIRouter = router({
         metrics,
         visualFilter: {
           ...visualFilter,
-          note: `Mercari Disney Pin results use the strict Disney Pins visual gate. Only exact visual matches with complete identity evidence can enter analyzer valuation; all other records remain context-only. ${visualFilter.note}`,
+          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : 'Disney Pin'} results use a strict visual gate. Only exact visual matches with complete identity evidence can enter analyzer valuation; all other records remain context-only. ${visualFilter.note}`,
         },
         audit: {
           rawReceived: result.listings.length,
