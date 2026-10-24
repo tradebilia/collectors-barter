@@ -78,6 +78,14 @@ export function normalizeListingGradeForStorage(
   return normalizeListingGrade(value, category, certificationCompany);
 }
 
+const TRADEBILIA_DATABASE_NAME = "GnMVDXgu6G8uhj5ZYQtcGe";
+
+export function buildTradebiliaDatabaseUrl(databaseUrl: string): string {
+  const url = new URL(databaseUrl);
+  url.pathname = `/${TRADEBILIA_DATABASE_NAME}`;
+  return url.toString();
+}
+
 let _db: ReturnType<typeof drizzle> | null = null;
 let _dbLastError: Error | null = null;
 let _dbErrorCount = 0;
@@ -289,12 +297,13 @@ export async function closeDb(): Promise<void> {
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
-    // Prefer CUSTOM_DATABASE_URL for the existing Tradebilia data; fall back to
-    // the platform-managed DATABASE_URL only when the custom connection is absent.
-    // Never log a connection-string fragment: it can disclose sensitive metadata.
+    // Build the Tradebilia connection from DATABASE_URL so its credentials,
+    // host, port, and SSL settings remain unchanged; only the database name is
+    // replaced. Never log a connection-string fragment.
     const customDatabaseUrl = process.env.CUSTOM_DATABASE_URL;
-    const dbUrl = customDatabaseUrl || process.env.DATABASE_URL || ENV.databaseUrl;
-    console.log(`[requireDb] Using database source: ${customDatabaseUrl ? 'CUSTOM' : 'MANUS-MANAGED'}`);
+    const baseDatabaseUrl = process.env.DATABASE_URL || ENV.databaseUrl;
+    const dbUrl = customDatabaseUrl ? buildTradebiliaDatabaseUrl(baseDatabaseUrl) : baseDatabaseUrl;
+    console.log(`[requireDb] Using database source: ${customDatabaseUrl ? 'DATABASE_URL_WITH_TRADEBILIA_DB' : 'MANUS-MANAGED'}`);
     const url = new URL(dbUrl);
     const sslParam = url.searchParams.get("ssl");
     
