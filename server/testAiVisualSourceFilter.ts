@@ -1168,7 +1168,10 @@ export async function filterVisualSourceCandidates<
         : review);
       const primaryReview = reconciledPrimaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
       const needsDisneyAdjudication = isDisneyPinsMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
-      const needsCoinAdjudication = isCoinMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
+      // Every image-bearing coin candidate must receive the independent
+      // high-resolution identity pass. The first pass is preliminary evidence
+      // only; its normalized verdict must never be able to skip adjudication.
+      const needsCoinAdjudication = isCoinMetadata(args.targetMetadata);
       const needsGalleryReview = shouldReviewAdditionalVisualImages({
         imageCount: candidate.imageUrls.length,
         review: primaryReview,

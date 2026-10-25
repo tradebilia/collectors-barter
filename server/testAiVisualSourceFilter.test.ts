@@ -193,7 +193,7 @@ describe("visual source filter", () => {
 
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("const reconciledPrimaryReviews = primaryReviews.map");
-    expect(source).toContain("const needsCoinAdjudication = isCoinMetadata(args.targetMetadata) && primaryReview?.verdict === \"match\"");
+    expect(source).toContain("const needsCoinAdjudication = isCoinMetadata(args.targetMetadata);");
   });
 
   it("runs the independent second review for an exact-title Mercari coin holder crop before making an admission decision", async () => {
@@ -202,7 +202,7 @@ describe("visual source filter", () => {
     const finalEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
     mockedInvokeLLM
       .mockResolvedValueOnce(structuredVisualResponse({
-        reviews: [{ candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The close crop does not show enough of the holder to classify the state.", visualEvidence: cropEvidence }],
+        reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The first pass reports a visual match, but the close crop does not independently show enough of the holder to finalize the graded state.", visualEvidence: cropEvidence }],
       }) as any)
       .mockResolvedValueOnce(structuredVisualResponse({
         reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The independent review confirms the matching coin identity, date, variety, grader, and grade.", visualEvidence: finalEvidence }],
