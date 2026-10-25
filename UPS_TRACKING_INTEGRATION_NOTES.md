@@ -21,3 +21,12 @@ UPS Track Alert documentation publishes two repeatedly usable CIE test tracking 
 [4] [UPS Track API](https://developer.ups.com/tag/Tracking)
 
 [5] [UPS Track Alert FAQ](https://developer.ups.com/tag/UPS-Track-Alert?loc=en_US)
+
+
+## Current runtime boundary — October 24, 2026
+
+The direct server-owned UPS OAuth flow described above is historical provider documentation. The active Tradebilia sandbox no longer reads UPS credentials or calls UPS OAuth directly. It calls the protected Cloudflare Worker documented in `CLOUDFLARE_SECRETS_STORE_UPS_HANDOFF.md`.
+
+The Cloudflare Worker owns the UPS Client Credentials exchange and reads `UPS_CLIENT_ID` and `UPS_CLIENT_SECRET` from Cloudflare Secrets Store. Tradebilia sends only the tracking number and Cloudflare Access service-token headers to the Worker. The sandbox-side proxy configuration uses `CLOUDFLARE_UPS_PROXY_URL`, `CLOUDFLARE_UPS_PROXY_CLIENT_ID`, and `CLOUDFLARE_UPS_PROXY_CLIENT_SECRET`; values remain in secure configuration and are never committed or printed.
+
+The Worker source is versioned at `cloudflare/tradebilia-ups-worker.js`. The application route is covered by `server/upsTracking.test.ts`, and live protected-Worker checks are covered by `server/cloudflareUpsProxyCredentials.test.ts` and `server/upsCredentials.test.ts`. The active health check verifies the protected Worker readiness response without accessing a tracking record.

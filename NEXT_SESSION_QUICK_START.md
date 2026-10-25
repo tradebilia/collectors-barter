@@ -47,3 +47,10 @@ The next unstarted phase is P1 performance and maintainability. Discuss scope be
 - **Do not create the replacement project yet.** Independent-project testing requires a complete writable staging snapshot first: an isolated writable staging database clone and replicated static/customer media.
 - Never copy, attach, print, or commit raw secrets. `.project-config.json` is platform-generated metadata, not a handoff source: **Do not open, copy, attach, print, or commit it.**
 - If a future migration is reconsidered, read `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md` and obtain Rich’s explicit approval before any pre-creation or cutover action.
+
+
+## Latest verified integration — Cloudflare UPS — October 24, 2026
+
+Read `CLOUDFLARE_SECRETS_STORE_UPS_HANDOFF.md` for the complete UPS runtime architecture. The sandbox calls the protected Cloudflare Worker; the Worker alone reads `UPS_CLIENT_ID` and `UPS_CLIENT_SECRET` from Cloudflare Secrets Store. The sandbox-side connection names are `CLOUDFLARE_UPS_PROXY_URL`, `CLOUDFLARE_UPS_PROXY_CLIENT_ID`, and `CLOUDFLARE_UPS_PROXY_CLIENT_SECRET`. Never print or commit any of their values.
+
+The synchronized baseline is commit `09996531b` on local `main`, GitHub `main`, and WebDev checkpoint `09996531b`. Before continuing, run the focused UPS/provider tests, `pnpm check`, `pnpm build`, `git diff --check`, and the live proxy tests only when the secure service-token configuration is available. Do not remove the Cloudflare Worker, Access policy, or secret bindings until a controlled real tracking smoke test is approved and completed.
