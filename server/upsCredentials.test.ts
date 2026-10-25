@@ -1,22 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 describe("UPS OAuth credentials", () => {
-  const runLiveCredentialProbe = process.env.RUN_EXTERNAL_CREDENTIAL_TESTS === "true" && Boolean(process.env.UPS_CLIENT_ID) && Boolean(process.env.UPS_CLIENT_SECRET);
+  const proxyUrl = process.env.CLOUDFLARE_UPS_PROXY_URL ?? "https://tradebilia-secret-connection-test.rtavani.workers.dev";
+  const proxyClientId = process.env.CLOUDFLARE_UPS_PROXY_CLIENT_ID;
+  const proxyClientSecret = process.env.CLOUDFLARE_UPS_PROXY_CLIENT_SECRET;
+  const runLiveCredentialProbe = process.env.RUN_EXTERNAL_CREDENTIAL_TESTS === "true" && Boolean(proxyClientId) && Boolean(proxyClientSecret);
 
-  it.skipIf(!runLiveCredentialProbe)("authenticates through the UPS token endpoint without exposing credentials when live provider checks are enabled", async () => {
-    const basicAuth = Buffer.from(`${process.env.UPS_CLIENT_ID}:${process.env.UPS_CLIENT_SECRET}`).toString("base64");
-    const response = await fetch("https://onlinetools.ups.com/security/v1/oauth/token", {
-      method: "POST",
+  it.skipIf(!runLiveCredentialProbe)("reaches UPS through the protected Cloudflare proxy without exposing credentials when live provider checks are enabled", async () => {
+    const response = await fetch(proxyUrl, {
       headers: {
-        Authorization: `Basic ${basicAuth}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        "CF-Access-Client-Id": proxyClientId as string,
+        "CF-Access-Client-Secret": proxyClientSecret as string,
+        Accept: "application/json",
       },
-      body: "grant_type=client_credentials",
       signal: AbortSignal.timeout(15_000),
     });
-    const payload = await response.json().catch(() => null) as { access_token?: string } | null;
+    const payload = await response.json().catch(() => null) as { cloudflareConnection?: string; upsTrackingProxy?: string } | null;
 
     expect(response.ok).toBe(true);
-    expect(typeof payload?.access_token).toBe("string");
+    expect(payload).toMatchObject({ cloudflareConnection: "successful", upsTrackingProxy: "ready" });
   });
 });

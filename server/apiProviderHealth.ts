@@ -409,14 +409,16 @@ async function probeUsps({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess
 }
 
 async function probeUps({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
-  const basic = Buffer.from(`${env.UPS_CLIENT_ID}:${env.UPS_CLIENT_SECRET}`).toString("base64");
-  const response = await requestJson(fetchImpl, "https://onlinetools.ups.com/security/v1/oauth/token", {
-    method: "POST",
-    headers: { Authorization: `Basic ${basic}`, "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
-    body: "grant_type=client_credentials",
+  const response = await requestJson(fetchImpl, env.CLOUDFLARE_UPS_PROXY_URL!, {
+    headers: {
+      "CF-Access-Client-Id": env.CLOUDFLARE_UPS_PROXY_CLIENT_ID!,
+      "CF-Access-Client-Secret": env.CLOUDFLARE_UPS_PROXY_CLIENT_SECRET!,
+      Accept: "application/json",
+    },
   });
   requireResponse(response.response, "UPS");
-  return { message: "Tracking OAuth token endpoint accepted the configured credential. No tracking record was accessed.", httpStatus: response.response.status, recordsVerified: 1 };
+  if (asRecord(response.payload).upsTrackingProxy !== "ready") throw new Error("Cloudflare UPS tracking proxy is not ready.");
+  return { message: "Cloudflare UPS tracking proxy is reachable. UPS credentials remain in Cloudflare Secrets Store; no tracking record was accessed.", httpStatus: response.response.status, recordsVerified: 1 };
 }
 
 async function probeFedex({ env, fetchImpl }: ProbeContext): Promise<ProbeSuccess> {
@@ -485,7 +487,7 @@ const PROVIDERS: ApiProviderDefinition[] = [
   { id: "stripe_test", name: "Stripe test billing", group: "Payments", description: "Future membership test-mode billing only. The health test creates no checkout or payment.", testMode: "credential", configured: (env) => configured(env, "STRIPE_SECRET_KEY"), check: probeStripe },
   { id: "daily", name: "Daily", group: "Member connections", description: "Trade Room video calls. The health test lists rooms only and creates none.", testMode: "credential", configured: (env) => configured(env, "DAILY_API_KEY"), check: probeDaily },
   { id: "usps", name: "USPS Tracking", group: "Shipping", description: "Carrier tracking OAuth. The health test obtains no shipment record.", testMode: "credential", configured: (env) => configured(env, "USPS_CONSUMER_KEY", "USPS_CONSUMER_SECRET"), check: probeUsps },
-  { id: "ups", name: "UPS Tracking", group: "Shipping", description: "Carrier tracking OAuth. The health test obtains no shipment record.", testMode: "credential", configured: (env) => configured(env, "UPS_CLIENT_ID", "UPS_CLIENT_SECRET"), check: probeUps },
+  { id: "ups", name: "UPS Tracking", group: "Shipping", description: "Carrier tracking through the protected Cloudflare proxy. The health test obtains no shipment record.", testMode: "credential", configured: (env) => configured(env, "CLOUDFLARE_UPS_PROXY_URL", "CLOUDFLARE_UPS_PROXY_CLIENT_ID", "CLOUDFLARE_UPS_PROXY_CLIENT_SECRET"), check: probeUps },
   { id: "fedex", name: "FedEx Tracking", group: "Shipping", description: "Carrier tracking OAuth. The health test obtains no shipment record.", testMode: "credential", configured: (env) => configured(env, "FEDEX_CLIENT_ID", "FEDEX_CLIENT_SECRET"), check: probeFedex },
   { id: "dhl", name: "DHL Tracking", group: "Shipping", description: "Carrier tracking. The health test uses a deliberately invalid tracking reference.", testMode: "credential", configured: (env) => configured(env, "DHL_API_KEY"), check: probeDhl },
   { id: "cloudflare_r2_media", name: "Cloudflare R2 public media", group: "Storage", description: "Listing images and public profile-media bucket.", testMode: "credential", configured: (env) => configured(env, "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"), check: ({ env }) => probeR2("tradebilia-public-media", "R2_ENDPOINT", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", env) },

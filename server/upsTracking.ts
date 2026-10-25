@@ -19,11 +19,6 @@ const fetch = async (input: RequestInfo | URL, init: RequestInit = {}): Promise<
   }
 };
 
-type UpsAccessToken = {
-  value: string;
-  expiresAt: number;
-};
-
 type UpsActivity = {
   date?: string;
   time?: string;
@@ -43,8 +38,6 @@ type UpsPackage = {
 type UpsTrackingResponse = {
   trackResponse?: { shipment?: Array<{ inquiryNumber?: string; package?: UpsPackage[] }> };
 };
-
-let cachedAccessToken: UpsAccessToken | null = null;
 
 export function normalizeUpsTrackingNumber(value: string): string {
   const normalized = value.replace(/[\s-]/g, "").toUpperCase();
@@ -105,53 +98,31 @@ export function formatUpsTrackingResult(response: UpsTrackingResponse, requested
   };
 }
 
-async function getUpsAccessToken(): Promise<string> {
-  const now = Date.now();
-  if (cachedAccessToken && cachedAccessToken.expiresAt > now + 60_000) return cachedAccessToken.value;
-
-  const clientId = process.env.UPS_CLIENT_ID;
-  const clientSecret = process.env.UPS_CLIENT_SECRET;
-  if (!clientId || !clientSecret) throw new Error("UPS credentials are not configured.");
-
-  const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
-  const response = await fetch("https://onlinetools.ups.com/security/v1/oauth/token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basicAuth}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: "grant_type=client_credentials",
-    signal: AbortSignal.timeout(15_000),
-  });
-  const payload = await response.json().catch(() => null) as { access_token?: string; expires_in?: string | number } | null;
-  if (!response.ok || !payload?.access_token) throw new Error("UPS OAuth authentication failed.");
-
-  cachedAccessToken = {
-    value: payload.access_token,
-    expiresAt: now + Math.max(Number(payload.expires_in ?? 300) - 60, 60) * 1000,
-  };
-  return cachedAccessToken.value;
-}
-
 export async function lookupUpsTracking(trackingNumberInput: string) {
   const trackingNumber = normalizeUpsTrackingNumber(trackingNumberInput);
-  const accessToken = await getUpsAccessToken();
+  const proxyUrl = process.env.CLOUDFLARE_UPS_PROXY_URL?.replace(/\/$/, "");
+  const proxyClientId = process.env.CLOUDFLARE_UPS_PROXY_CLIENT_ID;
+  const proxyClientSecret = process.env.CLOUDFLARE_UPS_PROXY_CLIENT_SECRET;
+  if (!proxyUrl || !proxyClientId || !proxyClientSecret) {
+    throw new Error("Cloudflare UPS tracking proxy is not configured.");
+  }
+
   const response = await fetch(
-    `https://onlinetools.ups.com/api/track/v1/details/${encodeURIComponent(trackingNumber)}?locale=en_US&returnSignature=false&returnMilestones=false&returnPOD=false`,
+    `${proxyUrl}/ups/track/${encodeURIComponent(trackingNumber)}`,
     {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
-        transId: crypto.randomUUID(),
-        transactionSrc: "tradebilia",
+        "CF-Access-Client-Id": proxyClientId,
+        "CF-Access-Client-Secret": proxyClientSecret,
         Accept: "application/json",
       },
       signal: AbortSignal.timeout(15_000),
     },
   );
-  const payload = await response.json().catch(() => null) as UpsTrackingResponse | null;
+  const payload = await response.json().catch(() => null) as (UpsTrackingResponse & { error?: string }) | null;
   if (!response.ok || !payload) {
     if (response.status === 404) throw new Error("UPS did not find that tracking number.");
     if (response.status === 403) throw new Error("UPS Track API access is not authorized for this account.");
+    if (response.status === 400 && payload?.error === "Invalid tracking number") throw new Error("Enter a valid UPS tracking number.");
     throw new Error("UPS tracking is temporarily unavailable. Please try again.");
   }
   return formatUpsTrackingResult(payload, trackingNumber);
