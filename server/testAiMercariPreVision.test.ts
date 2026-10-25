@@ -1,0 +1,33 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { assessSoldCompsPreVisionCandidates } from './testAIRouter';
+
+const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
+const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
+
+describe('Mercari Video Game pre-visual filtering', () => {
+  it('keeps the title gate opt-in so eBay behavior is not changed by this Mercari scope', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata: 'title=Metroid; category=video_games; fullItemDetails={"platform":"NES"}',
+      targetPlatform: 'NES',
+      listings: [{ title: 'Met Rosie #40B', price: 3 }],
+    });
+
+    expect(result.eligible).toHaveLength(1);
+    expect(result.excluded).toHaveLength(0);
+  });
+
+  it('routes Mercari Video Game results through the gate and exposes excluded rows separately', () => {
+    const start = routerSource.indexOf('getMercariSoldCompsData: protectedProcedure');
+    const end = routerSource.indexOf('// SoldComps TCGplayer coverage', start);
+    const section = routerSource.slice(start, end);
+
+    expect(section).toContain("if (normalizedCategory === 'video_games')");
+    expect(section).toContain('enforceVideoGameTitleMatch: true');
+    expect(section).toContain('preVisionExcludedListings');
+    expect(section).toContain("status: 'pre_visual_filtered'");
+    expect(pageSource).toContain('Excluded before visual review');
+  });
+});

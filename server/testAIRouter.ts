@@ -21,7 +21,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -494,8 +494,13 @@ export function assessSoldCompsPreVisionCandidates(args: {
   targetPlatform?: string | null;
   targetIsGraded?: boolean;
   statedTradeValue?: number | null;
+  enforceVideoGameTitleMatch?: boolean;
+  targetGameTitle?: string | null;
 }): { eligible: any[]; excluded: SoldCompsPreVisionAssessment[] } {
   const targetPlatform = args.category === 'video_games' ? canonicalVideoGamePlatform(args.targetPlatform) : null;
+  const targetGameTitleTokens = args.enforceVideoGameTitleMatch && args.category === 'video_games'
+    ? normalizedSoldCompsField(args.targetGameTitle).split(' ').filter((token) => token.length >= 2 && !['a', 'an', 'and', 'for', 'game', 'of', 'the', 'video', 'nintendo', 'entertainment', 'system'].includes(token))
+    : [];
   const assessments = args.listings.map((item) => {
     const metadata = normalizeSoldCompsMetadata(item);
     const reasons: string[] = [];
@@ -506,6 +511,16 @@ export function assessSoldCompsPreVisionCandidates(args: {
       const candidatePlatform = canonicalVideoGamePlatform(metadata.platform) ?? canonicalVideoGamePlatform(item?.title);
       if (candidatePlatform && candidatePlatform !== targetPlatform) {
         reasons.push(`candidate explicitly declares platform ${candidatePlatform}, but target platform is ${targetPlatform}`);
+      }
+    }
+    if (targetGameTitleTokens.length) {
+      const candidateTitleTokens = new Set(normalizedSoldCompsField(item?.title).split(' '));
+      const missingTitleTokens = targetGameTitleTokens.filter((token) => !candidateTitleTokens.has(token));
+      if (missingTitleTokens.length) {
+        reasons.push(`Mercari Video Game title mismatch: candidate is missing target game-title term${missingTitleTokens.length === 1 ? '' : 's'} ${missingTitleTokens.join(', ')}`);
+      }
+      if (/^\s*(?:\(\s*)?(?:manual|instruction(?:s)?|booklet|guide)\b|\b(?:manual|instruction(?:s)?|booklet|guide)\s+only\b|\b(?:box|case|cover|label|artwork|soundtrack)\s+only\b/i.test(String(item?.title ?? ''))) {
+        reasons.push('Mercari Video Game listing is manual/accessory-only, not the complete target game');
       }
     }
     if (args.targetIsGraded && hasConditionOnlyEvidence(item) && !hasExplicitGradedEvidence(item, metadata)) {
@@ -2296,7 +2311,67 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupMercariSoldComps(input);
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
-      if (result.error || !result.listings.length || !['disney_pins', 'coins'].includes(normalizedCategory)) return result;
+      if (result.error || !result.listings.length) return result;
+      if (normalizedCategory === 'video_games') {
+        const details = parseTestAiDetails(input.itemDetails);
+        const targetGameTitle = resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title;
+        const targetMetadata = buildVisualTargetMetadata({
+          title: input.title,
+          category: normalizedCategory,
+          itemType: input.itemType,
+          grade: input.grade,
+          certificationCompany: input.certificationCompany,
+          itemDetails: input.itemDetails,
+        });
+        const assessment = assessSoldCompsPreVisionCandidates({
+          listings: result.listings.map((listing) => ({
+            ...listing,
+            url: listing.itemUrl,
+            soldPrice: listing.price,
+            soldCurrency: listing.currency,
+            thumbnailUrl: listing.imageUrl,
+          })),
+          category: normalizedCategory,
+          targetMetadata,
+          targetPlatform: resolveTestAiDetailValue(details, 'platform'),
+          targetIsGraded: Boolean(normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory)),
+          enforceVideoGameTitleMatch: true,
+          targetGameTitle,
+        });
+        const excluded = assessment.excluded.map(({ item, metadata, reasons }) => ({
+          ...item,
+          itemUrl: item.itemUrl ?? item.url ?? null,
+          evidenceDisposition: 'pre_vision_excluded' as const,
+          evidenceReasons: reasons,
+          visualReviewStatus: 'not_reviewed' as const,
+          visualReviewRationale: reasons.join('; '),
+          soldCompsMetadata: metadata,
+        }));
+        return {
+          ...result,
+          listings: assessment.eligible.map((item) => ({
+            ...item,
+            itemUrl: item.itemUrl ?? item.url ?? null,
+            imageUrl: item.imageUrl ?? item.thumbnailUrl ?? null,
+            evidenceReasons: [],
+          })),
+          preVisionExcludedListings: excluded,
+          visualFilter: {
+            status: 'pre_visual_filtered' as const,
+            reviewedCount: 0,
+            removedCount: excluded.length,
+            retainedUnreviewedCount: assessment.eligible.length,
+            reviews: [],
+            note: `Mercari Video Game pre-visual filter excluded ${excluded.length} obvious mismatch${excluded.length === 1 ? '' : 'es'} before image review; retained records remain unreviewed context until later identity admission.`,
+          },
+          audit: {
+            rawReceived: result.listings.length,
+            preVisionExcluded: excluded.length,
+            ledger: [...assessment.eligible, ...excluded],
+          },
+        };
+      }
+      if (!['disney_pins', 'coins'].includes(normalizedCategory)) return result;
 
       const targetMetadata = buildVisualTargetMetadata({
         title: input.title,

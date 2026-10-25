@@ -99,6 +99,25 @@ describe('Sold-Comps API key validation', () => {
     expect(result.excluded.map((entry) => entry.reasons.join(' ')).join(' ')).toMatch(/platform|lot|25%|250%/i);
   });
 
+  it('Mercari Video Game title gate excludes unrelated and manual-only records before vision', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'video_games',
+      targetMetadata: 'title=Metroid; category=video_games; itemType=single_item; grade=unknown; fullItemDetails={"gameTitle":"Metroid","platform":"NES"}',
+      targetPlatform: 'NES',
+      enforceVideoGameTitleMatch: true,
+      targetGameTitle: 'Metroid',
+      listings: [
+        { title: 'Met Rosie #40B', price: 3 },
+        { title: "(Manual) Whomp 'Em for Nintendo NES", price: 35 },
+        { title: 'Metroid NES cartridge', price: 40 },
+      ],
+    });
+
+    expect(result.eligible.map((item) => item.title)).toEqual(['Metroid NES cartridge']);
+    expect(result.excluded).toHaveLength(2);
+    expect(result.excluded.flatMap((entry) => entry.reasons).join(' ')).toMatch(/title mismatch|manual\/accessory-only/i);
+  });
+
   it('keeps a graded Zelda listing with generic Pre-Owned condition eligible', () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: 'video_games',
