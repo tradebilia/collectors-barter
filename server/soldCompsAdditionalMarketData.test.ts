@@ -93,7 +93,7 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('keyword')).toBe('1990 Super Mario Bros. 3 NES PSA 9.5');
   });
 
-  it('uses Video Game condition only when no grade is available, matching eBay Sold', async () => {
+  it('omits Video Game condition from ungraded Mercari criteria', async () => {
     process.env.SOLD_COMPS_API_KEY = 'test-key';
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
     const result = await lookupMercariSoldComps({
@@ -102,7 +102,8 @@ describe('SoldComps additional marketplace adapters', () => {
       condition: 'good',
       itemDetails: JSON.stringify({ gameTitle: 'Sonic the Hedgehog', platform: 'Genesis', releaseYear: '1991' }),
     }, fetchMock as unknown as typeof fetch);
-    expect(result.query).toBe('1991 Sonic the Hedgehog Genesis good');
+    expect(result.query).toBe('1991 Sonic the Hedgehog Genesis');
+    expect(result.query).not.toContain('good');
   });
 
   it('omits a zero placeholder grade for an ungraded coin', async () => {

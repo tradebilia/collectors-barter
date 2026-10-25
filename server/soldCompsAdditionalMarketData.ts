@@ -94,7 +94,7 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
     const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
     const grade = normalizeTestAiGrade(input.grade, gradingCompany, normalizedCategory);
     const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
-    return [baseQuery, gradingCompany, grade || input.condition].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+    return [baseQuery, gradingCompany, grade].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
   }
   const title = input.title.trim();
   if (!title) return '';
