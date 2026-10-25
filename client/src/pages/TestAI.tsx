@@ -2465,7 +2465,7 @@ function NumistaSection({ item, side }: { item: SelectedItem; side: 'left' | 'ri
 
 function PwccSection({ item, side }: { item: SelectedItem; side: 'left' | 'right' }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
-  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl }, { enabled: !!item.title });
+  const { data, isLoading } = trpc.testAI.getPwccSales.useQuery({ query: item.title, title: item.title, category: item.category, grade: item.grade, certificationCompany: item.certificationCompany ?? item.gradingCompany ?? '', itemType: item.itemType, itemDetails: item.itemDetails, imageUrl: item.primaryPhotoUrl }, { enabled: !!item.title });
   const sales = data?.data?.items ?? [];
   const buckets = [
     ['Recent comparable sales · last 12 months', sales.filter((sale: any) => sale.recency === 'recent'), 'text-emerald-300'],
@@ -2665,7 +2665,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
   const cgcQuery = trpc.testAI.getCgcComicsData.useQuery({ certNumber }, { enabled: enabledSources.has('cgc') && item.category === 'comics' && isCgcCompany(item.gradingCompany) && !!certNumber });
   const pcgsQuery = trpc.testAI.getPcgsData.useQuery({ certNumber }, { enabled: enabledSources.has('pcgs') && item.gradingCompany === 'PCGS' && !!certNumber });
   const comicBookRealmQuery = trpc.testAI.getSpecialistMarketplaceData.useQuery({ sourceId: 'comic_book_realm', title: item.title, category: item.category, grade: item.grade ?? undefined, condition: item.condition ?? undefined, certificationCompany: item.certificationCompany ?? item.gradingCompany ?? undefined, itemDetails: item.itemDetails ?? undefined, sourceUrl: undefined }, { enabled: enabledSources.has('comic_book_realm') && item.category === 'comics' && !!item.title, retry: false });
-  const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title, itemDetails: marketItem.itemDetails }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
+  const pwccQuery = trpc.testAI.getPwccSales.useQuery({ query: marketItem.title, title: marketItem.title, category: marketItem.category, grade: marketItem.grade, certificationCompany: marketItem.certificationCompany ?? marketItem.gradingCompany ?? '', itemType: marketItem.itemType, itemDetails: marketItem.itemDetails, imageUrl: marketItem.primaryPhotoUrl }, { enabled: enabledSources.has('pwcc') && !!marketItem.title });
   const discogsCandidates = useMemo(() => discogsQuery.data?.data?.results ?? [], [discogsQuery.data]);
 
   useEffect(() => {
@@ -4487,11 +4487,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('hipstamp') }
   );
   const leftHipstampSoldQuery = trpc.testAI.getHipstampSoldData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!leftSearchItem && leftSources.has('hipstamp_sold') }
   );
   const rightHipstampSoldQuery = trpc.testAI.getHipstampSoldData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('hipstamp_sold') }
   );
 
@@ -4512,11 +4512,11 @@ export default function TestAI() {
     { enabled: !!rightSearchItem && rightSources.has('the_card_api') }
   );
   const leftCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, itemType: leftSearchItem.itemType ?? undefined, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!leftSearchItem && leftSources.has('cardsight_ai') }
   );
   const rightCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, itemType: rightSearchItem.itemType ?? undefined, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
     { enabled: !!rightSearchItem && rightSources.has('cardsight_ai') }
   );
   const leftComcQuery = trpc.testAI.getComcData.useQuery(

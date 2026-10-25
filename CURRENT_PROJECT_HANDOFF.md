@@ -2,7 +2,7 @@
 
 > **Read this document first at the start of every new session.** It supersedes earlier session-status statements elsewhere in this repository. Historical migration, audit, and prior handoff documents are reference material only unless this document says otherwise.
 
-## Current state — verified October 11, 2026
+## Current state — verified October 25, 2026
 
 | Boundary | Verified state |
 |---|---|
@@ -10,9 +10,19 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | IGDB Video Game Catalog lookups use saved Game Title + Platform as blocking criteria; release year is non-blocking regional context. PriceCharting exact-grade, sale-derived coin-guide policy remains unchanged. |
-| Latest validation | IGDB focused tests 5/5 passed; deterministic validation 307 files / 1,451 tests passed with external credential probes excluded; TypeScript, production build, `git diff --check`, and production audit passed. |
-| Dependency audit | No **high** or **critical** production findings remain. Two low findings remain for later review. |
+| Latest functional change | Cross-source Test AI pre-visual identity hardening: all visual sources now use one canonical target-metadata contract, deterministic explicit contradictions are context-only before vision, and individual certificate/holder/tracking IDs are ignored. PriceCharting policy remains unchanged. |
+| Latest validation | Focused shared visual-filter suite 78/78; full deterministic suite 329 files / 1,670 tests passed with 4 files / 7 tests intentionally skipped; TypeScript, production build, development-preview health, and `git diff --check` passed. |
+| Dependency audit | `pnpm audit --prod --audit-level=high` currently reports existing dependency advisories. No dependency changes were made in the authorized source-only filter scope. |
+
+## Cross-source pre-visual identity hardening — October 25, 2026
+
+The shared Test AI visual filter now canonicalizes target identity metadata once at entry and uses that same normalized metadata for the complete visual-review pipeline, including prompts, retries, adjudication, and final evidence mapping. Every production visual-source route uses `buildVisualTargetMetadata`; Cardsight, both HIPStamp Sold summary calls, and PWCC now pass the available item type and grading-company fallback instead of dropping them.
+
+Before any target-image or candidate-image early return, the filter retains an explicit contradiction as **context-only** with its reason. The approved deterministic exclusions are: raw-versus-graded conflicts; sports-card set versus individually graded-card form; video-game sealed/CIB/boxed/loose/parts form; vintage-toy packaging and independent completeness form; incompatible compound card/catalog denominators; provider-declared UPC/EAN/barcode, catalog, and sports-card print-run conflicts; existing category identity conflicts; and multi-item lots. Absent provider data remains unknown, not a contradiction.
+
+Certificate, certificate-of-authenticity, holder, slab, barcode/QR, and tracking aliases identify a specimen rather than its collectible type. They are not allowed to exclude an otherwise compatible candidate. Generic `serialNumber` remains protected as a distinct sports-card print-run field: only a different denominator—for example, `/100` versus `/99`—is a deterministic conflict. Legacy direct fields, including plain `catalog=...`, are preserved through canonicalization.
+
+The implementation does not query providers differently, alter valuation policy, write database records, run migrations, change credentials, or publish a domain. Regressions cover all added rules, legacy aliases, context preservation, original indexes, and source-contract propagation. The WebDev checkpoint, GitHub synchronization, and deployment-parity confirmation must be recorded as the final synchronization set for this change.
 
 ## Coverage tracker confirmation — October 11, 2026
 

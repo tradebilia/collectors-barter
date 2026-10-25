@@ -615,7 +615,7 @@ function metadataValue(metadata: string, key: string): string {
 }
 
 function metadataDetails(metadata: string): Record<string, unknown> {
-  const raw = metadataValue(metadata, "fullItemDetails") || metadataValue(metadata, "itemDetails") || metadataValue(metadata, "details");
+  const raw = metadataValue(metadata, "fullItemDetails") || metadataValue(metadata, "itemDetails") || metadataValue(metadata, "details") || metadataValue(metadata, "catalog");
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -623,6 +623,122 @@ function metadataDetails(metadata: string): Record<string, unknown> {
   } catch {
     return {};
   }
+}
+
+type VisualTargetMetadataInput = {
+  title?: unknown;
+  category?: unknown;
+  itemType?: unknown;
+  grade?: unknown;
+  certificationCompany?: unknown;
+  grader?: unknown;
+  isGraded?: unknown;
+  fullItemDetails?: unknown;
+  itemDetails?: unknown;
+  details?: unknown;
+  catalog?: unknown;
+};
+
+function metadataText(value: unknown, fallback = "unknown"): string {
+  const text = String(value ?? "").trim();
+  return text || fallback;
+}
+
+function visualMetadataDetails(value: unknown): Record<string, unknown> {
+  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value !== "string" || !value.trim() || /^unknown$/i.test(value.trim())) return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  } catch {
+    // Several legacy source contracts allow free-text details. Preserve that
+    // text for the visual prompt rather than silently deleting it; deterministic
+    // guards still require an explicit structured conflict.
+    return { rawDetails: value.trim() };
+  }
+}
+
+function firstMeaningfulValue(...values: unknown[]): unknown {
+  return values.find((value) => String(value ?? "").trim() !== "");
+}
+
+function normalizedVisualCategory(value: unknown): string {
+  const normalized = String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return normalized || "unknown";
+}
+
+/**
+ * Every visual caller uses this target contract. It keeps source-specific
+ * aliases from silently disabling shared deterministic guards, while treating
+ * missing fields as unknown rather than fabricating identity evidence.
+ */
+export function buildVisualTargetMetadata(input: VisualTargetMetadataInput): string {
+  const details = visualMetadataDetails(
+    input.fullItemDetails ?? input.itemDetails ?? input.details ?? input.catalog,
+  );
+  const itemType = metadataText(firstMeaningfulValue(input.itemType, details.itemType, details.productType, details.form));
+  const grade = metadataText(firstMeaningfulValue(input.grade, details.grade));
+  const certificationCompany = metadataText(
+    firstMeaningfulValue(
+      input.certificationCompany,
+      input.grader,
+      details.certificationCompany,
+      details.gradingCompany,
+      details.grader,
+    ),
+  );
+  const isGraded = metadataText(firstMeaningfulValue(input.isGraded, details.isGraded, details.graded));
+  return [
+    `title=${metadataText(input.title, "structured item")}`,
+    `category=${normalizedVisualCategory(input.category)}`,
+    `itemType=${itemType}`,
+    `grade=${grade}`,
+    `certificationCompany=${certificationCompany}`,
+    `isGraded=${isGraded}`,
+    `fullItemDetails=${JSON.stringify(details)}`,
+  ].join("; ");
+}
+
+function directMetadataFields(metadata: string): Record<string, unknown> {
+  const standardKeys = new Set([
+    "title",
+    "category",
+    "itemtype",
+    "grade",
+    "certificationcompany",
+    "grader",
+    "isgraded",
+    "fullitemdetails",
+    "itemdetails",
+    "details",
+    "catalog",
+  ]);
+  const fields: Record<string, unknown> = {};
+  for (const match of metadata.matchAll(/(?:^|;)\s*([A-Za-z][A-Za-z0-9_]*)=([^;]*)/g)) {
+    const [, key, value] = match;
+    if (!standardKeys.has(key.toLowerCase()) && value.trim() && !/^unknown$/i.test(value.trim())) fields[key] = value.trim();
+  }
+  return fields;
+}
+
+function canonicalVisualTargetMetadata(metadata: string): string {
+  const legacyCatalog = metadataValue(metadata, "catalog");
+  const serializedDetails = metadataValue(metadata, "fullItemDetails") || metadataValue(metadata, "itemDetails") || metadataValue(metadata, "details") || legacyCatalog;
+  const details = {
+    ...visualMetadataDetails(serializedDetails),
+    ...directMetadataFields(metadata),
+  };
+  if (legacyCatalog && !/^\s*[{[]/.test(legacyCatalog) && !details.catalogNumber) details.catalogNumber = legacyCatalog;
+  return buildVisualTargetMetadata({
+    title: metadataValue(metadata, "title"),
+    category: metadataValue(metadata, "category"),
+    itemType: metadataValue(metadata, "itemType"),
+    grade: metadataValue(metadata, "grade"),
+    certificationCompany: metadataValue(metadata, "certificationCompany"),
+    grader: metadataValue(metadata, "grader"),
+    isGraded: metadataValue(metadata, "isGraded"),
+    fullItemDetails: details,
+  });
 }
 
 /** An explicit user-selected Is graded = No is authoritative over model inference. */
@@ -945,6 +1061,172 @@ function videoGameGraderEquivalenceInstruction(metadata: string): string {
   return " VIDEO-GAME GRADER EQUIVALENCE: PSA and WATA are accepted as equivalent grader evidence for video games because WATA transitioned into PSA. A visible PSA label and a visible WATA label may therefore match when the numeric grade, sealed/CIB/loose form, and actual game identity match. Preserve the exact visible label in the rationale; do not treat PSA/WATA as interchangeable for other categories, and do not relax the form or numeric-grade gates.";
 }
 
+type ExplicitGradingState = "graded" | "raw" | null;
+
+function explicitGradingState(value: unknown): ExplicitGradingState {
+  const normalized = normalizedChoice(value);
+  if (["yes", "true", "1", "graded", "slabbed", "certified"].includes(normalized)) return "graded";
+  if (["no", "false", "0", "raw", "ungraded"].includes(normalized)) return "raw";
+  return null;
+}
+
+function candidateStructuredDetails(listing: VisualSourceCandidate): Record<string, unknown> {
+  return visualMetadataDetails(listing.fullItemDetails ?? listing.itemDetails ?? listing.details);
+}
+
+function targetExplicitGradingState(targetMetadata: string): ExplicitGradingState {
+  const details = extractTargetItemDetails(targetMetadata);
+  const structured = explicitGradingState(metadataValue(targetMetadata, "isGraded") || details.isGraded || details.graded);
+  if (structured) return structured;
+  const grade = metadataValue(targetMetadata, "grade");
+  const grader = metadataValue(targetMetadata, "certificationCompany");
+  return grade && !/^(?:unknown|raw|ungraded|none|n\/?a)$/i.test(grade) || grader && !/^(?:unknown|raw|ungraded|none|n\/?a)$/i.test(grader)
+    ? "graded"
+    : null;
+}
+
+function candidateExplicitGradingState(listing: VisualSourceCandidate): ExplicitGradingState {
+  const details = candidateStructuredDetails(listing);
+  const structured = explicitGradingState(listing.isGraded ?? details.isGraded ?? details.graded);
+  if (structured) return structured;
+  const candidateGrade = metadataText(listing.grade ?? details.grade, "");
+  const candidateGrader = metadataText(listing.certificationCompany ?? listing.gradingCompany ?? listing.grader ?? details.certificationCompany ?? details.gradingCompany ?? details.grader, "");
+  if (candidateGrade && candidateGrader && !/^(?:raw|ungraded|unknown|none|n\/?a)$/i.test(candidateGrade) && !/^(?:raw|ungraded|unknown|none|n\/?a)$/i.test(candidateGrader)) return "graded";
+  const title = String(listing.title ?? "");
+  if (/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title)) return "graded";
+  if (/\b(?:raw|ungraded|un[- ]slabbed|no\s+(?:slab|holder))\b/i.test(title)) return "raw";
+  return null;
+}
+
+function explicitGradingStateConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (isDisneyPinsMetadata(targetMetadata)) return null;
+  const targetState = targetExplicitGradingState(targetMetadata);
+  const candidateState = candidateExplicitGradingState(listing);
+  if (!targetState || !candidateState || targetState === candidateState) return null;
+  return `Grading state differs: target is explicitly ${targetState}, but the candidate explicitly declares ${candidateState}.`;
+}
+
+type ProductForm = "set" | "single_card" | "sealed" | "cib" | "boxed_only" | "loose" | "parts_only" | "complete" | "incomplete" | null;
+
+function sportsCardProductForm(value: unknown): ProductForm {
+  const normalized = normalizedChoice(value);
+  if (!normalized) return null;
+  if (/(?:^|_)(?:complete|factory|team|master|card)?_?set(?:$|_)/.test(normalized) || /unopened_product/.test(normalized)) return "set";
+  if (/(?:^|_)(?:single|individual)_?(?:card)?(?:$|_)/.test(normalized)) return "single_card";
+  return null;
+}
+
+function sportsCardTitleProductForm(title: string): ProductForm {
+  if (/\b(?:complete|factory|team|master)\s+set\b|\bunopened\s+product\b/i.test(title)) return "set";
+  if (/\b(?:single|individual)\s+(?:trading\s+)?card\b/i.test(title)) return "single_card";
+  if (/(?:^|[^\w])#\s*\d+[A-Za-z]?(?:\s*\/\s*\d+)?\b[^\n]{0,80}\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|graded|gem\s+mint)\b/i.test(title)) return "single_card";
+  return null;
+}
+
+function videoGameProductForm(value: unknown): ProductForm {
+  const normalized = normalizedChoice(value);
+  if (!normalized) return null;
+  if (/^(?:yes|true|1|factory_sealed|sealed)$/.test(normalized) || /factory_sealed/.test(normalized)) return "sealed";
+  if (/^(?:yes|true|1|cib|complete_in_box)$/.test(normalized) || /complete_in_box|\bcib\b/.test(normalized)) return "cib";
+  if (/boxed_only|box_only/.test(normalized)) return "boxed_only";
+  if (/loose|cartridge_only|disc_only/.test(normalized)) return "loose";
+  if (/parts_only|for_parts/.test(normalized)) return "parts_only";
+  return null;
+}
+
+function videoGameTitleProductForm(title: string): ProductForm {
+  if (/\b(?:factory\s+)?sealed(?:\s+[A-Z])?\b/i.test(title)) return "sealed";
+  if (/\b(?:CIB|complete\s+in\s+box)\b/i.test(title)) return "cib";
+  if (/\b(?:boxed|box)\s+only\b/i.test(title)) return "boxed_only";
+  if (/\b(?:loose|cartridge\s+only|disc\s+only)\b/i.test(title)) return "loose";
+  if (/\b(?:parts\s+only|for\s+parts)\b/i.test(title)) return "parts_only";
+  return null;
+}
+
+function vintageToyProductForm(value: unknown): ProductForm {
+  const normalized = normalizedChoice(value);
+  if (!normalized) return null;
+  if (/^(?:no|false|0|incomplete)$/.test(normalized) || /incomplete|missing_parts/.test(normalized)) return "incomplete";
+  if (/^(?:yes|true|1|sealed|factory_sealed)$/.test(normalized) || /factory_sealed/.test(normalized)) return "sealed";
+  if (/^(?:no|false|0|opened)$/.test(normalized) || /opened/.test(normalized)) return "loose";
+  if (/^(?:yes|true|1|complete)$/.test(normalized) || /complete/.test(normalized)) return "complete";
+  return null;
+}
+
+function vintageToyTitleProductForm(title: string): ProductForm {
+  if (/\bfactory\s+sealed\b/i.test(title)) return "sealed";
+  if (/\b(?:opened|previously\s+opened)\b/i.test(title)) return "loose";
+  if (/\bcomplete\b/i.test(title)) return "complete";
+  if (/\b(?:incomplete|missing\s+(?:parts|piece|accessory))\b/i.test(title)) return "incomplete";
+  return null;
+}
+
+function targetProductForm(targetMetadata: string): ProductForm {
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const details = extractTargetItemDetails(targetMetadata);
+  const targetType = metadataValue(targetMetadata, "itemType") || details.itemType || details.productType || details.form;
+  if (category === "sports_cards") return sportsCardProductForm(targetType);
+  if (category === "video_games") {
+    if (normalizedChoice(details.sealed ?? details.factorySealed) === "yes") return "sealed";
+    if (normalizedChoice(details.completeInBox) === "yes") return "cib";
+    return videoGameProductForm(details.sealedStatus ?? details.packageStatus ?? details.packaging ?? targetType);
+  }
+  if (category === "vintage_toys") return vintageToyProductForm(details.sealedStatus ?? details.packagingType ?? details.packageType ?? details.complete ?? details.isComplete);
+  return null;
+}
+
+function candidateProductForm(targetMetadata: string, listing: VisualSourceCandidate): ProductForm {
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const details = candidateStructuredDetails(listing);
+  const structured = listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form;
+  const title = String(listing.title ?? "");
+  if (category === "sports_cards") return sportsCardProductForm(structured) ?? sportsCardTitleProductForm(title);
+  if (category === "video_games") return videoGameProductForm(details.sealedStatus ?? details.packageStatus ?? details.packaging ?? structured) ?? videoGameTitleProductForm(title);
+  if (category === "vintage_toys") return vintageToyProductForm(details.sealedStatus ?? details.packagingType ?? details.packageType ?? details.complete ?? details.isComplete ?? structured) ?? vintageToyTitleProductForm(title);
+  return null;
+}
+
+function explicitProductFormConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetForm = targetProductForm(targetMetadata);
+  const candidateForm = candidateProductForm(targetMetadata, listing);
+  if (!targetForm || !candidateForm || targetForm === candidateForm) return null;
+  return `Product form differs: target is explicitly ${targetForm.replace(/_/g, " ")}, but the candidate explicitly declares ${candidateForm.replace(/_/g, " ")}.`;
+}
+
+function vintageToyCompleteness(value: unknown): "complete" | "incomplete" | null {
+  const normalized = normalizedChoice(value);
+  if (!normalized) return null;
+  if (/^(?:no|false|0|incomplete)$/.test(normalized) || /incomplete|missing_(?:parts|piece|accessory)/.test(normalized)) return "incomplete";
+  if (/^(?:yes|true|1|complete)$/.test(normalized) || /\bcomplete\b/.test(normalized)) return "complete";
+  return null;
+}
+
+function vintageToyCompletenessConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return null;
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidateDetails = candidateStructuredDetails(listing);
+  const targetCompleteness = vintageToyCompleteness(targetDetails.completeness ?? targetDetails.isComplete ?? targetDetails.complete ?? extractTargetTitle(targetMetadata));
+  const candidateCompleteness = vintageToyCompleteness(candidateDetails.completeness ?? candidateDetails.isComplete ?? candidateDetails.complete ?? String(listing.title ?? ""));
+  if (!targetCompleteness || !candidateCompleteness || targetCompleteness === candidateCompleteness) return null;
+  return `Vintage-toy completeness differs: target is explicitly ${targetCompleteness}, but the candidate explicitly declares ${candidateCompleteness}.`;
+}
+
+function compoundNumber(value: unknown): { numerator: string; denominator: string } | null {
+  const match = String(value ?? "").match(/\b(\d{1,6}[A-Za-z]?)\s*\/\s*(\d{1,7})\b/);
+  return match ? { numerator: match[1].toLowerCase(), denominator: match[2] } : null;
+}
+
+function explicitCompoundNumberConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const details = extractTargetItemDetails(targetMetadata);
+  const target = compoundNumber(details.cardNumber ?? details.catalogNumber);
+  if (!target) return null;
+  const candidate = String(listing.title ?? "").match(/(?:\b(?:card(?:\s*(?:no\.?|number))?|catalog(?:\s*(?:no\.?|number))?|cat\.?)\s*#?|#\s*)(\d{1,6}[A-Za-z]?)\s*\/\s*(\d{1,7})\b/i);
+  if (!candidate) return null;
+  const candidateNumber = { numerator: candidate[1].toLowerCase(), denominator: candidate[2] };
+  if (candidateNumber.numerator !== target.numerator || candidateNumber.denominator === target.denominator) return null;
+  return `Card/catalog number differs: target is ${target.numerator}/${target.denominator}, but the candidate title explicitly declares ${candidateNumber.numerator}/${candidateNumber.denominator}.`;
+}
+
 /**
  * Marketplace titles sometimes declare a different printing or regional edition
  * more clearly than the thumbnail. These are transparent identity warnings, not
@@ -970,10 +1252,14 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const distributionPhrase = candidateIsNewsstand ? "Newsstand" : candidateIsDirect ? "Direct" : null;
     const facsimileConflict = targetFacsimile === "no" && /\b(?:facsimile|reprint|reproduction)\b/i.test(title);
     const packagingConflict = vintageToyPackagingConflict(targetMetadata, title);
+    const gradingStateConflict = explicitGradingStateConflict(targetMetadata, listing);
+    const productFormConflict = explicitProductFormConflict(targetMetadata, listing);
+    const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
+    const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? productFormConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
@@ -1127,25 +1413,35 @@ export async function filterVisualSourceCandidates<
 	  targetImageUrl?: string | null;
 	  targetMetadata: string;
 		  listings: T[];
-		  reviewDeadlineAt?: number;
-		}): Promise<VisualSourceFilterResult<T>> {
+	  reviewDeadlineAt?: number;
+	}): Promise<VisualSourceFilterResult<T>> {
+		  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
   const preVisualLotReasons = new Map<number, string>();
   args.listings.forEach((listing, index) => {
-    const reason = multiItemLotReason(listing, args.targetMetadata);
+    const reason = multiItemLotReason(listing, targetMetadata);
     if (reason) preVisualLotReasons.set(index, reason);
   });
+  const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata);
+  const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
+  const preVisualExcludedIndexes = new Set([
+    ...preVisualLotReasons.keys(),
+    ...declaredReviewByIndex.keys(),
+  ]);
   const preVisualContextListings: T[] = args.listings.flatMap<T>((listing, originalIndex) => {
-    if (!preVisualLotReasons.has(originalIndex)) return [] as T[];
-    const reason = preVisualLotReasons.get(originalIndex) ?? "Pre-visual lot filter excluded this multi-item listing from visual review.";
+    if (!preVisualExcludedIndexes.has(originalIndex)) return [] as T[];
+    const declaredReview = declaredReviewByIndex.get(originalIndex);
+    const reason = preVisualLotReasons.get(originalIndex)
+      ?? declaredReview?.rationale
+      ?? "Pre-visual identity filter excluded this listing from visual review.";
       return {
         ...listing,
         visualRequirement: "not_required_pre_visual",
-        visualReviewStatus: "not_reviewed",
+        visualReviewStatus: declaredReview?.verdict ?? "not_reviewed",
         visualReviewRationale: reason,
         evidenceDisposition: "context_only",
       } as T;
   });
-  const eligibleListings = args.listings.filter((_, index) => !preVisualLotReasons.has(index));
+  const eligibleListings = args.listings.filter((_, index) => !preVisualExcludedIndexes.has(index));
   const target = safeHttps(args.targetImageUrl);
   if (!target)
     return {
@@ -1156,8 +1452,8 @@ export async function filterVisualSourceCandidates<
       reviewedCount: 0,
       removedCount: preVisualContextListings.length,
       retainedUnreviewedCount: 0,
-      reviews: [],
-      note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
+      reviews: declaredReviews,
+      note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   const candidates = args.listings
     .map((item, candidateIndex) => {
@@ -1172,7 +1468,7 @@ export async function filterVisualSourceCandidates<
         imageUrls,
       };
     })
-    .filter((entry) => !preVisualLotReasons.has(entry.candidateIndex))
+    .filter((entry) => !preVisualExcludedIndexes.has(entry.candidateIndex))
     .filter(
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
         entry.imageUrls.length > 0
@@ -1186,8 +1482,8 @@ export async function filterVisualSourceCandidates<
       reviewedCount: 0,
       removedCount: preVisualContextListings.length,
       retainedUnreviewedCount: eligibleListings.length,
-      reviews: [],
-      note: `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
+      reviews: declaredReviews,
+      note: `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   try {
     const strictResponseFormat = {
@@ -1246,11 +1542,7 @@ export async function filterVisualSourceCandidates<
     // Preserve every candidate, but only send the strongest non-conflicting
     // candidates to vision in the first pass. This bounds latency without
     // turning an omitted image review into an implicit acceptance.
-    const declaredReviews = buildDeclaredIdentityReviews(
-      args.listings,
-      args.targetMetadata,
-    );
-    const reviewQueue = prioritizeVisualSourceCandidates(candidates, args.targetMetadata, declaredReviews);
+    const reviewQueue = prioritizeVisualSourceCandidates(candidates, targetMetadata, declaredReviews);
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let reviewedCandidateCount = 0;
@@ -1275,7 +1567,7 @@ export async function filterVisualSourceCandidates<
       const content: Array<TextContent | ImageContent> = [
         {
           type: "text",
-          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. If the candidate title explicitly declares a grader or numeric grade but the primary image appears raw, loose, un-slabbed, or missing its label, this is a grading-evidence conflict: do not finalize a hard mismatch from the primary image alone. Use the additional gallery images and high-detail view to verify the slab, grader, and grade; if they remain unclear or contradictory, return unreadable/manual review. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. Return visualEvidence booleans based only on visible pixels, never on title claims: slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches, rawOrLooseVisible, characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, setDesignMatches, identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches. A graded match requires the first five fields true and rawOrLooseVisible false; otherwise use unreadable/manual review rather than match. If structured target metadata names a grade qualifier, label designation, or comic certification label status, that is also a mandatory identity fact: confirm the same explicit label evidence in the candidate title or images, otherwise use unreadable/manual review rather than infer it. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${gradedIdentifierInstruction()}${disneyPinsVisualInstruction(args.targetMetadata)}${explicitUngradedTargetInstruction(args.targetMetadata)}${gradedCoinInstruction(args.targetMetadata)}${coinVisualInstruction(args.targetMetadata)}${sportsCardSetInstruction(args.targetMetadata)}${vintageToyPackagingInstruction(args.targetMetadata)}${videoGameFormInstruction(args.targetMetadata)}${videoGameGraderEquivalenceInstruction(args.targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"...","visualEvidence":{"slabVisible":true,"gradingLabelVisible":true,"graderVisible":true,"numericGradeVisible":true,"gradeMatches":true,"rawOrLooseVisible":false,"characterMatches":true,"artworkMatches":true,"silhouetteMatches":true,"backingCardMatches":true,"setDesignMatches":true,"identityMatches":true,"dateMatches":true,"varietyMatches":true,"mintMarkMatches":true,"denominationMatches":true}}]}. Target metadata: ${args.targetMetadata}`,
+          text: `You are a strict visual identity reviewer for ${args.sourceLabel}. You are reviewing exactly one candidate. First classify the TARGET and CANDIDATE as graded/slabbed or raw/ungraded from the images. A visible slab, certification label, encapsulation, or grading holder means graded; an exposed item without a slab means raw/ungraded. Graded-versus-raw status is a mandatory identity gate: if the target is graded and the candidate is visibly raw, mark mismatch with high confidence; if the target is raw and the candidate is visibly graded, mark mismatch with high confidence. Do not override this visual decision because the title, series, grade, or price looks similar. If either image is too obscured to determine graded/raw status, use unreadable or low-confidence manual review rather than accepting it. If the candidate title explicitly declares a grader or numeric grade but the primary image appears raw, loose, un-slabbed, or missing its label, this is a grading-evidence conflict: do not finalize a hard mismatch from the primary image alone. Use the additional gallery images and high-detail view to verify the slab, grader, and grade; if they remain unclear or contradictory, return unreadable/manual review. When the target is graded, the candidate numeric or descriptive grade is also mandatory: a holder or grader name alone is not enough. If the candidate grade is not clearly readable or cannot be confirmed to match the target, use unreadable/manual review and state that limitation in the rationale. Return visualEvidence booleans based only on visible pixels, never on title claims: slabVisible, gradingLabelVisible, graderVisible, numericGradeVisible, gradeMatches, rawOrLooseVisible, characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, setDesignMatches, identityMatches, dateMatches, varietyMatches, mintMarkMatches, and denominationMatches. A graded match requires the first five fields true and rawOrLooseVisible false; otherwise use unreadable/manual review rather than match. If structured target metadata names a grade qualifier, label designation, or comic certification label status, that is also a mandatory identity fact: confirm the same explicit label evidence in the candidate title or images, otherwise use unreadable/manual review rather than infer it. After that gate, compare the TARGET cover/front image to the CANDIDATE cover/front image. For comics, the same series or character is not enough: the visible cover art, title treatment, issue number, language, edition, printing, and variant must correspond. If the candidate cover art is materially different from the target cover, mark mismatch with high confidence, even if the title, slab, grade, or series appears similar. Candidate title text is evidence: Mexican, foil, reprint, fifth printing, first appearance, variant, sketch, signed, edition, or a different issue are conflicts unless the target metadata explicitly supports them. Do not call a candidate a match merely because it is the same series, slab type, or grade. Use rough_match only when the cover is plausibly the same but cropped, obscured, or low quality. Use unreadable only when the image cannot be inspected.${gradedIdentifierInstruction()}${disneyPinsVisualInstruction(targetMetadata)}${explicitUngradedTargetInstruction(targetMetadata)}${gradedCoinInstruction(targetMetadata)}${coinVisualInstruction(targetMetadata)}${sportsCardSetInstruction(targetMetadata)}${vintageToyPackagingInstruction(targetMetadata)}${videoGameFormInstruction(targetMetadata)}${videoGameGraderEquivalenceInstruction(targetMetadata)} Return exactly one JSON review for candidate ${candidate.candidateIndex}: {"reviews":[{"candidateIndex":${candidate.candidateIndex},"verdict":"match|rough_match|mismatch|unreadable","confidence":"high|medium|low","rationale":"...","visualEvidence":{"slabVisible":true,"gradingLabelVisible":true,"graderVisible":true,"numericGradeVisible":true,"gradeMatches":true,"rawOrLooseVisible":false,"characterMatches":true,"artworkMatches":true,"silhouetteMatches":true,"backingCardMatches":true,"setDesignMatches":true,"identityMatches":true,"dateMatches":true,"varietyMatches":true,"mintMarkMatches":true,"denominationMatches":true}}]}. Target metadata: ${targetMetadata}`,
         },
         { type: "text", text: "TARGET LISTING IMAGE:" },
         { type: "image_url", image_url: { url: target, detail: "high" } },
@@ -1305,24 +1597,24 @@ export async function filterVisualSourceCandidates<
       // title before calculating the retry. The reconciliation only unlocks
       // the independent second visual pass; it does not itself admit a sale.
       const reconciledPrimaryReviews = primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
-        ? reconcileCoinPrimaryReviewForAdjudication(review, args.targetMetadata, String(candidate.item.title ?? ""))
+        ? reconcileCoinPrimaryReviewForAdjudication(review, targetMetadata, String(candidate.item.title ?? ""))
         : review);
       const primaryReview = reconciledPrimaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
-      const needsDisneyAdjudication = isDisneyPinsMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
+      const needsDisneyAdjudication = isDisneyPinsMetadata(targetMetadata) && primaryReview?.verdict === "match";
       // Every image-bearing coin candidate must receive the independent
       // high-resolution identity pass. The first pass is preliminary evidence
       // only; its normalized verdict must never be able to skip adjudication.
-      const needsCoinAdjudication = isCoinMetadata(args.targetMetadata);
+      const needsCoinAdjudication = isCoinMetadata(targetMetadata);
       const needsGalleryReview = shouldReviewAdditionalVisualImages({
         imageCount: candidate.imageUrls.length,
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
-        targetMetadata: args.targetMetadata,
+        targetMetadata: targetMetadata,
       }) || needsDisneyAdjudication || needsCoinAdjudication;
       const needsFocusedGradeEscalation = hasTitleDeclaredGradeVisualRawConflict({
         review: primaryReview,
         title: String(candidate.item.title ?? ""),
-        targetMetadata: args.targetMetadata,
+        targetMetadata: targetMetadata,
       });
       const embeddedFocusedCandidateImage = needsFocusedGradeEscalation
         ? await embedPromotedEbayImageForReview(candidate.imageUrl)
@@ -1359,7 +1651,7 @@ export async function filterVisualSourceCandidates<
         ? [
             {
               type: "text",
-              text: `INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION: Ignore every preliminary verdict and independently compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Disney Pins have no grading-company, slab, numeric-grade, or raw-versus-graded identity gate. Same character, similar colors, or the same series is not enough. Confirm every visible identity detail independently: character, exact artwork, pose, silhouette, pin shape, colors, backing card/backing logo, event or set design, edition markings, and pin count/form. Any material artwork, silhouette, backing, set-design, pose, or edition conflict is mismatch with high confidence. If any required detail is obscured or the images disagree, return unreadable/manual review rather than match. Return match only if all five structured Disney identity booleans are true: characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. Target metadata: ${args.targetMetadata}`,
+              text: `INDEPENDENT DISNEY PINS IDENTITY ADJUDICATION: Ignore every preliminary verdict and independently compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Disney Pins have no grading-company, slab, numeric-grade, or raw-versus-graded identity gate. Same character, similar colors, or the same series is not enough. Confirm every visible identity detail independently: character, exact artwork, pose, silhouette, pin shape, colors, backing card/backing logo, event or set design, edition markings, and pin count/form. Any material artwork, silhouette, backing, set-design, pose, or edition conflict is mismatch with high confidence. If any required detail is obscured or the images disagree, return unreadable/manual review rather than match. Return match only if all five structured Disney identity booleans are true: characterMatches, artworkMatches, silhouetteMatches, backingCardMatches, and setDesignMatches. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. Target metadata: ${targetMetadata}`,
             },
             { type: "text", text: "TARGET LISTING IMAGE:" },
             { type: "image_url", image_url: { url: target, detail: "high" } },
@@ -1383,7 +1675,7 @@ export async function filterVisualSourceCandidates<
         ? [
             {
               type: "text",
-              text: `INDEPENDENT HIGH-RESOLUTION GRADING ADJUDICATION: Compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Do not rely on or repeat any preliminary verdict. First read and reconcile the visible holder-label facts for BOTH images: slab/holder present, grader, numeric grade, and any printed form designation. Then decide item identity. A visible transparent slab plus a grading label and readable grade is graded—not raw—even if the item inside is a cartridge, card, coin, comic, toy, or game. Only call the candidate raw/loose when those visible slab and label signals are absent. The candidate image is supplied as the exact promoted provider image bytes when available; inspect it rather than a displayed thumbnail.${focusedVideoGameLabelInstruction(args.targetMetadata)}${videoGameGraderEquivalenceInstruction(args.targetMetadata)} Then independently compare the actual product identity, front artwork/cover, packaging, and edition. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. If the grading evidence or identity remains truly unclear, return unreadable rather than guessing. Target metadata: ${args.targetMetadata}`,
+              text: `INDEPENDENT HIGH-RESOLUTION GRADING ADJUDICATION: Compare exactly two images at high detail: first image is TARGET; second image is CANDIDATE ${candidate.candidateIndex}. Do not rely on or repeat any preliminary verdict. First read and reconcile the visible holder-label facts for BOTH images: slab/holder present, grader, numeric grade, and any printed form designation. Then decide item identity. A visible transparent slab plus a grading label and readable grade is graded—not raw—even if the item inside is a cartridge, card, coin, comic, toy, or game. Only call the candidate raw/loose when those visible slab and label signals are absent. The candidate image is supplied as the exact promoted provider image bytes when available; inspect it rather than a displayed thumbnail.${focusedVideoGameLabelInstruction(targetMetadata)}${videoGameGraderEquivalenceInstruction(targetMetadata)} Then independently compare the actual product identity, front artwork/cover, packaging, and edition. Return exactly one JSON review for candidate ${candidate.candidateIndex} using the required visualEvidence object. If the grading evidence or identity remains truly unclear, return unreadable rather than guessing. Target metadata: ${targetMetadata}`,
             },
             { type: "text", text: "TARGET LISTING IMAGE:" },
             { type: "image_url", image_url: { url: target, detail: "high" } },
@@ -1413,7 +1705,7 @@ export async function filterVisualSourceCandidates<
             galleryReviews = normalizeCompactCoinAdjudicationReview(
               parseAnalyzerResponse(galleryText),
               candidate.candidateIndex,
-              args.targetMetadata,
+              targetMetadata,
               String(candidate.item.title ?? ""),
             );
           }
@@ -1427,7 +1719,7 @@ export async function filterVisualSourceCandidates<
         return {
           reviews: reconciledPrimaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? {
-                ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata, String(candidate.item.title ?? "")),
+                ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, targetMetadata), targetMetadata, String(candidate.item.title ?? "")),
                 visualAudit: {
                   ...initialAudit,
                   retryStatus: "failed",
@@ -1448,7 +1740,7 @@ export async function filterVisualSourceCandidates<
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {
-              ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata, String(candidate.item.title ?? "")),
+              ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, targetMetadata), targetMetadata, String(candidate.item.title ?? "")),
               visualAudit: {
                 ...initialAudit,
                 adjudicationStatus: needsDisneyAdjudication || needsCoinAdjudication ? (galleryReviews.length ? "confirmed" : "unavailable") : undefined,
@@ -1474,11 +1766,11 @@ export async function filterVisualSourceCandidates<
       const acceptedMatches = normalizeExplicitUngradedVisualReviews(
           conservativeCoinVisualReviews(
           conservativeGradedVisualReviews(
-          conservativeComicVisualReviews(reviews, args.listings, args.targetMetadata),
+          conservativeComicVisualReviews(reviews, args.listings, targetMetadata),
           args.listings,
-          args.targetMetadata,
-          ), args.listings, args.targetMetadata),
-          args.targetMetadata,
+          targetMetadata,
+          ), args.listings, targetMetadata),
+          targetMetadata,
         ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
     }
@@ -1491,15 +1783,14 @@ export async function filterVisualSourceCandidates<
         conservativeComicVisualReviews(
           reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
           args.listings,
-          args.targetMetadata,
+          targetMetadata,
         ),
         args.listings,
-        args.targetMetadata,
-      ), args.listings, args.targetMetadata),
-      args.targetMetadata,
+        targetMetadata,
+      ), args.listings, targetMetadata),
+      targetMetadata,
     );
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
-    const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
     // Never leave an image appearing implicitly accepted because a provider omitted
     // its row. An absent response is explicitly unreadable/needs manual review.
     const reviewedQueueIndexes = new Set(reviewQueue.slice(0, reviewedCandidateCount).map(candidate => candidate.candidateIndex));
@@ -1533,17 +1824,17 @@ export async function filterVisualSourceCandidates<
           evidenceDisposition: "context_only",
         } as T;
       }
-      if (!imageBearingIndexes.has(index)) return listing;
       const declaredReview = declaredReviewByIndex.get(index);
       if (declaredReview) {
         return {
           ...listing,
-          visualRequirement: "required",
+          visualRequirement: "not_required_pre_visual",
           visualReviewStatus: declaredReview.verdict,
           visualReviewRationale: declaredReview.rationale,
-          evidenceDisposition: "warning_review",
+          evidenceDisposition: "context_only",
         } as T;
       }
+      if (!imageBearingIndexes.has(index)) return listing;
       if (reviewedIndexes.has(index)) return { ...listing, visualRequirement: "required" } as T;
       return {
         ...listing,
@@ -1557,7 +1848,7 @@ export async function filterVisualSourceCandidates<
       requirementAnnotatedListings,
       uniqueReviews,
       reviewedCandidateCount,
-      { requireExactMatch: isDisneyPinsMetadata(args.targetMetadata), requireCoinExactMatch: isCoinMetadata(args.targetMetadata), targetMetadata: args.targetMetadata },
+      { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata },
     );
     const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
     const contextIndexes = new Set([...declaredConflictIndexes, ...preVisualLotReasons.keys()]);
@@ -1568,7 +1859,7 @@ export async function filterVisualSourceCandidates<
       ...applied,
       listings: visibleListings,
       contextListings,
-      preVisualExcludedCount: preVisualLotReasons.size,
+      preVisualExcludedCount: preVisualContextListings.length,
       removedCount: contextListings.length,
       status: completedWithTimeout ? "completed_with_timeout" : "applied",
       reviews: uniqueReviews,
@@ -1586,15 +1877,15 @@ export async function filterVisualSourceCandidates<
             visualReviewRationale: "The visual provider was unavailable; manual image review is required.",
             evidenceDisposition: "warning_review",
           } as T
-        : listing).filter((_, index) => !preVisualLotReasons.has(index)),
+        : listing).filter((_, index) => !preVisualExcludedIndexes.has(index)),
       contextListings: preVisualContextListings,
       preVisualExcludedCount: preVisualContextListings.length,
       status: "provider_unavailable",
       reviewedCount: 0,
       removedCount: preVisualContextListings.length,
       retainedUnreviewedCount: candidates.length,
-      reviews: [],
-      note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all eligible text-filtered candidates were retained. ${preVisualContextListings.length} multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
+      reviews: declaredReviews,
+      note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all eligible text-filtered candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   }
 }

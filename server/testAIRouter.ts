@@ -32,7 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, buildVisualTargetMetadata, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -1428,7 +1428,15 @@ export const testAIRouter = router({
         filteredSummaries.slice(0, 5).forEach((s: any, i: number) => {
           console.log(`  [${i}] ${s.title} - Grade: ${extractGradeFromTitle(s.title)}`);
         });
-        const targetMetadata = `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${cert || 'unknown'}; fullItemDetails=${input.itemDetails ?? 'unknown'}`;
+        const targetMetadata = buildVisualTargetMetadata({
+          title: input.title,
+          category: input.category,
+          itemType: input.itemType,
+          grade: input.grade,
+          certificationCompany: cert,
+          isGraded: targetIsGraded ? 'Yes' : undefined,
+          itemDetails: input.itemDetails,
+        });
         const preVisionAssessment = assessSoldCompsPreVisionCandidates({
           category: input.category,
           targetMetadata,
@@ -1615,7 +1623,7 @@ export const testAIRouter = router({
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'HIPStamp active listings',
         targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=stamps; grade=${input.grade ?? 'unknown'}; catalog=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: 'stamps', itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.listings.map((listing) => ({ ...listing, imageUrl: listing.imageUrl })),
       });
       const listings = visualFilter.listings as typeof result.listings;
@@ -1644,7 +1652,7 @@ export const testAIRouter = router({
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'HIPStamp sold / closed listings',
         targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=stamps; grade=${input.grade ?? 'unknown'}; catalog=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: 'stamps', itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.listings.map((listing) => ({ ...listing, imageUrl: listing.imageUrl })),
       });
       const listings = visualFilter.listings as typeof result.listings;
@@ -1688,7 +1696,7 @@ export const testAIRouter = router({
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'The Card API completed sales',
         targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
       });
       return {
@@ -1715,6 +1723,7 @@ export const testAIRouter = router({
       condition: z.string().nullish(),
       certificationCompany: z.string().nullish(),
       itemDetails: z.string().nullish(),
+      itemType: z.string().nullish(),
       imageUrl: z.string().url().optional(),
     }))
     .query(async ({ ctx, input }) => {
@@ -1724,7 +1733,7 @@ export const testAIRouter = router({
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Cardsight.ai auction-price records',
         targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
       });
       return {
@@ -1752,7 +1761,7 @@ export const testAIRouter = router({
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Lelands completed auction records', targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
       });
       return {
@@ -1781,7 +1790,7 @@ export const testAIRouter = router({
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Pristine Auction completed records', targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
       });
       return {
@@ -1810,7 +1819,7 @@ export const testAIRouter = router({
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Collect Auctions completed records', targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
       });
       return {
@@ -1836,7 +1845,7 @@ export const testAIRouter = router({
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
         sourceLabel: 'Sirius Sports Auctions completed records', targetImageUrl: input.imageUrl,
-        targetMetadata: `title=${input.title}; category=${input.category}; grade=${input.grade ?? 'unknown'}; grader=${input.certificationCompany ?? 'unknown'}; details=${input.itemDetails ?? 'unknown'}`,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
       });
       return { ...result, sales: attachCanonicalProvenance('sirius_sports_auctions', visualFilter.listings.map((sale: any) => ({
@@ -2074,7 +2083,15 @@ export const testAIRouter = router({
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
-        const soldCompsTargetMetadata = `title=${input.title}; category=${input.category}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; fullItemDetails=${input.itemDetails ?? '{}'}`;
+        const soldCompsTargetMetadata = buildVisualTargetMetadata({
+          title: input.title,
+          category: input.category,
+          itemType: input.itemType,
+          grade: input.grade,
+          certificationCompany: input.certificationCompany,
+          isGraded: targetGrade !== null || Boolean(cert && grade) ? 'Yes' : undefined,
+          itemDetails: input.itemDetails,
+        });
         const preVisionAssessment = assessSoldCompsPreVisionCandidates({
           listings: filtered,
           category: input.category,
@@ -2281,7 +2298,14 @@ export const testAIRouter = router({
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
       if (result.error || !result.listings.length || !['disney_pins', 'coins'].includes(normalizedCategory)) return result;
 
-      const targetMetadata = `title=${input.title}; category=${normalizedCategory}; itemType=${input.itemType ?? 'unknown'}; grade=${input.grade ?? 'unknown'}; certificationCompany=${input.certificationCompany ?? 'unknown'}; fullItemDetails=${input.itemDetails ?? '{}'}`;
+      const targetMetadata = buildVisualTargetMetadata({
+        title: input.title,
+        category: normalizedCategory,
+        itemType: input.itemType,
+        grade: input.grade,
+        certificationCompany: input.certificationCompany,
+        itemDetails: input.itemDetails,
+      });
       const safeTargetImage = (() => {
         if (!input.imageUrl) return null;
         try {
@@ -2735,7 +2759,12 @@ export const testAIRouter = router({
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupParse130PointSales(input);
       if (result.status !== 'success' || !result.data) return result;
-      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: '130point sold listings', targetImageUrl: input.imageUrl, targetMetadata: `title=${input.title ?? input.query ?? 'structured item'}; category=${input.category}; itemDetails=${input.itemDetails ?? 'unknown'}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: '130point sold listings',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
+        listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+      });
       return {
         ...result,
         data: {
@@ -2753,12 +2782,26 @@ export const testAIRouter = router({
     }),
 
   getPwccSales: protectedProcedure
-    .input(z.object({ query: z.string().trim().min(2).max(240), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
+    .input(z.object({
+      query: z.string().trim().min(2).max(240),
+      title: z.string().trim().max(240).optional(),
+      category: z.string().trim().max(80).optional(),
+      grade: z.string().trim().max(32).optional(),
+      certificationCompany: z.string().trim().max(80).optional(),
+      itemType: z.string().trim().max(80).optional(),
+      itemDetails: z.string().optional(),
+      imageUrl: z.string().url().optional(),
+    }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const result = await lookupPwccSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
-      const visualFilter = await filterVisualSourceCandidates({ sourceLabel: 'PWCC / Fanatics Collect sold listings', targetImageUrl: input.imageUrl, targetMetadata: `title=${input.query}; category=unknown; itemDetails=${input.itemDetails ?? 'unknown'}`, listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })) });
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'PWCC / Fanatics Collect sold listings',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
+        listings: result.data.items.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item) })),
+      });
       return { ...result, data: { ...result.data, items: visualFilter.listings }, visualFilter };
     }),
 

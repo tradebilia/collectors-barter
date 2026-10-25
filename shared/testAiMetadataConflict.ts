@@ -138,6 +138,14 @@ function printRunDenominator(value: string): string {
   return String(value).match(/\d+\s*\/\s*(\d{1,7})/)?.[1] ?? '';
 }
 
+function isIndividualCertificateOrHolderIdentifier(field: string): boolean {
+  const normalized = field.toLowerCase().replace(/[_-]+/g, '');
+  return /^(?:certification|certificate|cert|authentication|auth|coa)(?:number|id|identifier|code)?$/.test(normalized)
+    || /^(?:holder|slab)(?:id|number|identifier|serial|barcode|qrcode|qr|tracking)?$/.test(normalized)
+    || /^(?:grading|slab|holder)(?:barcode|qrcode|qr|tracking|serial)(?:id|number|code)?$/.test(normalized)
+    || /^(?:(?:certification|certificate|cert|authentication|auth|coa|holder|slab|grading)?tracking)(?:id|number|identifier|code)?$/.test(normalized);
+}
+
 /**
  * Returns only explicit, material conflicts. An absent candidate field is not
  * a conflict; this keeps provider omissions reviewable instead of fail-open or
@@ -150,7 +158,15 @@ export function findMaterialMetadataConflicts(targetMetadata: string, candidate:
   const fields = [...new Set([
     ...(CATEGORY_FIELDS[category] ?? []),
     ...Object.keys(target),
-  ])].filter(field => !['title', 'category', 'itemType', 'isGraded', 'fullItemDetails', 'itemDetails', 'details'].includes(field));
+  ])].filter(field => ![
+    'title',
+    'category',
+    'itemType',
+    'isGraded',
+    'fullItemDetails',
+    'itemDetails',
+    'details',
+  ].includes(field) && !isIndividualCertificateOrHolderIdentifier(field));
   const candidateTitle = String(candidate.title ?? '');
   const conflicts: MetadataConflict[] = [];
 

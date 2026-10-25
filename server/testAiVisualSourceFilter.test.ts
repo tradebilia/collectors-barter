@@ -6,6 +6,7 @@ import { invokeLLM } from "./_core/llm";
 import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
+  buildVisualTargetMetadata,
   buildDeclaredIdentityReviews,
   coinAdmissionReason,
   conservativeComicVisualReviews,
@@ -103,6 +104,132 @@ describe("visual source filter", () => {
     expect(result.preVisualExcludedCount).toBe(2);
     expect(result.contextListings?.every(item => item.evidenceDisposition === "context_only")).toBe(true);
     expect(result.contextListings?.every(item => String(item.visualReviewRationale).includes("Pre-visual lot filter"))).toBe(true);
+  });
+
+  it("normalizes every source target into one conservative metadata contract", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "1999 Pokémon Charizard #4/102",
+      category: "Pokemon",
+      itemType: "single card",
+      grade: "9",
+      grader: "PSA",
+      itemDetails: JSON.stringify({ cardNumber: "4/102", isGraded: "Yes", language: "English" }),
+    });
+    expect(metadata).toContain("category=pokemon");
+    expect(metadata).toContain("itemType=single card");
+    expect(metadata).toContain("certificationCompany=PSA");
+    expect(metadata).toContain("isGraded=Yes");
+    expect(metadata).toContain('"cardNumber":"4/102"');
+  });
+
+  it("holds explicit grading, product-form, and compound-number conflicts before vision", () => {
+    const rawTarget = buildVisualTargetMetadata({
+      title: "1986 Fleer Michael Jordan",
+      category: "sports_cards",
+      itemType: "single_card",
+      itemDetails: JSON.stringify({ isGraded: "No" }),
+    });
+    const rawConflict = buildDeclaredIdentityReviews([
+      { title: "1986 Fleer Michael Jordan", itemDetails: JSON.stringify({ isGraded: "Yes" }) },
+    ], rawTarget);
+    expect(rawConflict[0]?.rationale).toContain("Grading state differs");
+
+    const setTarget = buildVisualTargetMetadata({ title: "1986 Fleer Complete Set", category: "sports_cards", itemType: "card_set" });
+    const setConflict = buildDeclaredIdentityReviews([{ title: "1986 Fleer Michael Jordan #57 PSA 10" }], setTarget);
+    expect(setConflict[0]?.rationale).toContain("Product form differs");
+
+    const sealedTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemDetails: JSON.stringify({ sealedStatus: "Factory Sealed" }) });
+    const sealedConflict = buildDeclaredIdentityReviews([{ title: "Super Mario Bros. 3 NES CIB" }], sealedTarget);
+    expect(sealedConflict[0]?.rationale).toContain("Product form differs");
+
+    const numberedTarget = buildVisualTargetMetadata({ title: "Charizard", category: "pokemon", itemDetails: JSON.stringify({ cardNumber: "4/102" }) });
+    const numberedConflict = buildDeclaredIdentityReviews([{ title: "Charizard #4/130" }], numberedTarget);
+    expect(numberedConflict[0]?.rationale).toContain("Card/catalog number differs");
+  });
+
+  it("retains all explicit conflicts as context before the visual provider is called", async () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "1986 Fleer Michael Jordan",
+      category: "sports_cards",
+      itemType: "single_card",
+      itemDetails: JSON.stringify({ isGraded: "No" }),
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Cross-source test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata,
+      listings: [{ title: "1986 Fleer Michael Jordan PSA 9", itemDetails: JSON.stringify({ isGraded: "Yes" }), imageUrl: "https://example.com/candidate.jpg" }],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings).toHaveLength(1);
+    expect(result.contextListings?.[0]).toMatchObject({ evidenceDisposition: "context_only", visualRequirement: "not_required_pre_visual" });
+    expect(result.contextListings?.[0].visualReviewRationale).toContain("Grading state differs");
+  });
+
+  it("does not exclude an otherwise compatible candidate because specimen certificate IDs differ", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Signed Baseball",
+      category: "autographs",
+      itemDetails: JSON.stringify({ signer: "Example Player", certificateNumber: "TARGET-100" }),
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "Signed Baseball", itemDetails: JSON.stringify({ signer: "Example Player", certificateNumber: "CANDIDATE-200" }) },
+    ], metadata);
+    expect(reviews).toEqual([]);
+  });
+
+  it("preserves direct product identifiers and print-run denominators through canonical pre-visual filtering", async () => {
+    const upcResult = await filterVisualSourceCandidates({
+      sourceLabel: "Legacy metadata test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: "title=Super Mario Bros. 3; category=video_games; upc=123456789012",
+      listings: [{ title: "Super Mario Bros. 3", itemDetails: JSON.stringify({ upc: "999999999999" }), imageUrl: "https://example.com/candidate.jpg" }],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(upcResult.contextListings?.[0].visualReviewRationale).toContain("upc differs in explicit provider metadata");
+
+    const printRunResult = await filterVisualSourceCandidates({
+      sourceLabel: "Legacy metadata test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: "title=2018 Topps Example; category=sports_cards; serialNumber=10/100",
+      listings: [{ title: "2018 Topps Example", itemDetails: JSON.stringify({ serialNumber: "2/99" }), imageUrl: "https://example.com/candidate.jpg" }],
+    });
+    expect(printRunResult.contextListings?.[0].visualReviewRationale).toContain("print-run denominator");
+
+    const catalogResult = await filterVisualSourceCandidates({
+      sourceLabel: "Legacy metadata test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: "title=Scott stamp; category=stamps; catalog=SCOTT-123",
+      listings: [{ title: "Scott stamp", itemDetails: JSON.stringify({ catalog: "SCOTT-999" }), imageUrl: "https://example.com/candidate.jpg" }],
+    });
+    expect(catalogResult.contextListings?.[0].visualReviewRationale).toContain("catalogNumber differs");
+  });
+
+  it("ignores all holder specimen-ID aliases while retaining non-holder product identifiers", () => {
+    const metadata = buildVisualTargetMetadata({
+      title: "Graded Collectible",
+      category: "sports_cards",
+      itemDetails: JSON.stringify({ holderId: "TARGET-HOLDER", holderNumber: "100", slabId: "SLAB-TARGET", certificateId: "CERT-TARGET", trackingId: "TRACK-TARGET", certificateTrackingId: "CERT-TRACK-TARGET" }),
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "Graded Collectible", itemDetails: JSON.stringify({ holderId: "CANDIDATE-HOLDER", holderNumber: "200", slabId: "SLAB-CANDIDATE", certificateId: "CERT-CANDIDATE", trackingId: "TRACK-CANDIDATE", certificateTrackingId: "CERT-TRACK-CANDIDATE" }) },
+    ], metadata);
+    expect(reviews).toEqual([]);
+  });
+
+  it("holds plain sealed video-game titles and opened-vs-incomplete vintage toys before vision", () => {
+    const cibTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemDetails: JSON.stringify({ sealedStatus: "CIB" }) });
+    expect(buildDeclaredIdentityReviews([{ title: "Super Mario Bros. 3 Sealed VGA 85" }], cibTarget)[0]?.rationale).toContain("Product form differs");
+
+    const completeToyTarget = buildVisualTargetMetadata({ title: "Vintage Figure", category: "vintage_toys", itemDetails: JSON.stringify({ sealedStatus: "Opened", completeness: "Complete" }) });
+    expect(buildDeclaredIdentityReviews([{ title: "Vintage Figure Opened Incomplete Missing Accessory" }], completeToyTarget)[0]?.rationale).toContain("Vintage-toy completeness differs");
+  });
+
+  it("keeps declared-review audit records on the provider-unavailable return path", () => {
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    const unavailablePath = source.slice(source.lastIndexOf('status: "provider_unavailable"') - 500);
+    expect(unavailablePath).toContain("reviews: declaredReviews");
   });
 
   it("retains high-confidence visual mismatches as review evidence", () => {
@@ -227,7 +354,7 @@ describe("visual source filter", () => {
 
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("const reconciledPrimaryReviews = primaryReviews.map");
-    expect(source).toContain("const needsCoinAdjudication = isCoinMetadata(args.targetMetadata);");
+    expect(source).toContain("const needsCoinAdjudication = isCoinMetadata(targetMetadata);");
   });
 
   it("runs the independent second review for an exact-title Mercari coin holder crop before making an admission decision", async () => {
@@ -499,10 +626,10 @@ describe("visual source filter", () => {
     expect(source).toContain("item form is a mandatory identity gate: sealed, CIB/complete-in-box, boxed-only, loose/raw, and parts-only are distinct comparable cohorts");
     expect(source).toContain("A candidate label that visibly says CIB is not the same as a target label that visibly says Sealed");
     expect(source).toContain("target's structured title/details say CIB or Complete in Box while its visible holder label says Sealed");
-    expect(source).toContain("${videoGameFormInstruction(args.targetMetadata)}");
+    expect(source).toContain("${videoGameFormInstruction(targetMetadata)}");
     expect(source).toContain("VIDEO-GAME LABEL CHECK: read the printed form designation on each visible grading label before deciding");
     expect(source).toContain("A clear PSA slab whose label says CIB is a graded CIB game—not a raw or loose cartridge");
-    expect(source).toContain("${focusedVideoGameLabelInstruction(args.targetMetadata)}");
+    expect(source).toContain("${focusedVideoGameLabelInstruction(targetMetadata)}");
   });
 
   it("pins a one-candidate model response to the candidate that was sent, not its returned index", () => {
@@ -552,8 +679,9 @@ describe("visual source filter", () => {
     ], listings, "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
     expect(result[0]).toMatchObject({ candidateIndex: 1, verdict: "unreadable", confidence: "low" });
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
-    expect(source).toContain("buildDeclaredIdentityReviews(\n      args.listings");
-    expect(source).toContain("conservativeGradedVisualReviews(\n          conservativeComicVisualReviews(reviews, args.listings");
+    expect(source).toContain("const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata);");
+    expect(source).toContain("const preVisualExcludedIndexes = new Set([");
+    expect(source).toContain("candidateIndex,");
   });
 
   it("downgrades broad comic visual matches when exact issue or cover evidence is absent", () => {
@@ -863,10 +991,19 @@ describe("visual source filter", () => {
 
   it("keeps the identity gate source-neutral for every shared marketplace caller", () => {
     const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
+    const clientSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
     expect(routerSource).toContain("sourceLabel: 'eBay active listings'");
     expect(routerSource).toContain("sourceLabel: '130point sold listings'");
     expect(routerSource).toContain("sourceLabel: 'PWCC / Fanatics Collect sold listings'");
-    expect(routerSource).toContain("itemDetails=${input.itemDetails ?? 'unknown'}");
+    expect(routerSource).toContain("buildVisualTargetMetadata");
+    expect(routerSource).toContain("category: input.category");
+    expect(routerSource).toContain("itemDetails: input.itemDetails");
+    expect(routerSource).toContain("getCardsightAiData");
+    expect(routerSource).toContain("itemType: z.string().nullish()");
+    expect(clientSource).toContain("const leftHipstampSoldQuery");
+    expect(clientSource).toContain("itemType: leftSearchItem.itemType");
+    expect(clientSource).toContain("const leftCardsightAiQuery");
+    expect(clientSource).toContain("itemType: leftSearchItem.itemType ?? undefined");
   });
 
   it("removes explicit Facsimile titles before the initial listing display and retains context", () => {
