@@ -9,6 +9,7 @@ import {
   conservativeComicVisualReviews,
   conservativeCoinVisualReviews,
   conservativeGradedVisualReviews,
+  gradedIdentifierInstruction,
   disneyPinsVisualInstruction,
   embedPromotedEbayImageForReview,
   enforceDisneyPinsExactEvidence,
@@ -832,6 +833,17 @@ describe("visual source filter", () => {
     expect(source).toContain("certificate IDs/numbers are unique to each individual coin");
     expect(source).toContain("never mark a coin mismatch because the visible certificate ID differs");
     expect(source).toContain("never require the IDs to match");
+  });
+
+  it("ignores unique holder identifiers for graded items across every source", () => {
+    const instruction = gradedIdentifierInstruction();
+    expect(instruction).toContain("every graded or certified item");
+    expect(instruction).toContain("certificate numbers");
+    expect(instruction).toContain("serial numbers");
+    expect(instruction).toContain("grading-holder barcodes");
+    expect(instruction).toContain("QR codes");
+    expect(instruction).toContain("never require them to match");
+    expect(instruction).toContain("every marketplace and data source");
   });
 
   it("shows each reviewed candidate price beside its match or mismatch verdict", () => {
