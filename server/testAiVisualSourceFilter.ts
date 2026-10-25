@@ -258,6 +258,21 @@ export function enforceCoinExactEvidence(review: VisualSourceReview, targetMetad
   };
 }
 
+/**
+ * Mercari commonly returns a close crop of a holder label and coin face. Apply
+ * the narrowly scoped title reconciliation before deciding whether the required
+ * independent coin adjudication should run. This is not admission by title:
+ * the second visual pass remains mandatory and an explicit raw conflict still
+ * fails closed.
+ */
+export function reconcileCoinPrimaryReviewForAdjudication(
+  review: VisualSourceReview,
+  targetMetadata: string,
+  candidateTitle = "",
+): VisualSourceReview {
+  return enforceCoinExactEvidence(review, targetMetadata, candidateTitle);
+}
+
 export function hasCompletedCoinAdjudication(review: VisualSourceReview | undefined, targetMetadata: string, candidateTitle = ""): boolean {
   return Boolean(review?.visualAudit?.retryStatus === "performed"
     && review.visualAudit.finalPass === "high_resolution_retry"
@@ -268,12 +283,30 @@ export function hasCompletedCoinAdjudication(review: VisualSourceReview | undefi
 export function coinAdmissionReason(review: VisualSourceReview | undefined, targetMetadata: string, candidateTitle = ""): string | null {
   if (!review) return "No visual review result was returned for this coin.";
   if (review.verdict !== "match") return `Visual review did not confirm a match (${review.verdict}); retained for manual review.`;
-  if (review.visualAudit?.retryStatus !== "performed" || review.visualAudit.finalPass !== "high_resolution_retry") {
-    return "The required independent high-resolution coin review was not completed.";
+  const audit = review.visualAudit;
+  if (audit?.retryStatus === "failed") {
+    return audit.retryReason
+      ? `The required independent high-resolution coin review did not complete: ${audit.retryReason}`
+      : "The required independent high-resolution coin review did not complete because it returned no usable decision.";
   }
-  if (review.visualAudit.adjudicationStatus !== "confirmed") return "The independent high-resolution coin review was not confirmed.";
-  if (!coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle, review.visualAudit.finalEvidence)) {
-    return "The confirmed coin review did not contain complete identity, date, variety, grader/grade, and raw-versus-graded evidence.";
+  if (audit?.retryStatus !== "performed" || audit.finalPass !== "high_resolution_retry") {
+    return `The required independent high-resolution coin review was not started after the first pass returned ${audit?.initialVerdict ?? review.verdict} (${audit?.initialConfidence ?? review.confidence}).`;
+  }
+  if (audit.adjudicationStatus !== "confirmed") return audit.retryReason
+    ? `The independent high-resolution coin review was not confirmed: ${audit.retryReason}`
+    : "The independent high-resolution coin review was not confirmed.";
+  if (!coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle, audit.finalEvidence)) {
+    const evidence = audit.finalEvidence;
+    const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
+    const missing = [
+      !(evidence?.identityMatches || titleIdentity) && "coin identity",
+      !(evidence?.dateMatches || titleIdentity) && "date",
+      !(evidence?.varietyMatches || titleIdentity) && "variety",
+      coinTargetRequiresMintMark(targetMetadata) && evidence?.mintMarkMatches !== true && "mint mark",
+      !hasExplicitlyUngradedTarget(targetMetadata) && !(evidence?.gradeMatches || titleConfirmsCoinGrade(candidateTitle, targetMetadata)) && "grader and grade",
+      hasExplicitCoinRawConflict(candidateTitle, review.rationale) && "graded-versus-raw state",
+    ].filter((field): field is string => Boolean(field));
+    return `The confirmed coin review is missing or conflicts on: ${missing.length ? missing.join(", ") : "required identity evidence"}.`;
   }
   return null;
 }
@@ -1127,7 +1160,13 @@ export async function filterVisualSourceCandidates<
         args.listings.length,
         candidate.candidateIndex,
       );
-      const primaryReview = primaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
+      // Reconcile a holder-cropped coin result with an exact completed-sale
+      // title before calculating the retry. The reconciliation only unlocks
+      // the independent second visual pass; it does not itself admit a sale.
+      const reconciledPrimaryReviews = primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+        ? reconcileCoinPrimaryReviewForAdjudication(review, args.targetMetadata, String(candidate.item.title ?? ""))
+        : review);
+      const primaryReview = reconciledPrimaryReviews.find((review) => review.candidateIndex === candidate.candidateIndex);
       const needsDisneyAdjudication = isDisneyPinsMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
       const needsCoinAdjudication = isCoinMetadata(args.targetMetadata) && primaryReview?.verdict === "match";
       const needsGalleryReview = shouldReviewAdditionalVisualImages({
@@ -1165,7 +1204,7 @@ export async function filterVisualSourceCandidates<
       };
       if (!needsGalleryReview) {
         return {
-          reviews: primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+          reviews: reconciledPrimaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? { ...review, visualAudit: initialAudit }
             : review),
           error: null,
@@ -1228,14 +1267,16 @@ export async function filterVisualSourceCandidates<
       }
       if (!galleryText.trim()) {
         return {
-          reviews: primaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
+          reviews: reconciledPrimaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? {
                 ...enforceCoinExactEvidence(enforceDisneyPinsExactEvidence(review, args.targetMetadata), args.targetMetadata, String(candidate.item.title ?? "")),
                 visualAudit: {
                   ...initialAudit,
                   retryStatus: "failed",
                   adjudicationStatus: "unavailable",
-                  retryReason: "The high-resolution retry did not return a usable structured decision; the complete primary visual match is retained provisionally and manual confirmation is recommended.",
+                  retryReason: galleryError instanceof VisualReviewTimeoutError
+                    ? "The high-resolution visual-review call timed out before returning a structured decision."
+                    : "The high-resolution visual-review call returned no usable structured decision.",
                   finalPass: "initial",
                 } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
               }
@@ -1248,7 +1289,7 @@ export async function filterVisualSourceCandidates<
         args.listings.length,
         candidate.candidateIndex,
       );
-      const finalReviews = galleryReviews.length ? galleryReviews : primaryReviews;
+      const finalReviews = galleryReviews.length ? galleryReviews : reconciledPrimaryReviews;
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {

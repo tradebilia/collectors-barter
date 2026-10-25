@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
+import { invokeLLM } from "./_core/llm";
 import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
@@ -21,6 +23,8 @@ import {
   isDisneyPinsMetadata,
   isCoinMetadata,
   enforceCoinExactEvidence,
+  filterVisualSourceCandidates,
+  reconcileCoinPrimaryReviewForAdjudication,
   normalizeExplicitUngradedVisualReviews,
   normalizeSingleCandidateVisualReview,
   normalizeVisualSourceReviews,
@@ -35,7 +39,14 @@ import {
   VISUAL_REVIEW_OVERALL_DEADLINE_MS,
 } from "./testAiVisualSourceFilter";
 
+const mockedInvokeLLM = vi.mocked(invokeLLM);
+const structuredVisualResponse = (value: unknown) => ({
+  choices: [{ message: { content: JSON.stringify(value) } }],
+});
+
 describe("visual source filter", () => {
+  beforeEach(() => mockedInvokeLLM.mockReset());
+
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
     expect(promoteEbayImageUrl("https://i.ebayimg.com/images/g/abc/s-l500.jpg")).toBe("https://i.ebayimg.com/images/g/abc/s-l1600.jpg");
     expect(promoteEbayImageUrl("https://example.com/image-s-l500.jpg")).toBe("https://example.com/image-s-l500.jpg");
@@ -167,6 +178,52 @@ describe("visual source filter", () => {
     expect(explicitRaw.verdict).not.toBe("match");
   });
 
+  it("reconciles an exact Mercari coin title before deciding whether to run the required second review", () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const firstPass = {
+      candidateIndex: 0,
+      verdict: "unreadable" as const,
+      confidence: "low" as const,
+      rationale: "The close crop does not show enough of the holder to independently classify the listing.",
+      visualEvidence: { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: false, identityMatches: false, dateMatches: false, varietyMatches: false, mintMarkMatches: false, denominationMatches: false },
+    };
+
+    const reconciled = reconcileCoinPrimaryReviewForAdjudication(firstPass, metadata, "1896 Morgan Silver Dollar PCGS MS63");
+    expect(reconciled).toMatchObject({ verdict: "match", confidence: "high" });
+
+    const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
+    expect(source).toContain("const reconciledPrimaryReviews = primaryReviews.map");
+    expect(source).toContain("const needsCoinAdjudication = isCoinMetadata(args.targetMetadata) && primaryReview?.verdict === \"match\"");
+  });
+
+  it("runs the independent second review for an exact-title Mercari coin holder crop before making an admission decision", async () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const cropEvidence = { slabVisible: false, gradingLabelVisible: false, graderVisible: false, numericGradeVisible: false, gradeMatches: false, rawOrLooseVisible: false, identityMatches: false, dateMatches: false, varietyMatches: false, mintMarkMatches: false, denominationMatches: false };
+    const finalEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
+    mockedInvokeLLM
+      .mockResolvedValueOnce(structuredVisualResponse({
+        reviews: [{ candidateIndex: 0, verdict: "unreadable", confidence: "low", rationale: "The close crop does not show enough of the holder to classify the state.", visualEvidence: cropEvidence }],
+      }) as any)
+      .mockResolvedValueOnce(structuredVisualResponse({
+        reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The independent review confirms the matching coin identity, date, variety, grader, and grade.", visualEvidence: finalEvidence }],
+      }) as any);
+
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Mercari coin sold listings",
+      targetImageUrl: "https://example.com/target-coin.jpg",
+      targetMetadata: metadata,
+      listings: [{ title: "1896 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.com/candidate-coin.jpg", imageUrls: ["https://example.com/candidate-coin.jpg"] }],
+    });
+
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(mockedInvokeLLM.mock.calls[1]?.[0]?.messages ?? [])).toContain("INDEPENDENT COIN IDENTITY ADJUDICATION");
+    expect(result.listings[0]).toMatchObject({
+      visualReviewStatus: "match",
+      visualAudit: { retryStatus: "performed", adjudicationStatus: "confirmed", finalPass: "high_resolution_retry" },
+    });
+    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+  });
+
   it("uses confirmed final coin evidence when the initial pass was incomplete", () => {
     const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
     const finalEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
@@ -200,8 +257,8 @@ describe("visual source filter", () => {
 
   it("reports the exact coin admission blocker when adjudication is unavailable", () => {
     const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
-    const review = { candidateIndex: 0, verdict: "match" as const, confidence: "high" as const, rationale: "The coin appears to match.", visualAudit: { imageCount: 1, initialVerdict: "match" as const, initialConfidence: "high" as const, retryStatus: "failed" as const, adjudicationStatus: "unavailable" as const, finalPass: "initial" as const } };
-    expect(coinAdmissionReason(review, metadata, "1896 Morgan Silver Dollar PCGS MS63")).toBe("The required independent high-resolution coin review was not completed.");
+    const review = { candidateIndex: 0, verdict: "match" as const, confidence: "high" as const, rationale: "The coin appears to match.", visualAudit: { imageCount: 1, initialVerdict: "match" as const, initialConfidence: "high" as const, retryStatus: "failed" as const, adjudicationStatus: "unavailable" as const, retryReason: "The high-resolution visual-review call timed out before returning a structured decision.", finalPass: "initial" as const } };
+    expect(coinAdmissionReason(review, metadata, "1896 Morgan Silver Dollar PCGS MS63")).toBe("The required independent high-resolution coin review did not complete: The high-resolution visual-review call timed out before returning a structured decision.");
   });
 
   it("requires completed independent high-resolution evidence before Disney Pins can enter analyzer evidence", () => {
