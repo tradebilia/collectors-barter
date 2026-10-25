@@ -522,6 +522,59 @@ export function normalizeSingleCandidateVisualReview(
   return reviews.slice(0, 1);
 }
 
+/**
+ * Some vision-model second passes have returned a compact coin adjudication
+ * object (`{ candidate, visualEvidence, notes }`) rather than the requested
+ * `reviews` array. Accept that shape only for a coin when it independently
+ * confirms every exact coin identity fact and the listing title separately
+ * confirms the target's year/variety, grader, and grade. This is deliberately
+ * not a general loose JSON parser and never overrides a raw/loose conflict.
+ */
+export function normalizeCompactCoinAdjudicationReview(
+  payload: unknown,
+  expectedCandidateIndex: number,
+  targetMetadata: string,
+  candidateTitle: string,
+): VisualSourceReview[] {
+  if (!isCoinMetadata(targetMetadata) || !payload || typeof payload !== "object" || Array.isArray(payload)) return [];
+  const row = payload as Record<string, unknown>;
+  const evidenceSource = row.visualEvidence;
+  if (!evidenceSource || typeof evidenceSource !== "object" || Array.isArray(evidenceSource)) return [];
+  const evidence = evidenceSource as Record<string, unknown>;
+  const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
+  const titleGrade = titleConfirmsCoinGrade(candidateTitle, targetMetadata);
+  const exactIdentity = evidence.identityMatches === true
+    && evidence.dateMatches === true
+    && evidence.varietyMatches === true
+    && evidence.denominationMatches === true
+    && (!coinTargetRequiresMintMark(targetMetadata) || evidence.mintMarkMatches === true);
+  if (!exactIdentity || !titleIdentity || !titleGrade) return [];
+  const notes = typeof evidence.notes === "string" && evidence.notes.trim()
+    ? evidence.notes.trim()
+    : typeof row.notes === "string" && row.notes.trim()
+    ? row.notes.trim()
+    : "The independent coin review returned complete matching identity evidence.";
+  return [{
+    candidateIndex: expectedCandidateIndex,
+    verdict: "match",
+    confidence: "high",
+    rationale: notes,
+    visualEvidence: {
+      slabVisible: evidence.slabVisible === true,
+      gradingLabelVisible: evidence.gradingLabelVisible === true,
+      graderVisible: evidence.graderVisible === true,
+      numericGradeVisible: evidence.numericGradeVisible === true,
+      gradeMatches: evidence.gradeMatches === true,
+      rawOrLooseVisible: evidence.rawOrLooseVisible === true,
+      identityMatches: true,
+      dateMatches: true,
+      varietyMatches: true,
+      mintMarkMatches: evidence.mintMarkMatches === true,
+      denominationMatches: true,
+    },
+  }];
+}
+
 function isComicMetadata(metadata: string): boolean {
   return metadata.match(/(?:^|;)\s*category=([^;]*)/i)?.[1]?.trim().toLowerCase() === "comics";
 }
@@ -1061,6 +1114,8 @@ export async function filterVisualSourceCandidates<
           properties: {
             reviews: {
               type: "array",
+              minItems: 1,
+              maxItems: 1,
               items: {
                 type: "object",
                 properties: {
@@ -1255,20 +1310,34 @@ export async function filterVisualSourceCandidates<
             { type: "text", text: `HIGH-RESOLUTION ESCALATION: Reassess the candidate using the promoted high-resolution primary image${candidate.imageUrls.length > 1 ? " and the additional gallery images" : ""} before finalizing the decision. This second pass is mandatory when the title or metadata indicates a grade but the first image was interpreted as raw, loose, un-slabbed, or missing a visible label/grade. Verify whether a slab/holder, grader, and numeric grade are actually visible before calling graded-versus-raw mismatch. Use the clearest image as the deciding evidence. Do not ignore a clear contradiction; if the high-resolution review remains conflicting or insufficient, return unreadable/manual review and explain the conflict.` },
             ...candidate.imageUrls.slice(1).map((url) => ({ type: "image_url" as const, image_url: { url: promoteEbayImageUrl(url) ?? url, detail: "high" as const }, })),
           ];
-      let galleryText = "";
+      let galleryReviews: VisualSourceReview[] = [];
       let galleryError: unknown;
       for (const responseFormat of [strictResponseFormat, { type: "json_object" as const }]) {
         try {
           const response = await invokeVisualReview({ model: needsFocusedGradeEscalation ? "gpt-5" : "gpt-5-mini", messages: [{ role: "user", content: galleryContent }], maxCompletionTokens: 1800, reasoning: needsFocusedGradeEscalation ? { effort: "low" } : undefined, temperature: 0, response_format: responseFormat }, VISUAL_REVIEW_PER_CANDIDATE_TIMEOUT_MS);
           const raw = response.choices[0]?.message?.content;
-          galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
-          if (galleryText.trim()) break;
-          throw new Error("The gallery visual review returned no structured content");
+          const galleryText = typeof raw === "string" ? raw : Array.isArray(raw) ? raw.filter((part): part is TextContent => part.type === "text").map(part => part.text).join("\n") : "";
+          if (!galleryText.trim()) throw new Error("The gallery visual review returned no structured content");
+          galleryReviews = normalizeSingleCandidateVisualReview(
+            parseAnalyzerResponse(galleryText),
+            args.listings.length,
+            candidate.candidateIndex,
+          );
+          if (!galleryReviews.length && needsCoinAdjudication) {
+            galleryReviews = normalizeCompactCoinAdjudicationReview(
+              parseAnalyzerResponse(galleryText),
+              candidate.candidateIndex,
+              args.targetMetadata,
+              String(candidate.item.title ?? ""),
+            );
+          }
+          if (galleryReviews.length) break;
+          galleryError = new Error("The high-resolution visual-review call returned a structured reply without the required review decision.");
         } catch (error) {
           galleryError = error;
         }
       }
-      if (!galleryText.trim()) {
+      if (!galleryReviews.length) {
         return {
           reviews: reconciledPrimaryReviews.map((review) => review.candidateIndex === candidate.candidateIndex
             ? {
@@ -1279,6 +1348,8 @@ export async function filterVisualSourceCandidates<
                   adjudicationStatus: "unavailable",
                   retryReason: galleryError instanceof VisualReviewTimeoutError
                     ? "The high-resolution visual-review call timed out before returning a structured decision."
+                    : galleryError instanceof Error && galleryError.message.includes("required review decision")
+                    ? "The high-resolution visual-review call returned a reply without the required decision, so its fallback format was tried but also did not return a usable decision."
                     : "The high-resolution visual-review call returned no usable structured decision.",
                   finalPass: "initial",
                 } satisfies NonNullable<VisualSourceReview["visualAudit"]>,
@@ -1287,12 +1358,7 @@ export async function filterVisualSourceCandidates<
           error: galleryError ?? null,
         };
       }
-      const galleryReviews = normalizeSingleCandidateVisualReview(
-        parseAnalyzerResponse(galleryText),
-        args.listings.length,
-        candidate.candidateIndex,
-      );
-      const finalReviews = galleryReviews.length ? galleryReviews : reconciledPrimaryReviews;
+      const finalReviews = galleryReviews;
       return {
         reviews: finalReviews.map((review) => review.candidateIndex === candidate.candidateIndex
           ? {

@@ -25,6 +25,7 @@ import {
   enforceCoinExactEvidence,
   filterVisualSourceCandidates,
   reconcileCoinPrimaryReviewForAdjudication,
+  normalizeCompactCoinAdjudicationReview,
   normalizeExplicitUngradedVisualReviews,
   normalizeSingleCandidateVisualReview,
   normalizeVisualSourceReviews,
@@ -222,6 +223,55 @@ describe("visual source filter", () => {
       visualAudit: { retryStatus: "performed", adjudicationStatus: "confirmed", finalPass: "high_resolution_retry" },
     });
     expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+  });
+
+  it("retries the second coin-review response format when a nonempty reply omits the required review", async () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const evidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
+    mockedInvokeLLM
+      .mockResolvedValueOnce(structuredVisualResponse({
+        reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The first review finds the matching graded coin.", visualEvidence: evidence }],
+      }) as any)
+      .mockResolvedValueOnce(structuredVisualResponse({ reviews: [] }) as any)
+      .mockResolvedValueOnce(structuredVisualResponse({
+        reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The fallback second review independently confirms the matching coin identity, date, variety, grader, and grade.", visualEvidence: evidence }],
+      }) as any);
+
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Mercari coin sold listings",
+      targetImageUrl: "https://example.com/target-coin.jpg",
+      targetMetadata: metadata,
+      listings: [{ title: "1896 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.com/candidate-coin.jpg", imageUrls: ["https://example.com/candidate-coin.jpg"] }],
+    });
+
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(3);
+    expect(result.listings[0]).toMatchObject({
+      visualReviewStatus: "match",
+      visualAudit: { retryStatus: "performed", adjudicationStatus: "confirmed", finalPass: "high_resolution_retry" },
+    });
+    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+  });
+
+  it("normalizes the compact completed coin adjudication shape returned by the live vision provider", () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const reviews = normalizeCompactCoinAdjudicationReview({
+      candidate: 0,
+      visualEvidence: {
+        identityMatches: true,
+        dateMatches: true,
+        varietyMatches: true,
+        mintMarkMatches: true,
+        denominationMatches: true,
+        notes: "Both images show the 1896 Morgan dollar in matching PCGS MS63 holders.",
+      },
+    }, 0, metadata, "1896 Morgan Silver Dollar PCGS MS63");
+
+    expect(reviews).toMatchObject([{
+      candidateIndex: 0,
+      verdict: "match",
+      confidence: "high",
+      visualEvidence: { identityMatches: true, dateMatches: true, varietyMatches: true, denominationMatches: true },
+    }]);
   });
 
   it("uses confirmed final coin evidence when the initial pass was incomplete", () => {

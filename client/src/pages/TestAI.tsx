@@ -4584,12 +4584,15 @@ export default function TestAI() {
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
   );
+  // Bump only when the server-side Mercari visual-admission contract changes.
+  // This makes an already-open Test AI page request the new result.
+  const mercariVisualReviewVersion = 'coin-adjudication-compact-response-v1';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !!leftSearchItem && leftSources.has('mercari_sold_comps'), retry: false }
   );
   const rightMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !!rightSearchItem && rightSources.has('mercari_sold_comps'), retry: false }
   );
   const leftTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(

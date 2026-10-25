@@ -2271,6 +2271,9 @@ export const testAIRouter = router({
       title: z.string(), category: z.string(), grade: z.string().optional(), condition: z.string().optional(),
       certificationCompany: z.string().optional(), itemDetails: z.string().optional(), itemType: z.string().optional(),
       statedTradeValue: z.number().finite().nonnegative().optional(), imageUrl: z.string().url().optional(),
+      // An already-open Test AI tab needs a distinct query key when the
+      // visual-admission contract changes.
+      visualReviewVersion: z.string().max(80).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
