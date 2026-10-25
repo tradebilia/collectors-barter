@@ -989,6 +989,70 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
   });
 }
 
+const MULTI_ITEM_TITLE_PATTERNS = [
+  /\b(?:mixed\s+)?(?:lot|bundle|group|collection|assortment)\b/i,
+  /\b(?:set|pair|duo|trio|multipack|multi[-\s]?pack|box\s+of|pack\s+of)\b/i,
+  /\b(?:\d+)\s*(?:coin|coins|card|cards|comic|comics|figure|figures|item|items|piece|pieces)\b/i,
+  /\b(?:coins?|cards?|comics?|issues?|figures?)\s+\d+\s*[-–]\s*\d+\b/i,
+  /#?\d+\s*(?:\+|,|\/)\s*#?\d+(?:\s*(?:\+|,|\/)\s*#?\d+)+/i,
+];
+
+function targetDescribesMultipleItems(targetMetadata: string): boolean {
+  const title = extractTargetTitle(targetMetadata);
+  const details = extractTargetItemDetails(targetMetadata);
+  const detailText = [
+    details.itemType,
+    details.productType,
+    details.form,
+    details.setType,
+    details.setName,
+    details.quantity,
+    details.itemCount,
+    details.numberOfItems,
+    details.lotQuantity,
+    details.isSet,
+    details.isLot,
+    details.bundle,
+  ].filter(value => value != null).map(String).join(" ");
+  const combined = `${title} ${detailText}`;
+  if (MULTI_ITEM_TITLE_PATTERNS.some(pattern => pattern.test(combined))) return true;
+  if (/\b(?:set|lot|bundle|group|collection|assortment)\b/i.test(String(details.itemType ?? details.productType ?? details.form ?? ""))) return true;
+  if ([details.quantity, details.itemCount, details.numberOfItems, details.lotQuantity].some(value => Number(value) > 1)) return true;
+  if (details.isSet === true || details.isLot === true || details.bundle === true) return true;
+  return Array.isArray(details.items) && details.items.length > 1;
+}
+
+function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T): string | null {
+  const title = String(listing.title ?? "").trim();
+  const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfItems, listing.quantity]
+    .map(value => Number(value))
+    .find(value => Number.isFinite(value) && value > 1);
+  if (structuredQuantity) {
+    return `Pre-visual lot filter: listing declares ${structuredQuantity} items, but the target is a single item.`;
+  }
+  const details = [listing.saleForm, listing.itemType, listing.productType, listing.form]
+    .filter(value => value != null).map(String).join(" ");
+  const text = `${title} ${details}`.trim();
+  const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(text));
+  if (matchedPattern) {
+    const label = /\b(?:lot|bundle|group|collection|assortment)\b/i.test(text) ? "lot or collection language" : "multi-item language";
+    return `Pre-visual lot filter: title or listing metadata contains ${label}; retained as context-only because the target is a single item.`;
+  }
+  const years = new Set(text.match(/\b(?:17|18|19|20)\d{2}\b/g) ?? []);
+  if (years.size > 1 && /(?:\+|\/|,|\band\b|\bthrough\b|\-)/i.test(text)) {
+    return `Pre-visual lot filter: listing names multiple issue years (${[...years].join(", ")}); retained as context-only because the target is a single item.`;
+  }
+  return null;
+}
+
+export function isMultiItemLot<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): boolean {
+  return !targetDescribesMultipleItems(targetMetadata) && Boolean(candidateMultiItemReason(listing));
+}
+
+export function multiItemLotReason<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): string | null {
+  return isMultiItemLot(listing, targetMetadata) ? candidateMultiItemReason(listing) : null;
+}
+
 function visualPriorityScore<T extends VisualSourceCandidate>(item: T, targetMetadata: string): number {
   const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
   const title = String(item.title ?? "").toLowerCase();
@@ -1062,19 +1126,38 @@ export async function filterVisualSourceCandidates<
   sourceLabel: string;
 	  targetImageUrl?: string | null;
 	  targetMetadata: string;
-	  listings: T[];
-	  reviewDeadlineAt?: number;
-	}): Promise<VisualSourceFilterResult<T>> {
+		  listings: T[];
+		  reviewDeadlineAt?: number;
+		}): Promise<VisualSourceFilterResult<T>> {
+  const preVisualLotReasons = new Map<number, string>();
+  args.listings.forEach((listing, index) => {
+    const reason = multiItemLotReason(listing, args.targetMetadata);
+    if (reason) preVisualLotReasons.set(index, reason);
+  });
+  const preVisualContextListings: T[] = args.listings.flatMap<T>((listing, originalIndex) => {
+    if (!preVisualLotReasons.has(originalIndex)) return [] as T[];
+    const reason = preVisualLotReasons.get(originalIndex) ?? "Pre-visual lot filter excluded this multi-item listing from visual review.";
+      return {
+        ...listing,
+        visualRequirement: "not_required_pre_visual",
+        visualReviewStatus: "not_reviewed",
+        visualReviewRationale: reason,
+        evidenceDisposition: "context_only",
+      } as T;
+  });
+  const eligibleListings = args.listings.filter((_, index) => !preVisualLotReasons.has(index));
   const target = safeHttps(args.targetImageUrl);
   if (!target)
     return {
-      listings: args.listings,
+      listings: eligibleListings,
+      contextListings: preVisualContextListings,
+      preVisualExcludedCount: preVisualContextListings.length,
       status: "skipped_no_target_image",
       reviewedCount: 0,
-      removedCount: 0,
+      removedCount: preVisualContextListings.length,
       retainedUnreviewedCount: 0,
       reviews: [],
-      note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered.`,
+      note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   const candidates = args.listings
     .map((item, candidateIndex) => {
@@ -1089,19 +1172,22 @@ export async function filterVisualSourceCandidates<
         imageUrls,
       };
     })
+    .filter((entry) => !preVisualLotReasons.has(entry.candidateIndex))
     .filter(
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
         entry.imageUrls.length > 0
     );
   if (!candidates.length)
     return {
-      listings: args.listings,
+      listings: eligibleListings,
+      contextListings: preVisualContextListings,
+      preVisualExcludedCount: preVisualContextListings.length,
       status: "skipped_no_candidate_images",
       reviewedCount: 0,
-      removedCount: 0,
-      retainedUnreviewedCount: args.listings.length,
+      removedCount: preVisualContextListings.length,
+      retainedUnreviewedCount: eligibleListings.length,
       reviews: [],
-      note: `No ${args.sourceLabel.toLowerCase()} candidate images were available; all candidates were retained.`,
+      note: `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   try {
     const strictResponseFormat = {
@@ -1437,6 +1523,16 @@ export async function filterVisualSourceCandidates<
     // visual verdict or remain explicit review-only. Do not let a later client
     // treat a missing model row as an implicit pass.
     const requirementAnnotatedListings = args.listings.map((listing, index) => {
+      const preVisualReason = preVisualLotReasons.get(index);
+      if (preVisualReason) {
+        return {
+          ...listing,
+          visualRequirement: "not_required_pre_visual",
+          visualReviewStatus: "not_reviewed",
+          visualReviewRationale: preVisualReason,
+          evidenceDisposition: "context_only",
+        } as T;
+      }
       if (!imageBearingIndexes.has(index)) return listing;
       const declaredReview = declaredReviewByIndex.get(index);
       if (declaredReview) {
@@ -1464,20 +1560,21 @@ export async function filterVisualSourceCandidates<
       { requireExactMatch: isDisneyPinsMetadata(args.targetMetadata), requireCoinExactMatch: isCoinMetadata(args.targetMetadata), targetMetadata: args.targetMetadata },
     );
     const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
-    const contextListings = applied.listings.filter((_, index) => declaredConflictIndexes.has(index));
-    const visibleListings = applied.listings.filter((_, index) => !declaredConflictIndexes.has(index));
+    const contextIndexes = new Set([...declaredConflictIndexes, ...preVisualLotReasons.keys()]);
+    const contextListings = applied.listings.filter((_, index) => contextIndexes.has(index));
+    const visibleListings = applied.listings.filter((_, index) => !contextIndexes.has(index));
     const completedWithTimeout = timedOutCount > 0 || deadlineReached;
     return {
       ...applied,
       listings: visibleListings,
       contextListings,
-      preVisualExcludedCount: contextListings.length,
+      preVisualExcludedCount: preVisualLotReasons.size,
       removedCount: contextListings.length,
       status: completedWithTimeout ? "completed_with_timeout" : "applied",
       reviews: uniqueReviews,
       timedOutCount,
       deadlineReached,
-      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${contextListings.length} explicit identity conflict${contextListings.length === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
+      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
     };
   } catch {
     return {
@@ -1489,13 +1586,15 @@ export async function filterVisualSourceCandidates<
             visualReviewRationale: "The visual provider was unavailable; manual image review is required.",
             evidenceDisposition: "warning_review",
           } as T
-        : listing),
+        : listing).filter((_, index) => !preVisualLotReasons.has(index)),
+      contextListings: preVisualContextListings,
+      preVisualExcludedCount: preVisualContextListings.length,
       status: "provider_unavailable",
       reviewedCount: 0,
-      removedCount: 0,
+      removedCount: preVisualContextListings.length,
       retainedUnreviewedCount: candidates.length,
       reviews: [],
-      note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all text-filtered candidates were retained.`,
+      note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all eligible text-filtered candidates were retained. ${preVisualContextListings.length} multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   }
 }

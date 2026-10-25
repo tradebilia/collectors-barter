@@ -20,6 +20,8 @@ import {
   hasUnavailableDisneyPinsAdjudication,
   hasExplicitlyUngradedTarget,
   hasTitleDeclaredGradeVisualRawConflict,
+  isMultiItemLot,
+  multiItemLotReason,
   isDisneyPinsMetadata,
   isCoinMetadata,
   enforceCoinExactEvidence,
@@ -70,6 +72,37 @@ describe("visual source filter", () => {
     expect(embedded).toBe("data:image/webp;base64,AQIDBA==");
     expect(await embedPromotedEbayImageForReview("https://example.com/s-l140.webp", fetchImpl)).toBeNull();
     expect(fetchCalls).toHaveLength(1);
+  });
+
+  it("classifies multi-item listings across categories but preserves multi-item targets", () => {
+    const singleCoin = "title=1896 Morgan Silver Dollar; category=coins; fullItemDetails={\"year\":\"1896\"}";
+    const singleCard = "title=1986 Fleer Michael Jordan; category=sports_cards; itemType=single";
+    const singleComic = "title=Amazing Spider-Man 300; category=comics; itemType=single";
+    expect(isMultiItemLot({ title: "AU/BU Morgan Silver Dollar Lot 3: 1878, 1880, 1896" }, singleCoin)).toBe(true);
+    expect(multiItemLotReason({ title: "AU/BU Morgan Silver Dollar Lot 3: 1878, 1880, 1896" }, singleCoin)).toContain("context-only");
+    expect(isMultiItemLot({ title: "1986 Fleer Michael Jordan Cards 1-10" }, singleCard)).toBe(true);
+    expect(isMultiItemLot({ title: "Amazing Spider-Man 299 + 300 + 301" }, singleComic)).toBe(true);
+    const setTarget = "title=1986 Fleer Michael Jordan Complete Set; category=sports_cards; itemType=set; fullItemDetails={\"itemType\":\"set\",\"quantity\":132}";
+    expect(isMultiItemLot({ title: "1986 Fleer Michael Jordan Complete Set" }, setTarget)).toBe(false);
+  });
+
+  it("keeps pre-visual lots in context and makes no vision call when every candidate is a lot", async () => {
+    const metadata = "title=1896 Morgan Silver Dollar; category=coins; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Mercari",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: metadata,
+      listings: [
+        { title: "AU/BU Morgan Silver Dollar Lot 3: 1878, 1880, 1896", imageUrl: "https://example.com/lot-1.jpg" },
+        { title: "1896 + 1897 Morgan Silver Dollar Group", imageUrl: "https://example.com/lot-2.jpg" },
+      ],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toHaveLength(0);
+    expect(result.contextListings).toHaveLength(2);
+    expect(result.preVisualExcludedCount).toBe(2);
+    expect(result.contextListings?.every(item => item.evidenceDisposition === "context_only")).toBe(true);
+    expect(result.contextListings?.every(item => String(item.visualReviewRationale).includes("Pre-visual lot filter"))).toBe(true);
   });
 
   it("retains high-confidence visual mismatches as review evidence", () => {
