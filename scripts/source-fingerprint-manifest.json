@@ -423,6 +423,7 @@
   "server/categoryPagination.test.ts",
   "server/categoryPaginationUi.test.ts",
   "server/categoryTradeProposalAlert.test.ts",
+  "server/cloudflareUpsProxyCredentials.test.ts",
   "server/coinGradeValidation.test.ts",
   "server/comicConnectMarketData.test.ts",
   "server/comicConnectMarketData.ts",

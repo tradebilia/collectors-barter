@@ -837,6 +837,8 @@ export function annotateSoldComparableCandidate(
   if (carriedDisposition && carriedDisposition !== 'valuation_eligible') {
     reasons.push(`source visual/evidence disposition retained: ${carriedDisposition}`);
   }
+  const visualAdmissionReason = String(item?.visualAdmissionReason ?? '').trim();
+  if (visualAdmissionReason) reasons.push(visualAdmissionReason);
 
   const evidenceDisposition: SoldComparableDisposition = carriedDisposition && carriedDisposition !== 'valuation_eligible'
     ? carriedDisposition
@@ -848,6 +850,7 @@ export function annotateSoldComparableCandidate(
     lotQuantity: item?.lotQuantity ?? lotQuantity,
     visualReviewStatus: carriedVisualStatus,
     visualReviewRationale: carriedVisualRationale,
+    visualAdmissionReason: visualAdmissionReason || undefined,
     // Preserve first-pass/retry provenance for the Evidence Review UI. The
     // visual filter creates this audit object, but the Sold-Comps annotation
     // layer must carry it forward into the returned listing record.
@@ -2229,6 +2232,7 @@ export const testAIRouter = router({
             soldCompsMetadata: i.soldCompsMetadata,
             visualReviewStatus: i.visualReviewStatus,
             visualReviewRationale: i.visualReviewRationale,
+            visualAdmissionReason: i.visualAdmissionReason,
             visualAudit: i.visualAudit,
             provenanceToken: i.provenanceToken,
             provenance: i.provenance,

@@ -216,9 +216,9 @@ function hasExplicitCoinRawConflict(title: string, rationale = ""): boolean {
   return /\b(?:raw|ungraded|loose)\s+(?:coin|item|listing)\b|\b(?:appears?|is|shown|identified|declared|labeled)\s+(?:as\s+)?(?:raw|ungraded|loose)\b|\bno\s+(?:slab|holder|grade)\b/i.test(`${title} ${rationale}`);
 }
 
-export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string, candidateTitle = ""): boolean {
-  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match" || review.confidence !== "high") return false;
-  const evidence = review.visualEvidence;
+export function coinVisualEvidenceIsExact(review: VisualSourceReview, targetMetadata: string, candidateTitle = "", evidenceOverride?: VisualEvidence): boolean {
+  if (!isCoinMetadata(targetMetadata) || review.verdict !== "match") return false;
+  const evidence = evidenceOverride ?? review.visualEvidence;
   if (!evidence) return false;
   const titleIdentity = titleConfirmsCoinIdentity(candidateTitle, targetMetadata);
   if (!(evidence?.identityMatches || titleIdentity) || !(evidence?.dateMatches || titleIdentity) || !(evidence?.varietyMatches || titleIdentity)) return false;
@@ -262,7 +262,20 @@ export function hasCompletedCoinAdjudication(review: VisualSourceReview | undefi
   return Boolean(review?.visualAudit?.retryStatus === "performed"
     && review.visualAudit.finalPass === "high_resolution_retry"
     && review.visualAudit.adjudicationStatus === "confirmed"
-    && coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle));
+    && coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle, review.visualAudit.finalEvidence));
+}
+
+export function coinAdmissionReason(review: VisualSourceReview | undefined, targetMetadata: string, candidateTitle = ""): string | null {
+  if (!review) return "No visual review result was returned for this coin.";
+  if (review.verdict !== "match") return `Visual review did not confirm a match (${review.verdict}); retained for manual review.`;
+  if (review.visualAudit?.retryStatus !== "performed" || review.visualAudit.finalPass !== "high_resolution_retry") {
+    return "The required independent high-resolution coin review was not completed.";
+  }
+  if (review.visualAudit.adjudicationStatus !== "confirmed") return "The independent high-resolution coin review was not confirmed.";
+  if (!coinVisualEvidenceIsExact(review, targetMetadata, candidateTitle, review.visualAudit.finalEvidence)) {
+    return "The confirmed coin review did not contain complete identity, date, variety, grader/grade, and raw-versus-graded evidence.";
+  }
+  return null;
 }
 
 export function disneyPinsVisualInstruction(metadata: string): string {
@@ -723,7 +736,12 @@ export function applyVisualSourceReviews<T extends VisualSourceCandidate>(
         visualReviewRationale: review.rationale,
         ...(review.visualAudit ? { visualAudit: review.visualAudit } : {}),
         ...((review.verdict === "mismatch" || (options?.requireExactMatch && !hasCompletedDisneyPinsAdjudication(review) && !hasUnavailableDisneyPinsAdjudication(review)) || (options?.requireCoinExactMatch && options.targetMetadata && !hasCompletedCoinAdjudication(review, options.targetMetadata, String(listing.title ?? ""))))
-          ? { evidenceDisposition: "warning_review" }
+          ? {
+              evidenceDisposition: "warning_review",
+              ...(options?.requireCoinExactMatch && options.targetMetadata
+                ? { visualAdmissionReason: coinAdmissionReason(review, options.targetMetadata, String(listing.title ?? "")) }
+                : {}),
+            }
           : {}),
       } as T;
     }),

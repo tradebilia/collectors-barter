@@ -5,6 +5,7 @@ import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
   buildDeclaredIdentityReviews,
+  coinAdmissionReason,
   conservativeComicVisualReviews,
   conservativeCoinVisualReviews,
   conservativeGradedVisualReviews,
@@ -163,6 +164,43 @@ describe("visual source filter", () => {
     expect(cropped).toMatchObject({ verdict: "match", confidence: "high" });
     const explicitRaw = enforceCoinExactEvidence({ ...cropped, rationale: "The listing is a raw ungraded coin with no slab." }, metadata, "1896 Morgan Silver Dollar PCGS MS63");
     expect(explicitRaw.verdict).not.toBe("match");
+  });
+
+  it("uses confirmed final coin evidence when the initial pass was incomplete", () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const finalEvidence = { slabVisible: true, gradingLabelVisible: true, graderVisible: true, numericGradeVisible: true, gradeMatches: true, rawOrLooseVisible: false, identityMatches: true, dateMatches: true, varietyMatches: true, mintMarkMatches: false, denominationMatches: true };
+    const review = {
+      candidateIndex: 0,
+      verdict: "match" as const,
+      confidence: "medium" as const,
+      rationale: "The title and second visual review confirm the same coin.",
+      visualEvidence: { ...finalEvidence, varietyMatches: false },
+      visualAudit: {
+        imageCount: 1,
+        initialVerdict: "match" as const,
+        initialConfidence: "low" as const,
+        retryStatus: "performed" as const,
+        adjudicationStatus: "confirmed" as const,
+        finalPass: "high_resolution_retry" as const,
+        initialEvidence: { ...finalEvidence, varietyMatches: false },
+        finalEvidence,
+      },
+    };
+    expect(hasCompletedCoinAdjudication(review, metadata, "1896 Morgan Silver Dollar PCGS MS63")).toBe(true);
+    const result = applyVisualSourceReviews(
+      [{ title: "1896 Morgan Silver Dollar PCGS MS63" }],
+      [review],
+      1,
+      { requireCoinExactMatch: true, targetMetadata: metadata },
+    );
+    expect(result.listings[0]).not.toHaveProperty("evidenceDisposition");
+    expect(coinAdmissionReason(review, metadata, "1896 Morgan Silver Dollar PCGS MS63")).toBeNull();
+  });
+
+  it("reports the exact coin admission blocker when adjudication is unavailable", () => {
+    const metadata = "title=1896 Morgan PCGS MS63; category=coins; grade=MS63; certificationCompany=PCGS; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
+    const review = { candidateIndex: 0, verdict: "match" as const, confidence: "high" as const, rationale: "The coin appears to match.", visualAudit: { imageCount: 1, initialVerdict: "match" as const, initialConfidence: "high" as const, retryStatus: "failed" as const, adjudicationStatus: "unavailable" as const, finalPass: "initial" as const } };
+    expect(coinAdmissionReason(review, metadata, "1896 Morgan Silver Dollar PCGS MS63")).toBe("The required independent high-resolution coin review was not completed.");
   });
 
   it("requires completed independent high-resolution evidence before Disney Pins can enter analyzer evidence", () => {
