@@ -1,3 +1,5 @@
+import { buildVideoGameTestAiCriteria, normalizeTestAiGrade, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+
 export type AdditionalSoldCompsInput = {
   title: string;
   category: string;
@@ -87,6 +89,12 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
       .filter(Boolean)
       .filter((value, index, all) => all.findIndex((candidate) => candidate.toLowerCase() === value.toLowerCase()) === index);
     if (disneyPinParts.length > 1) return disneyPinParts.join(' ');
+  }
+  if (normalizedCategory === 'video_games') {
+    const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
+    const grade = normalizeTestAiGrade(input.grade, gradingCompany, normalizedCategory);
+    const baseQuery = buildVideoGameTestAiCriteria(details, input.title);
+    return [baseQuery, gradingCompany, grade || input.condition].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
   }
   const title = input.title.trim();
   if (!title) return '';

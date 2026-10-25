@@ -76,6 +76,35 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(result.query).toBe('1896 Morgan PCGS MS63');
   });
 
+  it('builds Video Game Mercari criteria from the same fields as eBay Sold', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: 'Super Mario Bros. 3 sealed game PSA 9.5',
+      category: 'video_games',
+      grade: '9.5',
+      certificationCompany: 'PSA',
+      condition: 'mint',
+      itemDetails: JSON.stringify({ gameTitle: 'Super Mario Bros. 3', platform: 'Other', customPlatform: 'NES', releaseYear: '1990', upc: '012345678905', sealed: 'yes' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(result.query).toBe('1990 Super Mario Bros. 3 NES PSA 9.5');
+    expect(result.query).not.toContain('012345678905');
+    expect(result.query).not.toContain('sealed');
+    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('keyword')).toBe('1990 Super Mario Bros. 3 NES PSA 9.5');
+  });
+
+  it('uses Video Game condition only when no grade is available, matching eBay Sold', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: 'Sonic the Hedgehog cartridge',
+      category: 'video_games',
+      condition: 'good',
+      itemDetails: JSON.stringify({ gameTitle: 'Sonic the Hedgehog', platform: 'Genesis', releaseYear: '1991' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(result.query).toBe('1991 Sonic the Hedgehog Genesis good');
+  });
+
   it('omits a zero placeholder grade for an ungraded coin', async () => {
     process.env.SOLD_COMPS_API_KEY = 'test-key';
     const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
