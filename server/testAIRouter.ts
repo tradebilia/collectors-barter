@@ -595,7 +595,7 @@ function metadataMatches(target: unknown, candidate: unknown): boolean {
   return Boolean(expected && actual && (expected === actual || actual.includes(expected) || expected.includes(actual)));
 }
 
-export function rankMercariVideoGameCandidates(args: MercariVideoGameRankingArgs): any[] {
+export function rankVideoGameCandidates(args: MercariVideoGameRankingArgs): any[] {
   const targetTitleTokens = normalizedSoldCompsField(args.targetGameTitle).split(' ').filter((token) => token.length >= 2 && !['a', 'an', 'and', 'for', 'game', 'of', 'the', 'video', 'nintendo', 'entertainment', 'system'].includes(token));
   const targetPackaging = args.targetPackaging;
   return args.listings.map((item, originalIndex) => {
@@ -656,7 +656,7 @@ export function rankMercariVideoGameCandidates(args: MercariVideoGameRankingArgs
     .map((item, index) => ({ ...item, metadataMatchRank: index + 1, _metadataOriginalIndex: undefined }));
 }
 
-export function mercariVideoGameVisualCap(highestScore: number): number {
+export function videoGameVisualCap(highestScore: number): number {
   if (highestScore >= 90) return 6;
   if (highestScore >= 80) return 5;
   if (highestScore >= 60) return 3;
@@ -664,9 +664,9 @@ export function mercariVideoGameVisualCap(highestScore: number): number {
   return 0;
 }
 
-export function selectMercariVideoGameVisualCandidates(listings: any[]): { selected: any[]; excluded: any[]; cap: number } {
+export function selectVideoGameVisualCandidates(listings: any[]): { selected: any[]; excluded: any[]; cap: number } {
   const highestScore = Number(listings[0]?.metadataMatchScore ?? 0);
-  const cap = mercariVideoGameVisualCap(highestScore);
+  const cap = videoGameVisualCap(highestScore);
   const qualifying = listings.filter((listing) => Number(listing.metadataMatchScore ?? 0) >= 50);
   const selected = qualifying.slice(0, cap);
   const selectedKeys = new Set(selected.map((listing) => listing.itemUrl ?? listing.url ?? listing.saleId ?? listing.title));
@@ -675,14 +675,19 @@ export function selectMercariVideoGameVisualCandidates(listings: any[]): { selec
     evidenceDisposition: 'pre_vision_score_excluded' as const,
     visualReviewStatus: 'not_reviewed' as const,
     visualReviewRationale: Number(listing.metadataMatchScore ?? 0) < 50
-      ? `Metadata score ${Number(listing.metadataMatchScore ?? 0)}/100 is below the Mercari Video Game visual-review minimum of 50.`
-      : `Candidate ranked below the Mercari Video Game visual-review cap of ${cap}; higher-scoring candidates were selected first.`,
+      ? `Metadata score ${Number(listing.metadataMatchScore ?? 0)}/100 is below the Video Game visual-review minimum of 50.`
+      : `Candidate ranked below the Video Game visual-review cap of ${cap}; higher-scoring candidates were selected first.`,
     evidenceReasons: [Number(listing.metadataMatchScore ?? 0) < 50
       ? `metadata score below minimum (50)`
       : `visual-review cap reached (${cap})`],
   }));
   return { selected, excluded, cap };
 }
+
+// Backward-compatible aliases for existing Mercari-focused tests and callers.
+export const rankMercariVideoGameCandidates = rankVideoGameCandidates;
+export const mercariVideoGameVisualCap = videoGameVisualCap;
+export const selectMercariVideoGameVisualCandidates = selectVideoGameVisualCandidates;
 
 // Filter listings to match the grade from the search query
 export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null, category?: string, certificationCompany?: string): any[] {
@@ -1605,15 +1610,37 @@ export const testAIRouter = router({
           statedTradeValue: input.statedTradeValue,
           listings: filteredSummaries,
         });
-        const preVisionExcludedListings = preVisionAssessment.excluded.map((entry) => ({
+        const targetGameTitle = input.category === 'video_games'
+          ? resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title
+          : '';
+        const videoGameAdmission = input.category === 'video_games'
+          ? selectVideoGameVisualCandidates(rankVideoGameCandidates({
+              listings: preVisionAssessment.eligible,
+              targetGameTitle,
+              targetPlatform,
+              targetPackaging: targetVideoGamePackaging(details),
+              targetRegion: resolveTestAiDetailValue(details, 'region'),
+              targetEdition: resolveTestAiDetailValue(details, 'edition') || resolveTestAiDetailValue(details, 'releaseType'),
+              targetLanguage: resolveTestAiDetailValue(details, 'language'),
+              targetUpc: resolveTestAiDetailValue(details, 'upc') || resolveTestAiDetailValue(details, 'ean') || resolveTestAiDetailValue(details, 'barcode'),
+              targetCatalogNumber: resolveTestAiDetailValue(details, 'catalogNumber') || resolveTestAiDetailValue(details, 'productNumber'),
+              targetGrade,
+              targetGradingCompany: cert,
+            }))
+          : null;
+        const visualEligibleListings = videoGameAdmission?.selected ?? preVisionAssessment.eligible;
+        const preVisionExcludedListings = [
+          ...preVisionAssessment.excluded.map((entry) => ({
           ...entry.item,
           visualReviewStatus: 'not_reviewed',
           visualReviewRationale: entry.reasons.join('; '),
           evidenceDisposition: 'pre_vision_excluded',
           preVisionExclusionReasons: entry.reasons,
-        }));
+          })),
+          ...(videoGameAdmission?.excluded ?? []),
+        ];
         const declaredIdentityFilter = applyDeclaredIdentityFilter(
-          preVisionAssessment.eligible.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item), imageUrls: collectEbayImageUrls(item) })),
+          visualEligibleListings.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item), imageUrls: collectEbayImageUrls(item) })),
           targetMetadata,
         );
         const visualActiveFilter = input.includeVisualReview
@@ -2277,6 +2304,27 @@ export const testAIRouter = router({
           visualReviewRationale: 'Excluded before visual review by explicit metadata, lot/bundle, or high-value price-safety evidence.',
         }));
 
+        const targetGameTitle = input.category === 'video_games'
+          ? resolveTestAiDetailValue(details, 'gameTitle') || resolveTestAiDetailValue(details, 'videoGameTitle') || input.title
+          : '';
+        const videoGameAdmission = input.category === 'video_games'
+          ? selectVideoGameVisualCandidates(rankVideoGameCandidates({
+              listings: preVisionAssessment.eligible,
+              targetGameTitle,
+              targetPlatform: resolveTestAiDetailValue(details, 'platform'),
+              targetPackaging: targetVideoGamePackaging(details),
+              targetRegion: resolveTestAiDetailValue(details, 'region'),
+              targetEdition: resolveTestAiDetailValue(details, 'edition') || resolveTestAiDetailValue(details, 'releaseType'),
+              targetLanguage: resolveTestAiDetailValue(details, 'language'),
+              targetUpc: resolveTestAiDetailValue(details, 'upc') || resolveTestAiDetailValue(details, 'ean') || resolveTestAiDetailValue(details, 'barcode'),
+              targetCatalogNumber: resolveTestAiDetailValue(details, 'catalogNumber') || resolveTestAiDetailValue(details, 'productNumber'),
+              targetGrade: normalizeTestAiGrade(input.grade, cert, input.category),
+              targetGradingCompany: cert,
+            }))
+          : null;
+        const visualEligibleListings = videoGameAdmission?.selected ?? preVisionAssessment.eligible;
+        const scoreExcludedListings = videoGameAdmission?.excluded ?? [];
+
         const stageRows = [
           { rows: byYear, reason: targetYear ? `explicit stated year conflicts with target year ${targetYear}` : 'objective category field conflict' },
           { rows: byNumber, reason: targetNumber ? `explicit stated issue or catalog number conflicts with target ${targetNumber}` : 'objective category field conflict' },
@@ -2332,7 +2380,7 @@ export const testAIRouter = router({
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
             targetMetadata: soldCompsTargetMetadata,
-            listings: preVisionAssessment.eligible.map((item: any) => {
+            listings: visualEligibleListings.map((item: any) => {
               const imageUrls = collectEbayImageUrls(item);
               return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
             }),
@@ -2340,14 +2388,15 @@ export const testAIRouter = router({
           visuallyFiltered = sharedVisualFilter.listings;
           visualSoldFilter = {
             ...sharedVisualFilter,
-            preVisualExcludedCount: (sharedVisualFilter.preVisualExcludedCount ?? 0) + preVisionAssessment.excluded.length,
+            contextListings: [...scoreExcludedListings, ...(sharedVisualFilter.contextListings ?? [])],
+            preVisualExcludedCount: (sharedVisualFilter.preVisualExcludedCount ?? 0) + preVisionAssessment.excluded.length + scoreExcludedListings.length,
             note: `Sold-Comps visual review: ${sharedVisualFilter.note}`,
           };
         } else {
           visualSoldFilter = {
             ...visualSoldFilter,
-            preVisualExcludedCount: preVisionAssessment.excluded.length,
-            note: `${visualSoldFilter.note} ${preVisionAssessment.excluded.length} candidate${preVisionAssessment.excluded.length === 1 ? '' : 's'} excluded before vision by explicit metadata, lot/bundle, or high-value price-safety evidence.`,
+            preVisualExcludedCount: preVisionAssessment.excluded.length + scoreExcludedListings.length,
+            note: `${visualSoldFilter.note} ${preVisionAssessment.excluded.length + scoreExcludedListings.length} candidate${preVisionAssessment.excluded.length + scoreExcludedListings.length === 1 ? '' : 's'} excluded before vision by explicit metadata, lot/bundle, score, or high-value price-safety evidence.`,
           };
         }
 
@@ -2431,7 +2480,7 @@ export const testAIRouter = router({
             warningReview: canonicalListings.filter((item: any) => item.evidenceDisposition === 'warning_review').length,
             valuationEligible: valuationEligibleListings.length,
             notVisuallyReviewed: canonicalListings.filter((item: any) => item.visualReviewStatus === 'not_reviewed').length,
-            ledger: [...canonicalListings, ...rawAuditLedger, ...preVisionAuditLedger],
+            ledger: [...canonicalListings, ...rawAuditLedger, ...preVisionAuditLedger, ...scoreExcludedListings],
           },
           error: null,
         };
@@ -2484,7 +2533,7 @@ export const testAIRouter = router({
           enforceVideoGameTitleMatch: true,
           targetGameTitle,
         });
-        const rankedListings = rankMercariVideoGameCandidates({
+        const rankedListings = rankVideoGameCandidates({
           listings: assessment.eligible,
           targetGameTitle,
           targetPlatform: resolveTestAiDetailValue(details, 'platform'),
@@ -2497,7 +2546,7 @@ export const testAIRouter = router({
           targetGrade: normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory),
           targetGradingCompany: input.certificationCompany,
         });
-        const admission = selectMercariVideoGameVisualCandidates(rankedListings);
+        const admission = selectVideoGameVisualCandidates(rankedListings);
         const excluded = assessment.excluded.map(({ item, metadata, reasons }) => ({
           ...item,
           itemUrl: item.itemUrl ?? item.url ?? null,

@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
+import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, rankVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -27,10 +27,29 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain("if (normalizedCategory === 'video_games')");
     expect(section).toContain('enforceVideoGameTitleMatch: true');
     expect(section).toContain('preVisionExcludedListings');
-    expect(section).toContain('selectMercariVideoGameVisualCandidates');
+    expect(section).toContain('selectVideoGameVisualCandidates');
     expect(section).toContain('minimum metadata score of 50');
     expect(section).toContain('Score-band cap for this result set');
     expect(pageSource).toContain('Excluded before visual review');
+  });
+
+  it('uses the shared Video Game scorer across the marketplace visual-review routes', () => {
+    const activeStart = routerSource.indexOf('getEbayData: protectedProcedure');
+    const activeEnd = routerSource.indexOf('getSoldCompsData: protectedProcedure', activeStart);
+    const activeSection = routerSource.slice(activeStart, activeEnd);
+    const soldStart = routerSource.indexOf('getSoldCompsData: protectedProcedure');
+    const soldEnd = routerSource.indexOf('getMercariSoldCompsData: protectedProcedure', soldStart);
+    const soldSection = routerSource.slice(soldStart, soldEnd);
+    const mercariStart = routerSource.indexOf('getMercariSoldCompsData: protectedProcedure');
+    const mercariEnd = routerSource.indexOf('// SoldComps TCGplayer coverage', mercariStart);
+    const mercariSection = routerSource.slice(mercariStart, mercariEnd);
+
+    expect(activeSection).toContain('rankVideoGameCandidates');
+    expect(activeSection).toContain('selectVideoGameVisualCandidates');
+    expect(soldSection).toContain('rankVideoGameCandidates');
+    expect(soldSection).toContain('selectVideoGameVisualCandidates');
+    expect(mercariSection).toContain('rankVideoGameCandidates');
+    expect(mercariSection).toContain('selectVideoGameVisualCandidates');
   });
 
   it('does not blanket-mark non-Video-Game Mercari sold records as context-only', () => {
@@ -92,6 +111,21 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(ranked[1].metadataMatchReasons).toContain('packaging form not stated by candidate');
   });
 
+  it('produces the same ranking when the shared scorer receives an equivalent non-Mercari source listing', () => {
+    const listings = [
+      { title: 'Metroid NES' },
+      { title: 'Metroid NES CIB', itemSpecifics: [{ name: 'Completeness', value: 'Complete in Box' }] },
+    ];
+    const args = {
+      targetGameTitle: 'Metroid',
+      targetPlatform: 'NES',
+      targetPackaging: targetVideoGamePackaging({ completeInBox: 'Yes' }),
+      listings,
+    };
+    expect(rankVideoGameCandidates(args).map((item) => item.title))
+      .toEqual(rankMercariVideoGameCandidates(args).map((item) => item.title));
+  });
+
   it('uses the confirmed score bands and never fills the cap with sub-50 candidates', () => {
     expect(mercariVideoGameVisualCap(95)).toBe(6);
     expect(mercariVideoGameVisualCap(85)).toBe(5);
@@ -108,6 +142,6 @@ describe('Mercari Video Game pre-visual filtering', () => {
     ]);
     expect(admission.cap).toBe(3);
     expect(admission.selected.map((item) => item.title)).toEqual(['A', 'B', 'C']);
-    expect(admission.excluded[0].visualReviewRationale).toContain('below the Mercari Video Game visual-review minimum of 50');
+    expect(admission.excluded[0].visualReviewRationale).toContain('below the Video Game visual-review minimum of 50');
   });
 });
