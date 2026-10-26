@@ -1020,6 +1020,26 @@ function countAcceptedVisualMatches(data: any): number {
   return (data?.listings ?? []).filter((listing: any) => listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match').length;
 }
 
+/**
+ * A visual result is part of the analyzer contract, not presentation-only
+ * decoration. When a source actually ran image review, only an explicit match
+ * may continue to the analyzer; mismatches, unreadable results, unresolved
+ * candidates, provider failures, and timeouts stay context/manual-review only.
+ * Sources that skipped review because no target/candidate image existed retain
+ * their non-visual evidence behavior.
+ */
+function visualReviewAcceptedRecords<T extends Record<string, any>>(records: T[], sourceData: any): T[] {
+  const filter = sourceData?.visualFilter;
+  if (!filter) return records;
+  const status = String(filter.status ?? '');
+  const reviewRan = Number(filter.reviewedCount ?? 0) > 0
+    || status === 'applied'
+    || status === 'completed_with_timeout'
+    || status === 'provider_unavailable';
+  if (!reviewRan) return records;
+  return records.filter((record) => record.visualReviewStatus === 'match' || record.visualReviewStatus === 'rough_match');
+}
+
 function computeClientVisualMatchMetrics(listings: any[]): any | null {
   const seen = new Set<string>();
   const priced = listings.filter((listing: any) => {
@@ -2709,7 +2729,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('the_card_api')) {
       const sales = theCardApiData?.sales ?? [];
       const confirmedRecent = sales.filter((sale: any) => sale.confirmed && sale.recency === 'recent').length;
-      const analyzerSubmittedSales = cardApiAnalyzerSubmittedSales(sales);
+      const analyzerSubmittedSales = cardApiAnalyzerSubmittedSales(visualReviewAcceptedRecords(sales, theCardApiData));
       add({
         id: 'the_card_api',
         label: 'The Card API Sales',
@@ -2724,13 +2744,17 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('cardsight_ai')) {
       const sales = cardsightAiData?.sales ?? [];
       const completedRecent = sales.filter((sale: any) => sale.completed && sale.recency === 'recent').length;
+      const analyzerSubmitted = visualReviewAcceptedRecords(
+        sales.filter((sale: any) => sale.completed && Number(sale.price) > 0),
+        cardsightAiData,
+      );
       add({
         id: 'cardsight_ai',
         label: 'Cardsight.ai Market Data',
         kind: completedRecent > 0 ? 'market_completed' : 'market_historical',
         role: completedRecent > 0 ? 'valuation_candidate' : 'historical_context',
         status: evidenceStatus(cardsightAiData),
-        market: { returnedRecordCount: sales.length + (cardsightAiData?.activeListings?.length ?? 0), completedSaleCount: completedRecent, historicalSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'undated').length, currentListingCount: cardsightAiData?.activeListings?.length ?? 0 },
+        market: { returnedRecordCount: sales.length + (cardsightAiData?.activeListings?.length ?? 0), completedSaleCount: completedRecent, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: analyzerSubmitted.map((sale: any) => Number(sale.price)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: analyzerSubmitted.map((sale: any, index: number) => toAnalyzerRecord(sale, index, sale.recency === 'historical' ? 'historical_trend' : 'current_value')), historicalSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.completed && sale.recency === 'undated').length, currentListingCount: cardsightAiData?.activeListings?.length ?? 0 },
         // Cardsight's setName can be a catalog container such as “Checklist”,
         // while release + selected parallel carry the collectible identity.
         // Display both in the source panel but do not create a false Set conflict
@@ -2749,7 +2773,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         const timestamp = Date.parse(String(sale.date ?? ''));
         return Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp <= 365 * 86_400_000;
       });
-      const analyzerSubmitted = sales.filter((sale: any) => Number.isFinite(Number(sale.price ?? sale.finalPrice)) && Number(sale.price ?? sale.finalPrice) > 0);
+      const analyzerSubmitted = visualReviewAcceptedRecords(
+        sales.filter((sale: any) => Number.isFinite(Number(sale.price ?? sale.finalPrice)) && Number(sale.price ?? sale.finalPrice) > 0),
+        source.data,
+      );
       const submittedPrices = analyzerSubmitted
         .map((sale: any) => Number(sale.price ?? sale.finalPrice))
         .filter((price: number) => Number.isFinite(price) && price > 0);
@@ -2801,7 +2828,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     }
     if (enabledSources.has('mercari_sold_comps')) {
       const listings = mercariSoldCompsData?.listings ?? [];
-      const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+      const accepted = visualReviewAcceptedRecords(
+        listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0),
+        mercariSoldCompsData,
+      );
       const currentValue = accepted.filter((listing: any) => {
         const timestamp = Date.parse(String(listing.endedAt ?? ''));
         return Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp <= 365 * 86_400_000;
@@ -2831,6 +2861,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     if (enabledSources.has('one_thirty_point')) {
       const sales = oneThirtyPointData?.data?.items ?? [];
       const recentCompletedCount = sales.filter((sale: any) => sale.recency === 'recent').length;
+      const analyzerSubmitted = visualReviewAcceptedRecords(
+        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),
+        oneThirtyPointData,
+      );
       add({
         id: 'one_thirty_point',
         label: '130point',
@@ -2840,6 +2874,11 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
         market: {
           returnedRecordCount: sales.length,
           completedSaleCount: recentCompletedCount,
+          analyzerSubmittedSaleCount: analyzerSubmitted.length,
+          analyzerSubmittedPrices: analyzerSubmitted.map((sale: any) => Number(sale.price ?? sale.finalPrice)).filter((price: number) => Number.isFinite(price) && price > 0),
+          analyzerRecords: analyzerSubmitted.map((sale: any, index: number) => toAnalyzerRecord(sale, index, sale.recency === 'historical' ? 'historical_trend' : 'current_value')),
+          currentValueSaleCount: analyzerSubmitted.filter((sale: any) => sale.recency === 'recent').length,
+          historicalTrendSaleCount: analyzerSubmitted.filter((sale: any) => sale.recency === 'historical').length,
           historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length,
           undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length,
         },
@@ -2848,7 +2887,11 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     }
     if (enabledSources.has('pwcc')) {
       const sales = pwccQuery.data?.data?.items ?? [];
-      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { returnedRecordCount: sales.length, recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length }, message: pwccQuery.data?.message ?? null });
+      const analyzerSubmitted = visualReviewAcceptedRecords(
+        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),
+        pwccQuery.data,
+      );
+      add({ id: 'pwcc', label: 'PWCC / Fanatics Collect', kind: 'market_historical', status: evidenceStatus(pwccQuery.data), market: { returnedRecordCount: sales.length, recentSaleCount: sales.filter((sale: any) => sale.recency === 'recent').length, historicalSaleCount: sales.filter((sale: any) => sale.recency === 'historical').length, undatedSaleCount: sales.filter((sale: any) => sale.recency === 'undated').length, analyzerSubmittedSaleCount: analyzerSubmitted.length, analyzerSubmittedPrices: analyzerSubmitted.map((sale: any) => Number(sale.price ?? sale.finalPrice)).filter((price: number) => Number.isFinite(price) && price > 0), analyzerRecords: analyzerSubmitted.map((sale: any, index: number) => toAnalyzerRecord(sale, index, sale.recency === 'historical' ? 'historical_trend' : 'current_value')) }, message: pwccQuery.data?.message ?? null });
     }
     if (enabledSources.has('comic_book_realm')) {
       const guideRows = comicBookRealmQuery.data?.guideRows ?? [];

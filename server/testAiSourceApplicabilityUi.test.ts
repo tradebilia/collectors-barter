@@ -235,6 +235,13 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<AnalyzerRecordPanel records={decision.analyzerRecords} acceptedCount={decision.accepted} sourceLabel={decision.label} />');
     expect(source).toContain('analyzerRecords: accepted.map');
     expect(source).toContain('analyzerRecords: currentValue.map');
+    expect(source).toContain('function visualReviewAcceptedRecords');
+    expect(source).toContain('cardApiAnalyzerSubmittedSales(visualReviewAcceptedRecords(sales, theCardApiData))');
+    expect(source).toContain('sales.filter((sale: any) => sale.completed && Number(sale.price) > 0),\n        cardsightAiData');
+    expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter');
+    expect(source).toContain('visualReviewAcceptedRecords(\n        listings.filter');
+    expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        oneThirtyPointData');
+    expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        pwccQuery.data');
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
     expect(source).toContain('AI image checks are required before visually supported eBay Active listings can enter current-value evidence');
     expect(source).toContain('const recordCount = records.length > 0 ? records.length : acceptedCount;');
