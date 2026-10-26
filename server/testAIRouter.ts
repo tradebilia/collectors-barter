@@ -2558,10 +2558,37 @@ export const testAIRouter = router({
             evidenceReasons: [],
           })),
         });
-        const annotatedListings = visualFilter.listings.map((listing: any) => ({
+        const targetGrade = normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory);
+        const annotatedListings = visualFilter.listings.map((listing: any) => annotateSoldComparableCandidate({
           ...listing,
           itemUrl: listing.itemUrl ?? listing.url ?? null,
           imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
+          sourceId: 'mercari_sold_comps' as const,
+          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          marketplace: 'Mercari' as const,
+          soldPrice: listing.soldPrice ?? listing.price,
+          soldCurrency: listing.soldCurrency ?? listing.currency,
+          saleStatus: 'completed' as const,
+          completedStatusBasis: 'Mercari completed-sale endpoint',
+          priceBasis: 'sold' as const,
+          evidenceDisposition: undefined,
+          evidenceReasons: [],
+        }, {
+          category: normalizedCategory,
+          targetItemType: input.itemType ?? '',
+          certificationCompany: input.certificationCompany ?? '',
+          targetGrade: targetGrade || null,
+          targetNumber: null,
+          targetPlayer: null,
+          statedTradeValue: input.statedTradeValue,
+          visualReviewRequired: true,
+        })).map((listing: any) => ({
+          ...listing,
+          itemUrl: listing.itemUrl ?? listing.url ?? null,
+          imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
+          price: Number(listing.soldPrice ?? listing.price ?? 0),
+          currency: listing.soldCurrency ?? listing.currency ?? null,
+          endedAt: listing.endedAt ?? null,
           sourceId: 'mercari_sold_comps' as const,
           sourceLabel: 'Sold-Comps (Mercari Sold)',
           marketplace: 'Mercari' as const,

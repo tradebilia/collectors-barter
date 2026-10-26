@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { assessSoldCompsPreVisionCandidates, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
+import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -44,6 +44,29 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain("valuationEligible: valuationEligible.length");
     expect(section).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory)) return result;");
     expect(pageSource).toContain('records can affect valuation after the shared sold-evidence and identity gates.');
+  });
+
+  it('promotes a confirmed Mercari Video Game visual match to analyzer eligibility', () => {
+    const annotated = annotateSoldComparableCandidate({
+      title: 'Metroid - NES CIB',
+      soldPrice: 112,
+      soldCurrency: 'USD',
+      saleStatus: 'completed',
+      priceBasis: 'sold',
+      visualReviewStatus: 'match',
+      visualReviewRationale: 'Complete-in-box Metroid NES matches the target.',
+    }, {
+      category: 'video_games',
+      targetItemType: 'single',
+      certificationCompany: '',
+      targetGrade: null,
+      targetNumber: null,
+      targetPlayer: null,
+      visualReviewRequired: true,
+    });
+
+    expect(annotated.evidenceDisposition).toBe('valuation_eligible');
+    expect(annotated.visualReviewStatus).toBe('match');
   });
 
   it('ranks Complete In Box/CIB candidates ahead of candidates with unknown form', () => {
