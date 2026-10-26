@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { assessSoldCompsPreVisionCandidates } from './testAIRouter';
+import { assessSoldCompsPreVisionCandidates, rankMercariVideoGameCandidates } from './testAIRouter';
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -29,5 +29,26 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain('preVisionExcludedListings');
     expect(section).toContain("status: 'pre_visual_filtered'");
     expect(pageSource).toContain('Excluded before visual review');
+  });
+
+  it('ranks Complete In Box/CIB candidates ahead of candidates with unknown form', () => {
+    const ranked = rankMercariVideoGameCandidates({
+      targetGameTitle: 'Metroid',
+      targetPlatform: 'NES',
+      targetPackaging: 'cib',
+      listings: [
+        { title: 'Metroid NES' },
+        { title: 'Metroid NES CIB', itemSpecifics: [{ name: 'Completeness', value: 'Complete in Box' }] },
+        { title: 'Metroid NES Loose Cartridge' },
+      ],
+    });
+
+    expect(ranked.map((item) => item.title)).toEqual([
+      'Metroid NES CIB',
+      'Metroid NES',
+      'Metroid NES Loose Cartridge',
+    ]);
+    expect(ranked[0].metadataMatchReasons).toContain('Complete in Box/CIB form matches');
+    expect(ranked[1].metadataMatchReasons).toContain('packaging form not stated by candidate');
   });
 });

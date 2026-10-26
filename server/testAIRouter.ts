@@ -539,6 +539,116 @@ export function assessSoldCompsPreVisionCandidates(args: {
   };
 }
 
+type MercariVideoGameRankingArgs = {
+  listings: any[];
+  targetGameTitle: string;
+  targetPlatform?: string | null;
+  targetPackaging?: string | null;
+  targetRegion?: string | null;
+  targetEdition?: string | null;
+  targetLanguage?: string | null;
+  targetUpc?: string | null;
+  targetCatalogNumber?: string | null;
+  targetGrade?: string | number | null;
+  targetGradingCompany?: string | null;
+};
+
+function normalizedComparableValue(value: unknown): string {
+  return normalizedSoldCompsField(value).replace(/\b(?:yes|no|unknown|none|null)\b/g, '').replace(/\s+/g, ' ').trim();
+}
+
+function videoGamePackagingSignal(title: unknown, metadata: Record<string, string>): 'sealed' | 'cib' | 'boxed' | 'loose' | 'manual_only' | 'accessory_only' | null {
+  const text = normalizedSoldCompsField(`${String(title ?? '')} ${metadata.packaging ?? ''} ${metadata.completeness ?? ''} ${metadata.sealedStatus ?? ''}`);
+  if (/\b(?:sealed|factory sealed|new sealed|still sealed)\b/.test(text)) return 'sealed';
+  if (/\b(?:cib|complete in box|complete with box|boxed complete|complete boxed)\b/.test(text)) return 'cib';
+  if (/\b(?:boxed|with box|box included)\b/.test(text)) return 'boxed';
+  if (/\b(?:loose|cart only|cartridge only|disc only|game only)\b/.test(text)) return 'loose';
+  if (/\b(?:manual only|instruction(?:s)? only|booklet only|guide only)\b/.test(text)) return 'manual_only';
+  if (/\b(?:box only|case only|cover only|label only|artwork only|soundtrack only)\b/.test(text)) return 'accessory_only';
+  return null;
+}
+
+function targetVideoGamePackaging(details: Record<string, unknown>): 'sealed' | 'cib' | 'boxed' | 'loose' | null {
+  const raw = normalizedComparableValue(details.packaging ?? details.completeness ?? details.form ?? details.itemType);
+  const completeInBox = details.completeInBox ?? details.complete_in_box ?? details.cib;
+  const sealed = details.sealed ?? details.isSealed ?? details.sealedStatus;
+  const loose = details.loose ?? details.isLoose;
+  if (completeInBox === true || /^(?:yes|true|cib|complete in box)$/.test(raw)) return 'cib';
+  if (sealed === true || /^(?:yes|true|sealed|factory sealed)$/.test(normalizedComparableValue(sealed))) return 'sealed';
+  if (loose === true || /^(?:loose|cart only|cartridge only|disc only)$/.test(raw)) return 'loose';
+  if (/\b(?:cib|complete in box)\b/.test(raw)) return 'cib';
+  if (/\bsealed\b/.test(raw)) return 'sealed';
+  if (/\bloose\b/.test(raw)) return 'loose';
+  return null;
+}
+
+function metadataMatches(target: unknown, candidate: unknown): boolean {
+  const expected = normalizedComparableValue(target);
+  const actual = normalizedComparableValue(candidate);
+  return Boolean(expected && actual && (expected === actual || actual.includes(expected) || expected.includes(actual)));
+}
+
+export function rankMercariVideoGameCandidates(args: MercariVideoGameRankingArgs): any[] {
+  const targetTitleTokens = normalizedSoldCompsField(args.targetGameTitle).split(' ').filter((token) => token.length >= 2 && !['a', 'an', 'and', 'for', 'game', 'of', 'the', 'video', 'nintendo', 'entertainment', 'system'].includes(token));
+  const targetPackaging = args.targetPackaging;
+  return args.listings.map((item, originalIndex) => {
+    const metadata = normalizeSoldCompsMetadata(item);
+    const candidateTitle = normalizedSoldCompsField(item?.title);
+    const candidateTokens = new Set(candidateTitle.split(' '));
+    const matchReasons: string[] = [];
+    let score = 0;
+    if (targetTitleTokens.length && targetTitleTokens.every((token) => candidateTokens.has(token))) {
+      score += 35;
+      matchReasons.push('game title terms match');
+    }
+    const candidatePlatform = canonicalVideoGamePlatform(metadata.platform) ?? canonicalVideoGamePlatform(item?.title);
+    const targetPlatform = canonicalVideoGamePlatform(args.targetPlatform);
+    if (targetPlatform && candidatePlatform === targetPlatform) {
+      score += 20;
+      matchReasons.push(`platform matches ${targetPlatform.toUpperCase()}`);
+    }
+    const candidatePackaging = videoGamePackagingSignal(item?.title, metadata);
+    if (targetPackaging && candidatePackaging === targetPackaging) {
+      score += 15;
+      matchReasons.push(targetPackaging === 'cib' ? 'Complete in Box/CIB form matches' : `${targetPackaging} form matches`);
+    } else if (targetPackaging && !candidatePackaging) {
+      score += 5;
+      matchReasons.push('packaging form not stated by candidate');
+    }
+    for (const [label, target, candidate, weight] of [
+      ['region', args.targetRegion, metadata.region, 10],
+      ['edition', args.targetEdition, metadata.edition, 10],
+      ['language', args.targetLanguage, metadata.language, 5],
+      ['UPC/catalog identifier', args.targetUpc, metadata.upc, 5],
+      ['catalog number', args.targetCatalogNumber, metadata.catalogNumber, 5],
+    ] as const) {
+      if (!target) continue;
+      if (metadataMatches(target, candidate)) {
+        score += weight;
+        matchReasons.push(`${label} matches`);
+      } else if (!candidate) {
+        matchReasons.push(`${label} not stated by candidate`);
+      }
+    }
+    if (args.targetGrade != null && metadataMatches(args.targetGrade, metadata.grade)) {
+      score += 5;
+      matchReasons.push('grade matches');
+    }
+    if (args.targetGradingCompany && metadataMatches(args.targetGradingCompany, metadata.gradingCompany)) {
+      score += 5;
+      matchReasons.push('grading company matches');
+    }
+    return {
+      ...item,
+      metadataMatchScore: Math.round((score / 105) * 100),
+      metadataMatchReasons: matchReasons,
+      metadataMatchRank: 0,
+      _metadataOriginalIndex: originalIndex,
+    };
+  }).sort((a, b) => b.metadataMatchScore - a.metadataMatchScore || a._metadataOriginalIndex - b._metadataOriginalIndex)
+    .map((item, index) => ({ ...item, metadataMatchRank: index + 1, _metadataOriginalIndex: undefined }));
+}
+
 // Filter listings to match the grade from the search query
 export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null, category?: string, certificationCompany?: string): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
@@ -2338,6 +2448,19 @@ export const testAIRouter = router({
           enforceVideoGameTitleMatch: true,
           targetGameTitle,
         });
+        const rankedListings = rankMercariVideoGameCandidates({
+          listings: assessment.eligible,
+          targetGameTitle,
+          targetPlatform: resolveTestAiDetailValue(details, 'platform'),
+          targetPackaging: targetVideoGamePackaging(details),
+          targetRegion: resolveTestAiDetailValue(details, 'region'),
+          targetEdition: resolveTestAiDetailValue(details, 'edition') || resolveTestAiDetailValue(details, 'releaseType'),
+          targetLanguage: resolveTestAiDetailValue(details, 'language'),
+          targetUpc: resolveTestAiDetailValue(details, 'upc') || resolveTestAiDetailValue(details, 'ean') || resolveTestAiDetailValue(details, 'barcode'),
+          targetCatalogNumber: resolveTestAiDetailValue(details, 'catalogNumber') || resolveTestAiDetailValue(details, 'productNumber'),
+          targetGrade: normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory),
+          targetGradingCompany: input.certificationCompany,
+        });
         const excluded = assessment.excluded.map(({ item, metadata, reasons }) => ({
           ...item,
           itemUrl: item.itemUrl ?? item.url ?? null,
@@ -2349,7 +2472,7 @@ export const testAIRouter = router({
         }));
         return {
           ...result,
-          listings: assessment.eligible.map((item) => ({
+          listings: rankedListings.map((item) => ({
             ...item,
             itemUrl: item.itemUrl ?? item.url ?? null,
             imageUrl: item.imageUrl ?? item.thumbnailUrl ?? null,
@@ -2360,7 +2483,7 @@ export const testAIRouter = router({
             status: 'pre_visual_filtered' as const,
             reviewedCount: 0,
             removedCount: excluded.length,
-            retainedUnreviewedCount: assessment.eligible.length,
+            retainedUnreviewedCount: rankedListings.length,
             reviews: [],
             note: `Mercari Video Game pre-visual filter excluded ${excluded.length} obvious mismatch${excluded.length === 1 ? '' : 'es'} before image review; retained records remain unreviewed context until later identity admission.`,
           },

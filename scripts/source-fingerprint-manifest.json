@@ -706,6 +706,7 @@
   "server/testAiManufacturerCriteria.test.ts",
   "server/testAiMarketEvidence.test.ts",
   "server/testAiMarketEvidence.ts",
+  "server/testAiMercariPreVision.test.ts",
   "server/testAiMusicEvidence.test.ts",
   "server/testAiP0Evidence.test.ts",
   "server/testAiParserRecall.test.ts",
