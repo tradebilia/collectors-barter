@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { assessSoldCompsPreVisionCandidates, rankMercariVideoGameCandidates } from './testAIRouter';
+import { assessSoldCompsPreVisionCandidates, rankMercariVideoGameCandidates, targetVideoGamePackaging } from './testAIRouter';
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -32,10 +32,12 @@ describe('Mercari Video Game pre-visual filtering', () => {
   });
 
   it('ranks Complete In Box/CIB candidates ahead of candidates with unknown form', () => {
+    expect(targetVideoGamePackaging({ completeInBox: 'Yes' })).toBe('cib');
+    expect(targetVideoGamePackaging({ sealed: 'yes' })).toBe('sealed');
     const ranked = rankMercariVideoGameCandidates({
       targetGameTitle: 'Metroid',
       targetPlatform: 'NES',
-      targetPackaging: 'cib',
+      targetPackaging: targetVideoGamePackaging({ completeInBox: 'Yes' }),
       listings: [
         { title: 'Metroid NES' },
         { title: 'Metroid NES CIB', itemSpecifics: [{ name: 'Completeness', value: 'Complete in Box' }] },

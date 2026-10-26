@@ -557,6 +557,10 @@ function normalizedComparableValue(value: unknown): string {
   return normalizedSoldCompsField(value).replace(/\b(?:yes|no|unknown|none|null)\b/g, '').replace(/\s+/g, ' ').trim();
 }
 
+function normalizedBooleanChoice(value: unknown): string {
+  return String(value ?? '').trim().toLowerCase().replace(/[ _-]+/g, '_');
+}
+
 function videoGamePackagingSignal(title: unknown, metadata: Record<string, string>): 'sealed' | 'cib' | 'boxed' | 'loose' | 'manual_only' | 'accessory_only' | null {
   const text = normalizedSoldCompsField(`${String(title ?? '')} ${metadata.packaging ?? ''} ${metadata.completeness ?? ''} ${metadata.sealedStatus ?? ''}`);
   if (/\b(?:sealed|factory sealed|new sealed|still sealed)\b/.test(text)) return 'sealed';
@@ -568,14 +572,17 @@ function videoGamePackagingSignal(title: unknown, metadata: Record<string, strin
   return null;
 }
 
-function targetVideoGamePackaging(details: Record<string, unknown>): 'sealed' | 'cib' | 'boxed' | 'loose' | null {
+export function targetVideoGamePackaging(details: Record<string, unknown>): 'sealed' | 'cib' | 'boxed' | 'loose' | null {
   const raw = normalizedComparableValue(details.packaging ?? details.completeness ?? details.form ?? details.itemType);
   const completeInBox = details.completeInBox ?? details.complete_in_box ?? details.cib;
   const sealed = details.sealed ?? details.isSealed ?? details.sealedStatus;
   const loose = details.loose ?? details.isLoose;
-  if (completeInBox === true || /^(?:yes|true|cib|complete in box)$/.test(raw)) return 'cib';
-  if (sealed === true || /^(?:yes|true|sealed|factory sealed)$/.test(normalizedComparableValue(sealed))) return 'sealed';
-  if (loose === true || /^(?:loose|cart only|cartridge only|disc only)$/.test(raw)) return 'loose';
+  const completeChoice = normalizedBooleanChoice(completeInBox);
+  const sealedChoice = normalizedBooleanChoice(sealed);
+  const looseChoice = normalizedBooleanChoice(loose);
+  if (/^(?:yes|true|1|cib|complete_in_box)$/.test(completeChoice) || /^(?:cib|complete in box)$/.test(raw)) return 'cib';
+  if (/^(?:yes|true|1|sealed|factory_sealed)$/.test(sealedChoice)) return 'sealed';
+  if (/^(?:yes|true|1|loose)$/.test(looseChoice) || /^(?:loose|cart only|cartridge only|disc only)$/.test(raw)) return 'loose';
   if (/\b(?:cib|complete in box)\b/.test(raw)) return 'cib';
   if (/\bsealed\b/.test(raw)) return 'sealed';
   if (/\bloose\b/.test(raw)) return 'loose';
