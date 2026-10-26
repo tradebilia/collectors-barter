@@ -656,6 +656,34 @@ export function rankMercariVideoGameCandidates(args: MercariVideoGameRankingArgs
     .map((item, index) => ({ ...item, metadataMatchRank: index + 1, _metadataOriginalIndex: undefined }));
 }
 
+export function mercariVideoGameVisualCap(highestScore: number): number {
+  if (highestScore >= 90) return 6;
+  if (highestScore >= 80) return 5;
+  if (highestScore >= 60) return 3;
+  if (highestScore >= 50) return 2;
+  return 0;
+}
+
+export function selectMercariVideoGameVisualCandidates(listings: any[]): { selected: any[]; excluded: any[]; cap: number } {
+  const highestScore = Number(listings[0]?.metadataMatchScore ?? 0);
+  const cap = mercariVideoGameVisualCap(highestScore);
+  const qualifying = listings.filter((listing) => Number(listing.metadataMatchScore ?? 0) >= 50);
+  const selected = qualifying.slice(0, cap);
+  const selectedKeys = new Set(selected.map((listing) => listing.itemUrl ?? listing.url ?? listing.saleId ?? listing.title));
+  const excluded = listings.filter((listing) => !selectedKeys.has(listing.itemUrl ?? listing.url ?? listing.saleId ?? listing.title)).map((listing) => ({
+    ...listing,
+    evidenceDisposition: 'pre_vision_score_excluded' as const,
+    visualReviewStatus: 'not_reviewed' as const,
+    visualReviewRationale: Number(listing.metadataMatchScore ?? 0) < 50
+      ? `Metadata score ${Number(listing.metadataMatchScore ?? 0)}/100 is below the Mercari Video Game visual-review minimum of 50.`
+      : `Candidate ranked below the Mercari Video Game visual-review cap of ${cap}; higher-scoring candidates were selected first.`,
+    evidenceReasons: [Number(listing.metadataMatchScore ?? 0) < 50
+      ? `metadata score below minimum (50)`
+      : `visual-review cap reached (${cap})`],
+  }));
+  return { selected, excluded, cap };
+}
+
 // Filter listings to match the grade from the search query
 export function filterListingsByGrade(summaries: any[], targetGrade: ExtractedGrade | null, category?: string, certificationCompany?: string): any[] {
   if (!targetGrade) return summaries; // If no grade in query, return all
@@ -2468,6 +2496,7 @@ export const testAIRouter = router({
           targetGrade: normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory),
           targetGradingCompany: input.certificationCompany,
         });
+        const admission = selectMercariVideoGameVisualCandidates(rankedListings);
         const excluded = assessment.excluded.map(({ item, metadata, reasons }) => ({
           ...item,
           itemUrl: item.itemUrl ?? item.url ?? null,
@@ -2477,27 +2506,86 @@ export const testAIRouter = router({
           visualReviewRationale: reasons.join('; '),
           soldCompsMetadata: metadata,
         }));
-        return {
-          ...result,
-          listings: rankedListings.map((item) => ({
-            ...item,
-            itemUrl: item.itemUrl ?? item.url ?? null,
-            imageUrl: item.imageUrl ?? item.thumbnailUrl ?? null,
+        const scoreExcluded = admission.excluded.map((item) => ({
+          ...item,
+          itemUrl: item.itemUrl ?? item.url ?? null,
+          imageUrl: item.imageUrl ?? item.thumbnailUrl ?? null,
+        }));
+        const safeTargetImage = (() => {
+          if (!input.imageUrl) return null;
+          try {
+            return new URL(input.imageUrl).protocol === 'https:' ? input.imageUrl : null;
+          } catch {
+            return null;
+          }
+        })();
+        if (!safeTargetImage || !admission.selected.length) {
+          const reason = !safeTargetImage
+            ? 'Mercari Video Game visual review requires a target image; retained records remain context-only.'
+            : `No Mercari Video Game candidate reached the minimum metadata score of 50; retained records remain context-only.`;
+          return {
+            ...result,
+            listings: rankedListings,
+            preVisionExcludedListings: [...excluded, ...scoreExcluded],
+            visualFilter: {
+              status: !safeTargetImage ? 'skipped_no_target_image' as const : 'pre_visual_score_filtered' as const,
+              reviewedCount: 0,
+              removedCount: excluded.length + scoreExcluded.length,
+              retainedUnreviewedCount: admission.selected.length,
+              reviews: [],
+              note: `${reason} Score-band cap for this result set: ${admission.cap}.`,
+            },
+            audit: {
+              rawReceived: result.listings.length,
+              preVisionExcluded: excluded.length + scoreExcluded.length,
+              ledger: [...admission.selected, ...excluded, ...scoreExcluded],
+            },
+          };
+        }
+        const visualFilter = await filterVisualSourceCandidates({
+          sourceLabel: 'Mercari Video Game sold listings',
+          targetImageUrl: safeTargetImage,
+          targetMetadata,
+          listings: admission.selected.map((listing) => ({
+            ...listing,
+            url: listing.itemUrl ?? listing.url,
+            thumbnailUrl: listing.imageUrl ?? listing.thumbnailUrl,
+            soldPrice: listing.price ?? listing.soldPrice,
+            soldCurrency: listing.currency ?? listing.soldCurrency,
+            imageUrls: listing.imageUrl ? [listing.imageUrl] : [],
+            evidenceDisposition: undefined,
             evidenceReasons: [],
           })),
-          preVisionExcludedListings: excluded,
+        });
+        const annotatedListings = visualFilter.listings.map((listing: any) => ({
+          ...listing,
+          itemUrl: listing.itemUrl ?? listing.url ?? null,
+          imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
+          sourceId: 'mercari_sold_comps' as const,
+          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          marketplace: 'Mercari' as const,
+        }));
+        const visualContextListings = (visualFilter.contextListings ?? []).map((listing: any) => ({
+          ...listing,
+          itemUrl: listing.itemUrl ?? listing.url ?? null,
+          imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
+          evidenceDisposition: listing.evidenceDisposition ?? 'context_only',
+          sourceId: 'mercari_sold_comps' as const,
+          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          marketplace: 'Mercari' as const,
+        }));
+        return {
+          ...result,
+          listings: annotatedListings,
+          preVisionExcludedListings: [...excluded, ...scoreExcluded, ...visualContextListings],
           visualFilter: {
-            status: 'pre_visual_filtered' as const,
-            reviewedCount: 0,
-            removedCount: excluded.length,
-            retainedUnreviewedCount: rankedListings.length,
-            reviews: [],
-            note: `Mercari Video Game pre-visual filter excluded ${excluded.length} obvious mismatch${excluded.length === 1 ? '' : 'es'} before image review; retained records remain unreviewed context until later identity admission.`,
+            ...visualFilter,
+            note: `Mercari Video Game candidates use score-band visual admission: minimum score 50, cap ${admission.cap}. ${visualFilter.note}`,
           },
           audit: {
             rawReceived: result.listings.length,
-            preVisionExcluded: excluded.length,
-            ledger: [...assessment.eligible, ...excluded],
+            preVisionExcluded: excluded.length + scoreExcluded.length,
+            ledger: [...annotatedListings, ...excluded, ...scoreExcluded, ...visualContextListings],
           },
         };
       }

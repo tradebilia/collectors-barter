@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { assessSoldCompsPreVisionCandidates, rankMercariVideoGameCandidates, targetVideoGamePackaging } from './testAIRouter';
+import { assessSoldCompsPreVisionCandidates, mercariVideoGameVisualCap, rankMercariVideoGameCandidates, selectMercariVideoGameVisualCandidates, targetVideoGamePackaging } from './testAIRouter';
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
@@ -27,7 +27,9 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain("if (normalizedCategory === 'video_games')");
     expect(section).toContain('enforceVideoGameTitleMatch: true');
     expect(section).toContain('preVisionExcludedListings');
-    expect(section).toContain("status: 'pre_visual_filtered'");
+    expect(section).toContain('selectMercariVideoGameVisualCandidates');
+    expect(section).toContain('minimum metadata score of 50');
+    expect(section).toContain('Score-band cap for this result set');
     expect(pageSource).toContain('Excluded before visual review');
   });
 
@@ -52,5 +54,24 @@ describe('Mercari Video Game pre-visual filtering', () => {
     ]);
     expect(ranked[0].metadataMatchReasons).toContain('Complete in Box/CIB form matches');
     expect(ranked[1].metadataMatchReasons).toContain('packaging form not stated by candidate');
+  });
+
+  it('uses the confirmed score bands and never fills the cap with sub-50 candidates', () => {
+    expect(mercariVideoGameVisualCap(95)).toBe(6);
+    expect(mercariVideoGameVisualCap(85)).toBe(5);
+    expect(mercariVideoGameVisualCap(70)).toBe(3);
+    expect(mercariVideoGameVisualCap(60)).toBe(3);
+    expect(mercariVideoGameVisualCap(50)).toBe(2);
+    expect(mercariVideoGameVisualCap(49)).toBe(0);
+
+    const admission = selectMercariVideoGameVisualCandidates([
+      { title: 'A', itemUrl: 'a', metadataMatchScore: 62 },
+      { title: 'B', itemUrl: 'b', metadataMatchScore: 60 },
+      { title: 'C', itemUrl: 'c', metadataMatchScore: 55 },
+      { title: 'D', itemUrl: 'd', metadataMatchScore: 49 },
+    ]);
+    expect(admission.cap).toBe(3);
+    expect(admission.selected.map((item) => item.title)).toEqual(['A', 'B', 'C']);
+    expect(admission.excluded[0].visualReviewRationale).toContain('below the Mercari Video Game visual-review minimum of 50');
   });
 });
