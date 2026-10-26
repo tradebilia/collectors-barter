@@ -33,6 +33,19 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(pageSource).toContain('Excluded before visual review');
   });
 
+  it('does not blanket-mark non-Video-Game Mercari sold records as context-only', () => {
+    const start = routerSource.indexOf('getMercariSoldCompsData: protectedProcedure');
+    const end = routerSource.indexOf('// SoldComps TCGplayer coverage', start);
+    const section = routerSource.slice(start, end);
+
+    expect(routerSource).toContain('completed Mercari sales use the same evidence-based analyzer disposition');
+    expect(section).toContain('annotateSoldComparableCandidate');
+    expect(section).toContain("visualReviewRequired: false");
+    expect(section).toContain("valuationEligible: valuationEligible.length");
+    expect(section).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory)) return result;");
+    expect(pageSource).toContain('records can affect valuation after the shared sold-evidence and identity gates.');
+  });
+
   it('ranks Complete In Box/CIB candidates ahead of candidates with unknown form', () => {
     expect(targetVideoGamePackaging({ completeInBox: 'Yes' })).toBe('cib');
     expect(targetVideoGamePackaging({ sealed: 'yes' })).toBe('sealed');

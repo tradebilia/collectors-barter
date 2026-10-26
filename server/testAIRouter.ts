@@ -2440,9 +2440,10 @@ export const testAIRouter = router({
       }
     }),
 
-  // SoldComps Mercari coverage is deliberately separate from eBay. Mercari
-  // remains context-only for every category except Disney Pins and coins, whose
-  // records can enter valuation only after the shared strict visual-admission gate.
+  // SoldComps Mercari coverage is deliberately separate from eBay retrieval, but
+  // completed Mercari sales use the same evidence-based analyzer disposition.
+  // Coins, Disney Pins, and Video Games retain their category-specific visual
+  // gates; every other category still receives the shared sold-comparable gate.
   getMercariSoldCompsData: protectedProcedure
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().optional(), condition: z.string().optional(),
@@ -2589,7 +2590,70 @@ export const testAIRouter = router({
           },
         };
       }
-      if (!['disney_pins', 'coins'].includes(normalizedCategory)) return result;
+      if (!['disney_pins', 'coins'].includes(normalizedCategory)) {
+        const details = parseTestAiDetails(input.itemDetails);
+        const cert = resolveTestAiGradingCompany(details, input.certificationCompany ?? '').replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
+        const targetGrade = input.grade ? extractGradeFromQuery(`${cert} ${input.grade}`) : null;
+        const targetNumber = normalizedCategory === 'comics'
+          ? resolveTestAiDetailValue(details, 'issueNumber') || null
+          : normalizedCategory === 'sports_cards' || normalizedCategory === 'pokemon'
+            ? resolveTestAiDetailValue(details, 'cardNumber') || null
+            : null;
+        const targetPlayer = normalizedCategory === 'sports_cards' ? resolveTestAiDetailValue(details, 'player') || null : null;
+        const annotatedListings = result.listings.map((listing: any) => annotateSoldComparableCandidate({
+          ...listing,
+          url: listing.itemUrl ?? listing.url ?? null,
+          soldPrice: listing.price,
+          soldCurrency: listing.currency,
+          thumbnailUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
+          sourceId: 'mercari_sold_comps' as const,
+          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          marketplace: 'Mercari' as const,
+          saleStatus: 'completed' as const,
+          completedStatusBasis: 'Mercari completed-sale endpoint',
+          priceBasis: 'sold' as const,
+          evidenceDisposition: undefined,
+          evidenceReasons: [],
+        }, {
+          category: normalizedCategory,
+          targetItemType: input.itemType ?? '',
+          certificationCompany: cert,
+          targetGrade,
+          targetNumber,
+          targetPlayer,
+          statedTradeValue: input.statedTradeValue,
+          visualReviewRequired: false,
+        })).map((listing: any) => ({
+          ...listing,
+          itemUrl: listing.url ?? listing.itemUrl ?? null,
+          imageUrl: listing.thumbnailUrl ?? listing.imageUrl ?? null,
+          price: Number(listing.soldPrice ?? listing.price ?? 0),
+          currency: listing.soldCurrency ?? listing.currency ?? null,
+          endedAt: listing.endedAt ?? null,
+          sourceId: 'mercari_sold_comps' as const,
+          sourceLabel: 'Sold-Comps (Mercari Sold)',
+          marketplace: 'Mercari' as const,
+        }));
+        const valuationEligible = annotatedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
+        const metrics = computeMetrics(valuationEligible.map((listing: any) => ({
+          price: { value: listing.price, currency: listing.currency ?? 'USD' },
+          title: listing.title,
+          saleId: listing.saleId ?? listing.itemId ?? listing.itemUrl,
+          date: listing.endedAt,
+        })));
+        return {
+          ...result,
+          listings: annotatedListings,
+          metrics,
+          visualFilter: null,
+          audit: {
+            rawReceived: result.listings.length,
+            valuationEligible: valuationEligible.length,
+            warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length,
+            ledger: annotatedListings,
+          },
+        };
+      }
 
       const targetMetadata = buildVisualTargetMetadata({
         title: input.title,
