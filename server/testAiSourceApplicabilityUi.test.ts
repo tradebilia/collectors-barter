@@ -270,6 +270,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain('Optional AI image checks');
   });
 
+  it('uses the shared collapsible image checks for additional Sold-Comps sources', () => {
+    expect(source).toContain('<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />');
+    expect(source).toContain("{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible");
+    expect(source).toContain("listing.visualReviewStatus !== 'not_reviewed'");
+    expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
+    expect(source).toContain('View full explanation');
+  });
+
   it('separates PCGS current-value candidates from historical trend rows', () => {
     expect(source).toContain('historicalRowsLabel');
     expect(source).toContain('Jump to loaded rows');
