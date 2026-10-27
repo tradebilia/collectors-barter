@@ -15,6 +15,8 @@ import { registerProviderOAuthCallbacks } from "./providerOAuthCallbacks";
 import { registerStripeWebhook } from "../stripeWebhook";
 import { validateDatabaseConnection, validateEnvironment } from "./startupChecks";
 import { registerTradebiliaMaintenanceModeGuard } from "./maintenanceMode";
+import { safeDatabaseErrorCode } from "./databaseError";
+import { installGracefulShutdownHandlers } from "./serverLifecycle";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -36,10 +38,11 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 async function startServer() {
-  validateEnvironment();
-  await validateDatabaseConnection();
   const app = express();
   const server = createServer(app);
+  installGracefulShutdownHandlers(server);
+  validateEnvironment();
+  await validateDatabaseConnection();
   // Must be first: during a database cutover, only GET /health may reach the
   // process. This blocks webhooks, OAuth callbacks, scheduled writers, tRPC,
   // storage, and the SPA before any side effect can occur.
@@ -88,4 +91,7 @@ async function startServer() {
   });
 }
 
-startServer().catch(console.error);
+startServer().catch(error => {
+  console.error(`[startup] Server failed code=${safeDatabaseErrorCode(error)}`);
+  process.exitCode = 1;
+});

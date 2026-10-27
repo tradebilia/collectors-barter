@@ -107,7 +107,7 @@ describe("second deep-audit P1 provider reliability", () => {
     }));
   });
 
-  it("validates the explicit database target before Express constructs its listener without requiring optional provider settings", () => {
+  it("validates the explicit database target before opening the network listener while installing shutdown safety early", () => {
     expect(startupSource).toContain("resolveTradebiliaDatabaseTarget(env)");
     expect(startupSource).toContain("The selected Tradebilia database target is not valid");
     expect(startupSource).not.toContain('"RESEND_API_KEY"');
@@ -115,8 +115,12 @@ describe("second deep-audit P1 provider reliability", () => {
     const environmentCheck = serverSource.indexOf("validateEnvironment();");
     const databaseCheck = serverSource.indexOf("await validateDatabaseConnection();");
     const expressConstruction = serverSource.indexOf("const app = express();");
+    const shutdownHandlers = serverSource.indexOf("installGracefulShutdownHandlers(server);");
+    const listenerOpen = serverSource.lastIndexOf("server.listen(port");
     expect(environmentCheck).toBeGreaterThan(-1);
     expect(databaseCheck).toBeGreaterThan(environmentCheck);
-    expect(expressConstruction).toBeGreaterThan(databaseCheck);
+    expect(expressConstruction).toBeGreaterThan(-1);
+    expect(shutdownHandlers).toBeGreaterThan(expressConstruction);
+    expect(listenerOpen).toBeGreaterThan(databaseCheck);
   });
 });

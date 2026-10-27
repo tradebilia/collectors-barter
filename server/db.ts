@@ -48,6 +48,8 @@ import {
   resolveTradebiliaDatabaseConnection,
   resolveTradebiliaDatabaseTarget,
 } from "./databaseTarget";
+import { attestTradebiliaDatabase } from "./_core/databaseAttestation";
+import { safeDatabaseErrorCode } from "./_core/databaseError";
 
 export { buildTradebiliaDatabaseUrl } from "./databaseTarget";
 
@@ -86,9 +88,9 @@ export function normalizeListingGradeForStorage(
 }
 
 let _db: ReturnType<typeof drizzle> | null = null;
-let _dbLastError: Error | null = null;
-let _dbErrorCount = 0;
-const MAX_ERROR_COUNT = 3;
+let _dbTargetFingerprint: string | null = null;
+let _dbInitialization: Promise<ReturnType<typeof drizzle>> | null = null;
+let _dbInitializationFingerprint: string | null = null;
 
 const categoryLabels: Record<(typeof collectibleCategories)[number], string> = {
   comics: "Comics",
@@ -266,20 +268,6 @@ function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
 }
 
 /**
- * Track database errors and trigger reconnection if needed.
- * Call this when a database operation fails.
- */
-export function trackDbError(error: Error): void {
-  _dbLastError = error;
-  _dbErrorCount++;
-  console.error(`[trackDbError] Database error #${_dbErrorCount}: ${error.message}`);
-  
-  if (_dbErrorCount >= MAX_ERROR_COUNT) {
-    console.warn(`[trackDbError] Max errors reached (${MAX_ERROR_COUNT}), connection will be reset on next requireDb() call`);
-  }
-}
-
-/**
  * Gracefully close the underlying mysql2 connection pool. Called on
  * SIGTERM/SIGINT so restarts never leave half-open database connections.
  */
@@ -290,37 +278,61 @@ export async function closeDb(): Promise<void> {
       if (client?.end) await client.end();
     } finally {
       _db = null;
+      _dbTargetFingerprint = null;
     }
   }
 }
 
-export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
-  if (!_db) {
-    const target = resolveTradebiliaDatabaseTarget({
-      ...process.env,
-      DATABASE_URL: process.env.DATABASE_URL || ENV.databaseUrl,
-    });
-    const connection = resolveTradebiliaDatabaseConnection(target);
-    // The selector is intentionally explicit and fail-closed. Never log URL
-    // fragments, usernames, passwords, hosts, or TLS query settings.
-    console.log(`[requireDb] Database target=${target.name} expectedDatabase=${target.expectedDatabaseName} fingerprint=${target.connectionFingerprint}`);
-    if (connection.ssl) {
-      _db = drizzle({ connection });
-    } else {
-      _db = drizzle(connection.uri);
-    }
-    _dbErrorCount = 0;
-    _dbLastError = null;
-  } else if (_dbErrorCount >= MAX_ERROR_COUNT) {
-    // If we've had too many errors, reset the connection
-    console.warn(`[requireDb] Too many database errors (${_dbErrorCount}), resetting connection`);
-    await closeDb();
-    _dbErrorCount = 0;
-    _dbLastError = null;
-    // Recursively call to reinitialize
-    return requireDb();
+async function createAttestedDatabase(target: ReturnType<typeof resolveTradebiliaDatabaseTarget>): Promise<ReturnType<typeof drizzle>> {
+  const connection = resolveTradebiliaDatabaseConnection(target);
+  // The selector is intentionally explicit and fail-closed. Never log URL
+  // fragments, usernames, passwords, hosts, or TLS query settings.
+  console.log(`[requireDb] Database target=${target.name} expectedDatabase=${target.expectedDatabaseName} fingerprint=${target.connectionFingerprint}`);
+  const candidate = connection.ssl
+    ? drizzle({ connection })
+    : drizzle(connection.uri);
+  try {
+    await attestTradebiliaDatabase(candidate, target);
+    return candidate;
+  } catch (error) {
+    const client: any = (candidate as any).$client;
+    if (client?.end) await client.end();
+    console.error(`[requireDb] Database attestation failed code=${safeDatabaseErrorCode(error)}`);
+    throw error;
   }
-  return _db;
+}
+
+export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
+  const target = resolveTradebiliaDatabaseTarget({
+    ...process.env,
+    DATABASE_URL: process.env.DATABASE_URL || ENV.databaseUrl,
+  });
+
+  if (_db && _dbTargetFingerprint !== target.connectionFingerprint) {
+    throw new Error("Database target changed while the process was running; restart is required before reconnecting.");
+  }
+
+  if (_db) return _db;
+
+  if (_dbInitialization) {
+    if (_dbInitializationFingerprint !== target.connectionFingerprint) {
+      throw new Error("Database target changed while the process was initializing; restart is required before reconnecting.");
+    }
+    return _dbInitialization;
+  }
+
+  _dbInitializationFingerprint = target.connectionFingerprint;
+  _dbInitialization = createAttestedDatabase(target)
+    .then(candidate => {
+      _db = candidate;
+      _dbTargetFingerprint = target.connectionFingerprint;
+      return candidate;
+    })
+    .finally(() => {
+      _dbInitialization = null;
+      _dbInitializationFingerprint = null;
+    });
+  return _dbInitialization;
 }
 
 function getInsertId(result: any) {

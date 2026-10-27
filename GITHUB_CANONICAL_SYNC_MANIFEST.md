@@ -41,6 +41,15 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 | Recovery boundary | The legacy target remains configured, but rollback after live writes is a reconciliation operation: enable maintenance, pause writers, attest the selected target, reconcile post-cutover data, then obtain approval before reopening. It is not automatic failover. |
 | Post-cutover managed WebDev checkpoint | `25f9318c` — captures the completed activation evidence and reconciliation-required rollback rule; the associated documentation commit is pushed normally to GitHub `main` with no force push. |
 
+## Post-activation New-TiDB Connection Hardening — October 27, 2026
+
+| Record | Value |
+|---|---|
+| Scope | Source-only hardening of the already active `new` target: independently pinned `test` database name, canonical DNS hostname enforcement, verified TLS, fresh-pool `SELECT DATABASE()` attestation, single-flight initialization, sanitized public errors, graceful shutdown, and build-fingerprint manifest coverage. |
+| Runtime preservation | The active `new` target remains attested as database `test`; maintenance remains off; the existing daily writer remains resumed. No database data/schema/migration, provider, credential, or domain change occurred. |
+| Validation | Focused database hardening suite passed 66 tests. Full suite passed 335 files / 1,713 tests with 4 files / 7 intentional skips. TypeScript, production build, active new-target verified-TLS check, build-fingerprint manifest check, and diff hygiene passed. |
+| Follow-up boundary | Operational recovery work remains separate: complete writer-drain inventory, provider PITR restore-drill evidence, and an executable post-live rollback reconciliation runbook. |
+
 ## Compatibility Boundary
 
 The canonical GitHub repository contains an historical membership migration chain. The restored Tradebilia custom TiDB runtime now contains the separately approved, verified mixed-case Membership foundation, but the original GitHub migration files must not be replayed on that runtime. The following historical GitHub paths remain **migration-gated** and must not be imported or replayed as-is:

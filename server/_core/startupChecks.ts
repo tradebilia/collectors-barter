@@ -4,11 +4,12 @@
 // cryptically on the first request (e.g. "JWT_SECRET environment variable is
 // not set" at sign-in, ERR_INVALID_URL at first query). Now misconfiguration
 // is caught at boot with a clear, actionable message.
-import { sql } from "drizzle-orm";
 import {
   resolveTradebiliaDatabaseTarget,
   type TradebiliaDatabaseTarget,
 } from "../databaseTarget";
+import { attestTradebiliaDatabase } from "./databaseAttestation";
+import { safeDatabaseErrorCode } from "./databaseError";
 
 const REQUIRED_ENV_VARS = [
   "JWT_SECRET",
@@ -54,30 +55,13 @@ export async function validateDatabaseConnection(deps: DatabaseStartupDeps = {})
   const target = deps.target ?? resolveTradebiliaDatabaseTarget();
   try {
     const db = await requireDb();
-    await db.execute(sql`select 1`);
-    const result = await db.execute(sql`SELECT DATABASE() AS databaseName`);
-    const rows = Array.isArray(result) ? result[0] : [];
-    const databaseName = Array.isArray(rows) && rows[0] && typeof rows[0] === "object"
-      ? String((rows[0] as { databaseName?: unknown }).databaseName ?? "")
-      : "";
-
-    if (databaseName !== target.expectedDatabaseName) {
-      throw new Error(
-        `Selected database target ${target.name} expected ${target.expectedDatabaseName} but connected to ${databaseName || "(none)"}.`,
-      );
-    }
-
-    const attestation = {
-      target: target.name,
-      databaseName,
-      connectionFingerprint: target.connectionFingerprint,
-    };
+    const attestation = await attestTradebiliaDatabase(db, target, { log: false });
     console.log(`[startup] Database attestation: ${JSON.stringify(attestation)}`);
     return attestation;
   } catch (error) {
     console.error("========================================================");
-    console.error("STARTUP CHECK FAILED: cannot connect to the database.");
-    console.error("Verify DATABASE_URL credentials and network access.");
+    console.error(`[startup] Database attestation failed target=${target.name} code=${safeDatabaseErrorCode(error)}`);
+    console.error(`Verify the selected ${target.sourceEnv} connection and approved database target.`);
     console.error("========================================================");
     throw error;
   }

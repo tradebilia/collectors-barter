@@ -82,14 +82,17 @@ describe("/health", () => {
   it("returns 503 with database unreachable when the DB throws", async () => {
     const { app } = makeApp({
       requireDb: vi.fn(async () => {
-        throw new Error("connect ECONNREFUSED");
+        throw new Error("connect ECONNREFUSED mysql://user:password@private-host");
       }),
     });
     const res = await request(app).get("/health");
     expect(res.status).toBe(503);
     expect(res.body.status).toBe("error");
     expect(res.body.database).toBe("unreachable");
-    expect(res.body.error).toContain("ECONNREFUSED");
+    expect(res.body.error).toBe("database-unavailable");
+    expect(JSON.stringify(res.body)).not.toContain("ECONNREFUSED");
+    expect(JSON.stringify(res.body)).not.toContain("private-host");
+    expect(JSON.stringify(res.body)).not.toContain("password");
   });
 
   it("surfaces a failing health probe even when the connection itself succeeds", async () => {
@@ -103,7 +106,8 @@ describe("/health", () => {
     });
     const res = await request(app).get("/health");
     expect(res.status).toBe(503);
-    expect(res.body.error).toContain("query timeout");
+    expect(res.body.error).toBe("database-unavailable");
+    expect(JSON.stringify(res.body)).not.toContain("query timeout");
   });
 });
 
@@ -201,7 +205,8 @@ describe("cleanupExpiredDrafts", () => {
     });
     const res = await request(app).post("/api/scheduled/cleanupExpiredDrafts");
     expect(res.status).toBe(500);
-    expect(res.body.error).toContain("deadlock");
+    expect(res.body.error).toBe("cleanupExpiredDrafts-failed");
+    expect(JSON.stringify(res.body)).not.toContain("deadlock");
   });
 });
 
@@ -366,7 +371,8 @@ describe("tradeReminders", () => {
     } as any);
     const res = await request(app).post("/api/scheduled/tradeReminders");
     expect(res.status).toBe(500);
-    expect(res.body.error).toContain("lock wait timeout");
+    expect(res.body.error).toBe("tradeReminders-failed");
+    expect(JSON.stringify(res.body)).not.toContain("lock wait timeout");
   });
 });
 

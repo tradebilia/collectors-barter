@@ -5,6 +5,7 @@ import { sdk } from "./_core/sdk";
 import { notifyOwner } from "./_core/notification";
 import { isStagingSafetyEnabled } from "./_core/stagingSafety";
 import { sendShippingDeadlineReminderEmail } from "./_core/email";
+import { safeDatabaseErrorCode } from "./_core/databaseError";
 import { requireDb, deleteDraftsOlderThan } from "./db";
 import { getShipmentReminderKind, isShipmentReminderEmailEnabled, shipmentReminderMarker } from "./shipmentReminder";
 
@@ -57,8 +58,8 @@ async function requireCron(
 }
 
 function failed(res: Response, label: string, error: any) {
-  console.error(`[${label}] Error:`, error);
-  res.status(500).json({ error: error?.message ?? String(error), timestamp: new Date().toISOString() });
+  console.error(`[${label}] failed code=${safeDatabaseErrorCode(error)}`);
+  res.status(500).json({ error: `${label}-failed`, timestamp: new Date().toISOString() });
 }
 
 /** Health check — verifies the process is up AND the database is reachable. */
@@ -69,10 +70,11 @@ export function makeHealthHandler(deps: ScheduledDeps = defaultScheduledDeps) {
       await db.execute(sql`select 1`);
       res.json({ status: "ok", database: "connected", timestamp: new Date().toISOString() });
     } catch (error: any) {
+      console.error(`[health] database unavailable code=${safeDatabaseErrorCode(error)}`);
       res.status(503).json({
         status: "error",
         database: "unreachable",
-        error: error?.message ?? String(error),
+        error: "database-unavailable",
         timestamp: new Date().toISOString(),
       });
     }

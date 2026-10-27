@@ -1,7 +1,13 @@
 import { createHash } from "node:crypto";
+import { isIP } from "node:net";
 import type { SslOptions } from "mysql2";
 
 export const LEGACY_TRADEBILIA_DATABASE_NAME = "GnMVDXgu6G8uhj5ZYQtcGe";
+/**
+ * The reviewed database name for the user-managed TiDB target. This is an
+ * independent allowlist, not a value derived from the protected URL itself.
+ */
+export const NEW_TRADEBILIA_DATABASE_NAME = "test";
 
 export type TradebiliaDatabaseTargetName = "legacy" | "new";
 
@@ -38,11 +44,30 @@ function normalizeTargetName(value: string | undefined): TradebiliaDatabaseTarge
 }
 
 function databaseNameFromUrl(databaseUrl: string): string {
-  const databaseName = new URL(databaseUrl).pathname.replace(/^\/+/, "").trim();
-  if (!databaseName) {
-    throw new Error("The selected database URL must include a database name.");
+  const pathSegments = new URL(databaseUrl).pathname
+    .split("/")
+    .filter(Boolean)
+    .map(segment => decodeURIComponent(segment).trim());
+  if (pathSegments.length !== 1 || !pathSegments[0]) {
+    throw new Error("The selected database URL must include exactly one database name.");
   }
-  return databaseName;
+  return pathSegments[0];
+}
+
+function assertMysqlProtocol(databaseUrl: string): void {
+  if (new URL(databaseUrl).protocol !== "mysql:") {
+    throw new Error("The selected database URL must use the mysql protocol.");
+  }
+}
+
+function assertNewTargetHostname(databaseUrl: string): void {
+  const hostname = new URL(databaseUrl).hostname.replace(/^\[|\]$/g, "");
+  const isDnsHostname = hostname.includes(".")
+    && /[a-z]/i.test(hostname)
+    && /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/i.test(hostname);
+  if (isIP(hostname) || !isDnsHostname) {
+    throw new Error("NEW_TIDB_DATABASE_URL must use a canonical DNS hostname so TLS identity can be verified.");
+  }
 }
 
 /**
@@ -113,8 +138,8 @@ export function resolveTradebiliaDatabaseConnection(target: TradebiliaDatabaseTa
     if (!ssl) {
       throw new Error("NEW_TIDB_DATABASE_URL must use verified TLS via ssl or sslMode=VERIFY_IDENTITY.");
     }
-    if (ssl.rejectUnauthorized !== true) {
-      throw new Error("NEW_TIDB_DATABASE_URL must reject unauthorized TLS certificates.");
+    if (ssl.rejectUnauthorized !== true || ssl.verifyIdentity !== true) {
+      throw new Error("NEW_TIDB_DATABASE_URL must validate TLS certificates and the server hostname.");
     }
   }
 
@@ -124,7 +149,8 @@ export function resolveTradebiliaDatabaseConnection(target: TradebiliaDatabaseTa
 /**
  * Runtime database selection is explicit and safe by default:
  * - unset / "legacy" keeps the current Tradebilia database on DATABASE_URL;
- * - "new" uses only NEW_TIDB_DATABASE_URL.
+ * - "new" uses only NEW_TIDB_DATABASE_URL and must select the independently
+ *   approved new TiDB database name.
  *
  * There is intentionally no automatic fallback. A failed new-database startup
  * must stop rather than silently writing to a different database.
@@ -142,10 +168,15 @@ export function resolveTradebiliaDatabaseTarget(env: NodeJS.ProcessEnv = process
   let expectedDatabaseName: string;
   try {
     databaseUrl = name === "legacy" ? buildTradebiliaDatabaseUrl(sourceUrl) : sourceUrl;
+    assertMysqlProtocol(databaseUrl);
+    if (name === "new") assertNewTargetHostname(databaseUrl);
+    const configuredDatabaseName = databaseNameFromUrl(databaseUrl);
+    if (name === "new" && configuredDatabaseName !== NEW_TRADEBILIA_DATABASE_NAME) {
+      throw new Error(`NEW_TIDB_DATABASE_URL must select the approved database ${NEW_TRADEBILIA_DATABASE_NAME}.`);
+    }
     expectedDatabaseName = name === "legacy"
       ? LEGACY_TRADEBILIA_DATABASE_NAME
-      : databaseNameFromUrl(databaseUrl);
-    new URL(databaseUrl);
+      : NEW_TRADEBILIA_DATABASE_NAME;
   } catch (error) {
     const message = error instanceof Error ? error.message : "invalid URL";
     throw new Error(`Invalid ${sourceEnv} for TRADEBILIA_DATABASE_TARGET=${name}: ${message}`);

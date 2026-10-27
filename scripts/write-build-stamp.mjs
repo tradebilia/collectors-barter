@@ -40,11 +40,16 @@ function sourceTreeState() {
  * platform build artifacts from becoming implicit parity inputs.
  */
 async function sourceFingerprint() {
-  const files = JSON.parse(await readFile(fingerprintManifestPath, 'utf8'));
+  const manifestContents = await readFile(fingerprintManifestPath, 'utf8');
+  const files = JSON.parse(manifestContents);
   if (!Array.isArray(files) || files.some((file) => typeof file !== 'string' || !/^[A-Za-z0-9._/@-]+$/.test(file))) {
     throw new Error('Invalid source fingerprint manifest');
   }
   const hash = createHash('sha256');
+  hash.update('scripts/source-fingerprint-manifest.json');
+  hash.update('\0');
+  hash.update(manifestContents);
+  hash.update('\0');
   for (const relativePath of [...files].sort()) {
     hash.update(relativePath);
     hash.update('\0');
