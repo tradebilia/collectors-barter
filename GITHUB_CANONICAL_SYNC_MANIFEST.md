@@ -39,6 +39,7 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 | Live verification | Frozen health returned `200` while normal routes returned `503`; after approved reopening, health and the normal home route both returned `200` and the rendered preview loaded. |
 | Scheduled writer | The existing daily trade-reminder Heartbeat job was paused during the window and enabled again only after the reopened new-target checks passed. |
 | Recovery boundary | The legacy target remains configured, but rollback after live writes is a reconciliation operation: enable maintenance, pause writers, attest the selected target, reconcile post-cutover data, then obtain approval before reopening. It is not automatic failover. |
+| Post-cutover managed WebDev checkpoint | `25f9318c` — captures the completed activation evidence and reconciliation-required rollback rule; the associated documentation commit is pushed normally to GitHub `main` with no force push. |
 
 ## Compatibility Boundary
 
