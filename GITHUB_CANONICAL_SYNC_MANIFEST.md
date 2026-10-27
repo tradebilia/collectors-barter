@@ -49,7 +49,7 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 | Runtime preservation | The active `new` target remains attested as database `test`; maintenance remains off; the existing daily writer remains resumed. No database data/schema/migration, provider, credential, or domain change occurred. |
 | Validation | Focused database hardening suite passed 66 tests. Full suite passed 335 files / 1,713 tests with 4 files / 7 intentional skips. TypeScript, production build, active new-target verified-TLS check, build-fingerprint manifest check, and diff hygiene passed. |
 | Follow-up boundary | Operational recovery work remains separate: complete writer-drain inventory, provider PITR restore-drill evidence, and an executable post-live rollback reconciliation runbook. |
-| Managed WebDev checkpoint | `238dd1bc` — includes the complete hardened source boundary, regression coverage, handoff documentation, and validation record. The exact GitHub implementation commit is recorded after the normal push; no force push or domain action is authorized. |
+| Managed WebDev checkpoint and canonical implementation commit | Checkpoint `238dd1bc`; GitHub `main` commit `ccb807085a406e777feab42fc679bc76fe106114`, pushed normally with no force push or domain action. This commit includes the complete hardened source boundary, regression coverage, handoff documentation, and validation record. |
 
 ## Compatibility Boundary
 
