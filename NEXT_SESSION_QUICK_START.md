@@ -54,3 +54,9 @@ The next unstarted phase is P1 performance and maintainability. Discuss scope be
 Read `CLOUDFLARE_SECRETS_STORE_UPS_HANDOFF.md` for the complete UPS runtime architecture. The sandbox calls the protected Cloudflare Worker; the Worker alone reads `UPS_CLIENT_ID` and `UPS_CLIENT_SECRET` from Cloudflare Secrets Store. The sandbox-side connection names are `CLOUDFLARE_UPS_PROXY_URL`, `CLOUDFLARE_UPS_PROXY_CLIENT_ID`, and `CLOUDFLARE_UPS_PROXY_CLIENT_SECRET`. Never print or commit any of their values.
 
 The synchronized baseline is commit `09996531b` on local `main`, GitHub `main`, and WebDev checkpoint `09996531b`. Before continuing, run the focused UPS/provider tests, `pnpm check`, `pnpm build`, `git diff --check`, and the live proxy tests only when the secure service-token configuration is available. Do not remove the Cloudflare Worker, Access policy, or secret bindings until a controlled real tracking smoke test is approved and completed.
+
+## Documentation and backup reconciliation — October 27, 2026
+
+The authoritative handoff set is stored in the repository and mirrored in project shared files: `CURRENT_PROJECT_HANDOFF.md`, `SESSION_HANDOFF_GUIDE.md`, `HANDOFF_ADVERSARIAL_AUDIT.md`, `NEXT_SESSION_QUICK_START.md`, and `IMAGE_ASSET_INVENTORY.md`. Confirm their repository/shared SHA-256 parity before relying on a fresh-session handoff.
+
+The latest verified WebDev checkpoint is `f956d7c9`. Confirm the exact synchronized GitHub `main` commit from `GITHUB_CANONICAL_SYNC_MANIFEST.md`; do not place raw secrets or database URLs in this document.

@@ -97,3 +97,16 @@ The following unavailable object classes were audited. Their runtime dependency 
 ## Related Records
 
 The current-project architecture and credential registry are in `SESSION_HANDOFF_GUIDE.md`. The replacement-project launch gates are in `NEW_WEBDEV_MIGRATION_READINESS_REPORT.md`; the historical audit evidence is in `HANDOFF_ADVERSARIAL_AUDIT.md`.
+
+## TNN newsroom identity assets — October 17, 2026
+
+The following supplied TNN recovery copies are preserved in project shared files and `/home/ubuntu/webdev-static-assets/tradebilia/`; do not replace or remove them without Rich’s explicit TNN brand approval:
+
+| Asset | Active WebDev storage path | Recovery details |
+|---|---|---|
+| `TNNlogo.png` | `/manus-storage/TNNlogo_da53263e.png` | 406 × 335 px, RGBA; dedicated TNN identity mark. |
+| `TNNTradebiliaNewsroomStudio.png` | `/manus-storage/TNNTradebiliaNewsroomStudio_7f73bd45.png` | 1672 × 941 px; approved bright broadcast-newsroom set reference. |
+| `GlossyTNNTradebiliaNewsLogo.png` | `/manus-storage/GlossyTNNTradebiliaNewsLogo_2c671156.png` | 1964 × 801 px transparent TNN identity mark; SHA-256 `d3aea4a0db952cf47cf2a5fa6194bd7925462db0a3f82e0229d206933cd424d3`. |
+| `TNNOpeningGlobeReference.png` | `/manus-storage/TNNOpeningGlobeReference_f90474c7.png` | Opening-motion reference; SHA-256 `1002f55d9ebb19d7009e913b1790b7b0e20e54b7659a78053c615c434c04c73b`. |
+
+These are visual identity/reference assets, not customer media. The current TNN workflow attaches the server-owned assets to approved tasks and does not accept browser-supplied replacement URLs.

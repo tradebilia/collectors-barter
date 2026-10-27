@@ -2,7 +2,7 @@
 
 > **Read this document first at the start of every new session.** It supersedes earlier session-status statements elsewhere in this repository. Historical migration, audit, and prior handoff documents are reference material only unless this document says otherwise.
 
-## Current state — verified October 25, 2026
+## Current state — verified October 27, 2026
 
 | Boundary | Verified state |
 |---|---|
@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | Cross-source Test AI pre-visual identity hardening: all visual sources now use one canonical target-metadata contract, deterministic explicit contradictions are context-only before vision, and individual certificate/holder/tracking IDs are ignored. PriceCharting policy remains unchanged. |
-| Latest validation | Focused shared visual-filter suite 78/78; full deterministic suite 329 files / 1,670 tests passed with 4 files / 7 tests intentionally skipped; TypeScript, production build, development-preview health, and `git diff --check` passed. |
+| Latest functional change | Verified **Video Games → Sold-Comps (Mercari Sold)** in the Test AI source-coverage tracker as a confirmed Match. This is a tracker/status record only; the shared pre-visual filters, score ranking, capped visual admission, visual evidence rules, and valuation safeguards remain unchanged. |
+| Latest validation | Focused source-coverage regression passed 27/27; full deterministic suite passed 330 files / 1,682 tests with 4 files / 7 tests intentionally skipped; TypeScript, production build, and diff checks passed. |
 | Dependency audit | `pnpm audit --prod --audit-level=high` currently reports existing dependency advisories. No dependency changes were made in the authorized source-only filter scope. |
 
 ## Cross-source pre-visual identity hardening — October 25, 2026
@@ -23,6 +23,12 @@ Before any target-image or candidate-image early return, the filter retains an e
 Certificate, certificate-of-authenticity, holder, slab, barcode/QR, and tracking aliases identify a specimen rather than its collectible type. They are not allowed to exclude an otherwise compatible candidate. Generic `serialNumber` remains protected as a distinct sports-card print-run field: only a different denominator—for example, `/100` versus `/99`—is a deterministic conflict. Legacy direct fields, including plain `catalog=...`, are preserved through canonicalization.
 
 The implementation does not query providers differently, alter valuation policy, write database records, run migrations, change credentials, or publish a domain. Regressions cover all added rules, legacy aliases, context preservation, original indexes, and source-contract propagation. The WebDev checkpoint, GitHub synchronization, and deployment-parity confirmation must be recorded as the final synchronization set for this change.
+
+## Documentation and backup reconciliation — October 27, 2026
+
+The authoritative repository handoff files were reconciled against the older project-shared copies. The repository versions are retained as authoritative because they contain the later October 2026 Test AI, Mercari, Cloudflare UPS, TNN, and database-safeguard history. The shared copies were updated from these reconciled repository files after preserving the shared TNN asset records in `IMAGE_ASSET_INVENTORY.md`.
+
+The verified WebDev checkpoint is `f956d7c9` and the synchronized GitHub `main` commit is recorded in `GITHUB_CANONICAL_SYNC_MANIFEST.md`. The final parity check must show a clean repository, matching local and GitHub source state, and byte-identical copies of the five handoff/asset documents in the project-shared directory. No raw secrets, database URLs, customer media, or platform metadata belong in this documentation set.
 
 ## Coverage tracker confirmation — October 11, 2026
 

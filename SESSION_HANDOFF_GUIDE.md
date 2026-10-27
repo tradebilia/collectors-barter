@@ -165,3 +165,9 @@ When inspecting a Git remote, use a sanitized display that removes any embedded 
 [2] [Static asset recovery release](https://github.com/tradebilia/collectors-barter/releases/tag/tradebilia-static-assets-2026-08-11)
 [3] [Live Tradebilia site](https://tradebilia.manus.space)
 [4] `HANDOFF_ADVERSARIAL_AUDIT.md` in the project root and project shared files
+
+## 11. Documentation and backup reconciliation — October 27, 2026
+
+The repository copies of the handoff, quick-start, adversarial-audit, and asset-inventory documents are the authoritative versions for continuation. They were reconciled against older project-shared copies and then mirrored back to the project-shared directory. The latest verified WebDev checkpoint is `f956d7c9`; the exact GitHub `main` commit is recorded in `GITHUB_CANONICAL_SYNC_MANIFEST.md` after the final push.
+
+This record contains no raw credentials, database connection strings, customer-media exports, or platform-generated configuration. Protected secret names and recovery requirements remain documented here only at the name/purpose level.

@@ -28,3 +28,9 @@
 ## Audit Conclusion
 
 The current project was internally healthy at the time of audit, but a seamless fresh-task handoff was disproven. The safe replacement path is a gated migration that preserves the current project until source, database, media, secrets, integrations, scheduled writers, domains, and rollback controls are verified. See the migration readiness report for the authoritative sequence.
+
+## Documentation and backup reconciliation — October 27, 2026
+
+The earlier project-shared copies were older than the repository handoff set and contained conflicting continuation instructions. The repository versions were retained as the authority, the shared TNN asset records were preserved in the repository asset inventory, and the reconciled documents were mirrored back to project shared files.
+
+Final evidence required for this reconciliation: the WebDev checkpoint is `f956d7c9`; GitHub `main` must match the final local commit; the working tree must be clean; and the five reconciled documents must have identical SHA-256 hashes in the repository and project-shared directory. No secret values are included.
