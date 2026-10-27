@@ -21,6 +21,7 @@ describe('Music category', () => {
     const dbSource = read('server/db.ts');
     const schemaSource = read('drizzle/schema.ts');
     const migrationSource = read('drizzle/0024_p0_music_category_schema.sql');
+    const draftMigrationSource = read('drizzle/0025_p0_music_draft_category_schema.sql');
 
     expect(dbSource).not.toContain('ensureMusicCategory');
     expect(dbSource).not.toContain('ALTER TABLE listings MODIFY COLUMN category');
@@ -29,6 +30,9 @@ describe('Music category', () => {
     expect(migrationSource).toMatch(/ALTER TABLE `listings`\s+MODIFY COLUMN `category`/);
     expect(migrationSource).toMatch(/ALTER TABLE `conventions`\s+MODIFY COLUMN `category`/);
     expect(migrationSource).not.toMatch(/\bDROP\s+TABLE\b|\bDELETE\s+FROM\b|\bTRUNCATE\b/i);
+    expect(draftMigrationSource).toMatch(/ALTER TABLE `draftListings`\s+MODIFY COLUMN `category`/);
+    expect(draftMigrationSource).toContain("'movies','music','autographs','disney_pins'");
+    expect(draftMigrationSource).not.toMatch(/\bDROP\s+TABLE\b|\bDELETE\s+FROM\b|\bTRUNCATE\b/i);
   });
 
   it('registers Music as a first-class marketplace category with a unique visual theme', () => {
