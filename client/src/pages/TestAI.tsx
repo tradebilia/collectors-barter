@@ -437,6 +437,7 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'vintage toys:goldin': 'match',
   'video games:ebay_active': 'match',
   'video games:sold_comps': 'match',
+  'video games:mercari_sold_comps': 'match',
   'video games:goldin': 'match',
   'video games:igdb': 'match',
   'video games:rawg': 'match',
