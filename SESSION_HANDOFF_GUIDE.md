@@ -100,7 +100,7 @@ The application now has one explicit runtime selector, not an implicit connectio
 
 **Rollback after live activation is not an instant toggle.** First set maintenance mode to `1`, pause the writer, restart and attest the intended target, identify/reconcile any post-cutover writes, and obtain Rich's approval before reopening. There is intentionally no automatic fallback and no dual-write operation. Do not use the legacy selector merely to diagnose an issue while the new database has accepted live traffic.
 
-Database-related startup, health, and scheduled-writer failures return stable sanitized codes rather than driver text. Shutdown handling is installed before asynchronous startup validation; it drains HTTP traffic before closing the pool where possible and attempts a bounded pool close before a forced timeout exit. These code safeguards do not replace the required post-live rollback reconciliation process.
+Database-related startup, health, and scheduled-writer failures return stable sanitized codes rather than driver text. Shutdown handling is installed before asynchronous startup validation; it drains HTTP traffic before closing the pool where possible and attempts a bounded pool close before a forced timeout exit. mysql2 uses a callback-style pool close, so the lifecycle wrapper explicitly waits for the driver completion callback, drains an in-flight initialization before closing the pool it adopted, and rejects fresh acquisitions while closing. If close reports an error, later acquisitions fail closed until a process restart; do not attempt to re-open another pool in the same process. These code safeguards do not replace the required post-live rollback reconciliation process.
 
 | Requirement | Safe rule |
 |---|---|

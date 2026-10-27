@@ -31,6 +31,12 @@ Every fresh application pool is read-only-attested with `SELECT DATABASE()` befo
 
 This source-only hardening made no database data, schema, provider, credential, or domain change. The remaining operational work is separate: an exhaustive scheduled-writer drain inventory, provider PITR restore-drill evidence, and an executable post-live rollback reconciliation runbook.
 
+### Completed callback-pool lifecycle repair — October 27, 2026
+
+Drizzle retains mysql2’s callback-style pool at `$client`; the prior shutdown call invoked `end()` but could return before mysql2’s completion callback. The repaired lifecycle wrapper now awaits that callback, drains any in-flight database initialization before closing the pool it adopted, shares concurrent close requests, and prevents new acquisitions while shutdown is in progress. If the driver reports a close failure, the process fails closed: it retains the prior pool state and rejects all new acquisition attempts until a process restart, rather than risking an overlapping connection pool.
+
+The change is deliberately limited to connection lifecycle behavior. It leaves the active `new` selector, pinned database `test`, strict hostname-verified TLS, maintenance setting, resumed daily writer, legacy rollback procedure, schemas, data, providers, credentials, and domains unchanged. The callback wrapper, concurrency behavior, close-failure terminal state, and live read-only close/reconnect behavior are regression-tested. Focused validation passed 21/21; the serialized complete suite passed 336 files / 1,720 tests with 4 files / 7 intentional skips; TypeScript, the production build, source-fingerprint checks, diff hygiene, verified-TLS target attestation, `/health`, and the home route passed. Dependency advisories were observed but not modified because dependency remediation was outside this narrow approval.
+
 ## Cross-source pre-visual identity hardening — October 25, 2026
 
 The shared Test AI visual filter now canonicalizes target identity metadata once at entry and uses that same normalized metadata for the complete visual-review pipeline, including prompts, retries, adjudication, and final evidence mapping. Every production visual-source route uses `buildVisualTargetMetadata`; Cardsight, both HIPStamp Sold summary calls, and PWCC now pass the available item type and grading-company fallback instead of dropping them.

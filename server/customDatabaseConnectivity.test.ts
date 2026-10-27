@@ -22,6 +22,16 @@ describe("active TiDB connectivity", () => {
     const [rows] = await first.execute(sql`SELECT DATABASE() AS databaseName`);
     expect(Array.isArray(rows) ? rows[0]?.databaseName : undefined).toBe("test");
   }, 20_000);
+
+  it("releases the callback pool before a later attested pool is adopted", async () => {
+    const first = await requireDb();
+    await closeDb();
+    const second = await requireDb();
+
+    expect(second).not.toBe(first);
+    const [rows] = await second.execute(sql`SELECT DATABASE() AS databaseName`);
+    expect(Array.isArray(rows) ? rows[0]?.databaseName : undefined).toBe("test");
+  }, 20_000);
 });
 
 afterAll(async () => {

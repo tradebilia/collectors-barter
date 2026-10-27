@@ -50,6 +50,7 @@ import {
 } from "./databaseTarget";
 import { attestTradebiliaDatabase } from "./_core/databaseAttestation";
 import { safeDatabaseErrorCode } from "./_core/databaseError";
+import { closeMysql2PoolClient, createDatabasePoolLifecycle } from "./_core/databasePoolLifecycle";
 
 export { buildTradebiliaDatabaseUrl } from "./databaseTarget";
 
@@ -86,11 +87,6 @@ export function normalizeListingGradeForStorage(
 ): string {
   return normalizeListingGrade(value, category, certificationCompany);
 }
-
-let _db: ReturnType<typeof drizzle> | null = null;
-let _dbTargetFingerprint: string | null = null;
-let _dbInitialization: Promise<ReturnType<typeof drizzle>> | null = null;
-let _dbInitializationFingerprint: string | null = null;
 
 const categoryLabels: Record<(typeof collectibleCategories)[number], string> = {
   comics: "Comics",
@@ -272,15 +268,7 @@ function safeJsonParse<T>(raw: string | null | undefined, fallback: T): T {
  * SIGTERM/SIGINT so restarts never leave half-open database connections.
  */
 export async function closeDb(): Promise<void> {
-  if (_db) {
-    try {
-      const client: any = (_db as any).$client;
-      if (client?.end) await client.end();
-    } finally {
-      _db = null;
-      _dbTargetFingerprint = null;
-    }
-  }
+  await databasePoolLifecycle.close();
 }
 
 async function createAttestedDatabase(target: ReturnType<typeof resolveTradebiliaDatabaseTarget>): Promise<ReturnType<typeof drizzle>> {
@@ -295,44 +283,23 @@ async function createAttestedDatabase(target: ReturnType<typeof resolveTradebili
     await attestTradebiliaDatabase(candidate, target);
     return candidate;
   } catch (error) {
-    const client: any = (candidate as any).$client;
-    if (client?.end) await client.end();
+    await closeMysql2PoolClient((candidate as any).$client);
     console.error(`[requireDb] Database attestation failed code=${safeDatabaseErrorCode(error)}`);
     throw error;
   }
 }
+
+const databasePoolLifecycle = createDatabasePoolLifecycle({
+  initialize: createAttestedDatabase,
+  close: async candidate => closeMysql2PoolClient((candidate as any).$client),
+});
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   const target = resolveTradebiliaDatabaseTarget({
     ...process.env,
     DATABASE_URL: process.env.DATABASE_URL || ENV.databaseUrl,
   });
-
-  if (_db && _dbTargetFingerprint !== target.connectionFingerprint) {
-    throw new Error("Database target changed while the process was running; restart is required before reconnecting.");
-  }
-
-  if (_db) return _db;
-
-  if (_dbInitialization) {
-    if (_dbInitializationFingerprint !== target.connectionFingerprint) {
-      throw new Error("Database target changed while the process was initializing; restart is required before reconnecting.");
-    }
-    return _dbInitialization;
-  }
-
-  _dbInitializationFingerprint = target.connectionFingerprint;
-  _dbInitialization = createAttestedDatabase(target)
-    .then(candidate => {
-      _db = candidate;
-      _dbTargetFingerprint = target.connectionFingerprint;
-      return candidate;
-    })
-    .finally(() => {
-      _dbInitialization = null;
-      _dbInitializationFingerprint = null;
-    });
-  return _dbInitialization;
+  return databasePoolLifecycle.acquire(target);
 }
 
 function getInsertId(result: any) {

@@ -344,6 +344,8 @@
   "server/_core/databaseAttestation.ts",
   "server/_core/databaseError.test.ts",
   "server/_core/databaseError.ts",
+  "server/_core/databasePoolLifecycle.test.ts",
+  "server/_core/databasePoolLifecycle.ts",
   "server/_core/ebay.ts",
   "server/_core/ebayCallback.ts",
   "server/_core/ebayDataAcquisition.ts",

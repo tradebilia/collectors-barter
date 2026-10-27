@@ -51,6 +51,15 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 | Follow-up boundary | Operational recovery work remains separate: complete writer-drain inventory, provider PITR restore-drill evidence, and an executable post-live rollback reconciliation runbook. |
 | Managed WebDev checkpoint and canonical implementation commit | Checkpoint `238dd1bc`; GitHub `main` commit `ccb807085a406e777feab42fc679bc76fe106114`, pushed normally with no force push or domain action. This commit includes the complete hardened source boundary, regression coverage, handoff documentation, and validation record. |
 
+## Callback-Pool Lifecycle Repair — October 27, 2026
+
+| Record | Value |
+|---|---|
+| Scope | Narrow repair for Drizzle’s retained callback-style mysql2 pool: wait for `Pool.end(callback)` completion, drain an in-flight initializer before closing its adopted pool, coalesce concurrent close requests, and fail closed after a close error. |
+| Runtime preservation | Active target remains `new` / database `test` with verified TLS; maintenance remains off and the daily writer remains resumed. No selector, data, schema, migration, provider, credential, or domain action occurred. |
+| Validation | Focused lifecycle/connectivity suite passed 21/21. The serialized full suite passed 336 files / 1,720 tests with 4 files / 7 intentional skips. TypeScript, production build, build-fingerprint check, diff hygiene, verified-TLS attestation, `/health`, and home route checks passed. |
+| Recovery behavior | If mysql2 reports a close failure, the process rejects every new acquisition until it restarts; it never opens a replacement pool alongside an unconfirmed prior close. |
+
 ## Compatibility Boundary
 
 The canonical GitHub repository contains an historical membership migration chain. The restored Tradebilia custom TiDB runtime now contains the separately approved, verified mixed-case Membership foundation, but the original GitHub migration files must not be replayed on that runtime. The following historical GitHub paths remain **migration-gated** and must not be imported or replayed as-is:
