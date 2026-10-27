@@ -35,8 +35,12 @@ The earlier project-shared copies were older than the repository handoff set and
 
 Final evidence required for this reconciliation: the WebDev checkpoint is `f956d7c9`; GitHub `main` must match the final local commit; the working tree must be clean; and the five reconciled documents must have identical SHA-256 hashes in the repository and project-shared directory. No secret values are included.
 
-## Stage 1 external-TiDB cutover safety — October 27, 2026
+## Stage 1 external-TiDB cutover safety and completed activation — October 27, 2026
 
 The runtime now defaults explicitly to the legacy Tradebilia target. New TiDB is selected only by `TRADEBILIA_DATABASE_TARGET=new` and its protected new URL; startup requires a verified-TLS connection and confirms the server-selected database name by read-only query. There is no automatic fallback, which prevents a failed new target from silently writing to another database.
 
-`TRADEBILIA_MAINTENANCE_MODE=1` is mounted ahead of every application route and permits only `GET /health`; it blocks webhooks, OAuth, scheduled writers, tRPC, storage, and static requests with a non-cacheable `503`. This was compiled and tested in a temporary process. The live isolated-development runtime remains default-legacy with maintenance disabled. A future cutover still requires an exact Rich-approved activation window, health/attestation evidence, controlled smoke tests, a deliberate reopen decision, and a documented rollback to `legacy`; Stage 1 did not change a secret, activate new TiDB, migrate schema, or write application data.
+`TRADEBILIA_MAINTENANCE_MODE=1` is mounted ahead of every application route and permits only `GET /health`; it blocks webhooks, OAuth, scheduled writers, tRPC, storage, and static requests with a non-cacheable `503`. This was compiled and tested in a temporary process.
+
+The approved live activation is now complete: maintenance was enabled, the single daily trade-reminder writer was paused, the new TiDB `test` target reached 64-table parity after the approved narrow delta, and the restarted server attested `target: new` and database `test` with verified TLS. Only after the frozen health and route checks passed did Rich approve reopening; the live home route returned `200`, and the writer was resumed. No migration, seed, schema operation, destructive action, provider action, or credential value was exposed.
+
+**Adversarial rollback rule:** the legacy selector is retained as an intentional recovery target, not automatic failover. Because the new database now accepts live writes, a rollback must fence traffic and scheduled writers, attest the chosen database, reconcile any post-cutover divergence, and receive renewed approval before reopening. A selector-only flip is prohibited.

@@ -84,19 +84,21 @@ If a static asset breaks in the current project, use the recovery archive only a
 
 Tradebilia’s live data is stored in an **external MySQL/TiDB-compatible database**. It contains real users, listings, profile records, messages, trades, and media URLs. The Manus-managed `DATABASE_URL` is not a substitute for Tradebilia’s actual legacy data target.
 
-### Stage 1 reversible cutover safety — implemented October 27, 2026; not activated
+### Live new-TiDB target and reversible cutover safety — activated October 27, 2026
 
 The application now has one explicit runtime selector, not an implicit connection fallback:
 
 | Protected setting | Meaning | Current state |
 |---|---|---|
-| `TRADEBILIA_DATABASE_TARGET` unset or `legacy` | Derives the existing Tradebilia legacy database from `DATABASE_URL`, preserving host, user, port, and TLS configuration while selecting the known legacy database name. | **Active by default.** |
-| `TRADEBILIA_DATABASE_TARGET=new` | Uses only `NEW_TIDB_DATABASE_URL`, whose URL-selected database must match the startup attestation. | **Implemented and read-only verified; not active.** |
-| `TRADEBILIA_MAINTENANCE_MODE=1` | Blocks every request except `GET /health` with `503`, before webhooks, OAuth callbacks, scheduled writers, tRPC, storage, or the SPA can run. | **Implemented; currently off.** |
+| `TRADEBILIA_DATABASE_TARGET` unset or `legacy` | Derives the existing Tradebilia legacy database from `DATABASE_URL`, preserving host, user, port, and TLS configuration while selecting the known legacy database name. | **Configured rollback target; not active.** |
+| `TRADEBILIA_DATABASE_TARGET=new` | Uses only `NEW_TIDB_DATABASE_URL`, whose URL-selected database must match the startup attestation. | **Active live target: attested as `test` through verified TLS.** |
+| `TRADEBILIA_MAINTENANCE_MODE=1` | Blocks every request except `GET /health` with `503`, before webhooks, OAuth callbacks, scheduled writers, tRPC, storage, or the SPA can run. | **Implemented; currently off while live traffic is open.** |
 
 `NEW_TIDB_DATABASE_URL` must use verified TLS: either the existing JSON `ssl` setting with certificate validation enabled, or `sslMode=VERIFY_IDENTITY`. Unsupported, missing, malformed, or certificate-bypassing TLS configuration fails server startup. On every start the server executes `SELECT DATABASE()` and logs only the target label, database name, and a non-secret fingerprint; a mismatch stops startup. It never logs the URL, host, username, password, or TLS query values.
 
-**Later cutover procedure, only with Rich’s separate approval:** (1) set maintenance mode to `1`; (2) confirm the current app returns only health; (3) set database target to `new`; (4) restart and require a healthy new-target startup attestation plus the defined read-only smoke checks; (5) permit selected read-only browser smoke checks; (6) only after explicit approval set maintenance mode back to off. **Rollback is immediate:** restore target to `legacy`, keep maintenance enabled, restart, confirm the legacy attestation/health, then decide when to reopen. There is intentionally no automatic fallback, so an invalid new target cannot silently send writes to another database. No migration, seed, schema SQL, data repair, or dual-writer operation is part of this Stage 1 work.
+**Completed controlled activation:** Rich confirmed the legacy backup/PITR, approved a limited maintenance-window delta, approved the new selector, and separately authorized traffic reopening plus writer resumption. The new `test` database reached full 64-table parity after the approved 16-row scheduler-event delta and one activity-timestamp alignment. Startup then attested `target: new` / database `test`; the frozen runtime passed health and maintenance-route checks; the reopened home page returned `200`; and the daily trade-reminder job was resumed.
+
+**Rollback after live activation is not an instant toggle.** First set maintenance mode to `1`, pause the writer, restart and attest the intended target, identify/reconcile any post-cutover writes, and obtain Rich's approval before reopening. There is intentionally no automatic fallback and no dual-write operation. Do not use the legacy selector merely to diagnose an issue while the new database has accepted live traffic.
 
 | Requirement | Safe rule |
 |---|---|

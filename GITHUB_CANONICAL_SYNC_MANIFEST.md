@@ -29,6 +29,17 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 | Validation | New TiDB was read-only-attested as database `test` with certificate and hostname verification enabled. Focused tests passed 23/23; full suite passed 332 files / 1,697 tests with 4 files / 7 intentional skips; TypeScript, production build, legacy preview health, and compiled maintenance rehearsal passed. |
 | Preserved safeguards | The deployed runtime remains `legacy` with maintenance disabled. No target secret, migration, seed, schema SQL, database write/delete, provider configuration, payment, or domain action changed. Future activation requires separate Rich approval and follows the rollback-safe handoff procedure. |
 
+## Approved Live New-TiDB Activation Record — October 27, 2026
+
+| Record | Value |
+|---|---|
+| Authorization sequence | Rich confirmed legacy backup/PITR, approved the exact maintenance-window delta, approved the `new` selector, and separately approved traffic reopening plus daily-writer resumption. |
+| Data reconciliation | The approved guarded delta applied 16 scheduler-event rows and one activity-timestamp alignment to the new target, after which sanitized full parity passed across all 64 application tables. No migration, seed, schema SQL, destructive operation, or provider action occurred. |
+| Runtime attestation | The restarted application attested target `new` and database `test` through the strict verified-TLS connection path. No URL, hostname, username, password, or TLS material is recorded. |
+| Live verification | Frozen health returned `200` while normal routes returned `503`; after approved reopening, health and the normal home route both returned `200` and the rendered preview loaded. |
+| Scheduled writer | The existing daily trade-reminder Heartbeat job was paused during the window and enabled again only after the reopened new-target checks passed. |
+| Recovery boundary | The legacy target remains configured, but rollback after live writes is a reconciliation operation: enable maintenance, pause writers, attest the selected target, reconcile post-cutover data, then obtain approval before reopening. It is not automatic failover. |
+
 ## Compatibility Boundary
 
 The canonical GitHub repository contains an historical membership migration chain. The restored Tradebilia custom TiDB runtime now contains the separately approved, verified mixed-case Membership foundation, but the original GitHub migration files must not be replayed on that runtime. The following historical GitHub paths remain **migration-gated** and must not be imported or replayed as-is:

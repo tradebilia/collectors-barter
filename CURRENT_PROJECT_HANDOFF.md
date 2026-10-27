@@ -10,9 +10,17 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | **Stage 1 reversible database-cutover safety is implemented but not activated.** Runtime database selection is now explicit/default-legacy; it has strict TLS and startup-database attestation, plus a full-server maintenance guard for the later controlled switch. No active database, secret value, migration, or data changed. |
-| Latest validation | Fresh legacy read-only baseline: 3 users, 3 profiles, 57 listings, 83 listing photos, 6 trade proposals, and 1 inquiry reply. New-target read-only attestation reached `test` using verified TLS. Focused tests passed 23/23; full deterministic suite passed 332 files / 1,697 tests with 4 files / 7 intentionally skipped; TypeScript, production build, compiled maintenance rehearsal, legacy preview health, and diff checks passed. |
+| Latest functional change | **The approved new-TiDB activation is live.** Runtime selected `new`, startup attested database `test` through verified TLS, maintenance mode was removed only after frozen smoke checks, and the paused daily trade-reminder writer was resumed. The legacy target remains configured only as a controlled rollback option. |
+| Latest validation | A guarded 16-row scheduler-event delta and one activity-timestamp alignment were applied to the new database during the approved maintenance window; full 64-table parity then passed. The frozen new runtime attested `target: new` / database `test`, returned health `200`, and blocked normal routes with `503`. After Rich approved reopening, the live home route returned `200`, the rendered preview loaded, and the daily writer was confirmed resumed. Stage 1 source validation remains: 23 focused tests; 332 files / 1,697 tests with 4 files / 7 intentional skips; TypeScript, production build, compiled maintenance rehearsal, and diff hygiene passed. |
 | Dependency audit | `pnpm audit --prod --audit-level=high` currently reports existing dependency advisories. No dependency changes were made in the authorized source-only filter scope. |
+
+## Live new-TiDB activation — October 27, 2026
+
+Rich confirmed a current legacy backup/PITR, approved the exact maintenance-window delta, approved the `new` selector, and separately approved reopening normal traffic and resuming the daily writer. During the freeze, normal application routes returned the maintenance response before any application handler could run, and the trade-reminder Heartbeat job was paused. The approved delta made the new TiDB `test` database match the legacy target across all 64 application tables without a migration, seed, schema operation, deletion, or provider action.
+
+The application is now live on `TRADEBILIA_DATABASE_TARGET=new`; startup attestation confirms only the non-secret target label, database name `test`, and connection fingerprint. `TRADEBILIA_MAINTENANCE_MODE` is off, the home page and health endpoint returned `200`, and the existing daily trade-reminder job is enabled again. Do not expose, copy, or document the database URLs, hostnames, usernames, or passwords.
+
+**Critical rollback boundary:** now that normal traffic and the scheduled writer are live on the new database, do not casually switch the selector back to `legacy`. A rollback must first set maintenance mode to `1`, pause the writer, restart and attest the chosen target, compare and reconcile any post-cutover writes, and receive Rich's approval before reopening. The legacy target is a rollback source, not an automatic failover or a dual-write partner.
 
 ## Cross-source pre-visual identity hardening — October 25, 2026
 

@@ -13,8 +13,10 @@
 - GitHub repository: `tradebilia/collectors-barter`, branch `main` — fetch first for the exact current SHA
 - Public domains: `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space`
 - Latest functional policy: signed, exact-grade PCGS Auction Prices Realized rows within 365 days are current-value candidates; older exact-grade PCGS rows are historical trend only; incomplete, non-USD, undated, and grade-mismatched rows are context only. PCGS compact month/year labels such as `10-2009` are normalized internally for this timing split while their exact original label remains visible. The provider panel and Evidence Review both consume the same server-approved PCGS bucket utility. A View All history response that is HTTP-successful but empty is retried once with the alternate configured PCGS credential; an unsuccessful or still-empty retry preserves the empty result without inventing evidence. The client uses `historyQueryVersion: 5` to refresh older cached empty responses.
-- Latest validation: 320 Vitest files / 1,454 tests passed; TypeScript and production build passed; dependency audit has no high or critical findings.
-- Shared database baseline: 3 users, 3 profiles, 48 listings, 74 listing photos, 1 inquiry reply, 6 trade proposals.
+- **Active database:** the application is live on `TRADEBILIA_DATABASE_TARGET=new`; startup attested database `test` through verified TLS on October 27, 2026. Maintenance mode is off and the existing daily trade-reminder writer is enabled.
+- **Live cutover evidence:** after a Rich-approved maintenance window, a guarded 16-row scheduler-event delta plus one activity-timestamp alignment produced sanitized parity across all 64 application tables. The frozen new runtime passed health `200` plus normal-route `503`; after separate reopen approval, the home route returned `200` and the rendered preview loaded.
+- **Rollback boundary:** do not flip the selector back to `legacy` while the new database has live writes. First enable maintenance, pause the writer, restart/attest the intended target, reconcile post-cutover data, and obtain renewed approval before reopening.
+- Latest source validation: 23 focused tests; 332 files / 1,697 tests with 4 files / 7 intentional skips; TypeScript, production build, compiled maintenance rehearsal, and diff hygiene passed.
 
 ## Critical safety rules
 
@@ -23,6 +25,7 @@
 - Do not run migrations, seed scripts, or destructive scripts without Rich’s explicit approval for that exact operation.
 - Never print or commit raw credentials, database URLs, encryption/JWT keys, OAuth tokens, or `.project-config.json`.
 - PCGS current-value rows use the provider’s realized amount **as reported**; buyer-premium treatment is not disclosed. Preserve this caveat and never relabel it as an all-in price.
+- The legacy TiDB target is a controlled recovery source, not automatic failover and not a dual-write partner. Any post-live-cutover rollback requires explicit reconciliation approval.
 
 ## Synchronization policy
 
