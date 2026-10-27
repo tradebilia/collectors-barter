@@ -14,6 +14,7 @@ import { registerScheduledRoutes } from "../scheduledRoutes";
 import { registerProviderOAuthCallbacks } from "./providerOAuthCallbacks";
 import { registerStripeWebhook } from "../stripeWebhook";
 import { validateDatabaseConnection, validateEnvironment } from "./startupChecks";
+import { registerTradebiliaMaintenanceModeGuard } from "./maintenanceMode";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -39,6 +40,10 @@ async function startServer() {
   await validateDatabaseConnection();
   const app = express();
   const server = createServer(app);
+  // Must be first: during a database cutover, only GET /health may reach the
+  // process. This blocks webhooks, OAuth callbacks, scheduled writers, tRPC,
+  // storage, and the SPA before any side effect can occur.
+  registerTradebiliaMaintenanceModeGuard(app);
   // Stripe must receive raw bytes for signed webhook verification. Keep this
   // ahead of all JSON middleware and leave payment enforcement inactive.
   registerStripeWebhook(app);

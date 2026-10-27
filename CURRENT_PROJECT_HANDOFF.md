@@ -10,8 +10,8 @@
 | Active workspace | `/home/ubuntu/tradebilia-isolated-development` |
 | GitHub | `tradebilia/collectors-barter` → `main`; always fetch `canonical/main` to obtain the current synchronized SHA rather than relying on an older handoff SHA |
 | Public domains | `tradebilia.manus.space` and `tradebilia-d-bnuiylsx.manus.space` |
-| Latest functional change | Verified **Video Games → Sold-Comps (Mercari Sold)** in the Test AI source-coverage tracker as a confirmed Match. This is a tracker/status record only; the shared pre-visual filters, score ranking, capped visual admission, visual evidence rules, and valuation safeguards remain unchanged. |
-| Latest validation | Focused source-coverage regression passed 27/27; full deterministic suite passed 330 files / 1,682 tests with 4 files / 7 tests intentionally skipped; TypeScript, production build, and diff checks passed. |
+| Latest functional change | **Stage 1 reversible database-cutover safety is implemented but not activated.** Runtime database selection is now explicit/default-legacy; it has strict TLS and startup-database attestation, plus a full-server maintenance guard for the later controlled switch. No active database, secret value, migration, or data changed. |
+| Latest validation | Fresh legacy read-only baseline: 3 users, 3 profiles, 57 listings, 83 listing photos, 6 trade proposals, and 1 inquiry reply. New-target read-only attestation reached `test` using verified TLS. Focused tests passed 23/23; full deterministic suite passed 332 files / 1,697 tests with 4 files / 7 intentionally skipped; TypeScript, production build, compiled maintenance rehearsal, legacy preview health, and diff checks passed. |
 | Dependency audit | `pnpm audit --prod --audit-level=high` currently reports existing dependency advisories. No dependency changes were made in the authorized source-only filter scope. |
 
 ## Cross-source pre-visual identity hardening — October 25, 2026

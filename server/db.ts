@@ -43,6 +43,13 @@ import { buildPayPalComparisonProfile, type PayPalComparisonProfile, type PayPal
 import { selectSimilarListings } from "../shared/similarListings";
 import { normalizePcgsCoinGrade, recoverPcgsCoinGradeFromTitle } from "../shared/publicGradeValues";
 import { isAlphanumericCoinGrade } from "../shared/gradingCompanyConfig";
+import {
+  buildTradebiliaDatabaseUrl,
+  resolveTradebiliaDatabaseConnection,
+  resolveTradebiliaDatabaseTarget,
+} from "./databaseTarget";
+
+export { buildTradebiliaDatabaseUrl } from "./databaseTarget";
 
 export const collectibleCategories = ['comics', 'sports_cards', 'vintage_toys', 'video_games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney_pins'] as const;
 export const itemConditions = ['mint', 'near_mint', 'excellent', 'very_good', 'good', 'fair', 'poor'] as const;
@@ -76,14 +83,6 @@ export function normalizeListingGradeForStorage(
   certificationCompany?: string,
 ): string {
   return normalizeListingGrade(value, category, certificationCompany);
-}
-
-const TRADEBILIA_DATABASE_NAME = "GnMVDXgu6G8uhj5ZYQtcGe";
-
-export function buildTradebiliaDatabaseUrl(databaseUrl: string): string {
-  const url = new URL(databaseUrl);
-  url.pathname = `/${TRADEBILIA_DATABASE_NAME}`;
-  return url.toString();
 }
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -297,33 +296,18 @@ export async function closeDb(): Promise<void> {
 
 export async function requireDb(): Promise<ReturnType<typeof drizzle>> {
   if (!_db) {
-    // Build the Tradebilia connection from DATABASE_URL so its credentials,
-    // host, port, and SSL settings remain unchanged; only the database name is
-    // replaced. Never log a connection-string fragment.
-    const customDatabaseUrl = process.env.CUSTOM_DATABASE_URL;
-    const baseDatabaseUrl = process.env.DATABASE_URL || ENV.databaseUrl;
-    const dbUrl = customDatabaseUrl ? buildTradebiliaDatabaseUrl(baseDatabaseUrl) : baseDatabaseUrl;
-    console.log(`[requireDb] Using database source: ${customDatabaseUrl ? 'DATABASE_URL_WITH_TRADEBILIA_DB' : 'MANUS-MANAGED'}`);
-    const url = new URL(dbUrl);
-    const sslParam = url.searchParams.get("ssl");
-    
-    if (sslParam) {
-      try {
-        // mysql2 expects an object for SSL, not a string
-        const sslConfig = JSON.parse(sslParam);
-        url.searchParams.delete("ssl");
-        _db = drizzle({
-          connection: {
-            uri: url.toString(),
-            ssl: sslConfig
-          }
-        });
-      } catch (e) {
-        console.error("[requireDb] Failed to parse SSL config, falling back to default:", e);
-        _db = drizzle(dbUrl);
-      }
+    const target = resolveTradebiliaDatabaseTarget({
+      ...process.env,
+      DATABASE_URL: process.env.DATABASE_URL || ENV.databaseUrl,
+    });
+    const connection = resolveTradebiliaDatabaseConnection(target);
+    // The selector is intentionally explicit and fail-closed. Never log URL
+    // fragments, usernames, passwords, hosts, or TLS query settings.
+    console.log(`[requireDb] Database target=${target.name} expectedDatabase=${target.expectedDatabaseName} fingerprint=${target.connectionFingerprint}`);
+    if (connection.ssl) {
+      _db = drizzle({ connection });
     } else {
-      _db = drizzle(dbUrl);
+      _db = drizzle(connection.uri);
     }
     _dbErrorCount = 0;
     _dbLastError = null;

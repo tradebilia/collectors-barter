@@ -107,9 +107,9 @@ describe("second deep-audit P1 provider reliability", () => {
     }));
   });
 
-  it("validates the active custom-or-managed database setting before Express constructs its listener without requiring optional provider settings", () => {
-    expect(startupSource).toContain("process.env.CUSTOM_DATABASE_URL || process.env.DATABASE_URL");
-    expect(startupSource).toContain('missing.push("CUSTOM_DATABASE_URL or DATABASE_URL")');
+  it("validates the explicit database target before Express constructs its listener without requiring optional provider settings", () => {
+    expect(startupSource).toContain("resolveTradebiliaDatabaseTarget(env)");
+    expect(startupSource).toContain("The selected Tradebilia database target is not valid");
     expect(startupSource).not.toContain('"RESEND_API_KEY"');
     expect(startupSource).not.toContain('"TWILIO_ACCOUNT_SID"');
     const environmentCheck = serverSource.indexOf("validateEnvironment();");

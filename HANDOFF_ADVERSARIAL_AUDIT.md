@@ -34,3 +34,9 @@ The current project was internally healthy at the time of audit, but a seamless 
 The earlier project-shared copies were older than the repository handoff set and contained conflicting continuation instructions. The repository versions were retained as the authority, the shared TNN asset records were preserved in the repository asset inventory, and the reconciled documents were mirrored back to project shared files.
 
 Final evidence required for this reconciliation: the WebDev checkpoint is `f956d7c9`; GitHub `main` must match the final local commit; the working tree must be clean; and the five reconciled documents must have identical SHA-256 hashes in the repository and project-shared directory. No secret values are included.
+
+## Stage 1 external-TiDB cutover safety — October 27, 2026
+
+The runtime now defaults explicitly to the legacy Tradebilia target. New TiDB is selected only by `TRADEBILIA_DATABASE_TARGET=new` and its protected new URL; startup requires a verified-TLS connection and confirms the server-selected database name by read-only query. There is no automatic fallback, which prevents a failed new target from silently writing to another database.
+
+`TRADEBILIA_MAINTENANCE_MODE=1` is mounted ahead of every application route and permits only `GET /health`; it blocks webhooks, OAuth, scheduled writers, tRPC, storage, and static requests with a non-cacheable `503`. This was compiled and tested in a temporary process. The live isolated-development runtime remains default-legacy with maintenance disabled. A future cutover still requires an exact Rich-approved activation window, health/attestation evidence, controlled smoke tests, a deliberate reopen decision, and a documented rollback to `legacy`; Stage 1 did not change a secret, activate new TiDB, migrate schema, or write application data.
