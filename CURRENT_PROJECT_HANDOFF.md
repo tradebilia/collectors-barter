@@ -22,6 +22,10 @@ The application is now live on `TRADEBILIA_DATABASE_TARGET=new`; startup attesta
 
 **Critical rollback boundary:** now that normal traffic and the scheduled writer are live on the new database, do not casually switch the selector back to `legacy`. A rollback must first set maintenance mode to `1`, pause the writer, restart and attest the chosen target, compare and reconcile any post-cutover writes, and receive Rich's approval before reopening. The legacy target is a rollback source, not an automatic failover or a dual-write partner.
 
+### Approved database-connection hardening phase — October 27, 2026
+
+Rich approved a source-only remediation of the active new-TiDB connection layer. This phase must: independently pin the approved new database name `test`; require both certificate and hostname validation for every accepted new-target TLS representation; re-attest every newly created or reset pool; sanitize health/startup/database errors; install graceful HTTP and pool shutdown; and add deterministic regression coverage. It must not change the active target, database records, schema, provider behavior, credentials, or domains. The follow-up operational work remains separate: an exhaustive scheduled-writer drain inventory, provider PITR restore-drill evidence, and an executable post-live rollback reconciliation runbook.
+
 ## Cross-source pre-visual identity hardening — October 25, 2026
 
 The shared Test AI visual filter now canonicalizes target identity metadata once at entry and uses that same normalized metadata for the complete visual-review pipeline, including prompts, retries, adjudication, and final evidence mapping. Every production visual-source route uses `buildVisualTargetMetadata`; Cardsight, both HIPStamp Sold summary calls, and PWCC now pass the available item type and grading-company fallback instead of dropping them.
