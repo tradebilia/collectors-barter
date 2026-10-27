@@ -59,6 +59,7 @@ Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoin
 | Runtime preservation | Active target remains `new` / database `test` with verified TLS; maintenance remains off and the daily writer remains resumed. No selector, data, schema, migration, provider, credential, or domain action occurred. |
 | Validation | Focused lifecycle/connectivity suite passed 21/21. The serialized full suite passed 336 files / 1,720 tests with 4 files / 7 intentional skips. TypeScript, production build, build-fingerprint check, diff hygiene, verified-TLS attestation, `/health`, and home route checks passed. |
 | Recovery behavior | If mysql2 reports a close failure, the process rejects every new acquisition until it restarts; it never opens a replacement pool alongside an unconfirmed prior close. |
+| Managed WebDev checkpoint and canonical implementation commit | Checkpoint `c12956c3`; GitHub `main` commit `c12956c3e2ac8fb56c215b5592dddc1a39f6e052`, pushed normally with exact local/remote SHA parity. |
 
 ## Compatibility Boundary
 
