@@ -593,3 +593,13 @@ The final card correction uses canonical display-name priority, aligned directio
 | Scope | Complete current source, tests, project tracker, synchronization manifest, and verification documentation were copied to the canonical checkout. Sandbox runtime files, caches, generated build output, project metadata, and secrets were excluded. |
 | Validation | Canonical focused feature regressions passed; TypeScript, production build, production dependency audit, and diff-whitespace checks passed. The complete suite remains subject to unrelated live-provider credential checks that can time out. |
 | Backup status | Canonical checkout was clean and `origin/main` matched commit `f4321bd6158d8a37ff83f30a5209118988f0b2f7` before this manifest record was added. |
+
+
+## Documentation and project-shared copy reconciliation — October 27, 2026
+| Record | Value |
+|---|---|
+| Managed WebDev checkpoint | `f956d7c9` |
+| Canonical GitHub commit | `8c4784a33a55f15119a3897f2e76dfb91500b1ff` — normal credential-safe push to GitHub `main`; no force push or history replacement. |
+| Scope | Reconciled the authoritative repository handoff files, preserved the project-shared TNN recovery records in the repository asset inventory, and prepared the five handoff/asset documents for byte-identical mirroring into project shared files. |
+| Validation | Documentation diff passed `git diff --check`; local and GitHub SHA matched after push; no application source, database, secrets, migrations, provider configuration, or deployment settings changed. |
+| Security | No raw credentials, database URLs, customer media, or platform-generated configuration were copied into documentation or Git. |
