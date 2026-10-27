@@ -19,6 +19,16 @@ The external GitHub repository is the authoritative history for future Tradebili
 
 Before a future GitHub-to-WebDev reconciliation, create a fresh WebDev checkpoint and an immutable GitHub backup tag. Before a future WebDev change becomes canonical, commit and push the reviewed change to GitHub first, then apply the equivalent reviewed content to WebDev and checkpoint it. Record any new canonical baseline tag and paired recovery checkpoint in this document.
 
+## Stage 1 Reversible New-TiDB Cutover Safety Pair — October 27, 2026
+
+| Record | Value |
+|---|---|
+| Canonical implementation commit | `5ca0528d20cffe81f0d500363fe3370076e0e514` — normal push to GitHub `main`; no force push or history replacement. |
+| Paired managed WebDev checkpoint | `5ca0528d` |
+| Scope | Explicit `legacy`/`new` runtime database selector with legacy as the default; strict TLS normalization for the new target; selected-database startup attestation; full-server maintenance guard; and deterministic source/route regressions. |
+| Validation | New TiDB was read-only-attested as database `test` with certificate and hostname verification enabled. Focused tests passed 23/23; full suite passed 332 files / 1,697 tests with 4 files / 7 intentional skips; TypeScript, production build, legacy preview health, and compiled maintenance rehearsal passed. |
+| Preserved safeguards | The deployed runtime remains `legacy` with maintenance disabled. No target secret, migration, seed, schema SQL, database write/delete, provider configuration, payment, or domain action changed. Future activation requires separate Rich approval and follows the rollback-safe handoff procedure. |
+
 ## Compatibility Boundary
 
 The canonical GitHub repository contains an historical membership migration chain. The restored Tradebilia custom TiDB runtime now contains the separately approved, verified mixed-case Membership foundation, but the original GitHub migration files must not be replayed on that runtime. The following historical GitHub paths remain **migration-gated** and must not be imported or replayed as-is:
