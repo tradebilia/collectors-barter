@@ -151,10 +151,17 @@ function isIndividualCertificateOrHolderIdentifier(field: string): boolean {
  * a conflict; this keeps provider omissions reviewable instead of fail-open or
  * fail-closed by guesswork.
  */
-export function findMaterialMetadataConflicts(targetMetadata: string, candidate: MetadataRecord): MetadataConflict[] {
+export function findMaterialMetadataConflicts(
+  targetMetadata: string,
+  candidate: MetadataRecord,
+  options: { ignoreSubjectiveConditionDifferences?: boolean } = {},
+): MetadataConflict[] {
   const target = canonicalFields(targetMetadata);
   const candidateRecord = candidateFields(candidate);
   const category = normalizeCategory(String(target.category ?? ''));
+  const targetCondition = firstValue(target, 'condition');
+  const targetHasMaterialCondition = /\b(?:sealed|factory\s+sealed|for\s+parts|parts\s+only|unopened)\b/i.test(targetCondition);
+  const targetHasExplicitSealedState = Boolean(target.sealedStatus || target.packageStatus || targetHasMaterialCondition);
   const fields = [...new Set([
     ...(CATEGORY_FIELDS[category] ?? []),
     ...Object.keys(target),
@@ -167,6 +174,8 @@ export function findMaterialMetadataConflicts(targetMetadata: string, candidate:
     'itemDetails',
     'details',
   ].includes(field)
+    && !(options.ignoreSubjectiveConditionDifferences && ['condition', 'mediaCondition'].includes(field))
+    && !(options.ignoreSubjectiveConditionDifferences && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
     && !isIndividualCertificateOrHolderIdentifier(field));
   const candidateTitle = String(candidate.title ?? '');

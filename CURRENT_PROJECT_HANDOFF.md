@@ -67,6 +67,10 @@ Certificate, certificate-of-authenticity, holder, slab, barcode/QR, and tracking
 
 The implementation does not query providers differently, alter valuation policy, write database records, run migrations, change credentials, or publish a domain. Regressions cover all added rules, legacy aliases, context preservation, original indexes, and source-contract propagation. The WebDev checkpoint, GitHub synchronization, and deployment-parity confirmation must be recorded as the final synchronization set for this change.
 
+### Mercari Sold-Comps subjective-condition review gate — October 28, 2026
+
+Mercari Sold-Comps now passes a scoped `ignoreSubjectiveConditionDifferences` option into the shared pre-visual identity filter for every supported category, including the separate Video Games branch. Ordinary provider condition differences such as Excellent versus Good, Fair, Like New, or New no longer remove a Mercari candidate before image review. Lots, bundles, explicit identity conflicts, and category-specific material gates such as sealed/for-parts and raw-versus-graded conflicts remain hard pre-visual exclusions. eBay and non-Mercari visual-source callers retain the prior condition-conflict behavior. The exact Moonlighting Movies reproduction returned 13 records: 10 reached visual-review eligibility and 3 remained context-only lots/bundles. Focused tests passed 101/101; the full suite passed 339 files with 4 skipped and 1,753 tests with 7 skipped; TypeScript and the production build passed. No database, migration, secret, provider, or deployment setting changed.
+
 ## Documentation and backup reconciliation — October 27, 2026
 
 The authoritative repository handoff files were reconciled against the older project-shared copies. The repository versions are retained as authoritative because they contain the later October 2026 Test AI, Mercari, Cloudflare UPS, TNN, and database-safeguard history. The shared copies were updated from these reconciled repository files after preserving the shared TNN asset records in `IMAGE_ASSET_INVENTORY.md`.

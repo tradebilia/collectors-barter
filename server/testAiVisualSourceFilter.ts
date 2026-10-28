@@ -1287,6 +1287,7 @@ function explicitCompoundNumberConflict(targetMetadata: string, listing: VisualS
 export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
   listings: T[],
   targetMetadata: string,
+  options: { ignoreSubjectiveConditionDifferences?: boolean } = {},
 ): VisualSourceReview[] {
   const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
   const targetDetails = extractTargetItemDetails(targetMetadata);
@@ -1309,7 +1310,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
-    const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing);
+    const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
     const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
     const reason = gradingStateConflict ?? productFormConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
@@ -1466,7 +1467,8 @@ export async function filterVisualSourceCandidates<
 	  targetImageUrl?: string | null;
 	  targetMetadata: string;
 		  listings: T[];
-	  reviewDeadlineAt?: number;
+		  ignoreSubjectiveConditionDifferences?: boolean;
+		  reviewDeadlineAt?: number;
 	}): Promise<VisualSourceFilterResult<T>> {
 		  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
   const preVisualLotReasons = new Map<number, string>();
@@ -1474,7 +1476,9 @@ export async function filterVisualSourceCandidates<
     const reason = multiItemLotReason(listing, targetMetadata);
     if (reason) preVisualLotReasons.set(index, reason);
   });
-  const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata);
+  const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata, {
+    ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences,
+  });
   const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
   const preVisualExcludedIndexes = new Set([
     ...preVisualLotReasons.keys(),

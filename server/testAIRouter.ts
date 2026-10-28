@@ -2599,6 +2599,7 @@ export const testAIRouter = router({
           sourceLabel: 'Mercari Video Game sold listings',
           targetImageUrl: safeTargetImage,
           targetMetadata,
+          ignoreSubjectiveConditionDifferences: true,
           listings: admission.selected.map((listing) => ({
             ...listing,
             url: listing.itemUrl ?? listing.url,
@@ -2777,6 +2778,7 @@ export const testAIRouter = router({
         sourceLabel: visualSourceLabel,
         targetImageUrl: safeTargetImage,
         targetMetadata,
+        ignoreSubjectiveConditionDifferences: true,
         listings: result.listings.map((listing) => ({
           ...listing,
           // The common sold-comparable annotator uses the eBay-shaped aliases;

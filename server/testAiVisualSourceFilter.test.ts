@@ -679,7 +679,7 @@ describe("visual source filter", () => {
     ], listings, "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
     expect(result[0]).toMatchObject({ candidateIndex: 1, verdict: "unreadable", confidence: "low" });
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
-    expect(source).toContain("const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata);");
+    expect(source).toContain("const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata, {");
     expect(source).toContain("const preVisualExcludedIndexes = new Set([");
     expect(source).toContain("candidateIndex,");
   });
@@ -1169,6 +1169,38 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews(
       [{ title: `Prince — Purple Rain ${candidateCondition}`, imageUrl: "https://example.com/candidate.jpg" }],
       targetMetadata,
+    )).toEqual([]);
+  });
+
+  it.each([
+    "sports_cards",
+    "pokemon",
+    "coins",
+    "comics",
+    "video_games",
+    "stamps",
+    "movies",
+    "autographs",
+    "disney_pins",
+    "vintage_toys",
+    "music",
+  ])("allows ordinary condition differences for Mercari visual review across %s", (category) => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Example collectible",
+      category,
+      condition: "excellent",
+      itemDetails: JSON.stringify({ condition: "excellent" }),
+    });
+    const candidate = {
+      title: "Example collectible",
+      itemDetails: JSON.stringify({ condition: "good" }),
+      imageUrl: "https://example.com/candidate.jpg",
+    };
+    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(category === "music" ? 0 : 1);
+    expect(buildDeclaredIdentityReviews(
+      [candidate],
+      targetMetadata,
+      { ignoreSubjectiveConditionDifferences: true },
     )).toEqual([]);
   });
 
