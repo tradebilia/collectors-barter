@@ -1077,8 +1077,308 @@ function explicitGradingState(value: unknown): ExplicitGradingState {
   return null;
 }
 
+type NormalizedVisualSourceCandidate = VisualSourceCandidate & {
+  details: Record<string, unknown>;
+  title: string;
+  imageUrls: string[];
+  providerReference: string | null;
+  quantity: number | null;
+  grade: string;
+  grader: string;
+  isGraded: string;
+  condition: string;
+  itemType: string;
+};
+
+function candidateText(value: unknown): string {
+  return String(value ?? "").trim();
+}
+
+function firstCandidateText(...values: unknown[]): string {
+  return values.map(candidateText).find(Boolean) ?? "";
+}
+
+function imageValues(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(imageValues);
+  if (!value || typeof value !== "object") return [];
+  const image = value as Record<string, unknown>;
+  return [image.imageUrl, image.thumbnailUrl, image.url, image.src].flatMap(imageValues);
+}
+
+/**
+ * Provider payloads use different aliases. This adapter deliberately normalizes
+ * only source-neutral facts; missing data remains unknown and is never inferred.
+ */
+export function normalizeVisualSourceCandidate(listing: VisualSourceCandidate): NormalizedVisualSourceCandidate {
+  const details = candidateStructuredDetails(listing);
+  const rawImages = [
+    listing.imageUrls,
+    listing.imageUrl,
+    listing.thumbnailUrl,
+    listing.image,
+    listing.images,
+    listing.galleryImages,
+    listing.image_url,
+    details.imageUrls,
+    details.imageUrl,
+    details.thumbnailUrl,
+    details.images,
+  ].flatMap(imageValues);
+  const imageUrls = Array.from(new Set(rawImages
+    .map(promoteEbayImageUrl)
+    .filter((url): url is string => Boolean(url))))
+    .slice(0, 8);
+  const providerReference = firstCandidateText(
+    listing.saleId,
+    listing.listingId,
+    listing.itemId,
+    listing.id,
+    listing.itemUrl,
+    listing.url,
+    listing.itemWebUrl,
+    listing.permalink,
+    listing.link,
+  );
+  const quantityValue = [
+    listing.lotQuantity,
+    listing.itemCount,
+    listing.numberOfItems,
+    listing.quantity,
+    details.lotQuantity,
+    details.itemCount,
+    details.numberOfItems,
+    details.quantity,
+  ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0);
+  return {
+    details,
+    title: candidateText(listing.title),
+    imageUrls,
+    providerReference: providerReference || null,
+    quantity: quantityValue ?? null,
+    grade: firstCandidateText(listing.grade, details.grade),
+    grader: firstCandidateText(listing.certificationCompany, listing.gradingCompany, listing.grader, details.certificationCompany, details.gradingCompany, details.grader),
+    isGraded: firstCandidateText(listing.isGraded, details.isGraded, details.graded),
+    condition: firstCandidateText(listing.condition, details.condition, details.mediaCondition),
+    itemType: firstCandidateText(listing.itemType, listing.productType, listing.form, listing.saleForm, details.itemType, details.productType, details.form),
+  };
+}
+
 function candidateStructuredDetails(listing: VisualSourceCandidate): Record<string, unknown> {
   return visualMetadataDetails(listing.fullItemDetails ?? listing.itemDetails ?? listing.details);
+}
+
+type ExplicitState = "yes" | "no" | "unknown";
+
+function targetNumericQuantity(targetMetadata: string): number {
+  const details = extractTargetItemDetails(targetMetadata);
+  const quantity = [details.quantity, details.itemCount, details.numberOfItems, details.lotQuantity]
+    .map((value) => Number(value))
+    .find((value) => Number.isFinite(value) && value > 0);
+  return quantity ?? 1;
+}
+
+function explicitState(value: unknown, yesPattern: RegExp, noPattern: RegExp): ExplicitState {
+  const text = candidateText(value);
+  if (!text) return "unknown";
+  if (yesPattern.test(text)) return "yes";
+  if (noPattern.test(text)) return "no";
+  return "unknown";
+}
+
+function sourceText(candidate: NormalizedVisualSourceCandidate): string {
+  const detailText = Object.entries(candidate.details).map(([key, value]) => `${key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ")} ${candidateText(value)}`);
+  return [candidate.title, candidate.condition, candidate.itemType, ...detailText]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function targetText(metadata: string): string {
+  const details = extractTargetItemDetails(metadata);
+  const detailText = Object.entries(details).map(([key, value]) => `${key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ")} ${candidateText(value)}`);
+  return [extractTargetTitle(metadata), metadataValue(metadata, "itemType"), metadataValue(metadata, "condition"), ...detailText]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function sealedState(value: string): ExplicitState {
+  if (/\b(?:sealed(?:\s+status)?\s+(?:no|false|0)|opened|open(?:ed)?\s+box|unsealed|not\s+sealed|used|pre[- ]?owned)\b/i.test(value)) return "no";
+  if (/\b(?:sealed(?:\s+status)?\s+(?:yes|true|1)|factory\s+sealed|new\s*[/|]?\s*sealed|sealed|unopened|new\s+in\s+(?:shrink|box))\b/i.test(value)) return "yes";
+  return "unknown";
+}
+
+function unusableState(value: string): ExplicitState {
+  return explicitState(
+    value,
+    /\b(?:for\s+parts|parts\s+only|broken|damaged|incomplete|missing\s+(?:part|piece|accessory|disc|manual))\b/i,
+    /\b(?:complete|working|tested|intact|mint|excellent|good|fair|new|sealed)\b/i,
+  );
+}
+
+function signedState(value: string): ExplicitState {
+  if (/\b(?:signed|autograph(?:ed)?|signature)(?:\s+(?:status|present))?\s+(?:no|false|0)|\b(?:unsigned|not\s+signed|no\s+autograph)\b/i.test(value)) return "no";
+  if (/\b(?:signed|autograph(?:ed)?|signature)(?:\s+(?:status|present))?\s+(?:yes|true|1)|\b(?:signed|autograph(?:ed)?|signature)\b/i.test(value)) return "yes";
+  return "unknown";
+}
+
+function originalState(value: string): ExplicitState {
+  return explicitState(
+    value,
+    /\b(?:facsimile|reproduction|replica)\s+(?:no|false|0)|\b(?:original|first\s+print(?:ing)?|authentic)\b/i,
+    /\b(?:facsimile|reproduction|replica)\s+(?:yes|true|1)|\b(?:reproduction|replica|facsimile|reprint)\b/i,
+  );
+}
+
+type ComponentOnly = "manual" | "case" | "box" | "accessory" | "replacement_part" | null;
+
+function componentOnlyState(value: string): ComponentOnly {
+  if (/\b(?:instruction\s+)?manual\s+only\b/i.test(value)) return "manual";
+  if (/\b(?:case|cassette\s+case|dvd\s+case)\s+only\b/i.test(value)) return "case";
+  if (/\b(?:box|packaging)\s+only\b/i.test(value)) return "box";
+  if (/\baccessor(?:y|ies)\s+only\b/i.test(value)) return "accessory";
+  if (/\b(?:replacement\s+)?(?:part|piece)\s+only\b/i.test(value)) return "replacement_part";
+  return null;
+}
+
+type ParsedComparableGrade = { numeric: string; designation: string | null } | null;
+
+function parsedComparableGrade(value: unknown): ParsedComparableGrade {
+  const withoutGrader = candidateText(value)
+    .replace(/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG)\b/gi, " ");
+  const designation = withoutGrader.match(/\b(MS|PR|PF|SP|AU|VG|VF|EX|NM|MT)\s*(\d{1,3}(?:\.\d+)?)/i);
+  if (designation) return { numeric: String(Number(designation[2])), designation: designation[1].toUpperCase() };
+  const numeric = withoutGrader.match(/\b(?:grade|graded|score|rating)?\s*(?:is|of|:)?\s*(\d{1,3}(?:\.\d+)?)(?:\+)?\b/i)?.[1];
+  return numeric && Number.isFinite(Number(numeric)) ? { numeric: String(Number(numeric)), designation: null } : null;
+}
+
+function universalGradeConflict(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) === "disney_pins") return null;
+  if (targetExplicitGradingState(targetMetadata) !== "graded" || candidateExplicitGradingState(candidate) !== "graded") return null;
+  const target = parsedComparableGrade(metadataValue(targetMetadata, "grade"));
+  const source = parsedComparableGrade(`${candidate.grade} ${candidate.title}`);
+  if (!target || !source) return null;
+  if (target.numeric !== source.numeric || (target.designation && source.designation && target.designation !== source.designation)) {
+    return `Grade differs: target explicitly declares ${target.designation ?? "grade"} ${target.numeric}, but the candidate explicitly declares ${source.designation ?? "grade"} ${source.numeric}.`;
+  }
+  return null;
+}
+
+function normalizedGrader(value: unknown): string {
+  return candidateText(value).replace(/\s*(?:comics|cards|grading)$/i, "").trim().toUpperCase();
+}
+
+function targetGrader(targetMetadata: string): string {
+  const details = extractTargetItemDetails(targetMetadata);
+  const configured = normalizedGrader(metadataValue(targetMetadata, "certificationCompany"));
+  const custom = normalizedGrader(details.customGradingCompany ?? details.customCertificationCompany ?? details.otherGradingCompany);
+  return configured === "OTHER" ? custom : configured;
+}
+
+function candidateGrader(candidate: NormalizedVisualSourceCandidate): string {
+  const structured = normalizedGrader(candidate.grader);
+  if (structured) return structured;
+  const title = candidate.title;
+  const match = title.match(/\b(PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG)\b/i);
+  if (!match) return "";
+  const preceding = title.slice(Math.max(0, (match.index ?? 0) - 48), match.index ?? 0);
+  return /\b(?:not|no|without|non)\b[^.!?;]{0,48}$/i.test(preceding) ? "" : match[1].toUpperCase();
+}
+
+function gradeCompanyConflict(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) === "disney_pins") return null;
+  if (targetExplicitGradingState(targetMetadata) !== "graded") return null;
+  const expected = targetGrader(targetMetadata);
+  const actual = candidateGrader(candidate);
+  if (!expected || !actual || expected === actual) return null;
+  const videoGamePsaWataEquivalent = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games"
+    && ((expected === "PSA" && actual === "WATA") || (expected === "WATA" && actual === "PSA"));
+  if (videoGamePsaWataEquivalent) return null;
+  return `Grading company differs: target explicitly declares ${expected}, but the candidate explicitly declares ${actual}.`;
+}
+
+function universalCandidateConflict(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): string | null {
+  const target = targetText(targetMetadata);
+  const source = sourceText(candidate);
+  const targetQuantity = targetNumericQuantity(targetMetadata);
+  if (targetQuantity === 1 && (candidate.quantity ?? 1) > 1) {
+    return `Universal quantity filter: candidate declares ${candidate.quantity} items while the target quantity is 1.`;
+  }
+  const gradingConflict = explicitGradingStateConflict(targetMetadata, candidate);
+  if (gradingConflict) return gradingConflict;
+  const graderConflict = gradeCompanyConflict(targetMetadata, candidate);
+  if (graderConflict) return graderConflict;
+  const gradeConflict = universalGradeConflict(targetMetadata, candidate);
+  if (gradeConflict) return gradeConflict;
+  const targetSealed = sealedState(target);
+  const candidateSealed = sealedState(source);
+  if (targetSealed !== "unknown" && candidateSealed !== "unknown" && targetSealed !== candidateSealed) {
+    return `Material sealed state differs: target is explicitly ${targetSealed === "yes" ? "sealed" : "not sealed"}, but the candidate explicitly declares the opposite.`;
+  }
+  const targetUnusable = unusableState(target);
+  const candidateUnusable = unusableState(source);
+  if (targetUnusable !== "unknown" && candidateUnusable !== "unknown" && targetUnusable !== candidateUnusable) {
+    return `Material condition differs: target is explicitly ${targetUnusable === "yes" ? "for parts, damaged, or incomplete" : "usable/complete"}, but the candidate explicitly declares the opposite.`;
+  }
+  const targetSigned = signedState(target);
+  const candidateSigned = signedState(source);
+  if (targetSigned !== "unknown" && candidateSigned !== "unknown" && targetSigned !== candidateSigned) {
+    return `Signature state differs: target is explicitly ${targetSigned === "yes" ? "signed" : "unsigned"}, but the candidate explicitly declares the opposite.`;
+  }
+  const targetOriginal = originalState(target);
+  const candidateOriginal = originalState(source);
+  if (targetOriginal !== "unknown" && candidateOriginal !== "unknown" && targetOriginal !== candidateOriginal) {
+    return `Original/reproduction state differs: target and candidate explicitly declare opposite authenticity states.`;
+  }
+  const targetComponent = componentOnlyState(target);
+  const candidateComponent = componentOnlyState(source);
+  if (candidateComponent && candidateComponent !== targetComponent) {
+    return `Component-only mismatch: candidate is explicitly ${candidateComponent.replace(/_/g, " ")}-only, but the target is not explicitly the same component.`;
+  }
+  return null;
+}
+
+type UniversalPreparation<T extends VisualSourceCandidate> = {
+  listings: T[];
+  contextReasons: Map<number, string>;
+};
+
+/**
+ * Runs before ranking and vision for every shared visual source. Only exact
+ * provider references are deduplicated; titles, prices, and images are never
+ * used as duplicate evidence because they can represent separate sales.
+ */
+export function prepareUniversalVisualCandidates<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): UniversalPreparation<T> {
+  const normalized = listings.map(normalizeVisualSourceCandidate);
+  const canonicalIndexByReference = new Map<string, number>();
+  const mergedImages = normalized.map((candidate) => [...candidate.imageUrls]);
+  const contextReasons = new Map<number, string>();
+  normalized.forEach((candidate, index) => {
+    if (candidate.providerReference) {
+      const canonicalIndex = canonicalIndexByReference.get(candidate.providerReference);
+      if (canonicalIndex !== undefined) {
+        mergedImages[canonicalIndex] = Array.from(new Set([...mergedImages[canonicalIndex], ...candidate.imageUrls])).slice(0, 8);
+        contextReasons.set(index, "Universal duplicate filter: same provider record reference as an earlier candidate; retained as context-only and not sent to visual review.");
+        return;
+      }
+      canonicalIndexByReference.set(candidate.providerReference, index);
+    }
+    const conflict = universalCandidateConflict(targetMetadata, candidate);
+    if (conflict) {
+      contextReasons.set(index, `${conflict} Retained as context-only before visual review.`);
+      return;
+    }
+    if (!candidate.imageUrls.length) {
+      contextReasons.set(index, "Universal image-readiness filter: no usable HTTPS candidate image was supplied; retained as context-only and not sent to visual review.");
+    }
+  });
+  return {
+    listings: listings.map((listing, index) => ({
+      ...listing,
+      imageUrl: mergedImages[index][0] ?? normalizeVisualSourceCandidate(listing).imageUrls[0] ?? null,
+      imageUrls: mergedImages[index],
+    }) as T),
+    contextReasons,
+  };
 }
 
 function targetExplicitGradingState(targetMetadata: string): ExplicitGradingState {
@@ -1100,7 +1400,7 @@ function candidateExplicitGradingState(listing: VisualSourceCandidate): Explicit
   const candidateGrader = metadataText(listing.certificationCompany ?? listing.gradingCompany ?? listing.grader ?? details.certificationCompany ?? details.gradingCompany ?? details.grader, "");
   if (candidateGrade && candidateGrader && !/^(?:raw|ungraded|unknown|none|n\/?a)$/i.test(candidateGrade) && !/^(?:raw|ungraded|unknown|none|n\/?a)$/i.test(candidateGrader)) return "graded";
   const title = String(listing.title ?? "");
-  if (/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title)) return "graded";
+  if (/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?(?:[A-Z]{1,3}\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title)) return "graded";
   if (/\b(?:raw|ungraded|un[- ]slabbed|no\s+(?:slab|holder))\b/i.test(title)) return "raw";
   return null;
 }
@@ -1471,23 +1771,28 @@ export async function filterVisualSourceCandidates<
 		  reviewDeadlineAt?: number;
 	}): Promise<VisualSourceFilterResult<T>> {
 		  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
+	  const universalPreparation = prepareUniversalVisualCandidates(args.listings, targetMetadata);
+	  const preparedListings = universalPreparation.listings;
+	  const preVisualUniversalReasons = universalPreparation.contextReasons;
   const preVisualLotReasons = new Map<number, string>();
-  args.listings.forEach((listing, index) => {
+	  preparedListings.forEach((listing, index) => {
     const reason = multiItemLotReason(listing, targetMetadata);
     if (reason) preVisualLotReasons.set(index, reason);
   });
-  const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata, {
+	  const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {
     ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences,
   });
   const declaredReviewByIndex = new Map(declaredReviews.map((review) => [review.candidateIndex, review]));
   const preVisualExcludedIndexes = new Set([
+	    ...preVisualUniversalReasons.keys(),
     ...preVisualLotReasons.keys(),
     ...declaredReviewByIndex.keys(),
   ]);
-  const preVisualContextListings: T[] = args.listings.flatMap<T>((listing, originalIndex) => {
+	  const preVisualContextListings: T[] = preparedListings.flatMap<T>((listing, originalIndex) => {
     if (!preVisualExcludedIndexes.has(originalIndex)) return [] as T[];
     const declaredReview = declaredReviewByIndex.get(originalIndex);
-    const reason = preVisualLotReasons.get(originalIndex)
+	    const reason = preVisualUniversalReasons.get(originalIndex)
+	      ?? preVisualLotReasons.get(originalIndex)
       ?? declaredReview?.rationale
       ?? "Pre-visual identity filter excluded this listing from visual review.";
       return {
@@ -1498,7 +1803,7 @@ export async function filterVisualSourceCandidates<
         evidenceDisposition: "context_only",
       } as T;
   });
-  const eligibleListings = args.listings.filter((_, index) => !preVisualExcludedIndexes.has(index));
+	  const eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
   const target = safeHttps(args.targetImageUrl);
   if (!target)
     return {
@@ -1512,12 +1817,9 @@ export async function filterVisualSourceCandidates<
       reviews: declaredReviews,
       note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
-  const candidates = args.listings
+	  const candidates = preparedListings
     .map((item, candidateIndex) => {
-      const imageUrls = Array.from(new Set([
-        ...(Array.isArray(item.imageUrls) ? item.imageUrls : []),
-        item.imageUrl,
-      ].map(promoteEbayImageUrl).filter((url): url is string => Boolean(url)))).slice(0, 8);
+	      const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
       return {
         item,
         candidateIndex,
@@ -1645,9 +1947,9 @@ export async function filterVisualSourceCandidates<
         }
       }
       if (!text.trim()) return { reviews: [] as VisualSourceReview[], error: candidateError };
-      const primaryReviews = normalizeSingleCandidateVisualReview(
+	      const primaryReviews = normalizeSingleCandidateVisualReview(
         parseAnalyzerResponse(text),
-        args.listings.length,
+	        preparedListings.length,
         candidate.candidateIndex,
       );
       // Reconcile a holder-cropped coin result with an exact completed-sale
@@ -1755,7 +2057,7 @@ export async function filterVisualSourceCandidates<
           if (!galleryText.trim()) throw new Error("The gallery visual review returned no structured content");
           galleryReviews = normalizeSingleCandidateVisualReview(
             parseAnalyzerResponse(galleryText),
-            args.listings.length,
+            preparedListings.length,
             candidate.candidateIndex,
           );
           if (!galleryReviews.length && needsCoinAdjudication) {
@@ -1823,10 +2125,10 @@ export async function filterVisualSourceCandidates<
       const acceptedMatches = normalizeExplicitUngradedVisualReviews(
           conservativeCoinVisualReviews(
           conservativeGradedVisualReviews(
-          conservativeComicVisualReviews(reviews, args.listings, targetMetadata),
-          args.listings,
+          conservativeComicVisualReviews(reviews, preparedListings, targetMetadata),
+          preparedListings,
           targetMetadata,
-          ), args.listings, targetMetadata),
+          ), preparedListings, targetMetadata),
           targetMetadata,
         ).filter((review) => review.verdict === 'match' || review.verdict === 'rough_match').length;
       if (acceptedMatches >= VISUAL_REVIEW_TARGET_MATCHES) break;
@@ -1839,12 +2141,12 @@ export async function filterVisualSourceCandidates<
       conservativeGradedVisualReviews(
         conservativeComicVisualReviews(
           reviews.filter((review, index, all) => all.findIndex((other) => other.candidateIndex === review.candidateIndex) === index),
-          args.listings,
+          preparedListings,
           targetMetadata,
         ),
-        args.listings,
+        preparedListings,
         targetMetadata,
-      ), args.listings, targetMetadata),
+      ), preparedListings, targetMetadata),
       targetMetadata,
     );
     const reviewByIndex = new Map(uniqueReviews.map((review) => [review.candidateIndex, review]));
@@ -1870,7 +2172,17 @@ export async function filterVisualSourceCandidates<
     // A candidate with a usable target and candidate image must either receive a
     // visual verdict or remain explicit review-only. Do not let a later client
     // treat a missing model row as an implicit pass.
-    const requirementAnnotatedListings = args.listings.map((listing, index) => {
+	    const requirementAnnotatedListings = preparedListings.map((listing, index) => {
+	      const universalReason = preVisualUniversalReasons.get(index);
+	      if (universalReason) {
+	        return {
+	          ...listing,
+	          visualRequirement: "not_required_pre_visual",
+	          visualReviewStatus: "not_reviewed",
+	          visualReviewRationale: universalReason,
+	          evidenceDisposition: "context_only",
+	        } as T;
+	      }
       const preVisualReason = preVisualLotReasons.get(index);
       if (preVisualReason) {
         return {
@@ -1907,8 +2219,8 @@ export async function filterVisualSourceCandidates<
       reviewedCandidateCount,
       { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata },
     );
-    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
-    const contextIndexes = new Set([...declaredConflictIndexes, ...preVisualLotReasons.keys()]);
+	    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
+	    const contextIndexes = new Set([...preVisualUniversalReasons.keys(), ...declaredConflictIndexes, ...preVisualLotReasons.keys()]);
     const contextListings = applied.listings.filter((_, index) => contextIndexes.has(index));
     const visibleListings = applied.listings.filter((_, index) => !contextIndexes.has(index));
     const completedWithTimeout = timedOutCount > 0 || deadlineReached;
@@ -1922,11 +2234,11 @@ export async function filterVisualSourceCandidates<
       reviews: uniqueReviews,
       timedOutCount,
       deadlineReached,
-      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
+	      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualUniversalReasons.size} universal duplicate, quantity, state, grade, component, or image-readiness record${preVisualUniversalReasons.size === 1 ? " was" : "s were"} retained as context-only; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
     };
   } catch {
     return {
-      listings: args.listings.map((listing, index) => candidates.some((candidate) => candidate.candidateIndex === index)
+	      listings: preparedListings.map((listing, index) => candidates.some((candidate) => candidate.candidateIndex === index)
         ? {
             ...listing,
             visualRequirement: "required",

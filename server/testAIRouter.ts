@@ -290,20 +290,14 @@ export function filterListingsByCertificationCompany(
   certificationCompany: string | null | undefined,
   category?: string,
 ): any[] {
-  const target = normalizeCertificationCompany(certificationCompany ?? undefined);
-  if (!target) return summaries;
-  return summaries.filter((item: any) => {
-    const title = String(item.title ?? '');
-    const providers = positiveCertificationProviders(title);
-    const match = title.match(certificationProviderPattern);
-    const firstPositiveProvider = providers[0] ?? null;
-    // Absence is uncertainty, not a contradiction. Keep sparse titles in the
-    // evidence ledger as review-only candidates; reject only an explicit,
-    // recognized provider that conflicts with the target provider.
-    return !match || !firstPositiveProvider
-      || firstPositiveProvider === target
-      || (category === 'video_games' && hasVideoGameWataPsaEquivalence(title, target));
-  });
+  // A provider name alone is not an identity contradiction. A same-grade CGC
+  // candidate may be a useful comparison for a PSA target, for example. The
+  // shared universal pre-visual pipeline now evaluates raw/graded state and
+  // explicit grade equality first, then retains a different grading company as
+  // a visible warning for image review. Do not discard it before that stage.
+  void certificationCompany;
+  void category;
+  return summaries;
 }
 
 const explicitGradedListingPattern = new RegExp(
@@ -1640,27 +1634,31 @@ export const testAIRouter = router({
           })),
           ...(videoGameAdmission?.excluded ?? []),
         ];
-        const declaredIdentityFilter = applyDeclaredIdentityFilter(
-          visualEligibleListings.map((item: any) => ({ ...item, imageUrl: visualSourceCandidateImage(item), imageUrls: collectEbayImageUrls(item) })),
-          targetMetadata,
-        );
+        // The shared visual filter owns all universal and declared pre-vision
+        // checks. Sending rows through a separate declared filter here caused
+        // eBay Active to apply the same rule twice and lose one audit reason.
+        const visualInputListings = visualEligibleListings.map((item: any) => ({
+          ...item,
+          imageUrl: visualSourceCandidateImage(item),
+          imageUrls: collectEbayImageUrls(item),
+        }));
         const visualActiveFilter = input.includeVisualReview
           ? await filterVisualSourceCandidates({
               sourceLabel: 'eBay active listings',
               targetImageUrl: input.imageUrl,
               targetMetadata,
-              listings: declaredIdentityFilter.listings,
+              listings: visualInputListings,
             })
           : null;
         const combinedVisualFilter = visualActiveFilter
           ? {
               ...visualActiveFilter,
-              contextListings: [...preVisionExcludedListings, ...declaredIdentityFilter.contextListings, ...(visualActiveFilter.contextListings ?? [])],
-              preVisualExcludedCount: preVisionExcludedListings.length + declaredIdentityFilter.removedCount + (visualActiveFilter.preVisualExcludedCount ?? 0),
-              removedCount: preVisionExcludedListings.length + declaredIdentityFilter.removedCount + visualActiveFilter.removedCount,
+              contextListings: [...preVisionExcludedListings, ...(visualActiveFilter.contextListings ?? [])],
+              preVisualExcludedCount: preVisionExcludedListings.length + (visualActiveFilter.preVisualExcludedCount ?? 0),
+              removedCount: preVisionExcludedListings.length + visualActiveFilter.removedCount,
             }
           : null;
-        const displaySummaries = visualActiveFilter?.listings ?? declaredIdentityFilter.listings;
+        const displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
         const metrics = computeMetrics(displaySummaries);
         const visualMatchMetrics = visualActiveFilter ? computeVisualMatchMetrics(displaySummaries) : null;
         return {
@@ -1670,9 +1668,9 @@ export const testAIRouter = router({
             afterYearFilter: byYear.length,
             afterNumberFilter: byNumber.length,
             afterGradeFilter: filteredSummaries.length,
-            afterDeclaredIdentityFilter: declaredIdentityFilter.listings.length,
+            afterDeclaredIdentityFilter: visualActiveFilter?.listings.length ?? visualInputListings.length,
             preVisionExcludedCount: preVisionExcludedListings.length,
-            preVisualExcludedCount: preVisionExcludedListings.length + declaredIdentityFilter.removedCount,
+            preVisualExcludedCount: preVisionExcludedListings.length + (visualActiveFilter?.preVisualExcludedCount ?? 0),
             targetGrade,
             executedQueries: [exactQuery, ...fallbackQueries],
             exactTierPageCount: exactPages.length,
@@ -2355,15 +2353,6 @@ export const testAIRouter = router({
             : null;
         }).filter(Boolean);
 
-        let visuallyFiltered = preVisionAssessment.eligible;
-        let visualSoldFilter: any = {
-          status: 'skipped_no_target_image',
-          reviewedCount: 0,
-          removedCount: 0,
-          retainedUnreviewedCount: 0,
-          reviews: [],
-          note: 'No target listing image was supplied; sold comps were not visually filtered.',
-        };
         const safeTargetImage = (() => {
           if (!input.imageUrl) return null;
           try {
@@ -2372,35 +2361,25 @@ export const testAIRouter = router({
             return null;
           }
         })();
-        // Use the same adaptive, per-candidate visual comparer as every other
-        // marketplace. The first 20 images are only the initial window; it
-        // continues through bounded windows until it finds a useful matched
-        // sample or exhausts the available candidate images. Vision remains
-        // non-destructive: every mismatch is retained as warning evidence.
-        if (safeTargetImage) {
-          const sharedVisualFilter = await filterVisualSourceCandidates({
+        // Always run the deterministic shared preparation. With no target
+        // image it returns after universal/category context classification and
+        // makes no AI call; with an image it continues into bounded review.
+        const sharedVisualFilter = await filterVisualSourceCandidates({
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
-            targetMetadata: soldCompsTargetMetadata,
-            listings: visualEligibleListings.map((item: any) => {
-              const imageUrls = collectEbayImageUrls(item);
-              return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
-            }),
-          });
-          visuallyFiltered = sharedVisualFilter.listings;
-          visualSoldFilter = {
-            ...sharedVisualFilter,
-            contextListings: [...scoreExcludedListings, ...(sharedVisualFilter.contextListings ?? [])],
-            preVisualExcludedCount: (sharedVisualFilter.preVisualExcludedCount ?? 0) + preVisionAssessment.excluded.length + scoreExcludedListings.length,
-            note: `Sold-Comps visual review: ${sharedVisualFilter.note}`,
-          };
-        } else {
-          visualSoldFilter = {
-            ...visualSoldFilter,
-            preVisualExcludedCount: preVisionAssessment.excluded.length + scoreExcludedListings.length,
-            note: `${visualSoldFilter.note} ${preVisionAssessment.excluded.length + scoreExcludedListings.length} candidate${preVisionAssessment.excluded.length + scoreExcludedListings.length === 1 ? '' : 's'} excluded before vision by explicit metadata, lot/bundle, score, or high-value price-safety evidence.`,
-          };
-        }
+          targetMetadata: soldCompsTargetMetadata,
+          listings: visualEligibleListings.map((item: any) => {
+            const imageUrls = collectEbayImageUrls(item);
+            return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
+          }),
+        });
+        const visuallyFiltered = sharedVisualFilter.listings;
+        const visualSoldFilter: any = {
+          ...sharedVisualFilter,
+          contextListings: [...scoreExcludedListings, ...(sharedVisualFilter.contextListings ?? [])],
+          preVisualExcludedCount: (sharedVisualFilter.preVisualExcludedCount ?? 0) + preVisionAssessment.excluded.length + scoreExcludedListings.length,
+          note: `Sold-Comps visual review: ${sharedVisualFilter.note}`,
+        };
 
         const annotatedListings = visuallyFiltered.map((item: any, index: number) => annotateSoldComparableCandidate(item, {
           category: input.category,
@@ -2521,6 +2500,17 @@ export const testAIRouter = router({
           certificationCompany: input.certificationCompany,
           itemDetails: input.itemDetails,
         });
+        const visualSourceLabel = 'Mercari Video Game sold listings';
+        const toVisualCandidate = (listing: any) => ({
+          ...listing,
+          url: listing.itemUrl ?? listing.url,
+          thumbnailUrl: listing.imageUrl ?? listing.thumbnailUrl,
+          soldPrice: listing.price ?? listing.soldPrice,
+          soldCurrency: listing.currency ?? listing.soldCurrency,
+          imageUrls: listing.imageUrl ? [listing.imageUrl] : [],
+          evidenceDisposition: undefined,
+          evidenceReasons: [],
+        });
         const assessment = assessSoldCompsPreVisionCandidates({
           listings: result.listings.map((listing) => ({
             ...listing,
@@ -2536,8 +2526,16 @@ export const testAIRouter = router({
           enforceVideoGameTitleMatch: true,
           targetGameTitle,
         });
+        // This first pass has no target image, so it runs only deterministic
+        // universal/category preparation before metadata ranking and cap logic.
+        const universalPreFilter = await filterVisualSourceCandidates({
+          sourceLabel: visualSourceLabel,
+          targetMetadata,
+          ignoreSubjectiveConditionDifferences: true,
+          listings: assessment.eligible.map(toVisualCandidate),
+        });
         const rankedListings = rankVideoGameCandidates({
-          listings: assessment.eligible,
+          listings: universalPreFilter.listings,
           targetGameTitle,
           targetPlatform: resolveTestAiDetailValue(details, 'platform'),
           targetPackaging: targetVideoGamePackaging(details),
@@ -2559,6 +2557,7 @@ export const testAIRouter = router({
           visualReviewRationale: reasons.join('; '),
           soldCompsMetadata: metadata,
         }));
+        const universalExcluded = universalPreFilter.contextListings ?? [];
         const scoreExcluded = admission.excluded.map((item) => ({
           ...item,
           itemUrl: item.itemUrl ?? item.url ?? null,
@@ -2579,37 +2578,28 @@ export const testAIRouter = router({
           return {
             ...result,
             listings: rankedListings,
-            preVisionExcludedListings: [...excluded, ...scoreExcluded],
+            preVisionExcludedListings: [...excluded, ...universalExcluded, ...scoreExcluded],
             visualFilter: {
+              ...universalPreFilter,
               status: !safeTargetImage ? 'skipped_no_target_image' as const : 'pre_visual_score_filtered' as const,
               reviewedCount: 0,
-              removedCount: excluded.length + scoreExcluded.length,
+              removedCount: excluded.length + universalExcluded.length + scoreExcluded.length,
               retainedUnreviewedCount: admission.selected.length,
-              reviews: [],
-              note: `${reason} Score-band cap for this result set: ${admission.cap}.`,
+              note: `${reason} Universal preparation retained ${universalExcluded.length} contradiction, duplicate, or image-readiness record${universalExcluded.length === 1 ? '' : 's'} as context-only. Score-band cap for this result set: ${admission.cap}.`,
             },
             audit: {
               rawReceived: result.listings.length,
-              preVisionExcluded: excluded.length + scoreExcluded.length,
-              ledger: [...admission.selected, ...excluded, ...scoreExcluded],
+              preVisionExcluded: excluded.length + universalExcluded.length + scoreExcluded.length,
+              ledger: [...admission.selected, ...excluded, ...universalExcluded, ...scoreExcluded],
             },
           };
         }
         const visualFilter = await filterVisualSourceCandidates({
-          sourceLabel: 'Mercari Video Game sold listings',
+          sourceLabel: visualSourceLabel,
           targetImageUrl: safeTargetImage,
           targetMetadata,
           ignoreSubjectiveConditionDifferences: true,
-          listings: admission.selected.map((listing) => ({
-            ...listing,
-            url: listing.itemUrl ?? listing.url,
-            thumbnailUrl: listing.imageUrl ?? listing.thumbnailUrl,
-            soldPrice: listing.price ?? listing.soldPrice,
-            soldCurrency: listing.currency ?? listing.soldCurrency,
-            imageUrls: listing.imageUrl ? [listing.imageUrl] : [],
-            evidenceDisposition: undefined,
-            evidenceReasons: [],
-          })),
+          listings: admission.selected.map(toVisualCandidate),
         });
         const targetGrade = normalizeTestAiGrade(input.grade, input.certificationCompany ?? '', normalizedCategory);
         const annotatedListings = visualFilter.listings.map((listing: any) => annotateSoldComparableCandidate({
@@ -2670,74 +2660,6 @@ export const testAIRouter = router({
           },
         };
       }
-      // Mercari sold records use the shared image-review contract whenever a
-      // target image exists. Without this guard, every category except Coins
-      // and Disney Pins bypassed visual review with visualFilter=null.
-      if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl) {
-        const details = parseTestAiDetails(input.itemDetails);
-        const cert = resolveTestAiGradingCompany(details, input.certificationCompany ?? '').replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
-        const targetGrade = input.grade ? extractGradeFromQuery(`${cert} ${input.grade}`) : null;
-        const targetNumber = normalizedCategory === 'comics'
-          ? resolveTestAiDetailValue(details, 'issueNumber') || null
-          : normalizedCategory === 'sports_cards' || normalizedCategory === 'pokemon'
-            ? resolveTestAiDetailValue(details, 'cardNumber') || null
-            : null;
-        const targetPlayer = normalizedCategory === 'sports_cards' ? resolveTestAiDetailValue(details, 'player') || null : null;
-        const annotatedListings = result.listings.map((listing: any) => annotateSoldComparableCandidate({
-          ...listing,
-          url: listing.itemUrl ?? listing.url ?? null,
-          soldPrice: listing.price,
-          soldCurrency: listing.currency,
-          thumbnailUrl: listing.imageUrl ?? listing.thumbnailUrl ?? null,
-          sourceId: 'mercari_sold_comps' as const,
-          sourceLabel: 'Sold-Comps (Mercari Sold)',
-          marketplace: 'Mercari' as const,
-          saleStatus: 'completed' as const,
-          completedStatusBasis: 'Mercari completed-sale endpoint',
-          priceBasis: 'sold' as const,
-          evidenceDisposition: undefined,
-          evidenceReasons: [],
-        }, {
-          category: normalizedCategory,
-          targetItemType: input.itemType ?? '',
-          certificationCompany: cert,
-          targetGrade,
-          targetNumber,
-          targetPlayer,
-          statedTradeValue: input.statedTradeValue,
-          visualReviewRequired: false,
-        })).map((listing: any) => ({
-          ...listing,
-          itemUrl: listing.url ?? listing.itemUrl ?? null,
-          imageUrl: listing.thumbnailUrl ?? listing.imageUrl ?? null,
-          price: Number(listing.soldPrice ?? listing.price ?? 0),
-          currency: listing.soldCurrency ?? listing.currency ?? null,
-          endedAt: listing.endedAt ?? null,
-          sourceId: 'mercari_sold_comps' as const,
-          sourceLabel: 'Sold-Comps (Mercari Sold)',
-          marketplace: 'Mercari' as const,
-        }));
-        const valuationEligible = annotatedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
-        const metrics = computeMetrics(valuationEligible.map((listing: any) => ({
-          price: { value: listing.price, currency: listing.currency ?? 'USD' },
-          title: listing.title,
-          saleId: listing.saleId ?? listing.itemId ?? listing.itemUrl,
-          date: listing.endedAt,
-        })));
-        return {
-          ...result,
-          listings: annotatedListings,
-          metrics,
-          visualFilter: null,
-          audit: {
-            rawReceived: result.listings.length,
-            valuationEligible: valuationEligible.length,
-            warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length,
-            ledger: annotatedListings,
-          },
-        };
-      }
-
       const targetMetadata = buildVisualTargetMetadata({
         title: input.title,
         category: normalizedCategory,
@@ -2755,20 +2677,6 @@ export const testAIRouter = router({
           return null;
         }
       })();
-      if (!safeTargetImage) {
-        return {
-          ...result,
-          visualFilter: {
-            status: 'skipped_no_target_image' as const,
-            reviewedCount: 0,
-            removedCount: 0,
-            retainedUnreviewedCount: result.listings.length,
-            reviews: [],
-            note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : 'Disney Pin'} records require a target image before strict visual admission; results remain context-only.`,
-          },
-        };
-      }
-
       const visualSourceLabel = normalizedCategory === 'coins'
         ? 'Mercari coin sold listings'
         : normalizedCategory === 'disney_pins'

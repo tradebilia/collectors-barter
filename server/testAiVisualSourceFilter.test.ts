@@ -32,6 +32,8 @@ import {
   normalizeExplicitUngradedVisualReviews,
   normalizeSingleCandidateVisualReview,
   normalizeVisualSourceReviews,
+  normalizeVisualSourceCandidate,
+  prepareUniversalVisualCandidates,
   promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
   shouldReviewAdditionalVisualImages,
@@ -104,6 +106,150 @@ describe("visual source filter", () => {
     expect(result.preVisualExcludedCount).toBe(2);
     expect(result.contextListings?.every(item => item.evidenceDisposition === "context_only")).toBe(true);
     expect(result.contextListings?.every(item => String(item.visualReviewRationale).includes("Pre-visual lot filter"))).toBe(true);
+  });
+
+  it("normalizes provider aliases and suppresses only exact same-provider duplicates before vision", () => {
+    const target = buildVisualTargetMetadata({ title: "Example Item", category: "movies" });
+    const normalized = normalizeVisualSourceCandidate({
+      title: "Example Item",
+      listingId: "same-provider-record",
+      image: { imageUrl: "https://example.com/primary.jpg" },
+      galleryImages: [{ url: "https://example.com/gallery.jpg" }],
+      itemDetails: JSON.stringify({ quantity: "1", gradingCompany: "CGC", grade: "9.0" }),
+    });
+    expect(normalized).toMatchObject({
+      providerReference: "same-provider-record",
+      quantity: 1,
+      grader: "CGC",
+      grade: "9.0",
+      imageUrls: ["https://example.com/primary.jpg", "https://example.com/gallery.jpg"],
+    });
+
+    const prepared = prepareUniversalVisualCandidates([
+      { title: "Example Item", saleId: "sale-1", imageUrl: "https://example.com/first.jpg" },
+      { title: "Example Item duplicate provider row", saleId: "sale-1", imageUrl: "https://example.com/second.jpg" },
+      { title: "Example Item separate sale", saleId: "sale-2", imageUrl: "https://example.com/third.jpg" },
+      { title: "Example Item unknown source reference", imageUrl: "https://example.com/fourth.jpg" },
+    ], target);
+    expect(prepared.contextReasons.get(1)).toContain("same provider record reference");
+    expect(prepared.contextReasons.has(2)).toBe(false);
+    expect(prepared.contextReasons.has(3)).toBe(false);
+    expect(prepared.listings[0].imageUrls).toEqual(["https://example.com/first.jpg", "https://example.com/second.jpg"]);
+  });
+
+  it("retains unusable-image candidates as context before vision without treating them as matches", async () => {
+    const target = buildVisualTargetMetadata({ title: "Example Item", category: "movies" });
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Cross-source image readiness test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [
+        { title: "Example Item HTTP", imageUrl: "http://example.com/not-allowed.jpg" },
+        { title: "Example Item missing" },
+      ],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings).toHaveLength(2);
+    expect(result.contextListings?.every((item) => String(item.visualReviewRationale).includes("image-readiness"))).toBe(true);
+  });
+
+  it("applies universal quantity and material-state rules only to explicit contradictions", () => {
+    const singleTarget = buildVisualTargetMetadata({ title: "Target collectible", category: "movies" });
+    const singlePrepared = prepareUniversalVisualCandidates([
+      { title: "Target collectible", quantity: 2, imageUrl: "https://example.com/quantity.jpg" },
+    ], singleTarget);
+    expect(singlePrepared.contextReasons.get(0)).toContain("target quantity is 1");
+
+    const multiTarget = buildVisualTargetMetadata({ title: "Target collectible", category: "movies", itemDetails: JSON.stringify({ quantity: 2 }) });
+    expect(prepareUniversalVisualCandidates([
+      { title: "Target collectible", quantity: 2, imageUrl: "https://example.com/multi.jpg" },
+    ], multiTarget).contextReasons).toEqual(new Map());
+
+    const cases = [
+      [buildVisualTargetMetadata({ title: "Target Factory Sealed", category: "movies" }), "Target opened", "sealed state"],
+      [buildVisualTargetMetadata({ title: "Target Complete", category: "movies" }), "Target for parts", "Material condition"],
+      [buildVisualTargetMetadata({ title: "Signed Target", category: "autographs" }), "Unsigned Target", "Signature state"],
+      [buildVisualTargetMetadata({ title: "Target", category: "comics", itemDetails: JSON.stringify({ facsimile: "No" }) }), "Target facsimile reproduction", "Original/reproduction"],
+      [buildVisualTargetMetadata({ title: "Target game", category: "video_games" }), "Target game manual only", "Component-only"],
+    ] as const;
+    for (const [metadata, title, reason] of cases) {
+      expect(prepareUniversalVisualCandidates([{ title, imageUrl: "https://example.com/candidate.jpg" }], metadata).contextReasons.get(0)).toContain(reason);
+    }
+
+    const explicitlyUnsealed = buildVisualTargetMetadata({
+      title: "Target collectible",
+      category: "movies",
+      itemDetails: JSON.stringify({ sealedStatus: "No" }),
+    });
+    expect(prepareUniversalVisualCandidates([
+      { title: "Target collectible factory sealed", imageUrl: "https://example.com/sealed.jpg" },
+    ], explicitlyUnsealed).contextReasons.get(0)).toContain("sealed state");
+
+    const explicitlyUnsigned = buildVisualTargetMetadata({
+      title: "Target collectible",
+      category: "autographs",
+      itemDetails: JSON.stringify({ signed: "No" }),
+    });
+    expect(prepareUniversalVisualCandidates([
+      { title: "Target collectible signed", imageUrl: "https://example.com/signed.jpg" },
+    ], explicitlyUnsigned).contextReasons.get(0)).toContain("Signature state");
+
+    const unknownTarget = buildVisualTargetMetadata({ title: "Target collectible", category: "movies" });
+    expect(prepareUniversalVisualCandidates([
+      { title: "Target collectible signed sealed reproduction", imageUrl: "https://example.com/unknown.jpg" },
+    ], unknownTarget).contextReasons).toEqual(new Map());
+  });
+
+  it("hard-excludes raw-versus-graded, explicit grade, and grading-company conflicts before visual review", async () => {
+    const gradedTarget = buildVisualTargetMetadata({
+      title: "Target Coin",
+      category: "coins",
+      isGraded: "Yes",
+      grade: "MS65",
+      certificationCompany: "PCGS",
+    });
+    const prepared = prepareUniversalVisualCandidates([
+      { title: "Target Coin raw ungraded", imageUrl: "https://example.com/raw.jpg" },
+      { title: "Target Coin PCGS PR65", imageUrl: "https://example.com/pr65.jpg" },
+      { title: "Target Coin CGC MS65", grade: "MS65", certificationCompany: "CGC", imageUrl: "https://example.com/same-grade.jpg" },
+    ], gradedTarget);
+    expect(prepared.contextReasons.get(0)).toContain("Grading state differs");
+    expect(prepared.contextReasons.get(1)).toContain("Grade differs");
+    expect(prepared.contextReasons.get(2)).toContain("Grading company differs");
+
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Universal grade test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: gradedTarget,
+      listings: [{ title: "Target Coin CGC MS65", grade: "MS65", certificationCompany: "CGC", imageUrl: "https://example.com/same-grade.jpg" }],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings?.[0]?.visualReviewRationale).toContain("Grading company differs");
+
+    const videoGameTarget = buildVisualTargetMetadata({
+      title: "Example Game",
+      category: "video_games",
+      isGraded: "Yes",
+      grade: "9.0",
+      certificationCompany: "PSA",
+    });
+    expect(prepareUniversalVisualCandidates([
+      { title: "Example Game WATA 9.0", imageUrl: "https://example.com/wata.jpg" },
+    ], videoGameTarget).contextReasons).toEqual(new Map());
+
+    const customGraderTarget = buildVisualTargetMetadata({
+      title: "Custom graded item",
+      category: "comics",
+      isGraded: "Yes",
+      grade: "9.8",
+      certificationCompany: "Other",
+      itemDetails: JSON.stringify({ customGradingCompany: "My Grader" }),
+    });
+    expect(prepareUniversalVisualCandidates([
+      { title: "Custom graded item CGC 9.8", imageUrl: "https://example.com/cgc.jpg" },
+    ], customGraderTarget).contextReasons.get(0)).toContain("Grading company differs");
   });
 
   it("normalizes every source target into one conservative metadata contract", () => {
@@ -679,7 +825,8 @@ describe("visual source filter", () => {
     ], listings, "title=Mario Bros. 3 NES; category=video_games; grade=9.0; certificationCompany=PSA");
     expect(result[0]).toMatchObject({ candidateIndex: 1, verdict: "unreadable", confidence: "low" });
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
-    expect(source).toContain("const declaredReviews = buildDeclaredIdentityReviews(args.listings, targetMetadata, {");
+    expect(source).toContain("const universalPreparation = prepareUniversalVisualCandidates(args.listings, targetMetadata);");
+    expect(source).toContain("const declaredReviews = buildDeclaredIdentityReviews(preparedListings, targetMetadata, {");
     expect(source).toContain("const preVisualExcludedIndexes = new Set([");
     expect(source).toContain("candidateIndex,");
   });
@@ -1047,7 +1194,7 @@ describe("visual source filter", () => {
 
   it("builds the full image-bearing queue before applying the bounded priority cap", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
-    const candidateStart = source.indexOf("const candidates = args.listings");
+    const candidateStart = source.indexOf("const candidates = preparedListings");
     const queueStart = source.indexOf("const reviewQueue = prioritizeVisualSourceCandidates", candidateStart);
     expect(candidateStart).toBeGreaterThanOrEqual(0);
     expect(queueStart).toBeGreaterThan(candidateStart);
@@ -1082,9 +1229,9 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("imageUrls = collectEbayImageUrls(item)");
   });
 
-  it("does not allow Mercari sold records with a target image to bypass shared visual review", () => {
+  it("does not allow Mercari sold records to bypass universal preparation when a target image is absent", () => {
     const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
-    expect(routerSource).toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl)");
+    expect(routerSource).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl)");
     expect(routerSource).toContain("const visualSourceLabel = normalizedCategory === 'coins'");
     expect(routerSource).toContain("Mercari ${normalizedCategory.replace(/_/g, ' ')} sold listings");
     expect(routerSource).toContain("visualReviewRequired: true");

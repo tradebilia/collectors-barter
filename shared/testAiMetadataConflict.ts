@@ -129,9 +129,21 @@ function explicitNumberEvidence(field: string, value: string, title: string): bo
 function explicitGradeConflict(target: string, candidateTitle: string): string | null {
   const targetGrade = String(target).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
   if (!targetGrade) return null;
-  const candidateGrade = candidateTitle.match(/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?([0-9]+(?:\.[0-9]+)?)/i)?.[1];
+  const candidateGrade = candidateTitle.match(/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?([0-9]+(?:\.[0-9]+)?)/i)?.[1]
+    ?? candidateTitle.match(/\b(?:grade|graded|score|rating)\s*(?:is|of|:)?\s*([0-9]+(?:\.[0-9]+)?)/i)?.[1];
   if (candidateGrade && Number(candidateGrade) !== Number(targetGrade)) return candidateGrade;
   return null;
+}
+
+function explicitStructuredGradeConflict(target: string, candidate: string): string | null {
+  const targetGrade = String(target).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
+  const candidateGrade = String(candidate).match(/[0-9]+(?:\.[0-9]+)?/)?.[0];
+  if (!targetGrade || !candidateGrade || Number(candidateGrade) === Number(targetGrade)) return null;
+  return candidateGrade;
+}
+
+function isGradingCompanyField(field: string): boolean {
+  return ['gradingcompany', 'certificationcompany', 'grader'].includes(field.toLowerCase().replace(/[_-]+/g, ''));
 }
 
 function printRunDenominator(value: string): string {
@@ -174,6 +186,8 @@ export function findMaterialMetadataConflicts(
     'itemDetails',
     'details',
   ].includes(field)
+    && !isGradingCompanyField(field)
+    && !(category === 'disney_pins' && ['grade', 'gradingCompany', 'certificationCompany', 'grader'].includes(field))
     && !(options.ignoreSubjectiveConditionDifferences && ['condition', 'mediaCondition'].includes(field))
     && !(options.ignoreSubjectiveConditionDifferences && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
@@ -185,6 +199,13 @@ export function findMaterialMetadataConflicts(
     const targetValue = firstValue(target, field);
     if (!targetValue || /^(unknown|n ?a|none|raw|ungraded)$/i.test(targetValue)) continue;
     const directCandidateValue = firstValue(candidateRecord, field);
+    if (field === 'grade') {
+      const structuredGrade = explicitStructuredGradeConflict(targetValue, directCandidateValue);
+      const titleGrade = explicitGradeConflict(targetValue, candidateTitle);
+      const differentGrade = structuredGrade ?? titleGrade;
+      if (differentGrade) conflicts.push({ field, targetValue, candidateValue: differentGrade, reason: 'candidate declares a different numeric grade' });
+      continue;
+    }
     if (field === 'serialNumber') {
       const targetPrintRun = printRunDenominator(targetValue);
       const candidatePrintRun = printRunDenominator(directCandidateValue);
@@ -208,11 +229,6 @@ export function findMaterialMetadataConflicts(
       const numberLabel = field === 'upc' ? '(?:upc|ean|barcode)' : '(?:issue|no\.?|number|card\s*(?:no\.?)?|catalog|cat\.?|#)';
       const hasDifferentExplicitNumber = new RegExp(`${numberLabel}\\s*#?\\d+[A-Za-z]?`, 'i').test(candidateTitle) && !valueMatchesEvidence(targetValue, candidateTitle);
       if (hasDifferentExplicitNumber) conflicts.push({ field, targetValue, candidateValue: candidateTitle, reason: field === 'upc' ? 'candidate title declares a different UPC/EAN/barcode' : 'candidate title declares a different issue/card/catalog number' });
-      continue;
-    }
-    if (field === 'grade') {
-      const differentGrade = explicitGradeConflict(targetValue, candidateTitle);
-      if (differentGrade) conflicts.push({ field, targetValue, candidateValue: differentGrade, reason: 'candidate title declares a different grade' });
       continue;
     }
     if (field === 'platform' || field === 'language' || field === 'country' || field === 'sport' || field === 'publisher' || field === 'manufacturer' || field === 'brand') {

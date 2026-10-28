@@ -30,6 +30,10 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain('selectVideoGameVisualCandidates');
     expect(section).toContain('minimum metadata score of 50');
     expect(section).toContain('Score-band cap for this result set');
+    const universalPreparation = section.indexOf('const universalPreFilter = await filterVisualSourceCandidates');
+    const ranking = section.indexOf('const rankedListings = rankVideoGameCandidates');
+    expect(universalPreparation).toBeGreaterThanOrEqual(0);
+    expect(ranking).toBeGreaterThan(universalPreparation);
     expect(pageSource).toContain('Excluded before visual review');
   });
 
@@ -52,16 +56,17 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(mercariSection).toContain('selectVideoGameVisualCandidates');
   });
 
-  it('does not blanket-mark non-Video-Game Mercari sold records as context-only', () => {
+  it('routes every non-Video-Game Mercari result through shared universal preparation, even without a target image', () => {
     const start = routerSource.indexOf('getMercariSoldCompsData: protectedProcedure');
     const end = routerSource.indexOf('// SoldComps TCGplayer coverage', start);
     const section = routerSource.slice(start, end);
 
     expect(routerSource).toContain('completed Mercari sales use the same evidence-based analyzer disposition');
-    expect(section).toContain('annotateSoldComparableCandidate');
-    expect(section).toContain("visualReviewRequired: false");
+    expect(section).toContain('filterVisualSourceCandidates');
+    expect(section).toContain("targetImageUrl: safeTargetImage");
+    expect(section).toContain("visualReviewRequired: true");
     expect(section).toContain("valuationEligible: valuationEligible.length");
-    expect(section).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory)) return result;");
+    expect(section).not.toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl)");
     expect(pageSource).toContain('records can affect valuation after the shared sold-evidence and identity gates.');
   });
 
