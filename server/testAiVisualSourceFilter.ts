@@ -1500,6 +1500,77 @@ function explicitProductFormConflict(targetMetadata: string, listing: VisualSour
   return `Product form differs: target is explicitly ${targetForm.replace(/_/g, " ")}, but the candidate explicitly declares ${candidateForm.replace(/_/g, " ")}.`;
 }
 
+type SportsCardBinaryState = "yes" | "no" | null;
+
+function sportsCardBinaryState(value: unknown): SportsCardBinaryState {
+  const normalized = normalizedChoice(value);
+  if (["yes", "true", "1", "present", "included", "numbered", "rookie", "autograph", "autographed", "relic", "memorabilia"].includes(normalized)) return "yes";
+  if (["no", "false", "0", "none", "not_numbered", "non_numbered", "un_numbered", "non_rookie", "not_rookie", "unsigned", "non_autograph", "non_relic"].includes(normalized)) return "no";
+  return null;
+}
+
+function sportsCardExplicitState(
+  listing: VisualSourceCandidate,
+  field: "rookieCard" | "autograph" | "relicMemorabilia" | "serialNumbered",
+): SportsCardBinaryState {
+  const details = candidateStructuredDetails(listing);
+  const structuredValue = field === "rookieCard"
+    ? listing.rookieCard ?? details.rookieCard ?? details.rookieStatus
+    : field === "autograph"
+    ? listing.autograph ?? details.autograph ?? details.isAutographed
+    : field === "relicMemorabilia"
+    ? listing.relicMemorabilia ?? details.relicMemorabilia ?? details.relic ?? details.memorabilia
+    : listing.serialNumbered ?? details.serialNumbered ?? details.isSerialNumbered
+      ?? (details.serialNumber ?? details.printRun ? "yes" : undefined);
+  const structured = sportsCardBinaryState(structuredValue);
+  if (structured) return structured;
+  const title = String(listing.title ?? "");
+  if (field === "rookieCard") {
+    if (/\b(?:non[-\s]?rookie|not\s+rookie|no\s+rookie|non[-\s]?rc)\b/i.test(title)) return "no";
+    if (/\b(?:rookie|RC)\b/i.test(title)) return "yes";
+  }
+  if (field === "autograph") {
+    if (/\b(?:non[-\s]?auto(?:graph)?|unsigned|no\s+(?:auto(?:graph)?|signature))\b/i.test(title)) return "no";
+    if (/\b(?:autograph(?:ed)?|auto|signed|signature)\b/i.test(title)) return "yes";
+  }
+  if (field === "relicMemorabilia") {
+    if (/\b(?:non[-\s]?relic|no\s+(?:relic|memorabilia)|base\s+card)\b/i.test(title)) return "no";
+    if (/\b(?:relic|memorabilia|patch|jersey|bat|ball)\b/i.test(title)) return "yes";
+  }
+  if (field === "serialNumbered") {
+    if (/\b(?:non[-\s]?numbered|un[-\s]?numbered|not\s+numbered|no\s+serial)\b/i.test(title)) return "no";
+    if (/\b(?:serial(?:ly)?\s+numbered|numbered)\b|\b\d{1,4}\s*\/\s*\d{1,5}\b/i.test(title)) return "yes";
+  }
+  return null;
+}
+
+function sportsCardSingleCardConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "sports_cards") return null;
+  if (targetProductForm(targetMetadata) !== "single_card") return null;
+  const details = extractTargetItemDetails(targetMetadata);
+  const fields = [
+    ["rookieCard", "Rookie-card status"],
+    ["autograph", "Autograph status"],
+    ["relicMemorabilia", "Relic/memorabilia status"],
+    ["serialNumbered", "Serial-numbered status"],
+  ] as const;
+  for (const [field, label] of fields) {
+    const targetValue = field === "rookieCard"
+      ? details.rookieCard ?? details.rookieStatus
+      : field === "autograph"
+      ? details.autograph ?? details.isAutographed
+      : field === "relicMemorabilia"
+      ? details.relicMemorabilia ?? details.relic ?? details.memorabilia
+      : details.serialNumbered ?? details.isSerialNumbered ?? (details.serialNumber ?? details.printRun ? "yes" : undefined);
+    const targetState = sportsCardBinaryState(targetValue);
+    const candidateState = sportsCardExplicitState(listing, field);
+    if (targetState && candidateState && targetState !== candidateState) {
+      return `${label} differs: target explicitly declares ${targetState === "yes" ? "yes" : "no"}, but the candidate explicitly declares ${candidateState === "yes" ? "yes" : "no"}.`;
+    }
+  }
+  return null;
+}
+
 type MusicMediaCondition = "sealed" | "excellent" | "good" | "fair" | "for_parts" | null;
 
 function musicMediaCondition(value: unknown): MusicMediaCondition {
@@ -1607,13 +1678,14 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const packagingConflict = vintageToyPackagingConflict(targetMetadata, title);
     const gradingStateConflict = explicitGradingStateConflict(targetMetadata, listing);
     const productFormConflict = explicitProductFormConflict(targetMetadata, listing);
+    const sportsCardConflict = sportsCardSingleCardConflict(targetMetadata, listing);
     const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? productFormConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

@@ -293,6 +293,58 @@ describe("visual source filter", () => {
     expect(numberedConflict[0]?.rationale).toContain("Card/catalog number differs");
   });
 
+  it("filters explicit Sports Card single-card feature contradictions before vision", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1986 Fleer Michael Jordan #57",
+      category: "sports_cards",
+      itemType: "single_card",
+      itemDetails: JSON.stringify({
+        rookieCard: "no",
+        autograph: "no",
+        relicMemorabilia: "no",
+        serialNumbered: "no",
+      }),
+    });
+
+    const cases = [
+      ["1986 Fleer Michael Jordan #57 RC", "Rookie-card status differs"],
+      ["1986 Fleer Michael Jordan #57 AUTO", "Autograph status differs"],
+      ["1986 Fleer Michael Jordan #57 Patch Relic", "Relic/memorabilia status differs"],
+      ["1986 Fleer Michael Jordan #57 Numbered /100", "Serial-numbered status differs"],
+    ] as const;
+    for (const [title, reason] of cases) {
+      expect(buildDeclaredIdentityReviews([{ title }], target)[0]?.rationale).toContain(reason);
+    }
+
+    expect(buildDeclaredIdentityReviews([{
+      title: "1986 Fleer Michael Jordan #57",
+      itemDetails: JSON.stringify({ serialNumber: "10/100" }),
+    }], target)[0]?.rationale).toContain("Serial-numbered status differs");
+
+    const targetWithFeatures = buildVisualTargetMetadata({
+      title: "2001 Bowman Example #1",
+      category: "sports_cards",
+      itemType: "single_card",
+      itemDetails: JSON.stringify({
+        rookieCard: "yes",
+        autograph: "yes",
+        relicMemorabilia: "yes",
+        serialNumbered: "yes",
+      }),
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "2001 Bowman Example #1 RC Auto Patch 10/25" }], targetWithFeatures)).toEqual([]);
+  });
+
+  it("does not invent Sports Card feature conflicts when the target or candidate omits the field", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1986 Fleer Michael Jordan #57",
+      category: "sports_cards",
+      itemType: "single_card",
+      itemDetails: JSON.stringify({ rookieCard: "unknown" }),
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "1986 Fleer Michael Jordan #57 RC Auto Patch /100" }], target)).toEqual([]);
+  });
+
   it("retains all explicit conflicts as context before the visual provider is called", async () => {
     const targetMetadata = buildVisualTargetMetadata({
       title: "1986 Fleer Michael Jordan",
