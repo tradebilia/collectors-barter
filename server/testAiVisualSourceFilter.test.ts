@@ -1090,16 +1090,21 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("visualReviewRequired: true");
   });
 
-  it("holds a Music Good target when a candidate title declares Factory Sealed", () => {
+  it.each([
+    ["cassette_tape", "cassette"],
+    ["compact_disc", "CD"],
+    ["vinyl_record", "vinyl record"],
+    ["eight_track_tape", "8-track tape"],
+  ])("holds a Music Good %s target when a candidate title declares Factory Sealed", (itemType, formatLabel) => {
     const targetMetadata = buildVisualTargetMetadata({
       title: "Nevermind",
       category: "music",
-      itemType: "cassette_tape",
+      itemType,
       isGraded: "no",
-      itemDetails: JSON.stringify({ condition: "good", format: "cassette_tape" }),
+      itemDetails: JSON.stringify({ condition: "good", format: itemType }),
     });
     const reviews = buildDeclaredIdentityReviews(
-      [{ title: "Factory Sealed NIRVANA — NEVERMIND Cassette Tape", imageUrl: "https://example.com/candidate.jpg" }],
+      [{ title: `Factory Sealed NIRVANA — NEVERMIND ${formatLabel}`, imageUrl: "https://example.com/candidate.jpg" }],
       targetMetadata,
     );
     expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
