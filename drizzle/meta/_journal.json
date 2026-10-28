@@ -197,6 +197,13 @@
       "when": 1793136600000,
       "tag": "0027_p0_direct_message_item_link",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1793137200000,
+      "tag": "0028_p0_secondary_index_reconciliation",
+      "breakpoints": true
     }
   ]
 }
