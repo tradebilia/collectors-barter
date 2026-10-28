@@ -86,8 +86,20 @@ function safeHttps(value: unknown): string | null {
 
 /** Prefer eBay's largest hosted image variant when a provider gives us a thumbnail. */
 export function promoteEbayImageUrl(value: unknown): string | null {
-  const url = safeHttps(value);
-  if (!url) return null;
+  if (typeof value !== "string" || !value.trim()) return null;
+  let url: string;
+  try {
+    const parsed = new URL(value);
+    if (parsed.protocol === "http:") {
+      if (!/(?:^|\.)ebayimg\.com$/i.test(parsed.hostname)) return null;
+      parsed.protocol = "https:";
+    } else if (parsed.protocol !== "https:") {
+      return null;
+    }
+    url = parsed.toString();
+  } catch {
+    return null;
+  }
   try {
     const parsed = new URL(url);
     if (!/(?:^|\.)ebayimg\.com$/i.test(parsed.hostname)) return url;

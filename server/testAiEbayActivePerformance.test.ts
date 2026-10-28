@@ -58,6 +58,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).not.toContain("fetchEbayListings(candidateQuery || candidate, token, 100)");
   });
 
+  it("normalizes all supported eBay image aliases before visual admission", () => {
+    expect(routerSource).toContain("item?.image?.thumbnailUrl");
+    expect(routerSource).toContain("item?.image?.url");
+    expect(routerSource).toContain(".map((url) => promoteEbayImageUrl(url))");
+    expect(routerSource).toContain("imageUrls: collectEbayImageUrls(item)");
+  });
+
   it("does not hold ordinary active-listing metrics behind AI image review", () => {
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(section).toContain("includeVisualReview: z.boolean().optional()");

@@ -32,7 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, buildVisualTargetMetadata, filterVisualSourceCandidates, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, buildVisualTargetMetadata, filterVisualSourceCandidates, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -124,13 +124,17 @@ function collectEbayImageUrls(item: any): string[] {
     item?.imageUrl,
     item?.thumbnailUrl,
     item?.image?.imageUrl,
+    item?.image?.thumbnailUrl,
+    item?.image?.url,
     ...(Array.isArray(item?.thumbnailImages) ? item.thumbnailImages.map((image: any) => image?.imageUrl) : []),
     ...(Array.isArray(item?.additionalImages) ? item.additionalImages.map((image: any) => image?.imageUrl) : []),
     ...(Array.isArray(item?.galleryImages) ? item.galleryImages.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
     ...(Array.isArray(item?.imageUrls) ? item.imageUrls : []),
     ...(Array.isArray(item?.images) ? item.images.map((image: any) => typeof image === 'string' ? image : image?.imageUrl) : []),
   ];
-  return Array.from(new Set(imageValues.filter((url): url is string => typeof url === 'string' && /^https:\/\//i.test(url)))).slice(0, 8);
+  return Array.from(new Set(imageValues
+    .map((url) => promoteEbayImageUrl(url))
+    .filter((url): url is string => Boolean(url)))).slice(0, 8);
 }
 
 async function fetchEbayExactTierPages(query: string, token: string) {
