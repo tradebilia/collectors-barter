@@ -1140,6 +1140,20 @@ describe("visual source filter", () => {
     )).toEqual([]);
   });
 
+  it("treats the literal New / Sealed target value as sealed", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Nevermind",
+      category: "music",
+      itemType: "cassette_tape",
+      condition: "New / Sealed",
+      itemDetails: JSON.stringify({ format: "cassette_tape" }),
+    });
+    expect(buildDeclaredIdentityReviews(
+      [{ title: "Sealed NIRVANA — NEVERMIND Cassette Tape", imageUrl: "https://example.com/candidate.jpg" }],
+      targetMetadata,
+    )).toEqual([]);
+  });
+
   it.each([
     ["excellent", "Good condition"],
     ["good", "Excellent condition"],

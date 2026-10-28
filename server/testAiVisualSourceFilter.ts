@@ -1203,7 +1203,7 @@ function explicitProductFormConflict(targetMetadata: string, listing: VisualSour
 type MusicMediaCondition = "sealed" | "excellent" | "good" | "fair" | "for_parts" | null;
 
 function musicMediaCondition(value: unknown): MusicMediaCondition {
-  const normalized = normalizedChoice(value);
+  const normalized = normalizedChoice(value).replace(/[\/|]+/g, "_").replace(/_+/g, "_");
   if (!normalized) return null;
   if (/^(?:sealed|new_sealed|factory_sealed)$/.test(normalized)) return "sealed";
   if (normalized === "excellent") return "excellent";
