@@ -166,7 +166,9 @@ export function findMaterialMetadataConflicts(targetMetadata: string, candidate:
     'fullItemDetails',
     'itemDetails',
     'details',
-  ].includes(field) && !isIndividualCertificateOrHolderIdentifier(field));
+  ].includes(field)
+    && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
+    && !isIndividualCertificateOrHolderIdentifier(field));
   const candidateTitle = String(candidate.title ?? '');
   const conflicts: MetadataConflict[] = [];
 

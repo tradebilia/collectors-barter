@@ -4634,7 +4634,7 @@ export default function TestAI() {
   );
   // Bump only when the server-side Mercari visual-admission contract changes.
   // This makes an already-open Test AI page request the new result.
-  const mercariVisualReviewVersion = 'coin-adjudication-compact-response-v1';
+  const mercariVisualReviewVersion = 'music-condition-gate-v2';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
     { enabled: !!leftSearchItem && leftSources.has('mercari_sold_comps'), retry: false }

@@ -98,4 +98,15 @@ describe('approved Test AI identity fields', () => {
     }
     expect(findMaterialMetadataConflicts(metadata('coins', { designation: 'DCAM' }), { title: 'Candidate with no provider designation' })).toEqual([]);
   });
+
+  it('keeps subjective Music condition differences for visual review instead of pre-filtering them', () => {
+    expect(findMaterialMetadataConflicts(
+      metadata('music', { condition: 'excellent', mediaCondition: 'excellent' }),
+      { title: 'Prince Purple Rain Vinyl', itemDetails: JSON.stringify({ condition: 'Good', mediaCondition: 'Good' }) },
+    )).toEqual([]);
+    expect(findMaterialMetadataConflicts(
+      metadata('music', { pressingDetails: 'Matrix ABC-123' }),
+      { title: 'Prince Purple Rain Vinyl', itemDetails: JSON.stringify({ matrixRunout: 'Matrix XYZ-999' }) },
+    )).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'pressingDetails' })]));
+  });
 });
