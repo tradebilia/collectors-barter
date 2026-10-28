@@ -31,6 +31,12 @@ Every fresh application pool is read-only-attested with `SELECT DATABASE()` befo
 
 This source-only hardening made no database data, schema, provider, credential, or domain change. The remaining operational work is separate: an exhaustive scheduled-writer drain inventory, provider PITR restore-drill evidence, and an executable post-live rollback reconciliation runbook.
 
+### Approved schema-drift repair — October 27, 2026
+
+Rich approved an additive repair for the verified application/live-schema differences. The artifact is `drizzle/0026_p0_schema_drift_repair.sql`; it adds Music to `conventionCategories.category`, expands the payment-method enum, adds trade-proposal `disputed`, and restores the forum fields/tables required by the active expanded forum paths. The logical-to-physical `payerId`/`payeeId` mapping and `tradePayments.status=disputed` were already correct, so no payment-column rename was needed.
+
+The artifact is applied and verified on target `new`, database `test`, through the runtime-attested connection. The final live schema includes Music in `conventionCategories`, PayPal/Venmo/Cash App/Zelle in `tradePayments.paymentMethod`, `disputed` in `tradeProposals.status`, six required `forumPosts`/`forumReplies` fields, and `forumReports`, `forumFollows`, and `forumNotifications`. Existing rows were preserved: 3 payments, 6 proposals, and 37 replies before and after; the three new forum tables began empty. The incomplete live migration ledger was intentionally not rewritten; blind replay remains prohibited until separately reconciled.
+
 ### Completed callback-pool lifecycle repair — October 27, 2026
 
 Drizzle retains mysql2’s callback-style pool at `$client`; the prior shutdown call invoked `end()` but could return before mysql2’s completion callback. The repaired lifecycle wrapper now awaits that callback, drains any in-flight database initialization before closing the pool it adopted, shares concurrent close requests, and prevents new acquisitions while shutdown is in progress. If the driver reports a close failure, the process fails closed: it retains the prior pool state and rejects all new acquisition attempts until a process restart, rather than risking an overlapping connection pool.

@@ -22,6 +22,7 @@ describe('Music category', () => {
     const schemaSource = read('drizzle/schema.ts');
     const migrationSource = read('drizzle/0024_p0_music_category_schema.sql');
     const draftMigrationSource = read('drizzle/0025_p0_music_draft_category_schema.sql');
+    const driftMigrationSource = read('drizzle/0026_p0_schema_drift_repair.sql');
 
     expect(dbSource).not.toContain('ensureMusicCategory');
     expect(dbSource).not.toContain('ALTER TABLE listings MODIFY COLUMN category');
@@ -33,6 +34,19 @@ describe('Music category', () => {
     expect(draftMigrationSource).toMatch(/ALTER TABLE `draftListings`\s+MODIFY COLUMN `category`/);
     expect(draftMigrationSource).toContain("'movies','music','autographs','disney_pins'");
     expect(draftMigrationSource).not.toMatch(/\bDROP\s+TABLE\b|\bDELETE\s+FROM\b|\bTRUNCATE\b/i);
+    expect(driftMigrationSource).toMatch(/ALTER TABLE `conventionCategories`\s+MODIFY COLUMN `category`/);
+    expect(driftMigrationSource).toContain("'paypal','venmo','cash_app','zelle'");
+    expect(driftMigrationSource).toContain("'frozen','disputed'");
+    expect(driftMigrationSource).toContain('CREATE TABLE IF NOT EXISTS `forumReports`');
+    expect(driftMigrationSource).toContain('CREATE TABLE IF NOT EXISTS `forumFollows`');
+    expect(driftMigrationSource).toContain('CREATE TABLE IF NOT EXISTS `forumNotifications`');
+    expect(driftMigrationSource).not.toMatch(/\bDROP\s+TABLE\b|\bDELETE\s+FROM\b|\bTRUNCATE\b|\bRENAME\s+COLUMN\b/i);
+  });
+
+  it('keeps the logical cash-payment IDs mapped to the preserved live physical columns', () => {
+    const schemaSource = read('drizzle/schema.ts');
+    expect(schemaSource).toContain('payerId: int("payerUserId")');
+    expect(schemaSource).toContain('payeeId: int("payeeUserId")');
   });
 
   it('registers Music as a first-class marketplace category with a unique visual theme', () => {

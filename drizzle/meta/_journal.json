@@ -183,6 +183,13 @@
       "when": 1793130000000,
       "tag": "0025_p0_music_draft_category_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "5",
+      "when": 1793133000000,
+      "tag": "0026_p0_schema_drift_repair",
+      "breakpoints": true
     }
   ]
 }
