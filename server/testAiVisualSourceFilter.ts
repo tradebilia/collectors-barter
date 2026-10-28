@@ -1232,6 +1232,16 @@ function musicMediaConditionConflict(targetMetadata: string, listing: VisualSour
   const targetCondition = musicMediaCondition(details.condition ?? details.mediaCondition ?? metadataValue(targetMetadata, "condition"));
   const candidateCondition = musicCandidateMediaCondition(listing);
   if (!targetCondition || !candidateCondition || targetCondition === candidateCondition) return null;
+  // Marketplace condition labels such as Excellent, Good, and Fair are
+  // subjective and frequently inconsistent across sellers. They should be
+  // evidence for the visual reviewer, not hard pre-vision exclusions. Sealed
+  // and For Parts are material product-state contradictions and remain gated.
+  const materialConflict =
+    (targetCondition === "sealed" && candidateCondition !== "sealed")
+    || (candidateCondition === "sealed" && targetCondition !== "sealed")
+    || (targetCondition === "for_parts" && candidateCondition !== "for_parts")
+    || (candidateCondition === "for_parts" && targetCondition !== "for_parts");
+  if (!materialConflict) return null;
   return `Music media condition differs: target is explicitly ${targetCondition.replace(/_/g, " ")}, but the candidate explicitly declares ${candidateCondition.replace(/_/g, " ")}.`;
 }
 

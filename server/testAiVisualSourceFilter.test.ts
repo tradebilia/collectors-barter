@@ -1140,6 +1140,38 @@ describe("visual source filter", () => {
     )).toEqual([]);
   });
 
+  it.each([
+    ["excellent", "Good condition"],
+    ["good", "Excellent condition"],
+    ["fair", "Good condition"],
+  ])("does not pre-exclude a subjective Music condition difference: target %s and candidate %s", (targetCondition, candidateCondition) => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Purple Rain",
+      category: "music",
+      condition: targetCondition,
+      itemType: "vinyl_record",
+      itemDetails: JSON.stringify({ format: "vinyl_record" }),
+    });
+    expect(buildDeclaredIdentityReviews(
+      [{ title: `Prince — Purple Rain ${candidateCondition}`, imageUrl: "https://example.com/candidate.jpg" }],
+      targetMetadata,
+    )).toEqual([]);
+  });
+
+  it("still pre-excludes a normal Music target against For Parts", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Purple Rain",
+      category: "music",
+      condition: "excellent",
+      itemType: "vinyl_record",
+      itemDetails: JSON.stringify({ format: "vinyl_record" }),
+    });
+    expect(buildDeclaredIdentityReviews(
+      [{ title: "Prince — Purple Rain For Parts", imageUrl: "https://example.com/candidate.jpg" }],
+      targetMetadata,
+    )[0]?.rationale).toContain("Music media condition differs");
+  });
+
   it("requires the visual reviewer to gate graded versus raw packaging first", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("graded/slabbed or raw/ungraded");
