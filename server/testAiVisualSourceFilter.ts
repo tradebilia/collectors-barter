@@ -1193,6 +1193,41 @@ function explicitProductFormConflict(targetMetadata: string, listing: VisualSour
   return `Product form differs: target is explicitly ${targetForm.replace(/_/g, " ")}, but the candidate explicitly declares ${candidateForm.replace(/_/g, " ")}.`;
 }
 
+type MusicMediaCondition = "sealed" | "excellent" | "good" | "fair" | "for_parts" | null;
+
+function musicMediaCondition(value: unknown): MusicMediaCondition {
+  const normalized = normalizedChoice(value);
+  if (!normalized) return null;
+  if (/^(?:sealed|new_sealed|factory_sealed)$/.test(normalized)) return "sealed";
+  if (normalized === "excellent") return "excellent";
+  if (normalized === "good") return "good";
+  if (normalized === "fair") return "fair";
+  if (/^(?:for_parts|parts_only)$/.test(normalized)) return "for_parts";
+  return null;
+}
+
+function musicCandidateMediaCondition(listing: VisualSourceCandidate): MusicMediaCondition {
+  const details = candidateStructuredDetails(listing);
+  const structured = musicMediaCondition(listing.condition ?? details.condition ?? details.mediaCondition);
+  if (structured) return structured;
+  const title = String(listing.title ?? "");
+  if (/\b(?:factory\s+sealed|new\s*[/|]?\s*sealed|sealed)\b/i.test(title)) return "sealed";
+  if (/\bfor\s+parts\b|\bparts\s+only\b/i.test(title)) return "for_parts";
+  if (/\bexcellent\b/i.test(title)) return "excellent";
+  if (/\bgood\s+condition\b/i.test(title)) return "good";
+  if (/\bfair\s+condition\b/i.test(title)) return "fair";
+  return null;
+}
+
+function musicMediaConditionConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "music") return null;
+  const details = extractTargetItemDetails(targetMetadata);
+  const targetCondition = musicMediaCondition(details.condition ?? details.mediaCondition ?? metadataValue(targetMetadata, "condition"));
+  const candidateCondition = musicCandidateMediaCondition(listing);
+  if (!targetCondition || !candidateCondition || targetCondition === candidateCondition) return null;
+  return `Music media condition differs: target is explicitly ${targetCondition.replace(/_/g, " ")}, but the candidate explicitly declares ${candidateCondition.replace(/_/g, " ")}.`;
+}
+
 function vintageToyCompleteness(value: unknown): "complete" | "incomplete" | null {
   const normalized = normalizedChoice(value);
   if (!normalized) return null;
@@ -1254,12 +1289,13 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const packagingConflict = vintageToyPackagingConflict(targetMetadata, title);
     const gradingStateConflict = explicitGradingStateConflict(targetMetadata, listing);
     const productFormConflict = explicitProductFormConflict(targetMetadata, listing);
+    const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? productFormConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? productFormConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

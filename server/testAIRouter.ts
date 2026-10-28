@@ -2666,7 +2666,10 @@ export const testAIRouter = router({
           },
         };
       }
-      if (!['disney_pins', 'coins'].includes(normalizedCategory)) {
+      // Mercari sold records use the shared image-review contract whenever a
+      // target image exists. Without this guard, every category except Coins
+      // and Disney Pins bypassed visual review with visualFilter=null.
+      if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl) {
         const details = parseTestAiDetails(input.itemDetails);
         const cert = resolveTestAiGradingCompany(details, input.certificationCompany ?? '').replace(/\s*(Comics|Cards|Grading)$/i, '').trim();
         const targetGrade = input.grade ? extractGradeFromQuery(`${cert} ${input.grade}`) : null;
@@ -2761,8 +2764,13 @@ export const testAIRouter = router({
         };
       }
 
+      const visualSourceLabel = normalizedCategory === 'coins'
+        ? 'Mercari coin sold listings'
+        : normalizedCategory === 'disney_pins'
+          ? 'Mercari Disney Pins sold listings'
+          : `Mercari ${normalizedCategory.replace(/_/g, ' ')} sold listings`;
       const visualFilter = await filterVisualSourceCandidates({
-        sourceLabel: normalizedCategory === 'coins' ? 'Mercari coin sold listings' : 'Mercari Disney Pins sold listings',
+        sourceLabel: visualSourceLabel,
         targetImageUrl: safeTargetImage,
         targetMetadata,
         listings: result.listings.map((listing) => ({
@@ -2823,7 +2831,7 @@ export const testAIRouter = router({
         metrics,
         visualFilter: {
           ...visualFilter,
-          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : 'Disney Pin'} results use a strict visual gate. Only exact visual matches with complete identity evidence can enter analyzer valuation; all other records remain context-only. ${visualFilter.note}`,
+          note: `Mercari ${normalizedCategory === 'coins' ? 'coin' : normalizedCategory === 'disney_pins' ? 'Disney Pin' : normalizedCategory.replace(/_/g, ' ')} results use the shared visual gate. Only completed visual matches can enter analyzer valuation; all other records remain context-only. ${visualFilter.note}`,
         },
         audit: {
           rawReceived: result.listings.length,

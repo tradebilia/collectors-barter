@@ -1082,6 +1082,44 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("imageUrls = collectEbayImageUrls(item)");
   });
 
+  it("does not allow Mercari sold records with a target image to bypass shared visual review", () => {
+    const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
+    expect(routerSource).toContain("if (!['disney_pins', 'coins'].includes(normalizedCategory) && !input.imageUrl)");
+    expect(routerSource).toContain("const visualSourceLabel = normalizedCategory === 'coins'");
+    expect(routerSource).toContain("Mercari ${normalizedCategory.replace(/_/g, ' ')} sold listings");
+    expect(routerSource).toContain("visualReviewRequired: true");
+  });
+
+  it("holds a Music Good target when a candidate title declares Factory Sealed", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Nevermind",
+      category: "music",
+      itemType: "cassette_tape",
+      isGraded: "no",
+      itemDetails: JSON.stringify({ condition: "good", format: "cassette_tape" }),
+    });
+    const reviews = buildDeclaredIdentityReviews(
+      [{ title: "Factory Sealed NIRVANA — NEVERMIND Cassette Tape", imageUrl: "https://example.com/candidate.jpg" }],
+      targetMetadata,
+    );
+    expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(reviews[0]?.rationale).toContain("Music media condition differs");
+  });
+
+  it("does not treat New / Sealed and Factory Sealed as conflicting Music conditions", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Nevermind",
+      category: "music",
+      itemType: "cassette_tape",
+      isGraded: "no",
+      itemDetails: JSON.stringify({ condition: "sealed", format: "cassette_tape" }),
+    });
+    expect(buildDeclaredIdentityReviews(
+      [{ title: "Factory Sealed NIRVANA — NEVERMIND Cassette Tape", imageUrl: "https://example.com/candidate.jpg" }],
+      targetMetadata,
+    )).toEqual([]);
+  });
+
   it("requires the visual reviewer to gate graded versus raw packaging first", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("graded/slabbed or raw/ungraded");
