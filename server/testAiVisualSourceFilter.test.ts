@@ -1111,6 +1111,21 @@ describe("visual source filter", () => {
     expect(reviews[0]?.rationale).toContain("Music media condition differs");
   });
 
+  it("preserves a top-level Music condition when itemDetails does not contain it", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Nevermind",
+      category: "music",
+      condition: "good",
+      itemType: "cassette_tape",
+      itemDetails: JSON.stringify({ format: "cassette_tape", isGraded: "no" }),
+    });
+    expect(targetMetadata).toContain('"condition":"good"');
+    expect(buildDeclaredIdentityReviews(
+      [{ title: "Factory Sealed NIRVANA — NEVERMIND Cassette Tape", imageUrl: "https://example.com/candidate.jpg" }],
+      targetMetadata,
+    )[0]?.rationale).toContain("Music media condition differs");
+  });
+
   it("does not treat New / Sealed and Factory Sealed as conflicting Music conditions", () => {
     const targetMetadata = buildVisualTargetMetadata({
       title: "Nevermind",

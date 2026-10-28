@@ -1596,6 +1596,7 @@ export const testAIRouter = router({
         const targetMetadata = buildVisualTargetMetadata({
           title: input.title,
           category: input.category,
+          condition: input.condition,
           itemType: input.itemType,
           grade: input.grade,
           certificationCompany: cert,
@@ -2273,6 +2274,7 @@ export const testAIRouter = router({
         const soldCompsTargetMetadata = buildVisualTargetMetadata({
           title: input.title,
           category: input.category,
+          condition: input.condition,
           itemType: input.itemType,
           grade: input.grade,
           certificationCompany: input.certificationCompany,
@@ -2513,6 +2515,7 @@ export const testAIRouter = router({
         const targetMetadata = buildVisualTargetMetadata({
           title: input.title,
           category: normalizedCategory,
+          condition: input.condition,
           itemType: input.itemType,
           grade: input.grade,
           certificationCompany: input.certificationCompany,
@@ -2737,6 +2740,7 @@ export const testAIRouter = router({
       const targetMetadata = buildVisualTargetMetadata({
         title: input.title,
         category: normalizedCategory,
+        condition: input.condition,
         itemType: input.itemType,
         grade: input.grade,
         certificationCompany: input.certificationCompany,

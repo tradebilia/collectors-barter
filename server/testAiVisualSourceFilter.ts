@@ -628,6 +628,7 @@ function metadataDetails(metadata: string): Record<string, unknown> {
 type VisualTargetMetadataInput = {
   title?: unknown;
   category?: unknown;
+  condition?: unknown;
   itemType?: unknown;
   grade?: unknown;
   certificationCompany?: unknown;
@@ -673,9 +674,15 @@ function normalizedVisualCategory(value: unknown): string {
  * missing fields as unknown rather than fabricating identity evidence.
  */
 export function buildVisualTargetMetadata(input: VisualTargetMetadataInput): string {
-  const details = visualMetadataDetails(
+  const details = {
+    ...visualMetadataDetails(
     input.fullItemDetails ?? input.itemDetails ?? input.details ?? input.catalog,
-  );
+    ),
+  };
+  const topLevelCondition = firstMeaningfulValue(input.condition);
+  if (topLevelCondition !== undefined && firstMeaningfulValue(details.condition, details.mediaCondition) === undefined) {
+    details.condition = topLevelCondition;
+  }
   const itemType = metadataText(firstMeaningfulValue(input.itemType, details.itemType, details.productType, details.form));
   const grade = metadataText(firstMeaningfulValue(input.grade, details.grade));
   const certificationCompany = metadataText(
