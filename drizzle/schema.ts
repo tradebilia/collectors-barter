@@ -154,7 +154,7 @@ export const forumPosts = mysqlTable("forumPosts", {
 export const forumPostAttachments = mysqlTable("forumPostAttachments", {
 	id: int().autoincrement().notNull(),
 	postId: int().notNull().references(() => forumPosts.id, { onDelete: "cascade" }),
-	userId: int().notNull().references(() => users.id),
+	userId: int().notNull().references(() => users.id, { onDelete: "cascade" }),
 	fileKey: varchar({ length: 255 }).notNull(),
 	imageUrl: text().notNull(),
 	altText: varchar({ length: 180 }),
@@ -215,7 +215,7 @@ export const forumReplies = mysqlTable("forumReplies", {
 export const forumReplyAttachments = mysqlTable("forumReplyAttachments", {
 	id: int().autoincrement().notNull(),
 	replyId: int().notNull().references(() => forumReplies.id, { onDelete: "cascade" }),
-	userId: int().notNull().references(() => users.id),
+	userId: int().notNull().references(() => users.id, { onDelete: "cascade" }),
 	fileKey: varchar({ length: 255 }).notNull(),
 	imageUrl: text().notNull(),
 	mimeType: varchar({ length: 80 }),
@@ -1074,7 +1074,7 @@ export const directMessages = mysqlTable("directMessages", {
 // ─── Trade Payments ──────────────────────────────────────────────────────────
 export const tradePayments = mysqlTable("tradePayments", {
 	id: int().autoincrement().notNull().primaryKey(),
-	proposalId: int().notNull().references(() => tradeProposals.id),
+	proposalId: int().notNull().references(() => tradeProposals.id, { onDelete: "cascade" }),
 	payerId: int("payerUserId").notNull().references(() => users.id),
 	payeeId: int("payeeUserId").notNull().references(() => users.id),
 	amount: decimal({ precision: 12, scale: 2 }).notNull(),
@@ -1204,9 +1204,7 @@ export const membershipProviderEvents = mysqlTable("membershipProviderEvents", {
 
 export const verificationOrders = mysqlTable("verificationOrders", {
 	id: int().autoincrement().notNull().primaryKey(),
-	// The restored custom schema does not include tradeProposals. The future
-	// relational link is deferred until that trade table is restored or migrated.
-	proposalId: int().notNull(),
+	proposalId: int().notNull().references(() => tradeProposals.id, { onDelete: 'cascade' }),
 	status: mysqlEnum(['awaiting_agreement', 'awaiting_payment', 'awaiting_shipment', 'received', 'matched_listing', 'forwarded', 'completed', 'admin_review', 'cancelled']).default('awaiting_agreement').notNull(),
 	requesterAgreed: tinyint().default(0).notNull(),
 	recipientAgreed: tinyint().default(0).notNull(),
