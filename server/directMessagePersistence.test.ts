@@ -103,7 +103,7 @@ describe("legacy direct-message thread persistence", () => {
     expect(messages).toHaveLength(2);
   });
 
-  it("uses an explicit legacy-compatible insert without the absent itemId column", () => {
+  it("uses an explicit compatibility insert and leaves itemId unset for participant-only messages", () => {
     const source = readFileSync(join(process.cwd(), "server", "directMessagePersistence.ts"), "utf-8");
     expect(source).toContain("INSERT INTO directMessageThreads (participantAId, participantBId, lastMessageAt, createdAt)");
     expect(source).not.toContain("insert(directMessageThreads)");
