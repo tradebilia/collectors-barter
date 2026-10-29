@@ -1957,7 +1957,11 @@ function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>
   const ranked = candidates.map((candidate, index) => {
     const scoring = sportsCardSingleVisualScore(candidate.item, targetMetadata);
     return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown, metadataMatchRank: index + 1 } as T };
-  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({
+      ...candidate,
+      item: { ...candidate.item, metadataMatchRank: index + 1 } as T,
+    }));
   const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
   const cap = sportsCardSingleVisualCap(highestScore);
   const selected = ranked.filter((candidate) => Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
@@ -2063,6 +2067,7 @@ export async function filterVisualSourceCandidates<
         : `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   let reviewCandidates = candidates;
+  let sportsCardRankedItems = new Map<number, T>();
   try {
     const strictResponseFormat = {
       type: "json_schema",
@@ -2125,8 +2130,8 @@ export async function filterVisualSourceCandidates<
       : null;
     reviewCandidates = sportsCardSelection?.selected ?? candidates;
     if (sportsCardSelection) {
-      const selectedIndexes = new Set(sportsCardSelection.selected.map((candidate) => candidate.candidateIndex));
       preVisualScoreExcludedIndexes = new Set<number>(sportsCardSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
+      sportsCardRankedItems = new Map(sportsCardSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
       preVisualScoreExcludedListings = sportsCardSelection.excluded.map((listing) => ({
         ...listing,
         visualRequirement: "not_required_pre_visual",
@@ -2134,7 +2139,7 @@ export async function filterVisualSourceCandidates<
       } as T));
       eligibleListings = eligibleListings.filter((listing) => {
         const candidateIndex = preparedListings.indexOf(listing);
-        return candidateIndex < 0 || selectedIndexes.has(candidateIndex) || !candidates.some((candidate) => candidate.item === listing);
+        return candidateIndex < 0 || !preVisualScoreExcludedIndexes.has(candidateIndex) || !candidates.some((candidate) => candidate.item === listing);
       });
     }
     const reviewQueue = prioritizeVisualSourceCandidates(reviewCandidates, targetMetadata, declaredReviews);
@@ -2408,21 +2413,24 @@ export async function filterVisualSourceCandidates<
     // A candidate with a usable target and candidate image must either receive a
     // visual verdict or remain explicit review-only. Do not let a later client
     // treat a missing model row as an implicit pass.
-	    const requirementAnnotatedListings = preparedListings.map((listing, index) => {
-	      const universalReason = preVisualUniversalReasons.get(index);
+    const requirementAnnotatedListings = preparedListings.map((listing, index) => {
+      const displayListing = sportsCardRankedItems.has(index)
+        ? { ...listing, ...sportsCardRankedItems.get(index) } as T
+        : listing;
+      const universalReason = preVisualUniversalReasons.get(index);
 	      if (universalReason) {
 	        return {
-	          ...listing,
-	          visualRequirement: "not_required_pre_visual",
-	          visualReviewStatus: "not_reviewed",
-	          visualReviewRationale: universalReason,
+          ...displayListing,
+          visualRequirement: "not_required_pre_visual",
+          visualReviewStatus: "not_reviewed",
+          visualReviewRationale: universalReason,
 	          evidenceDisposition: "context_only",
 	        } as T;
 	      }
       const preVisualReason = preVisualLotReasons.get(index);
       if (preVisualReason) {
         return {
-          ...listing,
+          ...displayListing,
           visualRequirement: "not_required_pre_visual",
           visualReviewStatus: "not_reviewed",
           visualReviewRationale: preVisualReason,
@@ -2432,7 +2440,7 @@ export async function filterVisualSourceCandidates<
       const declaredReview = declaredReviewByIndex.get(index);
       if (declaredReview) {
         return {
-          ...listing,
+          ...displayListing,
           visualRequirement: "not_required_pre_visual",
           visualReviewStatus: declaredReview.verdict,
           visualReviewRationale: declaredReview.rationale,
@@ -2442,7 +2450,7 @@ export async function filterVisualSourceCandidates<
       if (preVisualScoreExcludedIndexes.has(index)) {
         const scored = preVisualScoreExcludedListings.find((candidate) => candidate === listing || candidate.title === listing.title);
         return {
-          ...listing,
+          ...displayListing,
           metadataMatchScore: scored?.metadataMatchScore,
           metadataMatchReasons: scored?.metadataMatchReasons,
           visualRequirement: "not_required_pre_visual",
@@ -2451,10 +2459,10 @@ export async function filterVisualSourceCandidates<
           evidenceDisposition: "context_only",
         } as T;
       }
-      if (!imageBearingIndexes.has(index)) return listing;
-      if (reviewedIndexes.has(index)) return { ...listing, visualRequirement: "required" } as T;
+      if (!imageBearingIndexes.has(index)) return displayListing;
+      if (reviewedIndexes.has(index)) return { ...displayListing, visualRequirement: "required" } as T;
       return {
-        ...listing,
+        ...displayListing,
         visualRequirement: "required",
         visualReviewStatus: "not_reviewed",
         visualReviewRationale: "Candidate image was not reached by the bounded adaptive review window; manual image review is required.",
