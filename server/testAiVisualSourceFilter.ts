@@ -1807,6 +1807,70 @@ function explicitCompoundNumberConflict(targetMetadata: string, listing: VisualS
   return `Card/catalog number differs: target is ${target.numerator}/${target.denominator}, but the candidate title explicitly declares ${candidateNumber.numerator}/${candidateNumber.denominator}.`;
 }
 
+function isSingleComicTarget(targetMetadata: string): boolean {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "comics") return false;
+  const details = extractTargetItemDetails(targetMetadata);
+  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType") || details.itemType || details.productType || details.form);
+  return itemType === "single_comic" || itemType === "single_issue" || itemType === "comic";
+}
+function comicComparableValue(value: unknown): string {
+  return candidateText(value).toLowerCase().replace(/[“”"']/g, "").replace(/\s+/g, " ").trim();
+}
+function comicIssueNumber(value: unknown): string | null {
+  const match = candidateText(value).match(/(?:^|#|\bissue\s*)(\d{1,6}[a-z]?)(?:\b|$)/i);
+  return match?.[1]?.toLowerCase() ?? null;
+}
+function comicDistribution(value: unknown): "direct" | "newsstand" | null {
+  const normalized = comicComparableValue(value);
+  if (/\bnewsstand\b/.test(normalized)) return "newsstand";
+  if (/\bdirect(?:\s+market|\s+edition)?\b/.test(normalized)) return "direct";
+  return null;
+}
+function comicSingleIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (!isSingleComicTarget(targetMetadata)) return null;
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidateDetails = candidateStructuredDetails(listing);
+  const targetTitle = extractTargetTitle(targetMetadata);
+  const candidateTitle = String(listing.title ?? "");
+
+  const targetIssue = comicIssueNumber(targetDetails.issueNumber ?? targetDetails.issue ?? targetTitle);
+  const candidateIssue = comicIssueNumber(candidateDetails.issueNumber ?? candidateDetails.issue ?? candidateTitle);
+  if (targetIssue && candidateIssue && targetIssue !== candidateIssue) {
+    return `Comic issue number differs: target is #${targetIssue}, but the candidate explicitly declares #${candidateIssue}.`;
+  }
+
+  const targetPublisher = comicComparableValue(targetDetails.publisher);
+  const candidatePublisher = comicComparableValue(candidateDetails.publisher);
+  if (targetPublisher && candidatePublisher && targetPublisher !== candidatePublisher) {
+    return `Comic publisher differs: target is ${targetDetails.publisher}, but the candidate explicitly declares ${candidateDetails.publisher}.`;
+  }
+
+  const targetDistribution = comicDistribution(targetDetails.distributionType ?? targetDetails.distribution ?? targetTitle);
+  const candidateDistribution = comicDistribution(candidateDetails.distributionType ?? candidateDetails.distribution ?? candidateTitle);
+  if (targetDistribution && candidateDistribution && targetDistribution !== candidateDistribution) {
+    return `Comic distribution type differs: target is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the candidate explicitly declares ${candidateDistribution === "direct" ? "Direct" : "Newsstand"}.`;
+  }
+
+  const targetVariant = comicComparableValue(targetDetails.variantDescription ?? targetDetails.variantCover ?? targetDetails.variant);
+  const candidateVariant = comicComparableValue(candidateDetails.variantDescription ?? candidateDetails.variantCover ?? candidateDetails.variant);
+  if (targetVariant && candidateVariant && targetVariant !== candidateVariant) {
+    return `Comic variant differs: target declares “${targetVariant}”, but the candidate declares “${candidateVariant}”.`;
+  }
+
+  const targetFacsimile = normalizedChoice(targetDetails.facsimile);
+  const candidateFacsimile = normalizedChoice(candidateDetails.facsimile);
+  if (targetFacsimile && candidateFacsimile && targetFacsimile !== candidateFacsimile) {
+    return `Comic original/facsimile status differs: target declares ${targetFacsimile}, but the candidate declares ${candidateFacsimile}.`;
+  }
+
+  const targetSigned = signedState(`signed ${targetDetails.signed ?? targetDetails.isSigned ?? ""} ${targetTitle}`);
+  const candidateSigned = signedState(`signed ${candidateDetails.signed ?? candidateDetails.isSigned ?? ""} ${candidateTitle}`);
+  if (targetSigned !== "unknown" && candidateSigned !== "unknown" && targetSigned !== candidateSigned) {
+    return `Comic signature state differs: target is explicitly ${targetSigned === "yes" ? "signed" : "unsigned"}, but the candidate explicitly declares the opposite.`;
+  }
+  return null;
+}
+
 /**
  * Marketplace titles sometimes declare a different printing or regional edition
  * more clearly than the thumbnail. These are transparent identity warnings, not
@@ -1841,10 +1905,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
+    const comicSingleIdentityConflictReason = comicSingleIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

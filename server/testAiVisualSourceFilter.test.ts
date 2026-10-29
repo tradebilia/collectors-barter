@@ -1325,6 +1325,37 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("mintMark differs");
   });
 
+  it("applies the Comics / Single Comic hard identity filters before visual review", () => {
+    const metadata = `title=Amazing Spider-Man; category=comics; itemType=single_comic; fullItemDetails=${JSON.stringify({
+      issueNumber: "300", publisher: "Marvel", distributionType: "Direct", variantDescription: "Regular Cover", facsimile: "No", signed: "No",
+    })}`;
+    const candidates = [
+      { title: "Amazing Spider-Man #301", itemDetails: JSON.stringify({ publisher: "Marvel" }) },
+      { title: "Amazing Spider-Man #300", itemDetails: JSON.stringify({ publisher: "DC" }) },
+      { title: "Amazing Spider-Man #300 Newsstand Edition", itemDetails: JSON.stringify({ publisher: "Marvel" }) },
+      { title: "Amazing Spider-Man #300 Variant", itemDetails: JSON.stringify({ publisher: "Marvel", variantDescription: "Variant" }) },
+      { title: "Amazing Spider-Man #300", itemDetails: JSON.stringify({ publisher: "Marvel", facsimile: "Yes" }) },
+      { title: "Amazing Spider-Man #300 Signed", itemDetails: JSON.stringify({ publisher: "Marvel" }) },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(6);
+    expect(reviews.map((review) => review.candidateIndex)).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(reviews.every((review) => review.verdict === "mismatch" && review.confidence === "high")).toBe(true);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Comic issue number differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Comic publisher differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Comic distribution type differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Comic variant differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Comic original/facsimile status differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Comic signature state differs");
+  });
+
+  it("does not apply the Comics / Single Comic gate to other comic item types or unknown candidate fields", () => {
+    const collectionTarget = `title=Amazing Spider-Man; category=comics; itemType=collection_lot; fullItemDetails=${JSON.stringify({ issueNumber: "300", publisher: "Marvel" })}`;
+    expect(buildDeclaredIdentityReviews([{ title: "Amazing Spider-Man" }], collectionTarget)).toEqual([]);
+    const singleTarget = `title=Amazing Spider-Man; category=comics; itemType=single_comic; fullItemDetails=${JSON.stringify({ issueNumber: "300", publisher: "Marvel" })}`;
+    expect(buildDeclaredIdentityReviews([{ title: "Amazing Spider-Man #300" }], singleTarget)).toEqual([]);
+  });
+
   it("holds a comic candidate with an explicit issue-number conflict before vision", () => {
     const metadata = `title=Amazing Spider-Man; category=comics; fullItemDetails=${JSON.stringify({ series: "Amazing Spider-Man", issueNumber: "300", publisher: "Marvel" })}`;
     const result = buildDeclaredIdentityReviews([

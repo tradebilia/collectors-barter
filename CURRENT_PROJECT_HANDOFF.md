@@ -81,6 +81,12 @@ Validation for this stage: focused analyzer tests passed 129/129; the complete s
 
 The shared visual-filter contract now requires every caller to declare `sourceRole: 'marketplace' | 'ebay'`. Universal identity filtering, Sports Cards item-type filters, metadata ranking, visual caps, and visual review are reserved for marketplace/eBay candidate records. Grading lookups (PSA, BGS, SGC, CGC, and PCGS) and reference/catalog sources remain on their separate certification/reference evidence contracts and must not receive marketplace ranking metadata or score-band caps. A source-role regression protects this boundary.
 
+### Comics / Single Comic hard identity filter — October 29, 2026
+
+The shared marketplace/eBay declared-identity stage now applies a Comics / Single Comic-specific gate after universal normalization. Explicit conflicts in issue number, publisher, Direct versus Newsstand distribution, named variant, original versus facsimile status, and signed versus unsigned status are retained as high-confidence context-only mismatches and are not sent to visual review. Missing provider fields remain unknown and do not exclude a candidate. The gate is limited to the `single_comic`/single-issue item type; it does not add ranking or visual caps, and it does not run for grading or reference/catalog sources.
+
+Focused validation passed 126/126 visual-filter tests, 40/40 source-role/applicability tests, TypeScript, the production build, and diff hygiene. The complete suite reached 1,800 passing and 7 skipped tests; three existing `server/testAiAllItems.test.ts` JSX source-contract expectations remain failing from the earlier Collection/Lot render guard and are unrelated to this Comics-only change. No database, migration, credential, provider, deployment, selector, writer, or domain change was made.
+
 ### eBay Active normalized image transport repair — October 28, 2026
 
 The live eBay Browse API was independently verified read-only: OAuth returned `200`, Browse search returned `200`, and current `itemSummaries` still provide `image.imageUrl` on `i.ebayimg.com` plus `additionalImages`. The remaining failure was in Tradebilia's response mapper: after the shared visual filter normalized `imageUrls`, the separate eBay visual-review and listing payloads reconstructed images from the raw `s.image` field instead of preferring the normalized gallery. They now prefer `s.imageUrls`, retain the provider collector as a fallback, use the normalized first URL as `imageUrl`, and preserve the review payload's three-image bound.
