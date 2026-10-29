@@ -125,7 +125,7 @@ The snapshot merges the primary field definition registry, the remaining categor
 - `photos` — **Photos**; required; image-upload
 - `quantity` — **Quantity**; recommended; number
 - `artistName` — **Artist Name**; required; text
-- `artworkTitle` — **Artwork Title**; recommended; text
+- `artworkTitle` — **Artwork Title / Character**; recommended; text
 - `publisher` — **Publisher**; recommended; dropdown
 - `artType` — **Art Type**; required; dropdown
 - `medium` — **Medium**; recommended; dropdown

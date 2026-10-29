@@ -797,7 +797,7 @@
         },
         {
           "name": "artworkTitle",
-          "label": "Artwork Title",
+          "label": "Artwork Title / Character",
           "inputType": "text",
           "requirement": "recommended",
           "conditionalLogic": "",

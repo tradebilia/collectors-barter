@@ -572,7 +572,7 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'artworkTitle',
-    label: 'Artwork Title',
+    label: 'Artwork Title / Character',
     inputType: 'text',
     requirement: 'recommended',
   },
