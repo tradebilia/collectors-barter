@@ -414,6 +414,12 @@ describe('Sold-Comps API key validation', () => {
     expect(annotated.evidenceReasons).toEqual([]);
   });
 
+  it('documents that graded-target condition handling is universal rather than eBay-route-specific', () => {
+    const metadataSource = readFileSync(resolve(import.meta.dirname, '../shared/testAiMetadataConflict.ts'), 'utf8');
+    expect(metadataSource).toContain('|| targetIsGraded');
+    expect(metadataSource).toContain("['condition', 'mediaCondition']");
+  });
+
   it('accepts sold comps exactly at 25% and 250% when the stated value is above $10,000', () => {
     expect(evaluateSoldCompPriceSafety(20_000, 5_000)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 5_000, maximumAcceptedPrice: 50_000 });
     expect(evaluateSoldCompPriceSafety(20_000, 50_000)).toMatchObject({ applies: true, status: 'accepted', minimumAcceptedPrice: 5_000, maximumAcceptedPrice: 50_000 });

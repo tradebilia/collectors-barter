@@ -172,6 +172,8 @@ export function findMaterialMetadataConflicts(
   const candidateRecord = candidateFields(candidate);
   const category = normalizeCategory(String(target.category ?? ''));
   const targetCondition = firstValue(target, 'condition');
+  const targetIsGraded = /^(?:yes|true|graded)$/i.test(String(target.isGraded ?? '').trim())
+    || (Boolean(firstValue(target, 'grade')) && !/^(?:unknown|n ?a|none|raw|ungraded|0(?:\.0+)?)$/i.test(firstValue(target, 'grade')) && Boolean(firstValue(target, 'gradingCompany')));
   const targetHasMaterialCondition = /\b(?:sealed|factory\s+sealed|for\s+parts|parts\s+only|unopened)\b/i.test(targetCondition);
   const targetHasExplicitSealedState = Boolean(target.sealedStatus || target.packageStatus || targetHasMaterialCondition);
   const fields = [...new Set([
@@ -188,8 +190,8 @@ export function findMaterialMetadataConflicts(
   ].includes(field)
     && !isGradingCompanyField(field)
     && !(category === 'disney_pins' && ['grade', 'gradingCompany', 'certificationCompany', 'grader'].includes(field))
-    && !(options.ignoreSubjectiveConditionDifferences && ['condition', 'mediaCondition'].includes(field))
-    && !(options.ignoreSubjectiveConditionDifferences && field === 'sealedStatus' && !targetHasExplicitSealedState)
+    && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && ['condition', 'mediaCondition'].includes(field))
+    && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
     && !isIndividualCertificateOrHolderIdentifier(field));
   const candidateTitle = String(candidate.title ?? '');

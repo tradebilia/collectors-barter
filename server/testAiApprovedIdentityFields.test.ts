@@ -109,4 +109,23 @@ describe('approved Test AI identity fields', () => {
       { title: 'Prince Purple Rain Vinyl', itemDetails: JSON.stringify({ matrixRunout: 'Matrix XYZ-999' }) },
     )).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'pressingDetails' })]));
   });
+
+  it('ignores marketplace condition for every graded target while retaining material identity fields', () => {
+    const target = metadata('sports_cards', {
+      isGraded: 'Yes',
+      gradingCompany: 'PSA',
+      grade: '10',
+      condition: 'Mint',
+      player: 'Ken Griffey Jr',
+      cardNumber: '1',
+    });
+    expect(findMaterialMetadataConflicts(target, {
+      title: '1989 Upper Deck Ken Griffey Jr #1 PSA 10',
+      condition: 'New (Other)',
+    })).toEqual([]);
+    expect(findMaterialMetadataConflicts(target, {
+      title: '1989 Upper Deck Ken Griffey Jr #1 PSA 10',
+      itemDetails: JSON.stringify({ cardNumber: '2' }),
+    })).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'cardNumber' })]));
+  });
 });

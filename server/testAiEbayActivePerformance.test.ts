@@ -125,7 +125,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     const targetMetadata = 'title=1989 Upper Deck Ken Griffey Jr #1 PSA 10; category=sports_cards; condition=Mint; itemType=single_card; grade=10; certificationCompany=PSA; fullItemDetails={"player":"Ken Griffey Jr","year":"1989","manufacturer":"Upper Deck","cardNumber":"1"}';
     const candidate = { title: '1989 Upper Deck Ken Griffey Jr #1 PSA 10', condition: 'Pre-Owned' };
 
-    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(1);
+    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toEqual([]);
     expect(buildDeclaredIdentityReviews([candidate], targetMetadata, { ignoreSubjectiveConditionDifferences: true })).toEqual([]);
 
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
