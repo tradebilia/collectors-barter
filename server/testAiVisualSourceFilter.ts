@@ -1863,8 +1863,14 @@ function comicSingleIdentityConflict(targetMetadata: string, listing: VisualSour
     return `Comic original/facsimile status differs: target declares ${targetFacsimile}, but the candidate declares ${candidateFacsimile}.`;
   }
 
-  const targetSigned = signedState(`signed ${targetDetails.signed ?? targetDetails.isSigned ?? ""} ${targetTitle}`);
-  const candidateSigned = signedState(`signed ${candidateDetails.signed ?? candidateDetails.isSigned ?? ""} ${candidateTitle}`);
+  const targetSignedValue = targetDetails.signed ?? targetDetails.isSigned;
+  const candidateSignedValue = candidateDetails.signed ?? candidateDetails.isSigned;
+  const targetSigned = targetSignedValue != null && String(targetSignedValue).trim()
+    ? signedState(`signed ${targetSignedValue}`)
+    : signedState(targetTitle);
+  const candidateSigned = candidateSignedValue != null && String(candidateSignedValue).trim()
+    ? signedState(`signed ${candidateSignedValue}`)
+    : signedState(candidateTitle);
   if (targetSigned !== "unknown" && candidateSigned !== "unknown" && targetSigned !== candidateSigned) {
     return `Comic signature state differs: target is explicitly ${targetSigned === "yes" ? "signed" : "unsigned"}, but the candidate explicitly declares the opposite.`;
   }

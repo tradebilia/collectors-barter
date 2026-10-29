@@ -1430,6 +1430,12 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "The Legend of Zelda" }], metadata)).toEqual([]);
   });
 
+  it("does not treat an ordinary Comics title as signed when the target is unsigned", () => {
+    const metadata = `title=The Amazing Spider-Man #238 CGC 9.6; category=comics; itemType=single_comic; fullItemDetails=${JSON.stringify({ issueNumber: "238", publisher: "Marvel", signed: "No" })}`;
+    expect(buildDeclaredIdentityReviews([{ title: "The Amazing Spider-Man #238 CGC 9.6" }], metadata)).toEqual([]);
+    expect(buildDeclaredIdentityReviews([{ title: "The Amazing Spider-Man #238 Signed CGC 9.6" }], metadata)[0]?.rationale).toContain("signature state differs");
+  });
+
   it("exposes the vintage-toy packaging-form gate in the vision prompt", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     expect(source).toContain("packaging form is a mandatory identity gate");
