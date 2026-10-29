@@ -1718,6 +1718,9 @@ export const testAIRouter = router({
             uniqueBidderCount: s.uniqueBidderCount ?? null,
             currentBidPrice: s.currentBidPrice ?? null,
             auctionEndDate: s.itemEndDate ?? null,
+            metadataMatchScore: s.metadataMatchScore,
+            metadataMatchRank: s.metadataMatchRank,
+            metadataMatchReasons: s.metadataMatchReasons,
             // Preserve the visual filter result in the transport object used by
             // MarketplaceVisualReview; dropping these made the button appear to
             // do nothing even when the server had flagged a listing.
@@ -1744,6 +1747,9 @@ export const testAIRouter = router({
             uniqueBidderCount: s.uniqueBidderCount ?? null,
             currentBidPrice: s.currentBidPrice ?? null,
             auctionEndDate: s.itemEndDate ?? null,
+            metadataMatchScore: s.metadataMatchScore,
+            metadataMatchRank: s.metadataMatchRank,
+            metadataMatchReasons: s.metadataMatchReasons,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,

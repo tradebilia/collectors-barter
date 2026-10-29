@@ -72,6 +72,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("imageUrls: normalizedImageUrls,");
   });
 
+  it("preserves ranking metadata in both eBay listing transport arrays", () => {
+    expect(routerSource).toContain("metadataMatchScore: s.metadataMatchScore");
+    expect(routerSource).toContain("metadataMatchRank: s.metadataMatchRank");
+    expect(routerSource).toContain("metadataMatchReasons: s.metadataMatchReasons");
+  });
+
   it("does not hold ordinary active-listing metrics behind AI image review", () => {
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(section).toContain("includeVisualReview: z.boolean().optional()");
