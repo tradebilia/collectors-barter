@@ -363,7 +363,7 @@ describe("visual source filter", () => {
 
     const setTarget = buildVisualTargetMetadata({ title: "1986 Fleer Complete Set", category: "sports_cards", itemType: "card_set" });
     const setConflict = buildDeclaredIdentityReviews([{ title: "1986 Fleer Michael Jordan #57 PSA 10" }], setTarget);
-    expect(setConflict[0]?.rationale).toContain("Product form differs");
+    expect(setConflict[0]?.rationale).toContain("individual card");
 
     const sealedTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemDetails: JSON.stringify({ sealedStatus: "Factory Sealed" }) });
     const sealedConflict = buildDeclaredIdentityReviews([{ title: "Super Mario Bros. 3 NES CIB" }], sealedTarget);
@@ -1519,6 +1519,36 @@ describe("visual source filter", () => {
     expect(instruction).toContain("one individual card");
     expect(instruction).toContain("mark mismatch with high confidence");
     expect(sportsCardSetInstruction("title=1985 Topps #401; category=sports_cards; itemType=single_card")).toBe("");
+  });
+
+  it("pre-excludes an individual card from a Sports Cards / Set target", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1985 Topps Complete Set",
+      category: "sports_cards",
+      itemType: "card_set",
+      fullItemDetails: {
+        setName: "Topps",
+        setType: "Factory Set",
+        missingCards: "no",
+      },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1985 Topps #401 PSA 10", imageUrl: "https://example.com/card.jpg" },
+    ], target);
+    expect(reviews[0]).toMatchObject({ verdict: "mismatch", confidence: "high" });
+    expect(reviews[0]?.rationale).toContain("individual card");
+  });
+
+  it("does not reject an ambiguous set title solely because it says cards", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1985 Topps Complete Set",
+      category: "sports_cards",
+      itemType: "card_set",
+      fullItemDetails: { setType: "Factory Set", missingCards: "no" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "1985 Topps Cards Collection", imageUrl: "https://example.com/set.jpg" },
+    ], target)).toEqual([]);
   });
 
   it("ignores unique certificate IDs when visually comparing graded coins", () => {

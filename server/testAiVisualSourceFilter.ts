@@ -1585,6 +1585,55 @@ function sportsCardSingleCardConflict(targetMetadata: string, listing: VisualSou
   return null;
 }
 
+function sportsCardSetConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "sports_cards") return null;
+  if (targetProductForm(targetMetadata) !== "set") return null;
+
+  const details = extractTargetItemDetails(targetMetadata);
+  const title = String(listing.title ?? "");
+  const candidateForm = candidateProductForm(targetMetadata, listing);
+  // A set target must never send an explicitly individual card to vision. This
+  // is intentionally conservative: only direct single-card evidence is gated;
+  // unknown or ambiguous titles remain eligible for visual confirmation.
+  const individualCardEvidence =
+    candidateForm === "single_card"
+    || /\b(?:single|individual)\s+(?:sports\s+)?card\b/i.test(title)
+    || /\b(?:rookie|rc)\s+card\b/i.test(title)
+    || /(?:^|[^\w])#\s*\d+[A-Za-z]?(?:\s*\/\s*\d+)?\b/i.test(title)
+    || /\b(?:card|rc)\b[^\n]{0,48}\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|graded|gem\s+mint)\b/i.test(title)
+    || (/\bcard\b/i.test(title) && !/\b(?:complete|factory|master|team|partial|unopened)\s+set\b/i.test(title));
+  if (individualCardEvidence) {
+    return "Sports Cards / Set filter: candidate is an individual card, but the target is a set. Retained as context-only before visual review.";
+  }
+
+  const targetSetType = normalizedChoice(details.setType);
+  const targetMissingCards = normalizedChoice(details.missingCards);
+  const candidateIncomplete = /\b(?:partial\s+set|incomplete\s+set|missing\s+(?:cards?|pieces?)|less\s+than\s+(?:a\s+)?complete\s+set)\b/i.test(title);
+  const candidateComplete = /\b(?:complete|factory|master|team)\s+set\b/i.test(title);
+
+  if ((targetMissingCards === "no" || /^(?:factory_set|complete_hand_collated_set)$/.test(targetSetType)) && candidateIncomplete) {
+    return "Sports Cards / Set filter: candidate is explicitly incomplete or missing cards, but the target is a complete set. Retained as context-only before visual review.";
+  }
+  if (targetMissingCards === "yes" && candidateComplete) {
+    return "Sports Cards / Set filter: candidate is explicitly a complete set, but the target is a partial/missing-card set. Retained as context-only before visual review.";
+  }
+
+  const targetFactorySealed = normalizedChoice(details.factorySealed);
+  const candidateSealed = /\b(?:factory\s+sealed|sealed|unopened)\b/i.test(title);
+  const candidateOpened = /\b(?:opened|open\s+box|unsealed)\b/i.test(title);
+  if (targetFactorySealed === "yes" && candidateOpened) {
+    return "Sports Cards / Set filter: candidate is explicitly opened/unsealed, but the target is factory sealed. Retained as context-only before visual review.";
+  }
+  if (targetFactorySealed === "no" && candidateSealed) {
+    return "Sports Cards / Set filter: candidate is explicitly sealed, but the target is not factory sealed. Retained as context-only before visual review.";
+  }
+
+  // Avoid treating a generic word such as “cards” in an otherwise ambiguous
+  // listing as proof of a single card. The normalized set/product metadata and
+  // explicit title evidence above are the only hard gates.
+  return null;
+}
+
 type MusicMediaCondition = "sealed" | "excellent" | "good" | "fair" | "for_parts" | null;
 
 function musicMediaCondition(value: unknown): MusicMediaCondition {
@@ -1693,13 +1742,14 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const gradingStateConflict = explicitGradingStateConflict(targetMetadata, listing);
     const productFormConflict = explicitProductFormConflict(targetMetadata, listing);
     const sportsCardConflict = sportsCardSingleCardConflict(targetMetadata, listing);
+    const sportsCardSetConflictReason = sportsCardSetConflict(targetMetadata, listing);
     const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

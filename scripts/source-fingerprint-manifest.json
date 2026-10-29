@@ -682,6 +682,7 @@
   "server/soldCompsAdditionalMarketData.ts",
   "server/specialistMarketplaceMarketData.test.ts",
   "server/specialistMarketplaceMarketData.ts",
+  "server/sportsCardsSetField.test.ts",
   "server/sportsManufacturerOptions.test.ts",
   "server/stagingSafety.test.ts",
   "server/stampFormat.test.ts",
