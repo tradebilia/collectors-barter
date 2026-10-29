@@ -8,6 +8,7 @@ import { getTradeAlertVisualHints } from "@shared/tradeAlertThemes";
 import { getTestedComicWorldScenePrompt, isProviderSceneSafetyRejection } from "./imageSceneRecovery";
 import { collectibleCategories, itemConditions, mysqlNow, toMysqlDateTime } from "./db";
 import { isValidGradeForCompany, getGradingCompanyByName } from "@shared/gradingCompanyConfig";
+import { getMissingComicsOriginalArtCoverSketchFields } from "@shared/comicsOriginalArtValidation";
 import {
   createListing,
   getCommunicationDisplayName,
@@ -1713,6 +1714,10 @@ export const appRouter = router({
 	        }),
 	      )
 	      .mutation(async ({ ctx, input }) => {
+        const missingCoverSketchFields = getMissingComicsOriginalArtCoverSketchFields(input);
+        if (missingCoverSketchFields.length > 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `${missingCoverSketchFields.join(' and ')} ${missingCoverSketchFields.length === 1 ? 'is' : 'are'} required for Comic Book Cover Sketch / Remark artwork.` });
+        }
         // Block suspended users from publishing live listings
         if ((ctx.user as any).isSuspended === 1) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Your account is suspended. Listings cannot be published while suspended.' });
@@ -1771,6 +1776,7 @@ export const appRouter = router({
           listingId: z.number().int().positive(),
           title: z.string().min(3).max(160),
           category: z.enum(collectibleCategories),
+          itemType: z.string().min(1).max(50),
           condition: z.enum(itemConditions),
           description: z.string().max(4000),
           estimatedValue: z.number().nonnegative().optional(),
@@ -1782,6 +1788,10 @@ export const appRouter = router({
         }),
       )
       .mutation(({ ctx, input }) => {
+        const missingCoverSketchFields = getMissingComicsOriginalArtCoverSketchFields(input);
+        if (missingCoverSketchFields.length > 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `${missingCoverSketchFields.join(' and ')} ${missingCoverSketchFields.length === 1 ? 'is' : 'are'} required for Comic Book Cover Sketch / Remark artwork.` });
+        }
         // Validate grading company and grade from description if present
         const descriptionLines = input.description.split('\n');
         let graderCompany = '';
@@ -2152,7 +2162,13 @@ export const appRouter = router({
         certificationNumber: z.string().optional(),
         grade: z.string().optional(),
       }))
-      .mutation(({ ctx, input }) => publishDraft({ id: ctx.user.id, name: ctx.user.name }, input)),
+      .mutation(({ ctx, input }) => {
+        const missingCoverSketchFields = getMissingComicsOriginalArtCoverSketchFields(input);
+        if (missingCoverSketchFields.length > 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: `${missingCoverSketchFields.join(' and ')} ${missingCoverSketchFields.length === 1 ? 'is' : 'are'} required for Comic Book Cover Sketch / Remark artwork.` });
+        }
+        return publishDraft({ id: ctx.user.id, name: ctx.user.name }, input);
+      }),
     deleteDraft: protectedProcedure
       .input(
         z.object({

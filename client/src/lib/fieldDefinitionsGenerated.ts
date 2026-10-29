@@ -595,6 +595,21 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     otherFieldName: 'Custom Art Type',
   },
   {
+    name: 'coverSketchComicTitle',
+    label: 'Comic Title',
+    inputType: 'text',
+    requirement: 'conditional',
+    conditionalLogic: 'Art Type = Comic Book Cover Sketch / Remark',
+  },
+  {
+    name: 'coverSketchIssueNumber',
+    label: 'Issue Number',
+    inputType: 'text',
+    maxLength: 5,
+    requirement: 'conditional',
+    conditionalLogic: 'Art Type = Comic Book Cover Sketch / Remark',
+  },
+  {
     name: 'medium',
     label: 'Medium',
     inputType: 'dropdown',

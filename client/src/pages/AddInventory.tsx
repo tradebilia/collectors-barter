@@ -454,6 +454,7 @@ export default function AddInventory() {
             listingId: parseInt(params.listingId),
             title: formData.listingTitle,
             category: formData.category,
+            itemType: String(formData.itemType || ""),
             condition: shouldIncludeCondition ? (formData.condition || "mint") : "mint", // Always provide a valid condition
             description: formData.description,
             estimatedValue: formData.tradeValue ? parseFloat(formData.tradeValue) : 0,
