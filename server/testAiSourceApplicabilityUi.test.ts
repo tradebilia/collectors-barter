@@ -153,6 +153,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('const visibleMessages = data?.messages?.map');
   });
 
+  it('routes Goldin through the shared visual review and displays metadata ranking fields', () => {
+    expect(source).toContain('imageUrl: item.primaryPhotoUrl ?? undefined');
+    expect(source).toContain('itemType: item.itemType ?? undefined');
+    expect(source).toContain("source.id === 'goldin' && (data as any)?.visualFilter");
+    expect(source).toContain('sourceLabel="Goldin specialist records"');
+    expect(source).toContain('<MetadataMatchLine listing={record} />');
+  });
+
   it('uses brand, line, and toy name for Goldin Vintage Toys criteria', () => {
     expect(source).toContain('function buildGoldinVintageToyDisplayQuery');
     expect(source).toContain("firstText('brand', 'brandName', 'manufacturer')");

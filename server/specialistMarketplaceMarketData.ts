@@ -869,6 +869,10 @@ type GoldinPublicLotResponse = {
     final_price?: unknown;
     buyer_premium?: unknown;
     end_timestamp?: unknown;
+    image_url?: unknown;
+    imageUrl?: unknown;
+    image?: unknown;
+    images?: unknown;
   };
 };
 
@@ -881,6 +885,10 @@ type GoldinPublicSearchLot = {
   current_price?: unknown;
   buyer_premium?: unknown;
   end_timestamp?: unknown;
+  image_url?: unknown;
+  imageUrl?: unknown;
+  image?: unknown;
+  images?: unknown;
 };
 
 type GoldinPublicSearchResponse = {
@@ -1024,7 +1032,29 @@ function publicGoldinRecordUrl(value: unknown): string | null {
     : null;
 }
 
-async function fetchGoldinPublicLotDetail(url: string): Promise<{ title: string; description: string } | null> {
+function publicGoldinImageUrl(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const candidate = canonicalUrl(value.trim());
+    return candidate && /^https:\/\//i.test(candidate) ? candidate : null;
+  }
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = publicGoldinImageUrl(entry);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    for (const key of ['url', 'src', 'image_url', 'imageUrl', 'thumbnail', 'thumbnailUrl']) {
+      const found = publicGoldinImageUrl(record[key]);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+async function fetchGoldinPublicLotDetail(url: string): Promise<{ title: string; description: string; imageUrl: string | null } | null> {
   const slug = publicGoldinLotSlug(url);
   if (!slug) return null;
   try {
@@ -1038,6 +1068,7 @@ async function fetchGoldinPublicLotDetail(url: string): Promise<{ title: string;
     return {
       title: text(payload.lot?.title),
       description: text(payload.lot?.description),
+      imageUrl: publicGoldinImageUrl(payload.lot?.image_url ?? payload.lot?.imageUrl ?? payload.lot?.image ?? payload.lot?.images),
     };
   } catch {
     return null;
@@ -1086,6 +1117,7 @@ async function enrichGoldinSearchRecords(input: SpecialistMarketplaceLookupInput
       ...record,
       title,
       description: description || null,
+      imageUrl: detail.imageUrl ?? record.imageUrl,
       grade,
       certificationCompany,
       certificateNumber: certNumber,
@@ -1135,7 +1167,7 @@ async function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLooku
       lotId,
       auctionName: null,
       url: publicGoldinRecordUrl(lot.meta_slug),
-      imageUrl: null,
+      imageUrl: publicGoldinImageUrl(lot.image_url ?? lot.imageUrl ?? lot.image ?? lot.images),
       saleStatus: completed ? 'completed' as const : 'unknown' as const,
       completed,
       price: allInPrice,

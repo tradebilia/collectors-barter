@@ -2099,12 +2099,42 @@ export const testAIRouter = router({
     .input(z.object({
       sourceId: z.enum(['ngc', 'rumsey', 'cherrystone', 'raritan', 'morphy', 'theriaults', 'poster_auctions', 'bonhams', 'university_archives', 'swann', 'rr_auction', 'alexander_historical', 'goldin', 'weiss', 'bertoia', 'heritage', 'hakes', 'lcg', 'nate_sanders', 'tcgplayer_reef', 'comic_book_realm']),
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
-      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), sourceUrl: z.string().url().nullish(),
+      certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().nullish(), sourceUrl: z.string().url().nullish(),
       historyWindow: z.enum(['recent_12_months', 'historical', 'all']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
-      return lookupSpecialistMarketplace(input);
+      const result = await lookupSpecialistMarketplace(input);
+      if (input.sourceId !== 'goldin' || result.status !== 'success') return result;
+
+      const candidateRecords = [...result.sales, ...result.context].map((record) => ({
+        ...record,
+        imageUrl: visualSourceCandidateImage(record),
+      }));
+      const visualFilter = await filterVisualSourceCandidates({
+        sourceLabel: 'Goldin specialist auction records',
+        targetImageUrl: input.imageUrl,
+        targetMetadata: buildVisualTargetMetadata({
+          title: input.title,
+          category: input.category,
+          itemType: input.itemType,
+          grade: input.grade,
+          condition: input.condition,
+          certificationCompany: input.certificationCompany,
+          itemDetails: input.itemDetails,
+        }),
+        listings: candidateRecords,
+      });
+      const visible = visualFilter.listings;
+      const context = visualFilter.contextListings ?? [];
+      const allReviewed = [...visible, ...context];
+      return {
+        ...result,
+        sales: allReviewed.filter((record: any) => record.completed && record.identityMatched),
+        context: allReviewed.filter((record: any) => !(record.completed && record.identityMatched)),
+        visualReviewListings: allReviewed,
+        visualFilter,
+      };
     }),
 
   // Fetch eBay sold/completed listings via Sold-Comps API
