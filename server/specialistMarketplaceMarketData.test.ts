@@ -492,6 +492,7 @@ describe('bounded specialist marketplace adapters', () => {
             current_price: 14170,
             buyer_premium: 20,
             end_timestamp: '2022-05-22T02:30:00Z',
+            primary_image_name: 'goldin-mario-2.jpg',
           },
         ],
       },
@@ -513,6 +514,7 @@ describe('bounded specialist marketplace adapters', () => {
       imageUrl: 'https://images.example.test/goldin-mario.jpg',
     });
     expect(result.context).toHaveLength(1);
+    expect(result.context[0]?.imageUrl).toBe('https://d2tt46f3mh26nl.cloudfront.net/public/Lots/goldin-mario-2/goldin-mario-2.jpg');
     expect(result.context[0]?.exclusionReason).toMatch(/identity-token threshold|grade conflicts/i);
     expect(fetchMock).toHaveBeenCalledWith('https://d1wu47wucybvr3.cloudfront.net/api/lots_v2', expect.objectContaining({
       method: 'POST',

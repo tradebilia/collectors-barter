@@ -869,6 +869,7 @@ type GoldinPublicLotResponse = {
     final_price?: unknown;
     buyer_premium?: unknown;
     end_timestamp?: unknown;
+    primary_image_name?: unknown;
     image_url?: unknown;
     imageUrl?: unknown;
     image?: unknown;
@@ -885,6 +886,7 @@ type GoldinPublicSearchLot = {
   current_price?: unknown;
   buyer_premium?: unknown;
   end_timestamp?: unknown;
+  primary_image_name?: unknown;
   image_url?: unknown;
   imageUrl?: unknown;
   image?: unknown;
@@ -1054,6 +1056,17 @@ function publicGoldinImageUrl(value: unknown): string | null {
   return null;
 }
 
+const GOLDIN_PUBLIC_IMAGE_CDN = 'https://d2tt46f3mh26nl.cloudfront.net';
+
+function publicGoldinLotImageUrl(lotId: unknown, imageName: unknown): string | null {
+  const direct = publicGoldinImageUrl(imageName);
+  if (direct) return direct;
+  const id = text(lotId);
+  const name = text(imageName);
+  if (!id || !name || !/^[a-z0-9-]{6,120}$/i.test(id) || !/^[a-z0-9._-]{6,180}$/i.test(name)) return null;
+  return `${GOLDIN_PUBLIC_IMAGE_CDN}/public/Lots/${encodeURIComponent(id)}/${encodeURIComponent(name)}`;
+}
+
 async function fetchGoldinPublicLotDetail(url: string): Promise<{ title: string; description: string; imageUrl: string | null } | null> {
   const slug = publicGoldinLotSlug(url);
   if (!slug) return null;
@@ -1068,7 +1081,8 @@ async function fetchGoldinPublicLotDetail(url: string): Promise<{ title: string;
     return {
       title: text(payload.lot?.title),
       description: text(payload.lot?.description),
-      imageUrl: publicGoldinImageUrl(payload.lot?.image_url ?? payload.lot?.imageUrl ?? payload.lot?.image ?? payload.lot?.images),
+      imageUrl: publicGoldinLotImageUrl(payload.lot?.lot_id, payload.lot?.primary_image_name)
+        ?? publicGoldinImageUrl(payload.lot?.image_url ?? payload.lot?.imageUrl ?? payload.lot?.image ?? payload.lot?.images),
     };
   } catch {
     return null;
@@ -1167,7 +1181,8 @@ async function parseGoldinPublicSearchResponse(input: SpecialistMarketplaceLooku
       lotId,
       auctionName: null,
       url: publicGoldinRecordUrl(lot.meta_slug),
-      imageUrl: publicGoldinImageUrl(lot.image_url ?? lot.imageUrl ?? lot.image ?? lot.images),
+      imageUrl: publicGoldinLotImageUrl(lot.lot_id, lot.primary_image_name)
+        ?? publicGoldinImageUrl(lot.image_url ?? lot.imageUrl ?? lot.image ?? lot.images),
       saleStatus: completed ? 'completed' as const : 'unknown' as const,
       completed,
       price: allInPrice,
