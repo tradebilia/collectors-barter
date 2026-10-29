@@ -2356,7 +2356,9 @@ function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(
 export async function filterVisualSourceCandidates<
   T extends VisualSourceCandidate,
 >(args: {
-  sourceLabel: string;
+	  /** Marketplace/eBay candidates only. Grading and reference sources use separate evidence contracts. */
+	  sourceRole: 'marketplace' | 'ebay';
+	  sourceLabel: string;
 	  targetImageUrl?: string | null;
 	  targetMetadata: string;
 		  listings: T[];

@@ -1658,6 +1658,7 @@ export const testAIRouter = router({
         }));
         const visualActiveFilter = input.includeVisualReview
           ? await filterVisualSourceCandidates({
+              sourceRole: 'ebay',
               sourceLabel: 'eBay active listings',
               targetImageUrl: input.imageUrl,
               targetMetadata,
@@ -1793,6 +1794,7 @@ export const testAIRouter = router({
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'ebay',
         sourceLabel: 'eBay active listings',
         targetImageUrl: input.targetImageUrl,
         targetMetadata: input.targetMetadata,
@@ -1840,6 +1842,7 @@ export const testAIRouter = router({
       if (result.error || result.listings.length === 0) return { ...result, visualFilter: null };
 
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'HIPStamp active listings',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: 'stamps', itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -1871,6 +1874,7 @@ export const testAIRouter = router({
       const result = await lookupHipstampSoldListings(input);
       if (result.error || result.listings.length === 0) return { ...result, visualFilter: null };
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'HIPStamp sold / closed listings',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: 'stamps', itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -1920,6 +1924,7 @@ export const testAIRouter = router({
       const result = await lookupTheCardApi(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'The Card API completed sales',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -1959,6 +1964,7 @@ export const testAIRouter = router({
       const result = await lookupCardsightAi(input);
       if (!result.sales.length) return { ...result, visualFilter: null };
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'Cardsight.ai auction-price records',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -1990,6 +1996,7 @@ export const testAIRouter = router({
       const result = await lookupLelandsAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'Lelands completed auction records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
@@ -2021,6 +2028,7 @@ export const testAIRouter = router({
       const result = await lookupPristineAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'Pristine Auction completed records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
@@ -2052,6 +2060,7 @@ export const testAIRouter = router({
       const result = await lookupCollectAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'Collect Auctions completed records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
@@ -2080,6 +2089,7 @@ export const testAIRouter = router({
       const result = await lookupSiriusSportsAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'Sirius Sports Auctions completed records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
         listings: result.sales,
@@ -2140,6 +2150,7 @@ export const testAIRouter = router({
         imageUrl: visualSourceCandidateImage(record),
       }));
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'Goldin specialist auction records',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({
@@ -2453,6 +2464,7 @@ export const testAIRouter = router({
         // image it returns after universal/category context classification and
         // makes no AI call; with an image it continues into bounded review.
         const sharedVisualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'ebay',
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
           targetMetadata: soldCompsTargetMetadata,
@@ -2622,6 +2634,7 @@ export const testAIRouter = router({
         // This first pass has no target image, so it runs only deterministic
         // universal/category preparation before metadata ranking and cap logic.
         const universalPreFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
           sourceLabel: visualSourceLabel,
           targetMetadata,
           ignoreSubjectiveConditionDifferences: true,
@@ -2688,6 +2701,7 @@ export const testAIRouter = router({
           };
         }
         const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
           sourceLabel: visualSourceLabel,
           targetImageUrl: safeTargetImage,
           targetMetadata,
@@ -2776,6 +2790,7 @@ export const testAIRouter = router({
           ? 'Mercari Disney Pins sold listings'
           : `Mercari ${normalizedCategory.replace(/_/g, ' ')} sold listings`;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: visualSourceLabel,
         targetImageUrl: safeTargetImage,
         targetMetadata,
@@ -3212,6 +3227,7 @@ export const testAIRouter = router({
       const result = await lookupParse130PointSales(input);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: '130point sold listings',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -3251,6 +3267,7 @@ export const testAIRouter = router({
       const result = await lookupPwccSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
         sourceLabel: 'PWCC / Fanatics Collect sold listings',
         targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title ?? input.query, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),

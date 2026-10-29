@@ -178,6 +178,7 @@ describe("visual source filter", () => {
       },
     });
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Unopened Product ranking test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: target,
@@ -315,6 +316,7 @@ describe("visual source filter", () => {
   it("keeps pre-visual lots in context and makes no vision call when every candidate is a lot", async () => {
     const metadata = "title=1896 Morgan Silver Dollar; category=coins; fullItemDetails={\"year\":\"1896\",\"variety\":\"Morgan\"}";
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Mercari",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: metadata,
@@ -363,6 +365,7 @@ describe("visual source filter", () => {
   it("retains unusable-image candidates as context before vision without treating them as matches", async () => {
     const target = buildVisualTargetMetadata({ title: "Example Item", category: "movies" });
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Cross-source image readiness test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: target,
@@ -387,6 +390,7 @@ describe("visual source filter", () => {
       fullItemDetails: { player: "Ken Griffey Jr", year: "1989", manufacturer: "Upper Deck", cardNumber: "1" },
     });
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Goldin",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: target,
@@ -467,6 +471,7 @@ describe("visual source filter", () => {
     expect(prepared.contextReasons.get(2)).toContain("Grading company differs");
 
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Universal grade test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: gradedTarget,
@@ -620,6 +625,7 @@ describe("visual source filter", () => {
       itemDetails: JSON.stringify({ isGraded: "No" }),
     });
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Cross-source test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata,
@@ -646,6 +652,7 @@ describe("visual source filter", () => {
 
   it("preserves direct product identifiers and print-run denominators through canonical pre-visual filtering", async () => {
     const upcResult = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Legacy metadata test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: "title=Super Mario Bros. 3; category=video_games; upc=123456789012",
@@ -655,6 +662,7 @@ describe("visual source filter", () => {
     expect(upcResult.contextListings?.[0].visualReviewRationale).toContain("upc differs in explicit provider metadata");
 
     const printRunResult = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Legacy metadata test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: "title=2018 Topps Example; category=sports_cards; serialNumber=10/100",
@@ -663,6 +671,7 @@ describe("visual source filter", () => {
     expect(printRunResult.contextListings?.[0].visualReviewRationale).toContain("print-run denominator");
 
     const catalogResult = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Legacy metadata test",
       targetImageUrl: "https://example.com/target.jpg",
       targetMetadata: "title=Scott stamp; category=stamps; catalog=SCOTT-123",
@@ -835,6 +844,7 @@ describe("visual source filter", () => {
       }) as any);
 
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Mercari coin sold listings",
       targetImageUrl: "https://example.com/target-coin.jpg",
       targetMetadata: metadata,
@@ -863,6 +873,7 @@ describe("visual source filter", () => {
       }) as any);
 
     const result = await filterVisualSourceCandidates({
+              sourceRole: 'marketplace',
       sourceLabel: "Mercari coin sold listings",
       targetImageUrl: "https://example.com/target-coin.jpg",
       targetMetadata: metadata,

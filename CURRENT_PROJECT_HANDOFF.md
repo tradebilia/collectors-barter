@@ -77,6 +77,10 @@ The shared visual pipeline now performs source-neutral candidate normalization a
 
 Validation for this stage: focused analyzer tests passed 129/129; the complete suite passed 339 files with 4 skipped and 1,757 tests with 7 skipped; TypeScript passed; the production build passed; diff hygiene and forbidden-change scans passed. No database, migration, credential, provider, writer, selector, or domain setting changed. The working tree still requires the final checkpoint/GitHub synchronization step before this stage is considered synchronized.
 
+### Marketplace/eBay-only filter and ranking boundary — October 29, 2026
+
+The shared visual-filter contract now requires every caller to declare `sourceRole: 'marketplace' | 'ebay'`. Universal identity filtering, Sports Cards item-type filters, metadata ranking, visual caps, and visual review are reserved for marketplace/eBay candidate records. Grading lookups (PSA, BGS, SGC, CGC, and PCGS) and reference/catalog sources remain on their separate certification/reference evidence contracts and must not receive marketplace ranking metadata or score-band caps. A source-role regression protects this boundary.
+
 ### eBay Active normalized image transport repair — October 28, 2026
 
 The live eBay Browse API was independently verified read-only: OAuth returned `200`, Browse search returned `200`, and current `itemSummaries` still provide `image.imageUrl` on `i.ebayimg.com` plus `additionalImages`. The remaining failure was in Tradebilia's response mapper: after the shared visual filter normalized `imageUrls`, the separate eBay visual-review and listing payloads reconstructed images from the raw `s.image` field instead of preferring the normalized gallery. They now prefer `s.imageUrls`, retain the provider collector as a fallback, use the normalized first URL as `imageUrl`, and preserve the review payload's three-image bound.
