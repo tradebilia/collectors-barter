@@ -1106,13 +1106,21 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     const details = item.itemDetails ? (() => {
       try { return JSON.parse(item.itemDetails); } catch { return {}; }
     })() : {};
-    if (item.category === 'movies') {
-      const movieTitle = details.title || item.title;
-      const format = details.format === 'Other' ? (details.customFormat || '') : (details.format || '');
-      return [movieTitle, format, item.certificationCompany, item.grade, item.condition].filter(Boolean).join(' ') || item.title;
-    }
-    const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean);
-    return parts.join(' ') || item.title;
+    const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '');
+    const normalizedGrade = normalizeTestAiGrade(item.grade, gradingCompany, item.category);
+    const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+    const normalizedItemType = String(item.itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_');
+    const isUnopenedProduct = item.category === 'sports_cards'
+      && (normalizedItemType === 'unopened_product' || Boolean((details as Record<string, unknown>).productFormat));
+    const suppressGradingCriteria = /^video games?$/.test(normalizedCategory);
+    return buildStructuredItemQuery(
+      item.category,
+      item.itemDetails,
+      isUnopenedProduct || suppressGradingCriteria
+        ? []
+        : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition],
+      item.itemType ?? '',
+    ) || item.title;
   }, [item.category, item.itemDetails, item.title, item.certificationCompany, item.grade, item.condition]);
   const visualReviewInput = useMemo(() => ({
     targetImageUrl: item.primaryPhotoUrl || 'https://invalid.local/target-image-placeholder',
@@ -1186,8 +1194,11 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
   const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
-  const visibleSearchQuery = displayData?.query || requestQueryPreview || item.title || 'No title supplied';
-  const queryStatus = displayData?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview';
+  // Visual-review responses carry review evidence, not a replacement
+  // retrieval contract. Preserve the server-confirmed eBay query from the
+  // original lookup instead of falling back to a separately rebuilt preview.
+  const visibleSearchQuery = displayData?.query || data?.query || requestQueryPreview || item.title || 'No title supplied';
+  const queryStatus = displayData?.query || data?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview';
   // Image review changes the displayed asking-price summary as soon as its
   // response arrives. Opening the detail drawer is no longer required.
   const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics;

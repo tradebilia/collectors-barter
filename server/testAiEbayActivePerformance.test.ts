@@ -156,10 +156,19 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(clientMainSource).toContain("maxURLLength: 2000");
   });
 
-  it("shows the movie search request while eBay is still loading", () => {
+  it("builds the loading preview from structured criteria without duplicating title grade or condition", () => {
     expect(pageSource).toContain("const requestQueryPreview = useMemo(() => {");
-    expect(pageSource).toContain("if (item.category === 'movies')");
+    expect(pageSource).toContain("const gradingCompany = resolveTestAiGradingCompany(item.itemDetails, item.certificationCompany ?? item.gradingCompany ?? '')");
+    expect(pageSource).toContain("return buildStructuredItemQuery(");
+    expect(pageSource).not.toContain("const parts = [item.title, item.certificationCompany, item.grade, item.condition].filter(Boolean)");
+    expect(pageSource).not.toContain("const movieTitle = details.title || item.title");
     expect(pageSource).toContain("Search criteria / request <span className=\"font-normal text-cyan-200/60\">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span>");
+  });
+
+  it("keeps the server-confirmed eBay query when visual-review data replaces the display payload", () => {
+    expect(pageSource).toContain("const visibleSearchQuery = displayData?.query || data?.query || requestQueryPreview || item.title || 'No title supplied'");
+    expect(pageSource).toContain("const queryStatus = displayData?.query || data?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview'");
+    expect(pageSource).toContain("Preserve the server-confirmed eBay query from the");
   });
 
   it("keeps the query visible across searchable marketplace panels", () => {
@@ -177,7 +186,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("item.certId && company === 'CGC' && item.category === 'comics'");
     expect(pageSource).toContain("Only a CGC comic needs the comics certificate response");
     expect(pageSource).toContain("item already has a usable title/format/grade and must not be blocked");
-    expect(pageSource).toContain("[movieTitle, format, item.certificationCompany, item.grade, item.condition]");
+    expect(pageSource).toContain("buildStructuredItemQuery(");
   });
 
   it("updates the primary asking-price cards from accepted visual matches automatically", () => {
