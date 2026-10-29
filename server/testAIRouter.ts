@@ -494,6 +494,7 @@ export function assessSoldCompsPreVisionCandidates(args: {
   statedTradeValue?: number | null;
   enforceVideoGameTitleMatch?: boolean;
   targetGameTitle?: string | null;
+  ignoreSubjectiveConditionDifferences?: boolean;
 }): { eligible: any[]; excluded: SoldCompsPreVisionAssessment[] } {
   const targetPlatform = args.category === 'video_games' ? canonicalVideoGamePlatform(args.targetPlatform) : null;
   const targetGameTitleTokens = args.enforceVideoGameTitleMatch && args.category === 'video_games'
@@ -502,7 +503,9 @@ export function assessSoldCompsPreVisionCandidates(args: {
   const assessments = args.listings.map((item) => {
     const metadata = normalizeSoldCompsMetadata(item);
     const reasons: string[] = [];
-    const conflicts = findMaterialMetadataConflicts(args.targetMetadata, soldCompsCandidateForMetadataConflict(item, metadata));
+    const conflicts = findMaterialMetadataConflicts(args.targetMetadata, soldCompsCandidateForMetadataConflict(item, metadata), {
+      ignoreSubjectiveConditionDifferences: args.ignoreSubjectiveConditionDifferences,
+    });
     for (const conflict of conflicts) reasons.push(metadataConflictReviewReason([conflict]));
 
     if (targetPlatform) {
@@ -1607,6 +1610,10 @@ export const testAIRouter = router({
           targetPlatform,
           targetIsGraded,
           statedTradeValue: input.statedTradeValue,
+          // eBay's listing-level condition (for example, Pre-Owned) is not a
+          // collectible identity assertion. Explicit sealed, parts, grade,
+          // grader, lot, and sports-card feature conflicts remain hard gates.
+          ignoreSubjectiveConditionDifferences: true,
           listings: filteredSummaries,
         });
         const targetGameTitle = input.category === 'video_games'
@@ -1652,6 +1659,7 @@ export const testAIRouter = router({
               targetImageUrl: input.imageUrl,
               targetMetadata,
               listings: visualInputListings,
+              ignoreSubjectiveConditionDifferences: true,
             })
           : null;
         const combinedVisualFilter = visualActiveFilter

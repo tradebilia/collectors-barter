@@ -8,7 +8,7 @@ import {
   EBAY_ACTIVE_DISPLAY_TARGET,
   computeMetrics,
 } from "./testAIRouter";
-import { prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
+import { buildDeclaredIdentityReviews, prioritizeVisualSourceCandidates } from "./testAiVisualSourceFilter";
 import { assessSoldCompsPreVisionCandidates } from "./testAIRouter";
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
@@ -121,16 +121,30 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(result.excluded.flatMap((entry) => entry.reasons).join(" ")).toMatch(/platform|lot|condition-only|25%|250%/i);
   });
 
+  it("does not treat eBay's generic marketplace condition as a card identity conflict before vision", () => {
+    const targetMetadata = 'title=1989 Upper Deck Ken Griffey Jr #1 PSA 10; category=sports_cards; condition=Mint; itemType=single_card; grade=10; certificationCompany=PSA; fullItemDetails={"player":"Ken Griffey Jr","year":"1989","manufacturer":"Upper Deck","cardNumber":"1"}';
+    const candidate = { title: '1989 Upper Deck Ken Griffey Jr #1 PSA 10', condition: 'Pre-Owned' };
+
+    expect(buildDeclaredIdentityReviews([candidate], targetMetadata)).toHaveLength(1);
+    expect(buildDeclaredIdentityReviews([candidate], targetMetadata, { ignoreSubjectiveConditionDifferences: true })).toEqual([]);
+
+    const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
+    expect(section).toContain("ignoreSubjectiveConditionDifferences: true,");
+  });
+
   it("keeps the UI on the fast result while mandatory image checks run", () => {
     expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }");
     expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useMutation");
     expect(pageSource).toContain("visualReviewMutation.mutateAsync");
     expect(pageSource).toContain("data?.visualReviewListings");
-    expect(pageSource).toContain("data.visualReviewListings.slice(0, 30)");
+    expect(pageSource).toContain("const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : []");
     expect(pageSource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
+    expect(pageSource).toContain("const effectiveVisualReviewData = visualReviewData ?? (data?.visualFilter ? data : undefined);");
+    expect(pageSource).toContain("onVisualReviewData?.(effectiveVisualReviewData && !effectiveVisualReviewData.error ? effectiveVisualReviewData : null);");
+    expect(pageSource).toContain("<MarketplaceVisualReview data={effectiveVisualReviewData}");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
-    expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, visualReviewData)");
+    expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData)");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
     expect(pageSource).toContain("active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison");
@@ -174,7 +188,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
   it("preserves populated eBay listings when visual-review returns an empty or partial payload", () => {
     expect(pageSource).toContain("function mergeEbayVisualReviewDisplayData(base: any, review: any): any");
     expect(pageSource).toContain("listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings");
-    expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, visualReviewData)");
+    expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData)");
+  });
+
+  it("sends eBay candidates to visual review from either bounded list and promotes gallery images", () => {
+    expect(pageSource).toContain("const sourceListings = reviewListings.some(hasImage) ? reviewListings : listingRows");
+    expect(pageSource).toContain("const listingRows = Array.isArray(data?.listings) ? data.listings : []");
+    expect(pageSource).toContain("imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : imageUrls[0] ?? null");
   });
 
   it("keeps the query visible across searchable marketplace panels", () => {
@@ -196,8 +216,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("updates the primary asking-price cards from accepted visual matches automatically", () => {
-    expect(pageSource).toContain("const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics");
-    expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics");
+    expect(pageSource).toContain("const showingVisualMatchMetrics = !!effectiveVisualReviewData?.visualMatchMetrics");
+    expect(pageSource).toContain("const visibleMetrics = showingVisualMatchMetrics ? effectiveVisualReviewData.visualMatchMetrics : data?.metrics");
     expect(pageSource).toContain("Full-market asking context before image filtering");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
     expect(pageSource).toContain("No accepted visual matches have usable prices");

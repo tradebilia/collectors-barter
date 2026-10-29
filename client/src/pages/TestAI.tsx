@@ -1153,8 +1153,17 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     targetMetadata: data?.visualReviewTargetMetadata || requestQueryPreview,
     // A visual-review mutation uses POST, but retain a small explicit candidate
     // DTO so external eBay payload fields cannot expand the review contract.
-    listings: Array.isArray(data?.visualReviewListings)
-      ? data.visualReviewListings.slice(0, 30).map((listing: any) => ({
+    listings: (() => {
+      const reviewListings = Array.isArray(data?.visualReviewListings) ? data.visualReviewListings : [];
+      const listingRows = Array.isArray(data?.listings) ? data.listings : [];
+      const hasImage = (listing: any) => typeof listing?.imageUrl === 'string'
+        || (Array.isArray(listing?.imageUrls) && listing.imageUrls.some((url: unknown) => typeof url === 'string' && url.length > 0));
+      const sourceListings = reviewListings.some(hasImage) ? reviewListings : listingRows;
+      return sourceListings.slice(0, 30).map((listing: any) => {
+        const imageUrls = Array.isArray(listing.imageUrls)
+          ? listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)
+          : [];
+        return {
           id: String(listing.id ?? listing.itemId ?? listing.itemUrl ?? ''),
           title: String(listing.title ?? ''),
           price: Number(listing.price?.value ?? listing.price) || null,
@@ -1162,18 +1171,19 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           condition: listing.condition ? String(listing.condition) : null,
           seller: listing.seller ? String(listing.seller) : null,
           itemUrl: listing.itemUrl ? String(listing.itemUrl) : null,
-          imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : null,
+          imageUrl: typeof listing.imageUrl === 'string' ? listing.imageUrl : imageUrls[0] ?? null,
           // Preserve primary plus two additional images for progressive review.
-          imageUrls: Array.isArray(listing.imageUrls) ? listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3) : [],
+          imageUrls,
           listingType: listing.listingType ? String(listing.listingType) : null,
           bidCount: Number.isFinite(Number(listing.bidCount)) ? Number(listing.bidCount) : null,
           uniqueBidderCount: Number.isFinite(Number(listing.uniqueBidderCount)) ? Number(listing.uniqueBidderCount) : null,
           currentBidPrice: Number.isFinite(Number(listing.currentBidPrice?.value ?? listing.currentBidPrice)) ? Number(listing.currentBidPrice?.value ?? listing.currentBidPrice) : null,
           auctionEndDate: listing.auctionEndDate ? String(listing.auctionEndDate) : null,
-        }))
-      : [],
-  }), [data?.visualReviewListings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
-  const reviewBaseEnabled = reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata;
+        };
+      });
+    })(),
+  }), [data?.visualReviewListings, data?.listings, data?.visualReviewTargetMetadata, item.primaryPhotoUrl, requestQueryPreview]);
+  const reviewBaseEnabled = reviewRequested && !!item.primaryPhotoUrl && !!data?.visualReviewTargetMetadata && !data?.visualFilter;
   const reviewBatchInputs = useMemo(() => Array.from({ length: VISUAL_REVIEW_CLIENT_MAX_BATCHES }, (_, batchIndex) => ({
     ...visualReviewInput,
     listings: visualReviewInput.listings.slice(batchIndex * VISUAL_REVIEW_CLIENT_BATCH_SIZE, (batchIndex + 1) * VISUAL_REVIEW_CLIENT_BATCH_SIZE),
@@ -1214,12 +1224,16 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     setReviewRequested(Boolean(item.primaryPhotoUrl));
     setShowVisualMatchMetrics(false);
   }, [item.id, item.title, item.primaryPhotoUrl]);
+  // Newer eBay requests complete the bounded visual pass server-side. Treat
+  // that response as first-class review evidence instead of waiting for the
+  // legacy client mutation (which is intentionally suppressed in this mode).
+  const effectiveVisualReviewData = visualReviewData ?? (data?.visualFilter ? data : undefined);
   useEffect(() => {
-    onVisualReviewData?.(visualReviewData && !visualReviewData.error ? visualReviewData : null);
-  }, [onVisualReviewData, visualReviewData]);
+    onVisualReviewData?.(effectiveVisualReviewData && !effectiveVisualReviewData.error ? effectiveVisualReviewData : null);
+  }, [effectiveVisualReviewData, onVisualReviewData]);
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
-  const displayData = mergeEbayVisualReviewDisplayData(data, visualReviewData);
+  const displayData = mergeEbayVisualReviewDisplayData(data, effectiveVisualReviewData);
   // Visual-review responses carry review evidence, not a replacement
   // retrieval contract. Preserve the server-confirmed eBay query from the
   // original lookup instead of falling back to a separately rebuilt preview.
@@ -1227,9 +1241,9 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const queryStatus = displayData?.query || data?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview';
   // Image review changes the displayed asking-price summary as soon as its
   // response arrives. Opening the detail drawer is no longer required.
-  const showingVisualMatchMetrics = !!visualReviewData?.visualMatchMetrics;
-  const visibleMetrics = showingVisualMatchMetrics ? visualReviewData.visualMatchMetrics : data?.metrics;
-  const visualMatchCount = visualReviewData?.visualMatchMetrics?.count ?? 0;
+  const showingVisualMatchMetrics = !!effectiveVisualReviewData?.visualMatchMetrics;
+  const visibleMetrics = showingVisualMatchMetrics ? effectiveVisualReviewData.visualMatchMetrics : data?.metrics;
+  const visualMatchCount = effectiveVisualReviewData?.visualMatchMetrics?.count ?? 0;
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -1244,10 +1258,10 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       </div>
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
-      {visualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {visualReviewData.error}</p>}
-      {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">{visualReviewData ? 'AI image checks stopped after returning partial results' : 'AI image checks could not start'}: {visualReviewErrorMessage}</p>}
-      {visualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{visualReviewData.visualFilter.note}</p>}
-      {visualReviewData?.visualFilter && !visualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
+      {effectiveVisualReviewData?.error && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">AI image checks could not complete: {effectiveVisualReviewData.error}</p>}
+      {visualReviewErrorMessage && <p className="rounded border border-red-700/30 bg-red-950/20 px-2 py-1 text-[10px] text-red-300">{effectiveVisualReviewData ? 'AI image checks stopped after returning partial results' : 'AI image checks could not start'}: {visualReviewErrorMessage}</p>}
+      {effectiveVisualReviewData?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{effectiveVisualReviewData.visualFilter.note}</p>}
+      {effectiveVisualReviewData?.visualFilter && !effectiveVisualReviewData?.visualMatchMetrics && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">No accepted visual matches have usable prices, so the full-market asking context remains shown.</p>}
       {visibleMetrics && (
         <div className="space-y-1.5">
           <div className="grid grid-cols-4 gap-2 text-[11px]">
@@ -1271,8 +1285,8 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {showingVisualMatchMetrics && data?.metrics && <p className="text-[9px] text-slate-400">Full-market asking context before image filtering: Avg {formatWholeDollar(data.metrics.avg)} · Median {formatWholeDollar(data.metrics.median)} · Range {formatWholeDollar(data.metrics.min)}–{formatWholeDollar(data.metrics.max)}.</p>}
       {data && !data.error && !reviewRequested && !item.primaryPhotoUrl && <div className="rounded border border-amber-700/30 bg-amber-950/20 p-2"><p className="text-[10px] font-semibold text-amber-100">Visual confirmation unavailable</p><p className="text-[9px] text-amber-200/80">No target image is available, so eBay Active listings remain asking-price context only and cannot enter current-value analyzer evidence.</p></div>}
       {reviewRequested && visualReviewLoading && <p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5 text-[10px] text-cyan-100">AI image checks are required before visually supported eBay Active listings can enter current-value evidence. Asking-price context remains available below while the bounded review runs in batches of 10 (maximum 30 candidates; maximum 2 minutes overall).</p>}
-      {visualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">The AI image review stopped at its safety time limit. Only candidates with a completed visual result can support current-value evidence; the rest remain asking-price context.</p>}
-      {visualReviewData?.visualFilter && <MarketplaceVisualReview data={visualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
+      {effectiveVisualReviewData?.visualFilter?.status === 'completed_with_timeout' && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1.5 text-[10px] text-amber-200">The AI image review stopped at its safety time limit. Only candidates with a completed visual result can support current-value evidence; the rest remain asking-price context.</p>}
+      {effectiveVisualReviewData?.visualFilter && <MarketplaceVisualReview data={effectiveVisualReviewData} targetImageUrl={item.primaryPhotoUrl} sourceLabel="eBay active listings" open={showVisualMatchMetrics} onOpenChange={setShowVisualMatchMetrics} />}
       {displayData?.query && <p className="text-gray-500 text-[10px]">{displayData.listings.length} results · {displayData.debug?.queryTierCount ?? 0} bounded query tier{displayData.debug?.queryTierCount === 1 ? '' : 's'} · {displayData.debug?.exactTierPageCount ?? 1} exact page{displayData.debug?.exactTierPageCount === 1 ? '' : 's'} checked</p>}
       {displayData?.debug && <p className="text-cyan-200/70 text-[9px]">Exact-tier results: {displayData.debug.exactTierFilteredCount ?? 0} retained after grade/identity filters ({displayData.debug.exactTierResultCount ?? 0} returned by eBay across {displayData.debug.exactTierPageCount ?? 1} page{displayData.debug.exactTierPageCount === 1 ? '' : 's'}). {displayData.debug.exactTierUsedFallbacks ? 'Additional fallback tiers were needed after exact-query pagination.' : 'No fallback tiers were needed.'}</p>}
       {displayData?.preVisionFilter?.excludedCount > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200"><summary className="cursor-pointer font-semibold">{displayData.preVisionFilter.excludedCount} active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison</summary><div className="mt-1 space-y-1 text-amber-100/80">{displayData.preVisionFilter.excludedListings.map((listing: any, index: number) => <p key={`${listing.itemUrl || listing.title}-${index}`}><strong>{listing.title}</strong>{listing.visualReviewRationale ? ` — ${listing.visualReviewRationale}` : ''}</p>)}</div></details>}
@@ -4555,11 +4569,11 @@ export default function TestAI() {
   const rightSearchItem = buildSearchableItem(rightItem, rightPSAQuery, rightBeckettQuery, rightCgcQuery, rightPcgsCoinFactsQuery.data);
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl, statedTradeValue: Number(leftSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl, includeVisualReview: true, statedTradeValue: Number(leftSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
     { enabled: !!leftSearchItem && leftSources.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl, statedTradeValue: Number(rightSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl, includeVisualReview: true, statedTradeValue: Number(rightSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
     { enabled: !!rightSearchItem && rightSources.has('ebay_active') }
   );
 

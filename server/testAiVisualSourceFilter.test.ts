@@ -252,6 +252,25 @@ describe("visual source filter", () => {
     ], customGraderTarget).contextReasons.get(0)).toContain("Grading company differs");
   });
 
+  it("does not treat a sports-card number as a grade when an explicit grader-adjacent grade matches", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Upper Deck Ken Griffey Jr. #1 PSA 10",
+      category: "sports_cards",
+      itemType: "single_card",
+      isGraded: "Yes",
+      grade: "10",
+      certificationCompany: "PSA",
+      itemDetails: JSON.stringify({ cardNumber: "1", player: "Ken Griffey Jr.", manufacturer: "Upper Deck" }),
+    });
+    const prepared = prepareUniversalVisualCandidates([
+      { title: "1989 Upper Deck Ken Griffey Jr. #1 PSA 10", imageUrl: "https://example.com/psa10.jpg" },
+      { title: "1989 Upper Deck Ken Griffey Jr. #1 PSA 9", imageUrl: "https://example.com/psa9.jpg" },
+    ], target);
+
+    expect(prepared.contextReasons.has(0)).toBe(false);
+    expect(prepared.contextReasons.get(1)).toContain("Grade differs");
+  });
+
   it("normalizes every source target into one conservative metadata contract", () => {
     const metadata = buildVisualTargetMetadata({
       title: "1999 Pokémon Charizard #4/102",

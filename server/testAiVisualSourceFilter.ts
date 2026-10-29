@@ -1254,20 +1254,25 @@ function componentOnlyState(value: string): ComponentOnly {
 
 type ParsedComparableGrade = { numeric: string; designation: string | null } | null;
 
-function parsedComparableGrade(value: unknown): ParsedComparableGrade {
-  const withoutGrader = candidateText(value)
+function parsedComparableGrade(value: unknown, options: { allowBareNumeric?: boolean } = {}): ParsedComparableGrade {
+  const text = candidateText(value).trim();
+  const withoutGrader = text
     .replace(/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG)\b/gi, " ");
   const designation = withoutGrader.match(/\b(MS|PR|PF|SP|AU|VG|VF|EX|NM|MT)\s*(\d{1,3}(?:\.\d+)?)/i);
   if (designation) return { numeric: String(Number(designation[2])), designation: designation[1].toUpperCase() };
-  const numeric = withoutGrader.match(/\b(?:grade|graded|score|rating)?\s*(?:is|of|:)?\s*(\d{1,3}(?:\.\d+)?)(?:\+)?\b/i)?.[1];
-  return numeric && Number.isFinite(Number(numeric)) ? { numeric: String(Number(numeric)), designation: null } : null;
+  const graderAdjacent = text.match(/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA|HGA|CSG|ISA|GMA|PSE|ASG)\s+(?:graded\s+)?(?:[A-Z]{1,3}\s*)?(\d{1,3}(?:\.\d+)?)(?:\+)?\b/i)?.[1];
+  if (graderAdjacent && Number.isFinite(Number(graderAdjacent))) return { numeric: String(Number(graderAdjacent)), designation: null };
+  const labeled = text.match(/\b(?:grade|graded|score|rating)\s*(?:is|of|:)?\s*(\d{1,3}(?:\.\d+)?)(?:\+)?\b/i)?.[1];
+  if (labeled && Number.isFinite(Number(labeled))) return { numeric: String(Number(labeled)), designation: null };
+  const bare = options.allowBareNumeric ? text.match(/^\s*(\d{1,3}(?:\.\d+)?)(?:\+)?\s*$/)?.[1] : null;
+  return bare && Number.isFinite(Number(bare)) ? { numeric: String(Number(bare)), designation: null } : null;
 }
 
 function universalGradeConflict(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, "category")) === "disney_pins") return null;
   if (targetExplicitGradingState(targetMetadata) !== "graded" || candidateExplicitGradingState(candidate) !== "graded") return null;
-  const target = parsedComparableGrade(metadataValue(targetMetadata, "grade"));
-  const source = parsedComparableGrade(`${candidate.grade} ${candidate.title}`);
+  const target = parsedComparableGrade(metadataValue(targetMetadata, "grade"), { allowBareNumeric: true });
+  const source = parsedComparableGrade(candidate.grade, { allowBareNumeric: true }) ?? parsedComparableGrade(candidate.title);
   if (!target || !source) return null;
   if (target.numeric !== source.numeric || (target.designation && source.designation && target.designation !== source.designation)) {
     return `Grade differs: target explicitly declares ${target.designation ?? "grade"} ${target.numeric}, but the candidate explicitly declares ${source.designation ?? "grade"} ${source.numeric}.`;
@@ -1926,7 +1931,9 @@ export async function filterVisualSourceCandidates<
       removedCount: preVisualContextListings.length,
       retainedUnreviewedCount: eligibleListings.length,
       reviews: declaredReviews,
-      note: `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
+      note: eligibleListings.length === 0
+        ? `No ${args.sourceLabel.toLowerCase()} candidates remained after deterministic identity and multi-item filtering; ${preVisualContextListings.length} listing${preVisualContextListings.length === 1 ? " was" : "s were"} retained as context-only before vision.`
+        : `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   try {
     const strictResponseFormat = {
