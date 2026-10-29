@@ -38,6 +38,8 @@ import {
   prioritizeVisualSourceCandidates,
   sportsCardSetVisualCap,
   sportsCardSetVisualScore,
+  sportsCardUnopenedVisualCap,
+  sportsCardUnopenedVisualScore,
   sportsCardSingleVisualCap,
   sportsCardSingleVisualScore,
   shouldReviewAdditionalVisualImages,
@@ -128,6 +130,64 @@ describe("visual source filter", () => {
     expect(sportsCardSetVisualCap(65)).toBe(3);
     expect(sportsCardSetVisualCap(55)).toBe(2);
     expect(sportsCardSetVisualCap(49)).toBe(0);
+  });
+
+  it("scores Sports Cards / Unopened Product on product identity and condition signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps BBCE FASC Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: {
+        productName: "Topps",
+        productFormat: "Box",
+        productType: "Hobby",
+        manufacturer: "Topps",
+        year: "1989",
+        authenticationCompany: "BBCE",
+        factorySealed: "Yes",
+        fromASealedCase: "Yes",
+      },
+    });
+    const score = sportsCardUnopenedVisualScore({
+      title: "1989 Topps BBCE FASC Hobby Box Factory Sealed",
+      imageUrl: "https://example.com/box.jpg",
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "productName", "productFormat", "productType", "manufacturerOrSet", "year",
+      "authenticationCompany", "factorySealed", "fromASealedCase",
+    ]));
+  });
+
+  it("uses the approved Sports Cards / Unopened Product score-band caps", () => {
+    expect(sportsCardUnopenedVisualCap(95)).toBe(10);
+    expect(sportsCardUnopenedVisualCap(80)).toBe(6);
+    expect(sportsCardUnopenedVisualCap(70)).toBe(3);
+    expect(sportsCardUnopenedVisualCap(60)).toBe(2);
+    expect(sportsCardUnopenedVisualCap(54)).toBe(0);
+  });
+
+  it("ranks Unopened Product candidates before applying the visual cap", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps BBCE FASC Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: {
+        productName: "Topps", productFormat: "Box", productType: "Hobby", manufacturer: "Topps",
+        year: "1989", authenticationCompany: "BBCE", factorySealed: "Yes", fromASealedCase: "Yes",
+      },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Unopened Product ranking test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [
+        { title: "1989 Topps BBCE FASC Hobby Box Factory Sealed", imageUrl: "https://example.com/strong.jpg" },
+        { title: "1989 Topps Hobby Box", imageUrl: "https://example.com/weak.jpg" },
+      ],
+    });
+    expect(result.listings.length).toBeGreaterThan(0);
+    expect(result.listings[0]).toMatchObject({ metadataMatchRank: 1, metadataMatchScore: 100 });
   });
 
   it("filters Sports Cards / Unopened Product by format and product type", () => {
