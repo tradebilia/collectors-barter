@@ -286,6 +286,13 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('View full explanation');
   });
 
+  it('renders ranking score and rank through the shared candidate-row component', () => {
+    expect(source).toContain('function MetadataMatchLine');
+    expect(source).toContain('Metadata rank #');
+    expect(source).toContain('<MetadataMatchLine listing={listing} />');
+    expect(source).toContain('<MetadataMatchLine listing={l} />');
+  });
+
   it('separates PCGS current-value candidates from historical trend rows', () => {
     expect(source).toContain('historicalRowsLabel');
     expect(source).toContain('Jump to loaded rows');

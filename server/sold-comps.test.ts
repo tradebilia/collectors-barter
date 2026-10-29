@@ -17,6 +17,14 @@ describe('Sold-Comps API key validation', () => {
     expect(getSoldCompsApiKey({})).toBeNull();
   });
 
+  it('preserves ranking metadata in the eBay Sold-Comps transport payload', () => {
+    const routerSource = readFileSync(resolve(process.cwd(), 'server/testAIRouter.ts'), 'utf8');
+    const soldCompsSection = routerSource.slice(routerSource.indexOf("sourceLabel: 'eBay Sold-Comps'"));
+    expect(soldCompsSection).toContain('metadataMatchScore: i.metadataMatchScore');
+    expect(soldCompsSection).toContain('metadataMatchRank: i.metadataMatchRank');
+    expect(soldCompsSection).toContain('metadataMatchReasons: i.metadataMatchReasons');
+  });
+
   it('retains the precise sports-card grade for completed-sale retrieval', () => {
     const query = '1989 Upper Deck Ken Griffey Jr 1 PSA 10';
 
