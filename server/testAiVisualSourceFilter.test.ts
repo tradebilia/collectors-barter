@@ -130,6 +130,97 @@ describe("visual source filter", () => {
     expect(sportsCardSetVisualCap(49)).toBe(0);
   });
 
+  it("filters Sports Cards / Unopened Product by format and product type", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps BBCE Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: { productFormat: "Box", productType: "Hobby", factorySealed: "Yes" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1989 Topps BBCE Hobby Pack", imageUrl: "https://example.com/pack.jpg" },
+      { title: "1989 Topps BBCE Retail Box", imageUrl: "https://example.com/retail.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(2);
+    expect(reviews[0]?.rationale).toContain("product format differs");
+    expect(reviews[1]?.rationale).toContain("product type differs");
+  });
+
+  it("filters opened or resealed product when the target is factory sealed", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps Factory Sealed Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: { productFormat: "Box", factorySealed: "Yes" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1989 Topps Hobby Box Opened", imageUrl: "https://example.com/opened.jpg" },
+      { title: "1989 Topps Hobby Box Resealed", imageUrl: "https://example.com/resealed.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(2);
+    expect(reviews[0]?.rationale).toContain("sealed status differs");
+    expect(reviews[1]?.rationale).toContain("sealed status differs");
+  });
+
+  it("requires the same authentication company when authentication is explicit", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps BBCE Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: { productFormat: "Box", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1989 Topps PSA Authenticated Hobby Box", imageUrl: "https://example.com/psa.jpg" },
+      { title: "1989 Topps Unauthenticated Hobby Box", imageUrl: "https://example.com/raw.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(2);
+    expect(reviews[0]?.rationale).toContain("authentication company differs");
+    expect(reviews[1]?.rationale).toContain("authentication status differs");
+  });
+
+  it("recognizes FASC and filters an explicit FASC contradiction", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps BBCE FASC Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: { productFormat: "Box", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1989 Topps BBCE Hobby Box Not From a Sealed Case", imageUrl: "https://example.com/not-fasc.jpg" },
+      { title: "1989 Topps BBCE FASC Hobby Box", imageUrl: "https://example.com/fasc.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]?.rationale).toContain("FASC status differs");
+  });
+
+  it("excludes individual cards, sets, collections, and lots from an unopened-product target", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: { productFormat: "Box", factorySealed: "Yes" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1989 Topps Ken Griffey Jr #1 PSA 10", imageUrl: "https://example.com/card.jpg" },
+      { title: "1989 Topps Complete Set", imageUrl: "https://example.com/set.jpg" },
+      { title: "1989 Topps Card Collection Lot", imageUrl: "https://example.com/lot.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(3);
+    expect(reviews.every((review) => review?.rationale.includes("rather than unopened product"))).toBe(true);
+  });
+
+  it("keeps candidates with missing unopened-product metadata eligible", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Topps Hobby Box",
+      category: "sports_cards",
+      itemType: "unopened_product",
+      fullItemDetails: { productFormat: "Box", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" },
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "1989 Topps Hobby Box", imageUrl: "https://example.com/unknown.jpg" },
+    ], target)).toEqual([]);
+  });
+
   it("embeds only a bounded promoted eBay image for a focused grading retry", async () => {
     const fetchCalls: string[] = [];
     const fetchImpl: typeof fetch = async (input) => {

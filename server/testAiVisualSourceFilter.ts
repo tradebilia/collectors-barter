@@ -1427,18 +1427,20 @@ function explicitGradingStateConflict(targetMetadata: string, listing: VisualSou
   return `Grading state differs: target is explicitly ${targetState}, but the candidate explicitly declares ${candidateState}.`;
 }
 
-type ProductForm = "set" | "single_card" | "sealed" | "cib" | "boxed_only" | "loose" | "parts_only" | "complete" | "incomplete" | null;
+type ProductForm = "set" | "single_card" | "unopened_product" | "sealed" | "cib" | "boxed_only" | "loose" | "parts_only" | "complete" | "incomplete" | null;
 
 function sportsCardProductForm(value: unknown): ProductForm {
   const normalized = normalizedChoice(value);
   if (!normalized) return null;
-  if (/(?:^|_)(?:complete|factory|team|master|card)?_?set(?:$|_)/.test(normalized) || /unopened_product/.test(normalized)) return "set";
+  if (/unopened_product/.test(normalized)) return "unopened_product";
+  if (/(?:^|_)(?:complete|factory|team|master|card)?_?set(?:$|_)/.test(normalized)) return "set";
   if (/(?:^|_)(?:single|individual)_?(?:card)?(?:$|_)/.test(normalized)) return "single_card";
   return null;
 }
 
 function sportsCardTitleProductForm(title: string): ProductForm {
-  if (/\b(?:complete|factory|team|master)\s+set\b|\bunopened\s+product\b/i.test(title)) return "set";
+  if (/\bunopened\s+product\b/i.test(title)) return "unopened_product";
+  if (/\b(?:complete|factory|team|master)\s+set\b/i.test(title)) return "set";
   if (/\b(?:single|individual)\s+(?:trading\s+)?card\b/i.test(title)) return "single_card";
   if (/(?:^|[^\w])#\s*\d+[A-Za-z]?(?:\s*\/\s*\d+)?\b[^\n]{0,80}\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|graded|gem\s+mint)\b/i.test(title)) return "single_card";
   return null;
@@ -1634,6 +1636,98 @@ function sportsCardSetConflict(targetMetadata: string, listing: VisualSourceCand
   return null;
 }
 
+type SportsCardUnopenedState = "yes" | "no" | null;
+type SportsCardUnopenedFormat = "pack" | "rack_pack" | "box" | "case" | null;
+
+function sportsCardUnopenedState(value: unknown): SportsCardUnopenedState {
+  const normalized = normalizedChoice(value);
+  if (["yes", "true", "1", "sealed", "factory_sealed", "authenticated", "fasc"].includes(normalized)) return "yes";
+  if (["no", "false", "0", "opened", "unsealed", "unauthenticated"].includes(normalized)) return "no";
+  return null;
+}
+
+function sportsCardUnopenedFormat(value: unknown, title = ""): SportsCardUnopenedFormat {
+  const normalized = normalizedChoice(value);
+  if (/rack_pack|rack/.test(normalized)) return "rack_pack";
+  if (/^pack$|cello|hanger/.test(normalized)) return "pack";
+  if (/^case$|sealed_case/.test(normalized)) return "case";
+  if (/^box$|hobby|jumbo|retail|blaster|mega/.test(normalized)) return "box";
+  if (/\brack\s*pack\b/i.test(title)) return "rack_pack";
+  if (/\b(?:sealed\s+)?case\b/i.test(title) && !/\bnot\s+from\s+(?:a\s+)?sealed\s+case\b/i.test(title)) return "case";
+  if (/\b(?:hobby|jumbo|retail|blaster|mega)\s+box\b|\bbox\b/i.test(title)) return "box";
+  if (/\b(?:cello|hanger|rack\s*pack|pack)\b/i.test(title)) return /rack\s*pack/i.test(title) ? "rack_pack" : "pack";
+  return null;
+}
+
+function sportsCardUnopenedCompany(value: unknown, title = ""): string | null {
+  const normalized = normalizedChoice(value);
+  if (normalized) return normalized.replace(/_+/g, " ").trim();
+  const match = title.match(/\b(BBCE|PSA|iCert|RVP)\b/i);
+  return match?.[1].toLowerCase() ?? (/(?:not\s+authenticated|unauthenticated|no\s+authentication)/i.test(title) ? "none" : null);
+}
+
+function sportsCardUnopenedProductType(value: unknown, title = ""): string | null {
+  const normalized = normalizedChoice(value);
+  if (normalized) return normalized;
+  const match = title.match(/\b(hobby|jumbo|retail|blaster|mega|hanger|cello|rack)\b/i);
+  return match?.[1].toLowerCase() ?? null;
+}
+
+function sportsCardUnopenedProductConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "sports_cards") return null;
+  if (targetProductForm(targetMetadata) !== "unopened_product") return null;
+
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidateDetails = candidateStructuredDetails(listing);
+  const title = String(listing.title ?? "");
+  const targetFormat = sportsCardUnopenedFormat(targetDetails.productFormat);
+  const candidateFormat = sportsCardUnopenedFormat(candidateDetails.productFormat ?? candidateDetails.format ?? listing.productFormat ?? listing.format, title);
+  if (targetFormat && candidateFormat && targetFormat !== candidateFormat) {
+    return `Sports Cards / Unopened Product filter: product format differs; target is ${targetFormat.replace(/_/g, " ")}, but the candidate is explicitly ${candidateFormat.replace(/_/g, " ")}.`;
+  }
+
+  const targetProductType = sportsCardUnopenedProductType(targetDetails.productType);
+  const candidateProductType = sportsCardUnopenedProductType(candidateDetails.productType ?? listing.productType, title);
+  if (targetProductType && candidateProductType && targetProductType !== candidateProductType) {
+    return `Sports Cards / Unopened Product filter: product type differs; target is ${targetProductType.replace(/_/g, " ")}, but the candidate is explicitly ${candidateProductType.replace(/_/g, " ")}.`;
+  }
+
+  const targetSealed = sportsCardUnopenedState(targetDetails.factorySealed);
+  const candidateSealed = sportsCardUnopenedState(candidateDetails.factorySealed ?? candidateDetails.sealedStatus ?? listing.factorySealed)
+    ?? (/\b(?:opened|open\s+box|unsealed|resealed|box\s+break|pack\s+break|loose\s+pack|empty\s+box|searched\s+pack)\b/i.test(title) ? "no" : /\b(?:factory\s+sealed|unopened|original\s+shrink|wax\s+sealed)\b/i.test(title) ? "yes" : null);
+  if (targetSealed && candidateSealed && targetSealed !== candidateSealed) {
+    return `Sports Cards / Unopened Product filter: sealed status differs; target is ${targetSealed === "yes" ? "factory sealed" : "not factory sealed"}, but the candidate explicitly declares ${candidateSealed === "yes" ? "sealed" : "opened or unsealed"}.`;
+  }
+
+  const targetAuthenticated = sportsCardUnopenedState(targetDetails.authenticated);
+  const candidateAuthenticated = sportsCardUnopenedState(candidateDetails.authenticated ?? listing.authenticated)
+    ?? (/(?:not\s+authenticated|unauthenticated|no\s+authentication)/i.test(title) ? "no" : sportsCardUnopenedCompany(undefined, title) ? "yes" : null);
+  const targetCompany = sportsCardUnopenedCompany(targetDetails.authenticationCompany);
+  const candidateCompany = sportsCardUnopenedCompany(candidateDetails.authenticationCompany ?? listing.authenticationCompany, title);
+  if (targetAuthenticated && candidateAuthenticated && targetAuthenticated !== candidateAuthenticated) {
+    return `Sports Cards / Unopened Product filter: authentication status differs; target is ${targetAuthenticated}, but the candidate explicitly declares ${candidateAuthenticated}.`;
+  }
+  if (targetAuthenticated === "yes" && targetCompany && candidateCompany && candidateCompany !== targetCompany) {
+    return `Sports Cards / Unopened Product filter: authentication company differs; target is ${targetCompany.toUpperCase()}, but the candidate is explicitly ${candidateCompany.toUpperCase()}.`;
+  }
+
+  const targetFasc = sportsCardUnopenedState(targetDetails.fromASealedCase);
+  const candidateFasc = sportsCardUnopenedState(candidateDetails.fromASealedCase ?? listing.fromASealedCase)
+    ?? (/\b(?:not\s+FASC|not\s+from\s+(?:a\s+)?sealed\s+case)\b/i.test(title) ? "no" : /\b(?:FASC|from\s+(?:a\s+)?sealed\s+case)\b/i.test(title) ? "yes" : null);
+  if (targetFasc && candidateFasc && targetFasc !== candidateFasc) {
+    return `Sports Cards / Unopened Product filter: FASC status differs; target is ${targetFasc === "yes" ? "from a sealed case" : "not from a sealed case"}, but the candidate explicitly declares the opposite.`;
+  }
+  if (targetAuthenticated === "yes" && targetCompany === "bbce" && targetFasc === "yes" && ((candidateCompany && candidateCompany !== "bbce") || candidateFasc === "no")) {
+    return "Sports Cards / Unopened Product filter: target is BBCE and FASC, but the candidate does not explicitly match both BBCE authentication and FASC status.";
+  }
+
+  const nonProductEvidence = /\b(?:single|individual|loose)\s+(?:sports\s+)?card\b|(?:^|[^\w])#\s*\d+[A-Za-z]?(?:\s*\/\s*\d+)?\b|\b(?:PSA|AFA|CGC|CBCS|BGS|SGC)\s*\d(?:\.\d+)?\b|\b(?:complete|partial|master|team)\s+set\b|\b(?:collection|lot)\b/i.test(title);
+  if (nonProductEvidence) {
+    return "Sports Cards / Unopened Product filter: candidate is an individual card, set, collection, or lot rather than unopened product. Retained as context-only before visual review.";
+  }
+  return null;
+}
+
 type MusicMediaCondition = "sealed" | "excellent" | "good" | "fair" | "for_parts" | null;
 
 function musicMediaCondition(value: unknown): MusicMediaCondition {
@@ -1743,13 +1837,14 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const productFormConflict = explicitProductFormConflict(targetMetadata, listing);
     const sportsCardConflict = sportsCardSingleCardConflict(targetMetadata, listing);
     const sportsCardSetConflictReason = sportsCardSetConflict(targetMetadata, listing);
+    const sportsCardUnopenedProductConflictReason = sportsCardUnopenedProductConflict(targetMetadata, listing);
     const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
