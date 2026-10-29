@@ -19,6 +19,7 @@ import { PERMISSION_PENDING_MARKET_SOURCES } from '@shared/permissionPendingMark
 import { SANDBOX_SPECIALIST_SOURCES, type SandboxSpecialistSource } from '@shared/sandboxSpecialistSources';
 import { isSandboxSiteBlockedSource } from '@shared/sandboxBlockedSources';
 import { HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD } from '@shared/testAiSoldCompSafety';
+import { COLLECTION_LOT_NOT_COMPARABLE_MESSAGE, isCollectionLotItemType } from '@shared/testAiItemType';
 
 // ─── Data Source Registry ────────────────────────────────────────────────────
 // Each source defines: what data it provides, what it needs (cert ID, title, etc.)
@@ -545,12 +546,14 @@ function SourceSelector({ enabled, onChange, side, item }: {
     item
       ? getEligibleTestAiSources({
           category: item.category,
+          itemType: item.itemType,
           gradingCompany: item.certificationCompany ?? item.gradingCompany,
           hasTitle: Boolean(item.title?.trim()),
         }).map(source => source.sourceId)
       : [],
   );
   const toggle = (id: SourceId) => {
+    if (isCollectionLotItemType(item?.itemType)) return;
     const next = new Set(enabled);
     if (next.has(id)) next.delete(id);
     else next.add(id);
@@ -560,6 +563,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
       <p className={`text-[11px] font-bold uppercase ${accentColor}`}>Data Sources</p>
+      {isCollectionLotItemType(item?.itemType) && <div role="alert" className="rounded border border-amber-700/40 bg-amber-950/30 p-3 text-[11px] text-amber-200">{COLLECTION_LOT_NOT_COMPARABLE_MESSAGE}</div>}
       {SOURCE_GROUPS.map(group => (
         <div key={group}>
           <p className="text-gray-500 text-[9px] uppercase font-semibold mb-1.5">{group}</p>
@@ -577,7 +581,7 @@ function SourceSelector({ enabled, onChange, side, item }: {
                   && item?.category.trim().toLowerCase().replace(/[_-]+/g, ' ') === 'video games'
                   && !priceChartingVideoGameUpc
                   && !priceChartingVideoGameSearchIdentity;
-                const isSelectable = !isPermissionPending && !isDeferred && !missingPriceChartingVideoGameIdentity;
+                const isSelectable = !isCollectionLotItemType(item?.itemType) && !isPermissionPending && !isDeferred && !missingPriceChartingVideoGameIdentity;
                 const pendingTestLabel = source.liveTestStatus === 'verified'
                   ? 'item test passed'
                   : source.liveTestStatus === 'partial'
@@ -3789,6 +3793,10 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
     rightSources.size > 0 ? `Item B: ${Array.from(rightSources).map(id => DATA_SOURCES[id].label).join(', ')}` : null,
   ].filter(Boolean).join(' · ');
 
+  if (isCollectionLotItemType(leftItem.itemType) || isCollectionLotItemType(rightItem.itemType)) {
+    return <div role="alert" className="rounded-xl border border-amber-700/40 bg-amber-950/30 p-4 text-sm text-amber-200">{COLLECTION_LOT_NOT_COMPARABLE_MESSAGE}</div>;
+  }
+
   return (
     <div className="bg-indigo-900/20 rounded-xl border border-indigo-700/30 p-4 space-y-4">
       <div className="flex items-center justify-between">
@@ -4417,6 +4425,10 @@ export default function TestAI() {
   const [rightGoldinSales, setRightGoldinSales] = useState<any[]>([]);
   const [rightEvidenceSummary, setRightEvidenceSummary] = useState<NormalizedEvidenceSummary | null>(null);
   const [rightEbayVisualReview, setRightEbayVisualReview] = useState<any | null>(null);
+  const leftIsCollectionLot = isCollectionLotItemType(leftItem?.itemType);
+  const rightIsCollectionLot = isCollectionLotItemType(rightItem?.itemType);
+  const leftSourcesEnabled = leftIsCollectionLot ? new Set<SourceId>() : leftSources;
+  const rightSourcesEnabled = rightIsCollectionLot ? new Set<SourceId>() : rightSources;
   const leftSourceKey = useMemo(() => Array.from(leftSources).sort().join('|'), [leftSources]);
   const rightSourceKey = useMemo(() => Array.from(rightSources).sort().join('|'), [rightSources]);
 
@@ -4429,6 +4441,10 @@ export default function TestAI() {
     setRightEvidenceSummary(null);
     setRightEbayVisualReview(null);
   }, [rightItem?.id, rightItem?.title, rightItem?.category, rightSourceKey]);
+  useEffect(() => {
+    if (leftIsCollectionLot && leftSources.size > 0) setLeftSources(new Set());
+    if (rightIsCollectionLot && rightSources.size > 0) setRightSources(new Set());
+  }, [leftIsCollectionLot, rightIsCollectionLot, leftSources, rightSources]);
 
   const { data: inventory = [], isLoading: inventoryLoading } = trpc.testAI.getMyInventory.useQuery(undefined, {
     enabled: !!user && user.role === 'admin',
@@ -4440,29 +4456,29 @@ export default function TestAI() {
   // ── Silently fetch PSA cert data for cert-mode items so we can build search queries ──
   const leftPSAQuery = trpc.testAI.getPSAData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'PSA' }
+    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'PSA' }
   );
   const rightPSAQuery = trpc.testAI.getPSAData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'PSA' }
+    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'PSA' }
   );
 
   // ── Silently fetch Beckett cert data for BGS cert-mode items ──
   const leftBeckettQuery = trpc.testAI.getBeckettData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'BGS' }
+    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'BGS' }
   );
   const rightBeckettQuery = trpc.testAI.getBeckettData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'BGS' }
+    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'BGS' }
   );
   const leftCgcQuery = trpc.testAI.getCgcComicsData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'CGC' && leftItem?.category === 'comics' }
+    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'CGC' && leftItem?.category === 'comics' }
   );
   const rightCgcQuery = trpc.testAI.getCgcComicsData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'CGC' && rightItem?.category === 'comics' }
+    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'CGC' && rightItem?.category === 'comics' }
   );
   // PCGS certificate lookup supplies the verified coin identity needed for
   // downstream source queries and comparable scoring. It is intentionally
@@ -4470,11 +4486,11 @@ export default function TestAI() {
   // the user expands any particular panel.
   const leftPcgsCoinFactsQuery = trpc.testAI.getPcgsData.useQuery(
     { certNumber: leftItem?.certId || '' },
-    { enabled: !!leftItem?.certId && leftItem?.gradingCompany === 'PCGS' && leftItem?.category === 'coins' },
+    { enabled: !leftIsCollectionLot && !!leftItem?.certId && leftItem?.gradingCompany === 'PCGS' && leftItem?.category === 'coins' },
   );
   const rightPcgsCoinFactsQuery = trpc.testAI.getPcgsData.useQuery(
     { certNumber: rightItem?.certId || '' },
-    { enabled: !!rightItem?.certId && rightItem?.gradingCompany === 'PCGS' && rightItem?.category === 'coins' },
+    { enabled: !rightIsCollectionLot && !!rightItem?.certId && rightItem?.gradingCompany === 'PCGS' && rightItem?.category === 'coins' },
   );
 
   // Build an effective item for Sold-Comps/eBay queries:
@@ -4581,145 +4597,145 @@ export default function TestAI() {
 
   const leftEbayQuery = trpc.testAI.getEbayData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl, includeVisualReview: true, statedTradeValue: Number(leftSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
-    { enabled: !!leftSearchItem && leftSources.has('ebay_active') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('ebay_active') }
   );
   const rightEbayQuery = trpc.testAI.getEbayData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl, includeVisualReview: true, statedTradeValue: Number(rightSearchItem.estimatedValue) || undefined } : { title: '', category: '' },
-    { enabled: !!rightSearchItem && rightSources.has('ebay_active') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('ebay_active') }
   );
 
   const leftHipstampQuery = trpc.testAI.getHipstampData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
-    { enabled: !!leftSearchItem && leftSources.has('hipstamp') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('hipstamp') }
   );
   const rightHipstampQuery = trpc.testAI.getHipstampData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
-    { enabled: !!rightSearchItem && rightSources.has('hipstamp') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('hipstamp') }
   );
   const leftHipstampSoldQuery = trpc.testAI.getHipstampSoldData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('hipstamp_sold') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('hipstamp_sold') }
   );
   const rightHipstampSoldQuery = trpc.testAI.getHipstampSoldData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('hipstamp_sold') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('hipstamp_sold') }
   );
 
   const leftPokemonPriceTrackerQuery = trpc.testAI.getPokemonPriceTrackerData.useQuery(
-    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade ?? undefined, condition: leftItem.condition ?? undefined, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails ?? undefined } : { title: '', category: 'unknown' },
-    { enabled: !!leftItem && leftSources.has('pokemon_price_tracker') }
+    leftItem ? { title: leftItem.title, category: leftItem.category, grade: leftItem.grade ?? undefined, condition: leftItem.condition ?? undefined, certificationCompany: leftItem.certificationCompany ?? undefined, itemDetails: leftItem.itemDetails ?? undefined, itemType: leftItem.itemType ?? undefined } : { title: '', category: 'unknown' },
+    { enabled: !leftIsCollectionLot && !!leftItem && leftSourcesEnabled.has('pokemon_price_tracker') }
   );
   const rightPokemonPriceTrackerQuery = trpc.testAI.getPokemonPriceTrackerData.useQuery(
-    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade ?? undefined, condition: rightItem.condition ?? undefined, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails ?? undefined } : { title: '', category: 'unknown' },
-    { enabled: !!rightItem && rightSources.has('pokemon_price_tracker') }
+    rightItem ? { title: rightItem.title, category: rightItem.category, grade: rightItem.grade ?? undefined, condition: rightItem.condition ?? undefined, certificationCompany: rightItem.certificationCompany ?? undefined, itemDetails: rightItem.itemDetails ?? undefined, itemType: rightItem.itemType ?? undefined } : { title: '', category: 'unknown' },
+    { enabled: !rightIsCollectionLot && !!rightItem && rightSourcesEnabled.has('pokemon_price_tracker') }
   );
   const leftTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('the_card_api') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('the_card_api') }
   );
   const rightTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('the_card_api') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('the_card_api') }
   );
   const leftCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, itemType: leftSearchItem.itemType ?? undefined, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('cardsight_ai') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('cardsight_ai') }
   );
   const rightCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, itemType: rightSearchItem.itemType ?? undefined, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('cardsight_ai') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('cardsight_ai') }
   );
   const leftComcQuery = trpc.testAI.getComcData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('comc_parse') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('comc_parse') }
   );
   const rightComcQuery = trpc.testAI.getComcData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('comc_parse') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('comc_parse') }
   );
   const leftLelandsQuery = trpc.testAI.getLelandsAuctionData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('lelands') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('lelands') }
   );
   const rightLelandsQuery = trpc.testAI.getLelandsAuctionData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('lelands') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('lelands') }
   );
   const leftPristineAuctionQuery = trpc.testAI.getPristineAuctionData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('pristine_auction') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('pristine_auction') }
   );
   const rightPristineAuctionQuery = trpc.testAI.getPristineAuctionData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('pristine_auction') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('pristine_auction') }
   );
   const leftCollectAuctionQuery = trpc.testAI.getCollectAuctionData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('collect_auction') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('collect_auction') }
   );
   const rightCollectAuctionQuery = trpc.testAI.getCollectAuctionData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('collect_auction') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('collect_auction') }
   );
   const leftSiriusSportsAuctionQuery = trpc.testAI.getSiriusSportsAuctionData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('sirius_sports_auctions') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('sirius_sports_auctions') }
   );
   const rightSiriusSportsAuctionQuery = trpc.testAI.getSiriusSportsAuctionData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('sirius_sports_auctions') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('sirius_sports_auctions') }
   );
   const leftComicConnectQuery = trpc.testAI.getComicConnectData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType } : { title: '', category: 'unknown' },
-    { enabled: !!leftSearchItem && leftSources.has('comicconnect') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('comicconnect') }
   );
   const rightComicConnectQuery = trpc.testAI.getComicConnectData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType } : { title: '', category: 'unknown' },
-    { enabled: !!rightSearchItem && rightSources.has('comicconnect') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('comicconnect') }
   );
   const leftPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: leftItem?.certId || '', historyQueryVersion: 5 },
-    { enabled: !!leftItem && leftSources.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
+    { enabled: !leftIsCollectionLot && !!leftItem && leftSourcesEnabled.has('pcgs') && leftItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(leftItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
   const rightPcgsAuctionQuery = trpc.testAI.getPcgsAuctionData.useQuery(
     { certNumber: rightItem?.certId || '', historyQueryVersion: 5 },
-    { enabled: !!rightItem && rightSources.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
+    { enabled: !rightIsCollectionLot && !!rightItem && rightSourcesEnabled.has('pcgs') && rightItem.gradingCompany === 'PCGS' && /^\d{7,8}$/.test(rightItem.certId || ''), retry: false, staleTime: 10 * 60 * 1000 },
   );
 
   const leftSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
-    { enabled: !!leftSearchItem && leftSources.has('sold_comps') }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('sold_comps') }
   );
   const rightSoldCompsQuery = trpc.testAI.getSoldCompsData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
-    { enabled: !!rightSearchItem && rightSources.has('sold_comps') }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('sold_comps') }
   );
   // Bump only when the server-side Mercari visual-admission contract changes.
   // This makes an already-open Test AI page request the new result.
   const mercariVisualReviewVersion = 'music-condition-gate-v2';
   const leftMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
-    { enabled: !!leftSearchItem && leftSources.has('mercari_sold_comps'), retry: false }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('mercari_sold_comps'), retry: false }
   );
   const rightMercariSoldCompsQuery = trpc.testAI.getMercariSoldCompsData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl, visualReviewVersion: mercariVisualReviewVersion } : { title: '', category: '', visualReviewVersion: mercariVisualReviewVersion },
-    { enabled: !!rightSearchItem && rightSources.has('mercari_sold_comps'), retry: false }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('mercari_sold_comps'), retry: false }
   );
   const leftTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(
     leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails, statedTradeValue: leftItem?.estimatedValue ?? undefined, imageUrl: leftItem?.primaryPhotoUrl ?? leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
-    { enabled: !!leftSearchItem && leftSources.has('tcgplayer_sold_comps') && normalizeCoverageCategory(leftSearchItem.category) === 'pokemon', retry: false }
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('tcgplayer_sold_comps') && normalizeCoverageCategory(leftSearchItem.category) === 'pokemon', retry: false }
   );
   const rightTcgplayerSoldCompsQuery = trpc.testAI.getTcgplayerSoldCompsData.useQuery(
     rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails, statedTradeValue: rightItem?.estimatedValue ?? undefined, imageUrl: rightItem?.primaryPhotoUrl ?? rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
-    { enabled: !!rightSearchItem && rightSources.has('tcgplayer_sold_comps') && normalizeCoverageCategory(rightSearchItem.category) === 'pokemon', retry: false }
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('tcgplayer_sold_comps') && normalizeCoverageCategory(rightSearchItem.category) === 'pokemon', retry: false }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
     { query: leftSearchItem?.title, title: leftSearchItem?.title, category: leftSearchItem?.category || '', grade: leftSearchItem?.grade, condition: leftSearchItem?.condition, certificationCompany: leftSearchItem?.certificationCompany ?? '', itemType: leftSearchItem?.itemType, itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl },
-    { enabled: !!leftSearchItem && leftSources.has('one_thirty_point') },
+    { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('one_thirty_point') },
   );
   const right130PointQuery = trpc.testAI.get130PointData.useQuery(
     { query: rightSearchItem?.title, title: rightSearchItem?.title, category: rightSearchItem?.category || '', grade: rightSearchItem?.grade, condition: rightSearchItem?.condition, certificationCompany: rightSearchItem?.certificationCompany ?? '', itemType: rightSearchItem?.itemType, itemDetails: rightSearchItem?.itemDetails, imageUrl: rightSearchItem?.primaryPhotoUrl },
-    { enabled: !!rightSearchItem && rightSources.has('one_thirty_point') },
+    { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('one_thirty_point') },
   );
 
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><Spinner /></div>;
@@ -4752,16 +4768,16 @@ export default function TestAI() {
         {/* Data source selectors — only show when items are selected */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            {leftItem && <SourceSelector enabled={leftSources} onChange={setLeftSources} side="left" item={leftItem} />}
-            {rightItem && <SourceSelector enabled={rightSources} onChange={setRightSources} side="right" item={rightItem} />}
+            {leftItem && <SourceSelector enabled={leftSourcesEnabled} onChange={setLeftSources} side="left" item={leftItem} />}
+            {rightItem && <SourceSelector enabled={rightSourcesEnabled} onChange={setRightSources} side="right" item={rightItem} />}
           </div>
         )}
 
         {/* Data sections */}
         {(leftItem || rightItem) && (
           <div className={`grid gap-4 ${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}`}>
-            <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSources} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isLoading} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />
-            {rightItem && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSources} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isLoading} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
+            {leftItem && !leftIsCollectionLot && <DataColumn item={leftItem} searchItem={leftSearchItem} side="left" enabledSources={leftSourcesEnabled} ebayData={leftEbayQuery.data} ebayEvidenceData={leftEbayVisualReview ? { ...leftEbayQuery.data, ...leftEbayVisualReview } : leftEbayQuery.data} onEbayVisualReview={setLeftEbayVisualReview} ebayLoading={leftEbayQuery.isLoading} soldCompsData={leftSoldCompsQuery.data} soldCompsLoading={leftSoldCompsQuery.isLoading} mercariSoldCompsData={leftMercariSoldCompsQuery.data} mercariSoldCompsLoading={leftMercariSoldCompsQuery.isLoading} tcgplayerSoldCompsData={leftTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={leftTcgplayerSoldCompsQuery.isLoading} hipstampData={leftHipstampQuery.data} hipstampSoldData={leftHipstampSoldQuery.data} pokemonPriceTrackerData={leftPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={leftPokemonPriceTrackerQuery.isLoading} theCardApiData={leftTheCardApiQuery.data} theCardApiLoading={leftTheCardApiQuery.isLoading} cardsightAiData={leftCardsightAiQuery.data} cardsightAiLoading={leftCardsightAiQuery.isLoading} comcData={leftComcQuery.data} comcLoading={leftComcQuery.isLoading} lelandsData={leftLelandsQuery.data} lelandsLoading={leftLelandsQuery.isLoading} pristineAuctionData={leftPristineAuctionQuery.data} pristineAuctionLoading={leftPristineAuctionQuery.isLoading} collectAuctionData={leftCollectAuctionQuery.data} collectAuctionLoading={leftCollectAuctionQuery.isLoading} siriusSportsAuctionData={leftSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={leftSiriusSportsAuctionQuery.isLoading} comicConnectData={leftComicConnectQuery.data} comicConnectLoading={leftComicConnectQuery.isLoading} pcgsAuctionData={leftPcgsAuctionQuery.data} pcgsAuctionLoading={leftPcgsAuctionQuery.isLoading} oneThirtyPointData={left130PointQuery.data} onEvidenceSummary={setLeftEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setLeftGoldinSales(sales); }} />}
+            {rightItem && !rightIsCollectionLot && <DataColumn item={rightItem} searchItem={rightSearchItem} side="right" enabledSources={rightSourcesEnabled} ebayData={rightEbayQuery.data} ebayEvidenceData={rightEbayVisualReview ? { ...rightEbayQuery.data, ...rightEbayVisualReview } : rightEbayQuery.data} onEbayVisualReview={setRightEbayVisualReview} ebayLoading={rightEbayQuery.isLoading} soldCompsData={rightSoldCompsQuery.data} soldCompsLoading={rightSoldCompsQuery.isLoading} mercariSoldCompsData={rightMercariSoldCompsQuery.data} mercariSoldCompsLoading={rightMercariSoldCompsQuery.isLoading} tcgplayerSoldCompsData={rightTcgplayerSoldCompsQuery.data} tcgplayerSoldCompsLoading={rightTcgplayerSoldCompsQuery.isLoading} hipstampData={rightHipstampQuery.data} hipstampSoldData={rightHipstampSoldQuery.data} pokemonPriceTrackerData={rightPokemonPriceTrackerQuery.data} pokemonPriceTrackerLoading={rightPokemonPriceTrackerQuery.isLoading} theCardApiData={rightTheCardApiQuery.data} theCardApiLoading={rightTheCardApiQuery.isLoading} cardsightAiData={rightCardsightAiQuery.data} cardsightAiLoading={rightCardsightAiQuery.isLoading} comcData={rightComcQuery.data} comcLoading={rightComcQuery.isLoading} lelandsData={rightLelandsQuery.data} lelandsLoading={rightLelandsQuery.isLoading} pristineAuctionData={rightPristineAuctionQuery.data} pristineAuctionLoading={rightPristineAuctionQuery.isLoading} collectAuctionData={rightCollectAuctionQuery.data} collectAuctionLoading={rightCollectAuctionQuery.isLoading} siriusSportsAuctionData={rightSiriusSportsAuctionQuery.data} siriusSportsAuctionLoading={rightSiriusSportsAuctionQuery.isLoading} comicConnectData={rightComicConnectQuery.data} comicConnectLoading={rightComicConnectQuery.isLoading} pcgsAuctionData={rightPcgsAuctionQuery.data} pcgsAuctionLoading={rightPcgsAuctionQuery.isLoading} oneThirtyPointData={right130PointQuery.data} onEvidenceSummary={setRightEvidenceSummary} onSpecialistSales={(sourceId, sales) => { if (sourceId === 'goldin') setRightGoldinSales(sales); }} />}
           </div>
         )}
 
@@ -4777,8 +4793,8 @@ export default function TestAI() {
             rightAnalysisItem={rightSearchItem}
             leftEbayData={leftEbayQuery.data}
             rightEbayData={rightEbayQuery.data}
-             leftSources={leftSources}
-             rightSources={rightSources}
+             leftSources={leftSourcesEnabled}
+             rightSources={rightSourcesEnabled}
              leftSoldCompsData={leftSoldCompsQuery.data}
              rightSoldCompsData={rightSoldCompsQuery.data}
              leftMercariSoldCompsData={leftMercariSoldCompsQuery.data}

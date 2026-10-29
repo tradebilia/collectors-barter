@@ -1,8 +1,9 @@
 import { isSandboxSiteBlockedSource } from './sandboxBlockedSources';
+import { isCollectionLotItemType } from './testAiItemType';
 
 export type TestAiSourceId = 'ebay_active' | 'sold_comps' | 'mercari_sold_comps' | 'tcgplayer_sold_comps' | 'hipstamp' | 'hipstamp_sold' | 'pokemon_price_tracker' | 'the_card_api' | 'cardsight_ai' | 'lelands' | 'pristine_auction' | 'collect_auction' | 'sirius_sports_auctions' | 'comc_parse' | 'cgc' | 'psa' | 'bgs' | 'sgc' | 'pcgs' | 'numista' | 'pricecharting' | 'one_thirty_point' | 'pwcc' | 'wikidata' | 'smithsonian' | 'tcgdex' | 'igdb' | 'rawg' | 'discogs' | 'ngc' | 'rumsey' | 'cherrystone' | 'raritan' | 'omega_auctions' | 'bertoia' | 'morphy' | 'theriaults' | 'propstore' | 'poster_auctions' | 'bonhams' | 'comicconnect' | 'comic_book_realm' | 'university_archives' | 'swann' | 'rr_auction' | 'alexander_historical' | 'goldin' | 'weiss' | 'hakes' | 'lcg' | 'nate_sanders' | 'tcgplayer_reef';
 
-export type SourceEligibilityContext = { category: string; gradingCompany?: string | null; hasTitle?: boolean };
+export type SourceEligibilityContext = { category: string; itemType?: string | null; gradingCompany?: string | null; hasTitle?: boolean };
 
 export type SourceApplicability = {
   sourceId: TestAiSourceId;
@@ -70,6 +71,7 @@ function certificateRequirementMet(requirement: SourceApplicability['requires'],
 }
 
 export function getEligibleTestAiSources(context: SourceEligibilityContext): SourceApplicability[] {
+  if (isCollectionLotItemType(context.itemType)) return [];
   const category = normalizeCategory(context.category);
   return TEST_AI_SOURCE_APPLICABILITY.filter((source) => {
     if (isSandboxSiteBlockedSource(source.sourceId)) return false;

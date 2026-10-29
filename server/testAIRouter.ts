@@ -49,6 +49,7 @@ import { consumePayPalComparisonInspection } from './paypalInspection';
 import { buildPayPalAuthorizationUrl, createPayPalOauthState, getPayPalIdentityRedirectUri } from './paypalIdentity';
 import { setProviderOauthStateCookie } from './_core/providerOauthState';
 import { lookupMercariSoldComps, lookupTcgplayerSoldComps } from './soldCompsAdditionalMarketData';
+import { collectionLotGuard, collectionLotNotComparable, isCollectionLotItemType } from '../shared/testAiItemType';
 
 // ─── Shared eBay helpers (mirrors tradeFlowRouter logic) ────────────────────
 const EBAY_OAUTH_TIMEOUT_MS = 8_000;
@@ -1401,6 +1402,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const tokenResult = await getEbayAppToken();
       if (!tokenResult.token) {
         return { query: input.title, listings: [], metrics: null, visualFilter: null, error: tokenResult.error };
@@ -1827,6 +1830,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       if (input.category.trim().toLowerCase().replace(/[_-]+/g, ' ') !== 'stamps') {
         return { query: input.title, listings: [], metrics: null, debug: { totalFetched: 0, afterIdentityFilter: 0, nonUsdListings: 0 }, visualFilter: null, error: 'HIPStamp is available only for Stamps items' };
       }
@@ -1858,6 +1863,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       if (input.category.trim().toLowerCase().replace(/[_-]+/g, ' ') !== 'stamps') {
         return { query: input.title, listings: [], metrics: null, debug: { storesDiscovered: 0, storesQueried: 0, totalFetched: 0, afterIdentityFilter: 0, nonUsdListings: 0 }, visualFilter: null, error: 'HIPStamp sold listings are available only for Stamps items' };
       }
@@ -1883,9 +1890,12 @@ export const testAIRouter = router({
       condition: z.string().nullish(),
       certificationCompany: z.string().nullish(),
       itemDetails: z.string().nullish(),
+      itemType: z.string().nullish(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       return lookupPokemonPriceTracker(input);
     }),
 
@@ -1905,6 +1915,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupTheCardApi(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -1942,6 +1954,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupCardsightAi(input);
       if (!result.sales.length) return { ...result, visualFilter: null };
       const visualFilter = await filterVisualSourceCandidates({
@@ -1971,6 +1985,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupLelandsAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -2000,6 +2016,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupPristineAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -2029,6 +2047,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupCollectAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -2055,6 +2075,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupSiriusSportsAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -2075,6 +2097,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       return lookupComcListings(input);
     }),
 
@@ -2086,6 +2110,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupComicConnectSold(input);
       const sealedSales = attachCanonicalProvenance('comicconnect', result.sales as MarketSale[], { query: result.query });
       const sealedContext = attachCanonicalProvenance('comicconnect', result.context as MarketSale[], { query: result.query });
@@ -2104,6 +2130,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupSpecialistMarketplace(input);
       if (input.sourceId !== 'goldin' || result.status !== 'success') return result;
 
@@ -2152,6 +2180,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const apiKey = getSoldCompsApiKey();
       if (!apiKey) return { query: input.title, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
 
@@ -2546,6 +2576,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupMercariSoldComps(input);
       const normalizedCategory = input.category.trim().toLowerCase().replace(/[\s-]+/g, '_');
       if (result.error || !result.listings.length) return result;
@@ -2829,6 +2861,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       return lookupTcgplayerSoldComps(input);
     }),
 
@@ -3173,6 +3207,8 @@ export const testAIRouter = router({
     .input(z.object({ query: z.string().trim().max(240).optional(), title: z.string().trim().max(240).optional(), category: z.string().trim(), grade: z.string().trim().max(32).optional(), condition: z.string().trim().max(80).optional(), certificationCompany: z.string().trim().max(80).optional(), itemType: z.string().trim().max(80).optional(), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupParse130PointSales(input);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -3210,6 +3246,8 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      const collectionLotBlock = collectionLotGuard(input);
+      if (collectionLotBlock) return collectionLotBlock;
       const result = await lookupPwccSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({
@@ -3397,6 +3435,7 @@ export const testAIRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      if (isCollectionLotItemType(input.leftItem.itemType) || isCollectionLotItemType(input.rightItem?.itemType)) return collectionLotNotComparable();
       const news = await fetchMarketNewsForItems([input.leftItem, ...(input.rightItem ? [input.rightItem] : [])]);
       return { ...news, registry: getMarketNewsFeedRegistry() };
     }),
@@ -3511,6 +3550,7 @@ export const testAIRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+      if (isCollectionLotItemType(input.leftItem.itemType) || isCollectionLotItemType(input.rightItem?.itemType)) return collectionLotNotComparable();
 
       const { leftItem, rightItem, leftEbayMetrics, rightEbayMetrics, leftHipstampMetrics, rightHipstampMetrics, leftSoldCompsMetrics, rightSoldCompsMetrics, leftHistoricalTrendSales, rightHistoricalTrendSales, leftEvidenceSummary, rightEvidenceSummary, leftIdentityGate, rightIdentityGate, cashAdjustment, marketNews, useImageAnalyzer, useVisualFieldCompletion } = input;
 
