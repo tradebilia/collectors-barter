@@ -161,6 +161,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<MetadataMatchLine listing={record} />');
   });
 
+  it('stabilizes specialist observations before passing them into the summary effect', () => {
+    expect(source).toContain('const specialistObservationList = useMemo(() => Object.values(specialistObservations), [specialistObservations]);');
+    expect(source).toContain('specialistObservations={specialistObservationList}');
+    expect(source).not.toContain('specialistObservations={Object.values(specialistObservations)}');
+  });
+
   it('uses brand, line, and toy name for Goldin Vintage Toys criteria', () => {
     expect(source).toContain('function buildGoldinVintageToyDisplayQuery');
     expect(source).toContain("firstText('brand', 'brandName', 'manufacturer')");

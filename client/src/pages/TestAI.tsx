@@ -4324,6 +4324,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvid
   const onSpecialistObservation = useCallback((observation: EvidenceSourceObservation) => {
     setSpecialistObservations((current) => ({ ...current, [observation.id]: observation }));
   }, []);
+  const specialistObservationList = useMemo(() => Object.values(specialistObservations), [specialistObservations]);
   if (!item) return (
     <div className="rounded-xl border border-gray-700/30 bg-gray-800/20 p-8 text-center text-gray-500 text-sm">
       Select {side === 'left' ? 'Item A' : 'Item B'} to see data
@@ -4347,7 +4348,7 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvid
 
   return (
     <div className="space-y-3">
-      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={Object.values(specialistObservations)} onSummaryChange={onEvidenceSummary} />
+      <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'
           ? <EbayActiveSection item={queryItem} side={side} data={ebayData} isLoading={ebayLoading} onVisualReviewData={onEbayVisualReview} />

@@ -1978,6 +1978,16 @@ function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>
   return { selected, excluded, cap, ranked };
 }
 
+function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
+  return listings
+    .map((item, index) => {
+      const scoring = sportsCardSingleVisualScore(item, targetMetadata);
+      return { item: { ...item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T, index };
+    })
+    .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.index - b.index)
+    .map((entry, rank) => ({ ...entry.item, metadataMatchRank: rank + 1 } as T));
+}
+
 export async function filterVisualSourceCandidates<
   T extends VisualSourceCandidate,
 >(args: {
@@ -2052,9 +2062,12 @@ export async function filterVisualSourceCandidates<
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
         entry.imageUrls.length > 0
     );
-  if (!candidates.length)
+  if (!candidates.length) {
+    const scoredWithoutImages = sportsCardSingleTarget(targetMetadata)
+      ? annotateSportsCardScoresWithoutImages(eligibleListings, targetMetadata)
+      : eligibleListings;
     return {
-      listings: eligibleListings,
+      listings: scoredWithoutImages,
       contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
       preVisualExcludedCount: preVisualContextListings.length,
       status: "skipped_no_candidate_images",
@@ -2066,6 +2079,7 @@ export async function filterVisualSourceCandidates<
         ? `No ${args.sourceLabel.toLowerCase()} candidates remained after deterministic identity and multi-item filtering; ${preVisualContextListings.length} listing${preVisualContextListings.length === 1 ? " was" : "s were"} retained as context-only before vision.`
         : `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
+  }
   let reviewCandidates = candidates;
   let sportsCardRankedItems = new Map<number, T>();
   try {
