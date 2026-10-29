@@ -1089,6 +1089,32 @@ function mergeVisualReviewBatches(completed: any[]): any | undefined {
   };
 }
 
+function ebayListingKey(listing: any): string {
+  return String(listing?.id ?? listing?.itemId ?? listing?.itemUrl ?? listing?.title ?? '');
+}
+
+function mergeEbayVisualReviewDisplayData(base: any, review: any): any {
+  if (!review || review.error) return base;
+  const baseListings = Array.isArray(base?.listings) ? base.listings : [];
+  const reviewedListings = Array.isArray(review.listings) ? review.listings : [];
+  const reviewedByKey = new Map(reviewedListings.map((listing: any) => [ebayListingKey(listing), listing]));
+  const mergedListings = baseListings.map((listing: any) => {
+    const reviewed = reviewedByKey.get(ebayListingKey(listing));
+    return reviewed ? { ...listing, ...reviewed } : listing;
+  });
+  const baseKeys = new Set(baseListings.map(ebayListingKey));
+  const reviewOnlyListings = reviewedListings.filter((listing: any) => !baseKeys.has(ebayListingKey(listing)));
+  return {
+    ...base,
+    ...review,
+    query: review.query ?? base?.query,
+    debug: review.debug ?? base?.debug,
+    listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings,
+    visualReviewListings: reviewedListings.length > 0 ? reviewedListings : base?.visualReviewListings ?? [],
+    preVisionFilter: review.preVisionFilter ?? base?.preVisionFilter,
+  };
+}
+
 function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: { item: SelectedItem; side: 'left' | 'right'; data: any; isLoading: boolean; onVisualReviewData?: (data: any | null) => void }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   // A target image makes visual confirmation mandatory before an eBay Active
@@ -1193,7 +1219,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   }, [onVisualReviewData, visualReviewData]);
   // A failed optional review must never replace already-loaded asking-price
   // context with an empty/error response.
-  const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data;
+  const displayData = mergeEbayVisualReviewDisplayData(data, visualReviewData);
   // Visual-review responses carry review evidence, not a replacement
   // retrieval contract. Preserve the server-confirmed eBay query from the
   // original lookup instead of falling back to a separately rebuilt preview.

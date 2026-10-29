@@ -130,7 +130,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("listing.imageUrls.filter((url: unknown) => typeof url === 'string').slice(0, 3)");
     expect(pageSource).toContain("useState(Boolean(item.primaryPhotoUrl))");
     expect(pageSource).toContain("AI image checks are required before visually supported eBay Active listings can enter current-value evidence");
-    expect(pageSource).toContain("const displayData = visualReviewData && !visualReviewData.error ? visualReviewData : data");
+    expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, visualReviewData)");
     expect(pageSource).toContain("AI image checks could not start");
     expect(pageSource).toContain("AI image checks stopped after returning partial results");
     expect(pageSource).toContain("active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison");
@@ -169,6 +169,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("const visibleSearchQuery = displayData?.query || data?.query || requestQueryPreview || item.title || 'No title supplied'");
     expect(pageSource).toContain("const queryStatus = displayData?.query || data?.query ? 'server-confirmed' : isLoading ? 'pending response' : 'preview'");
     expect(pageSource).toContain("Preserve the server-confirmed eBay query from the");
+  });
+
+  it("preserves populated eBay listings when visual-review returns an empty or partial payload", () => {
+    expect(pageSource).toContain("function mergeEbayVisualReviewDisplayData(base: any, review: any): any");
+    expect(pageSource).toContain("listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings");
+    expect(pageSource).toContain("const displayData = mergeEbayVisualReviewDisplayData(data, visualReviewData)");
   });
 
   it("keeps the query visible across searchable marketplace panels", () => {
