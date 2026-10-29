@@ -1690,17 +1690,21 @@ export const testAIRouter = router({
           visualReviewTargetMetadata: targetMetadata,
           // Keep the separately transported review payload within the same
           // bounded contract enforced by reviewEbayVisualData.
-          visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map((s: any) => ({
+          visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map((s: any) => {
+            const normalizedImageUrls = Array.isArray(s.imageUrls) && s.imageUrls.length > 0
+              ? s.imageUrls
+              : collectEbayImageUrls(s);
+            return {
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
             condition: s.condition,
             seller: s.seller?.username,
             itemUrl: s.itemWebUrl,
-            imageUrl: s.image?.imageUrl,
+            imageUrl: normalizedImageUrls[0] ?? s.image?.imageUrl ?? null,
             // Keep the review transport bounded; the normal listing response
             // below still retains the full gallery for UI inspection.
-            imageUrls: collectEbayImageUrls(s).slice(0, 3),
+            imageUrls: normalizedImageUrls.slice(0, 3),
             listingType: s.buyingOptions?.[0],
             bidCount: s.bidCount ?? null,
             uniqueBidderCount: s.uniqueBidderCount ?? null,
@@ -1712,16 +1716,21 @@ export const testAIRouter = router({
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
-          })),
-          listings: displaySummaries.slice(0, 20).map((s: any) => ({
+          };
+          }),
+          listings: displaySummaries.slice(0, 20).map((s: any) => {
+            const normalizedImageUrls = Array.isArray(s.imageUrls) && s.imageUrls.length > 0
+              ? s.imageUrls
+              : collectEbayImageUrls(s);
+            return {
             title: s.title,
             price: parseFloat(s.price?.value || '0'),
             currency: s.price?.currency || 'USD',
             condition: s.condition,
             seller: s.seller?.username,
             itemUrl: s.itemWebUrl,
-            imageUrl: s.image?.imageUrl,
-            imageUrls: collectEbayImageUrls(s),
+            imageUrl: normalizedImageUrls[0] ?? s.image?.imageUrl ?? null,
+            imageUrls: normalizedImageUrls,
             listingType: s.buyingOptions?.[0],
             bidCount: s.bidCount ?? null,
             uniqueBidderCount: s.uniqueBidderCount ?? null,
@@ -1730,7 +1739,8 @@ export const testAIRouter = router({
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
-          })),
+          };
+          }),
           metrics,
           visualMatchMetrics,
           visualFilter: combinedVisualFilter,

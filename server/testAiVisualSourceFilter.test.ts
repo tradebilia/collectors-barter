@@ -1275,7 +1275,8 @@ describe("visual source filter", () => {
     expect(routerSource).toContain("visualReviewStatus: s.visualReviewStatus ?? null");
     expect(routerSource).toContain("visualReviewRationale: s.visualReviewRationale ?? null");
     expect(routerSource).toContain("collectEbayImageUrls");
-    expect(routerSource).toContain("imageUrls: collectEbayImageUrls(s)");
+    expect(routerSource).toContain("const normalizedImageUrls = Array.isArray(s.imageUrls) && s.imageUrls.length > 0");
+    expect(routerSource).toContain("imageUrls: normalizedImageUrls");
     expect(routerSource).toContain("item?.imageUrl");
     expect(routerSource).toContain("item?.thumbnailUrl");
     expect(routerSource).toContain("imageUrls = collectEbayImageUrls(item)");

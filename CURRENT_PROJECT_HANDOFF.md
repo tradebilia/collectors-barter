@@ -77,6 +77,12 @@ The shared visual pipeline now performs source-neutral candidate normalization a
 
 Validation for this stage: focused analyzer tests passed 129/129; the complete suite passed 339 files with 4 skipped and 1,757 tests with 7 skipped; TypeScript passed; the production build passed; diff hygiene and forbidden-change scans passed. No database, migration, credential, provider, writer, selector, or domain setting changed. The working tree still requires the final checkpoint/GitHub synchronization step before this stage is considered synchronized.
 
+### eBay Active normalized image transport repair — October 28, 2026
+
+The live eBay Browse API was independently verified read-only: OAuth returned `200`, Browse search returned `200`, and current `itemSummaries` still provide `image.imageUrl` on `i.ebayimg.com` plus `additionalImages`. The remaining failure was in Tradebilia's response mapper: after the shared visual filter normalized `imageUrls`, the separate eBay visual-review and listing payloads reconstructed images from the raw `s.image` field instead of preferring the normalized gallery. They now prefer `s.imageUrls`, retain the provider collector as a fallback, use the normalized first URL as `imageUrl`, and preserve the review payload's three-image bound.
+
+Regression coverage now protects both the normalized visual-review transport and the image-check listing transport. Focused eBay/visual tests passed 125/125, the complete suite passed 339 files with 4 skipped and 1,761 tests with 7 skipped, TypeScript passed, the production build passed, and the semantic/source-fingerprint checks passed. A transient preview failure was traced to `DATABASE_UNAVAILABLE` during startup; after the approved restart, the runtime re-attested `target: new` / database `test`, `/health` returned `200` with `database: connected`, and the home route returned `200`. No database, schema, migration, secret, credential, provider, writer, selector, or domain setting changed.
+
 ## Documentation and backup reconciliation — October 27, 2026
 
 The authoritative repository handoff files were reconciled against the older project-shared copies. The repository versions are retained as authoritative because they contain the later October 2026 Test AI, Mercari, Cloudflare UPS, TNN, and database-safeguard history. The shared copies were updated from these reconciled repository files after preserving the shared TNN asset records in `IMAGE_ASSET_INVENTORY.md`.
