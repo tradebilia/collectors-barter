@@ -93,6 +93,12 @@ Comics / Single Comic marketplace and eBay candidates now receive the approved 1
 
 Focused validation passed 129/129 visual-filter tests, 40/40 source-role/applicability tests, TypeScript, the production build, and diff hygiene. No database, migration, credential, provider, deployment, selector, writer, or domain change was made.
 
+### Comics / Single Comic grade, grader, and title-normalization repair — October 29, 2026
+
+The Comics / Single Comic marketplace/eBay ranking now separately scores grade and grading company and normalizes harmless title wording differences. The revised 100-point model is: title 20, issue number 20, grade 15, grading company 10, variant 10, publisher 10, publication year 5, distribution type 5, facsimile 3, and signed 2. A title such as “The Amazing Spider-Man” therefore matches “Amazing Spider-Man” after removing a harmless leading article and normalizing punctuation. Missing provider fields remain unknown and do not reduce a score; explicit grade or grading-company conflicts continue to be handled by the universal pre-visual filter. The model remains limited to marketplace/eBay sources; grading/reference sources are unchanged.
+
+Validation passed 130/130 visual-filter tests, 40/40 source-role/applicability tests, TypeScript, the production build, and diff hygiene. A direct probe confirmed a title/issue/CGC/9.6 match scores 65 points before any additional fields; wrong grader or wrong grade does not receive the corresponding points. No database, migration, credential, provider, deployment, selector, writer, or domain change was made.
+
 ### eBay Active normalized image transport repair — October 28, 2026
 
 The live eBay Browse API was independently verified read-only: OAuth returned `200`, Browse search returned `200`, and current `itemSummaries` still provide `image.imageUrl` on `i.ebayimg.com` plus `additionalImages`. The remaining failure was in Tradebilia's response mapper: after the shared visual filter normalized `imageUrls`, the separate eBay visual-review and listing payloads reconstructed images from the raw `s.image` field instead of preferring the normalized gallery. They now prefer `s.imageUrls`, retain the provider collector as a fallback, use the normalized first URL as `imageUrl`, and preserve the review payload's three-image bound.

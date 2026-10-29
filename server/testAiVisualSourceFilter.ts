@@ -2099,14 +2099,16 @@ const SPORTS_CARD_SCORE_FIELDS = [
   ['serialNumberedStatus', 2],
 ] as const;
 const COMICS_SINGLE_SCORE_FIELDS = [
-  ['comicTitle', 25],
+  ['comicTitle', 20],
   ['issueNumber', 20],
-  ['variant', 15],
+  ['grade', 15],
+  ['gradingCompany', 10],
+  ['variant', 10],
   ['publisher', 10],
-  ['publicationYear', 10],
-  ['distributionType', 10],
-  ['facsimile', 5],
-  ['signed', 5],
+  ['publicationYear', 5],
+  ['distributionType', 5],
+  ['facsimile', 3],
+  ['signed', 2],
 ] as const;
 function comicsSingleTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, 'category')) === 'comics'
@@ -2119,6 +2121,33 @@ function comicValueMatches(targetValue: unknown, candidateText: string): boolean
   const target = comicScoreText(targetValue);
   if (!target) return null;
   return candidateText.includes(target);
+}
+function comicTitleComparable(value: unknown): string {
+  return comicScoreText(value)
+    .replace(/^the\s+/, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+function comicTitleMatches(targetValue: unknown, candidateTitle: string): boolean | null {
+  const target = comicTitleComparable(targetValue);
+  const candidate = comicTitleComparable(candidateTitle);
+  if (!target) return null;
+  return candidate.includes(target);
+}
+function comicGradeMatches(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): boolean | null {
+  const target = parsedComparableGrade(metadataValue(targetMetadata, 'grade'), { allowBareNumeric: true });
+  if (!target) return null;
+  const source = parsedComparableGrade(candidate.grade, { allowBareNumeric: true }) ?? parsedComparableGrade(candidate.title, { allowBareNumeric: false });
+  if (!source) return null;
+  return target.numeric === source.numeric && (!target.designation || !source.designation || target.designation === source.designation);
+}
+function comicGradingCompanyMatches(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): boolean | null {
+  const target = targetGrader(targetMetadata);
+  if (!target || /^(?:UNKNOWN|NONE|RAW|UNGRADED|N\/A)$/i.test(target)) return null;
+  const source = candidateGrader(candidate);
+  if (!source) return null;
+  return source === target;
 }
 function comicIssueMatches(targetValue: unknown, candidateText: string): boolean | null {
   const target = String(targetValue ?? '').trim();
@@ -2145,14 +2174,16 @@ export function comicsSingleVisualScore(listing: VisualSourceCandidate, targetMe
     if (result === true) { score += points; matched.push(field); }
     else if (result === null) unknown.push(field);
   };
-  add('comicTitle', 25, comicValueMatches(firstMeaningfulValue(targetDetails.comicTitle, targetDetails.series, targetDetails.title), candidateText));
+  add('comicTitle', 20, comicTitleMatches(firstMeaningfulValue(targetDetails.comicTitle, targetDetails.series, targetDetails.title, extractTargetTitle(targetMetadata)), candidate.title));
   add('issueNumber', 20, comicIssueMatches(firstMeaningfulValue(targetDetails.issueNumber, targetDetails.issueNo, targetDetails.number), candidateText));
-  add('variant', 15, comicValueMatches(firstMeaningfulValue(targetDetails.variantDescription, targetDetails.variantCover, targetDetails.variant), candidateText));
+  add('grade', 15, comicGradeMatches(targetMetadata, candidate));
+  add('gradingCompany', 10, comicGradingCompanyMatches(targetMetadata, candidate));
+  add('variant', 10, comicValueMatches(firstMeaningfulValue(targetDetails.variantDescription, targetDetails.variantCover, targetDetails.variant), candidateText));
   add('publisher', 10, comicValueMatches(targetDetails.publisher, candidateText));
-  add('publicationYear', 10, comicValueMatches(firstMeaningfulValue(targetDetails.publicationYear, targetDetails.year), candidateText));
-  add('distributionType', 10, comicValueMatches(targetDetails.distributionType, candidateText));
-  add('facsimile', 5, comicBoolean(firstMeaningfulValue(targetDetails.facsimile, targetDetails.original), candidateText, /\b(?:facsimile|facsimile\s*edition|reprint)\b/i, /\b(?:original|first\s*print)\b/i));
-  add('signed', 5, comicBoolean(targetDetails.signed, candidateText, /\b(?:signed|autograph(?:ed)?)\b/i, /\b(?:unsigned|not\s*signed)\b/i));
+  add('publicationYear', 5, comicValueMatches(firstMeaningfulValue(targetDetails.publicationYear, targetDetails.year), candidateText));
+  add('distributionType', 5, comicValueMatches(targetDetails.distributionType, candidateText));
+  add('facsimile', 3, comicBoolean(firstMeaningfulValue(targetDetails.facsimile, targetDetails.original), candidateText, /\b(?:facsimile|facsimile\s*edition|reprint)\b/i, /\b(?:original|first\s*print)\b/i));
+  add('signed', 2, comicBoolean(targetDetails.signed, candidateText, /\b(?:signed|autograph(?:ed)?)\b/i, /\b(?:unsigned|not\s*signed)\b/i));
   return { score, matched, unknown };
 }
 export function comicsSingleVisualCap(score: number): number {

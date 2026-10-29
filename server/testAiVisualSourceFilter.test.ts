@@ -68,9 +68,11 @@ describe("visual source filter", () => {
 
   it("scores Comics / Single Comic candidates on the approved identity signals", () => {
     const target = buildVisualTargetMetadata({
-      title: "Amazing Spider-Man #300 Regular Cover",
+      title: "The Amazing Spider-Man #300 Regular Cover",
       category: "comics",
       itemType: "single_comic",
+      grade: "9.6",
+      certificationCompany: "CGC",
       fullItemDetails: {
         comicTitle: "Amazing Spider-Man",
         issueNumber: "300",
@@ -83,13 +85,13 @@ describe("visual source filter", () => {
       },
     });
     const score = comicsSingleVisualScore({
-      title: "Amazing Spider-Man #300 Marvel 1988 Direct Regular Cover Original Unsigned",
+      title: "Amazing Spider-Man #300 Marvel 1988 Direct Regular Cover Original Unsigned CGC 9.6",
       imageUrl: "https://example.com/comic.jpg",
     }, target);
     expect(score.score).toBe(100);
     expect(score.matched).toEqual(expect.arrayContaining([
-      "comicTitle", "issueNumber", "variant", "publisher", "publicationYear",
-      "distributionType", "facsimile", "signed",
+      "comicTitle", "issueNumber", "grade", "gradingCompany", "variant", "publisher",
+      "publicationYear", "distributionType", "facsimile", "signed",
     ]));
   });
 
@@ -119,8 +121,8 @@ describe("visual source filter", () => {
         { title: "Amazing Spider-Man", imageUrl: "https://example.com/weak.jpg" },
       ],
     });
-    expect(result.listings[0]).toMatchObject({ metadataMatchRank: 1, metadataMatchScore: 55 });
-    expect(result.listings[1]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 25 });
+    expect(result.listings[0]).toMatchObject({ metadataMatchRank: 1, metadataMatchScore: 50 });
+    expect(result.listings[1]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 20 });
     expect(result.listings).toHaveLength(2);
   });
 
