@@ -87,6 +87,12 @@ The shared marketplace/eBay declared-identity stage now applies a Comics / Singl
 
 Focused validation passed 126/126 visual-filter tests, 40/40 source-role/applicability tests, TypeScript, the production build, and diff hygiene. The complete suite reached 1,800 passing and 7 skipped tests; three existing `server/testAiAllItems.test.ts` JSX source-contract expectations remain failing from the earlier Collection/Lot render guard and are unrelated to this Comics-only change. No database, migration, credential, provider, deployment, selector, writer, or domain change was made.
 
+### Comics / Single Comic ranking and visual cap — October 29, 2026
+
+Comics / Single Comic marketplace and eBay candidates now receive the approved 100-point metadata ranking after universal and Comics-specific identity filtering: comic title 25, issue number 20, variant 15, publisher 10, publication year 10, distribution type 10, facsimile status 5, and signed status 5. Missing fields remain unknown and do not reduce the score. Scores sort candidates highest-first and remain visible through the existing generic metadata rank/score/matched-fields transport and display. The visual-review cap is 10 candidates at 90–100, 8 at 80–89, 6 at 70–79, 4 at 60–69, 2 at 50–59, and 0 below 50; candidates without images remain ranked context-only.
+
+Focused validation passed 129/129 visual-filter tests, 40/40 source-role/applicability tests, TypeScript, the production build, and diff hygiene. No database, migration, credential, provider, deployment, selector, writer, or domain change was made.
+
 ### eBay Active normalized image transport repair — October 28, 2026
 
 The live eBay Browse API was independently verified read-only: OAuth returned `200`, Browse search returned `200`, and current `itemSummaries` still provide `image.imageUrl` on `i.ebayimg.com` plus `additionalImages`. The remaining failure was in Tradebilia's response mapper: after the shared visual filter normalized `imageUrls`, the separate eBay visual-review and listing payloads reconstructed images from the raw `s.image` field instead of preferring the normalized gallery. They now prefer `s.imageUrls`, retain the provider collector as a fallback, use the normalized first URL as `imageUrl`, and preserve the review payload's three-image bound.

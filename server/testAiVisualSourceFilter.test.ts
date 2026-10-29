@@ -36,6 +36,8 @@ import {
   prepareUniversalVisualCandidates,
   promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
+  comicsSingleVisualCap,
+  comicsSingleVisualScore,
   sportsCardSetVisualCap,
   sportsCardSetVisualScore,
   sportsCardUnopenedVisualCap,
@@ -62,6 +64,64 @@ describe("visual source filter", () => {
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
     expect(promoteEbayImageUrl("https://i.ebayimg.com/images/g/abc/s-l500.jpg")).toBe("https://i.ebayimg.com/images/g/abc/s-l1600.jpg");
     expect(promoteEbayImageUrl("https://example.com/image-s-l500.jpg")).toBe("https://example.com/image-s-l500.jpg");
+  });
+
+  it("scores Comics / Single Comic candidates on the approved identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Amazing Spider-Man #300 Regular Cover",
+      category: "comics",
+      itemType: "single_comic",
+      fullItemDetails: {
+        comicTitle: "Amazing Spider-Man",
+        issueNumber: "300",
+        publisher: "Marvel",
+        distributionType: "Direct",
+        variantDescription: "Regular Cover",
+        publicationYear: "1988",
+        facsimile: "No",
+        signed: "No",
+      },
+    });
+    const score = comicsSingleVisualScore({
+      title: "Amazing Spider-Man #300 Marvel 1988 Direct Regular Cover Original Unsigned",
+      imageUrl: "https://example.com/comic.jpg",
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "comicTitle", "issueNumber", "variant", "publisher", "publicationYear",
+      "distributionType", "facsimile", "signed",
+    ]));
+  });
+
+  it("uses the approved Comics / Single Comic score-band visual caps", () => {
+    expect(comicsSingleVisualCap(95)).toBe(10);
+    expect(comicsSingleVisualCap(85)).toBe(8);
+    expect(comicsSingleVisualCap(75)).toBe(6);
+    expect(comicsSingleVisualCap(65)).toBe(4);
+    expect(comicsSingleVisualCap(55)).toBe(2);
+    expect(comicsSingleVisualCap(49)).toBe(0);
+  });
+
+  it("ranks Comics / Single Comic candidates before applying the visual cap and preserves unknown fields", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Amazing Spider-Man #300",
+      category: "comics",
+      itemType: "single_comic",
+      fullItemDetails: { comicTitle: "Amazing Spider-Man", issueNumber: "300", publisher: "Marvel" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "marketplace",
+      sourceLabel: "Comics ranking test",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [
+        { title: "Amazing Spider-Man #300 Marvel", imageUrl: "https://example.com/strong.jpg" },
+        { title: "Amazing Spider-Man", imageUrl: "https://example.com/weak.jpg" },
+      ],
+    });
+    expect(result.listings[0]).toMatchObject({ metadataMatchRank: 1, metadataMatchScore: 55 });
+    expect(result.listings[1]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 25 });
+    expect(result.listings).toHaveLength(2);
   });
 
   it("scores Sports Cards single-card candidates on explicit identity signals", () => {

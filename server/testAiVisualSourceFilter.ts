@@ -2092,7 +2092,71 @@ const SPORTS_CARD_SCORE_FIELDS = [
   ['relicStatus', 2],
   ['serialNumberedStatus', 2],
 ] as const;
-
+const COMICS_SINGLE_SCORE_FIELDS = [
+  ['comicTitle', 25],
+  ['issueNumber', 20],
+  ['variant', 15],
+  ['publisher', 10],
+  ['publicationYear', 10],
+  ['distributionType', 10],
+  ['facsimile', 5],
+  ['signed', 5],
+] as const;
+function comicsSingleTarget(targetMetadata: string): boolean {
+  return normalizedChoice(metadataValue(targetMetadata, 'category')) === 'comics'
+    && normalizedChoice(metadataValue(targetMetadata, 'itemType')).includes('single');
+}
+function comicScoreText(value: unknown): string {
+  return normalizedChoice(value).replace(/[_-]+/g, ' ');
+}
+function comicValueMatches(targetValue: unknown, candidateText: string): boolean | null {
+  const target = comicScoreText(targetValue);
+  if (!target) return null;
+  return candidateText.includes(target);
+}
+function comicIssueMatches(targetValue: unknown, candidateText: string): boolean | null {
+  const target = String(targetValue ?? '').trim();
+  if (!target) return null;
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|[^0-9])(?:#|issue\\s*)?${escaped}(?:[a-z])?(?:[^0-9]|$)`, 'i').test(candidateText);
+}
+function comicBoolean(value: unknown, candidateText: string, positive: RegExp, negative: RegExp): boolean | null {
+  const target = comicScoreText(value);
+  if (!target) return null;
+  const targetPositive = /^(?:yes|true|signed|original)$/i.test(target);
+  const targetNegative = /^(?:no|false|unsigned|facsimile|reprint)$/i.test(target);
+  if (!targetPositive && !targetNegative) return null;
+  return targetPositive ? positive.test(candidateText) : negative.test(candidateText);
+}
+export function comicsSingleVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = comicScoreText(sourceText(candidate));
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof COMICS_SINGLE_SCORE_FIELDS[number][0], points: number, result: boolean | null) => {
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+  add('comicTitle', 25, comicValueMatches(firstMeaningfulValue(targetDetails.comicTitle, targetDetails.series, targetDetails.title), candidateText));
+  add('issueNumber', 20, comicIssueMatches(firstMeaningfulValue(targetDetails.issueNumber, targetDetails.issueNo, targetDetails.number), candidateText));
+  add('variant', 15, comicValueMatches(firstMeaningfulValue(targetDetails.variantDescription, targetDetails.variantCover, targetDetails.variant), candidateText));
+  add('publisher', 10, comicValueMatches(targetDetails.publisher, candidateText));
+  add('publicationYear', 10, comicValueMatches(firstMeaningfulValue(targetDetails.publicationYear, targetDetails.year), candidateText));
+  add('distributionType', 10, comicValueMatches(targetDetails.distributionType, candidateText));
+  add('facsimile', 5, comicBoolean(firstMeaningfulValue(targetDetails.facsimile, targetDetails.original), candidateText, /\b(?:facsimile|facsimile\s*edition|reprint)\b/i, /\b(?:original|first\s*print)\b/i));
+  add('signed', 5, comicBoolean(targetDetails.signed, candidateText, /\b(?:signed|autograph(?:ed)?)\b/i, /\b(?:unsigned|not\s*signed)\b/i));
+  return { score, matched, unknown };
+}
+export function comicsSingleVisualCap(score: number): number {
+  if (score >= 90) return 10;
+  if (score >= 80) return 8;
+  if (score >= 70) return 6;
+  if (score >= 60) return 4;
+  if (score >= 50) return 2;
+  return 0;
+}
 function sportsCardSingleTarget(targetMetadata: string): boolean {
   const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
   const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType'));
@@ -2408,6 +2472,32 @@ function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>
   return { selected, excluded, cap, ranked };
 }
 
+function selectComicsSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate) => {
+    const scoring = comicsSingleVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = comicsSingleVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((listing) => ({
+    ...listing.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(listing.item.metadataMatchScore ?? 0) < 50
+      ? `Comics / Single Comic metadata score ${Number(listing.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 50.`
+      : `Comics / Single Comic visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [listing.imageUrls.length === 0
+      ? 'no candidate image available; retained as context-only'
+      : Number(listing.item.metadataMatchScore ?? 0) < 50
+        ? 'metadata score below minimum (50)'
+        : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
+
 function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
   return listings
     .map((item, index) => {
@@ -2482,11 +2572,15 @@ export async function filterVisualSourceCandidates<
     : sportsCardSetTarget(targetMetadata)
       ? selectSportsCardSetVisualCandidates(allCandidates, targetMetadata)
       : null;
-  if (sportsCardSelection) {
-    preVisualScoreExcludedIndexes = new Set<number>(sportsCardSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
-    sportsCardRankedItems = new Map(sportsCardSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
+  const comicsSelection = comicsSingleTarget(targetMetadata)
+    ? selectComicsSingleVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection;
+  if (rankedSelection) {
+    preVisualScoreExcludedIndexes = new Set<number>(rankedSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
+    sportsCardRankedItems = new Map(rankedSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
     for (const [candidateIndex, item] of sportsCardRankedItems) rankedItems.set(candidateIndex, item);
-    preVisualScoreExcludedListings = sportsCardSelection.excluded.map((listing) => ({
+    preVisualScoreExcludedListings = rankedSelection.excluded.map((listing) => ({
       ...listing,
       visualRequirement: "not_required_pre_visual",
       evidenceDisposition: "context_only",
@@ -2497,7 +2591,7 @@ export async function filterVisualSourceCandidates<
     });
   }
   const target = safeHttps(args.targetImageUrl);
-  const remainingUnrankedEligible = sportsCardSelection ? [] : eligibleListings;
+  const remainingUnrankedEligible = rankedSelection ? [] : eligibleListings;
   if (!target)
     return {
       listings: [],
@@ -2604,8 +2698,8 @@ export async function filterVisualSourceCandidates<
     // Preserve every candidate, but only send the strongest non-conflicting
     // candidates to vision in the first pass. This bounds latency without
     // turning an omitted image review into an implicit acceptance.
-    reviewCandidates = sportsCardSelection
-      ? sportsCardSelection.selected
+    reviewCandidates = rankedSelection
+      ? rankedSelection.selected
         .filter((candidate) => candidate.imageUrls.length > 0)
         .map((candidate) => ({ ...candidate, imageUrl: candidate.imageUrl as string }))
       : candidates;
