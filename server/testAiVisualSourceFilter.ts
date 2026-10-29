@@ -2023,6 +2023,110 @@ export function sportsCardSingleVisualCap(score: number): number {
   return 0;
 }
 
+const SPORTS_CARD_SET_SCORE_FIELDS = [
+  ['setName', 25],
+  ['year', 15],
+  ['manufacturer', 15],
+  ['setType', 15],
+  ['missingCards', 15],
+  ['factorySealed', 10],
+  ['sport', 5],
+] as const;
+
+function sportsCardSetTarget(targetMetadata: string): boolean {
+  const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
+  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType'));
+  return category === 'sports_cards' && itemType.includes('set') && !itemType.includes('collection') && !itemType.includes('lot');
+}
+
+function sportsCardSetSignal(value: unknown, candidateText: string, patterns: RegExp[]): boolean | null {
+  const normalized = normalizedChoice(value);
+  if (!normalized) return null;
+  return patterns.some((pattern) => pattern.test(candidateText));
+}
+
+export function sportsCardSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = sourceText(candidate);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof SPORTS_CARD_SET_SCORE_FIELDS[number][0], points: number, result: boolean | null) => {
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+
+  const setName = firstMeaningfulValue(targetDetails.setName, targetDetails.series, targetDetails.cardSet);
+  add('setName', 25, setName ? sportsCardText(candidateText).includes(sportsCardText(setName)) : null);
+
+  const year = String(firstMeaningfulValue(targetDetails.year, targetDetails.releaseYear, targetDetails.issueYear) ?? '').trim();
+  add('year', 15, year ? new RegExp(`\\b${year.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(candidateText) : null);
+
+  const manufacturer = firstMeaningfulValue(targetDetails.manufacturer, targetDetails.customManufacturer, targetDetails.brand);
+  add('manufacturer', 15, manufacturer ? sportsCardText(candidateText).includes(sportsCardText(manufacturer)) : null);
+
+  const setType = normalizedChoice(targetDetails.setType);
+  const setTypePatterns: Record<string, RegExp[]> = {
+    factory_set: [/\bfactory\s+set\b/i, /\bfactory\s+sealed\b/i],
+    complete_hand_collated_set: [/\bcomplete(?:ly)?\s+(?:hand[- ]?collated\s+)?set\b/i, /\bcomplete\s+set\b/i],
+    partial_set: [/\bpartial\s+set\b/i, /\bincomplete\s+set\b/i],
+  };
+  add('setType', 15, setType ? sportsCardSetSignal(setType, candidateText, setTypePatterns[setType] ?? [new RegExp(`\\b${setType.replace(/_/g, '[ -]')}\\b`, 'i')]) : null);
+
+  const missingCards = normalizedChoice(targetDetails.missingCards);
+  add('missingCards', 15, missingCards
+      ? missingCards === 'yes'
+      ? /\b(?:partial|incomplete|missing\s+(?:cards?|pieces?))\b/i.test(candidateText)
+      : /\b(?:complete|factory|master|team)(?:\s+(?:factory|sealed|hand[- ]?collated))*\s+set\b/i.test(candidateText)
+    : null);
+
+  const factorySealed = normalizedChoice(targetDetails.factorySealed);
+  add('factorySealed', 10, factorySealed
+    ? factorySealed === 'yes'
+      ? /\b(?:factory\s+sealed|sealed|unopened)\b/i.test(candidateText)
+      : /\b(?:opened|open\s+box|unsealed)\b/i.test(candidateText)
+    : null);
+
+  const sport = firstMeaningfulValue(targetDetails.sport);
+  add('sport', 5, sport ? sportsCardText(candidateText).includes(sportsCardText(sport)) : null);
+  return { score, matched, unknown };
+}
+
+export function sportsCardSetVisualCap(score: number): number {
+  if (score >= 85) return 10;
+  if (score >= 70) return 6;
+  if (score >= 60) return 3;
+  if (score >= 50) return 2;
+  return 0;
+}
+
+function selectSportsCardSetVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate) => {
+    const scoring = sportsCardSetVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = sportsCardSetVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((candidate) => ({
+    ...candidate.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(candidate.item.metadataMatchScore ?? 0) < 50
+      ? `Sports Card set metadata score ${Number(candidate.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 50.`
+      : `Sports Card set visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [candidate.imageUrls.length === 0
+      ? 'no candidate image available; retained as context-only'
+      : Number(candidate.item.metadataMatchScore ?? 0) < 50
+        ? 'metadata score below minimum (50)'
+        : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
+
 function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
   const ranked = candidates.map((candidate, index) => {
     const scoring = sportsCardSingleVisualScore(candidate.item, targetMetadata);
@@ -2121,7 +2225,9 @@ export async function filterVisualSourceCandidates<
   const rankedItems = new Map<number, T>(allCandidates.map((candidate) => [candidate.candidateIndex, candidate.item]));
   const sportsCardSelection = sportsCardSingleTarget(targetMetadata)
     ? selectSportsCardSingleVisualCandidates(allCandidates, targetMetadata)
-    : null;
+    : sportsCardSetTarget(targetMetadata)
+      ? selectSportsCardSetVisualCandidates(allCandidates, targetMetadata)
+      : null;
   if (sportsCardSelection) {
     preVisualScoreExcludedIndexes = new Set<number>(sportsCardSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
     sportsCardRankedItems = new Map(sportsCardSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));

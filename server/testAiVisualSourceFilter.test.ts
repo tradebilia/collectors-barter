@@ -36,6 +36,8 @@ import {
   prepareUniversalVisualCandidates,
   promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
+  sportsCardSetVisualCap,
+  sportsCardSetVisualScore,
   sportsCardSingleVisualCap,
   sportsCardSingleVisualScore,
   shouldReviewAdditionalVisualImages,
@@ -93,6 +95,39 @@ describe("visual source filter", () => {
     expect(sportsCardSingleVisualCap(65)).toBe(4);
     expect(sportsCardSingleVisualCap(55)).toBe(2);
     expect(sportsCardSingleVisualCap(49)).toBe(0);
+  });
+
+  it("scores Sports Cards sets on set identity and condition signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1986 Fleer Complete Factory Set",
+      category: "sports_cards",
+      itemType: "set",
+      fullItemDetails: {
+        setName: "Fleer",
+        year: "1986",
+        manufacturer: "Fleer",
+        setType: "factory_set",
+        missingCards: "No",
+        factorySealed: "Yes",
+        sport: "Football",
+      },
+    });
+    const score = sportsCardSetVisualScore({
+      title: "1986 Fleer Football Complete Factory Sealed Set",
+      imageUrl: "https://example.com/set.jpg",
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "setName", "year", "manufacturer", "setType", "missingCards", "factorySealed", "sport",
+    ]));
+  });
+
+  it("uses the approved Sports Cards / Set score-band visual caps", () => {
+    expect(sportsCardSetVisualCap(90)).toBe(10);
+    expect(sportsCardSetVisualCap(75)).toBe(6);
+    expect(sportsCardSetVisualCap(65)).toBe(3);
+    expect(sportsCardSetVisualCap(55)).toBe(2);
+    expect(sportsCardSetVisualCap(49)).toBe(0);
   });
 
   it("embeds only a bounded promoted eBay image for a focused grading retry", async () => {
