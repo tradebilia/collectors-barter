@@ -30,6 +30,7 @@ export const sports_cardsSetLayout: ItemTypeLayoutConfig = {
       columns: 2,
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
+        factorySealed: { colSpan: 'half', position: 2 },
       },
     },
     optional: {

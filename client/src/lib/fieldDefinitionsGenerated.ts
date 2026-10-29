@@ -1703,6 +1703,13 @@ export const SPORTS_CARDS_SET_FIELDS: FieldDefinition[] = [
     maxLength: 4,
     requirement: 'recommended',
   },
+  {
+    name: 'factorySealed',
+    label: 'Factory Sealed',
+    inputType: 'dropdown',
+    requirement: 'recommended',
+    dropdownOptions: ['Yes', 'No'],
+  },
 
   {
     name: 'sport',
