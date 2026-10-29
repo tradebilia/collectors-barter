@@ -819,7 +819,7 @@
           "inputType": "dropdown",
           "requirement": "required",
           "conditionalLogic": "",
-          "options": "Cover Art | Splash Page | Interior Page | Published Commission | Unpublished Commission | Sketch | Sketch Card | Comic Strip | Other",
+          "options": "Cover Art | Comic Book Cover Art | Splash Page | Interior Page | Published Commission | Unpublished Commission | Sketch | Sketch Card | Comic Strip | Other",
           "supportsOther": "Yes"
         },
         {

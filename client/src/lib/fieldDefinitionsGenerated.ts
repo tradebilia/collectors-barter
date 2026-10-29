@@ -590,7 +590,7 @@ export const COMICS_ORIGINAL_ART_FIELDS: FieldDefinition[] = [
     label: 'Art Type',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['Cover Art', 'Splash Page', 'Interior Page', 'Published Commission', 'Unpublished Commission', 'Sketch', 'Sketch Card', 'Comic Strip', 'Other'],
+    dropdownOptions: ['Cover Art', 'Comic Book Cover Art', 'Splash Page', 'Interior Page', 'Published Commission', 'Unpublished Commission', 'Sketch', 'Sketch Card', 'Comic Strip', 'Other'],
     supportsOther: true,
     otherFieldName: 'Custom Art Type',
   },

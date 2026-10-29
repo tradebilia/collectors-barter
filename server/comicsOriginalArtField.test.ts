@@ -12,4 +12,11 @@ describe('Comics / Original Art artwork title field', () => {
     });
     expect(comicsOriginalartLayout.sections.recommended.fieldLayout.artworkTitle).toBeDefined();
   });
+
+  it('offers a specific Comic Book Cover Art choice without removing Cover Art', () => {
+    const field = COMICS_ORIGINAL_ART_FIELDS.find((entry) => entry.name === 'artType');
+
+    expect(field?.dropdownOptions).toContain('Comic Book Cover Art');
+    expect(field?.dropdownOptions).toContain('Cover Art');
+  });
 });
