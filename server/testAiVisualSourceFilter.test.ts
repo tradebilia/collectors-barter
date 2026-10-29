@@ -36,6 +36,8 @@ import {
   prepareUniversalVisualCandidates,
   promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
+  sportsCardSingleVisualCap,
+  sportsCardSingleVisualScore,
   shouldReviewAdditionalVisualImages,
   sportsCardSetInstruction,
   VISUAL_REVIEW_MAX_CANDIDATES,
@@ -56,6 +58,41 @@ describe("visual source filter", () => {
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
     expect(promoteEbayImageUrl("https://i.ebayimg.com/images/g/abc/s-l500.jpg")).toBe("https://i.ebayimg.com/images/g/abc/s-l1600.jpg");
     expect(promoteEbayImageUrl("https://example.com/image-s-l500.jpg")).toBe("https://example.com/image-s-l500.jpg");
+  });
+
+  it("scores Sports Cards single-card candidates on explicit identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Upper Deck Ken Griffey Jr #1 PSA 10",
+      category: "sports_cards",
+      itemType: "single_card",
+      grade: "10",
+      certificationCompany: "PSA",
+      fullItemDetails: {
+        player: "Ken Griffey Jr",
+        year: "1989",
+        manufacturer: "Upper Deck",
+        setName: "Upper Deck",
+        cardNumber: "1",
+        rookieStatus: "Yes",
+      },
+    });
+    const score = sportsCardSingleVisualScore({
+      title: "1989 Upper Deck Ken Griffey Jr #1 Rookie RC PSA 10",
+      grade: "10",
+      gradingCompany: "PSA",
+      imageUrl: "https://example.com/card.jpg",
+    }, target);
+    expect(score.score).toBeGreaterThanOrEqual(90);
+    expect(score.matched).toEqual(expect.arrayContaining(["player", "year", "manufacturerOrSet", "cardNumber", "gradingCompany", "grade", "singleCardForm", "rookieStatus"]));
+  });
+
+  it("uses the approved Sports Cards score-band visual caps", () => {
+    expect(sportsCardSingleVisualCap(95)).toBe(10);
+    expect(sportsCardSingleVisualCap(85)).toBe(8);
+    expect(sportsCardSingleVisualCap(75)).toBe(6);
+    expect(sportsCardSingleVisualCap(65)).toBe(4);
+    expect(sportsCardSingleVisualCap(55)).toBe(2);
+    expect(sportsCardSingleVisualCap(49)).toBe(0);
   });
 
   it("embeds only a bounded promoted eBay image for a focused grading retry", async () => {
@@ -1270,7 +1307,7 @@ describe("visual source filter", () => {
     expect(candidateStart).toBeGreaterThanOrEqual(0);
     expect(queueStart).toBeGreaterThan(candidateStart);
     expect(source.slice(candidateStart, queueStart)).not.toContain(".slice(0, VISUAL_REVIEW_MAX_CANDIDATES)");
-    expect(source.slice(queueStart, queueStart + 700)).toContain("prioritizeVisualSourceCandidates(candidates");
+    expect(source.slice(queueStart, queueStart + 700)).toContain("prioritizeVisualSourceCandidates(reviewCandidates");
     expect(source).toContain(".slice(0, VISUAL_REVIEW_MAX_CANDIDATES);");
   });
 

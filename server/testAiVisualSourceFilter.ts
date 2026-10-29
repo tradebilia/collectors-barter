@@ -1849,6 +1849,131 @@ export function buildVisualSourceFilterNote(
   return `${sourceLabel}: ${result.reviewedCount} candidate image${result.reviewedCount === 1 ? "" : "s"} reviewed; high-confidence visual flags are retained as manual-review provenance, never removed by vision alone${result.retainedUnreviewedCount ? `; ${result.retainedUnreviewedCount} reviewed-window candidate${result.retainedUnreviewedCount === 1 ? "" : "s"} received no decisive visual result` : ""}.`;
 }
 
+const SPORTS_CARD_SCORE_FIELDS = [
+  ['player', 20],
+  ['year', 15],
+  ['manufacturerOrSet', 15],
+  ['cardNumber', 15],
+  ['gradingCompany', 10],
+  ['grade', 10],
+  ['singleCardForm', 5],
+  ['rookieStatus', 3],
+  ['autographStatus', 3],
+  ['relicStatus', 2],
+  ['serialNumberedStatus', 2],
+] as const;
+
+function sportsCardSingleTarget(targetMetadata: string): boolean {
+  const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
+  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType'));
+  return category === 'sports_cards' && !itemType.includes('set') && !itemType.includes('collection') && !itemType.includes('lot');
+}
+
+function sportsCardText(value: unknown): string {
+  return normalizedChoice(value).replace(/_/g, ' ');
+}
+
+function sportsCardExplicitNumber(value: unknown, title: string): boolean {
+  const target = String(value ?? '').trim();
+  if (!target) return false;
+  const escaped = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|[^0-9])(?:#|card(?:\s*(?:no|number))?\s*)?${escaped}(?:[^0-9]|$)`, 'i').test(title)
+    || new RegExp(`(?:^|[^0-9])${escaped}(?:[^0-9]|$)`, 'i').test(title);
+}
+
+function sportsCardBooleanSignal(target: string, candidate: string, positive: RegExp): 'match' | 'mismatch' | 'unknown' {
+  const targetPositive = positive.test(target);
+  const targetNegative = /\b(?:no|false|none|unsigned|not\s+signed|non[- ]?relic|base|non[- ]?numbered)\b/i.test(target);
+  const candidatePositive = positive.test(candidate);
+  const candidateNegative = /\b(?:no|false|none|unsigned|not\s+signed|non[- ]?relic|base|non[- ]?numbered)\b/i.test(candidate);
+  if (!targetPositive && !targetNegative) return 'unknown';
+  if (targetPositive === candidatePositive && targetNegative === candidateNegative) return 'match';
+  if (candidatePositive || candidateNegative) return 'mismatch';
+  return 'unknown';
+}
+
+export function sportsCardSingleVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetTitle = extractTargetTitle(targetMetadata);
+  const targetTextValue = targetText(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateTextValue = sourceText(candidate);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof SPORTS_CARD_SCORE_FIELDS[number][0], points: number, isMatch: boolean, isKnown = true) => {
+    if (isMatch) { score += points; matched.push(field); }
+    else if (!isKnown) unknown.push(field);
+  };
+
+  const player = firstMeaningfulValue(targetDetails.player, targetDetails.athlete, targetDetails.subject);
+  const playerSurname = String(player ?? '').trim().split(/\s+/).filter(Boolean).slice(-1)[0] ?? '';
+  add('player', 20, Boolean(playerSurname && new RegExp(`\\b${playerSurname.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i').test(candidate.title)), Boolean(player));
+
+  const year = String(firstMeaningfulValue(targetDetails.year, targetDetails.releaseYear, targetDetails.issueYear) ?? '').trim();
+  add('year', 15, Boolean(year && new RegExp(`\\b${year.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(candidateTextValue)), Boolean(year));
+
+  const manufacturer = String(firstMeaningfulValue(targetDetails.manufacturer, targetDetails.customManufacturer, targetDetails.brand) ?? '').trim();
+  const setName = String(firstMeaningfulValue(targetDetails.setName, targetDetails.series, targetDetails.cardSet) ?? '').trim();
+  const manufacturerOrSet = [manufacturer, setName].filter(Boolean);
+  add('manufacturerOrSet', 15, manufacturerOrSet.some((value) => sportsCardText(candidateTextValue).includes(sportsCardText(value))), manufacturerOrSet.length > 0);
+
+  const cardNumber = String(firstMeaningfulValue(targetDetails.cardNumber, targetDetails.cardNo, targetDetails.number) ?? '').trim();
+  add('cardNumber', 15, sportsCardExplicitNumber(cardNumber, candidate.title), Boolean(cardNumber));
+
+  const targetGrader = String(firstMeaningfulValue(metadataValue(targetMetadata, 'certificationCompany'), targetDetails.gradingCompany, targetDetails.grader) ?? '').trim();
+  add('gradingCompany', 10, Boolean(targetGrader && sportsCardText(candidate.grader) === sportsCardText(targetGrader)), Boolean(targetGrader));
+
+  const targetGrade = normalizedGrade(String(firstMeaningfulValue(metadataValue(targetMetadata, 'grade'), targetDetails.grade) ?? ''));
+  const candidateGrade = normalizedGrade((candidate.grade || candidateTextValue.match(/\b(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*(\d+(?:\.\d+)?)\b/i)?.[1]) ?? '');
+  add('grade', 10, Boolean(targetGrade && candidateGrade && Number(targetGrade) === Number(candidateGrade)), Boolean(targetGrade));
+
+  const singleForm = !/\b(?:complete|factory|master|team)\s+set\b|\b(?:lot|bundle|collection|multipack|\d+\s+cards?)\b/i.test(candidateTextValue);
+  add('singleCardForm', 5, singleForm, true);
+
+  const targetRookie = `${targetTextValue} ${JSON.stringify(targetDetails)}`;
+  const targetAutograph = `${targetTextValue} ${JSON.stringify(targetDetails)}`;
+  const targetRelic = `${targetTextValue} ${JSON.stringify(targetDetails)}`;
+  const targetSerial = `${targetTextValue} ${JSON.stringify(targetDetails)}`;
+  const candidateIdentityText = `${candidateTextValue} ${JSON.stringify(candidate.details)}`;
+  add('rookieStatus', 3, sportsCardBooleanSignal(targetRookie, candidateIdentityText, /\b(?:rookie|rc)\b/i) === 'match', sportsCardBooleanSignal(targetRookie, candidateIdentityText, /\b(?:rookie|rc)\b/i) !== 'unknown');
+  add('autographStatus', 3, sportsCardBooleanSignal(targetAutograph, candidateIdentityText, /\b(?:autograph(?:ed)?|signed|auto)\b/i) === 'match', sportsCardBooleanSignal(targetAutograph, candidateIdentityText, /\b(?:autograph(?:ed)?|signed|auto)\b/i) !== 'unknown');
+  add('relicStatus', 2, sportsCardBooleanSignal(targetRelic, candidateIdentityText, /\b(?:relic|memorabilia|patch|jersey)\b/i) === 'match', sportsCardBooleanSignal(targetRelic, candidateIdentityText, /\b(?:relic|memorabilia|patch|jersey)\b/i) !== 'unknown');
+  add('serialNumberedStatus', 2, sportsCardBooleanSignal(targetSerial, candidateIdentityText, /\b(?:\d+\/\d+|serial(?:ized)?|numbered|print\s*run)\b/i) === 'match', sportsCardBooleanSignal(targetSerial, candidateIdentityText, /\b(?:\d+\/\d+|serial(?:ized)?|numbered|print\s*run)\b/i) !== 'unknown');
+
+  return { score, matched, unknown };
+}
+
+export function sportsCardSingleVisualCap(score: number): number {
+  if (score >= 90) return 10;
+  if (score >= 80) return 8;
+  if (score >= 70) return 6;
+  if (score >= 60) return 4;
+  if (score >= 50) return 2;
+  return 0;
+}
+
+function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate, index) => {
+    const scoring = sportsCardSingleVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown, metadataMatchRank: index + 1 } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = sportsCardSingleVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((candidate) => ({
+    ...candidate.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(candidate.item.metadataMatchScore ?? 0) < 50
+      ? `Sports Card single-card metadata score ${Number(candidate.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 50.`
+      : `Sports Card single-card visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [Number(candidate.item.metadataMatchScore ?? 0) < 50 ? 'metadata score below minimum (50)' : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
+
 export async function filterVisualSourceCandidates<
   T extends VisualSourceCandidate,
 >(args: {
@@ -1892,12 +2017,14 @@ export async function filterVisualSourceCandidates<
         evidenceDisposition: "context_only",
       } as T;
   });
-	  const eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
+  let eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
+  let preVisualScoreExcludedListings: T[] = [];
+  let preVisualScoreExcludedIndexes = new Set<number>();
   const target = safeHttps(args.targetImageUrl);
   if (!target)
     return {
       listings: eligibleListings,
-      contextListings: preVisualContextListings,
+      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
       preVisualExcludedCount: preVisualContextListings.length,
       status: "skipped_no_target_image",
       reviewedCount: 0,
@@ -1906,7 +2033,7 @@ export async function filterVisualSourceCandidates<
       reviews: declaredReviews,
       note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
-	  const candidates = preparedListings
+  const candidates = preparedListings
     .map((item, candidateIndex) => {
 	      const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
       return {
@@ -1924,7 +2051,7 @@ export async function filterVisualSourceCandidates<
   if (!candidates.length)
     return {
       listings: eligibleListings,
-      contextListings: preVisualContextListings,
+      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
       preVisualExcludedCount: preVisualContextListings.length,
       status: "skipped_no_candidate_images",
       reviewedCount: 0,
@@ -1935,6 +2062,7 @@ export async function filterVisualSourceCandidates<
         ? `No ${args.sourceLabel.toLowerCase()} candidates remained after deterministic identity and multi-item filtering; ${preVisualContextListings.length} listing${preVisualContextListings.length === 1 ? " was" : "s were"} retained as context-only before vision.`
         : `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
+  let reviewCandidates = candidates;
   try {
     const strictResponseFormat = {
       type: "json_schema",
@@ -1992,7 +2120,24 @@ export async function filterVisualSourceCandidates<
     // Preserve every candidate, but only send the strongest non-conflicting
     // candidates to vision in the first pass. This bounds latency without
     // turning an omitted image review into an implicit acceptance.
-    const reviewQueue = prioritizeVisualSourceCandidates(candidates, targetMetadata, declaredReviews);
+    const sportsCardSelection = sportsCardSingleTarget(targetMetadata)
+      ? selectSportsCardSingleVisualCandidates(candidates, targetMetadata)
+      : null;
+    reviewCandidates = sportsCardSelection?.selected ?? candidates;
+    if (sportsCardSelection) {
+      const selectedIndexes = new Set(sportsCardSelection.selected.map((candidate) => candidate.candidateIndex));
+      preVisualScoreExcludedIndexes = new Set<number>(sportsCardSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
+      preVisualScoreExcludedListings = sportsCardSelection.excluded.map((listing) => ({
+        ...listing,
+        visualRequirement: "not_required_pre_visual",
+        evidenceDisposition: "context_only",
+      } as T));
+      eligibleListings = eligibleListings.filter((listing) => {
+        const candidateIndex = preparedListings.indexOf(listing);
+        return candidateIndex < 0 || selectedIndexes.has(candidateIndex) || !candidates.some((candidate) => candidate.item === listing);
+      });
+    }
+    const reviewQueue = prioritizeVisualSourceCandidates(reviewCandidates, targetMetadata, declaredReviews);
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
     let reviewedCandidateCount = 0;
@@ -2258,7 +2403,7 @@ export async function filterVisualSourceCandidates<
         reviewByIndex.set(candidate.candidateIndex, fallback);
       }
     }
-    const imageBearingIndexes = new Set(candidates.map((candidate) => candidate.candidateIndex));
+    const imageBearingIndexes = new Set(reviewCandidates.map((candidate) => candidate.candidateIndex));
     const reviewedIndexes = new Set([...uniqueReviews, ...declaredReviews].map((review) => review.candidateIndex));
     // A candidate with a usable target and candidate image must either receive a
     // visual verdict or remain explicit review-only. Do not let a later client
@@ -2294,6 +2439,18 @@ export async function filterVisualSourceCandidates<
           evidenceDisposition: "context_only",
         } as T;
       }
+      if (preVisualScoreExcludedIndexes.has(index)) {
+        const scored = preVisualScoreExcludedListings.find((candidate) => candidate === listing || candidate.title === listing.title);
+        return {
+          ...listing,
+          metadataMatchScore: scored?.metadataMatchScore,
+          metadataMatchReasons: scored?.metadataMatchReasons,
+          visualRequirement: "not_required_pre_visual",
+          visualReviewStatus: "not_reviewed",
+          visualReviewRationale: scored?.visualReviewRationale ?? "Candidate was omitted by the Sports Card single-card score cap.",
+          evidenceDisposition: "context_only",
+        } as T;
+      }
       if (!imageBearingIndexes.has(index)) return listing;
       if (reviewedIndexes.has(index)) return { ...listing, visualRequirement: "required" } as T;
       return {
@@ -2311,7 +2468,7 @@ export async function filterVisualSourceCandidates<
       { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata },
     );
 	    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
-	    const contextIndexes = new Set([...preVisualUniversalReasons.keys(), ...declaredConflictIndexes, ...preVisualLotReasons.keys()]);
+    const contextIndexes = new Set([...preVisualUniversalReasons.keys(), ...declaredConflictIndexes, ...preVisualLotReasons.keys(), ...preVisualScoreExcludedIndexes]);
     const contextListings = applied.listings.filter((_, index) => contextIndexes.has(index));
     const visibleListings = applied.listings.filter((_, index) => !contextIndexes.has(index));
     const completedWithTimeout = timedOutCount > 0 || deadlineReached;
@@ -2329,7 +2486,7 @@ export async function filterVisualSourceCandidates<
     };
   } catch {
     return {
-	      listings: preparedListings.map((listing, index) => candidates.some((candidate) => candidate.candidateIndex === index)
+      listings: preparedListings.map((listing, index) => reviewCandidates.some((candidate) => candidate.candidateIndex === index)
         ? {
             ...listing,
             visualRequirement: "required",
@@ -2338,7 +2495,7 @@ export async function filterVisualSourceCandidates<
             evidenceDisposition: "warning_review",
           } as T
         : listing).filter((_, index) => !preVisualExcludedIndexes.has(index)),
-      contextListings: preVisualContextListings,
+      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
       preVisualExcludedCount: preVisualContextListings.length,
       status: "provider_unavailable",
       reviewedCount: 0,
