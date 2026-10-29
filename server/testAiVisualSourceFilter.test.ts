@@ -188,7 +188,32 @@ describe("visual source filter", () => {
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
     expect(result.listings).toEqual([]);
     expect(result.contextListings).toHaveLength(2);
-    expect(result.contextListings?.every((item) => String(item.visualReviewRationale).includes("image-readiness"))).toBe(true);
+    expect(result.contextListings?.every((item) => String(item.visualReviewRationale).includes("No candidate image"))).toBe(true);
+  });
+
+  it("ranks image-less Sports Cards before retaining them as context-only", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Upper Deck Ken Griffey Jr #1 PSA 10",
+      category: "sports_cards",
+      itemType: "single_card",
+      grade: "10",
+      certificationCompany: "PSA",
+      fullItemDetails: { player: "Ken Griffey Jr", year: "1989", manufacturer: "Upper Deck", cardNumber: "1" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceLabel: "Goldin",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [
+        { title: "1989 Upper Deck Ken Griffey Jr #1 PSA 10", grade: "10", gradingCompany: "PSA" },
+        { title: "1989 Upper Deck Ken Griffey Jr #1 rookie card" },
+      ],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toHaveLength(0);
+    expect(result.contextListings).toHaveLength(2);
+    expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 1, visualReviewStatus: "not_reviewed", evidenceDisposition: "context_only" });
+    expect(result.contextListings?.[0].metadataMatchScore).toBeGreaterThan(result.contextListings?.[1].metadataMatchScore as number);
   });
 
   it("applies universal quantity and material-state rules only to explicit contradictions", () => {
@@ -1302,7 +1327,7 @@ describe("visual source filter", () => {
 
   it("builds the full image-bearing queue before applying the bounded priority cap", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
-    const candidateStart = source.indexOf("const candidates = preparedListings");
+    const candidateStart = source.indexOf("let allCandidates");
     const queueStart = source.indexOf("const reviewQueue = prioritizeVisualSourceCandidates", candidateStart);
     expect(candidateStart).toBeGreaterThanOrEqual(0);
     expect(queueStart).toBeGreaterThan(candidateStart);

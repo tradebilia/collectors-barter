@@ -1384,9 +1384,6 @@ export function prepareUniversalVisualCandidates<T extends VisualSourceCandidate
       contextReasons.set(index, `${conflict} Retained as context-only before visual review.`);
       return;
     }
-    if (!candidate.imageUrls.length) {
-      contextReasons.set(index, "Universal image-readiness filter: no usable HTTPS candidate image was supplied; retained as context-only and not sent to visual review.");
-    }
   });
   return {
     listings: listings.map((listing, index) => ({
@@ -1806,7 +1803,30 @@ function visualPriorityScore<T extends VisualSourceCandidate>(item: T, targetMet
 function visualQueryTierPriority<T extends VisualSourceCandidate>(item: T): number {
   return Number((item as any).__tradebiliaQueryTier) === 0 ? 1 : 0;
 }
-
+export function universalMetadataScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[] } {
+  const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = sourceText(candidate).toLowerCase();
+  const targetTokens = [...new Set(targetTitle.split(/[^a-z0-9]+/).filter((token) => token.length >= 2))];
+  const matchedTokens = targetTokens.filter((token) => candidateText.includes(token));
+  const matched = matchedTokens.length ? [`title overlap (${matchedTokens.length}/${targetTokens.length})`] : [];
+  let score = targetTokens.length ? Math.round((matchedTokens.length / targetTokens.length) * 60) : 0;
+  const targetGrade = normalizedGrade(metadataValue(targetMetadata, "grade"));
+  const candidateGrade = normalizedGrade(candidate.grade || candidateText.match(/\b(?:PSA|BGS|SGC|CGC|BCCG|CGA)\s*(\d+(?:\.\d+)?)\b/i)?.[1] || "");
+  if (targetGrade && candidateGrade && Number(targetGrade) === Number(candidateGrade)) { score += 25; matched.push("grade"); }
+  const targetGrader = normalizedChoice(metadataValue(targetMetadata, "certificationCompany"));
+  if (targetGrader && candidate.grader && normalizedChoice(candidate.grader) === targetGrader) { score += 15; matched.push("grading company"); }
+  return { score: Math.min(100, score), matched };
+}
+function annotateUniversalScores<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string): Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }> {
+  return candidates
+    .map((candidate) => {
+      const scoring = universalMetadataScore(candidate.item, targetMetadata);
+      return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched } as T };
+    })
+    .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+}
 export function prioritizeVisualSourceCandidates<T extends VisualSourceCandidate>(
   candidates: Array<{ item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] }>,
   targetMetadata: string,
@@ -1953,7 +1973,7 @@ export function sportsCardSingleVisualCap(score: number): number {
   return 0;
 }
 
-function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] }>, targetMetadata: string) {
+function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
   const ranked = candidates.map((candidate, index) => {
     const scoring = sportsCardSingleVisualScore(candidate.item, targetMetadata);
     return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown, metadataMatchRank: index + 1 } as T };
@@ -1964,7 +1984,9 @@ function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>
     }));
   const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
   const cap = sportsCardSingleVisualCap(highestScore);
-  const selected = ranked.filter((candidate) => Number(candidate.item.metadataMatchScore ?? 0) >= 50).slice(0, cap);
+  const selected = ranked
+    .filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 50)
+    .slice(0, cap);
   const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
   const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((candidate) => ({
     ...candidate.item,
@@ -1973,7 +1995,11 @@ function selectSportsCardSingleVisualCandidates<T extends VisualSourceCandidate>
     visualReviewRationale: Number(candidate.item.metadataMatchScore ?? 0) < 50
       ? `Sports Card single-card metadata score ${Number(candidate.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 50.`
       : `Sports Card single-card visual cap reached (${cap}); higher-scoring candidates were selected first.`,
-    evidenceReasons: [Number(candidate.item.metadataMatchScore ?? 0) < 50 ? 'metadata score below minimum (50)' : `visual-review cap reached (${cap})`],
+    evidenceReasons: [candidate.imageUrls.length === 0
+      ? 'no candidate image available; retained as context-only'
+      : Number(candidate.item.metadataMatchScore ?? 0) < 50
+        ? 'metadata score below minimum (50)'
+        : `visual-review cap reached (${cap})`],
   } as T));
   return { selected, excluded, cap, ranked };
 }
@@ -2034,46 +2060,76 @@ export async function filterVisualSourceCandidates<
   let eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
   let preVisualScoreExcludedListings: T[] = [];
   let preVisualScoreExcludedIndexes = new Set<number>();
+  let sportsCardRankedItems = new Map<number, T>();
+  let allCandidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }> = preparedListings
+    .map((item, candidateIndex) => {
+      const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
+      return { item, candidateIndex, imageUrl: imageUrls[0] ?? null, imageUrls };
+    })
+    .filter((entry) => !preVisualExcludedIndexes.has(entry.candidateIndex));
+  allCandidates = annotateUniversalScores(allCandidates, targetMetadata);
+  const rankedItems = new Map<number, T>(allCandidates.map((candidate) => [candidate.candidateIndex, candidate.item]));
+  const sportsCardSelection = sportsCardSingleTarget(targetMetadata)
+    ? selectSportsCardSingleVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  if (sportsCardSelection) {
+    preVisualScoreExcludedIndexes = new Set<number>(sportsCardSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
+    sportsCardRankedItems = new Map(sportsCardSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
+    for (const [candidateIndex, item] of sportsCardRankedItems) rankedItems.set(candidateIndex, item);
+    preVisualScoreExcludedListings = sportsCardSelection.excluded.map((listing) => ({
+      ...listing,
+      visualRequirement: "not_required_pre_visual",
+      evidenceDisposition: "context_only",
+    } as T));
+    eligibleListings = eligibleListings.filter((listing) => {
+      const candidateIndex = preparedListings.indexOf(listing);
+      return candidateIndex >= 0 && !preVisualScoreExcludedIndexes.has(candidateIndex);
+    });
+  }
   const target = safeHttps(args.targetImageUrl);
+  const remainingUnrankedEligible = sportsCardSelection ? [] : eligibleListings;
   if (!target)
     return {
-      listings: eligibleListings,
-      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
-      preVisualExcludedCount: preVisualContextListings.length,
+      listings: [],
+      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
+        ...listing,
+        ...(rankedItems.get(preparedListings.indexOf(listing)) ?? {}),
+        visualRequirement: "not_required_pre_visual",
+        visualReviewStatus: "not_reviewed",
+        visualReviewRationale: "No target image was supplied; ranked candidate retained as context-only and not sent to visual review.",
+        evidenceDisposition: "context_only",
+      } as T))],
+      preVisualExcludedCount: preVisualContextListings.length + preVisualScoreExcludedListings.length + remainingUnrankedEligible.length,
       status: "skipped_no_target_image",
       reviewedCount: 0,
-      removedCount: preVisualContextListings.length,
+      removedCount: preVisualContextListings.length + preVisualScoreExcludedListings.length + remainingUnrankedEligible.length,
       retainedUnreviewedCount: 0,
       reviews: declaredReviews,
       note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
-  const candidates = preparedListings
-    .map((item, candidateIndex) => {
-	      const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
-      return {
-        item,
-        candidateIndex,
-        imageUrl: imageUrls[0] ?? null,
-        imageUrls,
-      };
-    })
-    .filter((entry) => !preVisualExcludedIndexes.has(entry.candidateIndex))
+  const candidates = allCandidates
     .filter(
       (entry): entry is { item: T; candidateIndex: number; imageUrl: string; imageUrls: string[] } =>
+        !preVisualScoreExcludedIndexes.has(entry.candidateIndex) &&
         entry.imageUrls.length > 0
     );
+  const imageLessIndexes = new Set(allCandidates.filter((candidate) => candidate.imageUrls.length === 0).map((candidate) => candidate.candidateIndex));
   if (!candidates.length) {
-    const scoredWithoutImages = sportsCardSingleTarget(targetMetadata)
-      ? annotateSportsCardScoresWithoutImages(eligibleListings, targetMetadata)
-      : eligibleListings;
     return {
-      listings: scoredWithoutImages,
-      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
-      preVisualExcludedCount: preVisualContextListings.length,
+      listings: [],
+      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
+        ...listing,
+        ...(rankedItems.get(preparedListings.indexOf(listing)) ?? {}),
+        visualRequirement: "not_required_pre_visual",
+        visualReviewStatus: "not_reviewed",
+        visualReviewRationale: "No candidate image was supplied; ranked candidate retained as context-only and not sent to visual review.",
+        evidenceDisposition: "context_only",
+      } as T))],
+      preVisualExcludedCount: preVisualContextListings.length + preVisualScoreExcludedListings.length + remainingUnrankedEligible.length,
       status: "skipped_no_candidate_images",
       reviewedCount: 0,
-      removedCount: preVisualContextListings.length,
-      retainedUnreviewedCount: eligibleListings.length,
+      removedCount: preVisualContextListings.length + preVisualScoreExcludedListings.length + remainingUnrankedEligible.length,
+      retainedUnreviewedCount: 0,
       reviews: declaredReviews,
       note: eligibleListings.length === 0
         ? `No ${args.sourceLabel.toLowerCase()} candidates remained after deterministic identity and multi-item filtering; ${preVisualContextListings.length} listing${preVisualContextListings.length === 1 ? " was" : "s were"} retained as context-only before vision.`
@@ -2081,7 +2137,6 @@ export async function filterVisualSourceCandidates<
     };
   }
   let reviewCandidates = candidates;
-  let sportsCardRankedItems = new Map<number, T>();
   try {
     const strictResponseFormat = {
       type: "json_schema",
@@ -2139,23 +2194,11 @@ export async function filterVisualSourceCandidates<
     // Preserve every candidate, but only send the strongest non-conflicting
     // candidates to vision in the first pass. This bounds latency without
     // turning an omitted image review into an implicit acceptance.
-    const sportsCardSelection = sportsCardSingleTarget(targetMetadata)
-      ? selectSportsCardSingleVisualCandidates(candidates, targetMetadata)
-      : null;
-    reviewCandidates = sportsCardSelection?.selected ?? candidates;
-    if (sportsCardSelection) {
-      preVisualScoreExcludedIndexes = new Set<number>(sportsCardSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
-      sportsCardRankedItems = new Map(sportsCardSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
-      preVisualScoreExcludedListings = sportsCardSelection.excluded.map((listing) => ({
-        ...listing,
-        visualRequirement: "not_required_pre_visual",
-        evidenceDisposition: "context_only",
-      } as T));
-      eligibleListings = eligibleListings.filter((listing) => {
-        const candidateIndex = preparedListings.indexOf(listing);
-        return candidateIndex < 0 || !preVisualScoreExcludedIndexes.has(candidateIndex) || !candidates.some((candidate) => candidate.item === listing);
-      });
-    }
+    reviewCandidates = sportsCardSelection
+      ? sportsCardSelection.selected
+        .filter((candidate) => candidate.imageUrls.length > 0)
+        .map((candidate) => ({ ...candidate, imageUrl: candidate.imageUrl as string }))
+      : candidates;
     const reviewQueue = prioritizeVisualSourceCandidates(reviewCandidates, targetMetadata, declaredReviews);
     const reviews: VisualSourceReview[] = [];
     let completedBatches = 0;
@@ -2428,8 +2471,8 @@ export async function filterVisualSourceCandidates<
     // visual verdict or remain explicit review-only. Do not let a later client
     // treat a missing model row as an implicit pass.
     const requirementAnnotatedListings = preparedListings.map((listing, index) => {
-      const displayListing = sportsCardRankedItems.has(index)
-        ? { ...listing, ...sportsCardRankedItems.get(index) } as T
+      const displayListing = rankedItems.has(index)
+        ? { ...listing, ...rankedItems.get(index) } as T
         : listing;
       const universalReason = preVisualUniversalReasons.get(index);
 	      if (universalReason) {
@@ -2473,6 +2516,15 @@ export async function filterVisualSourceCandidates<
           evidenceDisposition: "context_only",
         } as T;
       }
+      if (imageLessIndexes.has(index)) {
+        return {
+          ...displayListing,
+          visualRequirement: "not_required_pre_visual",
+          visualReviewStatus: "not_reviewed",
+          visualReviewRationale: "No usable candidate image was supplied; ranked candidate retained as context-only and not sent to visual review.",
+          evidenceDisposition: "context_only",
+        } as T;
+      }
       if (!imageBearingIndexes.has(index)) return displayListing;
       if (reviewedIndexes.has(index)) return { ...displayListing, visualRequirement: "required" } as T;
       return {
@@ -2490,7 +2542,7 @@ export async function filterVisualSourceCandidates<
       { requireExactMatch: isDisneyPinsMetadata(targetMetadata), requireCoinExactMatch: isCoinMetadata(targetMetadata), targetMetadata: targetMetadata },
     );
 	    const declaredConflictIndexes = new Set(declaredReviews.map((review) => review.candidateIndex));
-    const contextIndexes = new Set([...preVisualUniversalReasons.keys(), ...declaredConflictIndexes, ...preVisualLotReasons.keys(), ...preVisualScoreExcludedIndexes]);
+    const contextIndexes = new Set([...preVisualUniversalReasons.keys(), ...declaredConflictIndexes, ...preVisualLotReasons.keys(), ...preVisualScoreExcludedIndexes, ...imageLessIndexes]);
     const contextListings = applied.listings.filter((_, index) => contextIndexes.has(index));
     const visibleListings = applied.listings.filter((_, index) => !contextIndexes.has(index));
     const completedWithTimeout = timedOutCount > 0 || deadlineReached;
@@ -2507,21 +2559,36 @@ export async function filterVisualSourceCandidates<
 	      note: `${buildVisualSourceFilterNote(args.sourceLabel, { ...applied, removedCount: contextListings.length })} Adaptive visual review sent ${reviewedCandidateCount} of ${candidates.length} image-bearing candidates in batches of ${VISUAL_REVIEW_BATCH_SIZE}, stopping after ${VISUAL_REVIEW_TARGET_MATCHES} accepted visual matches, the ${VISUAL_REVIEW_MAX_CANDIDATES}-image maximum, or the ${VISUAL_REVIEW_OVERALL_DEADLINE_MS / 1000}-second overall deadline; ${timedOutCount} candidate${timedOutCount === 1 ? "" : "s"} timed out; ${preVisualUniversalReasons.size} universal duplicate, quantity, state, grade, component, or image-readiness record${preVisualUniversalReasons.size === 1 ? " was" : "s were"} retained as context-only; ${preVisualLotReasons.size} multi-item listing${preVisualLotReasons.size === 1 ? " was" : "s were"} excluded before vision and retained as context-only; ${declaredConflictIndexes.size} other explicit identity conflict${declaredConflictIndexes.size === 1 ? " was" : "s were"} excluded before vision and retained in context for audit.${completedWithTimeout ? " Remaining candidates are retained for manual review and cannot enter valuation implicitly." : ""}`,
     };
   } catch {
+    const unavailableContextListings = [
+      ...preVisualContextListings,
+      ...preVisualScoreExcludedListings,
+      ...preparedListings.flatMap((listing, index) => imageLessIndexes.has(index)
+        ? [{
+            ...listing,
+            ...(rankedItems.get(index) ?? {}),
+            visualRequirement: "not_required_pre_visual",
+            visualReviewStatus: "not_reviewed",
+            visualReviewRationale: "No usable candidate image was supplied; ranked candidate retained as context-only and not sent to visual review.",
+            evidenceDisposition: "context_only",
+          } as T]
+        : []),
+    ];
     return {
       listings: preparedListings.map((listing, index) => reviewCandidates.some((candidate) => candidate.candidateIndex === index)
         ? {
             ...listing,
+            ...(rankedItems.get(index) ?? {}),
             visualRequirement: "required",
             visualReviewStatus: "not_reviewed",
             visualReviewRationale: "The visual provider was unavailable; manual image review is required.",
             evidenceDisposition: "warning_review",
           } as T
-        : listing).filter((_, index) => !preVisualExcludedIndexes.has(index)),
-      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings],
-      preVisualExcludedCount: preVisualContextListings.length,
+        : { ...listing, ...(rankedItems.get(index) ?? {}) }).filter((_, index) => !preVisualExcludedIndexes.has(index) && !imageLessIndexes.has(index)),
+      contextListings: unavailableContextListings,
+      preVisualExcludedCount: unavailableContextListings.length,
       status: "provider_unavailable",
       reviewedCount: 0,
-      removedCount: preVisualContextListings.length,
+      removedCount: unavailableContextListings.length,
       retainedUnreviewedCount: candidates.length,
       reviews: declaredReviews,
       note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all eligible text-filtered candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
