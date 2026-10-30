@@ -9,7 +9,7 @@ import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { buildStructuredItemQuery, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
+import { buildComicsOriginalArtQueries, buildStructuredItemQuery, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '@shared/testAiCriteria';
 import { getEligibleTestAiSources, TEST_AI_SOURCE_APPLICABILITY, type TestAiSourceId } from '@shared/testAiSourceApplicability';
 import { normalizeTestAiEvidence, selectPreferredGuideAnchor, type AnalyzerRecordDetail, type EvidenceSourceObservation, type NormalizedEvidenceSummary } from '@shared/testAiEvidenceNormalization';
 import { bucketPcgsAuctionRows } from '@shared/testAiPcgsAuctionBuckets';
@@ -809,9 +809,11 @@ function MarketplaceQueryBanner({ item, query, isLoading, omitGradingCriteria = 
   const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
   const suppressGradingCriteria = omitGradingCriteria && /^video games?$/.test(normalizedCategory);
   const goldinVintageToy = sourceId === 'goldin' && normalizedCategory === 'vintage toys';
-  const structuredQuery = goldinVintageToy
-    ? buildGoldinVintageToyDisplayQuery(item)
-    : buildStructuredItemQuery(item.category, item.itemDetails, isUnopenedProduct || suppressGradingCriteria ? [] : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition], item.itemType ?? '');
+  const structuredQuery = isComicsOriginalArt(item.itemType) && item.category === 'comics'
+    ? (buildComicsOriginalArtQueries(item.itemDetails, item.title)[0] ?? '')
+    : goldinVintageToy
+      ? buildGoldinVintageToyDisplayQuery(item)
+      : buildStructuredItemQuery(item.category, item.itemDetails, isUnopenedProduct || suppressGradingCriteria ? [] : [gradingCompany, normalizedGrade, normalizedGrade ? null : item.condition], item.itemType ?? '');
   const visibleQuery = query || structuredQuery || 'No structured item fields supplied';
   return <div className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1.5">
     <p className="text-[9px] font-semibold uppercase tracking-wide text-cyan-300">Search criteria / request <span className="font-normal text-cyan-200/60">({query ? 'server-confirmed' : isLoading ? 'pending response' : 'structured preview'})</span></p>
@@ -895,6 +897,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
+      {data?.marketContextOnly && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-[10px] text-amber-200">Original Art market context only — these are broad price-range references, not exact comparables, and no candidate images are sent to visual analysis.</p>}
       {data?.visualFilter?.note && <p className="rounded bg-cyan-950/30 border border-cyan-700/30 px-2 py-1 text-[10px] text-cyan-200">{data.visualFilter.note}</p>}
       {data?.visualFilter && <div className="flex items-center justify-between gap-2 rounded border border-cyan-700/30 bg-cyan-950/20 p-2">
         <div className="min-w-0"><p className="text-[10px] font-semibold text-cyan-100">AI image review: {visualReviewRows.length} candidate image{visualReviewRows.length === 1 ? '' : 's'} reviewed</p><p className="text-[9px] text-cyan-200/80">{visualMismatchRows.length} visual mismatch flag{visualMismatchRows.length === 1 ? '' : 's'} · flags are retained for review, not silently deleted</p></div>

@@ -21,7 +21,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -2211,6 +2211,9 @@ export const testAIRouter = router({
       }
       // Comics
       else if (input.category === 'comics') {
+        if (isComicsOriginalArt(input.itemType)) {
+          query = buildComicsOriginalArtQueries(input.itemDetails, input.title)[0] ?? input.title;
+        } else {
         const comicTitle = details.comicTitle || input.title;
         const issueNumber = details.issueNumber || '';
         const issueStr = issueNumber ? ` #${issueNumber}` : '';
@@ -2218,6 +2221,7 @@ export const testAIRouter = router({
         else if (grade) query = `${comicTitle}${issueStr} ${grade}`;
         else if ((grade ? undefined : input.condition)) query = `${comicTitle}${issueStr} ${(grade ? undefined : input.condition)}`;
         else query = `${comicTitle}${issueStr}`.trim() || input.title;
+        }
       }
       // Sports cards
       else if (input.category === 'sports_cards') {
@@ -2314,7 +2318,9 @@ export const testAIRouter = router({
         // identity queries. The provider can return only one result for an
         // overly specific title, so do not treat that first page as complete.
         const targetGrade = extractGradeFromQuery(query);
-        const queryCandidates = buildSoldCompsQueryCandidates(query, {
+        const queryCandidates = isComicsOriginalArt(input.itemType)
+          ? buildComicsOriginalArtQueries(input.itemDetails, input.title)
+          : buildSoldCompsQueryCandidates(query, {
           // Keep grade in the first sports-card query, then use the broader
           // fallbacks. The final grade/provider filters remain authoritative.
           preserveGrade: input.category === 'sports_cards',
@@ -2368,6 +2374,47 @@ export const testAIRouter = router({
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
+        if (isComicsOriginalArt(input.itemType)) {
+          const marketListings = rawItems.map((item: any) => ({
+            title: item.title,
+            price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
+            currency: item.soldCurrency ?? item.currency ?? null,
+            condition: item.condition,
+            seller: item.sellerUsername,
+            itemUrl: item.url,
+            imageUrl: item.thumbnailUrl ?? item.imageUrl,
+            endedAt: item.endedAt,
+            shippingPrice: item.shippingPrice,
+            saleId: item.saleId ?? item.id ?? null,
+            sourceId: 'sold_comps',
+            sourceLabel: 'eBay Sold-Comps',
+            retrievalQuery: item.retrievalQuery ?? null,
+            evidenceDisposition: 'context_only',
+            evidenceReasons: ['Original Art market-range context only; not an exact comparable and not sent to visual analysis.'],
+            visualReviewStatus: 'not_reviewed',
+          }));
+          const metrics = computeMetrics(marketListings.map((item: any) => ({
+            ...item,
+            price: { value: item.price, currency: item.currency ?? 'USD' },
+          })));
+          return {
+            query,
+            marketContextOnly: true,
+            listings: marketListings,
+            visualReviewListings: [],
+            visualFilter: undefined,
+            metrics,
+            audit: {
+              rawReceived: rawItems.length,
+              retrievalCoverage,
+              valuationEligible: 0,
+              warningReview: marketListings.length,
+              objectiveConflicts: 0,
+              notVisuallyReviewed: marketListings.length,
+            },
+            note: 'Original Art market context only: the results provide a broad price range and are not used as exact comparables or sent to visual analysis.',
+          };
+        }
         const soldCompsTargetMetadata = buildVisualTargetMetadata({
           title: input.title,
           category: input.category,

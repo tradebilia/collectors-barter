@@ -2560,6 +2560,33 @@ export async function filterVisualSourceCandidates<
 		  const targetMetadata = canonicalVisualTargetMetadata(args.targetMetadata);
 	  const universalPreparation = prepareUniversalVisualCandidates(args.listings, targetMetadata);
 	  const preparedListings = universalPreparation.listings;
+	  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
+	    && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata);
+	  if (isOriginalArtTarget) {
+	    const contextListings = preparedListings.map((listing, index) => ({
+	      ...listing,
+	      visualRequirement: 'not_required_original_art',
+	      visualReviewStatus: 'not_reviewed',
+	      visualReviewRationale: 'Original Art uses broad market context; different artworks are not exact visual comparables.',
+	      evidenceDisposition: 'context_only',
+	      evidenceReasons: [
+	        ...(universalPreparation.contextReasons.get(index) ? [universalPreparation.contextReasons.get(index)!] : []),
+
+	        'Original Art market-context workflow does not use visual analysis.',
+	      ],
+	    } as T));
+	    return {
+	      listings: [],
+	      contextListings,
+	      preVisualExcludedCount: contextListings.length,
+	      status: 'skipped_no_target_image',
+	      reviewedCount: 0,
+	      removedCount: 0,
+	      retainedUnreviewedCount: contextListings.length,
+	      reviews: [],
+	      note: 'Original Art market context only: candidates are not sent to visual analysis because different artworks are not exact matches.',
+	    };
+	  }
 	  const preVisualUniversalReasons = universalPreparation.contextReasons;
   const preVisualLotReasons = new Map<number, string>();
 	  preparedListings.forEach((listing, index) => {

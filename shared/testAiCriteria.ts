@@ -64,6 +64,43 @@ export function resolveTestAiDetailValue(details: Record<string, unknown>, key: 
   return customText && customText.toLowerCase() !== 'other' ? customText : '';
 }
 
+export function isComicsOriginalArt(itemType: unknown): boolean {
+  return String(itemType ?? '').trim().toLowerCase().replace(/[ -]+/g, '_') === 'original_art';
+}
+
+/**
+ * Original Art is market-context research rather than an exact comparable
+ * search. Marketplace titles vary in word order and often omit articles, so
+ * use a bounded set of broad identity queries instead of one rigid phrase.
+ */
+export function buildComicsOriginalArtQueries(itemDetails: unknown, fallbackTitle: string): string[] {
+  const details = parseTestAiDetails(itemDetails);
+  const value = (...keys: string[]) => keys.map((key) => resolveTestAiDetailValue(details, key)).find(Boolean) ?? '';
+  const artist = value('artistName', 'artist', 'creator');
+  const artwork = value('artworkTitle', 'artworkTitleCharacter', 'character', 'subject');
+  const artType = value('artType', 'artworkType');
+  const comicTitle = value('comicTitle', 'coverSketchComicTitle', 'comicSeries', 'series');
+  const issueNumber = value('issueNumber', 'coverSketchIssueNumber', 'issueNo', 'issue');
+  const queryParts = [artist, artwork, artType, comicTitle, issueNumber];
+  const candidates = [
+    queryParts,
+    [artist, artwork, artType, comicTitle],
+    [artist, comicTitle, issueNumber, artType],
+    [artist, artwork, artType],
+    [artist, comicTitle, issueNumber],
+    [artist, artwork],
+    [artist, artType],
+    [fallbackTitle],
+  ].map((parts) => parts.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const articleAliases = candidates
+    .map((query) => query.replace(/\b(?:the|a|an)\b/gi, ' ').replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  return [...new Set([...candidates, ...articleAliases])]
+    .slice(0, 10)
+    .map((query) => query.slice(0, 240).trim())
+    .filter(Boolean);
+}
+
 /** Resolves all persisted dropdown selectors before any source-specific query builder reads them. */
 export function normalizeTestAiOtherDetails(details: Record<string, unknown>): Record<string, any> {
   const normalized = { ...details };
