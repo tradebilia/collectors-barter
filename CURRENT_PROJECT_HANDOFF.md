@@ -7,3 +7,13 @@ Added source-neutral 100-point ranking models. Single Stamp scores Scott/catalog
 Collection/Lot remains universally non-comparable and does not receive Stamps-specific filters, ranking, caps, provider lookups, visual analysis, or trade analysis. Grading and reference sources remain outside this marketplace/eBay filter, ranking, and cap pipeline.
 
 Validation passed: focused visual-filter suite **146/146**, source-role and applicability tests **40/40**, TypeScript, production build, diff hygiene, and complete deterministic suite **1,831 passed / 7 skipped** across **345 passed / 4 skipped test files**. No database writes, migrations, credentials, provider configuration, deployment, publishing, or domain changes were made.
+
+## Project safeguards
+P0 remediation completed. P1 performance and maintainability remain tracked separately. The project continues to use the existing custom database with a read-only database baseline before database changes. Do not apply migrations, seed scripts, or destructive scripts during this development workflow.
+
+## Video Games / Game, Console, and Accessory — October 30, 2026
+Implemented marketplace/eBay-only item-type identity filters for **Video Games / Game**, **Video Games / Console**, and **Video Games / Accessory**. Game candidates are checked for explicit game title, platform, release year, region, edition, and UPC/EAN conflicts. Console candidates are checked for console name, model number, region, and working condition. Accessory candidates are checked for accessory type/name, compatible platform, manufacturer, working condition, and original packaging. Explicit contradictions are retained as high-confidence context-only records before visual review; missing provider fields remain unknown and do not automatically exclude candidates. Normal marketplace title wording is tolerated when it contains the target identity, such as a game title followed by its platform or condition.
+
+Collection/Lot remains excluded from these item-type filters and from all provider lookups, ranking, visual analysis, and trade analysis. Existing universal safeguards, source-neutral marketplace/eBay routing, and grading/reference separation remain unchanged. Ranking scores and visual caps were intentionally not changed in this filter-only phase.
+
+Validation passed: Video Games visual-filter suite **150/150**, source-role and applicability tests **40/40**, handoff documentation contract **13/13**, TypeScript, production build, diff checks, and complete deterministic suite **1,835 passed / 7 skipped** across **345 passed / 4 skipped test files**. No database writes, migrations, credentials, provider configuration, deployment, publishing, or domain changes were made.

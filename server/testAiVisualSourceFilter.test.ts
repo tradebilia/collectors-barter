@@ -1675,6 +1675,53 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("platform differs");
   });
 
+  it("applies Video Games / Game identity filters and preserves unknown fields", () => {
+    const metadata = `title=Super Mario Bros. 3; category=video_games; itemType=game; fullItemDetails=${JSON.stringify({ gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", upc: "123456789012" })}`;
+    const candidates = [
+      { title: "Super Mario Bros. 3 Nintendo Switch", itemDetails: JSON.stringify({ platform: "Switch" }) },
+      { title: "Super Mario Bros. 3 NES", itemDetails: JSON.stringify({ releaseYear: 1991 }) },
+      { title: "Super Mario Bros. 3 NES", itemDetails: JSON.stringify({ region: "PAL" }) },
+      { title: "Super Mario Bros. 3 NES CIB" },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(3);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("platform differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("release year differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("region differs");
+  });
+  it("applies Video Games / Console identity filters", () => {
+    const metadata = `title=Nintendo NES; category=video_games; itemType=console; fullItemDetails=${JSON.stringify({ consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working" })}`;
+    const candidates = [
+      { title: "Nintendo NES Console", itemDetails: JSON.stringify({ modelNumber: "NES-101" }) },
+      { title: "Nintendo NES Console", itemDetails: JSON.stringify({ region: "PAL" }) },
+      { title: "Nintendo NES Console", itemDetails: JSON.stringify({ workingCondition: "Not Working" }) },
+      { title: "Nintendo NES Game", itemType: "game" },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(4);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("model number differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("working condition differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("item type differs");
+  });
+  it("applies Video Games / Accessory identity filters", () => {
+    const metadata = `title=Nintendo NES Controller; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "yes" })}`;
+    const candidates = [
+      { title: "Nintendo NES Controller", itemDetails: JSON.stringify({ platform: "Switch" }) },
+      { title: "Nintendo NES Controller", itemDetails: JSON.stringify({ manufacturer: "Sony" }) },
+      { title: "Nintendo NES Controller", itemDetails: JSON.stringify({ workingCondition: "Untested" }) },
+      { title: "Nintendo NES Controller", itemDetails: JSON.stringify({ originalPackaging: "no" }) },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(4);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("compatible platform differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("manufacturer differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("working condition differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("original packaging differs");
+  });
+  it("does not apply Video Games filters to Collection/Lot", () => {
+    const metadata = `title=Video Game Collection; category=video_games; itemType=collection_lot; fullItemDetails=${JSON.stringify({ platformsIncluded: "NES, Switch", approximateItemCount: 20 })}`;
+    expect(buildDeclaredIdentityReviews([{ title: "Nintendo Switch Console", itemType: "console", itemDetails: JSON.stringify({ platform: "Switch" }) }], metadata)).toEqual([]);
+  });
   it("holds a coin candidate with an explicit mint-mark conflict before vision", () => {
     const metadata = `title=1903 Morgan Dollar; category=coins; fullItemDetails=${JSON.stringify({ year: "1903", denomination: "1", mintMark: "S", variety: "Morgan" })}`;
     const result = buildDeclaredIdentityReviews([

@@ -1510,6 +1510,105 @@ function candidateProductForm(targetMetadata: string, listing: VisualSourceCandi
   return null;
 }
 
+function videoGameTargetItemType(targetMetadata: string): string {
+  const details = extractTargetItemDetails(targetMetadata);
+  return normalizedChoice(metadataValue(targetMetadata, "itemType") || details.itemType || details.productType || "");
+}
+function videoGameItemTypeLabel(value: string): string {
+  if (/^(?:game|video_game|video_games_game)$/.test(value)) return "game";
+  if (/^(?:console|video_game_console)$/.test(value)) return "console";
+  if (/^(?:accessory|video_game_accessory)$/.test(value)) return "accessory";
+  if (/collection|lot/.test(value)) return "collection/lot";
+  return "";
+}
+function videoGameCandidateItemType(listing: VisualSourceCandidate): string {
+  const details = candidateStructuredDetails(listing);
+  const structured = videoGameItemTypeLabel(normalizedChoice(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form ?? ""));
+  if (structured) return structured;
+  const title = String(listing.title ?? "");
+  if (/\b(?:manual|instruction booklet|box|case)\s+only\b/i.test(title)) return "accessory";
+  if (/\b(?:console|system|hardware)\s+only\b/i.test(title)) return "console";
+  if (/\b(?:controller|gamepad|memory card|power adapter|ac adapter|cable|cord)\b/i.test(title)) return "accessory";
+  return "";
+}
+function videoGameCanonicalValue(value: unknown): string {
+  return normalizedChoice(value)
+    .replace(/^nintendo_/, "")
+    .replace(/_system$/, "")
+    .replace(/_console$/, "")
+    .replace(/_edition$/, "");
+}
+function videoGameValuesAgree(targetValue: unknown, candidateValue: unknown, label: string): boolean {
+  const target = videoGameCanonicalValue(targetValue);
+  const candidate = videoGameCanonicalValue(candidateValue);
+  if (!target || !candidate) return true;
+  if (target === candidate) return true;
+  if (!(label.includes("title") || label.includes("name"))) return false;
+  const targetTokens = target.split(/[^a-z0-9]+/).filter((token) => token.length > 1 && !["the", "game", "video"].includes(token));
+  const candidateTokens = candidate.split(/[^a-z0-9]+/).filter(Boolean);
+  return targetTokens.length > 0 && targetTokens.every((token) => candidateTokens.includes(token));
+}
+function videoGameCandidateValue(listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  for (const alias of aliases) {
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    if (value != null && String(value).trim()) return String(value);
+  }
+  const title = String(listing.title ?? "");
+  for (const pattern of patterns) {
+    const match = title.match(pattern);
+    if (match?.[1]) return match[1];
+    if (match?.[0]) return match[0];
+  }
+  return "";
+}
+function videoGameItemTypeConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  if (!targetType || targetType === "collection/lot") return null;
+  const candidateType = videoGameCandidateItemType(listing);
+  if (candidateType && candidateType !== targetType) {
+    return `Video Game item type differs: target is ${targetType}, but the candidate is explicitly ${candidateType}.`;
+  }
+  return null;
+}
+function videoGameIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  if (category !== "video_games") return null;
+  const targetType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  if (!targetType || targetType === "collection/lot") return null;
+  const details = extractTargetItemDetails(targetMetadata);
+  const typeConflict = videoGameItemTypeConflict(targetMetadata, listing);
+  if (typeConflict) return typeConflict;
+  const checks: Array<[unknown, string, string[], RegExp[]]> = [];
+  if (targetType === "game") {
+    checks.push([details.gameTitle ?? extractTargetTitle(targetMetadata), "game title", ["gameTitle", "title"], []]);
+    checks.push([details.platform, "platform", ["platform", "consoleName"], [/\b(NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?|Sega(?:\s+Master\s+System)?|Genesis|Saturn|Dreamcast|PC)\b/i]]);
+    checks.push([details.releaseYear ?? details.year, "release year", ["releaseYear", "year"], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]]);
+    checks.push([details.region, "region", ["region"], [/\b(NTSC-U|NTSC-J|PAL|Region Free)\b/i]]);
+    checks.push([details.edition, "edition", ["edition", "releaseType"], []]);
+    checks.push([details.upc ?? details.ean, "UPC/EAN", ["upc", "ean", "barcode"], []]);
+  } else if (targetType === "console") {
+    checks.push([details.consoleName ?? extractTargetTitle(targetMetadata), "console name", ["consoleName", "platform"], [/\b(NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|Sega Genesis|Sega Saturn|Dreamcast|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?)\b/i]]);
+    checks.push([details.modelNumber, "model number", ["modelNumber", "model", "sku"], []]);
+    checks.push([details.region, "region", ["region"], [/\b(NTSC-U|NTSC-J|PAL|Region Free)\b/i]]);
+    checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested"], [/(\bWorking\b|\bNot Working\b|\bUntested\b)/i]]);
+  } else if (targetType === "accessory") {
+    checks.push([details.accessoryType, "accessory type", ["accessoryType", "type"], []]);
+    checks.push([details.accessoryName, "accessory name", ["accessoryName", "name"], []]);
+    checks.push([details.platform, "compatible platform", ["platform", "compatiblePlatform"], [/\b(NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)\b/i]]);
+    checks.push([details.manufacturer, "manufacturer", ["manufacturer", "brand"], []]);
+    checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested"], [/(\bWorking\b|\bNot Working\b|\bUntested\b)/i]]);
+    checks.push([details.originalPackaging, "original packaging", ["originalPackaging", "packaging"], [/(\bOriginal Packaging\b|\bNo Packaging\b)/i]]);
+  }
+  for (const [targetValue, label, aliases, patterns] of checks) {
+    const targetComparable = videoGameCanonicalValue(targetValue);
+    if (!targetComparable || /^(unknown|n_a|na|none|not_applicable)$/.test(targetComparable)) continue;
+    const candidateValue = videoGameCanonicalValue(videoGameCandidateValue(listing, aliases, patterns));
+    if (!candidateValue || /^(unknown|n_a|na|none|not_applicable)$/.test(candidateValue)) continue;
+    if (!videoGameValuesAgree(targetValue, videoGameCandidateValue(listing, aliases, patterns), label)) return `Video Game ${label} differs: target is ${String(targetValue)}, but the candidate explicitly declares ${String(videoGameCandidateValue(listing, aliases, patterns))}.`;
+  }
+  return null;
+}
 function explicitProductFormConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetForm = targetProductForm(targetMetadata);
   const candidateForm = candidateProductForm(targetMetadata, listing);
@@ -2116,10 +2215,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const coinSetIdentityConflictReason = coinSetIdentityConflict(targetMetadata, listing);
     const paperMoneyIdentityConflictReason = paperMoneyIdentityConflict(targetMetadata, listing);
     const stampsIdentityConflictReason = stampsIdentityConflict(targetMetadata, listing);
+    const videoGameIdentityConflictReason = videoGameIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? videoGameIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
