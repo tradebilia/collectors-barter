@@ -166,6 +166,19 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "1999 Pokémon Charizard Base Set #4/102" }], target)).toEqual([]);
   });
 
+  it("uses the approved Pokémon visual-review cap bands", () => {
+    expect(pokemonVisualCap(100)).toBe(8);
+    expect(pokemonVisualCap(90)).toBe(8);
+    expect(pokemonVisualCap(89)).toBe(6);
+    expect(pokemonVisualCap(80)).toBe(6);
+    expect(pokemonVisualCap(79)).toBe(4);
+    expect(pokemonVisualCap(70)).toBe(4);
+    expect(pokemonVisualCap(69)).toBe(2);
+    expect(pokemonVisualCap(60)).toBe(2);
+    expect(pokemonVisualCap(59)).toBe(0);
+    expect(pokemonVisualCap(0)).toBe(0);
+  });
+
   it("applies Pokémon Set and Unopened Product filters while preserving unknown fields", () => {
     const setTarget = buildVisualTargetMetadata({ title: "Pokémon Base Set Complete Set", category: "pokemon", itemType: "set", fullItemDetails: { setName: "Base Set", language: "English", setType: "Complete Set", numberOfCardsInSet: "102", year: "1999" } });
     const setScore = pokemonVisualScore({ title: "Pokémon Base Set English Complete Set of 102 Cards 1999" }, setTarget);
