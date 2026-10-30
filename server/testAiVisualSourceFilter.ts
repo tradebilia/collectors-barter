@@ -1830,6 +1830,10 @@ function isSingleCoinTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, "category")) === "coins"
     && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "single_coin";
 }
+function isCoinSetTarget(targetMetadata: string): boolean {
+  return normalizedChoice(metadataValue(targetMetadata, "category")) === "coins"
+    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "coin_set";
+}
 function coinComparable(value: unknown): string {
   return normalizedChoice(value).replace(/[^a-z0-9]+/g, " ").trim();
 }
@@ -1869,6 +1873,54 @@ function coinSingleIdentityConflict(targetMetadata: string, listing: VisualSourc
   const title = String(listing.title ?? "");
   if (targetOriginal === "yes" && /\b(?:replica|copy|counterfeit|facsimile|reproduction)\b/i.test(title)) return "Coin authenticity differs: target is original/authentic, but the candidate explicitly declares a replica, copy, counterfeit, or facsimile.";
   if (targetOriginal === "no" && /\brestrike\b/i.test(title)) return "Coin restrike status differs from the target.";
+  return null;
+}
+function coinSetPackagingValue(listing: VisualSourceCandidate): string {
+  const structured = coinExplicitValue(listing, ["originalPackagingIncluded", "originalPackaging", "packaging"]);
+  if (structured) return structured;
+  const title = String(listing.title ?? "");
+  if (/\b(?:without|no)\s+(?:original\s+)?(?:packaging|box|ケース)\b/i.test(title)) return "No";
+  if (/\b(?:original\s+packaging|original\s+box|with\s+(?:the\s+)?box)\b/i.test(title)) return "Yes";
+  return "";
+}
+function coinSetIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (!isCoinSetTarget(targetMetadata)) return null;
+  const target = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateDetails = candidateStructuredDetails(listing);
+  const title = String(listing.title ?? "");
+  const setLanguage = /\b(?:coin\s+set|mint\s+set|proof\s+set|commemorative\s+set|type\s+set|set\s+of\s+\d+)\b/i.test(title);
+  const individualCoinLanguage = /\b(?:single\s+coin|coin\s+only|one\s+coin)\b/i.test(title)
+    || (Boolean(candidateGrader(candidate)) && !setLanguage && !/\b(?:set|collection|lot)\b/i.test(title));
+  if (individualCoinLanguage) {
+    return "Coins / Coin Set filter: candidate is an individual coin, but the target is a coin set. Retained as context-only before visual review.";
+  }
+  const targetSetName = firstMeaningfulValue(target.setName, target.series, target.coinSeries, target.coinType);
+  const candidateSetName = firstMeaningfulValue(candidateDetails.setName, candidateDetails.series, candidateDetails.coinSeries, candidateDetails.coinType);
+  if (targetSetName && candidateSetName) {
+    const conflict = coinFieldConflict(targetSetName, candidateSetName, "set name/series");
+    if (conflict) return conflict;
+  }
+  const checks: Array<[unknown, string, string[], RegExp[]]> = [
+    [target.country ?? target.issuingCountry, "country/issuing authority", ["country", "issuingCountry"], [/\b(United States|Canada|Mexico|Australia|United Kingdom|Great Britain)\b/i]],
+    [target.year ?? target.date ?? target.issueYear, "year/date", ["year", "date", "issueYear"], [/(?:^|[^0-9])((?:17|18|19|20)\d{2})(?:[^0-9]|$)/i]],
+    [target.setType, "set type", ["setType", "type"], [/\b((?:proof|mint|commemorative|type)\s+set)\b/i]],
+  ];
+  for (const [targetValue, label, aliases, patterns] of checks) {
+    const conflict = coinFieldConflict(targetValue, coinExplicitValue(listing, aliases, patterns), label);
+    if (conflict) return conflict;
+  }
+  const targetCount = Number(firstMeaningfulValue(target.numberOfCoins, target.numberOfCoinsInSet, target.coinCount));
+  const candidateCountText = coinExplicitValue(listing, ["numberOfCoins", "numberOfCoinsInSet", "coinCount", "quantity"], [/(?:set\s+of|contains?|includes?)\s*(\d+)\s+coins?/i, /\b(\d+)\s*[- ]?coin\s+set\b/i]);
+  const candidateCount = Number(candidateCountText);
+  if (Number.isFinite(targetCount) && targetCount > 0 && Number.isFinite(candidateCount) && candidateCount > 0 && targetCount !== candidateCount) {
+    return `Coin set size differs: target declares ${targetCount} coins, but the candidate explicitly declares ${candidateCount}.`;
+  }
+  const targetPackaging = normalizedChoice(target.originalPackagingIncluded ?? target.originalPackaging ?? target.packaging);
+  const candidatePackaging = normalizedChoice(coinSetPackagingValue(listing));
+  if (targetPackaging && candidatePackaging && /^(?:yes|no)$/.test(targetPackaging) && /^(?:yes|no)$/.test(candidatePackaging) && targetPackaging !== candidatePackaging) {
+    return `Coin set packaging differs: target declares original packaging ${targetPackaging}, but the candidate explicitly declares ${candidatePackaging}.`;
+  }
   return null;
 }
 function comicSingleIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
@@ -1958,10 +2010,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const comicSingleIdentityConflictReason = comicSingleIdentityConflict(targetMetadata, listing);
     const coinSingleIdentityConflictReason = coinSingleIdentityConflict(targetMetadata, listing);
+    const coinSetIdentityConflictReason = coinSetIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
@@ -2278,6 +2331,56 @@ export function coinsSingleVisualScore(listing: VisualSourceCandidate, targetMet
   return { score, matched, unknown };
 }
 export function coinsSingleVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
+}
+const COIN_SET_SCORE_FIELDS = [
+  ['setNameSeries', 25],
+  ['yearDate', 20],
+  ['countryIssuingAuthority', 15],
+  ['setType', 15],
+  ['numberOfCoins', 15],
+  ['originalPackagingIncluded', 10],
+] as const;
+function coinSetScoreTargetValue(targetDetails: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
+  return firstMeaningfulValue(...aliases.map((alias) => targetDetails[alias]), fallback);
+}
+function coinSetNumberMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = Number(targetValue);
+  if (!Number.isFinite(target) || target <= 0) return null;
+  const candidate = Number(coinExplicitValue(listing, ["numberOfCoins", "numberOfCoinsInSet", "coinCount", "quantity"], [/(?:set\s+of|contains?|includes?)\s*(\d+)\s+coins?/i, /\b(\d+)\s*[- ]?coin\s+set\b/i]));
+  return Number.isFinite(candidate) && candidate > 0 ? candidate === target : null;
+}
+function coinSetPackagingMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = normalizedChoice(targetValue);
+  if (!/^(?:yes|no)$/.test(target)) return null;
+  const candidate = normalizedChoice(coinSetPackagingValue(listing));
+  return /^(?:yes|no)$/.test(candidate) ? candidate === target : null;
+}
+export function coinsSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = sourceText(candidate);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof COIN_SET_SCORE_FIELDS[number][0], points: number, result: boolean | null) => {
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+  const setName = coinSetScoreTargetValue(targetDetails, ['setName', 'series', 'coinSeries', 'coinType'], extractTargetTitle(targetMetadata));
+  add('setNameSeries', 25, coinTitleSeriesTypeMatches(setName, candidateText));
+  add('yearDate', 20, coinScoreValueMatches(coinSetScoreTargetValue(targetDetails, ['year', 'date', 'issueYear']), listing, ['year', 'date', 'issueYear'], [/(?:^|[^0-9])((?:17|18|19|20)\d{2})(?:[^0-9]|$)/i]));
+  add('countryIssuingAuthority', 15, coinScoreValueMatches(coinSetScoreTargetValue(targetDetails, ['country', 'issuingCountry', 'issuingAuthority']), listing, ['country', 'issuingCountry', 'issuingAuthority'], [/\b(United States|USA|US|Canada|Mexico|Australia|United Kingdom|Great Britain)\b/i]));
+  add('setType', 15, coinScoreValueMatches(targetDetails.setType, listing, ['setType', 'type'], [/\b((?:proof\s+set|mint\s+set|commemorative\s+set|type\s+set))\b/i]));
+  add('numberOfCoins', 15, coinSetNumberMatches(coinSetScoreTargetValue(targetDetails, ['numberOfCoins', 'numberOfCoinsInSet', 'coinCount']), listing));
+  add('originalPackagingIncluded', 10, coinSetPackagingMatches(coinSetScoreTargetValue(targetDetails, ['originalPackagingIncluded', 'originalPackaging', 'packaging']), listing));
+  return { score, matched, unknown };
+}
+export function coinsSetVisualCap(score: number): number {
   if (score >= 90) return 8;
   if (score >= 80) return 6;
   if (score >= 70) return 4;
@@ -2781,6 +2884,31 @@ function selectCoinsSingleVisualCandidates<T extends VisualSourceCandidate>(cand
   } as T));
   return { selected, excluded, cap, ranked };
 }
+function selectCoinsSetVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate) => {
+    const scoring = coinsSetVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = coinsSetVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((listing) => ({
+    ...listing.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(listing.item.metadataMatchScore ?? 0) < 60
+      ? `Coins / Coin Set metadata score ${Number(listing.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+      : `Coins / Coin Set visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [listing.imageUrls.length === 0
+      ? 'no candidate image available; retained as context-only'
+      : Number(listing.item.metadataMatchScore ?? 0) < 60
+        ? 'metadata score below minimum (60)'
+        : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
 
 function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
   return listings
@@ -2890,7 +3018,10 @@ export async function filterVisualSourceCandidates<
   const coinsSelection = isSingleCoinTarget(targetMetadata)
     ? selectCoinsSingleVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? coinsSelection;
+  const coinSetSelection = isCoinSetTarget(targetMetadata)
+    ? selectCoinsSetVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? coinsSelection ?? coinSetSelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(

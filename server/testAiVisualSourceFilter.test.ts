@@ -38,6 +38,8 @@ import {
   prioritizeVisualSourceCandidates,
   coinsSingleVisualCap,
   coinsSingleVisualScore,
+  coinsSetVisualCap,
+  coinsSetVisualScore,
   comicsSingleVisualCap,
   comicsSingleVisualScore,
   sportsCardSetVisualCap,
@@ -151,6 +153,60 @@ describe("visual source filter", () => {
     expect(coinsSingleVisualCap(75)).toBe(4);
     expect(coinsSingleVisualCap(65)).toBe(2);
     expect(coinsSingleVisualCap(59)).toBe(0);
+  });
+
+  it("scores Coins / Coin Set candidates on set identity and packaging signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1999 United States Silver Proof Set",
+      category: "coins",
+      itemType: "coin_set",
+      fullItemDetails: {
+        setName: "Silver Proof Set",
+        country: "United States",
+        year: "1999",
+        setType: "Proof Set",
+        numberOfCoins: "5",
+        originalPackagingIncluded: "Yes",
+      },
+    });
+    const score = coinsSetVisualScore({
+      title: "1999 United States Silver Proof Set of 5 Coins with Original Packaging",
+      imageUrl: "https://example.com/coin-set.jpg",
+      itemDetails: JSON.stringify({
+        setName: "Silver Proof Set",
+        country: "United States",
+        year: "1999",
+        setType: "Proof Set",
+        numberOfCoins: "5",
+        originalPackagingIncluded: "Yes",
+      }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "setNameSeries", "yearDate", "countryIssuingAuthority", "setType", "numberOfCoins", "originalPackagingIncluded",
+    ]));
+  });
+
+  it("uses the approved Coins / Coin Set score-band visual caps", () => {
+    expect(coinsSetVisualCap(95)).toBe(8);
+    expect(coinsSetVisualCap(85)).toBe(6);
+    expect(coinsSetVisualCap(75)).toBe(4);
+    expect(coinsSetVisualCap(65)).toBe(2);
+    expect(coinsSetVisualCap(59)).toBe(0);
+  });
+
+  it("holds an individual graded coin as context when the target is a Coin Set", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1999 United States Silver Proof Set",
+      category: "coins",
+      itemType: "coin_set",
+      fullItemDetails: { setName: "Silver Proof Set", country: "United States", year: "1999", setType: "Proof Set" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1999-S Silver Dollar PCGS PR69", imageUrl: "https://example.com/coin.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]?.rationale).toContain("individual coin");
   });
 
   it("ranks Coins / Single Coin candidates and retains low-score rows as context only", async () => {
