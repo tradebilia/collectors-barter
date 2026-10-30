@@ -2047,7 +2047,7 @@ function movieCandidateItemType(listing: VisualSourceCandidate): 'individual_mov
   return '';
 }
 function movieCanonicalText(value: unknown): string {
-  return normalizedChoice(value).replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu[- ]?ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  return normalizedChoice(value).replace(/[_-]+/g, ' ').replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu\s*ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 function movieValuesAgree(targetValue: unknown, candidateValue: unknown): boolean {
   const target = movieCanonicalText(targetValue);
@@ -2581,6 +2581,81 @@ export function videoGameGameVisualScore(listing: VisualSourceCandidate, targetM
 export function videoGameConsoleVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_CONSOLE_SCORE_FIELDS, 'console'); }
 export function videoGameAccessoryVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_ACCESSORY_SCORE_FIELDS, 'accessory'); }
 export function videoGameVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
+}
+const MOVIES_INDIVIDUAL_SCORE_FIELDS = [
+  ['movieTitle', 30], ['format', 20], ['releaseYear', 15], ['edition', 15], ['region', 10], ['sealed', 10],
+] as const;
+const MOVIES_BOX_SET_SCORE_FIELDS = [
+  ['boxSetName', 30], ['format', 20], ['numberOfMovies', 15], ['edition', 15], ['sealed', 10], ['gradingDetails', 10],
+] as const;
+function movieScoreText(value: unknown): string {
+  return movieCanonicalText(value);
+}
+function movieScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = [], textMatch = false): boolean | null {
+  const target = movieScoreText(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
+  const candidateValue = movieCandidateValue(listing, aliases, patterns);
+  if (!candidateValue) return null;
+  const candidate = movieScoreText(candidateValue);
+  if (!candidate || /^(?:unknown|n a|na|none|not applicable)$/.test(candidate)) return null;
+  return textMatch ? movieValuesAgree(targetValue, candidateValue) : target === candidate;
+}
+function movieScoreFormatMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = movieFormat(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
+  const candidateValue = movieCandidateValue(listing, ['format', 'mediaFormat'], [/(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc|Mixed)/i]);
+  if (!candidateValue) return null;
+  return target === movieFormat(candidateValue);
+}
+function movieScoreBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = movieBoolean(targetValue);
+  if (!target) return null;
+  const candidateValue = movieCandidateValue(listing, ['sealed', 'sealedStatus', 'packaging'], [/(?:factory\s+sealed|sealed|opened|used)/i]);
+  if (!candidateValue) return null;
+  const candidate = movieBoolean(candidateValue);
+  return candidate ? candidate === target : null;
+}
+function movieScoreCountMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = Number(targetValue);
+  if (!Number.isFinite(target) || target <= 0) return null;
+  const candidateValue = movieCandidateValue(listing, ['numberOfMovies', 'movieCount', 'quantity'], [/(?:contains?|includes?|set\s+of)\s*(\d+)\s+movies?/i, /\b(\d+)\s*[- ]?(?:disc|movie)\s+(?:box\s+)?set\b/i]);
+  const candidate = Number(candidateValue);
+  return Number.isFinite(candidate) && candidate > 0 ? candidate === target : null;
+}
+export function moviesIndividualVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  if (movieTargetItemType(targetMetadata) !== 'individual_movie') return { score: 0, matched: [], unknown: [] };
+  const target = extractTargetItemDetails(targetMetadata);
+  const matched: string[] = []; const unknown: string[] = []; let score = 0;
+  const add = (field: typeof MOVIES_INDIVIDUAL_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
+  add('movieTitle', 30, movieScoreValueMatches(firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), listing, ['title', 'movieTitle'], [], true));
+  add('format', 20, movieScoreFormatMatches(target.format, listing));
+  add('releaseYear', 15, movieScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]));
+  add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
+  add('region', 10, movieScoreValueMatches(target.region, listing, ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i]));
+  add('sealed', 10, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
+  return { score, matched, unknown };
+}
+export function moviesBoxSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  if (movieTargetItemType(targetMetadata) !== 'box_set') return { score: 0, matched: [], unknown: [] };
+  const target = extractTargetItemDetails(targetMetadata);
+  const matched: string[] = []; const unknown: string[] = []; let score = 0;
+  const add = (field: typeof MOVIES_BOX_SET_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
+  add('boxSetName', 30, movieScoreValueMatches(firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata)), listing, ['boxSetName', 'title', 'seriesName'], [], true));
+  add('format', 20, movieScoreFormatMatches(target.format, listing));
+  add('numberOfMovies', 15, movieScoreCountMatches(firstMeaningfulValue(target.numberOfMovies, target.movieCount), listing));
+  add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
+  add('sealed', 10, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
+  const gradeMatch = coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing));
+  const companyMatch = coinGradingCompanyMatches(targetMetadata, normalizeVisualSourceCandidate(listing));
+  add('gradingDetails', 10, gradeMatch === true && companyMatch === true ? true : gradeMatch === false || companyMatch === false ? false : null);
+  return { score, matched, unknown };
+}
+export function moviesVisualCap(score: number): number {
   if (score >= 90) return 8;
   if (score >= 80) return 6;
   if (score >= 70) return 4;
@@ -3410,6 +3485,27 @@ function selectStampsVisualCandidates<T extends VisualSourceCandidate>(candidate
   const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({ ...entry.item, evidenceDisposition: 'pre_vision_score_excluded', visualReviewStatus: 'not_reviewed', visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`, evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`] } as T));
   return { selected, excluded, cap, ranked };
 }
+function selectMoviesVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string, boxSetTarget: boolean) {
+  const score = (item: T) => boxSetTarget ? moviesBoxSetVisualScore(item, targetMetadata) : moviesIndividualVisualScore(item, targetMetadata);
+  const label = boxSetTarget ? 'Movies / Box Set' : 'Movies / Individual Movie';
+  const ranked = candidates.map((candidate) => {
+    const scoring = score(candidate.item);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = moviesVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
+    ...entry.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
 function selectVideoGameVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string, targetType: 'game' | 'console' | 'accessory') {
   const score = (item: T) => targetType === 'game'
     ? videoGameGameVisualScore(item, targetMetadata)
@@ -3611,7 +3707,11 @@ export async function filterVisualSourceCandidates<
   const videoGameSelection = videoGameType === 'game' || videoGameType === 'console' || videoGameType === 'accessory'
     ? selectVideoGameVisualCandidates(allCandidates, targetMetadata, videoGameType)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection;
+  const movieType = movieTargetItemType(targetMetadata);
+  const moviesSelection = movieType === 'individual_movie' || movieType === 'box_set'
+    ? selectMoviesVisualCandidates(allCandidates, targetMetadata, movieType === 'box_set')
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(

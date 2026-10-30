@@ -46,6 +46,9 @@ import {
   videoGameConsoleVisualScore,
   videoGameAccessoryVisualScore,
   videoGameVisualCap,
+  moviesIndividualVisualScore,
+  moviesBoxSetVisualScore,
+  moviesVisualCap,
   stampsSingleVisualCap,
   stampsSingleVisualScore,
   stampsSetVisualCap,
@@ -142,6 +145,29 @@ describe("visual source filter", () => {
     expect(stampsSetVisualScore(candidate, target).score).toBe(0);
   });
 
+
+  it("scores Movies / Individual Movie and Box Set independently", () => {
+    const individualTarget = buildVisualTargetMetadata({ title: "The Matrix", category: "movies", itemType: "individual_movie", fullItemDetails: { title: "The Matrix", format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" } });
+    const individualScore = moviesIndividualVisualScore({ title: "Matrix Blu-ray 1999 Standard Region 1 Opened", itemDetails: JSON.stringify({ format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" }) }, individualTarget);
+    expect(individualScore.score).toBe(100);
+    expect(individualScore.matched).toEqual(expect.arrayContaining(["movieTitle", "format", "releaseYear", "edition", "region", "sealed"]));
+
+    const boxTarget = buildVisualTargetMetadata({ title: "The Lord of the Rings Trilogy", category: "movies", itemType: "box_set", fullItemDetails: { boxSetName: "The Lord of the Rings Trilogy", format: "Blu-ray", numberOfMovies: 3, edition: "Standard", sealed: "Yes" } });
+    const boxScore = moviesBoxSetVisualScore({ title: "Lord of the Rings Trilogy 3 Movie Blu-ray Box Set Standard Sealed", itemDetails: JSON.stringify({ format: "Blu-ray", numberOfMovies: 3, edition: "Standard", sealed: "Yes" }) }, boxTarget);
+    expect(boxScore.score).toBe(90);
+    expect(boxScore.matched).toEqual(expect.arrayContaining(["boxSetName", "format", "numberOfMovies", "edition", "sealed"]));
+  });
+
+  it("uses the approved Movies score-band cap limits", () => {
+    expect(moviesVisualCap(95)).toBe(8);
+    expect(moviesVisualCap(85)).toBe(6);
+    expect(moviesVisualCap(75)).toBe(4);
+    expect(moviesVisualCap(65)).toBe(2);
+    expect(moviesVisualCap(59)).toBe(0);
+    const collectionTarget = buildVisualTargetMetadata({ title: "Movie Collection", category: "movies", itemType: "collection_lot" });
+    expect(moviesIndividualVisualScore({ title: "The Matrix", imageUrl: "https://example.com/movie.jpg" }, collectionTarget).score).toBe(0);
+    expect(moviesBoxSetVisualScore({ title: "Movie Box Set", imageUrl: "https://example.com/set.jpg" }, collectionTarget).score).toBe(0);
+  });
 
   it("scores Video Games / Game, Console, and Accessory independently", () => {
     const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
