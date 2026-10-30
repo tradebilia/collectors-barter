@@ -812,6 +812,7 @@
   "server/videoCallState.test.ts",
   "server/videoCallState.ts",
   "server/videoGameYearCriteria.test.ts",
+  "server/vintageToysFilter.test.ts",
   "server/viteRuntimeCompatibility.test.ts",
   "server/warRoomLayout.test.ts",
   "server/whatnotReference.test.ts",

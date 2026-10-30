@@ -3886,6 +3886,199 @@ export function sportsCardUnopenedVisualCap(score: number): number {
   return 0;
 }
 
+const VINTAGE_TOY_SCORE_FIELDS = {
+  "action figure/doll": [
+    ["toyNameCharacter", 30], ["brand", 15], ["franchise", 15], ["year", 10],
+    ["packagingType", 10], ["complete", 10], ["accessoriesIncluded", 10],
+  ],
+  "board game/puzzle": [
+    ["gamePuzzleName", 30], ["publisherBrand", 15], ["year", 10], ["complete", 15],
+    ["numberOfPieces", 10], ["instructionsIncluded", 10], ["boxIncluded", 10],
+  ],
+  "electronic toy": [
+    ["toyName", 30], ["brand", 15], ["year", 10], ["tested", 15],
+    ["workingCondition", 15], ["batteryCompartmentCondition", 10], ["soundOrLights", 5],
+  ],
+  LEGO: [
+    ["setNumber", 30], ["theme", 20], ["complete", 15], ["packagingType", 10],
+    ["releaseYear", 10], ["pieceCount", 5], ["minifiguresIncluded", 5], ["retiredStatus", 5],
+  ],
+  "model/kit": [
+    ["modelKitName", 30], ["brand", 15], ["scale", 15], ["builtOrUnbuilt", 15],
+    ["complete", 10], ["instructionsIncluded", 10], ["year", 5],
+  ],
+  playset: [
+    ["playsetName", 30], ["brand", 15], ["franchise", 15], ["year", 10],
+    ["complete", 15], ["missingPieces", 10], ["originalBoxIncluded", 5],
+  ],
+  "plush/stuffed toy": [
+    ["toyNameCharacter", 35], ["brand", 20], ["franchise", 10], ["year", 10],
+    ["tagsAttached", 15], ["cleanlinessOdorNotes", 10],
+  ],
+  vehicle: [
+    ["vehicleName", 30], ["brand", 15], ["franchise", 10], ["year", 10],
+    ["vehicleType", 15], ["packagingType", 10], ["workingFeatures", 10],
+  ],
+} as const;
+
+function vintageToyScoreText(value: unknown): string {
+  return normalizedChoice(value).replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function vintageToyScoreTargetValue(details: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
+  return firstMeaningfulValue(...aliases.map((alias) => details[alias]), fallback);
+}
+
+function vintageToyScoreCandidateText(listing: VisualSourceCandidate, aliases: string[]): { explicit: string; text: string } {
+  const details = candidateStructuredDetails(listing);
+  const explicit = vintageToyScoreText(firstMeaningfulValue(...aliases.map((alias) => details[alias])));
+  const text = vintageToyScoreText(`${String(listing.title ?? "")} ${sourceText(normalizeVisualSourceCandidate(listing))}`);
+  return { explicit, text };
+}
+
+function vintageToyScoreTextMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[]): boolean | null {
+  const target = vintageToyScoreText(targetValue);
+  if (!target) return null;
+  const candidate = vintageToyScoreCandidateText(listing, aliases);
+  if (candidate.explicit) return candidate.explicit.includes(target) || target.includes(candidate.explicit);
+  if (!candidate.text) return null;
+  return candidate.text.includes(target) ? true : null;
+}
+
+function vintageToyScoreYearMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[]): boolean | null {
+  const target = String(targetValue ?? "").match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
+  if (!target) return null;
+  const candidate = vintageToyScoreCandidateText(listing, aliases);
+  const candidateYear = (candidate.explicit || candidate.text).match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
+  return candidateYear ? candidateYear === target : null;
+}
+
+function vintageToyScoreNumberMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[]): boolean | null {
+  const target = String(targetValue ?? "").match(/\b\d{1,7}\b/)?.[0];
+  if (!target) return null;
+  const candidate = vintageToyScoreCandidateText(listing, aliases);
+  const candidateNumber = (candidate.explicit || candidate.text).match(new RegExp(`\\b${target}\\b`))?.[0];
+  return candidateNumber ? candidateNumber === target : null;
+}
+
+function vintageToyScoreStateMatch(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): boolean | null {
+  const target = vintageToyState(targetValue);
+  if (!target) return null;
+  const candidate = vintageToyScoreCandidateText(listing, aliases);
+  const text = candidate.explicit || candidate.text;
+  if (!text) return null;
+  const explicitState = vintageToyState(candidate.explicit);
+  if (explicitState) return explicitState === target;
+  const targetYes = target === "yes";
+  if (targetYes) return positive.test(text) ? true : negative.test(text) ? false : null;
+  return negative.test(text) ? true : positive.test(text) ? false : null;
+}
+
+function vintageToyScoreValue(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], kind: "text" | "year" | "number" | "state", positive?: RegExp, negative?: RegExp): boolean | null {
+  if (kind === "year") return vintageToyScoreYearMatch(targetValue, listing, aliases);
+  if (kind === "number") return vintageToyScoreNumberMatch(targetValue, listing, aliases);
+  if (kind === "state") return vintageToyScoreStateMatch(targetValue, listing, aliases, positive ?? /\b(?:yes|complete|working|tested|sealed|original)\b/i, negative ?? /\b(?:no|incomplete|missing|not\s+working|untested|opened|loose)\b/i);
+  return vintageToyScoreTextMatch(targetValue, listing, aliases);
+}
+
+function vintageToyScoreType(targetMetadata: string): string {
+  return vintageToyTargetItemType(targetMetadata);
+}
+
+function vintageToyScoreFields(type: string): Array<readonly [string, number]> {
+  return [...(VINTAGE_TOY_SCORE_FIELDS[type as keyof typeof VINTAGE_TOY_SCORE_FIELDS] ?? [])];
+}
+
+export function vintageToyVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const type = vintageToyScoreType(targetMetadata);
+  const details = extractTargetItemDetails(targetMetadata);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: string, points: number, value: unknown, aliases: string[], kind: "text" | "year" | "number" | "state", positive?: RegExp, negative?: RegExp) => {
+    const result = vintageToyScoreValue(value, listing, aliases, kind, positive, negative);
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+  for (const [field, points] of vintageToyScoreFields(type)) {
+    switch (field) {
+      case "toyNameCharacter": add(field, points, vintageToyScoreTargetValue(details, ["toyNameCharacter", "toyName", "character"], extractTargetTitle(targetMetadata)), ["toyNameCharacter", "toyName", "character", "name"], "text"); break;
+      case "toyName": add(field, points, vintageToyScoreTargetValue(details, ["toyName"], extractTargetTitle(targetMetadata)), ["toyName", "name"], "text"); break;
+      case "gamePuzzleName": add(field, points, vintageToyScoreTargetValue(details, ["gamePuzzleName", "gameName", "puzzleName"], extractTargetTitle(targetMetadata)), ["gamePuzzleName", "gameName", "puzzleName", "name"], "text"); break;
+      case "modelKitName": add(field, points, vintageToyScoreTargetValue(details, ["modelKitName", "modelName", "kitName"], extractTargetTitle(targetMetadata)), ["modelKitName", "modelName", "kitName", "name"], "text"); break;
+      case "playsetName": add(field, points, vintageToyScoreTargetValue(details, ["playsetName"], extractTargetTitle(targetMetadata)), ["playsetName", "name"], "text"); break;
+      case "vehicleName": add(field, points, vintageToyScoreTargetValue(details, ["vehicleName"], extractTargetTitle(targetMetadata)), ["vehicleName", "name"], "text"); break;
+      case "setNumber": add(field, points, vintageToyScoreTargetValue(details, ["setNumber", "setNo", "number"]), ["setNumber", "setNo", "number"], "number"); break;
+      case "pieceCount": add(field, points, vintageToyScoreTargetValue(details, ["pieceCount"]), ["pieceCount", "pieces", "numberOfPieces"], "number"); break;
+      case "numberOfPieces": add(field, points, vintageToyScoreTargetValue(details, ["numberOfPieces", "pieceCount"]), ["numberOfPieces", "pieceCount", "pieces"], "number"); break;
+      case "releaseYear": add(field, points, vintageToyScoreTargetValue(details, ["releaseYear", "year"]), ["releaseYear", "year"], "year"); break;
+      case "year": add(field, points, vintageToyScoreTargetValue(details, ["year", "releaseYear"]), ["year", "releaseYear"], "year"); break;
+      case "brand": add(field, points, vintageToyScoreTargetValue(details, ["brand", "manufacturer"]), ["brand", "manufacturer"], "text"); break;
+      case "publisherBrand": add(field, points, vintageToyScoreTargetValue(details, ["publisherBrand", "publisher", "brand"]), ["publisherBrand", "publisher", "brand"], "text"); break;
+      case "franchise": add(field, points, vintageToyScoreTargetValue(details, ["franchise", "series"]), ["franchise", "series"], "text"); break;
+      case "theme": add(field, points, vintageToyScoreTargetValue(details, ["theme"]), ["theme"], "text"); break;
+      case "scale": add(field, points, vintageToyScoreTargetValue(details, ["scale"]), ["scale"], "text"); break;
+      case "vehicleType": add(field, points, vintageToyScoreTargetValue(details, ["vehicleType", "type"]), ["vehicleType", "type"], "text"); break;
+      case "workingCondition": add(field, points, vintageToyScoreTargetValue(details, ["workingCondition", "functionality"]), ["workingCondition", "functionality"], "text"); break;
+      case "builtOrUnbuilt": add(field, points, vintageToyScoreTargetValue(details, ["builtOrUnbuilt", "buildStatus"]), ["builtOrUnbuilt", "buildStatus"], "state", /\b(?:unbuilt|sealed|unopened)\b/i, /\b(?:built|assembled|completed)\b/i); break;
+      case "packagingType": add(field, points, vintageToyScoreTargetValue(details, ["packagingType", "packageType", "packaging"]), ["packagingType", "packageType", "packaging"], "text"); break;
+      case "complete": add(field, points, vintageToyScoreTargetValue(details, ["complete", "isComplete", "completeness"]), ["complete", "isComplete", "completeness"], "state", /\b(?:complete|sealed|factory\s+sealed)\b/i, /\b(?:incomplete|missing|partial)\b/i); break;
+      case "accessoriesIncluded": add(field, points, vintageToyScoreTargetValue(details, ["accessoriesIncluded", "accessories"]), ["accessoriesIncluded", "accessories"], "state", /\b(?:accessories?|all\s+accessories)\b/i, /\b(?:missing\s+accessories?|no\s+accessories)\b/i); break;
+      case "instructionsIncluded": add(field, points, vintageToyScoreTargetValue(details, ["instructionsIncluded", "instructions"]), ["instructionsIncluded", "instructions"], "state", /\b(?:instructions?|with\s+instructions?)\b/i, /\b(?:no\s+instructions?|missing\s+instructions?)\b/i); break;
+      case "boxIncluded": add(field, points, vintageToyScoreTargetValue(details, ["boxIncluded", "originalBoxIncluded"]), ["boxIncluded", "originalBoxIncluded", "box"], "state", /\b(?:box|boxed|with\s+box)\b/i, /\b(?:no\s+box|boxless)\b/i); break;
+      case "originalBoxIncluded": add(field, points, vintageToyScoreTargetValue(details, ["originalBoxIncluded", "boxIncluded"]), ["originalBoxIncluded", "boxIncluded", "box"], "state", /\b(?:original\s+box|with\s+box)\b/i, /\b(?:no\s+box|boxless)\b/i); break;
+      case "tested": add(field, points, vintageToyScoreTargetValue(details, ["tested"]), ["tested"], "state", /\btested\b/i, /\buntested\b/i); break;
+      case "batteryCompartmentCondition": add(field, points, vintageToyScoreTargetValue(details, ["batteryCompartmentCondition", "batteryCondition"]), ["batteryCompartmentCondition", "batteryCondition"], "text"); break;
+      case "soundOrLights": {
+        const sound = vintageToyScoreTargetValue(details, ["soundWorks"]);
+        const lights = vintageToyScoreTargetValue(details, ["lightsWork"]);
+        const soundResult = vintageToyScoreValue(sound, listing, ["soundWorks"], "state", /\b(?:sound|voice|audio)\s*(?:works?|working)\b/i, /\b(?:sound|voice|audio)\s*(?:doesn.t\s+work|not\s+working)\b/i);
+        const lightResult = vintageToyScoreValue(lights, listing, ["lightsWork"], "state", /\blights?\s*(?:works?|working)\b/i, /\blights?\s*(?:doesn.t\s+work|not\s+working)\b/i);
+        const result = sound || lights ? (soundResult === true || lightResult === true ? true : soundResult === null || lightResult === null ? null : false) : null;
+        if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field);
+        break;
+      }
+      case "retiredStatus": add(field, points, vintageToyScoreTargetValue(details, ["retiredStatus", "retired"]), ["retiredStatus", "retired"], "state", /\bretired\b/i, /\b(?:current|not\s+retired)\b/i); break;
+      case "minifiguresIncluded": add(field, points, vintageToyScoreTargetValue(details, ["minifiguresIncluded", "minifigures"]), ["minifiguresIncluded", "minifigures"], "state", /\b(?:minifig(?:ure)?s?|figures?)\s*(?:included|present)\b/i, /\b(?:no|missing)\s+(?:minifig(?:ure)?s?|figures?)\b/i); break;
+      case "tagsAttached": add(field, points, vintageToyScoreTargetValue(details, ["tagsAttached", "tags"]), ["tagsAttached", "tags"], "state", /\b(?:with\s+tags?|tags?\s+attached)\b/i, /\b(?:no\s+tags?|tags?\s+missing)\b/i); break;
+      case "missingPieces": add(field, points, vintageToyScoreTargetValue(details, ["missingPieces"]), ["missingPieces"], "state", /\b(?:no\s+missing\s+pieces?|complete)\b/i, /\b(?:missing\s+pieces?|incomplete)\b/i); break;
+      case "workingFeatures": add(field, points, vintageToyScoreTargetValue(details, ["workingFeatures", "features"]), ["workingFeatures", "features"], "text"); break;
+      case "cleanlinessOdorNotes": add(field, points, vintageToyScoreTargetValue(details, ["cleanlinessOdorNotes"]), ["cleanlinessOdorNotes", "cleanliness", "odor"], "text"); break;
+    }
+  }
+  return { score, matched, unknown };
+}
+
+export function vintageToyVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
+}
+
+function selectVintageToyVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const label = `Vintage Toys / ${vintageToyScoreType(targetMetadata)}`;
+  const ranked = candidates.map((candidate) => {
+    const scoring = vintageToyVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const cap = vintageToyVisualCap(Number(ranked[0]?.item.metadataMatchScore ?? 0));
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
+    ...entry.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60
+      ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+      : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
+
 function selectSportsCardUnopenedVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
   const ranked = candidates.map((candidate) => {
     const scoring = sportsCardUnopenedVisualScore(candidate.item, targetMetadata);
@@ -4295,7 +4488,11 @@ export async function filterVisualSourceCandidates<
     && musicType !== '' && musicType !== 'collection/lot'
     ? selectMusicVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection;
+  const vintageToyType = vintageToyScoreType(targetMetadata);
+  const vintageToySelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'vintage_toys' && vintageToyType && vintageToyType !== 'collection/lot'
+    ? selectVintageToyVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(
