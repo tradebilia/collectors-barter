@@ -1873,6 +1873,78 @@ function musicMediaConditionConflict(targetMetadata: string, listing: VisualSour
   return `Music media condition differs: target is explicitly ${targetCondition.replace(/_/g, " ")}, but the candidate explicitly declares ${candidateCondition.replace(/_/g, " ")}.`;
 }
 
+function musicItemTypeLabel(value: unknown): string {
+  const normalized = normalizedChoice(value);
+  if (/^(?:vinyl|vinyl_record|record|lp|ep)$/.test(normalized)) return "vinyl record";
+  if (/^(?:cassette|cassette_tape|audio_cassette)$/.test(normalized)) return "cassette tape";
+  if (/^(?:cd|compact_disc|compact_disk)$/.test(normalized)) return "compact disc";
+  if (/^(?:8_track|eight_track|eight_track_tape|8_track_tape)$/.test(normalized)) return "8-track tape";
+  if (/other_music_format|other_format/.test(normalized)) return "other music format";
+  if (/collection|lot/.test(normalized)) return "collection/lot";
+  return "";
+}
+
+function musicCandidateFormat(listing: VisualSourceCandidate): string {
+  const details = candidateStructuredDetails(listing);
+  const explicit = musicItemTypeLabel(listing.itemType ?? listing.format ?? listing.productType ?? details.itemType ?? details.format ?? details.productType);
+  if (explicit) return explicit;
+  const title = String(listing.title ?? "");
+  if (/\b(?:8[- ]?track|eight[- ]?track)\b/i.test(title)) return "8-track tape";
+  if (/\b(?:compact disc|compact disk|audio CD|CD)\b/i.test(title)) return "compact disc";
+  if (/\b(?:cassette|audio tape|tape)\b/i.test(title)) return "cassette tape";
+  if (/\b(?:vinyl|LP|12-inch|10-inch|7-inch|45 RPM|33 RPM|78 RPM)\b/i.test(title)) return "vinyl record";
+  return "";
+}
+
+function musicComparableValue(value: unknown): string {
+  return candidateText(value).toLowerCase().replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, "").trim();
+}
+
+function musicExplicitValue(details: Record<string, unknown>, ...keys: string[]): string {
+  for (const key of keys) {
+    const value = details[key];
+    if (value !== undefined && value !== null && candidateText(value)) return candidateText(value);
+  }
+  return "";
+}
+
+function musicValuesConflict(targetValue: unknown, candidateValue: unknown): boolean {
+  const target = musicComparableValue(targetValue);
+  const candidate = musicComparableValue(candidateValue);
+  if (!target || !candidate) return false;
+  return target !== candidate && !target.includes(candidate) && !candidate.includes(target);
+}
+
+function musicIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "music") return null;
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetType = musicItemTypeLabel(metadataValue(targetMetadata, "itemType") || targetDetails.itemType || targetDetails.format);
+  if (!targetType || targetType === "collection/lot") return null;
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateType = musicCandidateFormat(listing);
+  if (candidateType && candidateType !== targetType && targetType !== "other music format") {
+    return `Music format differs: target is ${targetType}, but the candidate explicitly indicates ${candidateType}.`;
+  }
+  const checks: Array<[string, string, string[]]> = [
+    ["artist", "artist", ["artist", "performer", "artistName"]],
+    ["release title", "releaseTitle", ["releaseTitle", "album", "albumTitle", "title"]],
+    ["record label", "recordLabel", ["recordLabel", "label"]],
+    ["catalog number", "catalogNumber", ["catalogNumber", "catalogNo", "catNo"]],
+    ["country", "country", ["country", "countryOfRelease", "pressingCountry"]],
+    ["release year", "releaseYear", ["releaseYear", "year"]],
+    ["edition or variant", "edition", ["edition", "variant", "pressing"]],
+    ["pressing details", "pressingDetails", ["pressingDetails", "matrixRunout", "matrix", "runout"]],
+  ];
+  for (const [label, targetKey, candidateKeys] of checks) {
+    const targetValue = targetDetails[targetKey] ?? (targetKey === "releaseTitle" ? extractTargetTitle(targetMetadata) : metadataValue(targetMetadata, targetKey));
+    const candidateValue = musicExplicitValue(candidateDetails, ...candidateKeys);
+    if (musicValuesConflict(targetValue, candidateValue)) {
+      return `Music ${label} differs: the candidate explicitly declares a different ${label}.`;
+    }
+  }
+  return null;
+}
+
 function vintageToyCompleteness(value: unknown): "complete" | "incomplete" | null {
   const normalized = normalizedChoice(value);
   if (!normalized) return null;
@@ -2312,10 +2384,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const stampsIdentityConflictReason = stampsIdentityConflict(targetMetadata, listing);
     const videoGameIdentityConflictReason = videoGameIdentityConflict(targetMetadata, listing);
     const movieIdentityConflictReason = movieIdentityConflict(targetMetadata, listing);
+    const musicIdentityConflictReason = musicIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

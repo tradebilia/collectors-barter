@@ -2206,6 +2206,58 @@ describe("visual source filter", () => {
     )).toEqual([]);
   });
 
+  it("applies Music format and identity filters while preserving incomplete provider fields", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Kind of Blue",
+      category: "music",
+      itemType: "vinyl_record",
+      itemDetails: JSON.stringify({
+        artist: "Miles Davis", releaseTitle: "Kind of Blue", format: "vinyl_record",
+        recordLabel: "Columbia", catalogNumber: "CL 1355", country: "United States", releaseYear: "1959", edition: "First Pressing",
+      }),
+    });
+    const candidates = [
+      { title: "Miles Davis Kind of Blue CD", itemDetails: JSON.stringify({ format: "compact_disc" }) },
+      { title: "Miles Davis Kind of Blue", itemDetails: JSON.stringify({ artist: "John Coltrane" }) },
+      { title: "Miles Davis Kind of Blue", itemDetails: JSON.stringify({ catalogNumber: "CL 1356" }) },
+      { title: "Miles Davis Kind of Blue", itemDetails: JSON.stringify({ releaseYear: "1960" }) },
+      { title: "Kind of Blue", itemDetails: JSON.stringify({}) },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, targetMetadata);
+    expect(reviews).toHaveLength(4);
+    expect(reviews.map(review => review.candidateIndex)).toEqual([0, 1, 2, 3]);
+    expect(reviews[0].rationale).toContain("Music format differs");
+    expect(reviews[1].rationale).toContain("Music artist differs");
+    expect(reviews[2].rationale).toContain("Music catalog number differs");
+    expect(reviews[3].rationale).toContain("Music release year differs");
+  });
+
+  it("applies format-specific Music filters to cassette, CD, and 8-track titles", () => {
+    const cases = [
+      ["cassette_tape", "compact_disc"],
+      ["compact_disc", "eight_track_tape"],
+      ["eight_track_tape", "vinyl_record"],
+    ] as const;
+    for (const [targetType, candidateType] of cases) {
+      const targetMetadata = buildVisualTargetMetadata({
+        title: "Rumours", category: "music", itemType: targetType,
+        itemDetails: JSON.stringify({ artist: "Fleetwood Mac", releaseTitle: "Rumours", format: targetType }),
+      });
+      const reviews = buildDeclaredIdentityReviews([{ title: "Fleetwood Mac Rumours", itemType: candidateType }], targetMetadata);
+      expect(reviews[0].rationale).toContain("Music format differs");
+    }
+  });
+
+  it("does not apply Music identity filters to Collection/Lot targets", () => {
+    const targetMetadata = buildVisualTargetMetadata({
+      title: "Mixed Music Collection", category: "music", itemType: "collection_lot",
+      itemDetails: JSON.stringify({ artist: "Various Artists", format: "collection_lot" }),
+    });
+    expect(buildDeclaredIdentityReviews([
+      { title: "Mixed CD and Vinyl Lot", itemType: "compact_disc", itemDetails: JSON.stringify({ artist: "Various Artists" }) },
+    ], targetMetadata)).toEqual([]);
+  });
+
   it.each([
     "sports_cards",
     "pokemon",
