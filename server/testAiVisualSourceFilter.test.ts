@@ -40,6 +40,8 @@ import {
   coinsSingleVisualScore,
   coinsSetVisualCap,
   coinsSetVisualScore,
+  paperMoneyVisualCap,
+  paperMoneyVisualScore,
   comicsSingleVisualCap,
   comicsSingleVisualScore,
   sportsCardSetVisualCap,
@@ -193,6 +195,57 @@ describe("visual source filter", () => {
     expect(coinsSetVisualCap(75)).toBe(4);
     expect(coinsSetVisualCap(65)).toBe(2);
     expect(coinsSetVisualCap(59)).toBe(0);
+  });
+
+  it("scores Coins / Paper Money candidates on the approved banknote signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1934A $1,000 Federal Reserve Note PMG 64",
+      category: "coins",
+      itemType: "paper_money",
+      grade: "64",
+      certificationCompany: "PMG",
+      fullItemDetails: {
+        country: "United States",
+        denomination: "$1,000",
+        year: "1934",
+        series: "Federal Reserve Note",
+        signed: "No",
+        condition: "excellent",
+      },
+    });
+    const score = paperMoneyVisualScore({
+      title: "1934A United States $1,000 Federal Reserve Note PMG 64 Unsigned",
+      imageUrl: "https://example.com/note.jpg",
+      itemDetails: JSON.stringify({ country: "United States", denomination: "$1,000", year: "1934", series: "Federal Reserve Note", signed: "No", condition: "excellent" }),
+      gradingCompany: "PMG",
+      grade: "64",
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "country", "denomination", "yearDate", "titleSeries", "numericGrade", "gradingCompany", "signature", "condition",
+    ]));
+  });
+
+  it("uses the approved Coins / Paper Money score-band visual caps", () => {
+    expect(paperMoneyVisualCap(95)).toBe(8);
+    expect(paperMoneyVisualCap(85)).toBe(6);
+    expect(paperMoneyVisualCap(75)).toBe(4);
+    expect(paperMoneyVisualCap(65)).toBe(2);
+    expect(paperMoneyVisualCap(59)).toBe(0);
+  });
+
+  it("holds an explicitly different Paper Money country, denomination, or year as context", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1934A $1,000 Federal Reserve Note",
+      category: "coins",
+      itemType: "paper_money",
+      fullItemDetails: { country: "United States", denomination: "$1,000", year: "1934" },
+    });
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "1935A Canada $1,000 Banknote", imageUrl: "https://example.com/note.jpg" },
+    ], target);
+    expect(reviews).toHaveLength(1);
+    expect(reviews[0]?.rationale).toContain("Paper Money");
   });
 
   it("holds an individual graded coin as context when the target is a Coin Set", () => {

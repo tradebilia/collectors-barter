@@ -633,3 +633,11 @@ Coins / Coin Set marketplace and eBay candidates now receive a source-neutral it
 The approved 100-point Coin Set relevance score is: set name/series 25, year/date 20, country/issuing authority 15, set type 15, number of coins 15, and original packaging included 10. Missing data does not reduce the score. The visual-review cap is 8 candidates at 90–100, 6 at 80–89, 4 at 70–79, 2 at 60–69, and 0 below 60. Image-less, low-score, and over-cap candidates remain ranked context-only with explicit reasons and never enter visual analysis.
 
 Validation passed 138/138 focused visual-filter tests, TypeScript, production build, diff hygiene, and the complete deterministic suite: 345 test files passed / 4 skipped; 1,823 tests passed / 7 skipped. No database writes, migrations, credentials, provider configuration, publishing, or domain changes were made.
+
+## Coins / Paper Money ranking and filter — 2026-10-30
+
+Implemented the approved marketplace/eBay-only Paper Money / Banknotes safeguards. The shared pre-visual identity gate now retains explicit country, denomination, and year conflicts as context-only before visual review, while universal raw-versus-graded, grading-company, grade, lot, and duplicate safeguards remain active. Missing provider fields remain unknown and eligible; serial numbers and certification numbers are not used as hard identity conflicts, and ordinary condition differences are not hard-filtered.
+
+Added a source-neutral 100-point Paper Money relevance score: country 20, denomination 20, year/date 15, title/series identity 15, numeric grade 12, grading company 8, signature 5, and condition 5. Added score-band visual caps: 90–100 sends up to 8 image-bearing candidates, 80–89 up to 6, 70–79 up to 4, 60–69 up to 2, and below 60 sends none. Ranked and over-cap candidates remain visible as context-only audit records. Grading and reference sources do not receive this marketplace/eBay filter, ranking, or cap.
+
+Validation passed: focused visual-filter/source-role/applicability tests 151/151; TypeScript; production build; full deterministic suite 1,826 passed, 7 skipped across 345 passed and 4 skipped test files. No database, migration, credential, provider, deployment, selector, or publishing changes.
