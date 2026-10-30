@@ -1,0 +1,45 @@
+Category,Item Type,Specific Filter,Ranking Score,Visual Cap,Status / Notes
+Comics,Single Comic,Yes,Yes,10/8/6/4,Complete
+Comics,Original Art,Yes - market-context identity fields,Yes - market relevance,N/A,Market-range research only; never visual matching
+Comics,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Sports Cards,Single Card,Yes,Yes,10/8/6/4,Complete
+Sports Cards,Set,Yes,Yes,10/6/3/2,Complete; individual cards excluded as mismatches
+Sports Cards,Unopened Product,Yes,Yes,10/6/3/2,Complete; sealed authentication FASC and product form covered
+Sports Cards,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Vintage Toys,Action Figure/Doll,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Board Game/Puzzle,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Electronic Toy,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,LEGO,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Model/Kit,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Playset,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Plush/Stuffed Toy,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Vehicle,Yes,Yes,8/6/4/2,Complete
+Vintage Toys,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Video Games,Game,Yes,Yes,8/6/4/2,Complete
+Video Games,Console,Yes,Yes,8/6/4/2,Complete
+Video Games,Accessory,Yes,Yes,8/6/4/2,Complete
+Video Games,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Stamps,Single Stamp,Yes,Yes,8/6/4/2,Complete
+Stamps,Stamp Set/Sheet,Yes,Yes,8/6/4/2,Complete
+Stamps,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Coins,Single Coin,Yes,Yes,8/6/4/2,Complete
+Coins,Coin Set,Yes,Yes,8/6/4/2,Complete
+Coins,Paper Money/Banknotes,Yes,Yes,8/6/4/2,Complete; paper-money analyzer branch
+Coins,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Pokémon,Single Card,Yes,Yes,8/6/4/2,Complete
+Pokémon,Set,Yes,Yes,8/6/4/2,Complete
+Pokémon,Unopened Product,Yes,Yes,8/6/4/2,Complete
+Pokémon,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Movies,Individual Movie,Yes,Yes,8/6/4/2,Complete
+Movies,Box Set,Yes,Yes,8/6/4/2,Complete
+Movies,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Music,Vinyl Record,Yes,Yes,8/6/4/2,Complete; format-specific condition safeguards
+Music,Cassette Tape,Yes,Yes,8/6/4/2,Complete; format-specific condition safeguards
+Music,Compact Disc,Yes,Yes,8/6/4/2,Complete; format-specific condition safeguards
+Music,8-Track Tape,Yes,Yes,8/6/4/2,Complete; format-specific condition safeguards
+Music,Other Music Format,Yes,Yes,8/6/4/2,Complete
+Autographs,Signed Item,Yes - market-range identity fields,Yes - market relevance,N/A,Market-range research only; never visual matching
+Autographs,Collection/Lot,No,No,No,Intentional exception; universally blocked
+Disney Pins,Individual Pin,Yes,Yes,8/6/4/2,Complete
+Disney Pins,Pin Set,Yes,Yes,8/6/4/2,Complete
+Disney Pins,Collection/Lot,No,No,No,Intentional exception; universally blocked
