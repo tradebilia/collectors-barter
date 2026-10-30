@@ -103,7 +103,7 @@ function identityFromInput(input: CardsightLookupInput): CardsightIdentity {
     cardNumber: firstText(details, ['cardNumber', 'cardNo', 'number']),
     year: firstYear(details),
     manufacturer: firstText(details, ['manufacturer', 'brand']),
-    variant: firstText(details, ['variant', 'parallel', 'parallelVariation', 'printing', 'edition', 'editionEra', 'finish', 'finishVariant']),
+    variant: firstText(details, ['cardType', 'mechanic', 'variant', 'parallel', 'parallelVariation', 'printing', 'edition', 'editionEra', 'finish', 'finishVariant']),
   };
 }
 

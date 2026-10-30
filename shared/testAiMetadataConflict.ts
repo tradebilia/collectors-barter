@@ -39,7 +39,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
 
 const CATEGORY_FIELDS: Record<string, string[]> = {
   sports_cards: ['player', 'year', 'manufacturer', 'brand', 'series', 'setName', 'sport', 'team', 'league', 'cardNumber', 'rookieStatus', 'parallel', 'serialNumber', 'variant', 'gradeQualifier', 'gradingCompany', 'grade'],
-  pokemon: ['cardName', 'setName', 'series', 'cardNumber', 'rarity', 'language', 'holoType', 'variant', 'year', 'gradeQualifier', 'gradingCompany', 'grade', 'sealedStatus'],
+  pokemon: ['cardName', 'setName', 'series', 'cardNumber', 'rarity', 'language', 'finish', 'finishVariant', 'cardType', 'mechanic', 'holoType', 'variant', 'year', 'gradeQualifier', 'gradingCompany', 'grade', 'sealedStatus'],
   coins: ['country', 'denomination', 'year', 'mintMark', 'variety', 'series', 'metal', 'strike', 'designation', 'gradingCompany', 'grade'],
   comics: ['publisher', 'series', 'issueNumber', 'volume', 'variant', 'edition', 'certificationLabelStatus', 'labelNotation', 'gradingCompany', 'grade', 'distributionType'],
   video_games: ['gameTitle', 'platform', 'edition', 'region', 'releaseType', 'sealedStatus', 'publisher', 'catalogNumber', 'upc', 'gradingCompany', 'grade'],

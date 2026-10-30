@@ -1492,13 +1492,16 @@ export const testAIRouter = router({
           query = baseQuery || input.title;
         }
       }
-      // For pokemon: use year + editionEra + cardName + cardNumber + grading/condition
+      // For pokemon: use card identity plus finish, card type, language, and grading/condition
       if (input.category === 'pokemon') {
         const year = details.year || '';
         const editionEra = details.editionEra || '';
         const cardName = details.cardName || '';
         const cardNumber = details.cardNumber || '';
-        const parts = [year, editionEra, cardName, cardNumber].filter((p: string) => p);
+        const finish = details.finish || details.finishVariant || '';
+        const cardType = details.cardType || details.mechanic || '';
+        const language = details.language || '';
+        const parts = [year, editionEra, cardName, cardNumber, finish, cardType, language].filter((p: string) => p);
         const baseQuery = parts.join(' ');
         if (cert && grade) {
           query = `${baseQuery} ${cert} ${grade}`.trim();
@@ -2307,7 +2310,10 @@ export const testAIRouter = router({
         const editionEra = details.editionEra || '';
         const cardName = details.cardName || '';
         const cardNumber = details.cardNumber || '';
-        const parts = [year, editionEra, cardName, cardNumber].filter((p: string) => p);
+        const finish = details.finish || details.finishVariant || '';
+        const cardType = details.cardType || details.mechanic || '';
+        const language = details.language || '';
+        const parts = [year, editionEra, cardName, cardNumber, finish, cardType, language].filter((p: string) => p);
         const baseQuery = parts.join(' ');
         if (cert && grade) query = `${baseQuery} ${cert} ${grade}`.trim();
         else if (grade) query = `${baseQuery} ${grade}`.trim();

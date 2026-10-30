@@ -136,7 +136,7 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
   const keys = normalizedCategory === 'sports_cards'
     ? ['year', 'manufacturer', 'player', 'athlete', 'cardNumber', 'setName', 'cardSet', 'parallel', 'parallelVariation', 'variant']
     : normalizedCategory === 'pokemon'
-      ? ['cardName', 'pokemonName', 'name', 'cardNumber', 'cardNo', 'number', 'setName', 'set', 'cardSet', 'variant', 'printing', 'language']
+      ? ['cardName', 'pokemonName', 'name', 'cardNumber', 'cardNo', 'number', 'setName', 'set', 'cardSet', 'finish', 'finishVariant', 'cardType', 'mechanic', 'variant', 'printing', 'language']
       : normalizedCategory === 'comics'
         ? ['comicTitle', 'series', 'title', 'issueNumber', 'issueNo', 'issue', 'year', 'publisher', 'variant']
       : normalizedCategory === 'music'

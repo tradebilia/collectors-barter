@@ -157,6 +157,8 @@ const FIELD_LABELS: Record<string, string> = {
   set: 'Set',
   cardNumber: 'Card #',
   variant: 'Variant',
+  finish: 'Finish',
+  cardType: 'Card type / mechanic',
   year: 'Year',
   releaseYear: 'Listing year',
   globalReleaseYear: 'Global release year',
@@ -201,7 +203,7 @@ const FIELD_LABELS: Record<string, string> = {
 
 const CATEGORY_FIELDS: Record<string, string[]> = {
   sports_cards: ['player', 'year', 'manufacturer', 'cardNumber', 'certificationCompany', 'grade'],
-  pokemon: ['cardName', 'set', 'cardNumber', 'variant', 'year', 'certificationCompany', 'grade'],
+  pokemon: ['cardName', 'set', 'cardNumber', 'finish', 'cardType', 'variant', 'year', 'certificationCompany', 'grade'],
   coins: ['country', 'denomination', 'year', 'mintMark', 'variety', 'certificationCompany', 'grade'],
   comics: ['series', 'issueNumber', 'variant', 'publisher', 'certificationCompany', 'grade'],
   video_games: ['title', 'platform', 'edition', 'releaseYear', 'certificationCompany', 'grade'],
@@ -215,7 +217,7 @@ const CATEGORY_FIELDS: Record<string, string[]> = {
 
 const MATERIAL_FIELDS: Record<string, string[]> = {
   sports_cards: ['player', 'year', 'manufacturer', 'cardNumber', 'certificationCompany', 'grade'],
-  pokemon: ['cardName', 'set', 'cardNumber', 'variant', 'certificationCompany', 'grade'],
+  pokemon: ['cardName', 'set', 'cardNumber', 'finish', 'cardType', 'variant', 'certificationCompany', 'grade'],
   coins: ['denomination', 'year', 'mintMark', 'variety', 'certificationCompany', 'grade'],
   comics: ['series', 'issueNumber', 'variant', 'certificationCompany', 'grade'],
   video_games: ['title', 'platform', 'edition'],
@@ -347,7 +349,9 @@ function getListingValues(input: EvidenceListingInput): Record<string, string> {
     cardName: ['cardName', 'pokemonName', 'name'],
     set: ['setName', 'set', 'cardSet'],
     cardNumber: ['cardNumber', 'cardNo', 'number'],
-    variant: ['variant', 'variation', 'editionEra'],
+    finish: ['finish', 'finishVariant'],
+    cardType: ['cardType', 'mechanic', 'variant', 'variation'],
+    variant: ['variant', 'variation', 'cardType', 'mechanic', 'editionEra'],
     year: ['year', 'manufactureYear'],
     releaseYear: ['releaseYear', 'year', 'release_date_year'],
     manufacturer: ['customManufacturer', 'manufacturer', 'brand'],

@@ -1300,13 +1300,15 @@ export function assessComparableCategoryIdentity(
     const cardName = firstString(details, ['cardName', 'pokemonName', 'name']);
     const setName = firstString(details, ['setName', 'set', 'cardSet']);
     const edition = firstString(details, ['editionEra', 'edition', 'era']);
-    const finish = firstString(details, ['finishVariant', 'variant', 'variation']);
+    const finish = firstString(details, ['finish', 'finishVariant']);
+    const cardType = firstString(details, ['cardType', 'mechanic', 'variant', 'variation']);
     record('Card name', cardName, titleContainsExpectedPhrase(title, cardName));
     record('Set', setName, titleContainsExpectedPhrase(title, setName));
     const number = numberStatus();
     record('Card #', targetNumber, number.matches, number.conflict);
     record('Edition / era', edition, titleContainsExpectedPhrase(title, edition));
-    record('Finish / variant', finish, titleContainsExpectedPhrase(title, finish));
+    record('Finish', finish, titleContainsExpectedPhrase(title, finish));
+    record('Card type / mechanic', cardType, titleContainsExpectedPhrase(title, cardType));
   } else if (category === 'comics') {
     const series = firstString(details, ['comicTitle', 'series', 'title']) || target.title;
     const publisher = firstString(details, ['publisher']);

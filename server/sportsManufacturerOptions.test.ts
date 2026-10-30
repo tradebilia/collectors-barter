@@ -19,9 +19,11 @@ describe("Sports Manufacturer options", () => {
     expect(cardNumber?.requirement).toBe("required");
   });
 
-  it("requires Pokémon language and finish or variant for single-card identity", () => {
+  it("requires Pokémon year, language, finish, and card type for single-card identity", () => {
+    expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "year")?.requirement).toBe("required");
     expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "language")?.requirement).toBe("required");
-    expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "finishVariant")?.requirement).toBe("required");
+    expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "finish")?.requirement).toBe("required");
+    expect(POKEMON_SINGLE_CARD_FIELDS.find((field) => field.name === "cardType")?.requirement).toBe("required");
   });
 
   it("includes O-Pee-Chee in every Sports Manufacturer dropdown", () => {

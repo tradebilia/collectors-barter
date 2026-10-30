@@ -32,9 +32,10 @@ export const pokemonSinglecardLayout: ItemTypeLayoutConfig = {
       fieldLayout: {
         quantity: { colSpan: 'half', position: 1 },
         rarity: { colSpan: 'half', position: 2 },
-        finishVariant: { colSpan: 'half', position: 3 },
-        language: { colSpan: 'half', position: 4 },
-        gradeQualifier: { colSpan: 'full', position: 5 },
+        finish: { colSpan: 'half', position: 3 },
+        cardType: { colSpan: 'half', position: 4 },
+        language: { colSpan: 'half', position: 5 },
+        gradeQualifier: { colSpan: 'full', position: 6 },
       },
     },
     optional: {

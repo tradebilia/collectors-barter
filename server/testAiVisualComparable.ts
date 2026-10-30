@@ -15,7 +15,7 @@ export type VisualComparableQuery = {
 
 const QUERY_FIELD_ALLOWLIST = new Set([
   'series', 'setName', 'edition', 'editionEra', 'cardName', 'cardNumber', 'issueNumber',
-  'variant', 'parallel', 'finishVariant', 'pressing', 'recordLabel', 'catalogNumber',
+  'variant', 'parallel', 'finish', 'finishVariant', 'cardType', 'mechanic', 'pressing', 'recordLabel', 'catalogNumber',
   'platform', 'region', 'releaseType', 'character', 'toyLine', 'signer', 'artist',
   'releaseTitle', 'publisher', 'sport', 'team', 'player', 'manufacturer', 'brand',
 ]);
