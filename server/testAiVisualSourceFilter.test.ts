@@ -51,6 +51,9 @@ import {
   moviesVisualCap,
   musicVisualScore,
   musicVisualCap,
+  disneyPinsIndividualVisualScore,
+  disneyPinsSetVisualScore,
+  disneyPinsVisualCap,
   stampsSingleVisualCap,
   stampsSingleVisualScore,
   stampsSetVisualCap,
@@ -2233,6 +2236,43 @@ describe("visual source filter", () => {
     expect(score.matched).toEqual(expect.arrayContaining([
       "artist", "releaseTitle", "format", "recordLabel", "catalogNumber", "releaseYear", "country", "edition", "packagingIncluded",
     ]));
+  });
+
+  it("scores Disney Pins / Individual Pin on the approved identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Mickey Mouse Sorcerer Pin",
+      category: "disney_pins",
+      itemType: "individual_pin",
+      fullItemDetails: {
+        pinName: "Mickey Mouse Sorcerer Pin", character: "Mickey Mouse", series: "Sorcerer",
+        year: "2024", pinTradingEvent: "D23", limitedEdition: "yes", openEdition: "no",
+        artistProof: "no", preProduction: "no", backstampInformation: "© Disney D23",
+      },
+    });
+    const score = disneyPinsIndividualVisualScore({
+      title: "Mickey Mouse Sorcerer Pin D23 2024 Limited Edition",
+      itemDetails: JSON.stringify({ pinName: "Mickey Mouse Sorcerer Pin", character: "Mickey Mouse", series: "Sorcerer", year: "2024", pinTradingEvent: "D23", limitedEdition: "yes", openEdition: "no", artistProof: "no", preProduction: "no", backstampInformation: "© Disney D23" }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining(["pinName", "character", "series", "year", "pinTradingEvent", "limitedEdition", "openEdition"]));
+  });
+
+  it("scores Disney Pins / Pin Set and excludes Collection/Lot from ranking", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Villains Collection",
+      category: "disney_pins",
+      itemType: "pin_set",
+      fullItemDetails: { setName: "Villains Collection", completeSet: "yes", numberOfPins: "5", series: "Villains", charactersIncluded: "Maleficent Ursula", limitedEdition: "yes", missingPins: "none" },
+    });
+    const score = disneyPinsSetVisualScore({ title: "Villains Collection Complete Set of 5 Pins Limited Edition", itemDetails: JSON.stringify({ setName: "Villains Collection", completeSet: "yes", numberOfPins: 5, series: "Villains", charactersIncluded: "Maleficent Ursula", limitedEdition: "yes", missingPins: "none" }) }, target);
+    expect(score.score).toBe(100);
+    expect(disneyPinsVisualCap(95)).toBe(8);
+    expect(disneyPinsVisualCap(85)).toBe(6);
+    expect(disneyPinsVisualCap(75)).toBe(4);
+    expect(disneyPinsVisualCap(65)).toBe(2);
+    expect(disneyPinsVisualCap(59)).toBe(0);
+    const lotTarget = buildVisualTargetMetadata({ title: "Mixed Disney Pin Lot", category: "disney_pins", itemType: "collection_lot", fullItemDetails: { setName: "Mixed", format: "collection_lot" } });
+    expect(disneyPinsSetVisualScore({ title: "Mixed Disney Pin Lot" }, lotTarget).score).toBe(0);
   });
 
   it("uses the approved Music score-band caps and excludes Collection/Lot", () => {

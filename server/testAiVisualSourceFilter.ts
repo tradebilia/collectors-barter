@@ -3232,6 +3232,95 @@ function comicBoolean(value: unknown, candidateText: string, positive: RegExp, n
   return targetPositive ? positive.test(candidateText) : negative.test(candidateText);
 }
 
+
+const DISNEY_PINS_INDIVIDUAL_SCORE_FIELDS = [
+  ['pinName', 25], ['character', 15], ['series', 15], ['year', 10],
+  ['pinTradingEvent', 10], ['limitedEdition', 10], ['openEdition', 5],
+  ['artistProof', 4], ['preProduction', 3], ['backstampInformation', 3],
+] as const;
+const DISNEY_PINS_SET_SCORE_FIELDS = [
+  ['setName', 25], ['completeSet', 20], ['numberOfPins', 15], ['series', 15],
+  ['charactersIncluded', 10], ['limitedEdition', 10], ['missingPins', 5],
+] as const;
+function disneyPinsScoreText(value: unknown): string {
+  return normalizedChoice(value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function disneyPinsTargetValue(details: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
+  return firstMeaningfulValue(...aliases.map((alias) => details[alias]), fallback);
+}
+function disneyPinsCandidateDetails(listing: VisualSourceCandidate): Record<string, unknown> {
+  return candidateStructuredDetails(listing);
+}
+function disneyPinsValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): boolean | null {
+  const target = disneyPinsScoreText(targetValue);
+  if (!target) return null;
+  const details = disneyPinsCandidateDetails(listing);
+  const explicit = firstMeaningfulValue(...aliases.map((alias) => details[alias]));
+  const candidate = disneyPinsScoreText(explicit || listing.title || sourceText(normalizeVisualSourceCandidate(listing)));
+  if (!candidate) return null;
+  if (candidate.includes(target) || target.includes(candidate)) return true;
+  return patterns.some((pattern) => pattern.test(String(listing.title ?? ''))) ? true : explicit ? false : null;
+}
+function disneyPinsBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): boolean | null {
+  const target = disneyPinsScoreText(targetValue);
+  if (!/^(?:yes|no|true|false)$/.test(target)) return null;
+  const details = disneyPinsCandidateDetails(listing);
+  const explicit = disneyPinsScoreText(firstMeaningfulValue(...aliases.map((alias) => details[alias])));
+  if (explicit) return /^(?:yes|true)$/.test(target) ? /^(?:yes|true)$/.test(explicit) : /^(?:no|false)$/.test(explicit);
+  const text = `${String(listing.title ?? '')} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
+  return /^(?:yes|true)$/.test(target) ? (positive.test(text) ? true : negative.test(text) ? false : null) : (negative.test(text) ? true : positive.test(text) ? false : null);
+}
+function disneyPinsYearMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = String(targetValue ?? '').match(/\d{4}/)?.[0];
+  if (!target) return null;
+  const text = `${String(listing.title ?? '')} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
+  return new RegExp(`(?:^|[^0-9])${target}(?:[^0-9]|$)`).test(text);
+}
+function disneyPinsNumberMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
+  const target = Number(targetValue);
+  if (!Number.isFinite(target) || target <= 0) return null;
+  const details = disneyPinsCandidateDetails(listing);
+  const explicit = Number(firstMeaningfulValue(details.numberOfPins, details.pinCount, details.quantity));
+  if (Number.isFinite(explicit) && explicit > 0) return explicit === target;
+  const text = `${String(listing.title ?? '')} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
+  const match = text.match(/(?:set\s+of|contains?|includes?)\s*(\d+)\s*pins?/i) ?? text.match(/\b(\d+)\s*pin\s+set\b/i);
+  return match ? Number(match[1]) === target : null;
+}
+export function disneyPinsIndividualVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const details = extractTargetItemDetails(targetMetadata);
+  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType') || details.itemType);
+  if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'disney_pins' || itemType !== 'individual_pin') return { score: 0, matched: [], unknown: [] };
+  const matched: string[] = [], unknown: string[] = []; let score = 0;
+  const add=(field: typeof DISNEY_PINS_INDIVIDUAL_SCORE_FIELDS[number][0], points:number, result:boolean|null)=>{ if(result===true){score+=points;matched.push(field)} else if(result===null) unknown.push(field); };
+  add('pinName',25,disneyPinsValueMatches(disneyPinsTargetValue(details,['pinName','name'],extractTargetTitle(targetMetadata)),listing,['pinName','name']));
+  add('character',15,disneyPinsValueMatches(details.character,listing,['character','characters']));
+  add('series',15,disneyPinsValueMatches(details.series,listing,['series']));
+  add('year',10,disneyPinsYearMatches(details.year,listing));
+  add('pinTradingEvent',10,disneyPinsValueMatches(details.pinTradingEvent,listing,['pinTradingEvent','event']));
+  add('limitedEdition',10,disneyPinsBooleanMatches(details.limitedEdition,listing,['limitedEdition'],/\blimited edition\b/i,/\bopen edition\b/i));
+  add('openEdition',5,disneyPinsBooleanMatches(details.openEdition,listing,['openEdition'],/\bopen edition\b/i,/\blimited edition\b/i));
+  add('artistProof',4,disneyPinsBooleanMatches(details.artistProof,listing,['artistProof'],/\b(?:artist proof|AP)\b/i,/\bnot artist proof\b/i));
+  add('preProduction',3,disneyPinsBooleanMatches(details.preProduction,listing,['preProduction'],/\b(?:pre-production|PP)\b/i,/\bnot pre-production\b/i));
+  add('backstampInformation',3,disneyPinsValueMatches(details.backstampInformation,listing,['backstampInformation','backstamp']));
+  return {score,matched,unknown};
+}
+export function disneyPinsSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const details = extractTargetItemDetails(targetMetadata);
+  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType') || details.itemType);
+  if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'disney_pins' || itemType !== 'pin_set') return { score: 0, matched: [], unknown: [] };
+  const matched: string[] = [], unknown: string[] = []; let score = 0;
+  const add=(field: typeof DISNEY_PINS_SET_SCORE_FIELDS[number][0], points:number, result:boolean|null)=>{ if(result===true){score+=points;matched.push(field)} else if(result===null) unknown.push(field); };
+  add('setName',25,disneyPinsValueMatches(disneyPinsTargetValue(details,['setName','name'],extractTargetTitle(targetMetadata)),listing,['setName','name']));
+  add('completeSet',20,disneyPinsBooleanMatches(details.completeSet,listing,['completeSet'],/\bcomplete(?:d)?\s+set\b/i,/\bincomplete|missing\s+pins?\b/i));
+  add('numberOfPins',15,disneyPinsNumberMatches(details.numberOfPins,listing));
+  add('series',15,disneyPinsValueMatches(details.series,listing,['series']));
+  add('charactersIncluded',10,disneyPinsValueMatches(details.charactersIncluded,listing,['charactersIncluded','characters','character']));
+  add('limitedEdition',10,disneyPinsBooleanMatches(details.limitedEdition,listing,['limitedEdition'],/\blimited edition\b/i,/\bopen edition\b/i));
+  add('missingPins',5,disneyPinsValueMatches(details.missingPins,listing,['missingPins','missing']));
+  return {score,matched,unknown};
+}
+export function disneyPinsVisualCap(score: number): number { if(score>=90) return 8; if(score>=80) return 6; if(score>=70) return 4; if(score>=60) return 2; return 0; }
+
 const MUSIC_SCORE_FIELDS = [
   ['artist', 25],
   ['releaseTitle', 20],
@@ -3789,6 +3878,18 @@ function selectMoviesVisualCandidates<T extends VisualSourceCandidate>(candidate
   return { selected, excluded, cap, ranked };
 }
 
+function selectDisneyPinsVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string, setTarget: boolean) {
+  const ranked = candidates.map((candidate) => { const scoring = setTarget ? disneyPinsSetVisualScore(candidate.item, targetMetadata) : disneyPinsIndividualVisualScore(candidate.item, targetMetadata); return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T }; })
+    .sort((a,b) => Number(b.item.metadataMatchScore ?? 0)-Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex-b.candidateIndex)
+    .map((candidate,index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index+1 } as T }));
+  const cap = disneyPinsVisualCap(Number(ranked[0]?.item.metadataMatchScore ?? 0));
+  const label = setTarget ? 'Disney Pins / Pin Set' : 'Disney Pins / Individual Pin';
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0,cap);
+  const selectedKeys = new Set(selected.map((candidate)=>candidate.candidateIndex));
+  const excluded = ranked.filter((candidate)=>!selectedKeys.has(candidate.candidateIndex)).map((entry)=>({ ...entry.item, evidenceDisposition:'pre_vision_score_excluded', visualReviewStatus:'not_reviewed', visualReviewRationale:Number(entry.item.metadataMatchScore ?? 0)<60 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`, evidenceReasons:[entry.imageUrls.length===0?'no candidate image available; retained as context-only':Number(entry.item.metadataMatchScore ?? 0)<60?'metadata score below minimum (60)':`visual-review cap reached (${cap})`] } as T));
+  return {selected,excluded,cap,ranked};
+}
+
 function selectMusicVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
   const ranked = candidates.map((candidate) => {
     const scoring = musicVisualScore(candidate.item, targetMetadata);
@@ -4016,12 +4117,16 @@ export async function filterVisualSourceCandidates<
   const moviesSelection = movieType === 'individual_movie' || movieType === 'box_set'
     ? selectMoviesVisualCandidates(allCandidates, targetMetadata, movieType === 'box_set')
     : null;
+  const disneyPinsType = normalizedChoice(metadataValue(targetMetadata, 'itemType') || extractTargetItemDetails(targetMetadata).itemType);
+  const disneyPinsSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'disney_pins' && (disneyPinsType === 'individual_pin' || disneyPinsType === 'pin_set')
+    ? selectDisneyPinsVisualCandidates(allCandidates, targetMetadata, disneyPinsType === 'pin_set')
+    : null;
   const musicType = musicItemTypeLabel(metadataValue(targetMetadata, 'itemType') || extractTargetItemDetails(targetMetadata).itemType || extractTargetItemDetails(targetMetadata).format);
   const musicSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'music'
     && musicType !== '' && musicType !== 'collection/lot'
     ? selectMusicVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? musicSelection;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(
