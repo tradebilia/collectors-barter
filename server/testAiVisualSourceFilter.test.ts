@@ -42,6 +42,10 @@ import {
   coinsSetVisualScore,
   paperMoneyVisualCap,
   paperMoneyVisualScore,
+  videoGameGameVisualScore,
+  videoGameConsoleVisualScore,
+  videoGameAccessoryVisualScore,
+  videoGameVisualCap,
   stampsSingleVisualCap,
   stampsSingleVisualScore,
   stampsSetVisualCap,
@@ -136,6 +140,33 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
     expect(stampsSingleVisualScore(candidate, target).score).toBe(0);
     expect(stampsSetVisualScore(candidate, target).score).toBe(0);
+  });
+
+
+  it("scores Video Games / Game, Console, and Accessory independently", () => {
+    const gameTarget = buildVisualTargetMetadata({ title: "Super Mario Bros. 3", category: "video_games", itemType: "game", fullItemDetails: { gameTitle: "Super Mario Bros. 3", platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" } });
+    const gameScore = videoGameGameVisualScore({ title: "Super Mario Bros. 3 NES 1990 NTSC-U Standard", itemDetails: JSON.stringify({ platform: "NES", releaseYear: 1990, region: "NTSC-U", edition: "Standard", sealed: "No", upc: "123456789012" }) }, gameTarget);
+    expect(gameScore.score).toBe(90);
+    expect(gameScore.matched).toEqual(expect.arrayContaining(["gameTitle", "platform", "releaseYear", "region", "edition", "upcEan"]));
+    expect(gameScore.unknown).toContain("productForm");
+
+    const consoleTarget = buildVisualTargetMetadata({ title: "Nintendo NES", category: "video_games", itemType: "console", fullItemDetails: { consoleName: "NES", modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" } });
+    const consoleScore = videoGameConsoleVisualScore({ title: "Nintendo NES NES-001 Working NTSC-U", itemDetails: JSON.stringify({ modelNumber: "NES-001", region: "NTSC-U", workingCondition: "Working", originalBoxIncluded: "Yes", cablesIncluded: "Yes", controllersIncluded: "Yes" }) }, consoleTarget);
+    expect(consoleScore.score).toBe(100);
+    expect(consoleScore.matched).toEqual(expect.arrayContaining(["consoleName", "modelNumber", "region", "workingCondition", "originalBoxIncluded", "cablesIncluded", "controllersIncluded"]));
+
+    const accessoryTarget = buildVisualTargetMetadata({ title: "NES Controller", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
+    const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
+    expect(accessoryScore.score).toBe(100);
+    expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
+  });
+
+  it("uses the approved Video Games score-band cap limits", () => {
+    expect(videoGameVisualCap(95)).toBe(8);
+    expect(videoGameVisualCap(85)).toBe(6);
+    expect(videoGameVisualCap(75)).toBe(4);
+    expect(videoGameVisualCap(65)).toBe(2);
+    expect(videoGameVisualCap(59)).toBe(0);
   });
 
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {

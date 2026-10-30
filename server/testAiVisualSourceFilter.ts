@@ -2402,6 +2402,95 @@ const SPORTS_CARD_SCORE_FIELDS = [
   ['relicStatus', 2],
   ['serialNumberedStatus', 2],
 ] as const;
+const VIDEO_GAME_GAME_SCORE_FIELDS = [
+  ['gameTitle', 30], ['platform', 20], ['releaseYear', 15], ['region', 10], ['edition', 10], ['productForm', 10], ['upcEan', 5],
+] as const;
+const VIDEO_GAME_CONSOLE_SCORE_FIELDS = [
+  ['consoleName', 30], ['modelNumber', 20], ['region', 15], ['workingCondition', 15], ['originalBoxIncluded', 10], ['cablesIncluded', 5], ['controllersIncluded', 5],
+] as const;
+const VIDEO_GAME_ACCESSORY_SCORE_FIELDS = [
+  ['accessoryType', 25], ['accessoryName', 25], ['compatiblePlatform', 20], ['manufacturer', 10], ['workingCondition', 10], ['originalPackaging', 10],
+] as const;
+function videoGameScoreText(value: unknown): string {
+  return videoGameCanonicalValue(value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function videoGameScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[], label: string): boolean | null {
+  const target = videoGameScoreText(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
+  const candidateValue = videoGameCandidateValue(listing, aliases, patterns);
+  if (!candidateValue) return null;
+  const candidate = videoGameScoreText(candidateValue);
+  if (!candidate || /^(?:unknown|n a|na|none|not applicable)$/.test(candidate)) return null;
+  return videoGameValuesAgree(targetValue, candidateValue, label);
+}
+function videoGameScoreBoolean(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[]): boolean | null {
+  const target = normalizedChoice(targetValue);
+  if (!target || !/^(?:yes|no|true|false|1|0|working|not_working|untested)$/.test(target)) return null;
+  const candidateValue = videoGameCandidateValue(listing, aliases, patterns);
+  if (!candidateValue) return null;
+  const candidate = normalizedChoice(candidateValue);
+  if (!candidate) return null;
+  if (target === 'yes' || target === 'true' || target === '1') return /^(?:yes|true|1|working)$/.test(candidate);
+  if (target === 'no' || target === 'false' || target === '0') return /^(?:no|false|0|not_working)$/.test(candidate);
+  return candidate === target;
+}
+function videoGameScoreProductForm(targetMetadata: string, listing: VisualSourceCandidate): boolean | null {
+  const targetForm = targetProductForm(targetMetadata);
+  const candidateForm = candidateProductForm(targetMetadata, listing);
+  if (!targetForm || !candidateForm) return null;
+  return targetForm === candidateForm;
+}
+function videoGameScore<T extends readonly (readonly [string, number])[]>(
+  listing: VisualSourceCandidate,
+  targetMetadata: string,
+  fields: T,
+  targetType: 'game' | 'console' | 'accessory',
+): { score: number; matched: string[]; unknown: string[] } {
+  const target = extractTargetItemDetails(targetMetadata);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: string, points: number, result: boolean | null) => {
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+  if (targetType === 'game') {
+    add('gameTitle', 30, videoGameScoreValueMatches(firstMeaningfulValue(target.gameTitle, extractTargetTitle(targetMetadata)), listing, ['gameTitle', 'title'], [], 'title'));
+    add('platform', 20, videoGameScoreValueMatches(target.platform, listing, ['platform', 'consoleName'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?|Sega(?:\s+Master\s+System)?|Genesis|Saturn|Dreamcast|PC)/i], 'platform'));
+    add('releaseYear', 15, videoGameScoreValueMatches(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], 'year'));
+    add('region', 10, videoGameScoreValueMatches(target.region, listing, ['region'], [/(?:NTSC-U|NTSC-J|PAL|Region\s+Free)/i], 'region'));
+    add('edition', 10, videoGameScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], 'edition'));
+    add('productForm', 10, videoGameScoreProductForm(targetMetadata, listing));
+    add('upcEan', 5, videoGameScoreValueMatches(firstMeaningfulValue(target.upc, target.ean), listing, ['upc', 'ean', 'barcode'], [/(?:UPC|EAN|barcode)\s*[:#]?\s*([0-9]{8,14})/i], 'upc'));
+  } else if (targetType === 'console') {
+    add('consoleName', 30, videoGameScoreValueMatches(firstMeaningfulValue(target.consoleName, extractTargetTitle(targetMetadata)), listing, ['consoleName', 'platform', 'title'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|Sega\s+Genesis|Sega\s+Saturn|Dreamcast|PS[1-5]|Xbox(?:\s+(?:360|One|Series\s+X\/S))?)/i], 'name'));
+    add('modelNumber', 20, videoGameScoreValueMatches(target.modelNumber, listing, ['modelNumber', 'model', 'sku'], [], 'model'));
+    add('region', 15, videoGameScoreValueMatches(target.region, listing, ['region'], [/(?:NTSC-U|NTSC-J|PAL|Region\s+Free)/i], 'region'));
+    add('workingCondition', 15, videoGameScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested'], [/(?:Working|Not\s+Working|Untested)/i], 'working'));
+    add('originalBoxIncluded', 10, videoGameScoreBoolean(target.originalBoxIncluded, listing, ['originalBoxIncluded', 'originalBox', 'boxIncluded'], [/(?:original\s+box|box\s+included|no\s+box)/i]));
+    add('cablesIncluded', 5, videoGameScoreBoolean(target.cablesIncluded, listing, ['cablesIncluded', 'cables'], [/(?:cables?\s+included|no\s+cables?)/i]));
+    add('controllersIncluded', 5, videoGameScoreBoolean(target.controllersIncluded, listing, ['controllersIncluded', 'controllers'], [/(?:controllers?\s+included|no\s+controllers?)/i]));
+  } else {
+    add('accessoryType', 25, videoGameScoreValueMatches(target.accessoryType, listing, ['accessoryType', 'type'], [], 'type'));
+    add('accessoryName', 25, videoGameScoreValueMatches(target.accessoryName, listing, ['accessoryName', 'name', 'title'], [], 'name'));
+    add('compatiblePlatform', 20, videoGameScoreValueMatches(target.platform, listing, ['platform', 'compatiblePlatform'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)/i], 'platform'));
+    add('manufacturer', 10, videoGameScoreValueMatches(target.manufacturer, listing, ['manufacturer', 'brand'], [], 'manufacturer'));
+    add('workingCondition', 10, videoGameScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested'], [/(?:Working|Not\s+Working|Untested)/i], 'working'));
+    add('originalPackaging', 10, videoGameScoreBoolean(target.originalPackaging, listing, ['originalPackaging', 'packaging'], [/(?:original\s+packaging|no\s+packaging)/i]));
+  }
+  void fields;
+  return { score, matched, unknown };
+}
+export function videoGameGameVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_GAME_SCORE_FIELDS, 'game'); }
+export function videoGameConsoleVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_CONSOLE_SCORE_FIELDS, 'console'); }
+export function videoGameAccessoryVisualScore(listing: VisualSourceCandidate, targetMetadata: string) { return videoGameScore(listing, targetMetadata, VIDEO_GAME_ACCESSORY_SCORE_FIELDS, 'accessory'); }
+export function videoGameVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
+}
 const COMICS_SINGLE_SCORE_FIELDS = [
   ['comicTitle', 20],
   ['issueNumber', 20],
@@ -3225,6 +3314,33 @@ function selectStampsVisualCandidates<T extends VisualSourceCandidate>(candidate
   const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({ ...entry.item, evidenceDisposition: 'pre_vision_score_excluded', visualReviewStatus: 'not_reviewed', visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`, evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`] } as T));
   return { selected, excluded, cap, ranked };
 }
+function selectVideoGameVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string, targetType: 'game' | 'console' | 'accessory') {
+  const score = (item: T) => targetType === 'game'
+    ? videoGameGameVisualScore(item, targetMetadata)
+    : targetType === 'console'
+      ? videoGameConsoleVisualScore(item, targetMetadata)
+      : videoGameAccessoryVisualScore(item, targetMetadata);
+  const label = `Video Games / ${targetType[0].toUpperCase()}${targetType.slice(1)}`;
+  const ranked = candidates.map((candidate) => {
+    const scoring = score(candidate.item);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = videoGameVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
+    ...entry.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60
+      ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+      : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
 function selectCoinsSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
   const ranked = candidates.map((candidate) => {
     const scoring = coinsSingleVisualScore(candidate.item, targetMetadata);
@@ -3395,7 +3511,11 @@ export async function filterVisualSourceCandidates<
   const paperMoneySelection = isPaperMoneyTarget(targetMetadata)
     ? selectPaperMoneyVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection;
+  const videoGameType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  const videoGameSelection = videoGameType === 'game' || videoGameType === 'console' || videoGameType === 'accessory'
+    ? selectVideoGameVisualCandidates(allCandidates, targetMetadata, videoGameType)
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(
