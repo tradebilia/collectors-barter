@@ -234,7 +234,11 @@ export function findMaterialMetadataConflicts(
       continue;
     }
     if (field === 'platform' || field === 'language' || field === 'country' || field === 'sport' || field === 'publisher' || field === 'manufacturer' || field === 'brand') {
-      if (!valueMatchesEvidence(targetValue, candidateTitle) && directCandidateValue) conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: `${field} differs in explicit provider metadata` });
+      if (!valueMatchesEvidence(targetValue, candidateTitle)
+        && directCandidateValue
+        && compact(directCandidateValue) !== compact(targetValue)) {
+        conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: `${field} differs in explicit provider metadata` });
+      }
     }
   }
   return conflicts;

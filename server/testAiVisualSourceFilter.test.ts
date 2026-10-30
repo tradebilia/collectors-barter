@@ -36,6 +36,8 @@ import {
   prepareUniversalVisualCandidates,
   promoteEbayImageUrl,
   prioritizeVisualSourceCandidates,
+  coinsSingleVisualCap,
+  coinsSingleVisualScore,
   comicsSingleVisualCap,
   comicsSingleVisualScore,
   sportsCardSetVisualCap,
@@ -102,6 +104,121 @@ describe("visual source filter", () => {
     expect(comicsSingleVisualCap(65)).toBe(4);
     expect(comicsSingleVisualCap(55)).toBe(2);
     expect(comicsSingleVisualCap(49)).toBe(0);
+  });
+
+  it("scores Coins / Single Coin candidates on the approved identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1903-S Morgan Silver Dollar PCGS MS63 First Strike",
+      category: "coins",
+      itemType: "single_coin",
+      grade: "MS63",
+      certificationCompany: "PCGS",
+      fullItemDetails: {
+        series: "Morgan Dollar",
+        year: "1903",
+        denomination: "1 Dollar",
+        mintMark: "S",
+        variety: "Morgan",
+        designation: "First Strike",
+        composition: "Silver",
+        country: "United States",
+      },
+    });
+    const score = coinsSingleVisualScore({
+      title: "1903-S Morgan Silver Dollar PCGS MS63 First Strike",
+      imageUrl: "https://example.com/coin.jpg",
+      itemDetails: JSON.stringify({
+        series: "Morgan Dollar",
+        year: "1903",
+        denomination: "1 Dollar",
+        mintMark: "S",
+        variety: "Morgan",
+        designation: "First Strike",
+        composition: "Silver",
+        country: "United States",
+      }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "coinTitleSeriesType", "yearDate", "denomination", "mintMark", "variety",
+      "numericGrade", "gradingCompany", "designationStrikeFinish", "compositionMetal", "countryIssuingAuthority",
+    ]));
+  });
+
+  it("uses the approved Coins / Single Coin score-band visual caps", () => {
+    expect(coinsSingleVisualCap(95)).toBe(8);
+    expect(coinsSingleVisualCap(85)).toBe(6);
+    expect(coinsSingleVisualCap(75)).toBe(4);
+    expect(coinsSingleVisualCap(65)).toBe(2);
+    expect(coinsSingleVisualCap(59)).toBe(0);
+  });
+
+  it("ranks Coins / Single Coin candidates and retains low-score rows as context only", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "1903 Morgan Silver Dollar PCGS MS63",
+      category: "coins",
+      itemType: "single_coin",
+      grade: "MS63",
+      certificationCompany: "PCGS",
+      fullItemDetails: { series: "Morgan Dollar", year: "1903", denomination: "1 Dollar", variety: "Morgan" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "marketplace",
+      sourceLabel: "Coin ranking test",
+      targetMetadata: target,
+      listings: [
+        { title: "1903 Morgan Silver Dollar PCGS MS63", imageUrl: "https://example.com/strong.jpg" },
+        { title: "Morgan Dollar", imageUrl: "https://example.com/weak.jpg" },
+      ],
+    });
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings).toHaveLength(1);
+    expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 45, visualReviewStatus: "not_reviewed" });
+    expect(result.contextListings?.[0]?.visualReviewRationale).toContain("below the visual-review minimum of 60");
+  });
+
+  it("caps exact Coins / Single Coin candidates at eight visual-review requests and retains the ninth as ranked context", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "1903-S Morgan Silver Dollar PCGS MS63 First Strike",
+      category: "coins",
+      itemType: "single_coin",
+      grade: "MS63",
+      certificationCompany: "PCGS",
+      fullItemDetails: {
+        series: "Morgan Dollar", year: "1903", denomination: "1 Dollar", mintMark: "S",
+        variety: "Morgan", designation: "First Strike", composition: "Silver", country: "United States",
+      },
+    });
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{
+        candidateIndex: 0,
+        verdict: "mismatch",
+        confidence: "high",
+        rationale: "The candidate does not show the same coin.",
+        visualEvidence: { identityMatches: false, dateMatches: false, varietyMatches: false, denominationMatches: false, mintMarkMatches: false },
+      }],
+    }) as never);
+    const itemDetails = JSON.stringify({
+      series: "Morgan Dollar", year: "1903", denomination: "1 Dollar", mintMark: "S",
+      variety: "Morgan", designation: "First Strike", composition: "Silver", country: "United States",
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "Coin cap test",
+      targetImageUrl: "https://example.com/target-coin.jpg",
+      targetMetadata: target,
+      listings: Array.from({ length: 9 }, (_, index) => ({
+        title: `1903-S Morgan Silver Dollar PCGS MS63 First Strike listing ${index + 1}`,
+        itemDetails,
+        imageUrl: `https://example.com/coin-${index}.jpg`,
+      })),
+    });
+    expect(result.reviewedCount).toBe(8);
+    expect(mockedInvokeLLM).toHaveBeenCalledTimes(16);
+    expect(result.contextListings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ metadataMatchRank: 9, metadataMatchScore: 100, visualReviewStatus: "not_reviewed" }),
+    ]));
+    expect(result.contextListings?.[0]?.visualReviewRationale).toContain("visual cap reached (8)");
   });
 
   it("ranks Comics / Single Comic candidates before applying the visual cap and preserves unknown fields", async () => {

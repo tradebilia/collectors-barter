@@ -43,9 +43,10 @@ describe('Test AI all-sandbox-items selector', () => {
     expect(pageSource).toContain('administrator-only analyzer sandbox');
   });
 
-  it('does not render an empty Item B data or source column until Item B is selected', () => {
+  it('does not render an empty Item B column and preserves the Collection/Lot data-panel block', () => {
     expect(pageSource).toContain("${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}");
-    expect(pageSource).toContain('{rightItem && <DataColumn item={rightItem}');
+    expect(pageSource).toContain('{rightItem && <SourceSelector enabled={rightSourcesEnabled}');
+    expect(pageSource).toContain('{rightItem && !rightIsCollectionLot && <DataColumn item={rightItem}');
     expect(pageSource).not.toContain("{rightItem ? <SourceSelector enabled={rightSources}");
   });
 });

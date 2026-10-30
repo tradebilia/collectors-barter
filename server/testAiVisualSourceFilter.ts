@@ -2156,9 +2156,133 @@ const COMICS_SINGLE_SCORE_FIELDS = [
   ['facsimile', 3],
   ['signed', 2],
 ] as const;
+const COIN_SINGLE_SCORE_FIELDS = [
+  ['coinTitleSeriesType', 20],
+  ['yearDate', 15],
+  ['denomination', 15],
+  ['mintMark', 10],
+  ['variety', 10],
+  ['numericGrade', 12],
+  ['gradingCompany', 8],
+  ['designationStrikeFinish', 5],
+  ['compositionMetal', 3],
+  ['countryIssuingAuthority', 2],
+] as const;
 function comicsSingleTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, 'category')) === 'comics'
     && normalizedChoice(metadataValue(targetMetadata, 'itemType')).includes('single');
+}
+function coinScoreTargetValue(targetDetails: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
+  return firstMeaningfulValue(...aliases.map((alias) => targetDetails[alias]), fallback);
+}
+function coinScoreExplicitValue(
+  listing: VisualSourceCandidate,
+  aliases: string[],
+  titlePatterns: RegExp[] = [],
+): string | null {
+  const value = coinExplicitValue(listing, aliases, titlePatterns);
+  return value || null;
+}
+function coinScoreValueMatches(
+  targetValue: unknown,
+  listing: VisualSourceCandidate,
+  aliases: string[],
+  titlePatterns: RegExp[] = [],
+  normalizer: (value: unknown) => string = coinComparable,
+): boolean | null {
+  const target = normalizer(targetValue);
+  if (!target) return null;
+  const candidateValue = coinScoreExplicitValue(listing, aliases, titlePatterns);
+  if (!candidateValue) return null;
+  const candidate = normalizer(candidateValue);
+  return Boolean(candidate && (candidate === target || candidate.includes(target) || target.includes(candidate)));
+}
+function coinDenominationComparable(value: unknown): string {
+  const normalized = coinComparable(value).replace(/usd|us dollars?/g, 'dollar');
+  if (/\bhalf dollar\b|\b50 cents?\b/.test(normalized)) return 'half dollar';
+  if (/\bquarter\b|\b25 cents?\b/.test(normalized)) return 'quarter';
+  if (/\bdime\b|\b10 cents?\b/.test(normalized)) return 'dime';
+  if (/\bnickel\b|\b5 cents?\b/.test(normalized)) return 'nickel';
+  if (/\bcent\b|\bpenny\b|\b1 cent\b/.test(normalized)) return 'cent';
+  if (/\$\s*1\b|\b1 dollar\b|\bone dollar\b|\bdollar\b/.test(normalized)) return 'dollar';
+  return normalized;
+}
+function coinTitleSeriesTypeMatches(targetValue: unknown, candidateText: string): boolean | null {
+  const targetTokens = coinComparable(targetValue)
+    .split(' ')
+    .filter((token) => token && !/^\d{4}$/.test(token) && !/^(?:coin|coins|graded|pcgs|ngc)$/.test(token));
+  if (!targetTokens.length) return null;
+  const candidate = coinComparable(candidateText);
+  return targetTokens.every((token) => candidate.includes(token));
+}
+function coinNumericGradeMatches(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): boolean | null {
+  const target = parsedComparableGrade(metadataValue(targetMetadata, 'grade'), { allowBareNumeric: true });
+  if (!target) return null;
+  const source = parsedComparableGrade(candidate.grade, { allowBareNumeric: true })
+    ?? parsedComparableGrade(candidate.title, { allowBareNumeric: false });
+  if (!source) return null;
+  return target.numeric === source.numeric;
+}
+function coinGradingCompanyMatches(targetMetadata: string, candidate: NormalizedVisualSourceCandidate): boolean | null {
+  const target = targetGrader(targetMetadata);
+  if (!target || /^(?:UNKNOWN|NONE|RAW|UNGRADED|N\/A)$/i.test(target)) return null;
+  const source = candidateGrader(candidate);
+  if (!source) return null;
+  return source === target;
+}
+export function coinsSingleVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = sourceText(candidate);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof COIN_SINGLE_SCORE_FIELDS[number][0], points: number, result: boolean | null) => {
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+  add('coinTitleSeriesType', 20, coinTitleSeriesTypeMatches(
+    coinScoreTargetValue(targetDetails, ['series', 'coinSeries', 'coinType', 'type', 'name', 'subject'], extractTargetTitle(targetMetadata)),
+    candidateText,
+  ));
+  add('yearDate', 15, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['year', 'date', 'issueYear', 'mintYear']), listing,
+    ['year', 'date', 'issueYear', 'mintYear'], [/(?:^|[^0-9])((?:17|18|19|20)\d{2})(?:[^0-9]|$)/i],
+  ));
+  add('denomination', 15, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['denomination', 'coinDenomination']), listing,
+    ['denomination', 'coinDenomination'], [/\b(half dollar|quarter dollar|dollar|half dime|dime|nickel|penny|cent|\$\s*\d+(?:\.\d+)?)\b/i], coinDenominationComparable,
+  ));
+  add('mintMark', 10, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['mintMark', 'mint']), listing,
+    ['mintMark', 'mint'], [/(?:mint\s*mark|\b(?:17|18|19|20)\d{2})[-\s]*([PDSO])\b/i],
+  ));
+  add('variety', 10, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['variety', 'varietyName', 'series', 'coinSeries']), listing,
+    ['variety', 'varietyName', 'series', 'coinSeries', 'coinType'], [/\b(VAM\s*\d+|doubled die|double die|overdate|wide|narrow|morgan|peace|eagle|buffalo|mercury)\b/i],
+  ));
+  add('numericGrade', 12, coinNumericGradeMatches(targetMetadata, candidate));
+  add('gradingCompany', 8, coinGradingCompanyMatches(targetMetadata, candidate));
+  add('designationStrikeFinish', 5, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['designation', 'strike', 'finish']), listing,
+    ['designation', 'strike', 'finish'], [/\b(reverse proof|proof|business strike|first strike|first releases|first day of issue|early releases|deep cameo|cameo)\b/i],
+  ));
+  add('compositionMetal', 3, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['composition', 'metal']), listing,
+    ['composition', 'metal'], [/\b(silver|gold|copper|bronze|clad|nickel)\b/i],
+  ));
+  add('countryIssuingAuthority', 2, coinScoreValueMatches(
+    coinScoreTargetValue(targetDetails, ['country', 'issuingCountry', 'issuingAuthority']), listing,
+    ['country', 'issuingCountry', 'issuingAuthority'], [/\b(United States|USA|US|Canada|Mexico|Australia|United Kingdom|Great Britain)\b/i],
+  ));
+  return { score, matched, unknown };
+}
+export function coinsSingleVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
 }
 function comicScoreText(value: unknown): string {
   return normalizedChoice(value).replace(/[_-]+/g, ' ');
@@ -2632,6 +2756,32 @@ function selectComicsSingleVisualCandidates<T extends VisualSourceCandidate>(can
   return { selected, excluded, cap, ranked };
 }
 
+function selectCoinsSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate) => {
+    const scoring = coinsSingleVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = coinsSingleVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((listing) => ({
+    ...listing.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(listing.item.metadataMatchScore ?? 0) < 60
+      ? `Coins / Single Coin metadata score ${Number(listing.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+      : `Coins / Single Coin visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [listing.imageUrls.length === 0
+      ? 'no candidate image available; retained as context-only'
+      : Number(listing.item.metadataMatchScore ?? 0) < 60
+        ? 'metadata score below minimum (60)'
+        : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
+
 function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
   return listings
     .map((item, index) => {
@@ -2718,7 +2868,7 @@ export async function filterVisualSourceCandidates<
   let eligibleListings = preparedListings.filter((_, index) => !preVisualExcludedIndexes.has(index));
   let preVisualScoreExcludedListings: T[] = [];
   let preVisualScoreExcludedIndexes = new Set<number>();
-  let sportsCardRankedItems = new Map<number, T>();
+  let itemTypeRankedItems = new Map<number, T>();
   let allCandidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }> = preparedListings
     .map((item, candidateIndex) => {
       const imageUrls = normalizeVisualSourceCandidate(item).imageUrls;
@@ -2737,11 +2887,19 @@ export async function filterVisualSourceCandidates<
   const comicsSelection = comicsSingleTarget(targetMetadata)
     ? selectComicsSingleVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection;
+  const coinsSelection = isSingleCoinTarget(targetMetadata)
+    ? selectCoinsSingleVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? coinsSelection;
   if (rankedSelection) {
-    preVisualScoreExcludedIndexes = new Set<number>(rankedSelection.excluded.map((candidate) => Number(candidate.candidateIndex)));
-    sportsCardRankedItems = new Map(rankedSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
-    for (const [candidateIndex, item] of sportsCardRankedItems) rankedItems.set(candidateIndex, item);
+    const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
+    preVisualScoreExcludedIndexes = new Set<number>(
+      rankedSelection.ranked
+        .filter((candidate) => !selectedCandidateIndexes.has(candidate.candidateIndex))
+        .map((candidate) => candidate.candidateIndex),
+    );
+    itemTypeRankedItems = new Map(rankedSelection.ranked.map((candidate) => [candidate.candidateIndex, candidate.item]));
+    for (const [candidateIndex, item] of itemTypeRankedItems) rankedItems.set(candidateIndex, item);
     preVisualScoreExcludedListings = rankedSelection.excluded.map((listing) => ({
       ...listing,
       visualRequirement: "not_required_pre_visual",
@@ -3178,7 +3336,7 @@ export async function filterVisualSourceCandidates<
           metadataMatchReasons: scored?.metadataMatchReasons,
           visualRequirement: "not_required_pre_visual",
           visualReviewStatus: "not_reviewed",
-          visualReviewRationale: scored?.visualReviewRationale ?? "Candidate was omitted by the Sports Card single-card score cap.",
+          visualReviewRationale: scored?.visualReviewRationale ?? "Candidate was omitted by the item-type visual-review score cap.",
           evidenceDisposition: "context_only",
         } as T;
       }
