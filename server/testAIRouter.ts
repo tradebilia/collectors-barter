@@ -32,7 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, buildVisualTargetMetadata, filterVisualSourceCandidates, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, autographMarketRelevanceScore, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -1514,10 +1514,12 @@ export const testAIRouter = router({
       if (input.category === 'autographs') {
         const signer = details.signer || input.title;
         const itemType = details.signedItemType || '';
+        const autographCategory = details.autographCategory || '';
         const authCompany = input.certificationCompany === 'Other' 
-          ? (details.customAuthenticationCompany || '') 
+          ? (details.customAuthenticationCompany || '')
           : (input.certificationCompany || '');
-        const parts = [signer, itemType, authCompany].filter((p: string) => p);
+        const inscription = details.inscription || details.inscriptionText || details.personalization || '';
+        const parts = [signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
         console.log(`[Autographs Debug] signer="${signer}", itemType="${itemType}", authCompany="${authCompany}", query="${query}"`);
       }
@@ -2284,10 +2286,12 @@ export const testAIRouter = router({
       else if (input.category === 'autographs') {
         const signer = details.signer || input.title;
         const itemType = details.signedItemType || '';
+        const autographCategory = details.autographCategory || '';
         const authCompany = input.certificationCompany === 'Other'
           ? (details.customAuthenticationCompany || '')
           : (input.certificationCompany || '');
-        const parts = [signer, itemType, authCompany].filter((p: string) => p);
+        const inscription = details.inscription || details.inscriptionText || details.personalization || '';
+        const parts = [signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
       }
       // Pokemon
@@ -2373,6 +2377,64 @@ export const testAIRouter = router({
         const byCertification = filterListingsByCertificationCompany(bySport, cert || null, input.category);
         const filtered = filterListingsByGrade(byCertification, targetGrade, input.category);
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
+
+        const autographTargetMetadata = buildVisualTargetMetadata({
+          title: input.title,
+          category: input.category,
+          itemType: input.itemType,
+          certificationCompany: input.certificationCompany,
+          itemDetails: input.itemDetails,
+        });
+        if (isAutographSignedItemTarget(autographTargetMetadata)) {
+          const rankedAutographItems = rawItems
+            .map((item: any) => ({ ...item, ...autographMarketRelevanceScore(item, autographTargetMetadata) }))
+            .sort((a: any, b: any) => Number(b.score ?? 0) - Number(a.score ?? 0));
+          const marketListings = rankedAutographItems.map((item: any, index: number) => ({
+            title: item.title,
+            price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
+            currency: item.soldCurrency ?? item.currency ?? null,
+            condition: item.condition,
+            seller: item.sellerUsername,
+            itemUrl: item.url,
+            imageUrl: item.thumbnailUrl ?? item.imageUrl,
+            endedAt: item.endedAt,
+            shippingPrice: item.shippingPrice,
+            saleId: item.saleId ?? item.id ?? null,
+            sourceId: 'sold_comps',
+            sourceLabel: 'eBay Sold-Comps',
+            retrievalQuery: item.retrievalQuery ?? null,
+            evidenceDisposition: 'context_only',
+            evidenceReasons: ['Autographs / Signed Item market-range evidence only; not an exact comparable and not sent to visual analysis.'],
+            visualRequirement: 'not_required_autograph_market_context',
+            visualReviewStatus: 'not_reviewed',
+            visualReviewRationale: 'Signed objects vary physically, so this result supplies market range context rather than an exact visual match.',
+            metadataMatchScore: Number(item.score ?? 0),
+            metadataMatchReasons: item.matched ?? [],
+            metadataMatchRank: index + 1,
+            metadataMatchLabel: 'Market Relevance Score',
+          }));
+          const metrics = computeMetrics(marketListings.map((item: any) => ({
+            ...item,
+            price: { value: item.price, currency: item.currency ?? 'USD' },
+          })));
+          return {
+            query,
+            marketContextOnly: true,
+            listings: marketListings,
+            visualReviewListings: [],
+            visualFilter: undefined,
+            metrics,
+            audit: {
+              rawReceived: rawItems.length,
+              retrievalCoverage,
+              valuationEligible: 0,
+              warningReview: marketListings.length,
+              objectiveConflicts: 0,
+              notVisuallyReviewed: marketListings.length,
+            },
+            note: 'Autographs / Signed Item market range only: the results provide similar-signer/item/authentication evidence and price metrics; they are not exact comparables and are not sent to visual analysis.',
+          };
+        }
 
         if (isComicsOriginalArt(input.itemType)) {
           const originalArtTargetMetadata = buildVisualTargetMetadata({

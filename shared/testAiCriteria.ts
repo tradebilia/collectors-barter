@@ -147,9 +147,11 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
           ? ['brand', 'manufacturer', 'line', 'franchise', 'toyName', 'toyNameCharacter', 'vehicleName', 'playsetName', 'gamePuzzleName', 'modelKitName', 'setNumber', 'theme', 'toyForm', 'objectType', 'productType', 'version', 'variant', 'year']
         : normalizedCategory === 'coins'
           ? ['year', 'denomination', 'series', 'coinSeries', 'name', 'subject', 'mintMark', 'mint', 'country', 'variety', 'designation']
-        : normalizedCategory === 'stamps'
-              ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series', 'perforation', 'watermark', 'overprintSurcharge']
-              : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
+	        : normalizedCategory === 'stamps'
+	              ? ['catalogNumber', 'scottNumber', 'denomination', 'year', 'country', 'catalog', 'series', 'perforation', 'watermark', 'overprintSurcharge']
+	              : normalizedCategory === 'autographs'
+	                ? ['signer', 'signedItemType', 'autographCategory', 'authenticationCompany', 'customAuthenticationCompany', 'inscription', 'inscriptionText']
+	              : ['subject', 'name', 'year', 'setName', 'series', 'catalogNumber', 'issueNumber'];
   const gradingCompany = resolveTestAiGradingCompany(details);
   const manufacturer = normalizedCategory === 'sports_cards' ? resolveTestAiManufacturer(details) : '';
   const baseValues = unopenedProduct

@@ -56,9 +56,11 @@ import {
   disneyPinsVisualCap,
   stampsSingleVisualCap,
   stampsSingleVisualScore,
-  stampsSetVisualCap,
-  stampsSetVisualScore,
-  comicsSingleVisualCap,
+	  stampsSetVisualCap,
+	  stampsSetVisualScore,
+	  autographMarketRelevanceScore,
+	  isAutographSignedItemTarget,
+	  comicsSingleVisualCap,
   comicsSingleVisualScore,
   sportsCardSetVisualCap,
   sportsCardSetVisualScore,
@@ -82,6 +84,68 @@ const structuredVisualResponse = (value: unknown) => ({
 
 describe("visual source filter", () => {
   beforeEach(() => mockedInvokeLLM.mockReset());
+  it("ranks Signed Item market evidence by signer, object, authentication, and inscription", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Michael Jordan signed puck",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA", inscription: "Yes" },
+    });
+    expect(isAutographSignedItemTarget(target)).toBe(true);
+    const score = autographMarketRelevanceScore({
+      title: "Michael Jordan signed puck JSA inscription",
+      itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA", inscription: "Yes" }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining(["signer", "signed item type", "authentication company", "inscription"]));
+  });
+
+  it("keeps Signed Item candidates as ranked market context and never calls vision", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Michael Jordan signed puck",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "Autograph market range",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [
+        { title: "Michael Jordan signed puck JSA", itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA" }), imageUrl: "https://example.com/strong.jpg" },
+        { title: "Michael Jordan signed baseball PSA/DNA", itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Baseball", authenticationCompany: "PSA/DNA" }), imageUrl: "https://example.com/weak.jpg" },
+      ],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings).toHaveLength(2);
+    expect(result.contextListings?.[0].metadataMatchRank).toBe(1);
+    expect(result.contextListings?.[0].metadataMatchScore).toBeGreaterThan(result.contextListings?.[1].metadataMatchScore as number);
+    expect(result.contextListings?.every((listing) => listing.evidenceDisposition === "context_only")).toBe(true);
+    expect(result.note).toContain("not sent to visual analysis");
+  });
+
+  it("does not let Autographs Collection/Lot enter the Signed Item market path", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Michael Jordan autograph collection",
+      category: "autographs",
+      itemType: "collection_lot",
+      fullItemDetails: { numberOfSignedItems: "5" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "marketplace",
+      sourceLabel: "Autograph collection lot",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [{ title: "Michael Jordan signed items lot", imageUrl: "https://example.com/lot.jpg" }],
+    });
+    expect(isAutographSignedItemTarget(target)).toBe(false);
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings?.[0].evidenceDisposition).toBe("context_only");
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+  });
+
   it("scores Stamps / Single Stamp on the approved identity signals", () => {
     const target = buildVisualTargetMetadata({
       title: "United States Scott C1 24c Mint Never Hinged",

@@ -64,6 +64,66 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
   note: string;
 };
 
+export function isAutographSignedItemTarget(targetMetadata: string): boolean {
+  return normalizedChoice(metadataValue(targetMetadata, "category")) === "autographs"
+    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "signed_item";
+}
+
+function autographMarketValue(value: unknown): string {
+  return normalizedChoice(value).replace(/\bautograph(?:ed|s)?\b/g, "").replace(/\bsigned\b/g, "").trim();
+}
+
+function autographTargetValue(targetMetadata: string, details: Record<string, unknown>, aliases: string[]): string {
+  return autographMarketValue(aliases.map((key) => metadataValue(targetMetadata, key) || details[key]).find((value) => String(value ?? "").trim()));
+}
+
+function autographCandidateValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const structured = aliases.map((key) => listing[key] ?? candidate.details[key]).find((value) => String(value ?? "").trim());
+  if (structured != null) return autographMarketValue(structured);
+  for (const pattern of titlePatterns) {
+    const match = candidate.title.match(pattern);
+    if (match?.[1]) return autographMarketValue(match[1]);
+  }
+  return "";
+}
+
+export function autographMarketRelevanceScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const details = extractTargetItemDetails(targetMetadata);
+  const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
+  const targetItemType = autographTargetValue(targetMetadata, details, ["signedItemType", "itemType"]);
+  const targetAuth = autographTargetValue(targetMetadata, details, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany"]);
+  const targetInscription = autographTargetValue(targetMetadata, details, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateSigner = autographCandidateValue(listing, ["signer", "autographSigner"]);
+  const candidateItemType = autographCandidateValue(listing, ["signedItemType", "itemType", "productType", "form"], [/(?:signed|autographed)\s+([^|,;]+)/i]);
+  const candidateAuth = autographCandidateValue(listing, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany", "authenticator", "gradingCompany"]);
+  const candidateInscription = autographCandidateValue(listing, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const compare = (target: string, candidateValue: string, points: number, label: string) => {
+    if (!target || !candidateValue) { unknown.push(label); return; }
+    if (target === candidateValue || target.includes(candidateValue) || candidateValue.includes(target)) { score += points; matched.push(label); }
+  };
+  compare(targetSigner, candidateSigner || autographMarketValue(candidate.title), 40, "signer");
+  compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 30, "signed item type");
+  compare(targetAuth, candidateAuth || autographMarketValue(candidate.title), 20, "authentication company");
+  if (!targetInscription || !candidateInscription) unknown.push("inscription");
+  else if (targetInscription === candidateInscription || targetInscription.includes(candidateInscription) || candidateInscription.includes(targetInscription)) { score += 10; matched.push("inscription"); }
+  return { score, matched, unknown };
+}
+
+function annotateAutographMarketCandidates<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
+  return listings
+    .map((item, index) => {
+      const scoring = autographMarketRelevanceScore(item, targetMetadata);
+      return { item: { ...item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T, index };
+    })
+    .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.index - b.index)
+    .map((entry, rank) => ({ ...entry.item, metadataMatchRank: rank + 1 } as T));
+}
+
 export const VISUAL_REVIEW_BATCH_SIZE = 20;
 export const VISUAL_REVIEW_TARGET_MATCHES = 3;
 export const VISUAL_REVIEW_MAX_CANDIDATES = 30;
@@ -4403,6 +4463,32 @@ export async function filterVisualSourceCandidates<
 	      retainedUnreviewedCount: contextListings.length,
 	      reviews: [],
 	      note: 'Original Art market context only: candidates are not sent to visual analysis because different artworks are not exact matches.',
+	    };
+	  }
+	  if (isAutographSignedItemTarget(targetMetadata)) {
+	    const rankedAutographListings = annotateAutographMarketCandidates(preparedListings, targetMetadata);
+	    const contextListings = rankedAutographListings.map((listing, index) => ({
+	      ...listing,
+	      visualRequirement: 'not_required_autograph_market_context',
+	      visualReviewStatus: 'not_reviewed',
+	      visualReviewRationale: 'Signed Item uses broad market-range context; the signed object can vary and is not an exact visual comparable.',
+	      evidenceDisposition: 'context_only',
+	      evidenceReasons: [
+	        ...(universalPreparation.contextReasons.get(index) ? [universalPreparation.contextReasons.get(index)!] : []),
+
+	        'Autographs / Signed Item market-range workflow does not use visual analysis.',
+	      ],
+	    } as T));
+	    return {
+	      listings: [],
+	      contextListings,
+	      preVisualExcludedCount: contextListings.length,
+	      status: 'skipped_no_target_image',
+	      reviewedCount: 0,
+	      removedCount: 0,
+	      retainedUnreviewedCount: contextListings.length,
+	      reviews: [],
+	      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',
 	    };
 	  }
 	  const preVisualUniversalReasons = universalPreparation.contextReasons;
