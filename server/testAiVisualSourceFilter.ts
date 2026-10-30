@@ -193,6 +193,135 @@ export function isDisneyPinsMetadata(metadata: string): boolean {
   return metadataValue(metadata, "category").trim().toLowerCase().replace(/[\s-]+/g, "_") === "disney_pins";
 }
 
+function disneyPinsTargetItemType(targetMetadata: string): "individual_pin" | "pin_set" | "collection_lot" | "" {
+  if (!isDisneyPinsMetadata(targetMetadata)) return "";
+  const details = extractTargetItemDetails(targetMetadata);
+  const value = normalizedChoice(metadataValue(targetMetadata, "itemType") || details.itemType || details.productType || details.form);
+  if (/individual_pin|single_pin/.test(value)) return "individual_pin";
+  if (/pin_set|set/.test(value) && !/collection|lot/.test(value)) return "pin_set";
+  if (/collection|lot/.test(value)) return "collection_lot";
+  return "";
+}
+
+function disneyPinsCandidateItemType(listing: VisualSourceCandidate): "individual_pin" | "pin_set" | "collection_lot" | "" {
+  const details = candidateStructuredDetails(listing);
+  const value = normalizedChoice(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form);
+  const title = String(listing.title ?? "");
+  if (/collection|lot|bundle|mixed|assortment|group\s+of|set\s+of\s+\d+/i.test(value) || /collection|lot|bundle|mixed\s+lot|assortment|set\s+of\s+\d+/i.test(title)) return "collection_lot";
+  if (/pin_set|set/.test(value) || /(?:pin|pins)\s+(?:set|collection)|set\s+of\s+(?:pins?|\d+)/i.test(title)) return "pin_set";
+  if (/individual_pin|single_pin/.test(value) || /(?:single|individual|one)\s+pin\b/i.test(title)) return "individual_pin";
+  return "";
+}
+
+function disneyPinsComparableValue(value: unknown): string {
+  return candidateText(value).toLowerCase().replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function disneyPinsValuesConflict(targetValue: unknown, candidateValue: unknown): boolean {
+  const target = disneyPinsComparableValue(targetValue);
+  const candidate = disneyPinsComparableValue(candidateValue);
+  if (!target || !candidate || target === candidate) return false;
+  return !target.includes(candidate) && !candidate.includes(target);
+}
+
+function disneyPinsExplicitValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  const structured = aliases.filter((key) => key !== "title").map((key) => listing[key] ?? details[key]).find((value) => String(value ?? "").trim());
+  if (structured != null) return String(structured).trim();
+  if (aliases.includes("title")) {
+    const title = String(listing.title ?? "").trim();
+    if (title && !/^(?:disney\s+)?pins?$/i.test(title)) return title;
+  }
+  for (const pattern of titlePatterns) {
+    const match = String(listing.title ?? "").match(pattern);
+    if (match?.[1]) return match[1].trim();
+  }
+  return "";
+}
+
+function disneyPinsBooleanState(value: unknown): "yes" | "no" | null {
+  const normalized = normalizedChoice(value);
+  if (!normalized || /unknown|n_a|not_specified/.test(normalized)) return null;
+  if (/^(?:yes|true|1|limited|open|artist_proof|pre_production)$/.test(normalized)) return "yes";
+  if (/^(?:no|false|0|none|standard|regular)$/.test(normalized)) return "no";
+  return null;
+}
+
+function disneyPinsBooleanConflict(targetValue: unknown, candidateValue: unknown, label: string): string | null {
+  const target = disneyPinsBooleanState(targetValue);
+  const candidateChoice = normalizedChoice(candidateValue);
+  const candidate = label.includes("limited") && candidateChoice === "open"
+    ? "no"
+    : label.includes("open") && candidateChoice === "limited"
+      ? "no"
+      : disneyPinsBooleanState(candidateValue);
+  if (!target || !candidate || target === candidate) return null;
+  return `Disney Pins ${label} differs: target is explicitly ${target}, but the candidate explicitly declares ${candidate}.`;
+}
+
+function disneyPinsIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetType = disneyPinsTargetItemType(targetMetadata);
+  if (!targetType || targetType === "collection_lot") return null;
+  const candidateType = disneyPinsCandidateItemType(listing);
+  if (candidateType === "collection_lot") return "Disney Pins filter: candidate is a collection, lot, bundle, or mixed group, but the target is a single comparable item.";
+  if (candidateType && candidateType !== targetType) {
+    return `Disney Pins item type differs: target is ${targetType === "individual_pin" ? "an individual pin" : "a pin set"}, but the candidate is explicitly ${candidateType === "individual_pin" ? "an individual pin" : "a pin set"}.`;
+  }
+  const target = extractTargetItemDetails(targetMetadata);
+  const checks: Array<[string, unknown, string[], RegExp[]]> = targetType === "individual_pin"
+    ? [
+        ["pin name", target.pinName ?? extractTargetTitle(targetMetadata), ["pinName", "name", "title"], []],
+        ["character", target.character, ["character", "characterName"], []],
+        ["series", target.series, ["series", "seriesName"], []],
+        ["year", target.year, ["year", "releaseYear"], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/i]],
+        ["event", target.pinTradingEvent, ["pinTradingEvent", "event", "eventName"], []],
+        ["backstamp", target.backstampInformation, ["backstampInformation", "backstamp", "backstampLogo"], []],
+      ]
+    : [
+        ["set name", target.setName ?? extractTargetTitle(targetMetadata), ["setName", "series", "seriesName", "title"], []],
+        ["series", target.series, ["series", "seriesName"], []],
+        ["characters included", target.charactersIncluded, ["charactersIncluded", "characters", "characterList"], []],
+      ];
+  for (const [label, targetValue, aliases, titlePatterns] of checks) {
+    const candidateValue = disneyPinsExplicitValue(listing, aliases, titlePatterns);
+    if (disneyPinsValuesConflict(targetValue, candidateValue)) return `Disney Pins ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${candidateValue}.`;
+  }
+  if (targetType === "individual_pin") {
+    for (const [label, targetValue, aliases] of [
+      ["limited-edition status", target.limitedEdition, ["limitedEdition", "limited", "limitedEditionStatus"]],
+      ["open-edition status", target.openEdition, ["openEdition", "openEditionStatus"]],
+      ["artist-proof status", target.artistProof, ["artistProof", "artistProofStatus"]],
+      ["pre-production status", target.preProduction, ["preProduction", "preProductionStatus"]],
+      ["backer-card status", target.backerCardIncluded, ["backerCardIncluded", "backerCard", "backerCardStatus"]],
+    ] as Array<[string, unknown, string[]]>) {
+      const titlePatterns = label.includes("limited") || label.includes("open")
+        ? [/\b(limited|open)\s+edition\b/i]
+        : label.includes("artist")
+          ? [/\b(artist[’']?s?\s+proof|ap|pp)\b/i]
+          : label.includes("pre-production")
+            ? [/\b(pre[-\s]?production|prototype)\b/i]
+            : [];
+      const conflict = disneyPinsBooleanConflict(targetValue, disneyPinsExplicitValue(listing, aliases, titlePatterns), label);
+      if (conflict) return conflict;
+    }
+  } else {
+    const targetComplete = disneyPinsBooleanState(target.completeSet);
+    const candidateTitle = String(listing.title ?? "");
+    const candidateComplete = disneyPinsBooleanState(disneyPinsExplicitValue(listing, ["completeSet", "complete", "completeness"], [
+      /\b(complete|full)\s+(?:pin\s+)?set\b/i,
+      /\b(partial|incomplete)\s+(?:pin\s+)?set\b/i,
+    ]));
+    if (targetComplete && candidateComplete && targetComplete !== candidateComplete) return `Disney Pins complete-set status differs: target is explicitly ${targetComplete}, but the candidate explicitly declares ${candidateComplete}.`;
+    const limitedConflict = disneyPinsBooleanConflict(target.limitedEdition, disneyPinsExplicitValue(listing, ["limitedEdition", "limited", "limitedEditionStatus"], [/\b(limited|open)\s+edition\b/i]), "limited-edition status");
+    if (limitedConflict) return limitedConflict;
+    const targetCount = Number(target.numberOfPins);
+    const candidateCount = Number(disneyPinsExplicitValue(listing, ["numberOfPins", "pinCount", "quantity"], [/\b(?:set\s+of|contains?|includes?)\s*(\d+)\s+pins?\b/i]));
+    if (Number.isFinite(targetCount) && targetCount > 0 && Number.isFinite(candidateCount) && candidateCount > 0 && targetCount !== candidateCount) return `Disney Pins set size differs: target declares ${targetCount} pins, but the candidate explicitly declares ${candidateCount}.`;
+    if (targetComplete === "no" && /\b(?:complete|full)\s+(?:pin\s+)?set\b/i.test(candidateTitle)) return "Disney Pins set completeness differs: target is incomplete, but the candidate explicitly declares a complete set.";
+  }
+  return null;
+}
+
 export function isCoinMetadata(metadata: string): boolean {
   return normalizedChoice(metadataValue(metadata, "category")) === "coins";
 }
@@ -2382,13 +2511,14 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const coinSetIdentityConflictReason = coinSetIdentityConflict(targetMetadata, listing);
     const paperMoneyIdentityConflictReason = paperMoneyIdentityConflict(targetMetadata, listing);
     const stampsIdentityConflictReason = stampsIdentityConflict(targetMetadata, listing);
+    const disneyPinsIdentityConflictReason = disneyPinsIdentityConflict(targetMetadata, listing);
     const videoGameIdentityConflictReason = videoGameIdentityConflict(targetMetadata, listing);
     const movieIdentityConflictReason = movieIdentityConflict(targetMetadata, listing);
     const musicIdentityConflictReason = musicIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(disneyPinsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? disneyPinsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

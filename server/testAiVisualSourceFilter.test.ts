@@ -1484,6 +1484,45 @@ describe("visual source filter", () => {
     expect(disneyPinsVisualInstruction("category=disney_pins")).toContain("Same character, similar colors, or a shared series is never sufficient");
   });
 
+  it("holds Disney Pins collections, lots, and wrong item forms before visual review", () => {
+    const individualTarget = buildVisualTargetMetadata({
+      title: "Mickey D23 Limited Edition Pin",
+      category: "disney_pins",
+      itemType: "individual_pin",
+      fullItemDetails: { pinName: "Mickey D23", character: "Mickey Mouse", limitedEdition: "Yes" },
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "Disney pin collection lot", imageUrl: "https://example.com/lot.jpg" }], individualTarget)[0]?.rationale).toContain("collection, lot");
+    expect(buildDeclaredIdentityReviews([{ title: "Mickey D23 Pin Set", imageUrl: "https://example.com/set.jpg" }], individualTarget)[0]?.rationale).toContain("item type differs");
+
+    const setTarget = buildVisualTargetMetadata({
+      title: "Mickey D23 Pin Set",
+      category: "disney_pins",
+      itemType: "pin_set",
+      fullItemDetails: { setName: "Mickey D23", completeSet: "Yes", numberOfPins: 4 },
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "Mickey D23 Single Pin", imageUrl: "https://example.com/pin.jpg" }], setTarget)[0]?.rationale).toContain("item type differs");
+    expect(buildDeclaredIdentityReviews([{ title: "Mickey D23 Complete Pin Set", imageUrl: "https://example.com/complete.jpg" }], setTarget)).toHaveLength(0);
+  });
+
+  it("holds explicit Disney Pins identity and edition conflicts but does not reject missing fields", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Mickey D23 Limited Edition Pin",
+      category: "disney_pins",
+      itemType: "individual_pin",
+      fullItemDetails: {
+        pinName: "Mickey D23",
+        character: "Mickey Mouse",
+        series: "D23",
+        year: "2024",
+        limitedEdition: "Yes",
+        artistProof: "No",
+      },
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "Minnie D23 Limited Edition Pin 2024", imageUrl: "https://example.com/mismatch.jpg" }], target)[0]?.rationale).toContain("pin name differs");
+    expect(buildDeclaredIdentityReviews([{ title: "Mickey D23 Open Edition Pin 2024", imageUrl: "https://example.com/edition.jpg" }], target)[0]?.rationale).toContain("limited-edition status differs");
+    expect(buildDeclaredIdentityReviews([{ title: "Disney Pin", imageUrl: "https://example.com/unknown.jpg" }], target)).toHaveLength(0);
+  });
+
   it("requires a focused escalation for every initial mismatch against a graded target", () => {
     const args = {
       title: "Mario Bros. 3 NES Nintendo Game PSA Graded 9.0 CIB Complete In Box Oval Seal",
