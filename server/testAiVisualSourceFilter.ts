@@ -2163,6 +2163,57 @@ function comicBoolean(value: unknown, candidateText: string, positive: RegExp, n
   if (!targetPositive && !targetNegative) return null;
   return targetPositive ? positive.test(candidateText) : negative.test(candidateText);
 }
+const ORIGINAL_ART_SCORE_FIELDS = [
+  ['artistName', 30],
+  ['artworkTitleCharacter', 20],
+  ['artType', 20],
+  ['comicTitle', 15],
+  ['issueNumber', 10],
+  ['publisher', 5],
+] as const;
+function originalArtFieldMatches(targetValue: unknown, candidate: NormalizedVisualSourceCandidate, candidateText: string, aliases: string[] = []): boolean | null {
+  const target = comicTitleComparable(targetValue);
+  if (!target) return null;
+  const candidateValues = [
+    ...aliases.map((key) => candidate.details[key]),
+    candidate.title,
+    candidateText,
+  ].map(comicTitleComparable).filter(Boolean);
+  return candidateValues.some((value) => value.includes(target));
+}
+export function originalArtMarketRelevanceScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = comicScoreText(sourceText(candidate));
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof ORIGINAL_ART_SCORE_FIELDS[number][0], points: number, result: boolean | null) => {
+    if (result === true) { score += points; matched.push(field); }
+    else if (result === null) unknown.push(field);
+  };
+  add('artistName', 30, originalArtFieldMatches(firstMeaningfulValue(targetDetails.artistName, targetDetails.artist, targetDetails.creator), candidate, candidateText, ['artistName', 'artist', 'creator']));
+  add('artworkTitleCharacter', 20, originalArtFieldMatches(firstMeaningfulValue(targetDetails.artworkTitle, targetDetails.character, targetDetails.artworkTitleCharacter), candidate, candidateText, ['artworkTitle', 'character', 'artworkTitleCharacter']));
+  add('artType', 20, originalArtFieldMatches(targetDetails.artType, candidate, candidateText, ['artType']));
+  add('comicTitle', 15, originalArtFieldMatches(firstMeaningfulValue(targetDetails.coverSketchComicTitle, targetDetails.comicTitle, targetDetails.series, targetDetails.comicSeries), candidate, candidateText, ['coverSketchComicTitle', 'comicTitle', 'series', 'comicSeries']));
+  add('issueNumber', 10, comicIssueMatches(firstMeaningfulValue(targetDetails.coverSketchIssueNumber, targetDetails.issueNumber, targetDetails.issueNo, targetDetails.number), candidateText));
+  add('publisher', 5, originalArtFieldMatches(targetDetails.publisher, candidate, candidateText, ['publisher']));
+  return { score, matched, unknown };
+}
+export function annotateOriginalArtMarketCandidates<T extends VisualSourceCandidate>(listings: T[], targetMetadata: string): T[] {
+  return listings.map((item, index) => {
+    const scoring = originalArtMarketRelevanceScore(item, targetMetadata);
+    return { ...item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown, metadataMatchRank: index + 1, metadataMatchLabel: 'Market Relevance Score' };
+  }).sort((a, b) => Number(b.metadataMatchScore ?? 0) - Number(a.metadataMatchScore ?? 0))
+    .map((item, index) => ({ ...item, metadataMatchRank: index + 1 }));
+}
+export function originalArtMarketRelevanceBand(score: number): string {
+  if (score >= 85) return 'highly relevant';
+  if (score >= 70) return 'strong';
+  if (score >= 55) return 'useful broader';
+  if (score >= 40) return 'weak';
+  return 'limited';
+}
 export function comicsSingleVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const candidate = normalizeVisualSourceCandidate(listing);
@@ -2563,7 +2614,8 @@ export async function filterVisualSourceCandidates<
 	  const isOriginalArtTarget = /(?:^|;\s*)category=comics(?:;|$)/i.test(targetMetadata)
 	    && /(?:^|;\s*)itemType=original_art(?:;|$)/i.test(targetMetadata);
 	  if (isOriginalArtTarget) {
-	    const contextListings = preparedListings.map((listing, index) => ({
+	    const rankedOriginalArtListings = annotateOriginalArtMarketCandidates(preparedListings, targetMetadata);
+	    const contextListings = rankedOriginalArtListings.map((listing, index) => ({
 	      ...listing,
 	      visualRequirement: 'not_required_original_art',
 	      visualReviewStatus: 'not_reviewed',

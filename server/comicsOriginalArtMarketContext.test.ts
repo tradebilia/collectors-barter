@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildComicsOriginalArtQueries, isComicsOriginalArt } from '../shared/testAiCriteria';
-import { buildVisualTargetMetadata, filterVisualSourceCandidates } from './testAiVisualSourceFilter';
+import { buildVisualTargetMetadata, filterVisualSourceCandidates, originalArtMarketRelevanceBand, originalArtMarketRelevanceScore } from './testAiVisualSourceFilter';
 
 describe('Comics Original Art market-context workflow', () => {
   it('builds broad queries from the approved Original Art fields', () => {
@@ -22,20 +22,35 @@ describe('Comics Original Art market-context workflow', () => {
   });
 
   it('keeps Original Art candidates as context and makes no visual-review call', async () => {
+    const target = buildVisualTargetMetadata({
+      title: 'Spawn original art',
+      category: 'comics',
+      itemType: 'original_art',
+      fullItemDetails: {
+        artistName: 'Todd McFarlane',
+        artworkTitle: 'Spawn',
+        artType: 'Comic Book Cover Sketch / Remark',
+        coverSketchComicTitle: 'Spawn',
+        coverSketchIssueNumber: '300',
+        publisher: 'Image',
+      },
+    });
+    const score = originalArtMarketRelevanceScore({
+      title: 'Todd McFarlane Spawn Comic Book Cover Sketch Remark Spawn #300 Image',
+      imageUrl: 'https://example.com/candidate.jpg',
+    }, target);
+    expect(score.score).toBe(100);
+    expect(originalArtMarketRelevanceBand(score.score)).toBe('highly relevant');
     const result = await filterVisualSourceCandidates({
       sourceRole: 'ebay',
       sourceLabel: 'eBay Sold-Comps',
       targetImageUrl: 'https://example.com/target.jpg',
-      targetMetadata: buildVisualTargetMetadata({
-        title: 'Spawn original art',
-        category: 'comics',
-        itemType: 'original_art',
-        fullItemDetails: { artistName: 'Todd McFarlane', artType: 'Splash Page' },
-      }),
-      listings: [{ title: 'Amazing Spider-Man original comic art', imageUrl: 'https://example.com/candidate.jpg', price: 1000 }],
+      targetMetadata: target,
+      listings: [{ title: 'Todd McFarlane Spawn Comic Book Cover Sketch Remark Spawn #300 Image', imageUrl: 'https://example.com/candidate.jpg', price: 1000 }],
     });
     expect(result.listings).toHaveLength(0);
     expect(result.contextListings).toHaveLength(1);
+    expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 1, metadataMatchScore: 100 });
     expect(result.reviewedCount).toBe(0);
     expect(result.reviews).toHaveLength(0);
     expect(result.note).toContain('not sent to visual analysis');

@@ -32,7 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, buildVisualTargetMetadata, filterVisualSourceCandidates, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, buildVisualTargetMetadata, filterVisualSourceCandidates, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -2375,7 +2375,21 @@ export const testAIRouter = router({
         console.log(`[Sold-Comps] After sport filter: ${bySport.length} results (target: ${targetSport || 'none'})`);
 
         if (isComicsOriginalArt(input.itemType)) {
-          const marketListings = rawItems.map((item: any) => ({
+          const originalArtTargetMetadata = buildVisualTargetMetadata({
+            title: input.title,
+            category: input.category,
+            itemType: input.itemType,
+            itemDetails: input.itemDetails,
+          });
+          const rankedOriginalArtItems = rawItems.map((item: any) => ({
+            ...item,
+            ...originalArtMarketRelevanceScore({
+              title: item.title,
+              itemDetails: item.itemDetails,
+              imageUrl: item.thumbnailUrl ?? item.imageUrl,
+            }, originalArtTargetMetadata),
+          })).sort((a: any, b: any) => Number(b.score ?? 0) - Number(a.score ?? 0));
+          const marketListings = rankedOriginalArtItems.map((item: any, index: number) => ({
             title: item.title,
             price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
             currency: item.soldCurrency ?? item.currency ?? null,
@@ -2392,6 +2406,10 @@ export const testAIRouter = router({
             evidenceDisposition: 'context_only',
             evidenceReasons: ['Original Art market-range context only; not an exact comparable and not sent to visual analysis.'],
             visualReviewStatus: 'not_reviewed',
+            metadataMatchScore: Number(item.score ?? 0),
+            metadataMatchReasons: item.matched ?? [],
+            metadataMatchRank: index + 1,
+            metadataMatchLabel: 'Market Relevance Score',
           }));
           const metrics = computeMetrics(marketListings.map((item: any) => ({
             ...item,

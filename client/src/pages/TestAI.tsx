@@ -836,7 +836,7 @@ function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condi
 
 function MetadataMatchLine({ listing }: { listing: any }) {
   if (listing?.metadataMatchScore === undefined || listing?.metadataMatchScore === null) return null;
-  return <p className="text-[8px] text-cyan-200">Metadata rank #{listing.metadataMatchRank ?? '—'} · {listing.metadataMatchScore}/100 · {(listing.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}</p>;
+  return <p className="text-[8px] text-cyan-200">{listing.metadataMatchLabel ?? 'Metadata'} rank #{listing.metadataMatchRank ?? '—'} · {listing.metadataMatchScore}/100 · {(listing.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{listing.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>;
 }
 
 function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string }) {

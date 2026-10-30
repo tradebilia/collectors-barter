@@ -602,3 +602,10 @@ For **Comics → Original Art**, marketplace research now uses broad, bounded qu
 Original Art is deliberately treated differently from Comics / Single Comic. Sold-Comps results are returned as **market-context only** with price-range metrics; they are not exact comparables, are not valuation-eligible, and are not sent to visual analysis. The shared visual pipeline also has a fail-safe Original Art guard so other marketplace/eBay callers cannot send Original Art candidates to the image analyzer or apply Single Comic ranking/caps.
 
 The Test AI panel labels this explicitly: “Original Art market context only.” It shows broad price-range references and retains individual records for context, while showing zero analyzer/valuation candidates. Focused validation passed **134/134 tests**, including the new query and no-vision regressions; TypeScript and production build passed. No database, migration, credential, provider, or deployment changes were made.
+
+## Comics Original Art Market Relevance Score — October 30, 2026
+Original Art marketplace/eBay context records now receive a **Market Relevance Score**, explicitly labeled as **not an exact comparable**. The 100-point model scores Artist Name (30), Artwork Title / Character (20), Art Type (20), Comic Title (15), Issue Number (10), and Publisher (5). Missing fields remain unknown and do not reduce the score. Records are sorted highest-to-lowest and carry rank, score, matched fields, and the relevance label into the Test AI UI.
+
+Score bands are: 85–100 highly relevant, 70–84 strong, 55–69 useful broader reference, 40–54 weak, and below 40 limited. There is no visual-analysis cap because Original Art never enters visual analysis. It remains market-context-only, valuation-ineligible, and outside the Single Comic exact-match ranking model.
+
+Validation passed **142/142 focused tests**, TypeScript, production build, and diff hygiene. No database, migration, credential, provider, or deployment changes were made.
