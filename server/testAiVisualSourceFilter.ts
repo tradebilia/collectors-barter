@@ -3101,6 +3101,85 @@ function comicBoolean(value: unknown, candidateText: string, positive: RegExp, n
   if (!targetPositive && !targetNegative) return null;
   return targetPositive ? positive.test(candidateText) : negative.test(candidateText);
 }
+
+const MUSIC_SCORE_FIELDS = [
+  ['artist', 25],
+  ['releaseTitle', 20],
+  ['format', 15],
+  ['recordLabel', 10],
+  ['catalogNumber', 10],
+  ['releaseYear', 8],
+  ['country', 5],
+  ['edition', 5],
+  ['packagingIncluded', 2],
+] as const;
+
+function musicScoreText(value: unknown): string {
+  return musicComparableValue(value);
+}
+
+function musicScoreTargetValue(targetDetails: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
+  return firstMeaningfulValue(...aliases.map((alias) => targetDetails[alias]), fallback);
+}
+
+function musicScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): boolean | null {
+  const target = musicScoreText(targetValue);
+  if (!target) return null;
+  const candidateDetails = candidateStructuredDetails(listing);
+  const normalizedCandidate = normalizeVisualSourceCandidate(listing);
+  const candidateValue = musicExplicitValue(candidateDetails, ...aliases);
+  const candidate = musicScoreText(candidateValue || normalizedCandidate.title || sourceText(normalizedCandidate));
+  if (!candidate) return null;
+  if (candidate.includes(target) || target.includes(candidate)) return true;
+  if (titlePatterns.some((pattern) => pattern.test(String(listing.title ?? '')))) return true;
+  return false;
+}
+
+function musicScoreFormatMatches(targetType: string, listing: VisualSourceCandidate): boolean | null {
+  if (!targetType) return null;
+  const candidateType = musicCandidateFormat(listing);
+  return candidateType ? candidateType === targetType : null;
+}
+
+function musicScoreBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): boolean | null {
+  const target = normalizedChoice(targetValue);
+  if (!/^(?:yes|no|true|false)$/.test(target)) return null;
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateValue = normalizedChoice(musicExplicitValue(candidateDetails, ...aliases));
+  const normalizedCandidate = normalizeVisualSourceCandidate(listing);
+  const candidateText = String(normalizedCandidate.title ?? '') + ' ' + sourceText(normalizedCandidate);
+  if (candidateValue) return /^(?:yes|true)$/.test(target) ? /^(?:yes|true)$/.test(candidateValue) : /^(?:no|false)$/.test(candidateValue);
+  return /^(?:yes|true)$/.test(target) ? (positive.test(candidateText) ? true : negative.test(candidateText) ? false : null) : (negative.test(candidateText) ? true : positive.test(candidateText) ? false : null);
+}
+
+export function musicVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetType = musicItemTypeLabel(metadataValue(targetMetadata, 'itemType') || targetDetails.itemType || targetDetails.format);
+  if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'music' || !targetType || targetType === 'collection/lot') return { score: 0, matched: [], unknown: [] };
+  const matched: string[] = [];
+  const unknown: string[] = [];
+  let score = 0;
+  const add = (field: typeof MUSIC_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
+  add('artist', 25, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['artist', 'performer', 'artistName']), listing, ['artist', 'performer', 'artistName']));
+  add('releaseTitle', 20, musicScoreValueMatches(musicScoreTargetValue(targetDetails, ['releaseTitle', 'album', 'albumTitle'], extractTargetTitle(targetMetadata)), listing, ['releaseTitle', 'album', 'albumTitle', 'title']));
+  add('format', 15, musicScoreFormatMatches(targetType, listing));
+  add('recordLabel', 10, musicScoreValueMatches(targetDetails.recordLabel, listing, ['recordLabel', 'label']));
+  add('catalogNumber', 10, musicScoreValueMatches(targetDetails.catalogNumber, listing, ['catalogNumber', 'catalogNo', 'catNo']));
+  add('releaseYear', 8, musicScoreValueMatches(targetDetails.releaseYear ?? targetDetails.year, listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:17|18|19|20)\d{2})(?:[^0-9]|$)/i]));
+  add('country', 5, musicScoreValueMatches(targetDetails.country ?? targetDetails.countryOfRelease, listing, ['country', 'countryOfRelease', 'pressingCountry']));
+  add('edition', 5, musicScoreValueMatches(targetDetails.edition ?? targetDetails.variant ?? targetDetails.pressingDetails, listing, ['edition', 'variant', 'pressing', 'pressingDetails']));
+  add('packagingIncluded', 2, musicScoreBooleanMatches(targetDetails.packagingIncluded, listing, ['packagingIncluded', 'originalPackaging'], /\b(?:original|complete|with)\s+(?:packaging|case|jewel case|sleeve)\b/i, /\b(?:no|without|missing)\s+(?:original\s+)?(?:packaging|case|jewel case|sleeve)\b/i));
+  return { score, matched, unknown };
+}
+
+export function musicVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
+}
+
 const ORIGINAL_ART_SCORE_FIELDS = [
   ['artistName', 30],
   ['artworkTitleCharacter', 20],
@@ -3579,6 +3658,29 @@ function selectMoviesVisualCandidates<T extends VisualSourceCandidate>(candidate
   } as T));
   return { selected, excluded, cap, ranked };
 }
+
+function selectMusicVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate) => {
+    const scoring = musicVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate, index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0);
+  const cap = musicVisualCap(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({
+    ...entry.item,
+    evidenceDisposition: 'pre_vision_score_excluded',
+    visualReviewStatus: 'not_reviewed',
+    visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60
+      ? `Music metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.`
+      : `Music visual cap reached (${cap}); higher-scoring candidates were selected first.`,
+    evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`],
+  } as T));
+  return { selected, excluded, cap, ranked };
+}
+
 function selectVideoGameVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string, targetType: 'game' | 'console' | 'accessory') {
   const score = (item: T) => targetType === 'game'
     ? videoGameGameVisualScore(item, targetMetadata)
@@ -3784,7 +3886,12 @@ export async function filterVisualSourceCandidates<
   const moviesSelection = movieType === 'individual_movie' || movieType === 'box_set'
     ? selectMoviesVisualCandidates(allCandidates, targetMetadata, movieType === 'box_set')
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection;
+  const musicType = musicItemTypeLabel(metadataValue(targetMetadata, 'itemType') || extractTargetItemDetails(targetMetadata).itemType || extractTargetItemDetails(targetMetadata).format);
+  const musicSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'music'
+    && musicType !== '' && musicType !== 'collection/lot'
+    ? selectMusicVisualCandidates(allCandidates, targetMetadata)
+    : null;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? musicSelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(

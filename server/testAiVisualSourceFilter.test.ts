@@ -49,6 +49,8 @@ import {
   moviesIndividualVisualScore,
   moviesBoxSetVisualScore,
   moviesVisualCap,
+  musicVisualScore,
+  musicVisualCap,
   stampsSingleVisualCap,
   stampsSingleVisualScore,
   stampsSetVisualCap,
@@ -2172,6 +2174,36 @@ describe("visual source filter", () => {
       [{ title: "Factory Sealed NIRVANA — NEVERMIND Cassette Tape", imageUrl: "https://example.com/candidate.jpg" }],
       targetMetadata,
     )).toEqual([]);
+  });
+
+  it("scores comparable Music formats on the approved identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Kind of Blue",
+      category: "music",
+      itemType: "vinyl_record",
+      fullItemDetails: {
+        artist: "Miles Davis", releaseTitle: "Kind of Blue", format: "vinyl_record", recordLabel: "Columbia",
+        catalogNumber: "CL 1355", releaseYear: "1959", country: "United States", edition: "First Pressing", packagingIncluded: "yes",
+      },
+    });
+    const score = musicVisualScore({
+      title: "Miles Davis Kind of Blue Columbia CL 1355 1959 First Pressing Vinyl Record",
+      itemDetails: JSON.stringify({ artist: "Miles Davis", releaseTitle: "Kind of Blue", format: "vinyl_record", recordLabel: "Columbia", catalogNumber: "CL 1355", releaseYear: "1959", country: "United States", edition: "First Pressing", packagingIncluded: "yes" }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining([
+      "artist", "releaseTitle", "format", "recordLabel", "catalogNumber", "releaseYear", "country", "edition", "packagingIncluded",
+    ]));
+  });
+
+  it("uses the approved Music score-band caps and excludes Collection/Lot", () => {
+    expect(musicVisualCap(95)).toBe(8);
+    expect(musicVisualCap(85)).toBe(6);
+    expect(musicVisualCap(75)).toBe(4);
+    expect(musicVisualCap(65)).toBe(2);
+    expect(musicVisualCap(59)).toBe(0);
+    const collectionTarget = buildVisualTargetMetadata({ title: "Mixed Music Collection", category: "music", itemType: "collection_lot", fullItemDetails: { artist: "Various Artists", format: "collection_lot" } });
+    expect(musicVisualScore({ title: "Mixed Vinyl and CD Lot", imageUrl: "https://example.com/music.jpg" }, collectionTarget).score).toBe(0);
   });
 
   it("treats the literal New / Sealed target value as sealed", () => {
