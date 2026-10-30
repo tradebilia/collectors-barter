@@ -2074,6 +2074,174 @@ function musicIdentityConflict(targetMetadata: string, listing: VisualSourceCand
   return null;
 }
 
+function vintageToyItemTypeLabel(value: unknown): string {
+  const normalized = normalizedChoice(value);
+  if (/action_figure|doll/.test(normalized)) return "action figure/doll";
+  if (/board_game|puzzle/.test(normalized)) return "board game/puzzle";
+  if (/electronic_toy/.test(normalized)) return "electronic toy";
+  if (/^lego$|lego_set/.test(normalized)) return "LEGO";
+  if (/model_?kit/.test(normalized)) return "model/kit";
+  if (/playset/.test(normalized)) return "playset";
+  if (/plush|stuffed_toy/.test(normalized)) return "plush/stuffed toy";
+  if (/vehicle/.test(normalized)) return "vehicle";
+  if (/collection|lot/.test(normalized)) return "collection/lot";
+  return "";
+}
+
+function vintageToyTargetItemType(targetMetadata: string): string {
+  const details = extractTargetItemDetails(targetMetadata);
+  return vintageToyItemTypeLabel(metadataValue(targetMetadata, "itemType") || details.itemType || details.productType || details.form);
+}
+
+function vintageToyCandidateItemType(listing: VisualSourceCandidate): string {
+  const details = candidateStructuredDetails(listing);
+  const explicit = vintageToyItemTypeLabel(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form);
+  if (explicit) return explicit;
+  const title = String(listing.title ?? "");
+  if (/\b(?:action\s+figure|doll)\b/i.test(title)) return "action figure/doll";
+  if (/\b(?:board\s+game|puzzle)\b/i.test(title)) return "board game/puzzle";
+  if (/\belectronic\s+toy\b/i.test(title)) return "electronic toy";
+  if (/\b(?:LEGO|Lego)\b/i.test(title)) return "LEGO";
+  if (/\b(?:model\s+kit|scale\s+model)\b/i.test(title)) return "model/kit";
+  if (/\bplayset\b/i.test(title)) return "playset";
+  if (/\b(?:plush|stuffed\s+toy)\b/i.test(title)) return "plush/stuffed toy";
+  if (/\b(?:toy\s+car|toy\s+vehicle|die[- ]cast|vehicle)\b/i.test(title)) return "vehicle";
+  if (/\b(?:collection|lot|assortment|bundle)\b/i.test(title)) return "collection/lot";
+  return "";
+}
+
+function vintageToyComparableValue(value: unknown): string {
+  return candidateText(value).toLowerCase().replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function vintageToyValuesConflict(targetValue: unknown, candidateValue: unknown, allowTokenSubset = true): boolean {
+  const target = vintageToyComparableValue(targetValue);
+  const candidate = vintageToyComparableValue(candidateValue);
+  if (!target || !candidate || /^(?:unknown|n a|na|none|not applicable)$/.test(target) || /^(?:unknown|n a|na|none|not applicable)$/.test(candidate)) return false;
+  if (target === candidate) return false;
+  if (allowTokenSubset && (target.includes(candidate) || candidate.includes(target))) return false;
+  return true;
+}
+
+function vintageToyCandidateValue(listing: VisualSourceCandidate, aliases: string[]): string {
+  const details = candidateStructuredDetails(listing);
+  for (const alias of aliases) {
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    if (value != null && candidateText(value)) return candidateText(value);
+  }
+  return "";
+}
+
+function vintageToyState(value: unknown): string {
+  const normalized = normalizedChoice(value);
+  if (!normalized || /unknown|n_a|na|none/.test(normalized)) return "";
+  if (/^(?:yes|true|1|complete|working|tested|sealed|factory_sealed|original)$/.test(normalized)) return "yes";
+  if (/^(?:no|false|0|incomplete|not_working|untested|opened|loose|missing)$/.test(normalized)) return "no";
+  return normalized;
+}
+
+function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "vintage_toys") return null;
+  const targetType = vintageToyTargetItemType(targetMetadata);
+  if (!targetType || targetType === "collection/lot") return null;
+  const candidateType = vintageToyCandidateItemType(listing);
+  if (candidateType && candidateType !== targetType) {
+    return `Vintage Toys item type differs: target is ${targetType}, but the candidate is explicitly ${candidateType}.`;
+  }
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const checks: Array<[string, unknown, string[], "text" | "state" | "year"]> = [];
+  const addText = (label: string, target: unknown, aliases: string[]) => checks.push([label, target, aliases, "text"]);
+  const addState = (label: string, target: unknown, aliases: string[]) => checks.push([label, target, aliases, "state"]);
+  const addYear = (label: string, target: unknown, aliases: string[]) => checks.push([label, target, aliases, "year"]);
+  if (targetType === "action figure/doll") {
+    addText("toy name or character", targetDetails.toyNameCharacter ?? extractTargetTitle(targetMetadata), ["toyNameCharacter", "toyName", "character", "name", "title"]);
+    addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
+    addText("franchise", targetDetails.franchise, ["franchise", "series"]);
+    addYear("year", targetDetails.year, ["year", "releaseYear"]);
+    addText("packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]);
+    addState("complete status", targetDetails.complete, ["complete", "isComplete", "completeness"]);
+    addState("accessories", targetDetails.accessoriesIncluded, ["accessoriesIncluded", "accessories"]);
+  } else if (targetType === "board game/puzzle") {
+    addText("game or puzzle name", targetDetails.gamePuzzleName ?? extractTargetTitle(targetMetadata), ["gamePuzzleName", "gameName", "puzzleName", "name", "title"]);
+    addText("publisher or brand", targetDetails.publisherBrand ?? targetDetails.brand, ["publisherBrand", "publisher", "brand"]);
+    addYear("year", targetDetails.year, ["year", "releaseYear"]);
+    addState("complete status", targetDetails.complete, ["complete", "isComplete", "completeness"]);
+    addState("instructions", targetDetails.instructionsIncluded, ["instructionsIncluded", "instructions"]);
+    addState("box", targetDetails.boxIncluded, ["boxIncluded", "originalBoxIncluded"]);
+  } else if (targetType === "electronic toy") {
+    addText("toy name", targetDetails.toyName ?? extractTargetTitle(targetMetadata), ["toyName", "name", "title"]);
+    addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
+    addYear("year", targetDetails.year, ["year", "releaseYear"]);
+    addState("tested status", targetDetails.tested, ["tested"]);
+    addText("working condition", targetDetails.workingCondition, ["workingCondition", "functionality"]);
+    addText("battery compartment condition", targetDetails.batteryCompartmentCondition, ["batteryCompartmentCondition", "batteryCondition"]);
+    addState("sound", targetDetails.soundWorks, ["soundWorks"]);
+    addState("lights", targetDetails.lightsWork, ["lightsWork"]);
+  } else if (targetType === "LEGO") {
+    addText("set number", targetDetails.setNumber ?? extractTargetTitle(targetMetadata), ["setNumber", "setNo", "number"]);
+    addText("theme", targetDetails.theme, ["theme"]);
+    addYear("release year", targetDetails.releaseYear ?? targetDetails.year, ["releaseYear", "year"]);
+    addState("complete status", targetDetails.complete, ["complete", "isComplete", "completeness"]);
+    addText("packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]);
+    addState("retired status", targetDetails.retiredStatus, ["retiredStatus", "retired"]);
+  } else if (targetType === "model/kit") {
+    addText("model or kit name", targetDetails.modelKitName ?? extractTargetTitle(targetMetadata), ["modelKitName", "modelName", "kitName", "name", "title"]);
+    addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
+    addText("scale", targetDetails.scale, ["scale"]);
+    addText("built or unbuilt status", targetDetails.builtOrUnbuilt, ["builtOrUnbuilt", "buildStatus"]);
+    addState("complete status", targetDetails.complete, ["complete", "isComplete", "completeness"]);
+    addState("instructions", targetDetails.instructionsIncluded, ["instructionsIncluded", "instructions"]);
+  } else if (targetType === "playset") {
+    addText("playset name", targetDetails.playsetName ?? extractTargetTitle(targetMetadata), ["playsetName", "name", "title"]);
+    addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
+    addText("franchise", targetDetails.franchise, ["franchise", "series"]);
+    addYear("year", targetDetails.year, ["year", "releaseYear"]);
+    addState("complete status", targetDetails.complete, ["complete", "isComplete", "completeness"]);
+    addState("original box", targetDetails.originalBoxIncluded, ["originalBoxIncluded", "boxIncluded"]);
+  } else if (targetType === "plush/stuffed toy") {
+    addText("toy name or character", targetDetails.toyNameCharacter ?? extractTargetTitle(targetMetadata), ["toyNameCharacter", "toyName", "character", "name", "title"]);
+    addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
+    addYear("year", targetDetails.year, ["year", "releaseYear"]);
+    addState("tags", targetDetails.tagsAttached, ["tagsAttached", "tags"]);
+  } else if (targetType === "vehicle") {
+    addText("vehicle name", targetDetails.vehicleName ?? extractTargetTitle(targetMetadata), ["vehicleName", "name", "title"]);
+    addText("brand", targetDetails.brand, ["brand", "manufacturer"]);
+    addText("franchise", targetDetails.franchise, ["franchise", "series"]);
+    addYear("year", targetDetails.year, ["year", "releaseYear"]);
+    addText("vehicle type", targetDetails.vehicleType, ["vehicleType", "type"]);
+    addText("packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]);
+    addText("working features", targetDetails.workingFeatures, ["workingFeatures", "features"]);
+  }
+  const title = String(listing.title ?? "");
+  for (const [label, targetValue, aliases, kind] of checks) {
+    if (targetValue == null || !candidateText(targetValue)) continue;
+    const candidateValue = vintageToyCandidateValue(listing, aliases);
+    if (kind === "year") {
+      const year = String(targetValue).match(/\b(?:17|18|19|20)\d{2}\b/)?.[0];
+      if (year && candidateValue && /\b(?:17|18|19|20)\d{2}\b/.test(candidateValue) && !new RegExp(`\\b${year}\\b`).test(candidateValue)) {
+        return `Vintage Toys ${label} differs: target is ${year}, but the candidate explicitly declares a different year.`;
+      }
+      if (year && !candidateValue && /\b(?:17|18|19|20)\d{2}\b/.test(title) && !new RegExp(`\\b${year}\\b`).test(title)) return `Vintage Toys ${label} differs: target is ${year}, but the candidate title declares a different year.`;
+      continue;
+    }
+    if (kind === "state") {
+      const targetState = vintageToyState(targetValue);
+      const candidateState = vintageToyState(candidateValue || title);
+      if (targetState && candidateState && targetState !== candidateState && candidateValue || targetState && candidateState && targetState !== candidateState && /\b(?:complete|incomplete|sealed|opened|tested|untested|working|not\s+working|missing)\b/i.test(title)) return `Vintage Toys ${label} differs: target and candidate explicitly declare different states.`;
+      continue;
+    }
+    if (label === "set number" && !candidateValue) {
+      const candidateSetNumber = title.match(/\b\d{4,6}\b/)?.[0];
+      if (!candidateSetNumber) continue;
+      if (vintageToyValuesConflict(targetValue, candidateSetNumber, false)) return `Vintage Toys set number differs: target is ${targetValue}, but the candidate explicitly identifies a different set.`;
+      continue;
+    }
+    if (candidateValue && vintageToyValuesConflict(targetValue, candidateValue)) return `Vintage Toys ${label} differs: the candidate explicitly declares a different ${label}.`;
+    if (!candidateValue && vintageToyValuesConflict(targetValue, title)) return `Vintage Toys ${label} differs: the candidate title explicitly identifies a different ${label}.`;
+  }
+  return null;
+}
+
 function vintageToyCompleteness(value: unknown): "complete" | "incomplete" | null {
   const normalized = normalizedChoice(value);
   if (!normalized) return null;
@@ -2505,6 +2673,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const sportsCardUnopenedProductConflictReason = sportsCardUnopenedProductConflict(targetMetadata, listing);
     const mediaConditionConflict = musicMediaConditionConflict(targetMetadata, listing);
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
+    const vintageToyIdentityConflictReason = vintageToyIdentityConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const comicSingleIdentityConflictReason = comicSingleIdentityConflict(targetMetadata, listing);
     const coinSingleIdentityConflictReason = coinSingleIdentityConflict(targetMetadata, listing);
@@ -2516,9 +2685,9 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const movieIdentityConflictReason = movieIdentityConflict(targetMetadata, listing);
     const musicIdentityConflictReason = musicIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(disneyPinsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(vintageToyIdentityConflictReason) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(disneyPinsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? disneyPinsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? vintageToyIdentityConflictReason ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? disneyPinsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
