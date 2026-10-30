@@ -1826,6 +1826,51 @@ function comicDistribution(value: unknown): "direct" | "newsstand" | null {
   if (/\bdirect(?:\s+market|\s+edition)?\b/.test(normalized)) return "direct";
   return null;
 }
+function isSingleCoinTarget(targetMetadata: string): boolean {
+  return normalizedChoice(metadataValue(targetMetadata, "category")) === "coins"
+    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "single_coin";
+}
+function coinComparable(value: unknown): string {
+  return normalizedChoice(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+function coinExplicitValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  const structured = aliases.map((key) => listing[key] ?? details[key]).find((value) => String(value ?? "").trim());
+  if (structured != null) return String(structured).trim();
+  for (const pattern of titlePatterns) {
+    const match = String(listing.title ?? "").match(pattern);
+    if (match?.[1]) return match[1].trim();
+  }
+  return "";
+}
+function coinFieldConflict(targetValue: unknown, candidateValue: unknown, label: string): string | null {
+  const target = coinComparable(targetValue);
+  const candidate = coinComparable(candidateValue);
+  if (!target || !candidate || target === candidate || candidate.includes(target) || target.includes(candidate)) return null;
+  return `Coin ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${String(candidateValue)}.`;
+}
+function coinSingleIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (!isSingleCoinTarget(targetMetadata)) return null;
+  const target = extractTargetItemDetails(targetMetadata);
+  const checks: Array<[unknown, string, string[], RegExp[]]> = [
+    [target.country ?? target.issuingCountry, "country/issuing authority", ["country", "issuingCountry"], [/\b(United States|Canada|Mexico|Australia|United Kingdom|Great Britain)\b/i]],
+    [target.year ?? target.date ?? target.issueYear, "year/date", ["year", "date", "issueYear"], [/(?:^|[^0-9])((?:17|18|19|20)\d{2})(?:[^0-9]|$)/i]],
+    [target.denomination ?? target.coinDenomination, "denomination", ["denomination", "coinDenomination"], [/\b(half dollar|quarter dollar|dollar|half dime|dime|nickel|penny|cent)\b/i]],
+    [target.mintMark ?? target.mint, "mintMark", ["mintMark", "mint"], [/(?:mint\s*mark|\b(?:19|20)\d{2})[-\s]*([PDSO])\b/i]],
+    [target.composition ?? target.metal, "composition", ["composition", "metal"], [/\b(silver|gold|copper|bronze|clad|nickel)\b/i]],
+    [target.strike ?? target.finish ?? target.designation, "strike/finish", ["strike", "finish", "designation"], [/\b(reverse proof|proof|business strike|uncirculated|commemorative)\b/i]],
+    [target.variety ?? target.varietyName, "variety", ["variety", "varietyName"], [/\b(VAM\s*\d+|doubled die|double die|overdate|wide|narrow)\b/i]],
+  ];
+  for (const [targetValue, label, aliases, patterns] of checks) {
+    const conflict = coinFieldConflict(targetValue, coinExplicitValue(listing, aliases, patterns), label);
+    if (conflict) return conflict;
+  }
+  const targetOriginal = normalizedChoice(target.isOriginal ?? target.authenticity ?? target.restrike ?? target.restruck);
+  const title = String(listing.title ?? "");
+  if (targetOriginal === "yes" && /\b(?:replica|copy|counterfeit|facsimile|reproduction)\b/i.test(title)) return "Coin authenticity differs: target is original/authentic, but the candidate explicitly declares a replica, copy, counterfeit, or facsimile.";
+  if (targetOriginal === "no" && /\brestrike\b/i.test(title)) return "Coin restrike status differs from the target.";
+  return null;
+}
 function comicSingleIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (!isSingleComicTarget(targetMetadata)) return null;
   const targetDetails = extractTargetItemDetails(targetMetadata);
@@ -1912,10 +1957,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const completenessConflict = vintageToyCompletenessConflict(targetMetadata, listing);
     const compoundNumberConflict = explicitCompoundNumberConflict(targetMetadata, listing);
     const comicSingleIdentityConflictReason = comicSingleIdentityConflict(targetMetadata, listing);
+    const coinSingleIdentityConflictReason = coinSingleIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`

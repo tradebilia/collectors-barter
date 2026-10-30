@@ -609,3 +609,8 @@ Original Art marketplace/eBay context records now receive a **Market Relevance S
 Score bands are: 85–100 highly relevant, 70–84 strong, 55–69 useful broader reference, 40–54 weak, and below 40 limited. There is no visual-analysis cap because Original Art never enters visual analysis. It remains market-context-only, valuation-ineligible, and outside the Single Comic exact-match ranking model.
 
 Validation passed **142/142 focused tests**, TypeScript, production build, and diff hygiene. No database, migration, credential, provider, or deployment changes were made.
+
+## Coins / Single Coin filter — October 30, 2026
+The marketplace/eBay shared declared-identity filter now applies the approved Coins / Single Coin rules after universal normalization. It hard-gates explicit conflicts in country/issuing authority, year/date, denomination, mint mark, composition/metal, strike/finish/designation, variety, and original-versus-replica/restrike status. Existing universal gates continue to enforce single-item form, raw-versus-graded state, grading-company conflicts, and matching grades where explicit. Missing provider fields remain unknown and do not exclude a candidate. Grading/reference sources do not receive this marketplace filter.
+
+Focused validation passed **141/141 tests**, TypeScript, production build, and diff hygiene. The complete suite reached **1,810 passing / 7 skipped** tests; four failures remain the known stale `server/testAiAllItems.test.ts` JSX contract that predates the approved Collection/Lot UI guard and is unrelated to the Coin filter. No database, migration, credential, provider, or deployment changes were made.

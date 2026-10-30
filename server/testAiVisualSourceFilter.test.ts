@@ -1387,6 +1387,30 @@ describe("visual source filter", () => {
     expect(result[0].rationale).toContain("mintMark differs");
   });
 
+  it("applies the Coins / Single Coin identity filters while preserving unknown fields", () => {
+    const metadata = `title=1903 Morgan Dollar; category=coins; itemType=single_coin; fullItemDetails=${JSON.stringify({
+      country: "United States", year: "1903", denomination: "1 Dollar", mintMark: "S", composition: "Silver", strike: "Business Strike", variety: "Morgan", isOriginal: "Yes",
+    })}`;
+    const candidates = [
+      { title: "1904 Morgan Dollar", itemDetails: JSON.stringify({ country: "United States", year: "1904" }) },
+      { title: "1903 Morgan Dollar", itemDetails: JSON.stringify({ country: "Canada" }) },
+      { title: "1903 Morgan Dollar", itemDetails: JSON.stringify({ denomination: "Half Dollar" }) },
+      { title: "1903 Morgan Dollar", itemDetails: JSON.stringify({ mintMark: "O" }) },
+      { title: "1903 Morgan Dollar", itemDetails: JSON.stringify({ composition: "Gold" }) },
+      { title: "1903 Morgan Dollar Proof", itemDetails: JSON.stringify({ strike: "Proof" }) },
+      { title: "1903 Morgan Dollar VAM 1", itemDetails: JSON.stringify({ variety: "VAM 1" }) },
+      { title: "1903 Morgan Dollar Replica", itemDetails: JSON.stringify({}) },
+      { title: "1903 Morgan Dollar", itemDetails: JSON.stringify({}) },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(8);
+    expect(reviews.map((review) => review.candidateIndex)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Coin year/date differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Coin composition differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("Coin authenticity differs");
+    expect(reviews.every((review) => review.verdict === "mismatch" && review.confidence === "high")).toBe(true);
+  });
+
   it("applies the Comics / Single Comic hard identity filters before visual review", () => {
     const metadata = `title=Amazing Spider-Man; category=comics; itemType=single_comic; fullItemDetails=${JSON.stringify({
       issueNumber: "300", publisher: "Marvel", distributionType: "Direct", variantDescription: "Regular Cover", facsimile: "No", signed: "No",
