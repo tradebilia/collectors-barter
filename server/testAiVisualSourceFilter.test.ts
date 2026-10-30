@@ -1753,6 +1753,38 @@ describe("visual source filter", () => {
     const metadata = `title=Video Game Collection; category=video_games; itemType=collection_lot; fullItemDetails=${JSON.stringify({ platformsIncluded: "NES, Switch", approximateItemCount: 20 })}`;
     expect(buildDeclaredIdentityReviews([{ title: "Nintendo Switch Console", itemType: "console", itemDetails: JSON.stringify({ platform: "Switch" }) }], metadata)).toEqual([]);
   });
+  it("applies Movies / Individual Movie filters", () => {
+    const metadata = buildVisualTargetMetadata({ title: "The Matrix", category: "movies", itemType: "individual_movie", fullItemDetails: { title: "The Matrix", format: "Blu-ray", releaseYear: 1999, edition: "Standard", region: "Region 1", sealed: "No" } });
+    const candidates = [
+      { title: "The Matrix DVD 1999", itemDetails: JSON.stringify({ format: "DVD", releaseYear: 1999 }) },
+      { title: "The Matrix Blu-ray 2003", itemDetails: JSON.stringify({ format: "Blu-ray", releaseYear: 2003 }) },
+      { title: "The Matrix Complete Box Set", itemType: "box_set" },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(3);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("format differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("release year differs");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("individual movie");
+  });
+
+  it("applies Movies / Box Set filters and rejects individual movies", () => {
+    const metadata = buildVisualTargetMetadata({ title: "The Lord of the Rings Trilogy", category: "movies", itemType: "box_set", fullItemDetails: { boxSetName: "The Lord of the Rings Trilogy", format: "Blu-ray", numberOfMovies: 3, sealed: "Yes" } });
+    const candidates = [
+      { title: "The Lord of the Rings Trilogy Blu-ray 3 Movie Box Set", itemDetails: JSON.stringify({ format: "Blu-ray", numberOfMovies: 3, sealed: "Yes" }) },
+      { title: "The Lord of the Rings: The Fellowship of the Ring Blu-ray", itemType: "individual_movie" },
+      { title: "The Lord of the Rings Trilogy DVD 6 Movie Box Set", itemDetails: JSON.stringify({ format: "DVD", numberOfMovies: 6 }) },
+    ];
+    const reviews = buildDeclaredIdentityReviews(candidates, metadata);
+    expect(reviews).toHaveLength(2);
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("individual movie");
+    expect(reviews.map((review) => review.rationale).join(" ")).toContain("format differs");
+  });
+
+  it("does not apply Movies filters to Collection/Lot", () => {
+    const metadata = buildVisualTargetMetadata({ title: "Movie Collection", category: "movies", itemType: "collection_lot", fullItemDetails: { approximateQuantity: 50, formatsIncluded: "DVD, Blu-ray" } });
+    expect(buildDeclaredIdentityReviews([{ title: "The Matrix Blu-ray", itemType: "individual_movie" }, { title: "Complete Movie Box Set", itemType: "box_set" }], metadata)).toEqual([]);
+  });
+
   it("holds a coin candidate with an explicit mint-mark conflict before vision", () => {
     const metadata = `title=1903 Morgan Dollar; category=coins; fullItemDetails=${JSON.stringify({ year: "1903", denomination: "1", mintMark: "S", variety: "Morgan" })}`;
     const result = buildDeclaredIdentityReviews([

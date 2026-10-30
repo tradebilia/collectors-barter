@@ -2028,6 +2028,101 @@ function coinSetIdentityConflict(targetMetadata: string, listing: VisualSourceCa
   }
   return null;
 }
+function movieTargetItemType(targetMetadata: string): 'individual_movie' | 'box_set' | 'collection/lot' | '' {
+  const raw = normalizedChoice(metadataValue(targetMetadata, 'itemType') || extractTargetItemDetails(targetMetadata).itemType || '');
+  if (/individual_movie|single_movie|individual/.test(raw)) return 'individual_movie';
+  if (/box_set|boxset|complete_series|collection_set/.test(raw)) return 'box_set';
+  if (/collection|lot/.test(raw)) return 'collection/lot';
+  return '';
+}
+function movieCandidateItemType(listing: VisualSourceCandidate): 'individual_movie' | 'box_set' | 'collection/lot' | '' {
+  const details = candidateStructuredDetails(listing);
+  const explicit = normalizedChoice(listing.itemType ?? listing.productType ?? listing.form ?? details.itemType ?? details.productType ?? details.form ?? '');
+  if (/individual_movie|single_movie|individual/.test(explicit)) return 'individual_movie';
+  if (/box_set|boxset|complete_series|collection_set/.test(explicit)) return 'box_set';
+  if (/collection|lot/.test(explicit)) return 'collection/lot';
+  const title = String(listing.title ?? '');
+  if (/\b(?:box\s*set|complete\s+series|complete\s+collection|season\s*[0-9]|trilogy|quadrilogy|bundle|movie\s+lot|film\s+lot)\b/i.test(title)) return 'box_set';
+  if (/\b(?:collection|lot)\b/i.test(title)) return 'collection/lot';
+  return '';
+}
+function movieCanonicalText(value: unknown): string {
+  return normalizedChoice(value).replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu[- ]?ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+}
+function movieValuesAgree(targetValue: unknown, candidateValue: unknown): boolean {
+  const target = movieCanonicalText(targetValue);
+  const candidate = movieCanonicalText(candidateValue);
+  if (!target || !candidate) return true;
+  if (target === candidate) return true;
+  const targetTokens = target.split(' ').filter((token) => token.length > 1);
+  const candidateTokens = new Set(candidate.split(' '));
+  return targetTokens.length > 0 && targetTokens.every((token) => candidateTokens.has(token));
+}
+function movieCandidateValue(listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  for (const alias of aliases) {
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    if (value != null && String(value).trim()) return String(value);
+  }
+  const title = String(listing.title ?? '');
+  for (const pattern of patterns) {
+    const match = title.match(pattern);
+    if (match?.[1]) return match[1];
+    if (match?.[0]) return match[0];
+  }
+  return '';
+}
+function movieFormat(value: unknown): string {
+  return normalizedChoice(value).replace(/4k_uhd|uhd_4k/g, '4k').replace(/blu_ray/g, 'bluray');
+}
+function movieBoolean(value: unknown): string {
+  const normalized = normalizedChoice(value);
+  if (/^(?:yes|true|1|sealed|factory_sealed)$/.test(normalized)) return 'yes';
+  if (/^(?:no|false|0|opened|used)$/.test(normalized)) return 'no';
+  return '';
+}
+function movieIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'movies') return null;
+  const targetType = movieTargetItemType(targetMetadata);
+  if (!targetType || targetType === 'collection/lot') return null;
+  const candidateType = movieCandidateItemType(listing);
+  if (candidateType === 'collection/lot') return 'Movie candidate is explicitly a collection or lot, not a comparable single product.';
+  if (targetType === 'individual_movie' && candidateType === 'box_set') return 'Movie format differs: target is an individual movie, but the candidate is a box set or series.';
+  if (targetType === 'box_set' && candidateType === 'individual_movie') return 'Movie format differs: target is a box set, but the candidate is an individual movie.';
+  const target = extractTargetItemDetails(targetMetadata);
+  const checks: Array<[unknown, string, string[], RegExp[], boolean]> = [];
+  if (targetType === 'individual_movie') {
+    checks.push([firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), 'movie title', ['title', 'movieTitle'], [], true]);
+    checks.push([target.format, 'format', ['format', 'mediaFormat'], [/(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc)/i], false]);
+    checks.push([firstMeaningfulValue(target.releaseYear, target.year), 'release year', ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], false]);
+    checks.push([target.edition, 'edition', ['edition', 'releaseType'], [], true]);
+    checks.push([target.region, 'region', ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i], false]);
+  } else {
+    checks.push([firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata)), 'box-set name', ['boxSetName', 'title', 'seriesName'], [], true]);
+    checks.push([target.format, 'format', ['format', 'mediaFormat'], [/(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc|Mixed)/i], false]);
+    checks.push([target.edition, 'edition', ['edition', 'releaseType'], [], true]);
+  }
+  for (const [targetValue, label, aliases, patterns, textMatch] of checks) {
+    const targetComparable = textMatch ? movieCanonicalText(targetValue) : movieFormat(targetValue);
+    if (!targetComparable || /^(?:unknown|n a|na|none|not applicable)$/.test(targetComparable)) continue;
+    const candidateValue = movieCandidateValue(listing, aliases, patterns);
+    if (!candidateValue) continue;
+    const candidateComparable = textMatch ? movieCanonicalText(candidateValue) : movieFormat(candidateValue);
+    if (!candidateComparable || /^(?:unknown|n a|na|none|not applicable)$/.test(candidateComparable)) continue;
+    const agrees = textMatch ? movieValuesAgree(targetValue, candidateValue) : targetComparable === candidateComparable;
+    if (!agrees) return `Movie ${label} differs: target is ${String(targetValue)}, but the candidate explicitly declares ${String(candidateValue)}.`;
+  }
+  const targetYear = Number(firstMeaningfulValue(target.releaseYear, target.year));
+  const candidateYear = Number(movieCandidateValue(listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]));
+  if (targetType === 'individual_movie' && Number.isFinite(targetYear) && targetYear > 0 && Number.isFinite(candidateYear) && candidateYear > 0 && targetYear !== candidateYear) return `Movie release year differs: target is ${targetYear}, but the candidate explicitly declares ${candidateYear}.`;
+  const targetCount = Number(firstMeaningfulValue(target.numberOfMovies, target.movieCount, target.quantity));
+  const candidateCount = Number(movieCandidateValue(listing, ['numberOfMovies', 'movieCount', 'quantity'], [/(?:contains?|includes?|set\s+of)\s*(\d+)\s+movies?/i, /\b(\d+)\s*[- ]?(?:disc|movie)\s+(?:box\s+)?set\b/i]));
+  if (targetType === 'box_set' && Number.isFinite(targetCount) && targetCount > 0 && Number.isFinite(candidateCount) && candidateCount > 0 && targetCount !== candidateCount) return `Movie box-set size differs: target declares ${targetCount} movies, but the candidate explicitly declares ${candidateCount}.`;
+  const targetSealed = movieBoolean(firstMeaningfulValue(target.sealed, target.sealedStatus, target.packaging));
+  const candidateSealed = movieBoolean(movieCandidateValue(listing, ['sealed', 'sealedStatus', 'packaging'], [/(?:factory\s+sealed|sealed|opened|used)/i]));
+  if (targetSealed && candidateSealed && targetSealed !== candidateSealed) return `Movie sealed status differs: target is ${targetSealed}, but the candidate explicitly declares ${candidateSealed}.`;
+  return null;
+}
 function paperMoneyIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (!isPaperMoneyTarget(targetMetadata)) return null;
   const target = extractTargetItemDetails(targetMetadata);
@@ -2216,10 +2311,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const paperMoneyIdentityConflictReason = paperMoneyIdentityConflict(targetMetadata, listing);
     const stampsIdentityConflictReason = stampsIdentityConflict(targetMetadata, listing);
     const videoGameIdentityConflictReason = videoGameIdentityConflict(targetMetadata, listing);
+    const movieIdentityConflictReason = movieIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? videoGameIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
