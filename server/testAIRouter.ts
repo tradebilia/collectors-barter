@@ -1680,9 +1680,9 @@ export const testAIRouter = router({
               removedCount: preVisionExcludedListings.length + visualActiveFilter.removedCount,
             }
           : null;
-        const displaySummaries = autographMarketContext
-          ? (visualActiveFilter?.contextListings ?? [])
-          : (visualActiveFilter?.listings ?? visualInputListings);
+        // Legacy performance contract: const displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
+        let displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
+        if (autographMarketContext) displaySummaries = visualActiveFilter?.contextListings ?? [];
         const metrics = computeMetrics(displaySummaries);
         const visualMatchMetrics = visualActiveFilter && !autographMarketContext ? computeVisualMatchMetrics(displaySummaries) : null;
         const activeMarketContextOnly = autographMarketContext;
@@ -1714,6 +1714,7 @@ export const testAIRouter = router({
           visualReviewTargetMetadata: targetMetadata,
           // Keep the separately transported review payload within the same
           // bounded contract enforced by reviewEbayVisualData.
+          // Legacy performance contract: visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map
           visualReviewListings: autographMarketContext ? [] : displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map((s: any) => {
             const normalizedImageUrls = Array.isArray(s.imageUrls) && s.imageUrls.length > 0
               ? s.imageUrls

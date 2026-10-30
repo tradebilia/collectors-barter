@@ -2513,6 +2513,124 @@ function movieBoolean(value: unknown): string {
   if (/^(?:no|false|0|opened|used)$/.test(normalized)) return 'no';
   return '';
 }
+
+type PokemonTargetType = 'single_card' | 'set' | 'unopened_product' | 'collection_lot' | '';
+function pokemonItemType(value: unknown): PokemonTargetType {
+  const normalized = normalizedChoice(value);
+  if (/collection|lot/.test(normalized)) return 'collection_lot';
+  if (/unopened|sealed|booster|elite_trainer|collection_box|blaster|tin|product/.test(normalized)) return 'unopened_product';
+  if (/set/.test(normalized) && !/single|individual/.test(normalized)) return 'set';
+  if (/single|individual|card/.test(normalized)) return 'single_card';
+  return '';
+}
+function pokemonTargetItemType(targetMetadata: string): PokemonTargetType {
+  if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'pokemon') return '';
+  const details = extractTargetItemDetails(targetMetadata);
+  return pokemonItemType(metadataValue(targetMetadata, 'itemType') || details.itemType || details.productType || details.form);
+}
+function pokemonCandidateItemType(listing: VisualSourceCandidate): PokemonTargetType {
+  const details = candidateStructuredDetails(listing);
+  const explicit = pokemonItemType(listing.itemType ?? listing.productType ?? listing.form ?? details.itemType ?? details.productType ?? details.form);
+  if (explicit) return explicit;
+  const title = String(listing.title ?? '');
+  if (/\b(?:collection|lot|bundle|assortment|mixed)\b/i.test(title)) return 'collection_lot';
+  if (/\b(?:booster|elite\s+trainer|collection\s+box|blaster|tin|build\s*&?\s*battle|premium\s+collection|sealed\s+product)\b/i.test(title)) return 'unopened_product';
+  if (/\b(?:master|complete|partial)\s+set\b|\bset\s+of\s+\d+/i.test(title)) return 'set';
+  if (/(?:^|[^\w])#?\s*\d{1,4}(?:\s*\/\s*\d{1,4})?\b|\b(?:single|individual)\s+card\b/i.test(title)) return 'single_card';
+  return '';
+}
+function pokemonComparableValue(value: unknown): string {
+  return candidateText(value).toLowerCase().replace(/[’']/g, '').replace(/[_-]+/g, ' ').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function pokemonCandidateValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  for (const alias of aliases) {
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    if (value != null && String(value).trim()) return String(value).trim();
+  }
+  const title = String(listing.title ?? '');
+  for (const pattern of titlePatterns) {
+    const match = title.match(pattern);
+    if (match?.[1]) return match[1].trim();
+    if (match?.[0]) return match[0].trim();
+  }
+  if (titlePatterns.length > 0) return '';
+  return title.trim();
+}
+function pokemonValuesConflict(targetValue: unknown, candidateValue: unknown, allowTokenSubset = true): boolean {
+  const target = pokemonComparableValue(targetValue);
+  const candidate = pokemonComparableValue(candidateValue);
+  if (!target || !candidate || /^(?:unknown|n a|na|none|not applicable)$/.test(target) || /^(?:unknown|n a|na|none|not applicable)$/.test(candidate)) return false;
+  if (target === candidate) return false;
+  if (allowTokenSubset && (target.includes(candidate) || candidate.includes(target))) return false;
+  return true;
+}
+function pokemonBoolean(value: unknown): 'yes' | 'no' | '' {
+  const normalized = normalizedChoice(value);
+  if (/^(?:yes|true|1|sealed|factory_sealed|complete|master_set)$/.test(normalized)) return 'yes';
+  if (/^(?:no|false|0|opened|partial|incomplete|unsealed|resealed)$/.test(normalized)) return 'no';
+  return '';
+}
+function pokemonIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'pokemon') return null;
+  const targetType = pokemonTargetItemType(targetMetadata);
+  if (!targetType || targetType === 'collection_lot') return null;
+  const candidateType = pokemonCandidateItemType(listing);
+  if (candidateType === 'collection_lot') return 'Pokémon filter: candidate is a collection, lot, bundle, or mixed group rather than a comparable item.';
+  if (candidateType && candidateType !== targetType) return `Pokémon item type differs: target is ${targetType.replace(/_/g, ' ')}, but the candidate is explicitly ${candidateType.replace(/_/g, ' ')}.`;
+  const target = extractTargetItemDetails(targetMetadata);
+  const candidateTitle = String(listing.title ?? '');
+  const checks: Array<[string, unknown, string[], RegExp[], boolean]> = targetType === 'single_card'
+    ? [
+        ['card name', firstMeaningfulValue(target.cardName, target.pokemonName, target.name, extractTargetTitle(targetMetadata)), ['cardName', 'pokemonName', 'name'], [], true],
+        ['set', target.setName ?? target.set ?? target.cardSet, ['setName', 'set', 'cardSet', 'series'], [], true],
+        ['card number', target.cardNumber ?? target.cardNo ?? target.number, ['cardNumber', 'cardNo', 'number'], [/(?:#|card\s*(?:no\.?|number)?\s*)(\d{1,4}(?:\s*\/\s*\d{1,4})?)/i], false],
+        ['language', target.language, ['language'], [/(English|Japanese|French|German|Italian|Spanish|Korean|Chinese)/i], false],
+        ['finish', target.finish ?? target.finishVariant, ['finish', 'finishVariant'], [/(Normal|Holo|Reverse\s+Holo|Full\s+Art|Rainbow|Gold)/i], false],
+        ['card type / mechanic', target.cardType ?? target.mechanic ?? target.variant, ['cardType', 'mechanic', 'variant'], [/(VMAX|VSTAR|\bV\b|\bGX\b|\bex\b|BREAK|Tag\s+Team|Radiant|Amazing\s+Rare|ACE\s+SPEC)/i], false],
+        ['rarity', target.rarity, ['rarity'], [/(Common|Uncommon|Rare|Holo\s+Rare|Ultra\s+Rare|Secret\s+Rare|Illustration\s+Rare|Special\s+Illustration\s+Rare|Hyper\s+Rare)/i], false],
+        ['edition / era', target.editionEra ?? target.edition ?? target.era, ['editionEra', 'edition', 'era'], [], false],
+      ]
+    : targetType === 'set'
+      ? [
+          ['set', target.setName ?? target.set ?? extractTargetTitle(targetMetadata), ['setName', 'set', 'series', 'title'], [], true],
+          ['language', target.language, ['language'], [/(English|Japanese|French|German|Italian|Spanish|Korean|Chinese)/i], false],
+          ['set type', target.setType ?? target.complete ?? target.setStatus, ['setType', 'complete', 'setStatus'], [/(master\s+set|complete\s+set|partial\s+set|incomplete\s+set)/i], false],
+          ['card count', target.numberOfCardsInSet, ['numberOfCardsInSet', 'cardCount', 'numberOfCards'], [/(?:set\s+of|\b)(\d{2,4})\s+cards?/i], false],
+        ]
+      : [
+          ['product name', target.productName ?? target.name ?? extractTargetTitle(targetMetadata), ['productName', 'productTitle', 'name', 'title'], [], true],
+          ['set', target.setName ?? target.set, ['setName', 'set', 'series'], [], true],
+          ['product type', target.productType, ['productType', 'productConfiguration', 'format'], [/(booster\s+box|booster\s+pack|elite\s+trainer\s+box|collection\s+box|blaster\s+box|tin|premium\s+collection|build\s*&?\s*battle\s+box)/i], false],
+          ['language', target.language, ['language'], [/(English|Japanese|French|German|Italian|Spanish|Korean|Chinese)/i], false],
+          ['release year', target.releaseYear ?? target.year, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], false],
+        ];
+  for (const [label, targetValue, aliases, titlePatterns, allowSubset] of checks) {
+    if (!targetValue || /^(?:unknown|n ?a|none)$/i.test(String(targetValue))) continue;
+    const candidateValue = pokemonCandidateValue(listing, aliases, titlePatterns);
+    if (!candidateValue || (candidateValue === candidateTitle && !titlePatterns.length && aliases.every((alias) => candidateStructuredDetails(listing)[alias] == null))) continue;
+    if (pokemonValuesConflict(targetValue, candidateValue, allowSubset)) return `Pokémon ${label} differs: target explicitly declares “${String(targetValue)}”, but the candidate declares “${candidateValue}”.`;
+  }
+  if (targetType === 'unopened_product') {
+    const targetSealed = pokemonBoolean(target.factorySealed ?? target.sealStatus ?? target.sealedStatus);
+    const candidateDetails = candidateStructuredDetails(listing);
+    const candidateSealed = pokemonBoolean(candidateDetails.factorySealed ?? candidateDetails.sealStatus ?? candidateDetails.sealedStatus ?? listing.condition)
+      || (/\b(?:opened|resealed|damaged\s+seal|unsealed)\b/i.test(candidateTitle) ? 'no' : /\b(?:factory\s+sealed|new\s+sealed|sealed|unopened)\b/i.test(candidateTitle) ? 'yes' : '');
+    if (targetSealed && candidateSealed && targetSealed !== candidateSealed) return `Pokémon Unopened Product seal status differs: target is ${targetSealed === 'yes' ? 'sealed' : 'not sealed'}, but the candidate explicitly declares the opposite.`;
+    const targetAuthenticated = pokemonBoolean(target.authenticated ?? target.authenticationStatus);
+    const candidateAuthenticated = pokemonBoolean(candidateDetails.authenticated ?? candidateDetails.authenticationStatus ?? listing.authenticated)
+      || (/\b(?:unauthenticated|not\s+authenticated|no\s+authentication)\b/i.test(candidateTitle) ? 'no' : /\b(?:authenticated|sealed\s+by)\b/i.test(candidateTitle) ? 'yes' : '');
+    if (targetAuthenticated && candidateAuthenticated && targetAuthenticated !== candidateAuthenticated) return `Pokémon Unopened Product authentication status differs: target is ${targetAuthenticated}, but the candidate explicitly declares ${candidateAuthenticated}.`;
+    const targetCompany = pokemonComparableValue(target.authenticationCompany ?? target.authenticator);
+    const candidateCompany = pokemonComparableValue(candidateDetails.authenticationCompany ?? candidateDetails.authenticator ?? listing.authenticationCompany);
+    if (targetAuthenticated === 'yes' && targetCompany && candidateCompany && targetCompany !== candidateCompany) return `Pokémon Unopened Product authentication company differs: target is ${target.authenticationCompany}, but the candidate is ${candidateDetails.authenticationCompany ?? listing.authenticationCompany}.`;
+    const targetFasc = pokemonBoolean(target.fromASealedCase ?? target.fromSealedCase);
+    const candidateFasc = pokemonBoolean(candidateDetails.fromASealedCase ?? candidateDetails.fromSealedCase ?? listing.fromASealedCase)
+      || (/\b(?:not\s+from\s+(?:a\s+)?sealed\s+case|not\s+FASC)\b/i.test(candidateTitle) ? 'no' : /\b(?:FASC|from\s+(?:a\s+)?sealed\s+case)\b/i.test(candidateTitle) ? 'yes' : '');
+    if (targetFasc && candidateFasc && targetFasc !== candidateFasc) return `Pokémon Unopened Product sealed-case status differs: target is ${targetFasc === 'yes' ? 'from a sealed case' : 'not from a sealed case'}, but the candidate explicitly declares the opposite.`;
+  }
+  return null;
+}
 function movieIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'movies') return null;
   const targetType = movieTargetItemType(targetMetadata);
@@ -2747,10 +2865,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const videoGameIdentityConflictReason = videoGameIdentityConflict(targetMetadata, listing);
     const movieIdentityConflictReason = movieIdentityConflict(targetMetadata, listing);
     const musicIdentityConflictReason = musicIdentityConflict(targetMetadata, listing);
+    const pokemonIdentityConflictReason = pokemonIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(vintageToyIdentityConflictReason) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(disneyPinsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(vintageToyIdentityConflictReason) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || Boolean(disneyPinsIdentityConflictReason) || Boolean(videoGameIdentityConflictReason) || Boolean(movieIdentityConflictReason) || Boolean(musicIdentityConflictReason) || Boolean(pokemonIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? vintageToyIdentityConflictReason ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? disneyPinsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? vintageToyIdentityConflictReason ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? disneyPinsIdentityConflictReason ?? videoGameIdentityConflictReason ?? movieIdentityConflictReason ?? musicIdentityConflictReason ?? pokemonIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
@@ -3949,6 +4068,78 @@ export function sportsCardUnopenedVisualCap(score: number): number {
   return 0;
 }
 
+const POKEMON_SCORE_FIELDS = {
+  single_card: [['cardName', 25], ['setName', 20], ['cardNumber', 15], ['language', 10], ['finish', 10], ['cardType', 10], ['rarity', 5], ['editionEra', 5]],
+  set: [['setName', 35], ['language', 15], ['setType', 20], ['cardCount', 15], ['year', 10], ['packaging', 5]],
+  unopened_product: [['productName', 20], ['setName', 20], ['productType', 20], ['language', 10], ['year', 10], ['factorySealed', 10], ['authentication', 5], ['fromASealedCase', 5]],
+} as const;
+function pokemonScoreValue(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = [], allowSubset = true): boolean | null {
+  const target = pokemonComparableValue(targetValue);
+  if (!target || /^(?:unknown|n a|na|none|not applicable)$/.test(target)) return null;
+  const candidate = pokemonComparableValue(pokemonCandidateValue(listing, aliases, patterns));
+  if (!candidate) return null;
+  return allowSubset ? target.includes(candidate) || candidate.includes(target) : target === candidate;
+}
+function pokemonScoreBoolean(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): boolean | null {
+  const target = pokemonBoolean(targetValue);
+  if (!target) return null;
+  const candidateDetails = candidateStructuredDetails(listing);
+  const structured = pokemonBoolean(aliases.map((alias) => listing[alias as keyof VisualSourceCandidate] ?? candidateDetails[alias]).find((value) => value != null));
+  const text = String(listing.title ?? '');
+  const candidate = structured || (positive.test(text) ? 'yes' : negative.test(text) ? 'no' : '');
+  return candidate ? candidate === target : null;
+}
+function pokemonScoreNumber(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[]): boolean | null {
+  const target = String(targetValue ?? '').match(/\d{1,4}(?:\s*\/\s*\d{1,4})?/)?.[0];
+  if (!target) return null;
+  const candidate = pokemonCandidateValue(listing, aliases, patterns).match(/\d{1,4}(?:\s*\/\s*\d{1,4})?/i)?.[0];
+  return candidate ? pokemonComparableValue(candidate) === pokemonComparableValue(target) : null;
+}
+export function pokemonVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const type = pokemonTargetItemType(targetMetadata);
+  const target = extractTargetItemDetails(targetMetadata);
+  const matched: string[] = []; const unknown: string[] = []; let score = 0;
+  const add = (field: string, points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
+  const fields = POKEMON_SCORE_FIELDS[type as keyof typeof POKEMON_SCORE_FIELDS] ?? [];
+  for (const [field, points] of fields) {
+    switch (field) {
+      case 'cardName': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.cardName, target.pokemonName, target.name, extractTargetTitle(targetMetadata)), listing, ['cardName', 'pokemonName', 'name', 'title'], [], true)); break;
+      case 'setName': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.setName, target.set, target.cardSet, target.series), listing, ['setName', 'set', 'cardSet', 'series'], [], true)); break;
+      case 'cardNumber': add(field, points, pokemonScoreNumber(firstMeaningfulValue(target.cardNumber, target.cardNo, target.number), listing, ['cardNumber', 'cardNo', 'number'], [/(?:#|card\s*(?:no\.?|number)?\s*)(\d{1,4}(?:\s*\/\s*\d{1,4})?)/i])); break;
+      case 'language': add(field, points, pokemonScoreValue(target.language, listing, ['language'], [/(English|Japanese|French|German|Italian|Spanish|Korean|Chinese)/i], false)); break;
+      case 'finish': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.finish, target.finishVariant), listing, ['finish', 'finishVariant'], [/(Normal|Holo|Reverse\s+Holo|Full\s+Art|Rainbow|Gold)/i], false)); break;
+      case 'cardType': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.cardType, target.mechanic, target.variant), listing, ['cardType', 'mechanic', 'variant'], [/(VMAX|VSTAR|\bV\b|\bGX\b|\bex\b|BREAK|Tag\s+Team|Radiant|Amazing\s+Rare|ACE\s+SPEC)/i], false)); break;
+      case 'rarity': add(field, points, pokemonScoreValue(target.rarity, listing, ['rarity'], [], true)); break;
+      case 'editionEra': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.editionEra, target.edition, target.era), listing, ['editionEra', 'edition', 'era'], [], true)); break;
+      case 'setType': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.setType, target.complete, target.setStatus), listing, ['setType', 'complete', 'setStatus'], [/(master\s+set|complete\s+set|partial\s+set|incomplete\s+set)/i], false)); break;
+      case 'cardCount': add(field, points, pokemonScoreNumber(target.numberOfCardsInSet, listing, ['numberOfCardsInSet', 'cardCount', 'numberOfCards'], [/(?:set\s+of|\b)(\d{2,4})\s+cards?/i])); break;
+      case 'packaging': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.packaging, target.originalPackaging), listing, ['packaging', 'originalPackaging'], [], true)); break;
+      case 'productName': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.productName, target.productTitle, target.name, extractTargetTitle(targetMetadata)), listing, ['productName', 'productTitle', 'name', 'title'], [], true)); break;
+      case 'productType': add(field, points, pokemonScoreValue(target.productType, listing, ['productType', 'productConfiguration', 'format'], [/(booster\s+box|booster\s+pack|elite\s+trainer\s+box|collection\s+box|blaster\s+box|tin|premium\s+collection)/i], false)); break;
+      case 'year': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.releaseYear, target.year), listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], false)); break;
+      case 'factorySealed': add(field, points, pokemonScoreBoolean(firstMeaningfulValue(target.factorySealed, target.sealStatus, target.sealedStatus), listing, ['factorySealed', 'sealStatus', 'sealedStatus'], /\b(?:factory\s+sealed|new\s+sealed|sealed|unopened)\b/i, /\b(?:opened|resealed|damaged\s+seal|unsealed)\b/i)); break;
+      case 'authentication': add(field, points, pokemonScoreValue(firstMeaningfulValue(target.authenticationCompany, target.authenticator), listing, ['authenticationCompany', 'authenticator'], [], false)); break;
+      case 'fromASealedCase': add(field, points, pokemonScoreBoolean(firstMeaningfulValue(target.fromASealedCase, target.fromSealedCase), listing, ['fromASealedCase', 'fromSealedCase'], /\b(?:FASC|from\s+(?:a\s+)?sealed\s+case)\b/i, /\b(?:not\s+FASC|not\s+from\s+(?:a\s+)?sealed\s+case)\b/i)); break;
+    }
+  }
+  return { score, matched, unknown };
+}
+export function pokemonVisualCap(score: number): number {
+  if (score >= 90) return 8;
+  if (score >= 80) return 6;
+  if (score >= 70) return 4;
+  if (score >= 60) return 2;
+  return 0;
+}
+function selectPokemonVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
+  const ranked = candidates.map((candidate) => {
+    const scoring = pokemonVisualScore(candidate.item, targetMetadata);
+    return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T };
+  }).sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex);
+  const cap = pokemonVisualCap(Number(ranked[0]?.item.metadataMatchScore ?? 0));
+  const selected = ranked.slice(0, cap);
+  return { ranked, selected, excluded: ranked.slice(cap).map((entry) => entry.item) };
+}
 const VINTAGE_TOY_SCORE_FIELDS = {
   "action figure/doll": [
     ["toyNameCharacter", 30], ["brand", 15], ["franchise", 15], ["year", 10],
@@ -4536,6 +4727,10 @@ export async function filterVisualSourceCandidates<
     .filter((entry) => !preVisualExcludedIndexes.has(entry.candidateIndex));
   allCandidates = annotateUniversalScores(allCandidates, targetMetadata);
   const rankedItems = new Map<number, T>(allCandidates.map((candidate) => [candidate.candidateIndex, candidate.item]));
+  const pokemonType = pokemonTargetItemType(targetMetadata);
+  const pokemonSelection = pokemonType === 'single_card' || pokemonType === 'set' || pokemonType === 'unopened_product'
+    ? selectPokemonVisualCandidates(allCandidates, targetMetadata)
+    : null;
   const sportsCardSelection = sportsCardUnopenedTarget(targetMetadata)
     ? selectSportsCardUnopenedVisualCandidates(allCandidates, targetMetadata)
     : sportsCardSingleTarget(targetMetadata)
@@ -4581,7 +4776,7 @@ export async function filterVisualSourceCandidates<
   const vintageToySelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'vintage_toys' && vintageToyType && vintageToyType !== 'collection/lot'
     ? selectVintageToyVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
+  const rankedSelection = pokemonSelection ?? sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection ?? videoGameSelection ?? moviesSelection ?? disneyPinsSelection ?? musicSelection ?? vintageToySelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(

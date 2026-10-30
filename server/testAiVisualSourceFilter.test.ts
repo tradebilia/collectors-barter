@@ -60,6 +60,8 @@ import {
 	  stampsSetVisualScore,
 	  autographMarketRelevanceScore,
 	  isAutographSignedItemTarget,
+	  pokemonVisualCap,
+	  pokemonVisualScore,
 	  comicsSingleVisualCap,
   comicsSingleVisualScore,
   sportsCardSetVisualCap,
@@ -144,6 +146,42 @@ describe("visual source filter", () => {
     expect(result.listings).toEqual([]);
     expect(result.contextListings?.[0].evidenceDisposition).toBe("context_only");
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("applies Pokémon Single Card identity filters and ranking", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1999 Pokémon Charizard #4/102",
+      category: "pokemon",
+      itemType: "single_card",
+      fullItemDetails: { cardName: "Charizard", setName: "Base Set", cardNumber: "4/102", year: "1999", language: "English", finish: "Holo", cardType: "Regular", rarity: "Holo Rare", editionEra: "Wizards" },
+    });
+    const score = pokemonVisualScore({
+      title: "1999 Pokémon Charizard Base Set #4/102 English Holo Regular Holo Rare Wizards",
+      itemDetails: JSON.stringify({ cardName: "Charizard", setName: "Base Set", cardNumber: "4/102", language: "English", finish: "Holo", cardType: "Regular", rarity: "Holo Rare", editionEra: "Wizards" }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining(["cardName", "setName", "cardNumber", "language", "finish", "cardType"]));
+    expect(pokemonVisualCap(score.score)).toBe(8);
+    expect(buildDeclaredIdentityReviews([{ title: "1999 Pokémon Charizard Base Set #4/130 English Holo" }], target)[0]?.rationale).toContain("Card/catalog number differs");
+    expect(buildDeclaredIdentityReviews([{ title: "1999 Pokémon Charizard Base Set #4/102" }], target)).toEqual([]);
+  });
+
+  it("applies Pokémon Set and Unopened Product filters while preserving unknown fields", () => {
+    const setTarget = buildVisualTargetMetadata({ title: "Pokémon Base Set Complete Set", category: "pokemon", itemType: "set", fullItemDetails: { setName: "Base Set", language: "English", setType: "Complete Set", numberOfCardsInSet: "102", year: "1999" } });
+    const setScore = pokemonVisualScore({ title: "Pokémon Base Set English Complete Set of 102 Cards 1999" }, setTarget);
+    expect(setScore.score).toBe(95);
+    expect(buildDeclaredIdentityReviews([{ title: "Pokémon Jungle Complete Set English", itemDetails: JSON.stringify({ setName: "Jungle", numberOfCardsInSet: "64" }) }], setTarget)[0]?.rationale).toContain("set differs");
+
+    const productTarget = buildVisualTargetMetadata({ title: "Pokémon Base Set Booster Box Factory Sealed", category: "pokemon", itemType: "unopened_product", fullItemDetails: { productName: "Booster Box", setName: "Base Set", productType: "Booster Box", language: "English", releaseYear: "1999", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" } });
+    const productScore = pokemonVisualScore({ title: "Pokémon Base Set English Booster Box 1999 Factory Sealed BBCE FASC", itemDetails: JSON.stringify({ productName: "Booster Box", setName: "Base Set", productType: "Booster Box", language: "English", releaseYear: "1999", factorySealed: "Yes", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" }) }, productTarget);
+    expect(productScore.score).toBe(100);
+    expect(buildDeclaredIdentityReviews([{ title: "Pokémon Base Set English Booster Box Opened", itemDetails: JSON.stringify({ productName: "Booster Box", setName: "Base Set", productType: "Booster Box", language: "English", releaseYear: "1999", factorySealed: "No", authenticated: "Yes", authenticationCompany: "BBCE", fromASealedCase: "Yes" }) }], productTarget)[0]?.rationale).toContain("seal status differs");
+  });
+
+  it("does not rank or compare Pokémon Collection/Lot targets", () => {
+    const target = buildVisualTargetMetadata({ title: "Mixed Pokémon Collection", category: "pokemon", itemType: "collection_lot", fullItemDetails: { approximateItemCount: 100 } });
+    expect(pokemonVisualScore({ title: "Charizard Base Set #4/102" }, target).score).toBe(0);
+    expect(buildDeclaredIdentityReviews([{ title: "Charizard Base Set #4/102" }], target)).toEqual([]);
   });
 
   it("scores Stamps / Single Stamp on the approved identity signals", () => {
