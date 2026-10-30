@@ -43,6 +43,18 @@ describe('approved Test AI identity fields', () => {
     for (const name of ['perforation', 'watermark', 'overprintSurcharge']) {
       expect(field(STAMPS_SINGLE_STAMP_FIELDS, name)).toMatchObject({ requirement: 'recommended' });
     }
+    expect(field(STAMPS_SINGLE_STAMP_FIELDS, 'hinged')).toMatchObject({
+      label: 'Hinge Status',
+      requirement: 'required',
+      dropdownOptions: ['Never Hinged', 'Lightly Hinged', 'Hinged', 'Heavily Hinged', 'Hinge Remnant', 'Unknown', 'Not Applicable'],
+      displayLabels: expect.objectContaining({ 'Never Hinged': 'Never Hinged (NH)', 'Heavily Hinged': 'Heavily Hinged (HH)', 'Not Applicable': 'Not Applicable (N/A)' }),
+    });
+    expect(field(STAMPS_SINGLE_STAMP_FIELDS, 'gum')).toMatchObject({
+      label: 'Gum Type',
+      requirement: 'required',
+      dropdownOptions: ['Original Gum', 'Partial Original Gum', 'Disturbed Gum', 'Regummed', 'No Gum', 'Issued Without Gum', 'Unknown'],
+      displayLabels: expect.objectContaining({ 'Original Gum': 'Original Gum (OG)', 'Partial Original Gum': 'Partial Original Gum (POG)', 'No Gum': 'No Gum (NG)', 'Issued Without Gum': 'Issued Without Gum (N/A)' }),
+    });
     expect(field(SPORTS_CARDS_SINGLE_CARD_FIELDS, 'serialNumber')).toMatchObject({
       label: 'Serial Number / Print Run (example: 10/100)', maxLength: 14,
     });
@@ -54,7 +66,7 @@ describe('approved Test AI identity fields', () => {
       ['pokemon_single_card.ts', 'gradeQualifier'],
       ['coins_single_coin.ts', 'designation'],
       ['comics_single_comic.ts', 'certificationLabelStatus', 'labelNotation'],
-      ['stamps_single_stamp.ts', 'perforation', 'watermark', 'overprintSurcharge'],
+      ['stamps_single_stamp.ts', 'gum', 'hinged', 'perforation', 'watermark', 'overprintSurcharge'],
       ['video_games_game.ts', 'upc'],
     ] as const;
     for (const [filename, ...keys] of layouts) {

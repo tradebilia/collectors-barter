@@ -2265,10 +2265,11 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'hinged',
-    label: 'Hinged',
+    label: 'Hinge Status',
     inputType: 'dropdown',
-    requirement: 'optional',
-    dropdownOptions: ['Never Hinged', 'Hinged', 'Hinge Remnant', 'Unknown'],
+    requirement: 'required',
+    dropdownOptions: ['Never Hinged', 'Lightly Hinged', 'Hinged', 'Heavily Hinged', 'Hinge Remnant', 'Unknown', 'Not Applicable'],
+    displayLabels: { 'Never Hinged': 'Never Hinged (NH)', 'Lightly Hinged': 'Lightly Hinged (LH)', 'Hinged': 'Hinged (H)', 'Heavily Hinged': 'Heavily Hinged (HH)', 'Hinge Remnant': 'Hinge Remnant (HR)', 'Unknown': 'Unknown', 'Not Applicable': 'Not Applicable (N/A)' },
   },
   {
     name: 'isGraded',
@@ -2306,12 +2307,11 @@ export const STAMPS_SINGLE_STAMP_FIELDS: FieldDefinition[] = [
   },
   {
     name: 'gum',
-    label: 'Gum',
+    label: 'Gum Type',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['NH', 'LH', 'H', 'OG', 'NG'],
-    displayLabels: { 'NH': 'NH (Never Hinged)', 'LH': 'LH (Lightly Hinged)', 'H': 'H (Hinged)', 'OG': 'OG (Original Gum)', 'NG': 'NG (No Gum)' },
-    conditionalLogic: 'Is Graded = yes',
+    dropdownOptions: ['Original Gum', 'Partial Original Gum', 'Disturbed Gum', 'Regummed', 'No Gum', 'Issued Without Gum', 'Unknown'],
+    displayLabels: { 'Original Gum': 'Original Gum (OG)', 'Partial Original Gum': 'Partial Original Gum (POG)', 'Disturbed Gum': 'Disturbed Gum (DG)', 'Regummed': 'Regummed (RG)', 'No Gum': 'No Gum (NG)', 'Issued Without Gum': 'Issued Without Gum (N/A)', 'Unknown': 'Unknown' },
   },
   {
     name: 'centering',

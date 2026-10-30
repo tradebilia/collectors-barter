@@ -19,11 +19,13 @@ export const stampsSinglestampLayout: ItemTypeLayoutConfig = {
         country: { colSpan: 'half', position: 3 },
         year: { colSpan: 'half', position: 4 },
         mintOrUsed: { colSpan: 'half', position: 5 },
-        isGraded: { colSpan: 'half', position: 6 },
-        condition: { colSpan: 'half', position: 7 },
-        gradingCompany: { colSpan: 'half', position: 8 },
-        grade: { colSpan: 'half', position: 9 },
-        certificationNumber: { colSpan: 'half', position: 10 },
+        gum: { colSpan: 'half', position: 6 },
+        hinged: { colSpan: 'half', position: 7 },
+        isGraded: { colSpan: 'half', position: 8 },
+        condition: { colSpan: 'half', position: 9 },
+        gradingCompany: { colSpan: 'half', position: 10 },
+        grade: { colSpan: 'half', position: 11 },
+        certificationNumber: { colSpan: 'half', position: 12 },
       },
     },
     recommended: {
@@ -38,9 +40,7 @@ export const stampsSinglestampLayout: ItemTypeLayoutConfig = {
     },
     optional: {
       columns: 1,
-      fieldLayout: {
-        hinged: { colSpan: 'full', position: 1 },
-      },
+      fieldLayout: {},
     },
   },
   spacing: {
