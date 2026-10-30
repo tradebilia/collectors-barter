@@ -89,15 +89,15 @@ describe("visual source filter", () => {
       title: "Michael Jordan signed puck",
       category: "autographs",
       itemType: "signed_item",
-      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA", inscription: "Yes" },
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Puck", autographCategory: "Sports", authenticationCompany: "JSA", inscription: "Yes" },
     });
     expect(isAutographSignedItemTarget(target)).toBe(true);
     const score = autographMarketRelevanceScore({
       title: "Michael Jordan signed puck JSA inscription",
-      itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA", inscription: "Yes" }),
+      itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Puck", autographCategory: "Sports", authenticationCompany: "JSA", inscription: "Yes" }),
     }, target);
     expect(score.score).toBe(100);
-    expect(score.matched).toEqual(expect.arrayContaining(["signer", "signed item type", "authentication company", "inscription"]));
+    expect(score.matched).toEqual(expect.arrayContaining(["signer", "signed item type", "autograph category", "authentication company", "inscription"]));
   });
 
   it("keeps Signed Item candidates as ranked market context and never calls vision", async () => {

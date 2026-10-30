@@ -92,11 +92,13 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const details = extractTargetItemDetails(targetMetadata);
   const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
   const targetItemType = autographTargetValue(targetMetadata, details, ["signedItemType", "itemType"]);
+  const targetCategory = autographTargetValue(targetMetadata, details, ["autographCategory", "signatureCategory"]);
   const targetAuth = autographTargetValue(targetMetadata, details, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany"]);
   const targetInscription = autographTargetValue(targetMetadata, details, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const candidate = normalizeVisualSourceCandidate(listing);
   const candidateSigner = autographCandidateValue(listing, ["signer", "autographSigner"]);
   const candidateItemType = autographCandidateValue(listing, ["signedItemType", "itemType", "productType", "form"], [/(?:signed|autographed)\s+([^|,;]+)/i]);
+  const candidateCategory = autographCandidateValue(listing, ["autographCategory", "category", "sport", "entertainmentType"]);
   const candidateAuth = autographCandidateValue(listing, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany", "authenticator", "gradingCompany"]);
   const candidateInscription = autographCandidateValue(listing, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const matched: string[] = [];
@@ -106,8 +108,9 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
     if (!target || !candidateValue) { unknown.push(label); return; }
     if (target === candidateValue || target.includes(candidateValue) || candidateValue.includes(target)) { score += points; matched.push(label); }
   };
-  compare(targetSigner, candidateSigner || autographMarketValue(candidate.title), 40, "signer");
-  compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 30, "signed item type");
+  compare(targetSigner, candidateSigner || autographMarketValue(candidate.title), 35, "signer");
+  compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 25, "signed item type");
+  compare(targetCategory, candidateCategory || autographMarketValue(candidate.title), 10, "autograph category");
   compare(targetAuth, candidateAuth || autographMarketValue(candidate.title), 20, "authentication company");
   if (!targetInscription || !candidateInscription) unknown.push("inscription");
   else if (targetInscription === candidateInscription || targetInscription.includes(candidateInscription) || candidateInscription.includes(targetInscription)) { score += 10; matched.push("inscription"); }

@@ -1658,7 +1658,8 @@ export const testAIRouter = router({
           imageUrl: visualSourceCandidateImage(item),
           imageUrls: collectEbayImageUrls(item),
         }));
-        const visualActiveFilter = input.includeVisualReview
+        const autographMarketContext = isAutographSignedItemTarget(targetMetadata);
+        const visualActiveFilter = input.includeVisualReview || autographMarketContext
           ? await filterVisualSourceCandidates({
               sourceRole: 'ebay',
               sourceLabel: 'eBay active listings',
@@ -1676,17 +1677,23 @@ export const testAIRouter = router({
               removedCount: preVisionExcludedListings.length + visualActiveFilter.removedCount,
             }
           : null;
-        const displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
+        const displaySummaries = autographMarketContext
+          ? (visualActiveFilter?.contextListings ?? [])
+          : (visualActiveFilter?.listings ?? visualInputListings);
         const metrics = computeMetrics(displaySummaries);
-        const visualMatchMetrics = visualActiveFilter ? computeVisualMatchMetrics(displaySummaries) : null;
+        const visualMatchMetrics = visualActiveFilter && !autographMarketContext ? computeVisualMatchMetrics(displaySummaries) : null;
+        const activeMarketContextOnly = autographMarketContext;
         return {
           query,
+          marketContextOnly: activeMarketContextOnly,
           debug: {
             totalFetched: summaries.length,
             afterYearFilter: byYear.length,
             afterNumberFilter: byNumber.length,
             afterGradeFilter: filteredSummaries.length,
-            afterDeclaredIdentityFilter: visualActiveFilter?.listings.length ?? visualInputListings.length,
+            afterDeclaredIdentityFilter: autographMarketContext
+              ? (visualActiveFilter?.contextListings?.length ?? 0)
+              : (visualActiveFilter?.listings.length ?? visualInputListings.length),
             preVisionExcludedCount: preVisionExcludedListings.length,
             preVisualExcludedCount: preVisionExcludedListings.length + (visualActiveFilter?.preVisualExcludedCount ?? 0),
             targetGrade,
@@ -1704,7 +1711,7 @@ export const testAIRouter = router({
           visualReviewTargetMetadata: targetMetadata,
           // Keep the separately transported review payload within the same
           // bounded contract enforced by reviewEbayVisualData.
-          visualReviewListings: displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map((s: any) => {
+          visualReviewListings: autographMarketContext ? [] : displaySummaries.slice(0, VISUAL_REVIEW_MAX_CANDIDATES).map((s: any) => {
             const normalizedImageUrls = Array.isArray(s.imageUrls) && s.imageUrls.length > 0
               ? s.imageUrls
               : collectEbayImageUrls(s);
