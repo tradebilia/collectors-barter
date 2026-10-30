@@ -42,6 +42,10 @@ import {
   coinsSetVisualScore,
   paperMoneyVisualCap,
   paperMoneyVisualScore,
+  stampsSingleVisualCap,
+  stampsSingleVisualScore,
+  stampsSetVisualCap,
+  stampsSetVisualScore,
   comicsSingleVisualCap,
   comicsSingleVisualScore,
   sportsCardSetVisualCap,
@@ -66,6 +70,73 @@ const structuredVisualResponse = (value: unknown) => ({
 
 describe("visual source filter", () => {
   beforeEach(() => mockedInvokeLLM.mockReset());
+  it("scores Stamps / Single Stamp on the approved identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "United States Scott C1 24c Mint Never Hinged",
+      category: "stamps",
+      itemType: "single_stamp",
+      grade: "MNH",
+      fullItemDetails: {
+        country: "United States", scottNumber: "C1", year: "1918", denomination: "24c",
+        mintOrUsed: "Mint", hinged: "Never Hinged", perforation: "12", watermark: "Single line",
+        overprintSurcharge: "Airmail", format: "single stamp",
+      },
+    });
+    const score = stampsSingleVisualScore({
+      title: "United States Scott C1 1918 24c Airmail MNH Never Hinged Perforated 12 Single line watermark",
+      imageUrl: "https://example.com/stamp.jpg",
+      itemDetails: JSON.stringify({ denomination: "24c", mintOrUsed: "Mint", hinged: "Never Hinged", perforation: "12", watermark: "Single line", overprintSurcharge: "Airmail" }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining(["scottNumber", "country", "year", "denomination", "format", "mintOrUsed", "hingeGum"]));
+  });
+  it("scores Stamps / Stamp Set or Sheet on the approved identity signals", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1976 United States Bicentennial Mint Set",
+      category: "stamps",
+      itemType: "stamp_set___sheet",
+      grade: "95",
+      certificationCompany: "PSE",
+      fullItemDetails: {
+        country: "United States", setNameDescription: "Bicentennial", year: "1976", sheetType: "Set",
+        numberOfStamps: "4", mintOrUsed: "Mint", format: "set",
+      },
+    });
+    const score = stampsSetVisualScore({
+      title: "1976 United States Bicentennial Mint Set 4 Stamps PSE 95",
+      imageUrl: "https://example.com/set.jpg",
+      itemDetails: JSON.stringify({ setNameDescription: "Bicentennial", year: "1976", sheetType: "Set", numberOfStamps: 4, mintOrUsed: "Mint", format: "set" }),
+    }, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining(["setName", "country", "year", "sheetType", "numberOfStamps", "mintOrUsed"]));
+  });
+  it("uses the approved Stamps score-band caps", () => {
+    expect(stampsSingleVisualCap(95)).toBe(8);
+    expect(stampsSingleVisualCap(85)).toBe(6);
+    expect(stampsSingleVisualCap(75)).toBe(4);
+    expect(stampsSingleVisualCap(65)).toBe(2);
+    expect(stampsSingleVisualCap(59)).toBe(0);
+    expect(stampsSetVisualCap(95)).toBe(8);
+    expect(stampsSetVisualCap(85)).toBe(6);
+    expect(stampsSetVisualCap(75)).toBe(4);
+    expect(stampsSetVisualCap(65)).toBe(2);
+    expect(stampsSetVisualCap(59)).toBe(0);
+  });
+  it("pre-excludes wrong Scott numbers and individual stamps from set targets", () => {
+    const singleTarget = buildVisualTargetMetadata({ title: "United States Scott C1 24c", category: "stamps", itemType: "single_stamp", fullItemDetails: { country: "United States", scottNumber: "C1", denomination: "24c" } });
+    const wrongScott = buildDeclaredIdentityReviews([{ title: "United States Scott C2 6c", imageUrl: "https://example.com/a.jpg" }], singleTarget);
+    expect(wrongScott[0]?.rationale).toContain("Scott/catalog number differs");
+    const setTarget = buildVisualTargetMetadata({ title: "1976 United States Stamp Set", category: "stamps", itemType: "stamp_set___sheet", fullItemDetails: { country: "United States", setNameDescription: "1976", sheetType: "Set" } });
+    const individual = buildDeclaredIdentityReviews([{ title: "1976 United States Scott C1 single stamp", imageUrl: "https://example.com/b.jpg" }], setTarget);
+    expect(individual[0]?.rationale).toContain("format differs");
+  });
+  it("does not apply Stamps filters or ranking to Collection/Lot", () => {
+    const target = buildVisualTargetMetadata({ title: "United States Stamp Collection", category: "stamps", itemType: "collection_lot", fullItemDetails: { approximateQuantity: 100 } });
+    const candidate = { title: "United States Scott C1 single stamp", imageUrl: "https://example.com/c.jpg" };
+    expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
+    expect(stampsSingleVisualScore(candidate, target).score).toBe(0);
+    expect(stampsSetVisualScore(candidate, target).score).toBe(0);
+  });
 
   it("promotes eBay thumbnails without rewriting non-eBay image URLs", () => {
     expect(promoteEbayImageUrl("https://i.ebayimg.com/images/g/abc/s-l500.jpg")).toBe("https://i.ebayimg.com/images/g/abc/s-l1600.jpg");

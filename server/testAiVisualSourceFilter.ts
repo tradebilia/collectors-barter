@@ -1,6 +1,7 @@
 import { invokeLLM, type ImageContent, type TextContent } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
+import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -1942,6 +1943,89 @@ function paperMoneyIdentityConflict(targetMetadata: string, listing: VisualSourc
   }
   return null;
 }
+function isSingleStampTarget(targetMetadata: string): boolean {
+  return normalizedChoice(metadataValue(targetMetadata, "category")) === "stamps"
+    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "single_stamp";
+}
+function isStampSetTarget(targetMetadata: string): boolean {
+  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType"));
+  return normalizedChoice(metadataValue(targetMetadata, "category")) === "stamps"
+    && (itemType === "stamp_set___sheet" || itemType === "stamp_set_sheet" || itemType === "stamp_set");
+}
+function stampComparable(value: unknown): string {
+  return normalizedChoice(value).replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+function stampExplicitValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
+  const details = candidateStructuredDetails(listing);
+  const structured = aliases.map((key) => listing[key] ?? details[key]).find((value) => String(value ?? "").trim());
+  if (structured != null) return String(structured).trim();
+  for (const pattern of titlePatterns) {
+    const match = String(listing.title ?? "").match(pattern);
+    if (match?.[1]) return match[1].trim();
+  }
+  return "";
+}
+function stampValueConflict(targetValue: unknown, candidateValue: unknown, label: string): string | null {
+  const target = stampComparable(targetValue);
+  const candidate = stampComparable(candidateValue);
+  if (!target || !candidate || target === candidate || candidate.includes(target) || target.includes(candidate)) return null;
+  return `Stamp ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${String(candidateValue)}.`;
+}
+function stampFormatConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetProfile = classifyStampFormat({
+    title: extractTargetTitle(targetMetadata),
+    itemType: metadataValue(targetMetadata, "itemType"),
+    itemDetails: JSON.stringify(targetDetails),
+    condition: metadataValue(targetMetadata, "condition"),
+  });
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateProfile = classifyStampFormat({
+    title: String(listing.title ?? ""),
+    itemType: String(listing.itemType ?? candidateDetails.itemType ?? candidateDetails.format ?? ""),
+    itemDetails: JSON.stringify(candidateDetails),
+    condition: String(listing.condition ?? candidateDetails.condition ?? ""),
+  });
+  if (!stampFormatsCompatible(targetProfile, candidateProfile)) {
+    return `Stamp format differs: target is ${targetProfile.label}, but the candidate is ${candidateProfile.label}.`;
+  }
+  return null;
+}
+function stampsIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  if (!isSingleStampTarget(targetMetadata) && !isStampSetTarget(targetMetadata)) return null;
+  const target = extractTargetItemDetails(targetMetadata);
+  const formatConflict = stampFormatConflict(targetMetadata, listing);
+  if (formatConflict) return formatConflict;
+  const isSet = isStampSetTarget(targetMetadata);
+  const checks: Array<[unknown, string, string[], RegExp[]]> = [
+    [target.country ?? target.issuingCountry, "country", ["country", "issuingCountry"], [/\b(United States|USA|Canada|Mexico|Australia|United Kingdom|Great Britain|France|Germany|Japan)\b/i]],
+    [target.year ?? target.date ?? target.issueYear, "year/date", ["year", "date", "issueYear"], [/(?:^|[^0-9])((?:16|17|18|19|20)\d{2})(?:[^0-9]|$)/i]],
+  ];
+  if (!isSet) {
+    checks.push([target.scottNumber ?? target.catalogNumber ?? target.catalogNo, "Scott/catalog number", ["scottNumber", "catalogNumber", "catalogNo"], [/(?:Scott|catalog|cat\.?)\s*#?\s*([A-Z]?\d{1,8})\b/i]]);
+    checks.push([target.denomination, "denomination", ["denomination"], [/\b(\$?\d+(?:\.\d+)?\s*(?:c|cent|cents|d|dollar|dollars|p|pence|pound|pounds))\b/i]]);
+    checks.push([target.mintOrUsed, "mint/used status", ["mintOrUsed", "status"], [/\b(Mint|Used|Unused|CTO)\b/i]]);
+    checks.push([target.hinged ?? target.gum, "hinge/gum status", ["hinged", "hingeStatus", "gum"], [/\b(Never Hinged|MNH|Mint Never Hinged|Hinged|MH|Lightly Hinged|Hinge Remnant|Original Gum|No Gum)\b/i]]);
+    checks.push([target.perforation, "perforation", ["perforation"], [/\b(perforated|imperforate|imperf|perforation\s*[0-9.]+)\b/i]]);
+    checks.push([target.watermark, "watermark", ["watermark"], [/\b(watermark(?:ed)?|no watermark)\b/i]]);
+    checks.push([target.overprintSurcharge ?? target.overprint, "overprint/surcharge", ["overprintSurcharge", "overprint", "surcharge"], [/\b(overprint(?:ed)?|surcharge|airmail|semi[- ]?postal)\b/i]]);
+  } else {
+    checks.push([target.setNameDescription ?? target.setName ?? target.series, "set name/description", ["setNameDescription", "setName", "series"], []]);
+    checks.push([target.sheetType ?? target.format, "set/sheet type", ["sheetType", "format"], [/\b(Set|Sheet|Souvenir Sheet|Block|First Day Cover)\b/i]]);
+    checks.push([target.mintOrUsed, "mint/used status", ["mintOrUsed", "status"], [/\b(Mint|Used|Mixed|Unused|CTO)\b/i]]);
+    const targetCount = Number(target.numberOfStamps ?? target.quantity);
+    const candidateCount = Number(stampExplicitValue(listing, ["numberOfStamps", "stampCount", "quantity"], [/(?:set|sheet|contains?|includes?)\s*(\d+)\s+stamps?/i]));
+    if (Number.isFinite(targetCount) && targetCount > 0 && Number.isFinite(candidateCount) && candidateCount > 0 && targetCount !== candidateCount) {
+      return `Stamp set size differs: target declares ${targetCount} stamps, but the candidate explicitly declares ${candidateCount}.`;
+    }
+  }
+  for (const [targetValue, label, aliases, patterns] of checks) {
+    const candidateValue = stampExplicitValue(listing, aliases, patterns);
+    const conflict = stampValueConflict(targetValue, candidateValue, label);
+    if (conflict) return conflict;
+  }
+  return null;
+}
 function comicSingleIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (!isSingleComicTarget(targetMetadata)) return null;
   const targetDetails = extractTargetItemDetails(targetMetadata);
@@ -2031,10 +2115,11 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
     const coinSingleIdentityConflictReason = coinSingleIdentityConflict(targetMetadata, listing);
     const coinSetIdentityConflictReason = coinSetIdentityConflict(targetMetadata, listing);
     const paperMoneyIdentityConflictReason = paperMoneyIdentityConflict(targetMetadata, listing);
+    const stampsIdentityConflictReason = stampsIdentityConflict(targetMetadata, listing);
     const materialConflicts = findMaterialMetadataConflicts(targetMetadata, listing, options);
-    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || materialConflicts.length > 0;
+    const fieldConflict = distributionConflict || facsimileConflict || Boolean(packagingConflict) || Boolean(gradingStateConflict) || Boolean(productFormConflict) || Boolean(sportsCardConflict) || Boolean(sportsCardSetConflictReason) || Boolean(sportsCardUnopenedProductConflictReason) || Boolean(mediaConditionConflict) || Boolean(completenessConflict) || Boolean(compoundNumberConflict) || Boolean(comicSingleIdentityConflictReason) || Boolean(coinSingleIdentityConflictReason) || Boolean(coinSetIdentityConflictReason) || Boolean(paperMoneyIdentityConflictReason) || Boolean(stampsIdentityConflictReason) || materialConflicts.length > 0;
     if (!conflict && !fieldConflict) return [];
-    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
+    const reason = gradingStateConflict ?? sportsCardUnopenedProductConflictReason ?? sportsCardSetConflictReason ?? productFormConflict ?? sportsCardConflict ?? mediaConditionConflict ?? completenessConflict ?? compoundNumberConflict ?? comicSingleIdentityConflictReason ?? coinSingleIdentityConflictReason ?? coinSetIdentityConflictReason ?? paperMoneyIdentityConflictReason ?? stampsIdentityConflictReason ?? packagingConflict ?? (materialConflicts.length > 0
       ? metadataConflictReviewReason(materialConflicts)
       : distributionConflict
       ? `Distribution Type is ${targetDistribution === "direct" ? "Direct" : "Newsstand"}, but the title explicitly declares ${distributionPhrase}.`
@@ -2286,6 +2371,76 @@ export function paperMoneyVisualCap(score: number): number {
   if (score >= 60) return 2;
   return 0;
 }
+const STAMPS_SINGLE_SCORE_FIELDS = [
+  ['scottNumber', 25], ['country', 15], ['year', 15], ['denomination', 10], ['format', 10],
+  ['mintOrUsed', 10], ['hingeGum', 5], ['perforation', 5], ['watermark', 3], ['overprintSurcharge', 2],
+] as const;
+function stampScoreText(value: unknown): string {
+  return stampComparable(value);
+}
+function stampTextMatches(targetValue: unknown, candidateText: string): boolean | null {
+  const target = stampScoreText(targetValue);
+  if (!target) return null;
+  const tokens = target.split(' ').filter((token) => token.length > 1);
+  if (!tokens.length) return null;
+  const candidate = stampScoreText(candidateText);
+  return tokens.every((token) => candidate.includes(token));
+}
+function stampScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): boolean | null {
+  const target = stampScoreText(targetValue);
+  if (!target) return null;
+  const candidate = stampExplicitValue(listing, aliases, patterns);
+  if (!candidate) return null;
+  const normalizedCandidate = stampScoreText(candidate);
+  return normalizedCandidate === target || normalizedCandidate.includes(target) || target.includes(normalizedCandidate);
+}
+function stampFormatMatches(targetMetadata: string, listing: VisualSourceCandidate): boolean | null {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetProfile = classifyStampFormat({ title: extractTargetTitle(targetMetadata), itemType: metadataValue(targetMetadata, 'itemType'), itemDetails: JSON.stringify(targetDetails) });
+  const candidateDetails = candidateStructuredDetails(listing);
+  const candidateProfile = classifyStampFormat({ title: String(listing.title ?? ''), itemType: String(listing.itemType ?? candidateDetails.itemType ?? ''), itemDetails: JSON.stringify(candidateDetails) });
+  if (targetProfile.key === 'unknown' || candidateProfile.key === 'unknown') return null;
+  return stampFormatsCompatible(targetProfile, candidateProfile);
+}
+export function stampsSingleVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const target = extractTargetItemDetails(targetMetadata);
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const text = sourceText(candidate);
+  const matched: string[] = []; const unknown: string[] = []; let score = 0;
+  const add = (field: typeof STAMPS_SINGLE_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
+  add('scottNumber', 25, stampScoreValueMatches(target.scottNumber ?? target.catalogNumber ?? target.catalogNo, listing, ['scottNumber', 'catalogNumber', 'catalogNo'], [/(?:Scott|catalog|cat\.?)\s*#?\s*([A-Z]?\d{1,8})\b/i]));
+  add('country', 15, stampScoreValueMatches(target.country ?? target.issuingCountry, listing, ['country', 'issuingCountry'], [/\b(United States|USA|Canada|Mexico|Australia|United Kingdom|Great Britain|France|Germany|Japan)\b/i]));
+  add('year', 15, stampScoreValueMatches(target.year ?? target.date ?? target.issueYear, listing, ['year', 'date', 'issueYear'], [/(?:^|[^0-9])((?:16|17|18|19|20)\d{2})(?:[^0-9]|$)/i]));
+  add('denomination', 10, stampScoreValueMatches(target.denomination, listing, ['denomination'], [/\b(\$?\d+(?:\.\d+)?\s*(?:c|cent|cents|d|dollar|dollars|p|pence|pound|pounds))\b/i]));
+  add('format', 10, stampFormatMatches(targetMetadata, listing));
+  add('mintOrUsed', 10, stampScoreValueMatches(target.mintOrUsed, listing, ['mintOrUsed', 'status'], [/\b(Mint|Used|Unused|CTO)\b/i]));
+  add('hingeGum', 5, stampScoreValueMatches(target.hinged ?? target.gum, listing, ['hinged', 'hingeStatus', 'gum'], [/\b(Never Hinged|MNH|Mint Never Hinged|Hinged|MH|Lightly Hinged|Hinge Remnant|Original Gum|No Gum)\b/i]));
+  add('perforation', 5, stampScoreValueMatches(target.perforation, listing, ['perforation'], [/\b(perforated|imperforate|imperf|perforation\s*[0-9.]+)\b/i]));
+  add('watermark', 3, stampTextMatches(target.watermark, text));
+  add('overprintSurcharge', 2, stampTextMatches(target.overprintSurcharge ?? target.overprint, text));
+  return { score, matched, unknown };
+}
+export function stampsSingleVisualCap(score: number): number { if (score >= 90) return 8; if (score >= 80) return 6; if (score >= 70) return 4; if (score >= 60) return 2; return 0; }
+const STAMPS_SET_SCORE_FIELDS = [
+  ['setName', 25], ['country', 15], ['year', 15], ['sheetType', 15], ['numberOfStamps', 10], ['mintOrUsed', 8], ['grade', 5], ['gradingCompany', 4], ['format', 3],
+] as const;
+export function stampsSetVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
+  const target = extractTargetItemDetails(targetMetadata); const candidate = normalizeVisualSourceCandidate(listing); const text = sourceText(candidate);
+  const matched: string[] = []; const unknown: string[] = []; let score = 0;
+  const add = (field: typeof STAMPS_SET_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
+  add('setName', 25, stampTextMatches(target.setNameDescription ?? target.setName ?? target.series, text));
+  add('country', 15, stampScoreValueMatches(target.country ?? target.issuingCountry, listing, ['country', 'issuingCountry'], [/\b(United States|USA|Canada|Mexico|Australia|United Kingdom|Great Britain|France|Germany|Japan)\b/i]));
+  add('year', 15, stampScoreValueMatches(target.year ?? target.date ?? target.issueYear, listing, ['year', 'date', 'issueYear'], [/(?:^|[^0-9])((?:16|17|18|19|20)\d{2})(?:[^0-9]|$)/i]));
+  add('sheetType', 15, stampScoreValueMatches(target.sheetType ?? target.format, listing, ['sheetType', 'format'], [/\b(Set|Sheet|Souvenir Sheet|Block|First Day Cover)\b/i]));
+  const targetCount = Number(target.numberOfStamps ?? target.quantity); const candidateCount = Number(stampExplicitValue(listing, ['numberOfStamps', 'stampCount', 'quantity'], [/(?:set|sheet|contains?|includes?)\s*(\d+)\s+stamps?/i]));
+  add('numberOfStamps', 10, Number.isFinite(targetCount) && targetCount > 0 ? (Number.isFinite(candidateCount) && candidateCount > 0 ? candidateCount === targetCount : null) : null);
+  add('mintOrUsed', 8, stampScoreValueMatches(target.mintOrUsed, listing, ['mintOrUsed', 'status'], [/\b(Mint|Used|Mixed|Unused|CTO)\b/i]));
+  add('grade', 5, coinNumericGradeMatches(targetMetadata, candidate));
+  add('gradingCompany', 4, coinGradingCompanyMatches(targetMetadata, candidate));
+  add('format', 3, stampFormatMatches(targetMetadata, listing));
+  return { score, matched, unknown };
+}
+export function stampsSetVisualCap(score: number): number { if (score >= 90) return 8; if (score >= 80) return 6; if (score >= 70) return 4; if (score >= 60) return 2; return 0; }
 const COIN_SINGLE_SCORE_FIELDS = [
   ['coinTitleSeriesType', 20],
   ['yearDate', 15],
@@ -2957,6 +3112,19 @@ function selectPaperMoneyVisualCandidates<T extends VisualSourceCandidate>(candi
   } as T));
   return { selected, excluded, cap, ranked };
 }
+function selectStampsVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string, setTarget: boolean) {
+  const score = (item: T) => setTarget ? stampsSetVisualScore(item, targetMetadata) : stampsSingleVisualScore(item, targetMetadata);
+  const capFor = (value: number) => setTarget ? stampsSetVisualCap(value) : stampsSingleVisualCap(value);
+  const label = setTarget ? 'Stamps / Stamp Set or Sheet' : 'Stamps / Single Stamp';
+  const ranked = candidates.map((candidate) => { const scoring = score(candidate.item); return { ...candidate, item: { ...candidate.item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T }; })
+    .sort((a,b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.candidateIndex - b.candidateIndex)
+    .map((candidate,index) => ({ ...candidate, item: { ...candidate.item, metadataMatchRank: index + 1 } as T }));
+  const highestScore = Number(ranked[0]?.item.metadataMatchScore ?? 0); const cap = capFor(highestScore);
+  const selected = ranked.filter((candidate) => candidate.imageUrls.length > 0 && Number(candidate.item.metadataMatchScore ?? 0) >= 60).slice(0, cap);
+  const selectedKeys = new Set(selected.map((candidate) => candidate.candidateIndex));
+  const excluded = ranked.filter((candidate) => !selectedKeys.has(candidate.candidateIndex)).map((entry) => ({ ...entry.item, evidenceDisposition: 'pre_vision_score_excluded', visualReviewStatus: 'not_reviewed', visualReviewRationale: Number(entry.item.metadataMatchScore ?? 0) < 60 ? `${label} metadata score ${Number(entry.item.metadataMatchScore ?? 0)}/100 is below the visual-review minimum of 60.` : `${label} visual cap reached (${cap}); higher-scoring candidates were selected first.`, evidenceReasons: [entry.imageUrls.length === 0 ? 'no candidate image available; retained as context-only' : Number(entry.item.metadataMatchScore ?? 0) < 60 ? 'metadata score below minimum (60)' : `visual-review cap reached (${cap})`] } as T));
+  return { selected, excluded, cap, ranked };
+}
 function selectCoinsSingleVisualCandidates<T extends VisualSourceCandidate>(candidates: Array<{ item: T; candidateIndex: number; imageUrl: string | null; imageUrls: string[] }>, targetMetadata: string) {
   const ranked = candidates.map((candidate) => {
     const scoring = coinsSingleVisualScore(candidate.item, targetMetadata);
@@ -3113,6 +3281,11 @@ export async function filterVisualSourceCandidates<
   const comicsSelection = comicsSingleTarget(targetMetadata)
     ? selectComicsSingleVisualCandidates(allCandidates, targetMetadata)
     : null;
+  const stampsSelection = isSingleStampTarget(targetMetadata)
+    ? selectStampsVisualCandidates(allCandidates, targetMetadata, false)
+    : isStampSetTarget(targetMetadata)
+      ? selectStampsVisualCandidates(allCandidates, targetMetadata, true)
+      : null;
   const coinsSelection = isSingleCoinTarget(targetMetadata)
     ? selectCoinsSingleVisualCandidates(allCandidates, targetMetadata)
     : null;
@@ -3122,7 +3295,7 @@ export async function filterVisualSourceCandidates<
   const paperMoneySelection = isPaperMoneyTarget(targetMetadata)
     ? selectPaperMoneyVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const rankedSelection = sportsCardSelection ?? comicsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection;
+  const rankedSelection = sportsCardSelection ?? comicsSelection ?? stampsSelection ?? coinsSelection ?? coinSetSelection ?? paperMoneySelection;
   if (rankedSelection) {
     const selectedCandidateIndexes = new Set(rankedSelection.selected.map((candidate) => candidate.candidateIndex));
     preVisualScoreExcludedIndexes = new Set<number>(
