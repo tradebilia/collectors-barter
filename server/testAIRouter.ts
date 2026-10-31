@@ -3695,7 +3695,7 @@ export const testAIRouter = router({
       }
     }),
 
-  analyzeItems: protectedProcedure
+  analyzeTrade: protectedProcedure
     .input(z.object({
       leftItem: z.object({
         title: z.string(),
@@ -4108,6 +4108,98 @@ Return only the schema-compliant JSON response.`;
         leftVisualComparableMetrics: leftRefinedActive.metrics,
         rightVisualComparableMetrics: rightRefinedActive.metrics,
         visionDiagnostics,
+      };
+    }),
+
+  runCustomSourceSearch: protectedProcedure
+    .input(z.object({
+      sourceId: z.string().trim().min(1).max(80),
+      query: z.string().trim().min(2).max(180),
+      category: z.string().trim().max(80).optional(),
+      itemType: z.string().trim().max(120).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
+
+      const query = input.query.trim();
+      const sourceId = input.sourceId.trim();
+      const category = input.category?.trim() || '';
+
+      if (isCollectionLotItemType(input.itemType)) {
+        return {
+          status: 'blocked' as const,
+          sourceId,
+          query,
+          message: collectionLotNotComparable,
+          results: [],
+        };
+      }
+
+      if (sourceId === 'ebay_active') {
+        const tokenResult = await getEbayAppToken();
+        if (!tokenResult.token) {
+          return { status: 'error' as const, sourceId, query, message: tokenResult.error ?? 'eBay authorization unavailable.', results: [] };
+        }
+        try {
+          const pages = await fetchEbayExactTierPages(query, tokenResult.token);
+          const rawItems = pages.flatMap((page) => page.items).slice(0, EBAY_ACTIVE_DISPLAY_TARGET);
+          const results = rawItems.map((item: any, index: number) => ({
+            rank: index + 1,
+            title: String(item.title ?? 'Untitled listing'),
+            price: item.price?.value ?? item.currentBidPrice?.value ?? null,
+            currency: item.price?.currency ?? item.currentBidPrice?.currency ?? null,
+            url: item.itemWebUrl ?? item.itemUrl ?? null,
+            imageUrl: collectEbayImageUrls(item)[0] ?? null,
+            source: 'eBay Active Listings',
+          }));
+          return { status: 'success' as const, sourceId, query, message: `User-entered eBay search returned ${results.length} result${results.length === 1 ? '' : 's'}.`, results, contextOnly: true };
+        } catch (error) {
+          return { status: 'error' as const, sourceId, query, message: error instanceof Error ? error.message : 'eBay custom search failed.', results: [] };
+        }
+      }
+
+      if (sourceId === 'mercari_sold_comps') {
+        const result = await lookupMercariSoldComps({ title: query, category: category || 'unknown' });
+        return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered Mercari search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: result.listings.slice(0, 20), contextOnly: true };
+      }
+
+      if (sourceId === 'tcgplayer_sold_comps') {
+        const result = await lookupTcgplayerSoldComps({ title: query, category: category || 'pokemon' });
+        return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered TCGplayer search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: result.listings.slice(0, 20), contextOnly: true };
+      }
+
+      if (sourceId === 'tcgdex') {
+        const result = await lookupTcgDexCatalog(query);
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered TCGdex lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+      }
+
+      if (sourceId === 'wikidata') {
+        const result = await lookupWikidataMetadata(query, category === 'movies' ? 'movies' : 'autographs');
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Wikidata lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+      }
+
+      if (sourceId === 'smithsonian') {
+        const result = await lookupSmithsonianStampReference(query);
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Smithsonian lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+      }
+
+      if (sourceId === 'igdb') {
+        const result = await lookupIgdbGameMetadata(query);
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered IGDB lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+      }
+
+      if (sourceId === 'rawg') {
+        const result = await lookupRawgGameMetadata(query);
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered RAWG lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+      }
+
+      return {
+        status: 'unsupported' as const,
+        sourceId,
+        query,
+        message: 'This source requires a structured identifier or its own provider-specific lookup. The custom text was not sent through an incompatible endpoint.',
+        results: [],
+        contextOnly: true,
       };
     }),
 });
