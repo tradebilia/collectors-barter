@@ -139,6 +139,26 @@ describe("visual source filter", () => {
     expect(autographObjectTypeMismatchReason(baseballGloveTarget, { title: "Babe Ruth signed baseball" })).toContain("different signed object types");
   });
 
+  it("recognizes generic COA wording as authentication evidence without awarding company-match points", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Donald Trump signed photo",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Donald Trump", signedItemType: "Photo", authenticationCompany: "JSA" },
+    });
+    const genericCoa = autographMarketRelevanceScore({ title: "Donald Trump Signed Photo with Dual COAs" }, target);
+    const certificatePhrase = autographMarketRelevanceScore({ title: "Donald Trump Signed Photo with Certificate of Authenticity" }, target);
+    const missingCoa = autographMarketRelevanceScore({ title: "Donald Trump Signed Photo without COA" }, target);
+
+    expect(genericCoa.score).toBe(70);
+    expect(genericCoa.matched).toEqual(expect.arrayContaining(["authenticated"]));
+    expect(genericCoa.matched).not.toContain("authentication company");
+    expect(certificatePhrase.score).toBe(70);
+    expect(certificatePhrase.matched).toContain("authenticated");
+    expect(missingCoa.score).toBe(60);
+    expect(missingCoa.matched).not.toContain("authenticated");
+  });
+
   it("requires core identity and a 70-point minimum before Autographs valuation", () => {
     const target = buildVisualTargetMetadata({
       title: "Muhammad Ali signed boxing glove",
