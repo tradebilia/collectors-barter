@@ -192,6 +192,23 @@ describe("visual source filter", () => {
     expect(autographValuationEligibility({ title: "Babe Ruth New York Yankees Single Signed Baseball JSA Authenticated" }, target)).toMatchObject({ eligible: true });
   });
 
+  it("treats signer suffixes as distinct people for Autographs valuation", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Donald Trump signed photo",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Donald Trump", signedItemType: "Photo", authenticationCompany: "JSA" },
+    });
+    const jrTitle = { title: "Donald Trump Jr Signed Photo JSA" };
+    const jrStructured = { title: "Donald Trump signed photo JSA", itemDetails: JSON.stringify({ signer: "Donald Trump Jr", signedItemType: "Photo", authenticationCompany: "JSA" }) };
+
+    expect(autographMarketRelevanceScore(jrTitle, target).matched).not.toContain("signer");
+    expect(autographMarketRelevanceScore(jrStructured, target).matched).not.toContain("signer");
+    expect(autographValuationEligibility(jrTitle, target)).toMatchObject({ eligible: false });
+    expect(autographValuationEligibility(jrStructured, target)).toMatchObject({ eligible: false });
+    expect(autographValuationEligibility({ title: "Donald Trump Signed Photo JSA" }, target)).toMatchObject({ eligible: true });
+  });
+
   it("keeps explicit country/version identity variants out of valuation", () => {
     const target = buildVisualTargetMetadata({
       title: "Babe Ruth signed baseball",

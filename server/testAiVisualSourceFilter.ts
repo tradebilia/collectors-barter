@@ -131,6 +131,8 @@ function autographCandidateSigner(listing: VisualSourceCandidate, targetSigner =
   // explicit “signed by” / “autographed by” phrase names the signer.
   if (normalizedTarget) {
     const normalizedTitle = normalizedChoice(title);
+    const distinctSuffixes = ["jr", "sr", "ii", "iii", "iv"];
+    if (distinctSuffixes.some((suffix) => normalizedTitle === `${normalizedTarget}_${suffix}` || normalizedTitle.startsWith(`${normalizedTarget}_${suffix}_`))) return "";
     if (normalizedTitle === normalizedTarget || normalizedTitle.startsWith(`${normalizedTarget}_`)) return normalizedTarget;
   }
   const explicit = title.match(/\b(?:signed|autographed)\s+by\s+([^,|;()]+?)(?=\s+(?:on|a|an|the)\s+|[,|;()]|$)/i);
@@ -226,8 +228,7 @@ export function autographValuationEligibility(listing: VisualSourceCandidate, ta
     || autographObjectType(listing.title);
   const scoring = autographMarketRelevanceScore(listing, targetMetadata);
   const reasons: string[] = [];
-  const signerMatches = Boolean(targetSigner && candidateSigner
-    && (targetSigner === candidateSigner || targetSigner.includes(candidateSigner) || candidateSigner.includes(targetSigner)));
+  const signerMatches = Boolean(targetSigner && candidateSigner && targetSigner === candidateSigner);
   if (!signerMatches) reasons.push("signer is missing or does not match the target");
   if (!targetObjectType || !candidateObjectType || targetObjectType !== candidateObjectType) {
     reasons.push("signed object type is missing or does not match the target");
@@ -276,7 +277,10 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   let score = 0;
   const compare = (target: string, candidateValue: string, points: number, label: string) => {
     if (!target || !candidateValue) { unknown.push(label); return; }
-    if (target === candidateValue || target.includes(candidateValue) || candidateValue.includes(target)) { score += points; matched.push(label); }
+    const matches = label === "signer"
+      ? target === candidateValue
+      : target === candidateValue || target.includes(candidateValue) || candidateValue.includes(target);
+    if (matches) { score += points; matched.push(label); }
   };
   compare(targetSigner, candidateSigner, 35, "signer");
   compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 25, "signed item type");
