@@ -88,6 +88,31 @@ function autographCandidateValue(listing: VisualSourceCandidate, aliases: string
   return "";
 }
 
+export function autographReplicaReason(listing: VisualSourceCandidate): string | null {
+  const details = candidateStructuredDetails(listing);
+  const explicitValues = [
+    listing.replica,
+    listing.isReplica,
+    listing.reproduction,
+    listing.isReproduction,
+    listing.facsimile,
+    listing.isFacsimile,
+    details.replica,
+    details.isReplica,
+    details.reproduction,
+    details.isReproduction,
+    details.facsimile,
+    details.isFacsimile,
+    details.authenticity,
+  ].filter((value) => String(value ?? "").trim()).map((value) => normalizedChoice(value));
+  const title = String(listing.title ?? "");
+  const explicitReplica = explicitValues.some((value) => /^(?:yes|true|1|replica|reproduction|facsimile|reprint|copy|counterfeit)$/.test(value));
+  const titleMatch = title.match(/\b(?:replica|reproduction|facsimile|reprint|copy|counterfeit)\b/i);
+  if (!explicitReplica && !titleMatch) return null;
+  const declared = titleMatch?.[0] ?? explicitValues.find((value) => /replica|reproduction|facsimile|reprint|copy|counterfeit/.test(value)) ?? "replica";
+  return `Autograph candidate explicitly declares ${declared}; replica or reproduction signed objects are excluded from market-range evidence.`;
+}
+
 export function autographMarketRelevanceScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
   const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
@@ -4710,7 +4735,9 @@ export async function filterVisualSourceCandidates<
 	    };
 	  }
 	  if (isAutographSignedItemTarget(targetMetadata)) {
-	    const rankedAutographListings = annotateAutographMarketCandidates(preparedListings, targetMetadata);
+	    const autographReplicaExcludedCount = preparedListings.reduce((count, listing) => count + (autographReplicaReason(listing) ? 1 : 0), 0);
+	    const autographEligibleListings = preparedListings.filter((listing) => !autographReplicaReason(listing));
+	    const rankedAutographListings = annotateAutographMarketCandidates(autographEligibleListings, targetMetadata);
 	    const contextListings = rankedAutographListings.map((listing, index) => ({
 	      ...listing,
 	      visualRequirement: 'not_required_autograph_market_context',
@@ -4726,10 +4753,10 @@ export async function filterVisualSourceCandidates<
 	    return {
 	      listings: [],
 	      contextListings,
-	      preVisualExcludedCount: contextListings.length,
+	      preVisualExcludedCount: autographReplicaExcludedCount,
 	      status: 'skipped_no_target_image',
 	      reviewedCount: 0,
-	      removedCount: 0,
+	      removedCount: autographReplicaExcludedCount,
 	      retainedUnreviewedCount: contextListings.length,
 	      reviews: [],
 	      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',

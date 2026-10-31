@@ -32,7 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, autographMarketRelevanceScore, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, autographMarketRelevanceScore, autographReplicaReason, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -2400,7 +2400,8 @@ export const testAIRouter = router({
           itemDetails: input.itemDetails,
         });
         if (isAutographSignedItemTarget(autographTargetMetadata)) {
-          const rankedAutographItems = rawItems
+          const autographItems = rawItems.filter((item: any) => !autographReplicaReason(item));
+          const rankedAutographItems = autographItems
             .map((item: any) => ({ ...item, ...autographMarketRelevanceScore(item, autographTargetMetadata) }))
             .sort((a: any, b: any) => Number(b.score ?? 0) - Number(a.score ?? 0));
           const marketListings = rankedAutographItems.map((item: any, index: number) => ({

@@ -15,3 +15,6 @@ The marketplace/eBay filter now evaluates Hinge Status and Gum Type independentl
 
 ## Autographs search designation — October 30, 2026
 Added the default marketplace search term `autograph` to every Autographs / Signed Item structured query. It now appears before signer, signed item type, autograph category, authentication company, and inscription in the shared query builder and in both active eBay and Sold-Comps router branches. Other categories are unchanged. Focused query/router tests passed 210/210, TypeScript passed, production build passed, and diff checks passed. No database, migration, credential, provider, deployment, or publishing changes.
+
+## Autographs replica exclusion — October 30, 2026
+The Autographs / Signed Item market-range workflow now excludes candidates that explicitly declare replica, reproduction, facsimile, reprint, copy, or counterfeit status in structured fields or listing titles. Candidates without an explicit authenticity declaration remain eligible. The rule applies to active eBay context results and Sold-Comps market-range results; it does not send anything to visual analysis and does not change Collection/Lot blocking. Focused Autographs/filter tests passed 211/211, TypeScript passed, production build passed, and diff checks passed. No database, migration, credential, provider, deployment, or publishing changes.

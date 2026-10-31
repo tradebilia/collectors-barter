@@ -59,6 +59,7 @@ import {
 	  stampsSetVisualCap,
 	  stampsSetVisualScore,
 	  autographMarketRelevanceScore,
+	  autographReplicaReason,
 	  isAutographSignedItemTarget,
 	  pokemonVisualCap,
 	  pokemonVisualScore,
@@ -126,6 +127,30 @@ describe("visual source filter", () => {
     expect(result.contextListings?.[0].metadataMatchScore).toBeGreaterThan(result.contextListings?.[1].metadataMatchScore as number);
     expect(result.contextListings?.every((listing) => listing.evidenceDisposition === "context_only")).toBe(true);
     expect(result.note).toContain("not sent to visual analysis");
+  });
+
+  it("excludes explicit Autographs replica candidates without excluding unknown authenticity", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Michael Jordan signed puck",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA" },
+    });
+    const replica = { title: "Michael Jordan signed replica puck JSA", imageUrl: "https://example.com/replica.jpg" };
+    const structuredReplica = { title: "Michael Jordan signed puck JSA", itemDetails: JSON.stringify({ reproduction: "Yes" }), imageUrl: "https://example.com/reproduction.jpg" };
+    const unknown = { title: "Michael Jordan signed puck JSA", imageUrl: "https://example.com/unknown.jpg" };
+    expect(autographReplicaReason(replica)).toContain("replica");
+    expect(autographReplicaReason(unknown)).toBeNull();
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "Autograph market range",
+      targetMetadata: target,
+      listings: [replica, structuredReplica, unknown],
+    });
+    expect(result.contextListings?.map((listing) => listing.title)).toEqual([unknown.title]);
+    expect(result.removedCount).toBe(2);
+    expect(result.preVisualExcludedCount).toBe(2);
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
   });
 
   it("does not let Autographs Collection/Lot enter the Signed Item market path", async () => {
