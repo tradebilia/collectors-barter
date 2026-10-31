@@ -155,6 +155,29 @@ function autographCandidateAuthentication(listing: VisualSourceCandidate, struct
   return /\b(?:authenticated|authentic(?:ated|ity)?)\b/i.test(title) ? "authenticated" : "";
 }
 
+export const AUTOGRAPH_VALUATION_MIN_SCORE = 70;
+
+export function autographValuationEligibility(listing: VisualSourceCandidate, targetMetadata: string): { eligible: boolean; reasons: string[] } {
+  const details = extractTargetItemDetails(targetMetadata);
+  const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
+  const candidateSigner = autographCandidateValue(listing, ["signer", "autographSigner"]) || autographMarketValue(listing.title);
+  const targetObjectType = autographTargetObjectType(targetMetadata, details);
+  const candidateObjectType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
+    || autographObjectType(listing.title);
+  const scoring = autographMarketRelevanceScore(listing, targetMetadata);
+  const reasons: string[] = [];
+  const signerMatches = Boolean(targetSigner && candidateSigner
+    && (targetSigner === candidateSigner || targetSigner.includes(candidateSigner) || candidateSigner.includes(targetSigner)));
+  if (!signerMatches) reasons.push("signer is missing or does not match the target");
+  if (!targetObjectType || !candidateObjectType || targetObjectType !== candidateObjectType) {
+    reasons.push("signed object type is missing or does not match the target");
+  }
+  const replicaReason = autographReplicaReason(listing);
+  if (replicaReason) reasons.push(replicaReason);
+  if (scoring.score < AUTOGRAPH_VALUATION_MIN_SCORE) reasons.push(`market relevance score ${scoring.score}/100 is below the Autographs valuation minimum of ${AUTOGRAPH_VALUATION_MIN_SCORE}/100`);
+  return { eligible: reasons.length === 0, reasons };
+}
+
 export function autographObjectTypeMismatchReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const targetType = autographTargetObjectType(targetMetadata, targetDetails);
@@ -221,7 +244,15 @@ function annotateAutographMarketCandidates<T extends VisualSourceCandidate>(list
       return { item: { ...item, metadataMatchScore: scoring.score, metadataMatchReasons: scoring.matched, metadataUnknownFields: scoring.unknown } as T, index };
     })
     .sort((a, b) => Number(b.item.metadataMatchScore ?? 0) - Number(a.item.metadataMatchScore ?? 0) || a.index - b.index)
-    .map((entry, rank) => ({ ...entry.item, metadataMatchRank: rank + 1 } as T));
+    .map((entry, rank) => {
+      const eligibility = autographValuationEligibility(entry.item, targetMetadata);
+      return {
+        ...entry.item,
+        metadataMatchRank: rank + 1,
+        evidenceDisposition: eligibility.eligible ? 'valuation_eligible' : 'context_only',
+        evidenceReasons: eligibility.eligible ? ['Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.'] : eligibility.reasons,
+      } as T;
+    });
 }
 
 export const VISUAL_REVIEW_BATCH_SIZE = 20;
@@ -4816,10 +4847,10 @@ export async function filterVisualSourceCandidates<
 	      visualRequirement: 'not_required_autograph_market_context',
 	      visualReviewStatus: 'not_reviewed',
 	      visualReviewRationale: 'Signed Item uses broad market-range context; the signed object can vary and is not an exact visual comparable.',
-	      evidenceDisposition: 'context_only',
+	      evidenceDisposition: listing.evidenceDisposition ?? 'context_only',
 	      evidenceReasons: [
 	        ...(universalPreparation.contextReasons.get(index) ? [universalPreparation.contextReasons.get(index)!] : []),
-
+	        ...(Array.isArray(listing.evidenceReasons) ? listing.evidenceReasons : []),
 	        'Autographs / Signed Item market-range workflow does not use visual analysis.',
 	      ],
 	    } as T));

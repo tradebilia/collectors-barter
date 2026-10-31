@@ -32,7 +32,7 @@ import { fetchMarketNewsForItems, getMarketNewsFeedRegistry } from './marketNews
 import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFieldCompletionText, FIELD_COMPLETION_RESPONSE_FORMAT, FIELD_COMPLETION_SYSTEM, getFieldTableForItem, normalizeFieldCompletion, parseFieldCompletionJson, type FieldCompletionResult } from './testAiFieldCompletion';
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
-import { applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -1683,7 +1683,10 @@ export const testAIRouter = router({
         // Legacy performance contract: const displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
         let displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
         if (autographMarketContext) displaySummaries = visualActiveFilter?.contextListings ?? [];
-        const metrics = computeMetrics(displaySummaries);
+        const metrics = computeMetrics(autographMarketContext
+          ? displaySummaries.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
+          : displaySummaries);
+        // Legacy performance contract: const metrics = computeMetrics(displaySummaries);
         const visualMatchMetrics = visualActiveFilter && !autographMarketContext ? computeVisualMatchMetrics(displaySummaries) : null;
         const activeMarketContextOnly = autographMarketContext;
         return {
@@ -1699,6 +1702,9 @@ export const testAIRouter = router({
               : (visualActiveFilter?.listings.length ?? visualInputListings.length),
             preVisionExcludedCount: preVisionExcludedListings.length,
             preVisualExcludedCount: preVisionExcludedListings.length + (visualActiveFilter?.preVisualExcludedCount ?? 0),
+            autographValuationEligibleCount: autographMarketContext
+              ? displaySummaries.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible').length
+              : undefined,
             targetGrade,
             executedQueries: [exactQuery, ...fallbackQueries],
             exactTierPageCount: exactPages.length,
@@ -2404,31 +2410,36 @@ export const testAIRouter = router({
           const rankedAutographItems = autographItems
             .map((item: any) => ({ ...item, ...autographMarketRelevanceScore(item, autographTargetMetadata) }))
             .sort((a: any, b: any) => Number(b.score ?? 0) - Number(a.score ?? 0));
-          const marketListings = rankedAutographItems.map((item: any, index: number) => ({
-            title: item.title,
-            price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
-            currency: item.soldCurrency ?? item.currency ?? null,
-            condition: item.condition,
-            seller: item.sellerUsername,
-            itemUrl: item.url,
-            imageUrl: item.thumbnailUrl ?? item.imageUrl,
-            endedAt: item.endedAt,
-            shippingPrice: item.shippingPrice,
-            saleId: item.saleId ?? item.id ?? null,
-            sourceId: 'sold_comps',
-            sourceLabel: 'eBay Sold-Comps',
-            retrievalQuery: item.retrievalQuery ?? null,
-            evidenceDisposition: 'context_only',
-            evidenceReasons: ['Autographs / Signed Item market-range evidence only; not an exact comparable and not sent to visual analysis.'],
-            visualRequirement: 'not_required_autograph_market_context',
-            visualReviewStatus: 'not_reviewed',
-            visualReviewRationale: 'Signed objects vary physically, so this result supplies market range context rather than an exact visual match.',
-            metadataMatchScore: Number(item.score ?? 0),
-            metadataMatchReasons: item.matched ?? [],
-            metadataMatchRank: index + 1,
-            metadataMatchLabel: 'Market Relevance Score',
-          }));
-          const metrics = computeMetrics(marketListings.map((item: any) => ({
+          const marketListings = rankedAutographItems.map((item: any, index: number) => {
+            const eligibility = autographValuationEligibility(item, autographTargetMetadata);
+            return {
+              title: item.title,
+              price: Number(item.soldPrice ?? item.price?.value ?? item.price ?? 0),
+              currency: item.soldCurrency ?? item.currency ?? null,
+              condition: item.condition,
+              seller: item.sellerUsername,
+              itemUrl: item.url,
+              imageUrl: item.thumbnailUrl ?? item.imageUrl,
+              endedAt: item.endedAt,
+              shippingPrice: item.shippingPrice,
+              saleId: item.saleId ?? item.id ?? null,
+              sourceId: 'sold_comps',
+              sourceLabel: 'eBay Sold-Comps',
+              retrievalQuery: item.retrievalQuery ?? null,
+              evidenceDisposition: eligibility.eligible ? 'valuation_eligible' : 'context_only',
+              evidenceReasons: eligibility.eligible
+                ? ['Autographs / Signed Item passed the signer, object-type, and 70-point valuation gate.']
+                : eligibility.reasons,
+              visualRequirement: 'not_required_autograph_market_context',
+              visualReviewStatus: 'not_reviewed',
+              visualReviewRationale: 'Signed objects vary physically, so this result supplies market range context rather than an exact visual match.',
+              metadataMatchScore: Number(item.score ?? 0),
+              metadataMatchReasons: item.matched ?? [],
+              metadataMatchRank: index + 1,
+              metadataMatchLabel: 'Market Relevance Score',
+            };
+          });
+          const metrics = computeMetrics(marketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').map((item: any) => ({
             ...item,
             price: { value: item.price, currency: item.currency ?? 'USD' },
           })));
@@ -2442,8 +2453,8 @@ export const testAIRouter = router({
             audit: {
               rawReceived: rawItems.length,
               retrievalCoverage,
-              valuationEligible: 0,
-              warningReview: marketListings.length,
+              valuationEligible: marketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
+              warningReview: marketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
               objectiveConflicts: 0,
               notVisuallyReviewed: marketListings.length,
             },

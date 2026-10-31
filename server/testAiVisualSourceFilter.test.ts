@@ -59,6 +59,7 @@ import {
 	  stampsSetVisualCap,
 	  stampsSetVisualScore,
 	  autographMarketRelevanceScore,
+	  autographValuationEligibility,
 	  autographObjectTypeMismatchReason,
 	  autographReplicaReason,
 	  isAutographSignedItemTarget,
@@ -136,6 +137,18 @@ describe("visual source filter", () => {
     expect(autographObjectTypeMismatchReason(baseballGloveTarget, { title: "Babe Ruth signed baseball" })).toContain("different signed object types");
   });
 
+  it("requires core identity and a 70-point minimum before Autographs valuation", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Muhammad Ali signed boxing glove",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Muhammad Ali", signedItemType: "Boxing Glove", authenticationCompany: "Beckett Authentication Services" },
+    });
+    expect(autographValuationEligibility({ title: "Muhammad Ali signed boxing glove" }, target)).toMatchObject({ eligible: false });
+    expect(autographValuationEligibility({ title: "Muhammad Ali signed boxing glove PSA/DNA" }, target)).toMatchObject({ eligible: true });
+    expect(autographValuationEligibility({ title: "Muhammad Ali signed boxing card PSA/DNA" }, target)).toMatchObject({ eligible: false });
+  });
+
   it("keeps Signed Item candidates as ranked market context and never calls vision", async () => {
     const target = buildVisualTargetMetadata({
       title: "Michael Jordan signed puck",
@@ -158,7 +171,7 @@ describe("visual source filter", () => {
     expect(result.contextListings).toHaveLength(2);
     expect(result.contextListings?.[0].metadataMatchRank).toBe(1);
     expect(result.contextListings?.[0].metadataMatchScore).toBeGreaterThan(result.contextListings?.[1].metadataMatchScore as number);
-    expect(result.contextListings?.every((listing) => listing.evidenceDisposition === "context_only")).toBe(true);
+    expect(result.contextListings?.every((listing) => listing.evidenceDisposition === "valuation_eligible")).toBe(true);
     expect(result.note).toContain("not sent to visual analysis");
   });
 
