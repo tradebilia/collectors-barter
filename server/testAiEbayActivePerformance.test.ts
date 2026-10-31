@@ -209,6 +209,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("query={data?.query || data?.winningQuery}");
   });
 
+  it("stabilizes the PriceCharting candidate fallback used by its selection effect", () => {
+    expect(pageSource).toContain("const compatibleGameCandidates = useMemo(");
+    expect(pageSource).toContain("[candidateSearchData?.data?.compatibleCandidates],");
+    expect(pageSource).not.toContain("const compatibleGameCandidates = candidateSearchData?.data?.compatibleCandidates ?? [];");
+  });
+
   it("shows every executed eBay query tier in the active-listing panel", () => {
     expect(pageSource).toContain("displayData?.debug?.executedQueries?.length > 1");
     expect(pageSource).toContain("Executed query tiers");

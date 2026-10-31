@@ -1894,7 +1894,10 @@ function PriceChartingSection({ item, side, cardData, coinData, videoGameData, s
     { enabled: isVideoGame && !priceChartingVideoGameUpc && canSearchVideoGamesByTitle, retry: false, staleTime: 0, refetchOnMount: 'always' },
   );
   const candidateSearchData = videoGameCandidateQuery.data;
-  const compatibleGameCandidates = candidateSearchData?.data?.compatibleCandidates ?? [];
+  const compatibleGameCandidates = useMemo(
+    () => candidateSearchData?.data?.compatibleCandidates ?? [],
+    [candidateSearchData?.data?.compatibleCandidates],
+  );
   const [selectedVideoGameCandidateId, setSelectedVideoGameCandidateId] = useState<string | null>(null);
   useEffect(() => {
     setSelectedVideoGameCandidateId(candidateSearchData?.data?.selectionRequired ? null : compatibleGameCandidates[0]?.priceChartingId ?? null);
