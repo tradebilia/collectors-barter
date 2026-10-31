@@ -81,6 +81,15 @@ describe('bounded specialist marketplace adapters', () => {
     })).toBe('Ken Griffey Jr. 1989 1 PSA 9');
   });
 
+  it('uses the shared Autographs designation and identity fields in Goldin queries', () => {
+    expect(buildGoldinSearchQuery({
+      sourceId: 'goldin',
+      title: 'Donald Trump signed photo',
+      category: 'autographs',
+      itemDetails: JSON.stringify({ signer: 'Donald Trump', signedItemType: 'Photo', autographCategory: 'Presidential', authenticationCompany: 'JSA' }),
+    })).toBe('autograph Donald Trump Photo Presidential JSA');
+  });
+
   it('omits grading company and grade from every Goldin video-game search query', () => {
     const queries = buildGoldinSearchQueries({
       sourceId: 'goldin',

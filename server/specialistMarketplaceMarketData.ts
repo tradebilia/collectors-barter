@@ -10,6 +10,7 @@ import { extractIdentityState, extractSignatureNames, identityStateConflicts } f
 import { ENV } from './_core/env';
 import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 import { equivalentVideoGameGrader, videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { lookupHakes } from './hakesMarketData';
 import { lookupLcg, LCG_GALLERY_URL, LCG_MAX_RECORDS } from './lcgMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
@@ -260,6 +261,7 @@ type GoldinQueryOptions = {
 /** Goldin query built from structured identity fields; publisher/manufacturer is intentionally excluded. */
 export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, options: GoldinQueryOptions = {}): string {
   const details = parseDetails(input.itemDetails);
+  const sharedDefinition = buildMarketplaceSearchDefinition(input);
   const includeCertification = options.includeCertification !== false;
   const includeGrade = options.includeGrade !== false;
   const includeComicYear = options.includeComicYear !== false;
@@ -293,6 +295,8 @@ export function buildGoldinSearchQuery(input: SpecialistMarketplaceLookupInput, 
     add(firstDetail(details, ['platform', 'console', 'consoleName']));
     add(firstDetail(details, ['releaseYear', 'year']));
     add(firstDetail(details, ['edition', 'version']));
+  } else if (category === 'autographs' || category === 'movies' || category === 'coins') {
+    add(sharedDefinition.baseQuery);
   } else if (category === 'vintage toys') {
     add(firstDetail(details, ['brand', 'brandName', 'manufacturer']));
     add(firstDetail(details, ['line', 'franchise']));
