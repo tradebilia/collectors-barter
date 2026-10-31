@@ -191,6 +191,15 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("Preserve the server-confirmed eBay query from the");
   });
 
+  it("separates Autographs current-value evidence from context-only listings", () => {
+    expect(pageSource).toContain("const autographValuationListings = autographMarketContextOnly");
+    expect(pageSource).toContain("evidenceDisposition === 'valuation_eligible'");
+    expect(pageSource).toContain("Current-Value Market Evidence");
+    expect(pageSource).toContain("Context Only — Not Used in Valuation");
+    expect(pageSource).toContain("Current-value market evidence — included in valuation");
+    expect(pageSource).toContain("not included in valuation");
+  });
+
   it("preserves populated eBay listings when visual-review returns an empty or partial payload", () => {
     expect(pageSource).toContain("function mergeEbayVisualReviewDisplayData(base: any, review: any): any");
     expect(pageSource).toContain("listings: mergedListings.length > 0 ? [...mergedListings, ...reviewOnlyListings] : reviewedListings");

@@ -1744,12 +1744,14 @@ export const testAIRouter = router({
             metadataMatchScore: s.metadataMatchScore,
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
+            metadataMatchLabel: s.metadataMatchLabel ?? (autographMarketContext ? 'Market Relevance Score' : undefined),
             // Preserve the visual filter result in the transport object used by
             // MarketplaceVisualReview; dropping these made the button appear to
             // do nothing even when the server had flagged a listing.
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
+            evidenceReasons: s.evidenceReasons ?? s.preVisualExclusionReasons ?? [],
           };
           }),
           listings: displaySummaries.slice(0, 20).map((s: any) => {
@@ -1773,9 +1775,11 @@ export const testAIRouter = router({
             metadataMatchScore: s.metadataMatchScore,
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
+            metadataMatchLabel: s.metadataMatchLabel ?? (autographMarketContext ? 'Market Relevance Score' : undefined),
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
+            evidenceReasons: s.evidenceReasons ?? s.preVisualExclusionReasons ?? [],
           };
           }),
           metrics,

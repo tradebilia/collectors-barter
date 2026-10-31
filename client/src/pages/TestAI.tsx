@@ -1257,6 +1257,27 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const showingVisualMatchMetrics = !!effectiveVisualReviewData?.visualMatchMetrics;
   const visibleMetrics = showingVisualMatchMetrics ? effectiveVisualReviewData.visualMatchMetrics : data?.metrics;
   const visualMatchCount = effectiveVisualReviewData?.visualMatchMetrics?.count ?? 0;
+  const autographMarketContextOnly = Boolean(displayData?.marketContextOnly);
+  const autographValuationListings = autographMarketContextOnly
+    ? (displayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
+    : [];
+  const autographContextListings = autographMarketContextOnly
+    ? (displayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible')
+    : [];
+  const renderListing = (l: any, i: number) => (
+    <div key={`${l.id || l.saleId || l.itemUrl || l.title}-${i}`} className="flex items-start justify-between gap-2 py-1.5 border-b border-gray-700/20 last:border-b-0">
+      <div className="flex min-w-0 flex-1 items-start gap-2">
+        {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
+        <div className="min-w-0 flex-1">
+          <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline break-words block">{l.title}</a>
+          <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
+          {l.metadataMatchScore !== undefined && <p className="text-[9px] text-cyan-200">{l.metadataMatchLabel ?? 'Metadata'} rank #{l.metadataMatchRank} · {l.metadataMatchScore}/100 · {(l.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{l.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>}
+          {autographMarketContextOnly && <p className={`text-[8px] font-semibold ${l.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : 'text-amber-300'}`}>{l.evidenceDisposition === 'valuation_eligible' ? 'Current-value market evidence — included in valuation' : `Context only — ${l.evidenceReasons?.[0] || 'not included in valuation'}`}</p>}
+        </div>
+      </div>
+      <p className="shrink-0 pl-1 text-right text-green-400 font-semibold text-sm">{formatWholeDollar(l.price)}</p>
+    </div>
+  );
 
   return (
     <div className="bg-gray-800/30 rounded-lg p-3 border border-gray-700/20 space-y-3">
@@ -1306,24 +1327,10 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {displayData?.preVisionFilter?.excludedCount > 0 && <details className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200"><summary className="cursor-pointer font-semibold">{displayData.preVisionFilter.excludedCount} active candidate{displayData.preVisionFilter.excludedCount === 1 ? '' : 's'} excluded before image comparison</summary><div className="mt-1 space-y-1 text-amber-100/80">{displayData.preVisionFilter.excludedListings.map((listing: any, index: number) => <p key={`${listing.itemUrl || listing.title}-${index}`}><strong>{listing.title}</strong>{listing.visualReviewRationale ? ` — ${listing.visualReviewRationale}` : ''}</p>)}</div></details>}
       {displayData?.debug && !displayData.debug.targetIsGraded && (displayData.debug.rawTargetExcludedGradedCount ?? 0) > 0 && <p className="text-cyan-200/70 text-[9px]">Raw/ungraded target rule: {displayData.debug.rawTargetExcludedGradedCount} listing{displayData.debug.rawTargetExcludedGradedCount === 1 ? '' : 's'} with an explicit grading/slab signal were excluded before display and image review.</p>}
       {displayData?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[9px] text-amber-200">Signed Item candidates are ranked by market relevance only. No visual cap applies because these results are never sent to visual analysis.</p>}
-      {displayData?.listings && displayData.listings.length > 0 && (
-        <div className="space-y-1 max-h-72 overflow-y-auto pr-1">
-          {displayData.listings.map((l: any, i: number) => (
-            <div key={i} className="flex items-start justify-between gap-2 py-1.5 border-b border-gray-700/20 last:border-b-0">
-              <div className="flex min-w-0 flex-1 items-start gap-2">
-                {l.imageUrl && <img src={l.imageUrl} alt="" className="w-8 h-8 object-cover rounded flex-shrink-0" />}
-                <div className="min-w-0 flex-1">
-                  <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline truncate block">{l.title}</a>
-                  <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
-                  {l.metadataMatchScore !== undefined && <p className="text-[9px] text-cyan-200">Metadata rank #{l.metadataMatchRank} · {l.metadataMatchScore}/100 · {(l.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}</p>}
-                  {l.visualReviewStatus === 'mismatch' && <div className="mt-0.5 text-[9px] leading-snug text-red-300"><p className="flex items-start gap-1 break-words whitespace-normal"><span className="shrink-0 font-bold" aria-label="Image mismatch">✕</span><span><strong>Image mismatch:</strong> {l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</span></p><details className="mt-1 pl-4"><summary className="cursor-pointer text-[8px] text-red-200/80">View full mismatch explanation</summary><p className="mt-0.5 break-words whitespace-normal text-[9px] text-red-200/90">{l.visualReviewRationale || 'The candidate image does not match the target item identity.'}</p></details></div>}
-                </div>
-              </div>
-              <p className="shrink-0 pl-1 text-right text-green-400 font-semibold text-sm">{formatWholeDollar(l.price)}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {autographMarketContextOnly ? <>
+        {autographValuationListings.length > 0 && <section className="rounded border border-emerald-700/40 bg-emerald-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Current-Value Market Evidence</p><p className="mt-0.5 text-[9px] text-emerald-100/70">These listings passed the Autographs identity and score rules and are included in the valuation metrics above.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographValuationListings.map(renderListing)}</div></section>}
+        {autographContextListings.length > 0 && <section className="rounded border border-amber-700/40 bg-amber-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">Context Only — Not Used in Valuation</p><p className="mt-0.5 text-[9px] text-amber-100/70">These listings remain visible for transparency but do not affect the current-value metrics.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographContextListings.map(renderListing)}</div></section>}
+      </> : displayData?.listings && displayData.listings.length > 0 && <div className="space-y-1 max-h-72 overflow-y-auto pr-1">{displayData.listings.map(renderListing)}</div>}
       {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">No listings found.</p>}
     </div>
   );

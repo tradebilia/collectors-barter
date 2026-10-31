@@ -121,6 +121,22 @@ function autographCandidateValue(listing: VisualSourceCandidate, aliases: string
   return "";
 }
 
+function autographCandidateSigner(listing: VisualSourceCandidate, targetSigner = ""): string {
+  const structured = autographCandidateValue(listing, ["signer", "autographSigner"]);
+  if (structured) return structured;
+  const title = String(listing.title ?? "");
+  const normalizedTarget = autographMarketValue(targetSigner);
+  // A title may mention a famous person without being signed by that person.
+  // Accept title-derived identity only when the target leads the title or an
+  // explicit “signed by” / “autographed by” phrase names the signer.
+  if (normalizedTarget) {
+    const normalizedTitle = normalizedChoice(title);
+    if (normalizedTitle === normalizedTarget || normalizedTitle.startsWith(`${normalizedTarget}_`)) return normalizedTarget;
+  }
+  const explicit = title.match(/\b(?:signed|autographed)\s+by\s+([^,|;()]+?)(?=\s+(?:on|a|an|the)\s+|[,|;()]|$)/i);
+  return explicit?.[1] ? autographMarketValue(explicit[1]) : "";
+}
+
 export function autographReplicaReason(listing: VisualSourceCandidate): string | null {
   const details = candidateStructuredDetails(listing);
   const explicitValues = [
@@ -204,7 +220,7 @@ export const AUTOGRAPH_VALUATION_MIN_SCORE = 70;
 export function autographValuationEligibility(listing: VisualSourceCandidate, targetMetadata: string): { eligible: boolean; reasons: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
   const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
-  const candidateSigner = autographCandidateValue(listing, ["signer", "autographSigner"]) || autographMarketValue(listing.title);
+  const candidateSigner = autographCandidateSigner(listing, targetSigner);
   const targetObjectType = autographTargetObjectType(targetMetadata, details);
   const candidateObjectType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
     || autographObjectType(listing.title);
@@ -249,7 +265,7 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const targetAuth = autographTargetValue(targetMetadata, details, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany"]);
   const targetInscription = autographTargetValue(targetMetadata, details, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const candidate = normalizeVisualSourceCandidate(listing);
-  const candidateSigner = autographCandidateValue(listing, ["signer", "autographSigner"]);
+  const candidateSigner = autographCandidateSigner(listing, targetSigner);
   const candidateItemType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
     || autographObjectType(candidate.title);
   const candidateCategory = autographCandidateValue(listing, ["autographCategory", "category", "sport", "entertainmentType"]);
@@ -262,7 +278,7 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
     if (!target || !candidateValue) { unknown.push(label); return; }
     if (target === candidateValue || target.includes(candidateValue) || candidateValue.includes(target)) { score += points; matched.push(label); }
   };
-  compare(targetSigner, candidateSigner || autographMarketValue(candidate.title), 35, "signer");
+  compare(targetSigner, candidateSigner, 35, "signer");
   compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 25, "signed item type");
   compare(targetCategory, candidateCategory || autographMarketValue(candidate.title), 10, "autograph category");
   const normalizedCandidateAuth = normalizedChoice(candidateAuth);

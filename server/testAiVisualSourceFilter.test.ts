@@ -178,6 +178,20 @@ describe("visual source filter", () => {
     ]));
   });
 
+  it("does not treat a different person mentioned in a title as the target signer", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "JSA" },
+    });
+    const otherSigner = { title: "Sadaharu Oh Yomiuri Giants Japan Babe Ruth Home Run Signed Autograph Baseball JSA" };
+    expect(autographMarketRelevanceScore(otherSigner, target).matched).not.toContain("signer");
+    expect(autographValuationEligibility(otherSigner, target)).toMatchObject({ eligible: false });
+    expect(autographValuationEligibility(otherSigner, target).reasons).toContain("signer is missing or does not match the target");
+    expect(autographValuationEligibility({ title: "Babe Ruth New York Yankees Single Signed Baseball JSA Authenticated" }, target)).toMatchObject({ eligible: true });
+  });
+
   it("keeps explicit country/version identity variants out of valuation", () => {
     const target = buildVisualTargetMetadata({
       title: "Babe Ruth signed baseball",
