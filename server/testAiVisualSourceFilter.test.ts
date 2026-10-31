@@ -59,6 +59,7 @@ import {
 	  stampsSetVisualCap,
 	  stampsSetVisualScore,
 	  autographMarketRelevanceScore,
+	  autographMultiSignatureReason,
 	  autographValuationEligibility,
 	  autographObjectTypeMismatchReason,
 	  autographReplicaReason,
@@ -147,6 +148,19 @@ describe("visual source filter", () => {
     expect(autographValuationEligibility({ title: "Muhammad Ali signed boxing glove" }, target)).toMatchObject({ eligible: false });
     expect(autographValuationEligibility({ title: "Muhammad Ali signed boxing glove PSA/DNA" }, target)).toMatchObject({ eligible: true });
     expect(autographValuationEligibility({ title: "Muhammad Ali signed boxing card PSA/DNA" }, target)).toMatchObject({ eligible: false });
+  });
+
+  it("keeps multi-signed candidates out of single-signer valuation", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "BAS" },
+    });
+    const multiSigned = { title: "Signed (8) Sandlot Babe Ruth Baseball Guiry Leopardi Renna +5 w/ Character BAS" };
+    expect(autographMultiSignatureReason(target, multiSigned)).toContain("8 signers");
+    expect(autographValuationEligibility(multiSigned, target)).toMatchObject({ eligible: false });
+    expect(autographValuationEligibility({ title: "Babe Ruth signed baseball BAS" }, target)).toMatchObject({ eligible: true });
   });
 
   it("keeps Signed Item candidates as ranked market context and never calls vision", async () => {

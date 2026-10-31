@@ -77,6 +77,39 @@ function autographTargetValue(targetMetadata: string, details: Record<string, un
   return autographMarketValue(aliases.map((key) => metadataValue(targetMetadata, key) || details[key]).find((value) => String(value ?? "").trim()));
 }
 
+function autographSignerCount(value: unknown): number | null {
+  const text = autographMarketValue(value);
+  if (!text) return null;
+  const names = text
+    .replace(/\s+(?:and|with)\s+/gi, "|")
+    .split(/[|,&/+;]+/)
+    .map((name) => name.trim())
+    .filter((name) => name.length >= 2);
+  return names.length > 0 ? names.length : null;
+}
+
+function explicitCandidateSignerCount(listing: VisualSourceCandidate): number | null {
+  const details = candidateStructuredDetails(listing);
+  const structuredSigner = listing.signer ?? details.signer ?? listing.autographSigner ?? details.autographSigner;
+  const structuredCount = autographSignerCount(structuredSigner);
+  const title = String(listing.title ?? "");
+  const numbered = title.match(/\bsigned\s*\(\s*(\d+)\s*\)|\b(\d+)\s+(?:signatures?|autographs?)\b/i);
+  if (numbered) return Number(numbered[1] ?? numbered[2]);
+  const plusCount = title.match(/\+\s*(\d+)\s*(?:w\/|with)\s*(?:character|signer|autograph)/i);
+  if (plusCount) return Number(plusCount[1]) + 1;
+  if (/\b(?:multi[-\s]?signed|dual[-\s]?signed|double[-\s]?signed)\b/i.test(title)) return 2;
+  return structuredCount;
+}
+
+export function autographMultiSignatureReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const details = extractTargetItemDetails(targetMetadata);
+  const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
+  const targetCount = autographSignerCount(targetSigner) ?? (targetSigner ? 1 : null);
+  const candidateCount = explicitCandidateSignerCount(listing);
+  if (!targetCount || !candidateCount || targetCount === candidateCount) return null;
+  return `Autograph candidate identifies ${candidateCount} signers while the target identifies ${targetCount}; multi-signed and single-signed items are not interchangeable for valuation. Retained as context-only.`;
+}
+
 function autographCandidateValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const candidate = normalizeVisualSourceCandidate(listing);
   const structured = aliases.map((key) => listing[key] ?? candidate.details[key]).find((value) => String(value ?? "").trim());
@@ -172,6 +205,8 @@ export function autographValuationEligibility(listing: VisualSourceCandidate, ta
   if (!targetObjectType || !candidateObjectType || targetObjectType !== candidateObjectType) {
     reasons.push("signed object type is missing or does not match the target");
   }
+  const multiSignatureReason = autographMultiSignatureReason(targetMetadata, listing);
+  if (multiSignatureReason) reasons.push(multiSignatureReason);
   const replicaReason = autographReplicaReason(listing);
   if (replicaReason) reasons.push(replicaReason);
   if (scoring.score < AUTOGRAPH_VALUATION_MIN_SCORE) reasons.push(`market relevance score ${scoring.score}/100 is below the Autographs valuation minimum of ${AUTOGRAPH_VALUATION_MIN_SCORE}/100`);
