@@ -147,6 +147,14 @@ function autographTargetObjectType(targetMetadata: string, details: Record<strin
   return autographObjectType(structuredType) || autographObjectType(extractTargetTitle(targetMetadata));
 }
 
+function autographCandidateAuthentication(listing: VisualSourceCandidate, structuredValue: string): string {
+  if (structuredValue) return structuredValue;
+  const title = String(listing.title ?? "");
+  const company = title.match(/\b(?:PSA\/?DNA|JSA|BAS|Beckett(?:\s+Authentication\s+Services)?|MLB|Fanatics|Upper\s+Deck|Steiner|TriStar)\b/i);
+  if (company?.[0]) return autographMarketValue(company[0]);
+  return /\b(?:authenticated|authentic(?:ated|ity)?)\b/i.test(title) ? "authenticated" : "";
+}
+
 export function autographObjectTypeMismatchReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const targetType = autographTargetObjectType(targetMetadata, targetDetails);
@@ -174,7 +182,7 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const candidateItemType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
     || autographObjectType(candidate.title);
   const candidateCategory = autographCandidateValue(listing, ["autographCategory", "category", "sport", "entertainmentType"]);
-  const candidateAuth = autographCandidateValue(listing, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany", "authenticator", "gradingCompany"]);
+  const candidateAuth = autographCandidateAuthentication(listing, autographCandidateValue(listing, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany", "authenticator", "gradingCompany"]));
   const candidateInscription = autographCandidateValue(listing, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const matched: string[] = [];
   const unknown: string[] = [];
@@ -186,7 +194,21 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   compare(targetSigner, candidateSigner || autographMarketValue(candidate.title), 35, "signer");
   compare(targetItemType, candidateItemType || autographMarketValue(candidate.title), 25, "signed item type");
   compare(targetCategory, candidateCategory || autographMarketValue(candidate.title), 10, "autograph category");
-  compare(targetAuth, candidateAuth || autographMarketValue(candidate.title), 20, "authentication company");
+  const normalizedCandidateAuth = normalizedChoice(candidateAuth);
+  const explicitlyUnauthenticated = /^(?:no|none|unknown|not\s+authenticated|unauthenticated|unverified|not\s+verified)$/.test(normalizedCandidateAuth);
+  if (normalizedCandidateAuth && !explicitlyUnauthenticated) {
+    score += 10;
+    matched.push("authenticated");
+  } else {
+    unknown.push("authenticated");
+  }
+  if (targetAuth && normalizedCandidateAuth && !explicitlyUnauthenticated
+    && (targetAuth === normalizedCandidateAuth || targetAuth.includes(normalizedCandidateAuth) || normalizedCandidateAuth.includes(targetAuth))) {
+    score += 10;
+    matched.push("authentication company");
+  } else if (!targetAuth || !normalizedCandidateAuth || explicitlyUnauthenticated) {
+    unknown.push("authentication company");
+  }
   if (!targetInscription || !candidateInscription) unknown.push("inscription");
   else if (targetInscription === candidateInscription || targetInscription.includes(candidateInscription) || candidateInscription.includes(targetInscription)) { score += 10; matched.push("inscription"); }
   return { score, matched, unknown };

@@ -116,6 +116,13 @@ describe("visual source filter", () => {
     }, boxingGloveTarget);
     expect(boxingGloveScore.score).toBe(60);
     expect(boxingGloveScore.matched).toEqual(expect.arrayContaining(["signer", "signed item type"]));
+    const crossCompanyBoxingGloveScore = autographMarketRelevanceScore({
+      title: "Muhammad Ali Signed EVERLAST 10oz. Boxing Glove PSA/DNA",
+    }, boxingGloveTarget);
+    expect(crossCompanyBoxingGloveScore.score).toBe(70);
+    expect(crossCompanyBoxingGloveScore.matched).toEqual(expect.arrayContaining(["authenticated"]));
+    expect(crossCompanyBoxingGloveScore.matched).not.toContain("authentication company");
+    expect(autographMarketRelevanceScore({ title: "Muhammad Ali signed boxing glove unauthenticated" }, boxingGloveTarget).score).toBe(60);
 
     const baseballGloveTarget = buildVisualTargetMetadata({
       title: "Babe Ruth signed baseball glove",
