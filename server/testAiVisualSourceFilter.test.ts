@@ -104,6 +104,31 @@ describe("visual source filter", () => {
     expect(score.matched).toEqual(expect.arrayContaining(["signer", "signed item type", "autograph category", "authentication company", "inscription"]));
   });
 
+  it("normalizes equivalent signed sports-object wording before scoring", () => {
+    const boxingGloveTarget = buildVisualTargetMetadata({
+      title: "Muhammad Ali signed boxing glove",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Muhammad Ali", signedItemType: "Boxing Glove", authenticationCompany: "Beckett Authentication Services" },
+    });
+    const boxingGloveScore = autographMarketRelevanceScore({
+      title: "Muhammad Ali Signed EVERLAST 10oz. Boxing Glove The GOAT Boxing HOFer",
+    }, boxingGloveTarget);
+    expect(boxingGloveScore.score).toBe(60);
+    expect(boxingGloveScore.matched).toEqual(expect.arrayContaining(["signer", "signed item type"]));
+
+    const baseballGloveTarget = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball glove",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball Glove" },
+    });
+    const baseballMitt = { title: "Babe Ruth signed baseball mitt" };
+    expect(autographMarketRelevanceScore(baseballMitt, baseballGloveTarget).matched).toContain("signed item type");
+    expect(autographObjectTypeMismatchReason(baseballGloveTarget, baseballMitt)).toBeNull();
+    expect(autographObjectTypeMismatchReason(baseballGloveTarget, { title: "Babe Ruth signed baseball" })).toContain("different signed object types");
+  });
+
   it("keeps Signed Item candidates as ranked market context and never calls vision", async () => {
     const target = buildVisualTargetMetadata({
       title: "Michael Jordan signed puck",

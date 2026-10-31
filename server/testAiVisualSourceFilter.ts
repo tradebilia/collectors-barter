@@ -118,6 +118,14 @@ function autographObjectType(value: unknown): string {
   if (!text || /^(?:other|unknown|n\/a|not applicable)$/.test(text)) return "";
   if (/\b(?:trading\s+card|sports\s+card|baseball\s+card|card)\b/.test(text)) return "card";
   if (/\b(?:8\s*[x×]\s*10|8x10|photograph|photo|picture)\b/.test(text)) return "photo";
+  if (/\b(?:baseball\s+(?:glove|mitt)|catcher(?:'s)?\s+mitt|first\s+baseman(?:'s)?\s+mitt)\b/.test(text)) return "baseball glove";
+  if (/\bboxing\s+glove\b/.test(text)) return "boxing glove";
+  if (/\b(?:baseball|softball)\s+bat\b/.test(text)) return "baseball bat";
+  if (/\b(?:baseball|softball)\s+(?:jersey|uniform)\b/.test(text)) return "baseball jersey";
+  if (/\bfootball\s+(?:jersey|uniform)\b/.test(text)) return "football jersey";
+  if (/\bbasketball\s+(?:jersey|uniform)\b/.test(text)) return "basketball jersey";
+  if (/\bhockey\s+(?:jersey|sweater)\b/.test(text)) return "hockey jersey";
+  if (/\b(?:football|baseball|hockey|basketball)\s+helmet\b/.test(text)) return text.match(/\b(?:football|baseball|hockey|basketball)\s+helmet\b/)![0];
   if (/\bbaseball\b/.test(text)) return "baseball";
   if (/\bfootball\b/.test(text)) return "football";
   if (/\bbasketball\b/.test(text)) return "basketball";
@@ -134,10 +142,14 @@ function autographObjectType(value: unknown): string {
   return "";
 }
 
+function autographTargetObjectType(targetMetadata: string, details: Record<string, unknown>): string {
+  const structuredType = metadataValue(targetMetadata, "signedItemType") || String(details.signedItemType ?? "");
+  return autographObjectType(structuredType) || autographObjectType(extractTargetTitle(targetMetadata));
+}
+
 export function autographObjectTypeMismatchReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetDetails = extractTargetItemDetails(targetMetadata);
-  const targetSignedItemType = metadataValue(targetMetadata, "signedItemType") || String(targetDetails.signedItemType ?? "");
-  const targetType = autographObjectType(targetSignedItemType || extractTargetTitle(targetMetadata));
+  const targetType = autographTargetObjectType(targetMetadata, targetDetails);
   if (!targetType) return null;
   const candidate = normalizeVisualSourceCandidate(listing);
   const structuredType = candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType;
@@ -153,13 +165,14 @@ export function autographMarketExclusionReason(targetMetadata: string, listing: 
 export function autographMarketRelevanceScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
   const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
-  const targetItemType = autographTargetValue(targetMetadata, details, ["signedItemType", "itemType"]);
+  const targetItemType = autographTargetObjectType(targetMetadata, details);
   const targetCategory = autographTargetValue(targetMetadata, details, ["autographCategory", "signatureCategory"]);
   const targetAuth = autographTargetValue(targetMetadata, details, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany"]);
   const targetInscription = autographTargetValue(targetMetadata, details, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const candidate = normalizeVisualSourceCandidate(listing);
   const candidateSigner = autographCandidateValue(listing, ["signer", "autographSigner"]);
-  const candidateItemType = autographCandidateValue(listing, ["signedItemType", "itemType", "productType", "form"], [/(?:signed|autographed)\s+([^|,;]+)/i]);
+  const candidateItemType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
+    || autographObjectType(candidate.title);
   const candidateCategory = autographCandidateValue(listing, ["autographCategory", "category", "sport", "entertainmentType"]);
   const candidateAuth = autographCandidateValue(listing, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany", "authenticator", "gradingCompany"]);
   const candidateInscription = autographCandidateValue(listing, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
