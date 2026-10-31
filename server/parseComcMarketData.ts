@@ -1,4 +1,5 @@
-import { buildStructuredItemQuery, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
+import { resolveTestAiGradingCompany } from '../shared/testAiCriteria';
 
 export type ParseComcLookupInput = {
   title: string;
@@ -35,9 +36,7 @@ function parseDetails(itemDetails?: string | null): JsonRecord {
 }
 
 function buildSearchQuery(input: ParseComcLookupInput): string {
-  const details = parseDetails(input.itemDetails);
-  const gradingCompany = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
-  return buildStructuredItemQuery(input.category, { ...details, gradingCompany }, [input.grade, input.itemType], input.itemType ?? '');
+  return buildMarketplaceSearchDefinition(input).query;
 }
 
 function comcCategory(details: JsonRecord): string | null {

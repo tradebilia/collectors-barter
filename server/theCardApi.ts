@@ -1,4 +1,5 @@
-import { buildStructuredItemQuery, parseTestAiDetails, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { parseTestAiDetails, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 
 export type TheCardApiLookupInput = {
   title: string;
@@ -122,9 +123,7 @@ export function buildTheCardApiQuery(input: TheCardApiLookupInput) {
   // applied as structured filters first, then retried without them because
   // eBay records may expose those fields only in the title.
   const isUnopenedProduct = cardCategory === 'sports' && (typeof details.productFormat === 'string' || input.itemType?.trim().toLowerCase().replace(/[ -]+/g, '_') === 'unopened_product');
-  const query = isUnopenedProduct
-    ? buildStructuredItemQuery(input.category, details, [], input.itemType ?? '')
-    : stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]);
+  const query = buildMarketplaceSearchDefinition(input).baseQuery || stableQueryTerms([year, manufacturer, subject, setName, cardNumber, variant]);
   const requestedGrade = canonicalGrade(input.grade, gradingCompany);
 
   const sales = new URLSearchParams({

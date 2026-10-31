@@ -22,6 +22,7 @@ import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -1527,6 +1528,16 @@ export const testAIRouter = router({
         console.log(`[Autographs Debug] signer="${signer}", itemType="${itemType}", authCompany="${authCompany}", query="${query}"`);
       }
 
+      const standardSearchDefinition = buildMarketplaceSearchDefinition({
+        title: input.title,
+        category: input.category,
+        itemType: input.itemType,
+        grade,
+        condition: input.condition,
+        certificationCompany: cert,
+        itemDetails: details,
+      });
+      query = standardSearchDefinition.query || query || input.title;
       try {
         // Build bounded complementary eBay query tiers. Direct eBay search can
         // rank abbreviated titles, exact-grade phrases, and provider-less forms
@@ -2336,6 +2347,17 @@ export const testAIRouter = router({
         if (cert && grade) query = `${input.title} ${cert} ${grade}`;
         else if (grade) query = `${input.title} ${grade}`;
       }
+
+      const standardSearchDefinition = buildMarketplaceSearchDefinition({
+        title: input.title,
+        category: input.category,
+        itemType: input.itemType,
+        grade,
+        condition: input.condition,
+        certificationCompany: cert,
+        itemDetails: details,
+      });
+      query = standardSearchDefinition.query || query || input.title;
 
       if (input.category === 'sports_cards' && !query.trim()) {
         return { query: '', listings: [], metrics: null, error: 'No structured sports-card fields were supplied. No listing-title fallback query was sent.' };

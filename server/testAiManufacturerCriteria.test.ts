@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildSportsCardTestAiCriteria, buildStructuredItemQuery, resolveTestAiGradingCompany, resolveTestAiManufacturer } from '../shared/testAiCriteria';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 
 describe('Test AI manufacturer criteria', () => {
   it('uses Custom Manufacturer rather than the Other placeholder', () => {
@@ -74,5 +75,38 @@ describe('Test AI manufacturer criteria', () => {
       year: '2024', manufacturer: 'Topps', sport: 'Hockey', productFormat: 'Box',
       authentication: 'yes', authenticationCompany: 'BBCE', fromSealedCase: 'yes',
     })).toBe('2024 Topps Hockey Box BBCE FASC');
+  });
+
+  it('uses one standard definition for Autographs across marketplace providers', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Wayne Gretzky signed puck',
+      category: 'autographs',
+      itemType: 'signed_item',
+      itemDetails: {
+        signer: 'Wayne Gretzky',
+        signedItemType: 'Hockey Puck',
+        autographCategory: 'Sports',
+        authenticationCompany: 'JSA',
+        inscriptionText: 'HOF',
+      },
+    });
+
+    expect(definition.query).toBe('autograph Wayne Gretzky Hockey Puck Sports JSA HOF');
+    expect(definition.baseQuery).toBe(definition.query);
+    expect(definition.fieldsUsed).toEqual(['signer', 'signed item type', 'autograph category', 'authentication company', 'inscription']);
+    expect(definition.marketContextOnly).toBe(true);
+  });
+
+  it('keeps Original Art broad and market-context-only in the shared definition', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Todd McFarlane original art',
+      category: 'comics',
+      itemType: 'original_art',
+      itemDetails: { artistName: 'Todd McFarlane', artworkTitle: 'Spider-Man', artType: 'Comic Book Cover Art' },
+    });
+
+    expect(definition.marketContextOnly).toBe(true);
+    expect(definition.fallbackQueries.length).toBeGreaterThan(1);
+    expect(definition.fieldsUsed).toContain('artist');
   });
 });

@@ -5,6 +5,7 @@ import type {
   SpecialistMarketplaceRecord,
 } from './specialistMarketplaceMarketData';
 import { videoGameGradersEquivalent } from '../shared/videoGameGraderEquivalence';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 
 const HAKES_BASE = 'https://www.hakes.com';
 const HAKES_PAST_AUCTIONS = `${HAKES_BASE}/auctions/past`;
@@ -27,42 +28,12 @@ function canonicalUrl(value: string): string | null {
     return url.toString();
   } catch { return null; }
 }
-function parseDetails(value?: string | null): Record<string, unknown> {
-  try {
-    const parsed = value ? JSON.parse(value) : {};
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch { return {}; }
-}
-function detail(details: Record<string, unknown>, keys: string[]): string {
-  for (const key of keys) {
-    const value = text(details[key]);
-    if (value) return value;
-  }
-  return '';
-}
 function buildHakesQuery(input: SpecialistMarketplaceLookupInput): string {
-  const details = parseDetails(input.itemDetails);
-  const category = normalized(input.category).replace(/_/g, ' ');
-  const fields = category === 'sports cards'
-    ? [detail(details, ['player', 'athlete', 'subject']), detail(details, ['year']), detail(details, ['setName', 'set', 'cardSet']), detail(details, ['cardNumber', 'cardNo', 'number'])]
-    : category === 'video games'
-      ? [detail(details, ['gameTitle', 'title']) || input.title, detail(details, ['platform', 'console']), detail(details, ['releaseYear', 'year']), detail(details, ['edition', 'version'])]
-      : category === 'comics'
-        ? [detail(details, ['comicTitle', 'series', 'title']) || input.title, detail(details, ['issueNumber', 'issueNo', 'issue', 'number']), detail(details, ['publicationYear', 'year', 'issueYear'])]
-        : [input.title, detail(details, ['year', 'releaseYear', 'edition', 'variant', 'character', 'format'])];
-  return [...new Set(fields.map(text).filter(Boolean))].join(' ').replace(/\s+/g, ' ').trim().slice(0, 240);
+  return buildMarketplaceSearchDefinition(input).baseQuery.slice(0, 240);
 }
 function significantQueryTokens(input: SpecialistMarketplaceLookupInput): string[] {
-  const details = parseDetails(input.itemDetails);
-  const category = normalized(input.category).replace(/_/g, ' ');
-  const structured = category === 'sports cards'
-    ? [detail(details, ['player', 'athlete', 'subject']), detail(details, ['year']), detail(details, ['setName', 'set', 'cardSet']), detail(details, ['cardNumber', 'cardNo', 'number'])]
-    : category === 'video games'
-      ? [detail(details, ['gameTitle', 'title']) || input.title, detail(details, ['platform', 'console']), detail(details, ['releaseYear', 'year']), detail(details, ['edition', 'version'])]
-      : category === 'comics'
-        ? [detail(details, ['comicTitle', 'series', 'title']) || input.title, detail(details, ['issueNumber', 'issueNo', 'issue', 'number']), detail(details, ['publicationYear', 'year', 'issueYear'])]
-        : [input.title, detail(details, ['year', 'releaseYear', 'edition', 'variant', 'character', 'format'])];
-  return normalized(structured.join(' ')).split(' ').filter((token) => token.length >= 3 && !['the', 'and', 'with', 'card', 'cards', 'lot', 'auction', 'vintage', 'collectible', 'collectibles'].includes(token));
+  const query = buildMarketplaceSearchDefinition(input).baseQuery;
+  return normalized(query).split(' ').filter((token) => token.length >= 3 && !['the', 'and', 'with', 'card', 'cards', 'lot', 'auction', 'vintage', 'collectible', 'collectibles'].includes(token));
 }
 function extractDate(value: string): string | null {
   const match = value.match(/\b(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\.?\s+\d{1,2},?\s+20\d{2}\b/i) ?? value.match(/\b20\d{2}[-/]\d{1,2}[-/]\d{1,2}\b/);
