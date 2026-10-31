@@ -113,6 +113,43 @@ export function autographReplicaReason(listing: VisualSourceCandidate): string |
   return `Autograph candidate explicitly declares ${declared}; replica or reproduction signed objects are excluded from market-range evidence.`;
 }
 
+function autographObjectType(value: unknown): string {
+  const text = String(value ?? "").trim().toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  if (!text || /^(?:other|unknown|n\/a|not applicable)$/.test(text)) return "";
+  if (/\b(?:trading\s+card|sports\s+card|baseball\s+card|card)\b/.test(text)) return "card";
+  if (/\b(?:8\s*[x×]\s*10|8x10|photograph|photo|picture)\b/.test(text)) return "photo";
+  if (/\bbaseball\b/.test(text)) return "baseball";
+  if (/\bfootball\b/.test(text)) return "football";
+  if (/\bbasketball\b/.test(text)) return "basketball";
+  if (/\bhockey\s+puck|\bpuck\b/.test(text)) return "hockey puck";
+  if (/\bjersey\b/.test(text)) return "jersey";
+  if (/\bhelmet\b/.test(text)) return "helmet";
+  if (/\bbat\b/.test(text)) return "bat";
+  if (/\bglove\b/.test(text)) return "glove";
+  if (/\bposter\b/.test(text)) return "poster";
+  if (/\bprogram\b/.test(text)) return "program";
+  if (/\bticket\b/.test(text)) return "ticket";
+  if (/\b(?:book|novel|paperback|hardcover)\b/.test(text)) return "book";
+  if (/\bdocument\b/.test(text)) return "document";
+  return "";
+}
+
+export function autographObjectTypeMismatchReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetSignedItemType = metadataValue(targetMetadata, "signedItemType") || String(targetDetails.signedItemType ?? "");
+  const targetType = autographObjectType(targetSignedItemType || extractTargetTitle(targetMetadata));
+  if (!targetType) return null;
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const structuredType = candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType;
+  const candidateType = autographObjectType(structuredType) || autographObjectType(candidate.title);
+  if (!candidateType || candidateType === targetType) return null;
+  return `Autograph candidate is a signed ${candidateType}, but the target is a signed ${targetType}; different signed object types are excluded from market-range evidence.`;
+}
+
+export function autographMarketExclusionReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  return autographReplicaReason(listing) ?? autographObjectTypeMismatchReason(targetMetadata, listing);
+}
+
 export function autographMarketRelevanceScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
   const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
@@ -4735,9 +4772,10 @@ export async function filterVisualSourceCandidates<
 	    };
 	  }
 	  if (isAutographSignedItemTarget(targetMetadata)) {
-	    const autographReplicaExcludedCount = preparedListings.reduce((count, listing) => count + (autographReplicaReason(listing) ? 1 : 0), 0);
-	    const autographEligibleListings = preparedListings.filter((listing) => !autographReplicaReason(listing));
-	    const rankedAutographListings = annotateAutographMarketCandidates(autographEligibleListings, targetMetadata);
+	    const autographExcluded = preparedListings.map((listing) => autographMarketExclusionReason(targetMetadata, listing));
+	    const autographExcludedCount = autographExcluded.filter(Boolean).length;
+    const autographEligibleListings = preparedListings.filter((_, index) => !autographExcluded[index]);
+    const rankedAutographListings = annotateAutographMarketCandidates(autographEligibleListings, targetMetadata);
 	    const contextListings = rankedAutographListings.map((listing, index) => ({
 	      ...listing,
 	      visualRequirement: 'not_required_autograph_market_context',
@@ -4753,10 +4791,10 @@ export async function filterVisualSourceCandidates<
 	    return {
 	      listings: [],
 	      contextListings,
-	      preVisualExcludedCount: autographReplicaExcludedCount,
+	      preVisualExcludedCount: autographExcludedCount,
 	      status: 'skipped_no_target_image',
 	      reviewedCount: 0,
-	      removedCount: autographReplicaExcludedCount,
+	      removedCount: autographExcludedCount,
 	      retainedUnreviewedCount: contextListings.length,
 	      reviews: [],
 	      note: 'Autographs / Signed Item market range only: candidates are ranked as similar market evidence and are not sent to visual analysis.',

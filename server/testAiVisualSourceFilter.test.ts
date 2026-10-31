@@ -59,6 +59,7 @@ import {
 	  stampsSetVisualCap,
 	  stampsSetVisualScore,
 	  autographMarketRelevanceScore,
+	  autographObjectTypeMismatchReason,
 	  autographReplicaReason,
 	  isAutographSignedItemTarget,
 	  pokemonVisualCap,
@@ -117,7 +118,7 @@ describe("visual source filter", () => {
       targetMetadata: target,
       listings: [
         { title: "Michael Jordan signed puck JSA", itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "JSA" }), imageUrl: "https://example.com/strong.jpg" },
-        { title: "Michael Jordan signed baseball PSA/DNA", itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Baseball", authenticationCompany: "PSA/DNA" }), imageUrl: "https://example.com/weak.jpg" },
+        { title: "Michael Jordan signed puck PSA/DNA", itemDetails: JSON.stringify({ signer: "Michael Jordan", signedItemType: "Puck", authenticationCompany: "PSA/DNA" }), imageUrl: "https://example.com/weak.jpg" },
       ],
     });
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
@@ -170,6 +171,33 @@ describe("visual source filter", () => {
     expect(isAutographSignedItemTarget(target)).toBe(false);
     expect(result.listings).toEqual([]);
     expect(result.contextListings?.[0].evidenceDisposition).toBe("context_only");
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+  });
+
+  it("excludes clearly different signed objects from a signed-baseball market range", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "JSA" },
+    });
+    const photo = { title: "Babe Ruth signed 8x10 photo JSA", imageUrl: "https://example.com/photo.jpg" };
+    const card = { title: "Babe Ruth signed baseball card JSA", imageUrl: "https://example.com/card.jpg" };
+    const baseball = { title: "Babe Ruth signed baseball JSA", imageUrl: "https://example.com/baseball.jpg" };
+    const unknown = { title: "Babe Ruth signed autograph JSA", imageUrl: "https://example.com/unknown-object.jpg" };
+    expect(autographObjectTypeMismatchReason(target, photo)).toContain("signed photo");
+    expect(autographObjectTypeMismatchReason(target, card)).toContain("signed card");
+    expect(autographObjectTypeMismatchReason(target, baseball)).toBeNull();
+    expect(autographObjectTypeMismatchReason(target, unknown)).toBeNull();
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "Autograph market range",
+      targetMetadata: target,
+      listings: [photo, card, baseball, unknown],
+    });
+    expect(result.contextListings?.map((listing) => listing.title)).toEqual([baseball.title, unknown.title]);
+    expect(result.removedCount).toBe(2);
+    expect(result.preVisualExcludedCount).toBe(2);
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
   });
 
