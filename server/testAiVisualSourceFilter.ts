@@ -159,7 +159,9 @@ function autographObjectType(value: unknown): string {
   if (/\bbasketball\s+(?:jersey|uniform)\b/.test(text)) return "basketball jersey";
   if (/\bhockey\s+(?:jersey|sweater)\b/.test(text)) return "hockey jersey";
   if (/\b(?:football|baseball|hockey|basketball)\s+helmet\b/.test(text)) return text.match(/\b(?:football|baseball|hockey|basketball)\s+helmet\b/)![0];
-  if (/\bbaseball\b/.test(text)) return "baseball";
+  // A possessive/theme phrase such as “Baseball’s Greatest Players” does not
+  // identify a physical baseball. Card wording was handled above first.
+  if (/\bbaseball\b(?!['’]s\b)/.test(text)) return "baseball";
   if (/\bfootball\b/.test(text)) return "football";
   if (/\bbasketball\b/.test(text)) return "basketball";
   if (/\bhockey\s+puck|\bpuck\b/.test(text)) return "hockey puck";
@@ -178,6 +180,15 @@ function autographObjectType(value: unknown): string {
 function autographTargetObjectType(targetMetadata: string, details: Record<string, unknown>): string {
   const structuredType = metadataValue(targetMetadata, "signedItemType") || String(details.signedItemType ?? "");
   return autographObjectType(structuredType) || autographObjectType(extractTargetTitle(targetMetadata));
+}
+
+export function autographIdentityConflictReason(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetTitle = extractTargetTitle(targetMetadata);
+  const candidateTitle = String(listing.title ?? "");
+  const versionPattern = /\b(?:japanese|korean|chinese|taiwanese|foreign|international|european|mexican|canadian|australian|country)\s+(?:version|edition|variant|release|issue)\b|\b(?:version|edition|variant)\s+(?:of\s+)?(?:the\s+)?(?:japanese|korean|chinese|taiwanese|foreign|international|european|mexican|canadian|australian|country)\b/i;
+  const candidateMatch = candidateTitle.match(versionPattern);
+  if (!candidateMatch || versionPattern.test(targetTitle)) return null;
+  return `Autograph candidate declares a ${candidateMatch[0]} identity variant that is not present on the target; retained as context-only rather than valuation evidence.`;
 }
 
 function autographCandidateAuthentication(listing: VisualSourceCandidate, structuredValue: string): string {
@@ -205,6 +216,8 @@ export function autographValuationEligibility(listing: VisualSourceCandidate, ta
   if (!targetObjectType || !candidateObjectType || targetObjectType !== candidateObjectType) {
     reasons.push("signed object type is missing or does not match the target");
   }
+  const identityConflictReason = autographIdentityConflictReason(targetMetadata, listing);
+  if (identityConflictReason) reasons.push(identityConflictReason);
   const multiSignatureReason = autographMultiSignatureReason(targetMetadata, listing);
   if (multiSignatureReason) reasons.push(multiSignatureReason);
   const replicaReason = autographReplicaReason(listing);

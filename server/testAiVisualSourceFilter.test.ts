@@ -59,6 +59,7 @@ import {
 	  stampsSetVisualCap,
 	  stampsSetVisualScore,
 	  autographMarketRelevanceScore,
+	  autographIdentityConflictReason,
 	  autographMultiSignatureReason,
 	  autographValuationEligibility,
 	  autographObjectTypeMismatchReason,
@@ -161,6 +162,32 @@ describe("visual source filter", () => {
     expect(autographMultiSignatureReason(target, multiSigned)).toContain("8 signers");
     expect(autographValuationEligibility(multiSigned, target)).toMatchObject({ eligible: false });
     expect(autographValuationEligibility({ title: "Babe Ruth signed baseball BAS" }, target)).toMatchObject({ eligible: true });
+  });
+
+  it("does not treat Baseball's theme wording as a physical baseball", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "BAS" },
+    });
+    const card = { title: "Babe Ruth signed Baseball's Greatest Players card BAS" };
+    expect(autographValuationEligibility(card, target)).toMatchObject({ eligible: false });
+    expect(autographValuationEligibility(card, target).reasons).toEqual(expect.arrayContaining([
+      "signed object type is missing or does not match the target",
+    ]));
+  });
+
+  it("keeps explicit country/version identity variants out of valuation", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "BAS" },
+    });
+    const variant = { title: "Babe Ruth Japanese Version signed baseball BAS" };
+    expect(autographIdentityConflictReason(target, variant)).toContain("Japanese Version");
+    expect(autographValuationEligibility(variant, target)).toMatchObject({ eligible: false });
   });
 
   it("keeps Signed Item candidates as ranked market context and never calls vision", async () => {
