@@ -6,3 +6,9 @@ Added explicit cap-band regressions. Focused visual-filter tests passed 173/173,
 
 ## Stamps / Single Stamp field update — October 30, 2026
 Updated the inventory form so Gum Type and Hinge Status are required fields in the Required section. Gum Type now uses Original Gum (OG), Partial Original Gum (POG), Disturbed Gum (DG), Regummed (RG), No Gum (NG), Issued Without Gum (N/A), and Unknown. Hinge Status now uses Never Hinged (NH), Lightly Hinged (LH), Hinged (H), Heavily Hinged (HH), Hinge Remnant (HR), Unknown, and Not Applicable (N/A). Existing analyzer aliases remain compatible with the full stored labels. Focused tests passed 185/185, TypeScript passed, production build passed, and diff/layout checks passed. No database, migration, credential, provider, deployment, or publishing changes.
+
+## Preserved project safeguards
+P0 remediation completed. This development project uses the existing custom database and the read-only database baseline remains authoritative. Do not apply migrations, seed scripts, or destructive scripts as part of this work. P1 performance and maintainability work remains separate from the approved feature changes.
+
+## Stamps / Single Stamp analyzer refinement — October 30, 2026
+The marketplace/eBay filter now evaluates Hinge Status and Gum Type independently instead of using one combined hinge/gum signal. It normalizes the approved full names and abbreviations, preserves unknown values as unknown, returns separate mismatch reasons, and keeps the Single Stamp ranking at 100 points: Hinge Status 3 points and Gum Type 2 points. Focused Stamps regressions passed 186/186, TypeScript passed, production build passed, score-total and diff checks passed, and the handoff contract passed 13/13. The complete suite reached 1,877 passing / 7 skipped; the remaining Hake’s network timeout is unrelated and pre-existing. No database, migration, credential, provider, deployment, or publishing changes.

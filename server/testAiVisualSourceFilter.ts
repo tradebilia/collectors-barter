@@ -2715,6 +2715,34 @@ function stampValueConflict(targetValue: unknown, candidateValue: unknown, label
   if (!target || !candidate || target === candidate || candidate.includes(target) || target.includes(candidate)) return null;
   return `Stamp ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${String(candidateValue)}.`;
 }
+function stampHingeComparable(value: unknown): string {
+  const normalized = stampComparable(value);
+  if (!normalized || normalized === "unknown") return "";
+  if (["nh", "never hinged", "unhinged", "mnh"].includes(normalized)) return "never_hinged";
+  if (["lh", "lightly hinged"].includes(normalized)) return "lightly_hinged";
+  if (["h", "hinged", "mh"].includes(normalized)) return "hinged";
+  if (["hh", "heavily hinged"].includes(normalized)) return "heavily_hinged";
+  if (["hr", "hinge remnant"].includes(normalized)) return "hinge_remnant";
+  if (["n a", "not applicable"].includes(normalized)) return "not_applicable";
+  return normalized;
+}
+function stampGumComparable(value: unknown): string {
+  const normalized = stampComparable(value);
+  if (!normalized || normalized === "unknown") return "";
+  if (["og", "original gum"].includes(normalized)) return "original_gum";
+  if (["pog", "partial original gum"].includes(normalized)) return "partial_original_gum";
+  if (["dg", "disturbed gum"].includes(normalized)) return "disturbed_gum";
+  if (["rg", "regummed"].includes(normalized)) return "regummed";
+  if (["ng", "no gum"].includes(normalized)) return "no_gum";
+  if (["n a", "issued without gum", "not applicable"].includes(normalized)) return "not_applicable";
+  return normalized;
+}
+function stampStatusConflict(targetValue: unknown, candidateValue: unknown, label: string, normalize: (value: unknown) => string): string | null {
+  const target = normalize(targetValue);
+  const candidate = normalize(candidateValue);
+  if (!target || !candidate || target === candidate) return null;
+  return `Stamp ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${String(candidateValue)}.`;
+}
 function stampFormatConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const targetProfile = classifyStampFormat({
@@ -2749,7 +2777,20 @@ function stampsIdentityConflict(targetMetadata: string, listing: VisualSourceCan
     checks.push([target.scottNumber ?? target.catalogNumber ?? target.catalogNo, "Scott/catalog number", ["scottNumber", "catalogNumber", "catalogNo"], [/(?:Scott|catalog|cat\.?)\s*#?\s*([A-Z]?\d{1,8})\b/i]]);
     checks.push([target.denomination, "denomination", ["denomination"], [/\b(\$?\d+(?:\.\d+)?\s*(?:c|cent|cents|d|dollar|dollars|p|pence|pound|pounds))\b/i]]);
     checks.push([target.mintOrUsed, "mint/used status", ["mintOrUsed", "status"], [/\b(Mint|Used|Unused|CTO)\b/i]]);
-    checks.push([target.hinged ?? target.gum, "hinge/gum status", ["hinged", "hingeStatus", "gum"], [/\b(Never Hinged|MNH|Mint Never Hinged|Hinged|MH|Lightly Hinged|Hinge Remnant|Original Gum|No Gum)\b/i]]);
+    const hingeConflict = stampStatusConflict(
+      target.hinged ?? target.hingeStatus,
+      stampExplicitValue(listing, ["hinged", "hingeStatus"], [/\b(Never Hinged|MNH|Mint Never Hinged|NH|Lightly Hinged|LH|Hinged|MH|H|Heavily Hinged|HH|Hinge Remnant|HR)\b/i]),
+      "hinge status",
+      stampHingeComparable,
+    );
+    if (hingeConflict) return hingeConflict;
+    const gumConflict = stampStatusConflict(
+      target.gum ?? target.gumType ?? target.gumCondition,
+      stampExplicitValue(listing, ["gum", "gumType", "gumCondition"], [/\b(Original Gum|OG|Partial Original Gum|POG|Disturbed Gum|DG|Regummed|RG|No Gum|NG|Issued Without Gum)\b/i]),
+      "gum type",
+      stampGumComparable,
+    );
+    if (gumConflict) return gumConflict;
     checks.push([target.perforation, "perforation", ["perforation"], [/\b(perforated|imperforate|imperf|perforation\s*[0-9.]+)\b/i]]);
     checks.push([target.watermark, "watermark", ["watermark"], [/\b(watermark(?:ed)?|no watermark)\b/i]]);
     checks.push([target.overprintSurcharge ?? target.overprint, "overprint/surcharge", ["overprintSurcharge", "overprint", "surcharge"], [/\b(overprint(?:ed)?|surcharge|airmail|semi[- ]?postal)\b/i]]);
@@ -3287,7 +3328,7 @@ export function paperMoneyVisualCap(score: number): number {
 }
 const STAMPS_SINGLE_SCORE_FIELDS = [
   ['scottNumber', 25], ['country', 15], ['year', 15], ['denomination', 10], ['format', 10],
-  ['mintOrUsed', 10], ['hingeGum', 5], ['perforation', 5], ['watermark', 3], ['overprintSurcharge', 2],
+  ['mintOrUsed', 10], ['hingeStatus', 3], ['gumType', 2], ['perforation', 5], ['watermark', 3], ['overprintSurcharge', 2],
 ] as const;
 function stampScoreText(value: unknown): string {
   return stampComparable(value);
@@ -3307,6 +3348,14 @@ function stampScoreValueMatches(targetValue: unknown, listing: VisualSourceCandi
   if (!candidate) return null;
   const normalizedCandidate = stampScoreText(candidate);
   return normalizedCandidate === target || normalizedCandidate.includes(target) || target.includes(normalizedCandidate);
+}
+function stampStatusMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[], normalize: (value: unknown) => string): boolean | null {
+  const target = normalize(targetValue);
+  if (!target) return null;
+  const candidate = stampExplicitValue(listing, aliases, patterns);
+  if (!candidate) return null;
+  const normalizedCandidate = normalize(candidate);
+  return normalizedCandidate ? normalizedCandidate === target : null;
 }
 function stampFormatMatches(targetMetadata: string, listing: VisualSourceCandidate): boolean | null {
   const targetDetails = extractTargetItemDetails(targetMetadata);
@@ -3328,7 +3377,8 @@ export function stampsSingleVisualScore(listing: VisualSourceCandidate, targetMe
   add('denomination', 10, stampScoreValueMatches(target.denomination, listing, ['denomination'], [/\b(\$?\d+(?:\.\d+)?\s*(?:c|cent|cents|d|dollar|dollars|p|pence|pound|pounds))\b/i]));
   add('format', 10, stampFormatMatches(targetMetadata, listing));
   add('mintOrUsed', 10, stampScoreValueMatches(target.mintOrUsed, listing, ['mintOrUsed', 'status'], [/\b(Mint|Used|Unused|CTO)\b/i]));
-  add('hingeGum', 5, stampScoreValueMatches(target.hinged ?? target.gum, listing, ['hinged', 'hingeStatus', 'gum'], [/\b(Never Hinged|MNH|Mint Never Hinged|Hinged|MH|Lightly Hinged|Hinge Remnant|Original Gum|No Gum)\b/i]));
+  add('hingeStatus', 3, stampStatusMatches(target.hinged ?? target.hingeStatus, listing, ['hinged', 'hingeStatus'], [/\b(Never Hinged|MNH|Mint Never Hinged|NH|Lightly Hinged|LH|Hinged|MH|H|Heavily Hinged|HH|Hinge Remnant|HR)\b/i], stampHingeComparable));
+  add('gumType', 2, stampStatusMatches(target.gum ?? target.gumType ?? target.gumCondition, listing, ['gum', 'gumType', 'gumCondition'], [/\b(Original Gum|OG|Partial Original Gum|POG|Disturbed Gum|DG|Regummed|RG|No Gum|NG|Issued Without Gum)\b/i], stampGumComparable));
   add('perforation', 5, stampScoreValueMatches(target.perforation, listing, ['perforation'], [/\b(perforated|imperforate|imperf|perforation\s*[0-9.]+)\b/i]));
   add('watermark', 3, stampTextMatches(target.watermark, text));
   add('overprintSurcharge', 2, stampTextMatches(target.overprintSurcharge ?? target.overprint, text));

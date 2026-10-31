@@ -205,17 +205,31 @@ describe("visual source filter", () => {
       grade: "MNH",
       fullItemDetails: {
         country: "United States", scottNumber: "C1", year: "1918", denomination: "24c",
-        mintOrUsed: "Mint", hinged: "Never Hinged", perforation: "12", watermark: "Single line",
+        mintOrUsed: "Mint", hinged: "Never Hinged", gum: "Original Gum", perforation: "12", watermark: "Single line",
         overprintSurcharge: "Airmail", format: "single stamp",
       },
     });
     const score = stampsSingleVisualScore({
       title: "United States Scott C1 1918 24c Airmail MNH Never Hinged Perforated 12 Single line watermark",
       imageUrl: "https://example.com/stamp.jpg",
-      itemDetails: JSON.stringify({ denomination: "24c", mintOrUsed: "Mint", hinged: "Never Hinged", perforation: "12", watermark: "Single line", overprintSurcharge: "Airmail" }),
+      itemDetails: JSON.stringify({ denomination: "24c", mintOrUsed: "Mint", hinged: "Never Hinged", gum: "OG", perforation: "12", watermark: "Single line", overprintSurcharge: "Airmail" }),
     }, target);
     expect(score.score).toBe(100);
-    expect(score.matched).toEqual(expect.arrayContaining(["scottNumber", "country", "year", "denomination", "format", "mintOrUsed", "hingeGum"]));
+    expect(score.matched).toEqual(expect.arrayContaining(["scottNumber", "country", "year", "denomination", "format", "mintOrUsed", "hingeStatus", "gumType"]));
+  });
+  it("scores Hinge Status and Gum Type independently and identifies a gum mismatch", () => {
+    const target = buildVisualTargetMetadata({
+      title: "United States Scott C1 24c Mint Never Hinged Original Gum",
+      category: "stamps",
+      itemType: "single_stamp",
+      fullItemDetails: { country: "United States", scottNumber: "C1", year: "1918", denomination: "24c", mintOrUsed: "Mint", hinged: "Never Hinged", gum: "Original Gum", format: "single stamp" },
+    });
+    const partial = stampsSingleVisualScore({ title: "United States Scott C1 1918 24c MNH", itemDetails: JSON.stringify({ gum: "Unknown" }) }, target);
+    expect(partial.matched).toContain("hingeStatus");
+    expect(partial.matched).not.toContain("gumType");
+    expect(partial.unknown).toContain("gumType");
+    const wrongGum = buildDeclaredIdentityReviews([{ title: "United States Scott C1 24c MNH No Gum", imageUrl: "https://example.com/stamp.jpg" }], target);
+    expect(wrongGum[0]?.rationale).toContain("gum type differs");
   });
   it("scores Stamps / Stamp Set or Sheet on the approved identity signals", () => {
     const target = buildVisualTargetMetadata({
