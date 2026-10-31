@@ -21,7 +21,7 @@ import { lookupIgdbGameMetadata } from './igdbMetadata';
 import { getRawgProviderStatus, lookupRawgGameMetadata } from './rawgMetadata';
 import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
-import { buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
+import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -1522,7 +1522,7 @@ export const testAIRouter = router({
           ? (details.customAuthenticationCompany || '')
           : (input.certificationCompany || '');
         const inscription = details.inscription || details.inscriptionText || details.personalization || '';
-        const parts = [signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
+        const parts = [AUTOGRAPH_SEARCH_DESIGNATION, signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
         console.log(`[Autographs Debug] signer="${signer}", itemType="${itemType}", authCompany="${authCompany}", query="${query}"`);
       }
@@ -2302,7 +2302,7 @@ export const testAIRouter = router({
           ? (details.customAuthenticationCompany || '')
           : (input.certificationCompany || '');
         const inscription = details.inscription || details.inscriptionText || details.personalization || '';
-        const parts = [signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
+        const parts = [AUTOGRAPH_SEARCH_DESIGNATION, signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
       }
       // Pokemon

@@ -37,6 +37,13 @@ describe('Test AI manufacturer criteria', () => {
     expect(query).toContain('MS');
   });
 
+  it('adds the default autograph designation before Signed Item identity fields', () => {
+    expect(buildStructuredItemQuery('autographs', {
+      signer: 'Wayne Gretzky', signedItemType: 'Hockey Puck', autographCategory: 'Sports',
+      authenticationCompany: 'JSA', inscriptionText: 'HOF',
+    })).toBe('autograph Wayne Gretzky Hockey Puck Sports JSA HOF');
+  });
+
   it('replaces Other with the custom grading-company field', () => {
     const details = { gradingCompany: 'Other', customGradingCompany: 'KSA' };
     expect(resolveTestAiGradingCompany(details, 'Other')).toBe('KSA');

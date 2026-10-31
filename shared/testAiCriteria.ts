@@ -129,6 +129,8 @@ function cautiousMatrixRunout(details: Record<string, unknown>): string {
 }
 
 /** Builds an ordered, title-independent identity term list for request previews and adapters. */
+export const AUTOGRAPH_SEARCH_DESIGNATION = 'autograph';
+
 export function buildStructuredItemQuery(category: string, itemDetails: unknown, extra: Array<string | null | undefined> = [], itemType = ''): string {
   const details = parseTestAiDetails(itemDetails);
   const normalizedCategory = category.trim().toLowerCase().replace(/[- ]+/g, '_');
@@ -162,7 +164,8 @@ export function buildStructuredItemQuery(category: string, itemDetails: unknown,
     if (/^\d+(?:\.\d+)?$/.test(normalized)) return normalizeTestAiGrade(normalized, gradingCompany, normalizedCategory);
     return normalized.toLowerCase() === 'other' && gradingCompany ? gradingCompany : normalized;
   });
-  return [...baseValues, unopenedProduct ? '' : gradingCompany, ...extraValues]
+  const designationValues = normalizedCategory === 'autographs' ? [AUTOGRAPH_SEARCH_DESIGNATION] : [];
+  return [...designationValues, ...baseValues, unopenedProduct ? '' : gradingCompany, ...extraValues]
     .filter(Boolean)
     .filter((value, index, all) => all.indexOf(value) === index)
     .join(' ')
