@@ -1141,6 +1141,11 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const [visualReviewLoading, setVisualReviewLoading] = useState(false);
   const reviewRunId = useRef(0);
   const visualReviewMutation = trpc.testAI.reviewEbayVisualData.useMutation();
+  // tRPC mutation objects may expose a new mutateAsync function identity on a
+  // render. Keep the latest function available without making the review
+  // effect restart and set state on every render.
+  const visualReviewMutateAsyncRef = useRef(visualReviewMutation.mutateAsync);
+  visualReviewMutateAsyncRef.current = visualReviewMutation.mutateAsync;
   const requestQueryPreview = useMemo(() => {
     const details = item.itemDetails ? (() => {
       try { return JSON.parse(item.itemDetails); } catch { return {}; }
@@ -1217,7 +1222,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       for (const batch of reviewBatchInputs) {
         if (cancelled || Date.now() >= deadlineAt || !batch.listings.length) break;
         try {
-          const result = await visualReviewMutation.mutateAsync({ ...batch, reviewDeadlineAt: deadlineAt });
+          const result = await visualReviewMutateAsyncRef.current({ ...batch, reviewDeadlineAt: deadlineAt });
           if (cancelled || runId !== reviewRunId.current) return;
           completed.push(result);
           setVisualReviewData(mergeVisualReviewBatches(completed));
@@ -1232,7 +1237,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
     };
     void runBatches();
     return () => { cancelled = true; };
-  }, [reviewBaseEnabled, reviewBatchInputs, visualReviewMutation.mutateAsync]);
+  }, [reviewBaseEnabled, reviewBatchInputs]);
   useEffect(() => {
     setReviewRequested(Boolean(item.primaryPhotoUrl));
     setShowVisualMatchMetrics(false);

@@ -169,6 +169,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(visualSource).toContain("args.reviewDeadlineAt");
   });
 
+  it("does not restart the visual-review effect when tRPC changes mutateAsync identity", () => {
+    expect(pageSource).toContain("const visualReviewMutateAsyncRef = useRef(visualReviewMutation.mutateAsync);");
+    expect(pageSource).toContain("visualReviewMutateAsyncRef.current({ ...batch, reviewDeadlineAt: deadlineAt })");
+    expect(pageSource).toContain("}, [reviewBaseEnabled, reviewBatchInputs]);");
+    expect(pageSource).not.toContain("}, [reviewBaseEnabled, reviewBatchInputs, visualReviewMutation.mutateAsync]);");
+  });
+
   it("uses a POST-capable mutation because the configured query transport has a 2,000-character URL ceiling", () => {
     const reviewProcedure = procedureSource("reviewEbayVisualData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(reviewProcedure).toContain(".mutation(async ({ ctx, input }) => {");
