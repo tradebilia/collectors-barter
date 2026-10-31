@@ -185,6 +185,26 @@ describe('normalizeTestAiEvidence', () => {
     ]));
   });
 
+  it('counts Autographs market-range evidence as current-value without visual-analyzer transport', () => {
+    const summary = normalizeTestAiEvidence({ title: 'Babe Ruth signed baseball', category: 'autographs' }, [{
+      id: 'ebay_active',
+      label: 'eBay Active Listings',
+      kind: 'market_current',
+      status: 'success',
+      visualAnalysisRequired: false,
+      market: {
+        returnedRecordCount: 20,
+        currentListingCount: 20,
+        currentValueSaleCount: 1,
+        currentValuePrices: [19500],
+      },
+    }]);
+
+    const outcome = summarizeTestAiSourceRunOutcomes(summary.sourceDecisions ?? [])[0];
+    expect(outcome).toMatchObject({ returned: 20, currentValue: 1, context: 19, visualAnalysisRequired: false });
+    expect(outcome?.accepted).toBe(0);
+  });
+
   it('keeps coin certification evidence attributable and does not create market evidence from a guide value', () => {
     const summary = normalizeTestAiEvidence({
       title: '1923 Peace Dollar',

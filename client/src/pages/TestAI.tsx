@@ -2797,9 +2797,13 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     const observations: EvidenceSourceObservation[] = [];
     const add = (observation: EvidenceSourceObservation) => observations.push(observation);
     if (enabledSources.has('ebay_active')) {
+      const autographMarketContext = item.category === 'autographs' && ebayData?.marketContextOnly === true;
       const visualMatches = (ebayData?.visualReviewListings ?? []).filter((listing: any) => listing.visualReviewStatus === 'match' && Number(listing.price) > 0);
-      const analyzerRecords = visualMatches.map((listing: any, index: number) => toAnalyzerRecord(listing, index, 'current_value', 'Identity-matched active asking price; not a completed sale.'));
-      add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { returnedRecordCount: ebayData?.listings?.length ?? 0, currentListingCount: ebayData?.listings?.length ?? 0, currentValueSaleCount: analyzerRecords.length, currentValuePrices: analyzerRecords.flatMap((record: AnalyzerRecordDetail) => record.price != null ? [record.price] : []), analyzerRecords }, message: ebayData?.error ?? null });
+      const currentValueListings = autographMarketContext
+        ? (ebayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0)
+        : visualMatches;
+      const analyzerRecords = currentValueListings.map((listing: any, index: number) => toAnalyzerRecord(listing, index, 'current_value', autographMarketContext ? 'Autographs market-range evidence; not sent to visual analysis.' : 'Identity-matched active asking price; not a completed sale.'));
+      add({ id: 'ebay_active', label: 'eBay Active Listings', kind: 'market_current', status: evidenceStatus(ebayData), market: { returnedRecordCount: ebayData?.listings?.length ?? 0, currentListingCount: ebayData?.listings?.length ?? 0, currentValueSaleCount: analyzerRecords.length, currentValuePrices: analyzerRecords.flatMap((record: AnalyzerRecordDetail) => record.price != null ? [record.price] : []), analyzerRecords }, visualAnalysisRequired: !autographMarketContext, message: ebayData?.error ?? null });
     }
     if (enabledSources.has('hipstamp')) add({ id: 'hipstamp', label: 'HIPStamp Active Listings', kind: 'market_current', status: evidenceStatus(hipstampData), market: { returnedRecordCount: hipstampData?.listings?.length ?? 0, currentListingCount: hipstampData?.listings?.length ?? 0 }, message: hipstampData?.error ?? null });
     if (enabledSources.has('hipstamp_sold')) add({ id: 'hipstamp_sold', label: 'HIPStamp Sold / Closed', kind: 'market_historical', status: evidenceStatus(hipstampSoldData), market: { returnedRecordCount: hipstampSoldData?.listings?.length ?? 0, recentSaleCount: hipstampSoldData?.listings?.length ?? 0, historicalSaleCount: 0, undatedSaleCount: 0 }, message: hipstampSoldData?.error ?? (hipstampSoldData?.listings?.length ? `Store-scoped closed listings marked sold; format matched to ${hipstampSoldData?.debug?.targetFormat?.label ?? 'the selected stamp'}. Not marketplace-wide sales evidence.` : null) });
@@ -2873,6 +2877,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     }
     if (enabledSources.has('sold_comps')) {
       const listings = soldCompsData?.listings ?? [];
+      const autographMarketContext = item.category === 'autographs' && soldCompsData?.marketContextOnly === true;
       const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
       const currentValue = accepted.filter((listing: any) => {
         const timestamp = Date.parse(String(listing.endedAt ?? ''));
@@ -2901,6 +2906,7 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
           historicalTrendPrices: historicalTrend.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0),
           undatedSaleCount: listings.filter((listing: any) => !Number.isFinite(Date.parse(String(listing.endedAt ?? '')))).length,
         },
+        visualAnalysisRequired: !autographMarketContext,
         message: soldCompsData?.error ?? null,
       });
     }

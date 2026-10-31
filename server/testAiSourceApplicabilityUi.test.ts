@@ -284,6 +284,12 @@ describe('manual Test AI selector boundary', () => {
     expect(outcomeSource).toContain('timed out');
   });
 
+  it('keeps market-context evidence out of the visual-analyzer submission count', () => {
+    expect(outcomeSource).toContain('const sentToAnalyzer = outcome.visualAnalysisRequired');
+    expect(source).toContain('visualAnalysisRequired: !autographMarketContext');
+    expect(source).toContain("listing.evidenceDisposition === 'valuation_eligible'");
+  });
+
   it('requires eBay Active visual review before current-value evidence when images exist', () => {
     expect(source).toContain('useState(Boolean(item.primaryPhotoUrl))');
     expect(source).toContain('setReviewRequested(Boolean(item.primaryPhotoUrl))');

@@ -47,6 +47,8 @@ export type EvidenceSourceObservation = {
     undatedSaleCount?: number;
     analyzerRecords?: AnalyzerRecordDetail[];
   };
+  /** False for market-range workflows such as Autographs that never use visual analysis. */
+  visualAnalysisRequired?: boolean;
   message?: string | null;
 };
 
@@ -106,6 +108,7 @@ export type EvidenceSourceDecision = {
   treatment: 'valuation_candidate' | 'valuation_guide' | 'current_value' | 'historical_trend' | 'context_only' | 'certification_context' | 'unavailable';
   analyzerWeightPct: number | null;
   treatmentReason: string;
+  visualAnalysisRequired: boolean;
   message?: string | null;
 };
 
@@ -120,6 +123,7 @@ export type TestAiSourceRunOutcome = {
   historicalTrend: number;
   excludedFromValuation: number;
   context: number;
+  visualAnalysisRequired: boolean;
   timedOut: boolean;
   message?: string | null;
 };
@@ -541,6 +545,7 @@ function buildSourceDecision(source: EvidenceSourceObservation): EvidenceSourceD
     treatment,
     analyzerWeightPct: treatment === 'valuation_guide' ? 25 : null,
     treatmentReason,
+    visualAnalysisRequired: source.visualAnalysisRequired !== false,
     message: source.message,
   };
 }
@@ -562,6 +567,7 @@ export function summarizeTestAiSourceRunOutcomes(decisions: EvidenceSourceDecisi
     historicalTrend: decision.historicalTrend,
     excludedFromValuation: decision.excludedFromValuation,
     context: decision.context,
+    visualAnalysisRequired: decision.visualAnalysisRequired,
     timedOut: decision.status === 'error' && /\b(?:timeout|timed out|aborted)\b/i.test(String(decision.message ?? '')),
     message: decision.message,
   }));
