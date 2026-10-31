@@ -832,6 +832,7 @@
   "shared/gradingCompanies.ts",
   "shared/gradingCompanyConfig.ts",
   "shared/gradingScales.ts",
+  "shared/marketplaceSearchDefinition.ts",
   "shared/nearestLocationSort.ts",
   "shared/permissionPendingMarketSources.ts",
   "shared/priceChartingCoinGuide.ts",

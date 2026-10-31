@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
 
 export type ComicConnectLookupInput = {
   title: string;
@@ -94,9 +95,10 @@ function buildSearchQuery(input: ComicConnectLookupInput): string {
 
   // When structured CGC/issue details are unavailable, remove grading metadata
   // rather than sending the full analyzer title to ComicConnect's broad search.
-  const stripped = text(input.title)
+  const standardQuery = buildMarketplaceSearchDefinition(input).query;
+  const stripped = text(standardQuery || input.title)
     .replace(/\s+(?:CGC|CBCS|PSA|BGS|SGC)\b.*$/i, '')
-    .replace(/\s+\d+(?:\.\d+)?\s*$/i, '')
+    .replace(/\s+\d+(?:\.\d+)?\s*$/, '')
     .trim();
   return (stripped || input.title.trim()).slice(0, 120).trim();
 }

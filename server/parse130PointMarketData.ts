@@ -31,7 +31,7 @@ function parseDetails(itemDetails?: string | null): JsonRecord {
 
 /** Build only from structured item fields; the stored listing title is never used as a query fallback. */
 export function buildParse130PointSearch(input: Parse130PointLookupInput) {
-  const query = buildMarketplaceSearchDefinition({ ...input, title: input.title ?? '' }).query;
+  const query = buildMarketplaceSearchDefinition({ ...input, title: '' }).query;
   const params = new URLSearchParams({ sort: 'EndTimeSoonest', limit: '200', marketplace: 'all' });
   if (query) params.set('query', query);
   return { query, url: `${PARSE_API_BASE}/${PARSE_130POINT_API_ID}/search_sold_items?${params.toString()}` };

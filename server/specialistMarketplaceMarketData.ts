@@ -135,7 +135,8 @@ function comicBookRealmSearchQuery(input: SpecialistMarketplaceLookupInput): str
   const details = parseDetails(input.itemDetails);
   const issue = text(details.issueNumber ?? details.issueNo ?? details.issue ?? details.number ?? input.title.match(/#\s*([0-9A-Za-z-]+)/i)?.[1]);
   const series = text(details.comicTitle ?? details.title) || input.title.replace(/#\s*[0-9A-Za-z-]+.*$/i, '').trim();
-  return `${series || input.title} ${issue}`.replace(/\s+/g, ' ').trim().slice(0, 180);
+  const standard = buildMarketplaceSearchDefinition(input);
+  return `${series || standard.baseQuery || input.title} ${issue}`.replace(/\s+/g, ' ').trim().slice(0, 180);
 }
 
 /**
@@ -760,7 +761,7 @@ export function buildSpecialistMarketplaceRequest(input: SpecialistMarketplaceLo
     return { url: LCG_GALLERY_URL, error: null };
   }
   if (input.sourceId === 'nate_sanders' && source.searchContract === 'automatic_title_search') {
-    const query = text(input.title).slice(0, 180);
+    const query = buildMarketplaceSearchDefinition(input).query.slice(0, 180);
     return { url: `https://natedsanders.com/catalog.aspx?searchby=3&searchvalue=${encodeURIComponent(query)}`, error: null };
   }
   if (input.sourceId === 'tcgplayer_reef' && source.searchContract === 'automatic_title_search') {
@@ -1393,7 +1394,7 @@ async function lookupGoldinPublicLot(input: SpecialistMarketplaceLookupInput, so
 
 async function lookupWeissPublicCompletedLots(input: SpecialistMarketplaceLookupInput): Promise<SpecialistMarketplaceLookupResult> {
   const source = getSandboxSpecialistSource('weiss')!;
-  const query = text(input.title).slice(0, 240);
+  const query = buildMarketplaceSearchDefinition(input).query.slice(0, 240);
   const requestUrl = query ? buildWeissCompletedLotSearchUrl(query) : WEISS_PUBLIC_COMPLETED_LOTS_ENDPOINT;
   const empty = {
     source: 'weiss' as const,
@@ -1449,7 +1450,7 @@ function reefBase(sourceId: 'tcgplayer_reef', input: SpecialistMarketplaceLookup
     source: sourceId,
     label: source.label,
     searchContract: source.searchContract,
-    query: text(input.title).slice(0, 180),
+    query: buildMarketplaceSearchDefinition(input).query.slice(0, 180),
     sales: [] as SpecialistMarketplaceRecord[],
     context: [] as SpecialistMarketplaceRecord[],
     requestUrl,

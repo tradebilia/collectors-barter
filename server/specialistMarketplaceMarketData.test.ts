@@ -27,6 +27,13 @@ const weissComic = {
   itemDetails: JSON.stringify({ year: '1962', issueNumber: '2', title: 'Incredible Hulk' }),
 };
 
+const nateAutograph = {
+  sourceId: 'nate_sanders' as const,
+  title: 'Donald Trump Signed Photograph',
+  category: 'autographs',
+  itemDetails: JSON.stringify({ signer: 'Donald Trump', signedItemType: 'Photograph', autographCategory: 'Sports & Entertainment' }),
+};
+
 const morphyLotUrl = 'https://auctions.morphyauctions.com/LOT123456.aspx';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -311,6 +318,12 @@ describe('bounded specialist marketplace adapters', () => {
         error: null,
       });
     }
+  });
+
+  it('uses the shared Autographs identity definition for Nate Sanders keyword search', () => {
+    const request = buildSpecialistMarketplaceRequest(nateAutograph);
+    expect(request.error).toBeNull();
+    expect(request.url).toContain('searchvalue=autograph%20Donald%20Trump%20Photograph%20Sports%20%26%20Entertainment');
   });
 
   it('blocks Goldin Stamps, Music, and Disney Pins plus Weiss and Hake’s Video Games lookups as not applicable', async () => {
