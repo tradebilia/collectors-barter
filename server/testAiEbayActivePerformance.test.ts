@@ -129,6 +129,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain('className="h-full w-full object-contain"');
     expect(pageSource).toContain('loading="lazy"');
     expect(pageSource).toContain('title="Candidate image"');
+    expect(pageSource).toContain("function CustomSourceCandidateRow");
+    expect(pageSource).toContain("Search result #");
+    expect(pageSource).toContain("Ranking score: not used for this custom lookup");
+    expect(pageSource).not.toContain("object-cover");
   });
 
   it("keeps excluded eBay candidates visibly auditable with image and rank data", () => {
