@@ -196,7 +196,17 @@ export function findMaterialMetadataConflicts(
     && !((options.ignoreSubjectiveConditionDifferences || targetIsGraded) && field === 'sealedStatus' && !targetHasExplicitSealedState)
     && !(category === 'music' && ['condition', 'mediaCondition'].includes(field))
     && !isIndividualCertificateOrHolderIdentifier(field));
-  const candidateTitle = String(candidate.title ?? '');
+  const candidateTitle = String(
+    candidate.title
+      ?? candidate.itemTitle
+      ?? candidate.listingTitle
+      ?? candidate.name
+      ?? candidate.productName
+      ?? candidateRecord.title
+      ?? candidateRecord.itemTitle
+      ?? candidateRecord.listingTitle
+      ?? '',
+  );
   const conflicts: MetadataConflict[] = [];
 
   for (const field of fields) {
@@ -219,6 +229,12 @@ export function findMaterialMetadataConflicts(
       continue;
     }
     if (directCandidateValue && compact(directCandidateValue) !== compact(targetValue)) {
+      const videoGameSpecializedStateField = category === 'video_games'
+        && ['workingCondition', 'originalPackaging', 'originalBoxIncluded'].includes(field);
+      // Video Game identity logic understands equivalent provider wording such
+      // as Tested Working/Working and Boxed/Yes. Do not let the generic layer
+      // reject those values before the category-specific rule evaluates them.
+      if (videoGameSpecializedStateField) continue;
       const videoGameAccessoryTitleMatch = category === 'video_games'
         && normalizeCategory(String(target.itemType ?? '')) === 'accessory'
         && ['accessoryName', 'accessoryType'].includes(field)

@@ -1557,7 +1557,16 @@ export function normalizeVisualSourceCandidate(listing: VisualSourceCandidate): 
   ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0);
   return {
     details,
-    title: candidateText(listing.title),
+    title: firstCandidateText(
+      listing.title,
+      listing.itemTitle,
+      listing.listingTitle,
+      listing.name,
+      listing.productName,
+      details.title,
+      details.itemTitle,
+      details.listingTitle,
+    ),
     imageUrls,
     providerReference: providerReference || null,
     quantity: quantityValue ?? null,
@@ -2074,7 +2083,7 @@ function videoGameIdentityConflict(targetMetadata: string, listing: VisualSource
     if (!targetComparable || /^(unknown|n_a|na|none|not_applicable)$/.test(targetComparable)) continue;
     const titleConfirmsSpecificAccessoryField = targetType === "accessory"
       && ["accessory type", "accessory name", "manufacturer"].includes(label)
-      && titleContainsValue(listing.title, targetValue);
+      && titleContainsValue(normalizeVisualSourceCandidate(listing).title, targetValue);
     const candidateRawValue = targetType === "accessory"
       ? (titleConfirmsSpecificAccessoryField
         ? String(targetValue)
@@ -3418,7 +3427,7 @@ function videoGameAccessoryScoreValueMatches(targetValue: unknown, listing: Visu
   if (!target || /^(?:unknown|n_a|na|none|not_applicable)$/.test(target)) return null;
   // Prefer a specific product identity in the title over a generic provider
   // label such as "Controller".
-  if (["name", "type", "manufacturer"].includes(label) && titleContainsValue(listing.title, targetValue)) return true;
+  if (["name", "type", "manufacturer"].includes(label) && titleContainsValue(normalizeVisualSourceCandidate(listing).title, targetValue)) return true;
   const explicitAliases = aliases.filter((alias) => alias !== "title");
   const explicitCandidate = videoGameAccessoryValue(listing, explicitAliases);
   const candidateValue = videoGameAccessoryValue(listing, aliases, patterns);

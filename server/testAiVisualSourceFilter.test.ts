@@ -531,6 +531,12 @@ describe("visual source filter", () => {
     expect(providerGenericLabelScore.score).toBe(90);
     expect(providerGenericLabelScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]));
     expect(buildDeclaredIdentityReviews([providerGenericLabelCandidate], powerGloveTarget)).toEqual([]);
+    const aliasedTitleCandidate = {
+      itemTitle: "PAX Power Glove NES Famicom Controller Tested Working Boxed Vintage Japan",
+      itemDetails: JSON.stringify({ accessoryName: "PAX Power Glove Nintendo Famicom NES Controller", accessoryType: "Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Tested Working", originalPackaging: "Boxed" }),
+    };
+    expect(videoGameAccessoryVisualScore(aliasedTitleCandidate, powerGloveTarget).score).toBe(100);
+    expect(buildDeclaredIdentityReviews([aliasedTitleCandidate], powerGloveTarget)).toEqual([]);
   });
 
   it("uses marketplace aspects and accessory aliases for Video Games / Accessory", () => {
