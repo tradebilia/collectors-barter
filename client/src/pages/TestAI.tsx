@@ -1277,6 +1277,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
           <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline break-words block">{l.title}</a>
           <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
           {l.metadataMatchScore !== undefined && <p className="text-[9px] text-cyan-200">{l.metadataMatchLabel ?? 'Metadata'} rank #{l.metadataMatchRank} · {l.metadataMatchScore}/100 · {(l.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{l.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>}
+          {l.visualRequirement === 'not_required_no_target_image' && <p className="text-[8px] font-semibold text-amber-300">Context only — not visually analyzed because the target item image was unavailable.</p>}
           {autographMarketContextOnly && <p className={`text-[8px] font-semibold ${l.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : 'text-amber-300'}`}>{l.evidenceDisposition === 'valuation_eligible' ? 'Current-value market evidence — included in valuation' : `Context only — ${l.evidenceReasons?.[0] || 'not included in valuation'}`}</p>}
         </div>
       </div>

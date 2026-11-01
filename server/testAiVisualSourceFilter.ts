@@ -5049,10 +5049,23 @@ export async function filterVisualSourceCandidates<
   }
   const target = safeHttps(args.targetImageUrl);
   const remainingUnrankedEligible = rankedSelection ? [] : eligibleListings;
+  // A ranking cap selects the strongest candidates for visual review, but a
+  // missing target image means visual review cannot start. Keep those selected
+  // candidates visible as context-only instead of silently dropping ranks 1..N.
+  const rankedSelectedContextListings = rankedSelection
+    ? rankedSelection.selected.map((candidate) => ({
+      ...candidate.item,
+      visualRequirement: "not_required_no_target_image",
+      visualReviewStatus: "not_reviewed",
+      visualReviewRationale: "Not visually analyzed because the target item has no usable image for comparison.",
+      evidenceDisposition: "context_only",
+      evidenceReasons: ["target image unavailable; visual analysis did not run"],
+    } as T))
+    : [];
   if (!target)
     return {
       listings: [],
-      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
+      contextListings: [...rankedSelectedContextListings, ...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
         ...listing,
         ...(rankedItems.get(preparedListings.indexOf(listing)) ?? {}),
         visualRequirement: "not_required_pre_visual",
@@ -5078,7 +5091,7 @@ export async function filterVisualSourceCandidates<
   if (!candidates.length) {
     return {
       listings: [],
-      contextListings: [...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
+      contextListings: [...rankedSelectedContextListings, ...preVisualContextListings, ...preVisualScoreExcludedListings, ...remainingUnrankedEligible.map((listing) => ({
         ...listing,
         ...(rankedItems.get(preparedListings.indexOf(listing)) ?? {}),
         visualRequirement: "not_required_pre_visual",

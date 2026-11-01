@@ -1737,7 +1737,9 @@ export const testAIRouter = router({
             }
           : null;
         // Legacy performance contract: const displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
-        let displaySummaries = visualActiveFilter?.listings ?? visualInputListings;
+        let displaySummaries = visualActiveFilter
+          ? (visualActiveFilter.listings.length > 0 ? visualActiveFilter.listings : (visualActiveFilter.contextListings ?? []))
+          : visualInputListings;
         if (autographMarketContext) displaySummaries = visualActiveFilter?.contextListings ?? [];
         const metrics = computeMetrics(autographMarketContext
           ? displaySummaries.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')

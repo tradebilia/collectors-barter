@@ -733,9 +733,10 @@ describe("visual source filter", () => {
       ],
     });
     expect(result.listings).toEqual([]);
-    expect(result.contextListings).toHaveLength(1);
-    expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 45, visualReviewStatus: "not_reviewed" });
-    expect(result.contextListings?.[0]?.visualReviewRationale).toContain("below the visual-review minimum of 60");
+    expect(result.contextListings).toHaveLength(2);
+    expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 1, visualReviewStatus: "not_reviewed", visualRequirement: "not_required_no_target_image" });
+    expect(result.contextListings?.[1]).toMatchObject({ metadataMatchRank: 2, metadataMatchScore: 45, visualReviewStatus: "not_reviewed" });
+    expect(result.contextListings?.[1]?.visualReviewRationale).toContain("below the visual-review minimum of 60");
   });
 
   it("caps exact Coins / Single Coin candidates at eight visual-review requests and retains the ninth as ranked context", async () => {
@@ -1144,6 +1145,30 @@ describe("visual source filter", () => {
     expect(result.contextListings).toHaveLength(2);
     expect(result.contextListings?.[0]).toMatchObject({ metadataMatchRank: 1, visualReviewStatus: "not_reviewed", evidenceDisposition: "context_only" });
     expect(result.contextListings?.[0].metadataMatchScore).toBeGreaterThan(result.contextListings?.[1].metadataMatchScore as number);
+  });
+
+  it("keeps the top-ranked video-game candidates visible when no target image exists", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "NES Nintendo Power Glove",
+      category: "video_games",
+      itemType: "accessory",
+      fullItemDetails: { accessoryType: "controller", accessoryName: "Power Glove", platform: "NES" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: 'ebay',
+      sourceLabel: "eBay Active Listings",
+      targetMetadata: target,
+      listings: [
+        { title: "NES Nintendo Power Glove", accessoryType: "controller", accessoryName: "Power Glove", platform: "NES", imageUrl: "https://example.com/rank-1.jpg" },
+        { title: "NES Nintendo Power Glove controller", accessoryType: "controller", accessoryName: "Power Glove", platform: "NES", imageUrl: "https://example.com/rank-2.jpg" },
+        { title: "Nintendo NES Power Glove replacement parts", imageUrl: "https://example.com/rank-3.jpg" },
+      ],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.listings).toEqual([]);
+    expect(result.contextListings?.slice(0, 2).map((item) => item.metadataMatchRank)).toEqual([1, 2]);
+    expect(result.contextListings?.slice(0, 2).every((item) => item.visualRequirement === "not_required_no_target_image")).toBe(true);
+    expect(result.contextListings?.slice(0, 2).every((item) => String(item.visualReviewRationale).includes("target item has no usable image"))).toBe(true);
   });
 
   it("applies universal quantity and material-state rules only to explicit contradictions", () => {

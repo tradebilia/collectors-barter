@@ -146,6 +146,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("object-contain p-0.5");
   });
 
+  it("keeps selected ranks visible as context when visual analysis has no target image", () => {
+    expect(visualSource).toContain("rankedSelectedContextListings");
+    expect(visualSource).toContain("not_required_no_target_image");
+    expect(routerSource).toContain("visualActiveFilter.listings.length > 0 ? visualActiveFilter.listings : (visualActiveFilter.contextListings ?? [])");
+    expect(pageSource).toContain("not visually analyzed because the target item image was unavailable");
+  });
+
   it("applies the shared pre-vision gate to active asking prices", () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: "video_games",
