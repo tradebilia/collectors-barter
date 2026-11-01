@@ -256,7 +256,8 @@ export function autographObjectTypeMismatchReason(targetMetadata: string, listin
   const targetType = autographTargetObjectType(targetMetadata, targetDetails);
   if (!targetType) return null;
   const candidate = normalizeVisualSourceCandidate(listing);
-  const structuredType = candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType;
+  const autographDetails = candidateStructuredDetails(listing);
+  const structuredType = labeledCandidateValue(autographDetails, ["signedItemType", "autographItemType", "itemType", "productType", "form"]) ?? listing.signedItemType;
   const candidateType = autographObjectType(structuredType) || autographObjectType(candidate.title);
   if (!candidateType || candidateType === targetType) return null;
   return `Autograph candidate is a signed ${candidateType}, but the target is a signed ${targetType}; different signed object types are excluded from market-range evidence.`;
@@ -1506,7 +1507,19 @@ type NormalizedVisualSourceCandidate = VisualSourceCandidate & {
 function candidateText(value: unknown): string {
   return String(value ?? "").trim();
 }
-
+function canonicalCandidateTitle(listing: VisualSourceCandidate): string {
+  return normalizeVisualSourceCandidate(listing).title;
+}
+function normalizedFieldKey(value: unknown): string {
+  return String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+function labeledCandidateValue(details: Record<string, unknown>, aliases: string[]): unknown {
+  const wanted = new Set(aliases.map(normalizedFieldKey));
+  for (const [key, value] of Object.entries(details)) {
+    if (wanted.has(normalizedFieldKey(key)) && candidateText(value)) return value;
+  }
+  return undefined;
+}
 function firstCandidateText(...values: unknown[]): string {
   return values.map(candidateText).find(Boolean) ?? "";
 }
@@ -1860,7 +1873,7 @@ function candidateExplicitGradingState(listing: VisualSourceCandidate): Explicit
   const candidateGrade = metadataText(listing.grade ?? details.grade, "");
   const candidateGrader = metadataText(listing.certificationCompany ?? listing.gradingCompany ?? listing.grader ?? details.certificationCompany ?? details.gradingCompany ?? details.grader, "");
   if (candidateGrade && candidateGrader && !/^(?:raw|ungraded|unknown|none|n\/?a)$/i.test(candidateGrade) && !/^(?:raw|ungraded|unknown|none|n\/?a)$/i.test(candidateGrader)) return "graded";
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:PSA|AFA|CGC|CBCS|BGS|SGC|PCGS|NGC|WATA|VGA)\s*(?:graded\s*)?(?:[A-Z]{1,3}\s*)?\d{1,3}(?:\.\d+)?\b|\b(?:graded|slabbed|encapsulated)\b/i.test(title)) return "graded";
   if (/\b(?:raw|ungraded|un[- ]slabbed|no\s+(?:slab|holder))\b/i.test(title)) return "raw";
   return null;
@@ -1949,7 +1962,7 @@ function candidateProductForm(targetMetadata: string, listing: VisualSourceCandi
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   const details = candidateStructuredDetails(listing);
   const structured = listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (category === "sports_cards") return sportsCardProductForm(structured) ?? sportsCardTitleProductForm(title);
   if (category === "video_games") return videoGameProductForm(details.sealedStatus ?? details.packageStatus ?? details.packaging ?? structured) ?? videoGameTitleProductForm(title);
   if (category === "vintage_toys") return vintageToyProductForm(details.sealedStatus ?? details.packagingType ?? details.packageType ?? details.complete ?? details.isComplete ?? structured) ?? vintageToyTitleProductForm(title);
@@ -1971,7 +1984,7 @@ function videoGameCandidateItemType(listing: VisualSourceCandidate): string {
   const details = candidateStructuredDetails(listing);
   const structured = videoGameItemTypeLabel(normalizedChoice(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form ?? ""));
   if (structured) return structured;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:manual|instruction booklet|box|case)\s+only\b/i.test(title)) return "accessory";
   if (/\b(?:console|system|hardware)\s+only\b/i.test(title)) return "console";
   if (/\b(?:controller|gamepad|memory card|power adapter|ac adapter|cable|cord)\b/i.test(title)) return "accessory";
@@ -1997,10 +2010,10 @@ function videoGameValuesAgree(targetValue: unknown, candidateValue: unknown, lab
 function videoGameCandidateValue(listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
   for (const alias of aliases) {
-    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias] ?? labeledCandidateValue(details, [alias]);
     if (value != null && String(value).trim()) return String(value);
   }
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   for (const pattern of patterns) {
     const match = title.match(pattern);
     if (match?.[1]) return match[1];
@@ -2048,7 +2061,7 @@ function videoGameAccessoryValue(listing: VisualSourceCandidate, aliases: string
     const value = listing[alias] ?? details[alias] ?? details[videoGameAccessoryMetadataKey(alias)];
     if (value != null && String(value).trim()) return String(value);
   }
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   for (const pattern of patterns) {
     const match = title.match(pattern);
     if (match?.[1]) return match[1];
@@ -2207,7 +2220,7 @@ function sportsCardExplicitState(
       ?? (details.serialNumber ?? details.printRun ? "yes" : undefined);
   const structured = sportsCardBinaryState(structuredValue);
   if (structured) return structured;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (field === "rookieCard") {
     if (/\b(?:non[-\s]?rookie|not\s+rookie|no\s+rookie|non[-\s]?rc)\b/i.test(title)) return "no";
     if (/\b(?:rookie|RC)\b/i.test(title)) return "yes";
@@ -2259,7 +2272,7 @@ function sportsCardSetConflict(targetMetadata: string, listing: VisualSourceCand
   if (targetProductForm(targetMetadata) !== "set") return null;
 
   const details = extractTargetItemDetails(targetMetadata);
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   const candidateForm = candidateProductForm(targetMetadata, listing);
   // A set target must never send an explicitly individual card to vision. This
   // is intentionally conservative: only direct single-card evidence is gated;
@@ -2346,7 +2359,7 @@ function sportsCardUnopenedProductConflict(targetMetadata: string, listing: Visu
 
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const candidateDetails = candidateStructuredDetails(listing);
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   const targetFormat = sportsCardUnopenedFormat(targetDetails.productFormat);
   const candidateFormat = sportsCardUnopenedFormat(candidateDetails.productFormat ?? candidateDetails.format ?? listing.productFormat ?? listing.format, title);
   if (targetFormat && candidateFormat && targetFormat !== candidateFormat) {
@@ -2412,7 +2425,7 @@ function musicCandidateMediaCondition(listing: VisualSourceCandidate): MusicMedi
   const details = candidateStructuredDetails(listing);
   const structured = musicMediaCondition(listing.condition ?? details.condition ?? details.mediaCondition);
   if (structured) return structured;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:factory\s+sealed|new\s*[/|]?\s*sealed|sealed)\b/i.test(title)) return "sealed";
   if (/\bfor\s+parts\b|\bparts\s+only\b/i.test(title)) return "for_parts";
   if (/\bexcellent\b/i.test(title)) return "excellent";
@@ -2455,7 +2468,7 @@ function musicCandidateFormat(listing: VisualSourceCandidate): string {
   const details = candidateStructuredDetails(listing);
   const explicit = musicItemTypeLabel(listing.itemType ?? listing.format ?? listing.productType ?? details.itemType ?? details.format ?? details.productType);
   if (explicit) return explicit;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:8[- ]?track|eight[- ]?track)\b/i.test(title)) return "8-track tape";
   if (/\b(?:compact disc|compact disk|audio CD|CD)\b/i.test(title)) return "compact disc";
   if (/\b(?:cassette|audio tape|tape)\b/i.test(title)) return "cassette tape";
@@ -2469,7 +2482,7 @@ function musicComparableValue(value: unknown): string {
 
 function musicExplicitValue(details: Record<string, unknown>, ...keys: string[]): string {
   for (const key of keys) {
-    const value = details[key];
+    const value = details[key] ?? labeledCandidateValue(details, [key]);
     if (value !== undefined && value !== null && candidateText(value)) return candidateText(value);
   }
   return "";
@@ -2535,7 +2548,7 @@ function vintageToyCandidateItemType(listing: VisualSourceCandidate): string {
   const details = candidateStructuredDetails(listing);
   const explicit = vintageToyItemTypeLabel(listing.itemType ?? listing.productType ?? listing.form ?? listing.saleForm ?? details.itemType ?? details.productType ?? details.form);
   if (explicit) return explicit;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:action\s+figure|doll)\b/i.test(title)) return "action figure/doll";
   if (/\b(?:board\s+game|puzzle)\b/i.test(title)) return "board game/puzzle";
   if (/\belectronic\s+toy\b/i.test(title)) return "electronic toy";
@@ -2564,7 +2577,7 @@ function vintageToyValuesConflict(targetValue: unknown, candidateValue: unknown,
 function vintageToyCandidateValue(listing: VisualSourceCandidate, aliases: string[]): string {
   const details = candidateStructuredDetails(listing);
   for (const alias of aliases) {
-    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias] ?? labeledCandidateValue(details, [alias]);
     if (value != null && candidateText(value)) return candidateText(value);
   }
   return "";
@@ -2650,7 +2663,7 @@ function vintageToyIdentityConflict(targetMetadata: string, listing: VisualSourc
     addText("packaging type", targetDetails.packagingType, ["packagingType", "packageType", "packaging"]);
     addText("working features", targetDetails.workingFeatures, ["workingFeatures", "features"]);
   }
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   for (const [label, targetValue, aliases, kind] of checks) {
     if (targetValue == null || !candidateText(targetValue)) continue;
     const candidateValue = vintageToyCandidateValue(listing, aliases);
@@ -2693,7 +2706,7 @@ function vintageToyCompletenessConflict(targetMetadata: string, listing: VisualS
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const candidateDetails = candidateStructuredDetails(listing);
   const targetCompleteness = vintageToyCompleteness(targetDetails.completeness ?? targetDetails.isComplete ?? targetDetails.complete ?? extractTargetTitle(targetMetadata));
-  const candidateCompleteness = vintageToyCompleteness(candidateDetails.completeness ?? candidateDetails.isComplete ?? candidateDetails.complete ?? String(listing.title ?? ""));
+  const candidateCompleteness = vintageToyCompleteness(candidateDetails.completeness ?? candidateDetails.isComplete ?? candidateDetails.complete ?? canonicalCandidateTitle(listing));
   if (!targetCompleteness || !candidateCompleteness || targetCompleteness === candidateCompleteness) return null;
   return `Vintage-toy completeness differs: target is explicitly ${targetCompleteness}, but the candidate explicitly declares ${candidateCompleteness}.`;
 }
@@ -2707,7 +2720,7 @@ function explicitCompoundNumberConflict(targetMetadata: string, listing: VisualS
   const details = extractTargetItemDetails(targetMetadata);
   const target = compoundNumber(details.cardNumber ?? details.catalogNumber);
   if (!target) return null;
-  const candidate = String(listing.title ?? "").match(/(?:\b(?:card(?:\s*(?:no\.?|number))?|catalog(?:\s*(?:no\.?|number))?|cat\.?)\s*#?|#\s*)(\d{1,6}[A-Za-z]?)\s*\/\s*(\d{1,7})\b/i);
+  const candidate = canonicalCandidateTitle(listing).match(/(?:\b(?:card(?:\s*(?:no\.?|number))?|catalog(?:\s*(?:no\.?|number))?|cat\.?)\s*#?|#\s*)(\d{1,6}[A-Za-z]?)\s*\/\s*(\d{1,7})\b/i);
   if (!candidate) return null;
   const candidateNumber = { numerator: candidate[1].toLowerCase(), denominator: candidate[2] };
   if (candidateNumber.numerator !== target.numerator || candidateNumber.denominator === target.denominator) return null;
@@ -2751,10 +2764,10 @@ function coinComparable(value: unknown): string {
 }
 function coinExplicitValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
-  const structured = aliases.map((key) => listing[key] ?? details[key]).find((value) => String(value ?? "").trim());
+  const structured = aliases.map((key) => listing[key] ?? details[key] ?? labeledCandidateValue(details, [key])).find((value) => String(value ?? "").trim());
   if (structured != null) return String(structured).trim();
   for (const pattern of titlePatterns) {
-    const match = String(listing.title ?? "").match(pattern);
+    const match = canonicalCandidateTitle(listing).match(pattern);
     if (match?.[1]) return match[1].trim();
   }
   return "";
@@ -2782,7 +2795,7 @@ function coinSingleIdentityConflict(targetMetadata: string, listing: VisualSourc
     if (conflict) return conflict;
   }
   const targetOriginal = normalizedChoice(target.isOriginal ?? target.authenticity ?? target.restrike ?? target.restruck);
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (targetOriginal === "yes" && /\b(?:replica|copy|counterfeit|facsimile|reproduction)\b/i.test(title)) return "Coin authenticity differs: target is original/authentic, but the candidate explicitly declares a replica, copy, counterfeit, or facsimile.";
   if (targetOriginal === "no" && /\brestrike\b/i.test(title)) return "Coin restrike status differs from the target.";
   return null;
@@ -2790,7 +2803,7 @@ function coinSingleIdentityConflict(targetMetadata: string, listing: VisualSourc
 function coinSetPackagingValue(listing: VisualSourceCandidate): string {
   const structured = coinExplicitValue(listing, ["originalPackagingIncluded", "originalPackaging", "packaging"]);
   if (structured) return structured;
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:without|no)\s+(?:original\s+)?(?:packaging|box|ケース)\b/i.test(title)) return "No";
   if (/\b(?:original\s+packaging|original\s+box|with\s+(?:the\s+)?box)\b/i.test(title)) return "Yes";
   return "";
@@ -2800,7 +2813,7 @@ function coinSetIdentityConflict(targetMetadata: string, listing: VisualSourceCa
   const target = extractTargetItemDetails(targetMetadata);
   const candidate = normalizeVisualSourceCandidate(listing);
   const candidateDetails = candidateStructuredDetails(listing);
-  const title = String(listing.title ?? "");
+  const title = canonicalCandidateTitle(listing);
   const setLanguage = /\b(?:coin\s+set|mint\s+set|proof\s+set|commemorative\s+set|type\s+set|set\s+of\s+\d+)\b/i.test(title);
   const individualCoinLanguage = /\b(?:single\s+coin|coin\s+only|one\s+coin)\b/i.test(title)
     || (Boolean(candidateGrader(candidate)) && !setLanguage && !/\b(?:set|collection|lot)\b/i.test(title));
@@ -2848,7 +2861,7 @@ function movieCandidateItemType(listing: VisualSourceCandidate): 'individual_mov
   if (/individual_movie|single_movie|individual/.test(explicit)) return 'individual_movie';
   if (/box_set|boxset|complete_series|collection_set/.test(explicit)) return 'box_set';
   if (/collection|lot/.test(explicit)) return 'collection/lot';
-  const title = String(listing.title ?? '');
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:box\s*set|complete\s+series|complete\s+collection|season\s*[0-9]|trilogy|quadrilogy|bundle|movie\s+lot|film\s+lot)\b/i.test(title)) return 'box_set';
   if (/\b(?:collection|lot)\b/i.test(title)) return 'collection/lot';
   return '';
@@ -2868,10 +2881,10 @@ function movieValuesAgree(targetValue: unknown, candidateValue: unknown): boolea
 function movieCandidateValue(listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
   for (const alias of aliases) {
-    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias] ?? labeledCandidateValue(details, [alias]);
     if (value != null && String(value).trim()) return String(value);
   }
-  const title = String(listing.title ?? '');
+  const title = canonicalCandidateTitle(listing);
   for (const pattern of patterns) {
     const match = title.match(pattern);
     if (match?.[1]) return match[1];
@@ -2907,7 +2920,7 @@ function pokemonCandidateItemType(listing: VisualSourceCandidate): PokemonTarget
   const details = candidateStructuredDetails(listing);
   const explicit = pokemonItemType(listing.itemType ?? listing.productType ?? listing.form ?? details.itemType ?? details.productType ?? details.form);
   if (explicit) return explicit;
-  const title = String(listing.title ?? '');
+  const title = canonicalCandidateTitle(listing);
   if (/\b(?:collection|lot|bundle|assortment|mixed)\b/i.test(title)) return 'collection_lot';
   if (/\b(?:booster|elite\s+trainer|collection\s+box|blaster|tin|build\s*&?\s*battle|premium\s+collection|sealed\s+product)\b/i.test(title)) return 'unopened_product';
   if (/\b(?:master|complete|partial)\s+set\b|\bset\s+of\s+\d+/i.test(title)) return 'set';
@@ -2920,10 +2933,10 @@ function pokemonComparableValue(value: unknown): string {
 function pokemonCandidateValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
   for (const alias of aliases) {
-    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias];
+    const value = listing[alias as keyof VisualSourceCandidate] ?? details[alias] ?? labeledCandidateValue(details, [alias]);
     if (value != null && String(value).trim()) return String(value).trim();
   }
-  const title = String(listing.title ?? '');
+  const title = canonicalCandidateTitle(listing);
   for (const pattern of titlePatterns) {
     const match = title.match(pattern);
     if (match?.[1]) return match[1].trim();
@@ -2954,7 +2967,7 @@ function pokemonIdentityConflict(targetMetadata: string, listing: VisualSourceCa
   if (candidateType === 'collection_lot') return 'Pokémon filter: candidate is a collection, lot, bundle, or mixed group rather than a comparable item.';
   if (candidateType && candidateType !== targetType) return `Pokémon item type differs: target is ${targetType.replace(/_/g, ' ')}, but the candidate is explicitly ${candidateType.replace(/_/g, ' ')}.`;
   const target = extractTargetItemDetails(targetMetadata);
-  const candidateTitle = String(listing.title ?? '');
+  const candidateTitle = canonicalCandidateTitle(listing);
   const checks: Array<[string, unknown, string[], RegExp[], boolean]> = targetType === 'single_card'
     ? [
         ['card name', firstMeaningfulValue(target.cardName, target.pokemonName, target.name, extractTargetTitle(targetMetadata)), ['cardName', 'pokemonName', 'name'], [], true],
@@ -3076,10 +3089,10 @@ function stampComparable(value: unknown): string {
 }
 function stampExplicitValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
-  const structured = aliases.map((key) => listing[key] ?? details[key]).find((value) => String(value ?? "").trim());
+  const structured = aliases.map((key) => listing[key] ?? details[key] ?? labeledCandidateValue(details, [key])).find((value) => String(value ?? "").trim());
   if (structured != null) return String(structured).trim();
   for (const pattern of titlePatterns) {
-    const match = String(listing.title ?? "").match(pattern);
+    const match = canonicalCandidateTitle(listing).match(pattern);
     if (match?.[1]) return match[1].trim();
   }
   return "";
@@ -3128,7 +3141,7 @@ function stampFormatConflict(targetMetadata: string, listing: VisualSourceCandid
   });
   const candidateDetails = candidateStructuredDetails(listing);
   const candidateProfile = classifyStampFormat({
-    title: String(listing.title ?? ""),
+    title: canonicalCandidateTitle(listing),
     itemType: String(listing.itemType ?? candidateDetails.itemType ?? candidateDetails.format ?? ""),
     itemDetails: JSON.stringify(candidateDetails),
     condition: String(listing.condition ?? candidateDetails.condition ?? ""),
@@ -3191,7 +3204,7 @@ function comicSingleIdentityConflict(targetMetadata: string, listing: VisualSour
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const candidateDetails = candidateStructuredDetails(listing);
   const targetTitle = extractTargetTitle(targetMetadata);
-  const candidateTitle = String(listing.title ?? "");
+  const candidateTitle = canonicalCandidateTitle(listing);
 
   const targetIssue = comicIssueNumber(targetDetails.issueNumber ?? targetDetails.issue ?? targetTitle);
   const candidateIssue = comicIssueNumber(candidateDetails.issueNumber ?? candidateDetails.issue ?? candidateTitle);
@@ -3252,7 +3265,7 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
   const targetFacsimile = normalizedChoice(targetDetails.facsimile);
   const targetDistribution = normalizedChoice(targetDetails.distributionType);
   return listings.flatMap((listing, candidateIndex) => {
-    const title = String(listing.title ?? "");
+    const title = canonicalCandidateTitle(listing);
     const conflict = DECLARED_VARIANT_PATTERNS.find((pattern) => pattern.test(title) && !pattern.test(targetTitle));
     const phrase = conflict ? (title.match(conflict)?.[0] ?? "declared variant") : null;
     const candidateIsNewsstand = /\bnewsstand(?:\s+edition)?\b/i.test(title);
@@ -3335,7 +3348,7 @@ function targetDescribesMultipleItems(targetMetadata: string): boolean {
 }
 
 function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T): string | null {
-  const title = String(listing.title ?? "").trim();
+  const title = canonicalCandidateTitle(listing).trim();
   const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfItems, listing.quantity]
     .map(value => Number(value))
     .find(value => Number.isFinite(value) && value > 1);
@@ -3765,7 +3778,7 @@ function stampFormatMatches(targetMetadata: string, listing: VisualSourceCandida
   const targetDetails = extractTargetItemDetails(targetMetadata);
   const targetProfile = classifyStampFormat({ title: extractTargetTitle(targetMetadata), itemType: metadataValue(targetMetadata, 'itemType'), itemDetails: JSON.stringify(targetDetails) });
   const candidateDetails = candidateStructuredDetails(listing);
-  const candidateProfile = classifyStampFormat({ title: String(listing.title ?? ''), itemType: String(listing.itemType ?? candidateDetails.itemType ?? ''), itemDetails: JSON.stringify(candidateDetails) });
+  const candidateProfile = classifyStampFormat({ title: canonicalCandidateTitle(listing), itemType: String(listing.itemType ?? candidateDetails.itemType ?? ''), itemDetails: JSON.stringify(candidateDetails) });
   if (targetProfile.key === 'unknown' || candidateProfile.key === 'unknown') return null;
   return stampFormatsCompatible(targetProfile, candidateProfile);
 }
@@ -4051,7 +4064,7 @@ function disneyPinsScoreText(value: unknown): string {
   return normalizedChoice(value).replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 function disneyPinsTargetValue(details: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
-  return firstMeaningfulValue(...aliases.map((alias) => details[alias]), fallback);
+  return firstMeaningfulValue(...aliases.map((alias) => details[alias] ?? labeledCandidateValue(details, [alias])), fallback);
 }
 function disneyPinsCandidateDetails(listing: VisualSourceCandidate): Record<string, unknown> {
   return candidateStructuredDetails(listing);
@@ -4060,34 +4073,34 @@ function disneyPinsValueMatches(targetValue: unknown, listing: VisualSourceCandi
   const target = disneyPinsScoreText(targetValue);
   if (!target) return null;
   const details = disneyPinsCandidateDetails(listing);
-  const explicit = firstMeaningfulValue(...aliases.map((alias) => details[alias]));
-  const candidate = disneyPinsScoreText(explicit || listing.title || sourceText(normalizeVisualSourceCandidate(listing)));
+  const explicit = firstMeaningfulValue(...aliases.map((alias) => details[alias] ?? labeledCandidateValue(details, [alias])));
+  const candidate = disneyPinsScoreText(explicit || canonicalCandidateTitle(listing) || sourceText(normalizeVisualSourceCandidate(listing)));
   if (!candidate) return null;
   if (candidate.includes(target) || target.includes(candidate)) return true;
-  return patterns.some((pattern) => pattern.test(String(listing.title ?? ''))) ? true : explicit ? false : null;
+  return patterns.some((pattern) => pattern.test(canonicalCandidateTitle(listing))) ? true : explicit ? false : null;
 }
 function disneyPinsBooleanMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], positive: RegExp, negative: RegExp): boolean | null {
   const target = disneyPinsScoreText(targetValue);
   if (!/^(?:yes|no|true|false)$/.test(target)) return null;
   const details = disneyPinsCandidateDetails(listing);
-  const explicit = disneyPinsScoreText(firstMeaningfulValue(...aliases.map((alias) => details[alias])));
+  const explicit = disneyPinsScoreText(firstMeaningfulValue(...aliases.map((alias) => details[alias] ?? labeledCandidateValue(details, [alias]))));
   if (explicit) return /^(?:yes|true)$/.test(target) ? /^(?:yes|true)$/.test(explicit) : /^(?:no|false)$/.test(explicit);
-  const text = `${String(listing.title ?? '')} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
+  const text = `${canonicalCandidateTitle(listing)} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
   return /^(?:yes|true)$/.test(target) ? (positive.test(text) ? true : negative.test(text) ? false : null) : (negative.test(text) ? true : positive.test(text) ? false : null);
 }
 function disneyPinsYearMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
   const target = String(targetValue ?? '').match(/\d{4}/)?.[0];
   if (!target) return null;
-  const text = `${String(listing.title ?? '')} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
+  const text = `${canonicalCandidateTitle(listing)} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
   return new RegExp(`(?:^|[^0-9])${target}(?:[^0-9]|$)`).test(text);
 }
 function disneyPinsNumberMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
   const target = Number(targetValue);
   if (!Number.isFinite(target) || target <= 0) return null;
   const details = disneyPinsCandidateDetails(listing);
-  const explicit = Number(firstMeaningfulValue(details.numberOfPins, details.pinCount, details.quantity));
+  const explicit = Number(firstMeaningfulValue(details.numberOfPins, details.pinCount, details.quantity, labeledCandidateValue(details, ["numberOfPins", "pinCount", "quantity"])));
   if (Number.isFinite(explicit) && explicit > 0) return explicit === target;
-  const text = `${String(listing.title ?? '')} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
+  const text = `${canonicalCandidateTitle(listing)} ${sourceText(normalizeVisualSourceCandidate(listing))}`;
   const match = text.match(/(?:set\s+of|contains?|includes?)\s*(\d+)\s*pins?/i) ?? text.match(/\b(\d+)\s*pin\s+set\b/i);
   return match ? Number(match[1]) === target : null;
 }
@@ -4155,7 +4168,7 @@ function musicScoreValueMatches(targetValue: unknown, listing: VisualSourceCandi
   const candidate = musicScoreText(candidateValue || normalizedCandidate.title || sourceText(normalizedCandidate));
   if (!candidate) return null;
   if (candidate.includes(target) || target.includes(candidate)) return true;
-  if (titlePatterns.some((pattern) => pattern.test(String(listing.title ?? '')))) return true;
+  if (titlePatterns.some((pattern) => pattern.test(canonicalCandidateTitle(listing)))) return true;
   return false;
 }
 
@@ -4556,7 +4569,7 @@ function pokemonScoreBoolean(targetValue: unknown, listing: VisualSourceCandidat
   if (!target) return null;
   const candidateDetails = candidateStructuredDetails(listing);
   const structured = pokemonBoolean(aliases.map((alias) => listing[alias as keyof VisualSourceCandidate] ?? candidateDetails[alias]).find((value) => value != null));
-  const text = String(listing.title ?? '');
+  const text = canonicalCandidateTitle(listing);
   const candidate = structured || (positive.test(text) ? 'yes' : negative.test(text) ? 'no' : '');
   return candidate ? candidate === target : null;
 }
@@ -4651,13 +4664,13 @@ function vintageToyScoreText(value: unknown): string {
 }
 
 function vintageToyScoreTargetValue(details: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
-  return firstMeaningfulValue(...aliases.map((alias) => details[alias]), fallback);
+  return firstMeaningfulValue(...aliases.map((alias) => details[alias] ?? labeledCandidateValue(details, [alias])), fallback);
 }
 
 function vintageToyScoreCandidateText(listing: VisualSourceCandidate, aliases: string[]): { explicit: string; text: string } {
   const details = candidateStructuredDetails(listing);
-  const explicit = vintageToyScoreText(firstMeaningfulValue(...aliases.map((alias) => details[alias])));
-  const text = vintageToyScoreText(`${String(listing.title ?? "")} ${sourceText(normalizeVisualSourceCandidate(listing))}`);
+  const explicit = vintageToyScoreText(firstMeaningfulValue(...aliases.map((alias) => details[alias] ?? labeledCandidateValue(details, [alias]))));
+  const text = vintageToyScoreText(`${canonicalCandidateTitle(listing)} ${sourceText(normalizeVisualSourceCandidate(listing))}`);
   return { explicit, text };
 }
 

@@ -92,6 +92,25 @@ const structuredVisualResponse = (value: unknown) => ({
 
 describe("visual source filter", () => {
   beforeEach(() => mockedInvokeLLM.mockReset());
+  it("uses provider title aliases consistently across category ranking models", () => {
+    const coinTarget = buildVisualTargetMetadata({ title: "1999 United States Silver Dollar", category: "coins", itemType: "single_coin", fullItemDetails: { country: "United States", year: "1999", denomination: "Dollar" } });
+    expect(coinsSingleVisualScore({ itemTitle: "1999 United States Silver Dollar", itemDetails: JSON.stringify({ country: "United States", year: "1999", denomination: "Dollar" }) }, coinTarget).score).toBeGreaterThan(0);
+
+    const comicTarget = buildVisualTargetMetadata({ title: "Amazing Spider-Man 300", category: "comics", itemType: "single_comic", fullItemDetails: { comicTitle: "Amazing Spider-Man", issueNumber: "300" } });
+    expect(comicsSingleVisualScore({ listingTitle: "Amazing Spider-Man 300", itemDetails: JSON.stringify({ comicTitle: "Amazing Spider-Man", issueNumber: "300" }) }, comicTarget).matched).toEqual(expect.arrayContaining(["comicTitle", "issueNumber"]));
+
+    const pokemonTarget = buildVisualTargetMetadata({ title: "1999 Pokémon Charizard Base Set #4/102", category: "pokemon", itemType: "single_card", fullItemDetails: { cardName: "Charizard", setName: "Base Set", cardNumber: "4/102" } });
+    expect(pokemonVisualScore({ productName: "1999 Pokémon Charizard Base Set #4/102", itemDetails: JSON.stringify({ cardName: "Charizard", setName: "Base Set", cardNumber: "4/102" }) }, pokemonTarget).score).toBeGreaterThan(0);
+
+    const stampTarget = buildVisualTargetMetadata({ title: "1976 United States Bicentennial", category: "stamps", itemType: "single_stamp", fullItemDetails: { country: "United States", year: "1976" } });
+    expect(stampsSingleVisualScore({ listingTitle: "1976 United States Bicentennial", itemDetails: JSON.stringify({ country: "United States", year: "1976" }) }, stampTarget).score).toBeGreaterThan(0);
+
+    const musicTarget = buildVisualTargetMetadata({ title: "The Beatles Abbey Road", category: "music", itemType: "vinyl_record", fullItemDetails: { artist: "The Beatles", releaseTitle: "Abbey Road", format: "Vinyl" } });
+    expect(musicVisualScore({ itemTitle: "The Beatles Abbey Road Vinyl LP", itemDetails: JSON.stringify({ artist: "The Beatles", releaseTitle: "Abbey Road", format: "Vinyl" }) }, musicTarget).score).toBeGreaterThan(0);
+
+    const pinTarget = buildVisualTargetMetadata({ title: "Mickey Mouse 50th Anniversary Pin", category: "disney_pins", itemType: "individual_pin", fullItemDetails: { pinName: "Mickey Mouse", series: "50th Anniversary" } });
+    expect(disneyPinsIndividualVisualScore({ productName: "Mickey Mouse 50th Anniversary Pin", itemDetails: JSON.stringify({ pinName: "Mickey Mouse", series: "50th Anniversary" }) }, pinTarget).score).toBeGreaterThan(0);
+  });
   it("ranks Signed Item market evidence by signer, object, authentication, and inscription", () => {
     const target = buildVisualTargetMetadata({
       title: "Michael Jordan signed puck",
