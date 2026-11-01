@@ -82,7 +82,8 @@ function stringList(value: unknown, limit = 6): string[] {
 function isSafeVisionImageUrl(value?: string): boolean {
   if (!value) return false;
   try {
-    return new URL(value).protocol === 'https:';
+    const protocol = new URL(value).protocol;
+    return protocol === 'https:' || protocol === 'http:';
   } catch {
     return false;
   }

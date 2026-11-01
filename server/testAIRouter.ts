@@ -2687,7 +2687,8 @@ export const testAIRouter = router({
         const safeTargetImage = (() => {
           if (!input.imageUrl) return null;
           try {
-            return new URL(input.imageUrl).protocol === 'https:' ? input.imageUrl : null;
+            const protocol = new URL(input.imageUrl).protocol;
+            return protocol === 'https:' || protocol === 'http:' ? input.imageUrl.trim() : null;
           } catch {
             return null;
           }
@@ -2904,7 +2905,8 @@ export const testAIRouter = router({
         const safeTargetImage = (() => {
           if (!input.imageUrl) return null;
           try {
-            return new URL(input.imageUrl).protocol === 'https:' ? input.imageUrl : null;
+            const protocol = new URL(input.imageUrl).protocol;
+            return protocol === 'https:' || protocol === 'http:' ? input.imageUrl.trim() : null;
           } catch {
             return null;
           }
@@ -3011,7 +3013,8 @@ export const testAIRouter = router({
       const safeTargetImage = (() => {
         if (!input.imageUrl) return null;
         try {
-          return new URL(input.imageUrl).protocol === 'https:' ? input.imageUrl : null;
+          const protocol = new URL(input.imageUrl).protocol;
+            return protocol === 'https:' || protocol === 'http:' ? input.imageUrl.trim() : null;
         } catch {
           return null;
         }
@@ -3807,7 +3810,7 @@ export const testAIRouter = router({
         if (!value) return false;
         try {
           const url = new URL(value);
-          return url.protocol === 'https:';
+          return url.protocol === 'https:' || url.protocol === 'http:';
         } catch {
           return false;
         }
