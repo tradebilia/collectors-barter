@@ -502,6 +502,25 @@ describe("visual source filter", () => {
     expect(boxScore.matched).toEqual(expect.arrayContaining(["boxSetName", "format", "numberOfMovies", "edition", "sealed"]));
   });
 
+  it("treats equivalent season wording as the same Movie box set", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Moonlighting Season 1&2",
+      category: "movies",
+      itemType: "box_set",
+      fullItemDetails: { boxSetName: "Moonlighting Season 1&2", format: "DVD", releaseYear: 1985 },
+    });
+    const candidates = [
+      { title: "Moonlighting Seasons One and Two (DVD) COMPLETE", itemDetails: JSON.stringify({ format: "DVD", releaseYear: 1985, numberOfMovies: 2 }) },
+      { title: "Moonlighting Seasons 1 & 2 (DVD) Cybill Shepherd Bruce Willis", itemDetails: JSON.stringify({ format: "DVD", releaseYear: 1985, numberOfMovies: 2 }) },
+    ];
+
+    for (const candidate of candidates) {
+      const score = moviesBoxSetVisualScore(candidate, target);
+      expect(score.score).toBe(50);
+      expect(score.matched).toEqual(expect.arrayContaining(["boxSetName", "format"]));
+    }
+  });
+
   it("uses the approved Movies score-band cap limits", () => {
     expect(moviesVisualCap(95)).toBe(8);
     expect(moviesVisualCap(85)).toBe(6);

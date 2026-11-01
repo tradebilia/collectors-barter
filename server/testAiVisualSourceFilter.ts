@@ -1507,6 +1507,13 @@ type NormalizedVisualSourceCandidate = VisualSourceCandidate & {
 function candidateText(value: unknown): string {
   return String(value ?? "").trim();
 }
+const COMPARABLE_NUMBER_WORDS: Record<string, string> = {
+  zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5",
+  six: "6", seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11", twelve: "12",
+};
+function normalizeComparableNumberWords(value: string): string {
+  return value.replace(/\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi, (word) => COMPARABLE_NUMBER_WORDS[word.toLowerCase()] ?? word);
+}
 function canonicalCandidateTitle(listing: VisualSourceCandidate): string {
   return normalizeVisualSourceCandidate(listing).title;
 }
@@ -2477,7 +2484,7 @@ function musicCandidateFormat(listing: VisualSourceCandidate): string {
 }
 
 function musicComparableValue(value: unknown): string {
-  return candidateText(value).toLowerCase().replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, "").trim();
+  return normalizeComparableNumberWords(candidateText(value).toLowerCase()).replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, "").trim();
 }
 
 function musicExplicitValue(details: Record<string, unknown>, ...keys: string[]): string {
@@ -2562,7 +2569,7 @@ function vintageToyCandidateItemType(listing: VisualSourceCandidate): string {
 }
 
 function vintageToyComparableValue(value: unknown): string {
-  return candidateText(value).toLowerCase().replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
+  return normalizeComparableNumberWords(candidateText(value).toLowerCase()).replace(/[’']/g, "").replace(/[_-]+/g, " ").replace(/[^a-z0-9]+/g, " ").trim();
 }
 
 function vintageToyValuesConflict(targetValue: unknown, candidateValue: unknown, allowTokenSubset = true): boolean {
@@ -2734,7 +2741,7 @@ function isSingleComicTarget(targetMetadata: string): boolean {
   return itemType === "single_comic" || itemType === "single_issue" || itemType === "comic";
 }
 function comicComparableValue(value: unknown): string {
-  return candidateText(value).toLowerCase().replace(/[“”"']/g, "").replace(/\s+/g, " ").trim();
+  return normalizeComparableNumberWords(candidateText(value).toLowerCase()).replace(/[“”"']/g, "").replace(/\s+/g, " ").trim();
 }
 function comicIssueNumber(value: unknown): string | null {
   const match = candidateText(value).match(/(?:^|#|\bissue\s*)(\d{1,6}[a-z]?)(?:\b|$)/i);
@@ -2867,7 +2874,10 @@ function movieCandidateItemType(listing: VisualSourceCandidate): 'individual_mov
   return '';
 }
 function movieCanonicalText(value: unknown): string {
-  return normalizedChoice(value).replace(/[_-]+/g, ' ').replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu\s*ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  const normalized = normalizeComparableNumberWords(normalizedChoice(value).replace(/_/g, ' '))
+    .replace(/\bseasons?\b/g, ' season')
+    .replace(/(\d+)\s+and\s+(\d+)/g, '$1 $2');
+  return normalized.replace(/[_-]+/g, ' ').replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu\s*ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
 function movieValuesAgree(targetValue: unknown, candidateValue: unknown): boolean {
   const target = movieCanonicalText(targetValue);
@@ -2928,7 +2938,7 @@ function pokemonCandidateItemType(listing: VisualSourceCandidate): PokemonTarget
   return '';
 }
 function pokemonComparableValue(value: unknown): string {
-  return candidateText(value).toLowerCase().replace(/[’']/g, '').replace(/[_-]+/g, ' ').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return normalizeComparableNumberWords(candidateText(value).toLowerCase()).replace(/[’']/g, '').replace(/[_-]+/g, ' ').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 function pokemonCandidateValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
