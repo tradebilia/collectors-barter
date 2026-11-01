@@ -52,6 +52,7 @@ import {
   moviesVisualCap,
   musicVisualScore,
   musicVisualCap,
+  vintageToyVisualScore,
   disneyPinsIndividualVisualScore,
   disneyPinsSetVisualScore,
   disneyPinsVisualCap,
@@ -110,6 +111,30 @@ describe("visual source filter", () => {
 
     const pinTarget = buildVisualTargetMetadata({ title: "Mickey Mouse 50th Anniversary Pin", category: "disney_pins", itemType: "individual_pin", fullItemDetails: { pinName: "Mickey Mouse", series: "50th Anniversary" } });
     expect(disneyPinsIndividualVisualScore({ productName: "Mickey Mouse 50th Anniversary Pin", itemDetails: JSON.stringify({ pinName: "Mickey Mouse", series: "50th Anniversary" }) }, pinTarget).score).toBeGreaterThan(0);
+  });
+  it("keeps category item-type routing consistent across nested metadata and legitimate product wording", () => {
+    const nestedComic = buildVisualTargetMetadata({ title: "Amazing Spider-Man 300", category: "comics", fullItemDetails: { itemType: "single_issue", comicTitle: "Amazing Spider-Man", issueNumber: "300" } });
+    expect(comicsSingleVisualScore({ title: "Amazing Spider-Man #300" }, nestedComic).matched).toEqual(expect.arrayContaining(["comicTitle", "issueNumber"]));
+
+    const nestedStamp = buildVisualTargetMetadata({ title: "United States C1", category: "stamps", fullItemDetails: { itemType: "single_stamp", country: "United States", scottNumber: "C1" } });
+    expect(stampsSingleVisualScore({ title: "United States C1" }, nestedStamp).score).toBeGreaterThan(0);
+
+    const nestedSportsProduct = buildVisualTargetMetadata({ title: "1986 Topps Factory Box", category: "sports_cards", fullItemDetails: { itemType: "box_set", productName: "Factory Box", productFormat: "Factory Sealed", productType: "Box", manufacturer: "Topps", year: "1986" } });
+    expect(sportsCardUnopenedVisualScore({ title: "1986 Topps Factory Box Sealed", itemDetails: JSON.stringify({ productName: "Factory Box", productFormat: "Factory Sealed", productType: "Box", manufacturer: "Topps", year: "1986" }) }, nestedSportsProduct).score).toBeGreaterThan(0);
+
+    const pokemonSingle = buildVisualTargetMetadata({ title: "1999 Pokémon Charizard Base Set #4/102", category: "pokemon", itemType: "single_card" });
+    expect(isMultiItemLot({ title: "1999 Pokémon Charizard Base Set #4/102" }, pokemonSingle)).toBe(false);
+    const legoTarget = buildVisualTargetMetadata({ title: "LEGO 6285 Pirates", category: "vintage_toys", itemType: "lego" });
+    expect(isMultiItemLot({ title: "LEGO 6285 Pirates Set Complete" }, legoTarget)).toBe(false);
+
+    const pokemonProduct = buildVisualTargetMetadata({ title: "Pokémon Base Set Booster Bundle", category: "pokemon", itemType: "unopened_product", fullItemDetails: { productName: "Booster Bundle", setName: "Base Set", factorySealed: "Yes" } });
+    expect(buildDeclaredIdentityReviews([{ title: "Pokémon Base Set Booster Bundle Factory Sealed" }], pokemonProduct)).toEqual([]);
+
+    const autographTarget = buildVisualTargetMetadata({ title: "Jane Doe signed photo", category: "autographs", itemType: "signed_item", fullItemDetails: { signer: "Jane Doe", signedItemType: "Photo", authenticationCompany: "JSA" } });
+    expect(autographMarketRelevanceScore({ title: "Jane Doe signed object JSA", itemDetails: JSON.stringify({ itemType: "Photo" }) }, autographTarget).matched).toContain("signed item type");
+
+    const modelKitTarget = buildVisualTargetMetadata({ title: "P-51 Mustang model kit", category: "vintage_toys", itemType: "model/kit", fullItemDetails: { modelKitName: "P-51 Mustang", brand: "Monogram" } });
+    expect(vintageToyVisualScore({ title: "Monogram P-51 Mustang model kit", itemType: "model/kit" }, modelKitTarget).score).toBeGreaterThan(0);
   });
   it("ranks Signed Item market evidence by signer, object, authentication, and inscription", () => {
     const target = buildVisualTargetMetadata({

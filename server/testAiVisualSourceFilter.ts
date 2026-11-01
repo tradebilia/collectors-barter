@@ -72,7 +72,7 @@ export type VisualSourceFilterResult<T extends VisualSourceCandidate> = {
 
 export function isAutographSignedItemTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, "category")) === "autographs"
-    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "signed_item";
+    && targetItemTypeValue(targetMetadata) === "signed_item";
 }
 
 function autographMarketValue(value: unknown): string {
@@ -227,13 +227,20 @@ function autographCandidateAuthentication(listing: VisualSourceCandidate, struct
 
 export const AUTOGRAPH_VALUATION_MIN_SCORE = 70;
 
+function autographCandidateObjectType(listing: VisualSourceCandidate): string {
+  const details = candidateStructuredDetails(listing);
+  const structuredType = labeledCandidateValue(details, ["signedItemType", "autographItemType", "itemType", "productType", "form"])
+    ?? [listing.signedItemType, listing.autographItemType, listing.itemType, listing.productType, listing.form]
+      .find((value) => String(value ?? "").trim());
+  return autographObjectType(structuredType) || autographObjectType(canonicalCandidateTitle(listing));
+}
+
 export function autographValuationEligibility(listing: VisualSourceCandidate, targetMetadata: string): { eligible: boolean; reasons: string[] } {
   const details = extractTargetItemDetails(targetMetadata);
   const targetSigner = autographTargetValue(targetMetadata, details, ["signer"]);
   const candidateSigner = autographCandidateSigner(listing, targetSigner);
   const targetObjectType = autographTargetObjectType(targetMetadata, details);
-  const candidateObjectType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
-    || autographObjectType(listing.title);
+  const candidateObjectType = autographCandidateObjectType(listing);
   const scoring = autographMarketRelevanceScore(listing, targetMetadata);
   const reasons: string[] = [];
   const signerMatches = Boolean(targetSigner && candidateSigner && targetSigner === candidateSigner);
@@ -276,8 +283,7 @@ export function autographMarketRelevanceScore(listing: VisualSourceCandidate, ta
   const targetInscription = autographTargetValue(targetMetadata, details, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
   const candidate = normalizeVisualSourceCandidate(listing);
   const candidateSigner = autographCandidateSigner(listing, targetSigner);
-  const candidateItemType = autographObjectType(candidateStructuredDetails(listing).signedItemType ?? listing.signedItemType)
-    || autographObjectType(candidate.title);
+  const candidateItemType = autographCandidateObjectType(listing);
   const candidateCategory = autographCandidateValue(listing, ["autographCategory", "category", "sport", "entertainmentType"]);
   const candidateAuth = autographCandidateAuthentication(listing, autographCandidateValue(listing, ["authenticationCompany", "customAuthenticationCompany", "certificationCompany", "authenticator", "gradingCompany"]));
   const candidateInscription = autographCandidateValue(listing, ["inscription", "inscriptionText", "inscriptionPresent", "personalization"]);
@@ -1433,7 +1439,17 @@ export function sportsCardSetInstruction(metadata: string): string {
 function normalizedChoice(value: unknown): string {
   return String(value ?? "").trim().toLowerCase().replace(/[ _-]+/g, "_");
 }
-
+function targetItemTypeValue(targetMetadata: string): string {
+  const details = extractTargetItemDetails(targetMetadata);
+  return normalizedChoice(
+    metadataValue(targetMetadata, "itemType")
+      || metadataValue(targetMetadata, "productType")
+      || metadataValue(targetMetadata, "form")
+      || details.itemType
+      || details.productType
+      || details.form,
+  );
+}
 type VintageToyPackagingForm = "carded" | "loose" | "unknown";
 
 function vintageToyPackagingForm(value: unknown): VintageToyPackagingForm {
@@ -1906,7 +1922,7 @@ type ProductForm = "set" | "single_card" | "unopened_product" | "sealed" | "cib"
 function sportsCardProductForm(value: unknown): ProductForm {
   const normalized = normalizedChoice(value);
   if (!normalized) return null;
-  if (/unopened_product/.test(normalized)) return "unopened_product";
+  if (/unopened_product|box_set|sealed_box|bundle|product/.test(normalized)) return "unopened_product";
   if (/(?:^|_)(?:complete|factory|team|master|card)?_?set(?:$|_)/.test(normalized)) return "set";
   if (/(?:^|_)(?:single|individual)_?(?:card)?(?:$|_)/.test(normalized)) return "single_card";
   return null;
@@ -1984,11 +2000,11 @@ function candidateProductForm(targetMetadata: string, listing: VisualSourceCandi
 }
 
 function videoGameTargetItemType(targetMetadata: string): string {
-  const details = extractTargetItemDetails(targetMetadata);
-  return normalizedChoice(metadataValue(targetMetadata, "itemType") || details.itemType || details.productType || "");
+  return targetItemTypeValue(targetMetadata);
 }
 function videoGameItemTypeLabel(value: string): string {
   if (/^(?:game|video_game|video_games_game)$/.test(value)) return "game";
+  if (/box_set|bundle|multi_game|sealed_product|product/.test(value)) return "game";
   if (/^(?:console|video_game_console)$/.test(value)) return "console";
   if (/^(?:accessory|video_game_accessory)$/.test(value)) return "accessory";
   if (/collection|lot/.test(value)) return "collection/lot";
@@ -2473,6 +2489,7 @@ function musicItemTypeLabel(value: unknown): string {
   if (/^(?:cassette|cassette_tape|audio_cassette)$/.test(normalized)) return "cassette tape";
   if (/^(?:cd|compact_disc|compact_disk)$/.test(normalized)) return "compact disc";
   if (/^(?:8_track|eight_track|eight_track_tape|8_track_tape)$/.test(normalized)) return "8-track tape";
+  if (/box_set|bundle|multi_disc|product/.test(normalized)) return "other music format";
   if (/other_music_format|other_format/.test(normalized)) return "other music format";
   if (/collection|lot/.test(normalized)) return "collection/lot";
   return "";
@@ -2512,7 +2529,7 @@ function musicValuesConflict(targetValue: unknown, candidateValue: unknown): boo
 function musicIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   if (normalizedChoice(metadataValue(targetMetadata, "category")) !== "music") return null;
   const targetDetails = extractTargetItemDetails(targetMetadata);
-  const targetType = musicItemTypeLabel(metadataValue(targetMetadata, "itemType") || targetDetails.itemType || targetDetails.format);
+  const targetType = musicItemTypeLabel(targetItemTypeValue(targetMetadata) || targetDetails.format);
   if (!targetType || targetType === "collection/lot") return null;
   const candidateDetails = candidateStructuredDetails(listing);
   const candidateType = musicCandidateFormat(listing);
@@ -2545,7 +2562,7 @@ function vintageToyItemTypeLabel(value: unknown): string {
   if (/board_game|puzzle/.test(normalized)) return "board game/puzzle";
   if (/electronic_toy/.test(normalized)) return "electronic toy";
   if (/^lego$|lego_set/.test(normalized)) return "LEGO";
-  if (/model_?kit/.test(normalized)) return "model/kit";
+  if (/model(?:_|\/)?kit/.test(normalized)) return "model/kit";
   if (/playset/.test(normalized)) return "playset";
   if (/plush|stuffed_toy/.test(normalized)) return "plush/stuffed toy";
   if (/vehicle/.test(normalized)) return "vehicle";
@@ -2762,15 +2779,15 @@ function comicDistribution(value: unknown): "direct" | "newsstand" | null {
 }
 function isSingleCoinTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, "category")) === "coins"
-    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "single_coin";
+    && targetItemTypeValue(targetMetadata) === "single_coin";
 }
 function isCoinSetTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, "category")) === "coins"
-    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "coin_set";
+    && targetItemTypeValue(targetMetadata) === "coin_set";
 }
 function isPaperMoneyTarget(targetMetadata: string): boolean {
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
-  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType"));
+  const itemType = targetItemTypeValue(targetMetadata);
   return category === "coins" && (itemType === "paper_money" || itemType.includes("paper_money") || itemType.includes("banknote"));
 }
 function coinComparable(value: unknown): string {
@@ -2930,16 +2947,15 @@ function pokemonItemType(value: unknown): PokemonTargetType {
 }
 function pokemonTargetItemType(targetMetadata: string): PokemonTargetType {
   if (normalizedChoice(metadataValue(targetMetadata, 'category')) !== 'pokemon') return '';
-  const details = extractTargetItemDetails(targetMetadata);
-  return pokemonItemType(metadataValue(targetMetadata, 'itemType') || details.itemType || details.productType || details.form);
+  return pokemonItemType(targetItemTypeValue(targetMetadata));
 }
 function pokemonCandidateItemType(listing: VisualSourceCandidate): PokemonTargetType {
   const details = candidateStructuredDetails(listing);
-  const explicit = pokemonItemType(listing.itemType ?? listing.productType ?? listing.form ?? details.itemType ?? details.productType ?? details.form);
+  const explicit = pokemonItemType([listing.itemType, listing.productType, listing.form, details.itemType, details.productType, details.form].find((value) => String(value ?? '').trim()));
   if (explicit) return explicit;
   const title = canonicalCandidateTitle(listing);
-  if (/\b(?:collection|lot|bundle|assortment|mixed)\b/i.test(title)) return 'collection_lot';
   if (/\b(?:booster|elite\s+trainer|collection\s+box|blaster|tin|build\s*&?\s*battle|premium\s+collection|sealed\s+product)\b/i.test(title)) return 'unopened_product';
+  if (/\b(?:collection|lot|bundle|assortment|mixed)\b/i.test(title)) return 'collection_lot';
   if (/\b(?:master|complete|partial)\s+set\b|\bset\s+of\s+\d+/i.test(title)) return 'set';
   if (/(?:^|[^\w])#?\s*\d{1,4}(?:\s*\/\s*\d{1,4})?\b|\b(?:single|individual)\s+card\b/i.test(title)) return 'single_card';
   return '';
@@ -3094,10 +3110,10 @@ function paperMoneyIdentityConflict(targetMetadata: string, listing: VisualSourc
 }
 function isSingleStampTarget(targetMetadata: string): boolean {
   return normalizedChoice(metadataValue(targetMetadata, "category")) === "stamps"
-    && normalizedChoice(metadataValue(targetMetadata, "itemType")) === "single_stamp";
+    && targetItemTypeValue(targetMetadata) === "single_stamp";
 }
 function isStampSetTarget(targetMetadata: string): boolean {
-  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType"));
+  const itemType = targetItemTypeValue(targetMetadata);
   return normalizedChoice(metadataValue(targetMetadata, "category")) === "stamps"
     && (itemType === "stamp_set___sheet" || itemType === "stamp_set_sheet" || itemType === "stamp_set");
 }
@@ -3373,35 +3389,42 @@ function targetDescribesMultipleItems(targetMetadata: string): boolean {
   return Array.isArray(details.items) && details.items.length > 1;
 }
 
-function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T): string | null {
+function candidateMultiItemReason<T extends VisualSourceCandidate>(listing: T, targetMetadata = ""): string | null {
   const title = canonicalCandidateTitle(listing).trim();
-  const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfItems, listing.quantity]
+  const candidateDetails = candidateStructuredDetails(listing);
+  const structuredQuantity = [listing.lotQuantity, listing.itemCount, listing.numberOfItems, listing.quantity, candidateDetails.lotQuantity, candidateDetails.itemCount, candidateDetails.numberOfItems, candidateDetails.quantity]
     .map(value => Number(value))
     .find(value => Number.isFinite(value) && value > 1);
   if (structuredQuantity) {
     return `Pre-visual lot filter: listing declares ${structuredQuantity} items, but the target is a single item.`;
   }
-  const details = [listing.saleForm, listing.itemType, listing.productType, listing.form]
+  const details = [listing.saleForm, listing.itemType, listing.productType, listing.form, candidateDetails.saleForm, candidateDetails.itemType, candidateDetails.productType, candidateDetails.form]
     .filter(value => value != null).map(String).join(" ");
   const text = `${title} ${details}`.trim();
-  const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(text));
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const targetType = targetItemTypeValue(targetMetadata);
+  const categoryAwareText = category === "pokemon" && targetType === "single_card"
+    ? text.replace(/\bbase\s+set\b/gi, "base")
+    : category === "vintage_toys" && targetType === "lego"
+      ? text.replace(/\blego\s+[^;]{0,80}?\bset\b/gi, (match) => match.replace(/\bset\b/gi, "edition"))
+      : text;
+  const matchedPattern = MULTI_ITEM_TITLE_PATTERNS.find(pattern => pattern.test(categoryAwareText));
   if (matchedPattern) {
-    const label = /\b(?:lot|bundle|group|collection|assortment)\b/i.test(text) ? "lot or collection language" : "multi-item language";
+    const label = /\b(?:lot|bundle|group|collection|assortment)\b/i.test(categoryAwareText) ? "lot or collection language" : "multi-item language";
     return `Pre-visual lot filter: title or listing metadata contains ${label}; retained as context-only because the target is a single item.`;
   }
-  const years = new Set(text.match(/\b(?:17|18|19|20)\d{2}\b/g) ?? []);
-  if (years.size > 1 && /(?:\+|\/|,|\band\b|\bthrough\b|\-)/i.test(text)) {
+  const years = new Set(categoryAwareText.match(/\b(?:17|18|19|20)\d{2}\b/g) ?? []);
+  if (years.size > 1 && /(?:\+|\/|,|\band\b|\bthrough\b|\-)/i.test(categoryAwareText)) {
     return `Pre-visual lot filter: listing names multiple issue years (${[...years].join(", ")}); retained as context-only because the target is a single item.`;
   }
   return null;
 }
 
 export function isMultiItemLot<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): boolean {
-  return !targetDescribesMultipleItems(targetMetadata) && Boolean(candidateMultiItemReason(listing));
+  return !targetDescribesMultipleItems(targetMetadata) && Boolean(candidateMultiItemReason(listing, targetMetadata));
 }
-
 export function multiItemLotReason<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): string | null {
-  return isMultiItemLot(listing, targetMetadata) ? candidateMultiItemReason(listing) : null;
+  return isMultiItemLot(listing, targetMetadata) ? candidateMultiItemReason(listing, targetMetadata) : null;
 }
 
 function visualPriorityScore<T extends VisualSourceCandidate>(item: T, targetMetadata: string): number {
@@ -3861,8 +3884,9 @@ const COIN_SINGLE_SCORE_FIELDS = [
   ['countryIssuingAuthority', 2],
 ] as const;
 function comicsSingleTarget(targetMetadata: string): boolean {
+  const itemType = targetItemTypeValue(targetMetadata);
   return normalizedChoice(metadataValue(targetMetadata, 'category')) === 'comics'
-    && normalizedChoice(metadataValue(targetMetadata, 'itemType')).includes('single');
+    && ['single_comic', 'single_issue', 'comic'].includes(itemType);
 }
 function coinScoreTargetValue(targetDetails: Record<string, unknown>, aliases: string[], fallback?: unknown): unknown {
   return firstMeaningfulValue(...aliases.map((alias) => targetDetails[alias]), fallback);
@@ -4327,8 +4351,8 @@ export function comicsSingleVisualCap(score: number): number {
 }
 function sportsCardSingleTarget(targetMetadata: string): boolean {
   const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
-  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType'));
-  return category === 'sports_cards' && !itemType.includes('set') && !itemType.includes('collection') && !itemType.includes('lot') && !itemType.includes('unopened');
+  const itemType = targetItemTypeValue(targetMetadata);
+  return category === 'sports_cards' && !itemType.includes('set') && !itemType.includes('collection') && !itemType.includes('lot') && !/unopened|box_set|sealed_box|bundle|product/.test(itemType);
 }
 
 function sportsCardText(value: unknown): string {
@@ -4444,7 +4468,7 @@ const SPORTS_CARD_SET_SCORE_FIELDS = [
 
 function sportsCardSetTarget(targetMetadata: string): boolean {
   const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
-  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType'));
+  const itemType = targetItemTypeValue(targetMetadata);
   return category === 'sports_cards' && itemType.includes('set') && !itemType.includes('collection') && !itemType.includes('lot');
 }
 
@@ -4523,8 +4547,8 @@ const SPORTS_CARD_UNOPENED_SCORE_FIELDS = [
 
 function sportsCardUnopenedTarget(targetMetadata: string): boolean {
   const category = normalizedChoice(metadataValue(targetMetadata, 'category'));
-  const itemType = normalizedChoice(metadataValue(targetMetadata, 'itemType'));
-  return category === 'sports_cards' && itemType.includes('unopened');
+  const itemType = targetItemTypeValue(targetMetadata);
+  return category === 'sports_cards' && /unopened|box_set|sealed_box|bundle|product/.test(itemType);
 }
 
 export function sportsCardUnopenedVisualScore(listing: VisualSourceCandidate, targetMetadata: string): { score: number; matched: string[]; unknown: string[] } {
@@ -5131,7 +5155,7 @@ function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(
 // Collection/Lot remains intentionally non-comparable and receives no score.
 function scorePreVisualComparableCandidate<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): T {
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
-  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType") || extractTargetItemDetails(targetMetadata).itemType);
+  const itemType = targetItemTypeValue(targetMetadata);
   if (!category || /collection|lot/.test(itemType)) return listing;
 
   let scoring: { score: number; matched: string[]; unknown?: string[] } | null = null;
@@ -5319,11 +5343,11 @@ export async function filterVisualSourceCandidates<
   const moviesSelection = movieType === 'individual_movie' || movieType === 'box_set'
     ? selectMoviesVisualCandidates(allCandidates, targetMetadata, movieType === 'box_set')
     : null;
-  const disneyPinsType = normalizedChoice(metadataValue(targetMetadata, 'itemType') || extractTargetItemDetails(targetMetadata).itemType);
+  const disneyPinsType = disneyPinsTargetItemType(targetMetadata);
   const disneyPinsSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'disney_pins' && (disneyPinsType === 'individual_pin' || disneyPinsType === 'pin_set')
     ? selectDisneyPinsVisualCandidates(allCandidates, targetMetadata, disneyPinsType === 'pin_set')
     : null;
-  const musicType = musicItemTypeLabel(metadataValue(targetMetadata, 'itemType') || extractTargetItemDetails(targetMetadata).itemType || extractTargetItemDetails(targetMetadata).format);
+  const musicType = musicItemTypeLabel(targetItemTypeValue(targetMetadata));
   const musicSelection = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'music'
     && musicType !== '' && musicType !== 'collection/lot'
     ? selectMusicVisualCandidates(allCandidates, targetMetadata)
