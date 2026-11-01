@@ -4303,7 +4303,25 @@ function sportsCardExplicitNumber(value: unknown, title: string): boolean {
   return new RegExp(`(?:^|[^0-9])(?:#|card(?:\s*(?:no|number))?\s*)?${escaped}(?:[^0-9]|$)`, 'i').test(title)
     || new RegExp(`(?:^|[^0-9])${escaped}(?:[^0-9]|$)`, 'i').test(title);
 }
-
+function sportsCardTextEvidenceMatches(targetValue: unknown, candidate: NormalizedVisualSourceCandidate): boolean {
+  const target = String(targetValue ?? '').trim();
+  if (!target) return false;
+  return titleContainsValue(candidate.title, target)
+    || sportsCardText(sourceText(candidate)).includes(sportsCardText(target));
+}
+function sportsCardPlayerEvidenceMatches(targetValue: unknown, candidate: NormalizedVisualSourceCandidate): boolean {
+  const target = String(targetValue ?? '').trim();
+  if (!target) return false;
+  if (titleContainsValue(candidate.title, target)) return true;
+  const candidatePlayer = firstMeaningfulValue(
+    candidate.details.player,
+    candidate.details.athlete,
+    candidate.details.subject,
+    candidate.details.playerName,
+    candidate.details.athleteName,
+  );
+  return Boolean(candidatePlayer && titleContainsValue(candidatePlayer, target) && titleContainsValue(target, candidatePlayer));
+}
 function sportsCardBooleanSignal(target: string, candidate: string, positive: RegExp): 'match' | 'mismatch' | 'unknown' {
   const targetPositive = positive.test(target);
   const targetNegative = /\b(?:no|false|none|unsigned|not\s+signed|non[- ]?relic|base|non[- ]?numbered)\b/i.test(target);
@@ -4330,8 +4348,7 @@ export function sportsCardSingleVisualScore(listing: VisualSourceCandidate, targ
   };
 
   const player = firstMeaningfulValue(targetDetails.player, targetDetails.athlete, targetDetails.subject);
-  const playerSurname = String(player ?? '').trim().split(/\s+/).filter(Boolean).slice(-1)[0] ?? '';
-  add('player', 20, Boolean(playerSurname && new RegExp(`\\b${playerSurname.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i').test(candidate.title)), Boolean(player));
+  add('player', 20, sportsCardPlayerEvidenceMatches(player, candidate), Boolean(player));
 
   const year = String(firstMeaningfulValue(targetDetails.year, targetDetails.releaseYear, targetDetails.issueYear) ?? '').trim();
   add('year', 15, Boolean(year && new RegExp(`\\b${year.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(candidateTextValue)), Boolean(year));
@@ -4339,7 +4356,7 @@ export function sportsCardSingleVisualScore(listing: VisualSourceCandidate, targ
   const manufacturer = String(firstMeaningfulValue(targetDetails.manufacturer, targetDetails.customManufacturer, targetDetails.brand) ?? '').trim();
   const setName = String(firstMeaningfulValue(targetDetails.setName, targetDetails.series, targetDetails.cardSet) ?? '').trim();
   const manufacturerOrSet = [manufacturer, setName].filter(Boolean);
-  add('manufacturerOrSet', 15, manufacturerOrSet.some((value) => sportsCardText(candidateTextValue).includes(sportsCardText(value))), manufacturerOrSet.length > 0);
+  add('manufacturerOrSet', 15, manufacturerOrSet.some((value) => sportsCardTextEvidenceMatches(value, candidate)), manufacturerOrSet.length > 0);
 
   const cardNumber = String(firstMeaningfulValue(targetDetails.cardNumber, targetDetails.cardNo, targetDetails.number) ?? '').trim();
   add('cardNumber', 15, sportsCardExplicitNumber(cardNumber, candidate.title), Boolean(cardNumber));
@@ -4411,13 +4428,13 @@ export function sportsCardSetVisualScore(listing: VisualSourceCandidate, targetM
   };
 
   const setName = firstMeaningfulValue(targetDetails.setName, targetDetails.series, targetDetails.cardSet);
-  add('setName', 25, setName ? sportsCardText(candidateText).includes(sportsCardText(setName)) : null);
+  add('setName', 25, setName ? sportsCardTextEvidenceMatches(setName, candidate) : null);
 
   const year = String(firstMeaningfulValue(targetDetails.year, targetDetails.releaseYear, targetDetails.issueYear) ?? '').trim();
   add('year', 15, year ? new RegExp(`\\b${year.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(candidateText) : null);
 
   const manufacturer = firstMeaningfulValue(targetDetails.manufacturer, targetDetails.customManufacturer, targetDetails.brand);
-  add('manufacturer', 15, manufacturer ? sportsCardText(candidateText).includes(sportsCardText(manufacturer)) : null);
+  add('manufacturer', 15, manufacturer ? sportsCardTextEvidenceMatches(manufacturer, candidate) : null);
 
   const setType = normalizedChoice(targetDetails.setType);
   const setTypePatterns: Record<string, RegExp[]> = {
@@ -4485,7 +4502,7 @@ export function sportsCardUnopenedVisualScore(listing: VisualSourceCandidate, ta
   };
 
   const productName = firstMeaningfulValue(targetDetails.productName, targetDetails.productTitle, targetDetails.name, targetDetails.itemName);
-  add('productName', 20, productName ? sportsCardText(candidateText).includes(sportsCardText(productName)) : null);
+  add('productName', 20, productName ? sportsCardTextEvidenceMatches(productName, candidate) : null);
   const targetFormat = sportsCardUnopenedFormat(targetDetails.productFormat);
   const candidateFormat = sportsCardUnopenedFormat(candidateDetails.productFormat ?? candidateDetails.format ?? candidate.productFormat ?? candidate.format, candidate.title);
   add('productFormat', 20, targetFormat ? (candidateFormat ? candidateFormat === targetFormat : null) : null);
@@ -4496,7 +4513,7 @@ export function sportsCardUnopenedVisualScore(listing: VisualSourceCandidate, ta
   const manufacturer = firstMeaningfulValue(targetDetails.manufacturer, targetDetails.customManufacturer, targetDetails.brand);
   const setName = firstMeaningfulValue(targetDetails.setName, targetDetails.series, targetDetails.cardSet);
   const manufacturerOrSet = [manufacturer, setName].filter(Boolean);
-  add('manufacturerOrSet', 15, manufacturerOrSet.length ? manufacturerOrSet.some((value) => sportsCardText(candidateText).includes(sportsCardText(value))) : null);
+  add('manufacturerOrSet', 15, manufacturerOrSet.length ? manufacturerOrSet.some((value) => sportsCardTextEvidenceMatches(value, candidate)) : null);
   const year = String(firstMeaningfulValue(targetDetails.year, targetDetails.releaseYear, targetDetails.issueYear) ?? '').trim();
   add('year', 10, year ? new RegExp(`\\b${year.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`).test(candidateText) : null);
 

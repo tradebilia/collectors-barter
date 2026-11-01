@@ -928,6 +928,25 @@ describe("visual source filter", () => {
     expect(sportsCardSingleVisualCap(49)).toBe(0);
   });
 
+  it("requires the full Sports Cards player identity instead of surname-only credit", () => {
+    const target = buildVisualTargetMetadata({
+      title: "1989 Upper Deck Ken Griffey Jr #1 PSA 10",
+      category: "sports_cards",
+      itemType: "single_card",
+      grade: "10",
+      certificationCompany: "PSA",
+      fullItemDetails: { player: "Ken Griffey Jr", year: "1989", manufacturer: "Upper Deck", cardNumber: "1" },
+    });
+    const exact = sportsCardSingleVisualScore({ title: "1989 Upper Deck Ken Griffey Jr #1 PSA 10" }, target);
+    const missingSuffix = sportsCardSingleVisualScore({ title: "1989 Upper Deck Ken Griffey #1 PSA 10" }, target);
+    const differentPlayer = sportsCardSingleVisualScore({ title: "1989 Upper Deck Fred Griffey Jr #1 PSA 10" }, target);
+    expect(exact.matched).toContain("player");
+    expect(missingSuffix.matched).not.toContain("player");
+    expect(differentPlayer.matched).not.toContain("player");
+    expect(exact.score).toBeGreaterThan(missingSuffix.score);
+    expect(exact.score).toBeGreaterThan(differentPlayer.score);
+  });
+
   it("scores Sports Cards sets on set identity and condition signals", () => {
     const target = buildVisualTargetMetadata({
       title: "1986 Fleer Complete Factory Set",
