@@ -337,10 +337,11 @@ const RETRY_STATUSES = new Set(["not_needed", "performed", "failed"]);
 const ADJUDICATION_STATUSES = new Set(["confirmed", "unavailable"]);
 const FINAL_PASSES = new Set(["initial", "high_resolution_retry"]);
 
-function safeHttps(value: unknown): string | null {
+function safeRemoteImageUrl(value: unknown): string | null {
   if (typeof value !== "string" || !value.trim()) return null;
   try {
-    return new URL(value).protocol === "https:" ? value : null;
+    const protocol = new URL(value).protocol;
+    return protocol === "https:" || protocol === "http:" ? value.trim() : null;
   } catch {
     return null;
   }
@@ -5047,7 +5048,7 @@ export async function filterVisualSourceCandidates<
       return candidateIndex >= 0 && !preVisualScoreExcludedIndexes.has(candidateIndex);
     });
   }
-  const target = safeHttps(args.targetImageUrl);
+  const target = safeRemoteImageUrl(args.targetImageUrl);
   const remainingUnrankedEligible = rankedSelection ? [] : eligibleListings;
   // A ranking cap selects the strongest candidates for visual review, but a
   // missing target image means visual review cannot start. Keep those selected

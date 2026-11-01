@@ -1171,6 +1171,21 @@ describe("visual source filter", () => {
     expect(result.contextListings?.slice(0, 2).every((item) => String(item.visualReviewRationale).includes("target item has no usable image"))).toBe(true);
   });
 
+  it("accepts a browser-visible HTTP target image for visual review", async () => {
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The target and candidate show the same item." }],
+    }) as never);
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "eBay Active Listings",
+      targetImageUrl: "http://example.com/target.jpg",
+      targetMetadata: buildVisualTargetMetadata({ title: "NES Nintendo Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "controller", accessoryName: "Power Glove", platform: "NES" } }),
+      listings: [{ title: "NES Nintendo Power Glove", accessoryType: "controller", accessoryName: "Power Glove", platform: "NES", imageUrl: "https://example.com/candidate.jpg" }],
+    });
+    expect(result.status).not.toBe("skipped_no_target_image");
+    expect(mockedInvokeLLM).toHaveBeenCalled();
+  });
+
   it("applies universal quantity and material-state rules only to explicit contradictions", () => {
     const singleTarget = buildVisualTargetMetadata({ title: "Target collectible", category: "movies" });
     const singlePrepared = prepareUniversalVisualCandidates([
