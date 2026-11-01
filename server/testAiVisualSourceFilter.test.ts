@@ -541,9 +541,31 @@ describe("visual source filter", () => {
 
     for (const candidate of candidates) {
       const score = moviesBoxSetVisualScore(candidate, target);
-      expect(score.score).toBe(50);
-      expect(score.matched).toEqual(expect.arrayContaining(["boxSetName", "format"]));
+      expect(score.score).toBe(65);
+      expect(score.matched).toEqual(expect.arrayContaining(["boxSetName", "format", "numberOfMovies"]));
     }
+  });
+  it("sends a season-range Movie Box Set candidate to visual review instead of hiding it below the score minimum", async () => {
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The same Moonlighting box set is shown." }],
+    }) as never);
+    const target = buildVisualTargetMetadata({
+      title: "Moonlighting Season 1 & 2",
+      category: "movies",
+      itemType: "box_set",
+      fullItemDetails: { boxSetName: "Moonlighting Season 1 & 2", format: "DVD" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "eBay Sold-Comps",
+      targetImageUrl: "https://example.com/moonlighting-target.jpg",
+      targetMetadata: target,
+      listings: [{ title: "Moonlighting Seasons 1 & 2 DVD Collection", imageUrl: "https://example.com/moonlighting-candidate.jpg" }],
+    });
+    expect(result.listings[0]?.metadataMatchScore).toBe(65);
+    expect(result.listings).toHaveLength(1);
+    expect(result.contextListings ?? []).toHaveLength(0);
+    expect(mockedInvokeLLM).toHaveBeenCalled();
   });
 
   it("treats Arabic, written, and Roman numerals as equivalent title evidence", () => {

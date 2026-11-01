@@ -2893,7 +2893,7 @@ function movieCandidateItemType(listing: VisualSourceCandidate): 'individual_mov
   if (/box_set|boxset|complete_series|collection_set/.test(explicit)) return 'box_set';
   if (/collection|lot/.test(explicit)) return 'collection/lot';
   const title = canonicalCandidateTitle(listing);
-  if (/\b(?:box\s*set|complete\s+series|complete\s+collection|season\s*[0-9]|trilogy|quadrilogy|bundle|movie\s+lot|film\s+lot)\b/i.test(title)) return 'box_set';
+  if (/\b(?:box\s*set|complete\s+series|complete\s+collection|seasons?\s*(?:[0-9]+|one|two|three|four|five|six|seven|eight|nine|ten)|trilogy|quadrilogy|bundle|movie\s+lot|film\s+lot)\b/i.test(title)) return 'box_set';
   if (/\b(?:collection|lot)\b/i.test(title)) return 'collection/lot';
   return '';
 }
@@ -2925,6 +2925,16 @@ function movieCandidateValue(listing: VisualSourceCandidate, aliases: string[], 
     if (match?.[0]) return match[0];
   }
   return '';
+}
+function movieSeasonCountFromText(value: unknown): string {
+  const text = normalizeComparableNumberWords(String(value ?? ''));
+  const range = text.match(/\bseasons?\s*(\d+)\s*(?:&|and|through|to|[-–])\s*(\d+)\b/i);
+  if (range) {
+    const start = Number(range[1]);
+    const end = Number(range[2]);
+    return Number.isFinite(start) && Number.isFinite(end) && end >= start ? String(end - start + 1) : '';
+  }
+  return text.match(/\bseasons?\s*(\d+)\b/i)?.[1] ?? '';
 }
 function movieFormat(value: unknown): string {
   return normalizedChoice(value).replace(/4k_uhd|uhd_4k/g, '4k').replace(/blu_ray/g, 'bluray');
@@ -3086,7 +3096,7 @@ function movieIdentityConflict(targetMetadata: string, listing: VisualSourceCand
   const targetYear = Number(firstMeaningfulValue(target.releaseYear, target.year));
   const candidateYear = Number(movieCandidateValue(listing, ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/]));
   if (targetType === 'individual_movie' && Number.isFinite(targetYear) && targetYear > 0 && Number.isFinite(candidateYear) && candidateYear > 0 && targetYear !== candidateYear) return `Movie release year differs: target is ${targetYear}, but the candidate explicitly declares ${candidateYear}.`;
-  const targetCount = Number(firstMeaningfulValue(target.numberOfMovies, target.movieCount, target.quantity));
+  const targetCount = Number(firstMeaningfulValue(target.numberOfMovies, target.movieCount, target.quantity) ?? movieSeasonCountFromText(firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata))));
   const candidateCount = Number(movieCandidateValue(listing, ['numberOfMovies', 'movieCount', 'quantity'], [/(?:contains?|includes?|set\s+of)\s*(\d+)\s+movies?/i, /\b(\d+)\s*[- ]?(?:disc|movie)\s+(?:box\s+)?set\b/i]));
   if (targetType === 'box_set' && Number.isFinite(targetCount) && targetCount > 0 && Number.isFinite(candidateCount) && candidateCount > 0 && targetCount !== candidateCount) return `Movie box-set size differs: target declares ${targetCount} movies, but the candidate explicitly declares ${candidateCount}.`;
   const targetSealed = movieBoolean(firstMeaningfulValue(target.sealed, target.sealedStatus, target.packaging));
@@ -3684,7 +3694,7 @@ function movieScoreBooleanMatches(targetValue: unknown, listing: VisualSourceCan
 function movieScoreCountMatches(targetValue: unknown, listing: VisualSourceCandidate): boolean | null {
   const target = Number(targetValue);
   if (!Number.isFinite(target) || target <= 0) return null;
-  const candidateValue = movieCandidateValue(listing, ['numberOfMovies', 'movieCount', 'quantity'], [/(?:contains?|includes?|set\s+of)\s*(\d+)\s+movies?/i, /\b(\d+)\s*[- ]?(?:disc|movie)\s+(?:box\s+)?set\b/i]);
+  const candidateValue = movieCandidateValue(listing, ['numberOfMovies', 'movieCount', 'quantity'], [/(?:contains?|includes?|set\s+of)\s*(\d+)\s+movies?/i, /\b(\d+)\s*[- ]?(?:disc|movie)\s+(?:box\s+)?set\b/i]) || movieSeasonCountFromText(canonicalCandidateTitle(listing));
   const candidate = Number(candidateValue);
   return Number.isFinite(candidate) && candidate > 0 ? candidate === target : null;
 }
@@ -3708,7 +3718,7 @@ export function moviesBoxSetVisualScore(listing: VisualSourceCandidate, targetMe
   const add = (field: typeof MOVIES_BOX_SET_SCORE_FIELDS[number][0], points: number, result: boolean | null) => { if (result === true) { score += points; matched.push(field); } else if (result === null) unknown.push(field); };
   add('boxSetName', 30, movieScoreValueMatches(firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata)), listing, ['boxSetName', 'title', 'seriesName'], [], true));
   add('format', 20, movieScoreFormatMatches(target.format, listing));
-  add('numberOfMovies', 15, movieScoreCountMatches(firstMeaningfulValue(target.numberOfMovies, target.movieCount), listing));
+  add('numberOfMovies', 15, movieScoreCountMatches(firstMeaningfulValue(target.numberOfMovies, target.movieCount) ?? movieSeasonCountFromText(firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata))), listing));
   add('edition', 15, movieScoreValueMatches(target.edition, listing, ['edition', 'releaseType'], [], true));
   add('sealed', 10, movieScoreBooleanMatches(firstMeaningfulValue(target.sealed, target.sealedStatus), listing));
   const gradeMatch = coinNumericGradeMatches(targetMetadata, normalizeVisualSourceCandidate(listing));
@@ -5159,7 +5169,7 @@ function scorePreVisualComparableCandidate<T extends VisualSourceCandidate>(list
   if (!category || /collection|lot/.test(itemType)) return listing;
 
   let scoring: { score: number; matched: string[]; unknown?: string[] } | null = null;
-  const videoGameType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  const videoGameType = category === "video_games" ? videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata)) : "";
   const movieType = movieTargetItemType(targetMetadata);
   const musicType = musicItemTypeLabel(itemType);
   const vintageToyType = vintageToyScoreType(targetMetadata);
@@ -5335,7 +5345,9 @@ export async function filterVisualSourceCandidates<
   const paperMoneySelection = isPaperMoneyTarget(targetMetadata)
     ? selectPaperMoneyVisualCandidates(allCandidates, targetMetadata)
     : null;
-  const videoGameType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  const videoGameType = normalizedChoice(metadataValue(targetMetadata, "category")) === "video_games"
+    ? videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata))
+    : "";
   const videoGameSelection = videoGameType === 'game' || videoGameType === 'console' || videoGameType === 'accessory'
     ? selectVideoGameVisualCandidates(allCandidates, targetMetadata, videoGameType)
     : null;
