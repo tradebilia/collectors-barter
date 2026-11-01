@@ -2001,6 +2001,12 @@ function videoGameAccessoryValue(listing: VisualSourceCandidate, aliases: string
   }
   return "";
 }
+function videoGameFunctionalConditionValue(listing: VisualSourceCandidate): string {
+  const details = videoGameAccessoryDetails(listing);
+  const raw = listing.condition ?? details.condition ?? details.itemCondition ?? details.item_condition;
+  const normalized = videoGameAccessoryCanonicalValue(raw);
+  return /^(?:working|not_working|untested)$/.test(normalized) ? String(raw) : "";
+}
 function videoGameAccessoryCanonicalValue(value: unknown): string {
   const normalized = videoGameCanonicalValue(value);
   if (/^(?:tested|tested_working|fully_tested|works|working_properly|functional|functional_working)$/.test(normalized)) return "working";
@@ -2058,13 +2064,15 @@ function videoGameIdentityConflict(targetMetadata: string, listing: VisualSource
     checks.push([details.accessoryName, "accessory name", ["accessoryName", "name", "accessory_name", "modelName"], []]);
     checks.push([details.platform, "compatible platform", ["platform", "compatiblePlatform", "compatibleSystem", "console", "system"], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)\b/i]]);
     checks.push([details.manufacturer, "manufacturer", ["manufacturer", "brand", "maker"], []]);
-    checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested", "condition", "working_status"], [/(\bWorking\b|\bTested\b|\bNot Working\b|\bFor Parts\b|\bUntested\b)/i]]);
+    checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested", "working_status"], [/(\bWorking\b|\bTested\b|\bNot Working\b|\bFor Parts\b|\bUntested\b)/i]]);
     checks.push([details.originalPackaging, "original packaging", ["originalPackaging", "packaging", "packageType", "boxIncluded"], [/(\bOriginal Packaging\b|\bOriginal Box\b|\bNo Packaging\b|\bNo Box\b)/i]]);
   }
   for (const [targetValue, label, aliases, patterns] of checks) {
     const targetComparable = videoGameCanonicalValue(targetValue);
     if (!targetComparable || /^(unknown|n_a|na|none|not_applicable)$/.test(targetComparable)) continue;
-    const candidateRawValue = targetType === "accessory" ? videoGameAccessoryValue(listing, aliases, patterns) : videoGameCandidateValue(listing, aliases, patterns);
+    const candidateRawValue = targetType === "accessory"
+      ? (videoGameAccessoryValue(listing, aliases, patterns) || (label === "working condition" ? videoGameFunctionalConditionValue(listing) : ""))
+      : videoGameCandidateValue(listing, aliases, patterns);
     const candidateValue = targetType === "accessory" ? videoGameAccessoryCanonicalValue(candidateRawValue) : videoGameCanonicalValue(candidateRawValue);
     if (!candidateValue || /^(unknown|n_a|na|none|not_applicable)$/.test(candidateValue)) continue;
     const agrees = targetType === "accessory"

@@ -2209,6 +2209,19 @@ describe("visual source filter", () => {
     expect(reviews.map((review) => review.rationale).join(" ")).toContain("working condition differs");
     expect(reviews.map((review) => review.rationale).join(" ")).toContain("original packaging differs");
   });
+  it("does not compare cosmetic marketplace condition to Video Game working condition", () => {
+    const metadata = `title=NES Power Glove; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", workingCondition: "Working" })}`;
+    expect(buildDeclaredIdentityReviews([
+      { title: "Nintendo NES Power Glove Large L New Open Box Complete", condition: "Like New", imageUrl: "https://example.com/candidate.jpg" },
+    ], metadata)).toEqual([]);
+  });
+  it("still compares explicit functional condition signals for Video Game accessories", () => {
+    const metadata = `title=NES Power Glove; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", workingCondition: "Working" })}`;
+    const reviews = buildDeclaredIdentityReviews([
+      { title: "Nintendo NES Power Glove For Parts", condition: "For Parts or Not Working", imageUrl: "https://example.com/candidate.jpg" },
+    ], metadata);
+    expect(reviews[0]?.rationale).toContain("working condition differs");
+  });
   it("does not apply Video Games filters to Collection/Lot", () => {
     const metadata = `title=Video Game Collection; category=video_games; itemType=collection_lot; fullItemDetails=${JSON.stringify({ platformsIncluded: "NES, Switch", approximateItemCount: 20 })}`;
     expect(buildDeclaredIdentityReviews([{ title: "Nintendo Switch Console", itemType: "console", itemDetails: JSON.stringify({ platform: "Switch" }) }], metadata)).toEqual([]);

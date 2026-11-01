@@ -69,3 +69,10 @@ Corrected Test AI display semantics so the AI image-review panel counts only can
 - UI repair: the eBay Active pre-analysis list now explicitly shows either the real ranking score/rank or `Ranking score: not assigned — blocked by a universal identity filter before item-type ranking.` instead of silently omitting the line.
 - This preserves the one-ranking pipeline and prevents a filtered candidate from appearing to have a missing or stale score.
 - Validation passed: focused eBay/visual-source tests 218/218, TypeScript, production build, diff hygiene, and preview screenshot capture. No database, migration, credential, provider, deployment, or publishing changes.
+
+## Video Game condition semantics correction (2026-11-01)
+- Diagnosis: the accessory identity filter treated the generic marketplace `condition` field as working condition. That incorrectly compared cosmetic labels such as `Like New` with functional target values such as `Working`.
+- Repair: Video Game working-condition checks now use explicit functional fields (`workingCondition`, `functionality`, `tested`, `working_status`) and only accept generic marketplace condition values when they normalize to a functional state such as Working, Not Working/For Parts, or Untested. Cosmetic states such as Like New are ignored for this comparison.
+- Scope: the correction applies to the shared Video Game accessory identity path; console behavior remains functional-only and game behavior remains unchanged. Collection/Lot blocking remains unchanged.
+- Regression coverage: Like New is accepted without a working-condition conflict; For Parts or Not Working remains a conflict against a Working target.
+- Validation passed: 220 focused eBay/visual-source tests, TypeScript, production build, and diff hygiene. No database, migration, credential, provider, deployment, or publishing changes.
