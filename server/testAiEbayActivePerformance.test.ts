@@ -107,6 +107,18 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("eBay rejected the configured sandbox authorization. Recheck the secure eBay credentials.");
   });
 
+  it("keeps custom source searches bounded and prevents eBay custom searches from paging three times", () => {
+    const customProcedure = procedureSource("runCustomSourceSearch: protectedProcedure", "    }),\n});");
+    expect(routerSource).toContain("const CUSTOM_SOURCE_LOOKUP_TIMEOUT_MS = 10_000");
+    expect(routerSource).toContain("withCustomSourceTimeout");
+    expect(customProcedure).toContain("fetchEbayListings(query, tokenResult.token, EBAY_ACTIVE_DISPLAY_TARGET, 0)");
+    expect(customProcedure).not.toContain("fetchEbayExactTierPages(query, tokenResult.token)");
+    for (const sourceLabel of ["Mercari", "TCGplayer", "TCGdex", "Wikidata", "Smithsonian", "IGDB", "RAWG"]) {
+      expect(customProcedure).toContain(`'${sourceLabel}'`);
+    }
+    expect(customProcedure).toContain("The selected source could not complete the custom search. Please try again.");
+  });
+
   it("applies the shared pre-vision gate to active asking prices", () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: "video_games",

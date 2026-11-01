@@ -61,6 +61,21 @@ export const EBAY_ACTIVE_QUERY_TIER_LIMIT = 6;
 export const EBAY_ACTIVE_RESULTS_PER_TIER = 40;
 export const EBAY_ACTIVE_EXACT_PAGE_LIMIT = 3;
 export const EBAY_ACTIVE_DISPLAY_TARGET = 20;
+const CUSTOM_SOURCE_LOOKUP_TIMEOUT_MS = 10_000;
+
+async function withCustomSourceTimeout<T>(lookup: Promise<T>, sourceLabel: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      lookup,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${sourceLabel} custom search timed out. Please try again.`)), CUSTOM_SOURCE_LOOKUP_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 function normalizedPcgsAuctionGrade(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, '').toUpperCase();
@@ -4141,8 +4156,11 @@ Return only the schema-compliant JSON response.`;
           return { status: 'error' as const, sourceId, query, message: tokenResult.error ?? 'eBay authorization unavailable.', results: [] };
         }
         try {
-          const pages = await fetchEbayExactTierPages(query, tokenResult.token);
-          const rawItems = pages.flatMap((page) => page.items).slice(0, EBAY_ACTIVE_DISPLAY_TARGET);
+          // Custom searches are deliberately lightweight. The automatic Test AI
+          // path may use bounded fallback pages, but a user-entered search must
+          // not fan out into three sequential Browse requests and hit the tRPC
+          // request deadline before returning context results.
+          const rawItems = (await fetchEbayListings(query, tokenResult.token, EBAY_ACTIVE_DISPLAY_TARGET, 0)).slice(0, EBAY_ACTIVE_DISPLAY_TARGET);
           const results = rawItems.map((item: any, index: number) => ({
             rank: index + 1,
             title: String(item.title ?? 'Untitled listing'),
@@ -4158,48 +4176,59 @@ Return only the schema-compliant JSON response.`;
         }
       }
 
-      if (sourceId === 'mercari_sold_comps') {
-        const result = await lookupMercariSoldComps({ title: query, category: category || 'unknown' });
+      try {
+        if (sourceId === 'mercari_sold_comps') {
+        const result = await withCustomSourceTimeout(lookupMercariSoldComps({ title: query, category: category || 'unknown' }), 'Mercari');
         return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered Mercari search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: result.listings.slice(0, 20), contextOnly: true };
-      }
+        }
 
       if (sourceId === 'tcgplayer_sold_comps') {
-        const result = await lookupTcgplayerSoldComps({ title: query, category: category || 'pokemon' });
+        const result = await withCustomSourceTimeout(lookupTcgplayerSoldComps({ title: query, category: category || 'pokemon' }), 'TCGplayer');
         return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered TCGplayer search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: result.listings.slice(0, 20), contextOnly: true };
       }
 
       if (sourceId === 'tcgdex') {
-        const result = await lookupTcgDexCatalog(query);
+        const result = await withCustomSourceTimeout(lookupTcgDexCatalog(query), 'TCGdex');
         return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered TCGdex lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
       }
 
       if (sourceId === 'wikidata') {
-        const result = await lookupWikidataMetadata(query, category === 'movies' ? 'movies' : 'autographs');
+        const result = await withCustomSourceTimeout(lookupWikidataMetadata(query, category === 'movies' ? 'movies' : 'autographs'), 'Wikidata');
         return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Wikidata lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
       }
 
       if (sourceId === 'smithsonian') {
-        const result = await lookupSmithsonianStampReference(query);
+        const result = await withCustomSourceTimeout(lookupSmithsonianStampReference(query), 'Smithsonian');
         return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Smithsonian lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
       }
 
       if (sourceId === 'igdb') {
-        const result = await lookupIgdbGameMetadata(query);
+        const result = await withCustomSourceTimeout(lookupIgdbGameMetadata(query), 'IGDB');
         return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered IGDB lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
       }
 
       if (sourceId === 'rawg') {
-        const result = await lookupRawgGameMetadata(query);
+        const result = await withCustomSourceTimeout(lookupRawgGameMetadata(query), 'RAWG');
         return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered RAWG lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
       }
 
-      return {
-        status: 'unsupported' as const,
-        sourceId,
-        query,
-        message: 'This source requires a structured identifier or its own provider-specific lookup. The custom text was not sent through an incompatible endpoint.',
-        results: [],
-        contextOnly: true,
-      };
+        return {
+          status: 'unsupported' as const,
+          sourceId,
+          query,
+          message: 'This source requires a structured identifier or its own provider-specific lookup. The custom text was not sent through an incompatible endpoint.',
+          results: [],
+          contextOnly: true,
+        };
+      } catch (error) {
+        return {
+          status: 'error' as const,
+          sourceId,
+          query,
+          message: error instanceof Error ? error.message : 'The selected source could not complete the custom search. Please try again.',
+          results: [],
+          contextOnly: true,
+        };
+      }
     }),
 });
