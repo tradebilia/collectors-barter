@@ -60,6 +60,18 @@ describe('Sold-Comps API key validation', () => {
     ]);
   });
 
+  it('builds broader fallback tiers when a movie query includes only a condition phrase', () => {
+    const candidates = buildSoldCompsQueryCandidates('Moonlighting Season 1&2 DVD excellent', {
+      preserveGrade: true,
+      fallbackQueries: ['Moonlighting Season 1&2 DVD', 'Moonlighting Season 1&2'],
+    });
+
+    expect(candidates[0]).toBe('Moonlighting Season 1&2 DVD excellent');
+    expect(candidates).toContain('Moonlighting Season 1&2 DVD');
+    expect(candidates).toContain('Moonlighting Season 1&2');
+    expect(candidates.length).toBeGreaterThan(1);
+  });
+
   it('puts the precise query first when active retrieval preserves the grade', () => {
     expect(buildSoldCompsQueryCandidates('Transformers Megatron G1 AFA 60.0', { preserveGrade: true })[0])
       .toBe('Transformers Megatron G1 AFA 60.0');

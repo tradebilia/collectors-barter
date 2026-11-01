@@ -389,11 +389,18 @@ function hasConditionOnlyEvidence(item: any): boolean {
     || conditionOnlyPattern.test(conditionDescription);
 }
 
-export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean }): string[] {
+export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean; fallbackQueries?: string[] }): string[] {
   const precise = query.trim();
   const withoutGrade = buildEbayBrowseQuery(precise, { preserveGrade: false });
   const withoutProviderOrGrade = withoutGrade
     .replace(new RegExp(`\\b(${gradeProviderPattern})\\b`, 'gi'), '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+  // Condition is useful after retrieval, but many marketplace titles omit it.
+  // Remove only common condition phrases for a broader retrieval tier; the
+  // downstream identity and condition gates remain authoritative.
+  const withoutCondition = withoutProviderOrGrade
+    .replace(/\b(?:near\s+mint|mint\s+condition|like\s+new|very\s+good|open\s+box|excellent|mint|tested|untested|acceptable|good)\b/gi, '')
     .replace(/\s{2,}/g, ' ')
     .trim();
   // Marketplace titles commonly omit optional articles (for example, eBay
@@ -408,7 +415,9 @@ export function buildSoldCompsQueryCandidates(query: string, options?: { preserv
   const baseCandidates = [
     options?.preserveGrade ? precise : withoutGrade,
     withoutProviderOrGrade,
+    withoutCondition,
     precise,
+    ...(options?.fallbackQueries ?? []),
   ].filter(Boolean);
   const articleAliases = baseCandidates
     .map(removeOptionalArticles)
@@ -1619,7 +1628,7 @@ export const testAIRouter = router({
         const targetGrade = extractGradeFromQuery(query);
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
-          : buildSoldCompsQueryCandidates(query, { preserveGrade: true });
+          : buildSoldCompsQueryCandidates(query, { preserveGrade: true, fallbackQueries: standardSearchDefinition.fallbackQueries });
         const boundedSearchQueries = searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT);
         const exactQuery = boundedSearchQueries[0] ?? query;
         const exactCandidateQuery = buildEbayBrowseQuery(exactQuery, {
@@ -2470,6 +2479,7 @@ export const testAIRouter = router({
           // Keep grade in the first sports-card query, then use the broader
           // fallbacks. The final grade/provider filters remain authoritative.
           preserveGrade: input.category === 'sports_cards',
+          fallbackQueries: standardSearchDefinition.fallbackQueries,
         });
         const rawItems: any[] = [];
         const seenSoldKeys = new Set<string>();

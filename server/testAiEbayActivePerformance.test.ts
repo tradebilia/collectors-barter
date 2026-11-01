@@ -42,7 +42,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
 
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(section).toContain("searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT)");
-    expect(section).toContain("buildSoldCompsQueryCandidates(query, { preserveGrade: true })");
+    expect(section).toContain("buildSoldCompsQueryCandidates(query, { preserveGrade: true, fallbackQueries: standardSearchDefinition.fallbackQueries })");
     expect(section).toContain("fetchEbayExactTierPages(exactCandidateQuery, token)");
     expect(section).toContain("eligibility.filteredSummaries.length < EBAY_ACTIVE_DISPLAY_TARGET");
     expect(section).toContain("exactTierPageCount");
