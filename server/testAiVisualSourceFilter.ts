@@ -1485,6 +1485,8 @@ function explicitGradingState(value: unknown): ExplicitGradingState {
 type NormalizedVisualSourceCandidate = VisualSourceCandidate & {
   details: Record<string, unknown>;
   title: string;
+  titleSource: string;
+  titleCandidates: string[];
   imageUrls: string[];
   providerReference: string | null;
   quantity: number | null;
@@ -1501,6 +1503,13 @@ function candidateText(value: unknown): string {
 
 function firstCandidateText(...values: unknown[]): string {
   return values.map(candidateText).find(Boolean) ?? "";
+}
+
+function candidateTitleList(...values: unknown[]): string[] {
+  const titles = values.flatMap((value) => Array.isArray(value) ? value : [value])
+    .map(candidateText)
+    .filter(Boolean);
+  return Array.from(new Set(titles));
 }
 
 function imageValues(value: unknown): string[] {
@@ -1558,6 +1567,20 @@ export function normalizeVisualSourceCandidate(listing: VisualSourceCandidate): 
   return {
     details,
     title: firstCandidateText(
+      listing.normalizedListingTitle,
+      listing.title,
+      listing.itemTitle,
+      listing.listingTitle,
+      listing.name,
+      listing.productName,
+      details.title,
+      details.itemTitle,
+      details.listingTitle,
+    ),
+    titleSource: firstCandidateText(listing.normalizedListingTitleSource, listing.titleSource) || "unknown",
+    titleCandidates: candidateTitleList(
+      listing.normalizedListingTitleCandidates,
+      listing.normalizedListingTitle,
       listing.title,
       listing.itemTitle,
       listing.listingTitle,
@@ -1579,7 +1602,18 @@ export function normalizeVisualSourceCandidate(listing: VisualSourceCandidate): 
 }
 
 function candidateStructuredDetails(listing: VisualSourceCandidate): Record<string, unknown> {
-  return visualMetadataDetails(listing.fullItemDetails ?? listing.itemDetails ?? listing.details);
+  const source = listing.normalizedStructuredMetadata ?? listing.fullItemDetails ?? listing.itemDetails ?? listing.details;
+  const parsed = visualMetadataDetails(source);
+  const details: Record<string, unknown> = {};
+  const nestedKeys = new Set(['itemSpecifics', 'item_specifics', 'aspects', 'specifics', 'itemDetails', 'fullItemDetails']);
+  for (const [key, value] of Object.entries(parsed)) {
+    if (nestedKeys.has(key) && value && typeof value === 'object') {
+      Object.assign(details, visualMetadataDetails(value));
+    } else {
+      details[key] = value;
+    }
+  }
+  return details;
 }
 
 type ExplicitState = "yes" | "no" | "unknown";

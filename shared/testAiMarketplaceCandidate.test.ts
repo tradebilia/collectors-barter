@@ -54,6 +54,29 @@ describe('shared marketplace candidate contract', () => {
     expect(candidate.imageAvailability).toBe('available');
   });
 
+  it('uses the first real provider title alias without discarding the other title observations', () => {
+    const candidate = normalizeMarketplaceCandidate({
+      sourceId: 'ebay_active',
+      itemTitle: 'PAX Power Glove NES Famicom Controller Tested Working Boxed',
+      listingTitle: 'Provider listing title fallback',
+      name: 'Controller',
+      itemSpecifics: { AccessoryType: 'Controller', Platform: 'NES' },
+      aspects: { Brand: 'Nintendo' },
+    });
+
+    expect(candidate.title).toBe('PAX Power Glove NES Famicom Controller Tested Working Boxed');
+    expect(candidate.titleSource).toBe('itemTitle');
+    expect(candidate.titleCandidates).toEqual([
+      'PAX Power Glove NES Famicom Controller Tested Working Boxed',
+      'Provider listing title fallback',
+      'Controller',
+    ]);
+    expect(candidate.structuredMetadata).toEqual({
+      itemSpecifics: { AccessoryType: 'Controller', Platform: 'NES' },
+      aspects: { Brand: 'Nintendo' },
+    });
+  });
+
   it('keeps missing metadata unknown rather than inventing conflicts or a score', () => {
     const candidate = normalizeMarketplaceCandidate({ title: 'Unknown collectible' });
 

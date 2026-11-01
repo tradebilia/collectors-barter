@@ -539,6 +539,35 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([aliasedTitleCandidate], powerGloveTarget)).toEqual([]);
   });
 
+  it("preserves the shared canonical title source and structured metadata at the visual boundary", () => {
+    const candidate = normalizeVisualSourceCandidate({
+      normalizedListingTitle: "PAX Power Glove NES Famicom Controller Tested Working Boxed",
+      normalizedListingTitleSource: "itemTitle",
+      normalizedListingTitleCandidates: [
+        "PAX Power Glove NES Famicom Controller Tested Working Boxed",
+        "Provider fallback name",
+      ],
+      normalizedStructuredMetadata: {
+        itemSpecifics: { AccessoryType: "Controller", Platform: "NES" },
+        aspects: { Brand: "Nintendo" },
+      },
+      itemTitle: "PAX Power Glove NES Famicom Controller Tested Working Boxed",
+      name: "Provider fallback name",
+    });
+
+    expect(candidate.title).toBe("PAX Power Glove NES Famicom Controller Tested Working Boxed");
+    expect(candidate.titleSource).toBe("itemTitle");
+    expect(candidate.titleCandidates).toEqual([
+      "PAX Power Glove NES Famicom Controller Tested Working Boxed",
+      "Provider fallback name",
+    ]);
+    expect(candidate.details).toEqual({
+      AccessoryType: "Controller",
+      Platform: "NES",
+      Brand: "Nintendo",
+    });
+  });
+
   it("uses marketplace aspects and accessory aliases for Video Games / Accessory", () => {
     const target = buildVisualTargetMetadata({
       title: "NES Power Glove",

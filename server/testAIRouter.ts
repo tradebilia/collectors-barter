@@ -1717,6 +1717,10 @@ export const testAIRouter = router({
           return {
             ...item,
             marketplaceCandidate,
+            normalizedListingTitle: marketplaceCandidate.title,
+            normalizedListingTitleSource: marketplaceCandidate.titleSource,
+            normalizedListingTitleCandidates: marketplaceCandidate.titleCandidates,
+            normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata,
             imageUrl: marketplaceCandidate.imageUrl,
             imageUrls: marketplaceCandidate.imageUrls,
           };

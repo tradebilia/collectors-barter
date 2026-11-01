@@ -1,6 +1,7 @@
 export type MarketplaceCandidateStatus = 'active' | 'completed' | 'closed' | 'unknown';
 export type MarketplaceCandidatePriceBasis = 'asking' | 'sold' | 'realized' | 'closed' | 'unknown';
 export type MarketplaceCandidateEvidenceSource = 'structured' | 'title' | 'description' | 'image' | 'unknown';
+export type MarketplaceCandidateTitleSource = 'title' | 'itemTitle' | 'listingTitle' | 'productName' | 'name' | 'structured' | 'unknown';
 export type MarketplaceCandidateDisposition = 'valuation_eligible' | 'context_only' | 'rejected' | 'not_evaluated';
 export type MarketplaceCandidateFilterState = 'passed' | 'blocked' | 'unknown';
 
@@ -37,6 +38,8 @@ export type MarketplaceCandidate = {
   providerRecordId: string | null;
   retrievalQuery: string | null;
   title: string;
+  titleSource: MarketplaceCandidateTitleSource;
+  titleCandidates: string[];
   normalizedTitle: string;
   url: string | null;
   imageUrl: string | null;
@@ -67,6 +70,12 @@ export type MarketplaceCandidate = {
 
 type CandidateInput = Record<string, unknown> & {
   title?: unknown;
+  itemTitle?: unknown;
+  listingTitle?: unknown;
+  productName?: unknown;
+  name?: unknown;
+  canonicalTitle?: unknown;
+  canonicalTitleSource?: unknown;
   sourceId?: unknown;
   sourceLabel?: unknown;
   id?: unknown;
@@ -178,6 +187,41 @@ function arrayOfText(value: unknown): string[] {
   return Array.isArray(value) ? value.map(text).filter(Boolean) : [];
 }
 
+function titleCandidates(input: CandidateInput): Array<{ source: MarketplaceCandidateTitleSource; value: string }> {
+  const aliases: Array<[MarketplaceCandidateTitleSource, unknown]> = [
+    ['title', input.title],
+    ['itemTitle', input.itemTitle],
+    ['listingTitle', input.listingTitle],
+    ['productName', input.productName],
+    ['name', input.name],
+    ['structured', input.canonicalTitle],
+  ];
+  const seen = new Set<string>();
+  return aliases.flatMap(([source, value]) => {
+    const candidate = text(value);
+    const key = candidate.toLowerCase();
+    if (!candidate || seen.has(key)) return [];
+    seen.add(key);
+    return [{ source, value: candidate }];
+  });
+}
+
+function structuredMetadata(input: CandidateInput): Record<string, unknown> {
+  const metadata: Record<string, unknown> = {};
+  for (const key of ['itemSpecifics', 'item_specifics', 'aspects', 'specifics', 'itemDetails', 'fullItemDetails']) {
+    const value = input[key];
+    if ((value && typeof value === 'object') || (typeof value === 'string' && value.trim())) metadata[key] = value;
+  }
+  return metadata;
+}
+
+function validTitleSource(value: unknown, fallback: MarketplaceCandidateTitleSource): MarketplaceCandidateTitleSource {
+  const candidate = text(value);
+  return ['title', 'itemTitle', 'listingTitle', 'productName', 'name', 'structured', 'unknown'].includes(candidate)
+    ? candidate as MarketplaceCandidateTitleSource
+    : fallback;
+}
+
 function candidateId(input: CandidateInput, title: string, url: string | null): string {
   const explicit = text(input.candidateId ?? input.id ?? input.saleId ?? input.itemId);
   if (explicit) return explicit;
@@ -185,7 +229,9 @@ function candidateId(input: CandidateInput, title: string, url: string | null): 
 }
 
 export function normalizeMarketplaceCandidate(input: CandidateInput, defaults: Partial<MarketplaceCandidate> = {}): MarketplaceCandidate {
-  const title = text(input.title) || 'Untitled listing';
+  const titles = titleCandidates(input);
+  const title = titles[0]?.value || 'Untitled listing';
+  const titleSource = validTitleSource(input.canonicalTitleSource, titles[0]?.source || 'unknown');
   const images = imageList(input);
   const url = safeRemoteUrl(input.url ?? input.itemUrl ?? input.itemWebUrl);
   const imageUrl = images.urls[0] ?? null;
@@ -205,13 +251,15 @@ export function normalizeMarketplaceCandidate(input: CandidateInput, defaults: P
     providerRecordId: defaults.providerRecordId ?? nullableText(input.providerRecordId ?? input.id ?? input.saleId ?? input.itemId),
     retrievalQuery: defaults.retrievalQuery ?? nullableText(input.retrievalQuery),
     title,
+    titleSource,
+    titleCandidates: defaults.titleCandidates ?? titles.map((candidate) => candidate.value),
     normalizedTitle: defaults.normalizedTitle ?? normalizeTitle(title),
     url,
     imageUrl: defaults.imageUrl ?? imageUrl,
     imageUrls: defaults.imageUrls ?? images.urls,
     imageAvailability: defaults.imageAvailability ?? (imageUrl ? 'available' : images.invalid ? 'invalid' : 'missing'),
     rawMetadata: defaults.rawMetadata ?? { ...input },
-    structuredMetadata: defaults.structuredMetadata ?? {},
+    structuredMetadata: defaults.structuredMetadata ?? structuredMetadata(input),
     titleEvidence: defaults.titleEvidence ?? {},
     titleEvidenceSources: defaults.titleEvidenceSources ?? {},
     price: defaults.price ?? marketValue(input.price ?? input.soldPrice),

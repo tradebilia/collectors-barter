@@ -79,6 +79,10 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("retrievalQuery: query");
     expect(routerSource).toContain("structuredMetadata:");
     expect(routerSource).toContain("marketplaceCandidate,");
+    expect(routerSource).toContain("normalizedListingTitle: marketplaceCandidate.title");
+    expect(routerSource).toContain("normalizedListingTitleSource: marketplaceCandidate.titleSource");
+    expect(routerSource).toContain("normalizedListingTitleCandidates: marketplaceCandidate.titleCandidates");
+    expect(routerSource).toContain("normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata");
     expect(routerSource).toContain("imageUrl: marketplaceCandidate.imageUrl");
     expect(routerSource).toContain("imageUrls: marketplaceCandidate.imageUrls");
   });
