@@ -4976,6 +4976,48 @@ function annotateSportsCardScoresWithoutImages<T extends VisualSourceCandidate>(
     .map((entry, rank) => ({ ...entry.item, metadataMatchRank: rank + 1 } as T));
 }
 
+// Pre-vision conflicts stay excluded from visual review and valuation, but they
+// still receive the same single item-type score for transparent auditing.
+// Collection/Lot remains intentionally non-comparable and receives no score.
+function scorePreVisualComparableCandidate<T extends VisualSourceCandidate>(listing: T, targetMetadata: string): T {
+  const category = normalizedChoice(metadataValue(targetMetadata, "category"));
+  const itemType = normalizedChoice(metadataValue(targetMetadata, "itemType") || extractTargetItemDetails(targetMetadata).itemType);
+  if (!category || /collection|lot/.test(itemType)) return listing;
+
+  let scoring: { score: number; matched: string[]; unknown?: string[] } | null = null;
+  const videoGameType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  const movieType = movieTargetItemType(targetMetadata);
+  const musicType = musicItemTypeLabel(itemType);
+  const vintageToyType = vintageToyScoreType(targetMetadata);
+  const pokemonType = pokemonTargetItemType(targetMetadata);
+  if (sportsCardUnopenedTarget(targetMetadata)) scoring = sportsCardUnopenedVisualScore(listing, targetMetadata);
+  else if (sportsCardSetTarget(targetMetadata)) scoring = sportsCardSetVisualScore(listing, targetMetadata);
+  else if (sportsCardSingleTarget(targetMetadata)) scoring = sportsCardSingleVisualScore(listing, targetMetadata);
+  else if (comicsSingleTarget(targetMetadata)) scoring = comicsSingleVisualScore(listing, targetMetadata);
+  else if (isSingleStampTarget(targetMetadata)) scoring = stampsSingleVisualScore(listing, targetMetadata);
+  else if (isStampSetTarget(targetMetadata)) scoring = stampsSetVisualScore(listing, targetMetadata);
+  else if (isSingleCoinTarget(targetMetadata)) scoring = coinsSingleVisualScore(listing, targetMetadata);
+  else if (isCoinSetTarget(targetMetadata)) scoring = coinsSetVisualScore(listing, targetMetadata);
+  else if (isPaperMoneyTarget(targetMetadata)) scoring = paperMoneyVisualScore(listing, targetMetadata);
+  else if (videoGameType === "game") scoring = videoGameGameVisualScore(listing, targetMetadata);
+  else if (videoGameType === "console") scoring = videoGameConsoleVisualScore(listing, targetMetadata);
+  else if (videoGameType === "accessory") scoring = videoGameAccessoryVisualScore(listing, targetMetadata);
+  else if (movieType === "individual_movie") scoring = moviesIndividualVisualScore(listing, targetMetadata);
+  else if (movieType === "box_set") scoring = moviesBoxSetVisualScore(listing, targetMetadata);
+  else if (category === "disney_pins" && itemType === "individual_pin") scoring = disneyPinsIndividualVisualScore(listing, targetMetadata);
+  else if (category === "disney_pins" && itemType === "pin_set") scoring = disneyPinsSetVisualScore(listing, targetMetadata);
+  else if (category === "music" && musicType && musicType !== "collection/lot") scoring = musicVisualScore(listing, targetMetadata);
+  else if (category === "vintage_toys" && vintageToyType && vintageToyType !== "collection/lot") scoring = vintageToyVisualScore(listing, targetMetadata);
+  else if (category === "pokemon" && pokemonType) scoring = pokemonVisualScore(listing, targetMetadata);
+
+  return scoring ? {
+    ...listing,
+    metadataMatchScore: scoring.score,
+    metadataMatchReasons: scoring.matched,
+    ...(scoring.unknown ? { metadataUnknownFields: scoring.unknown } : {}),
+  } as T : listing;
+}
+
 export async function filterVisualSourceCandidates<
   T extends VisualSourceCandidate,
 >(args: {
@@ -5070,8 +5112,9 @@ export async function filterVisualSourceCandidates<
 	      ?? preVisualLotReasons.get(originalIndex)
       ?? declaredReview?.rationale
       ?? "Pre-visual identity filter excluded this listing from visual review.";
+      const scoredListing = scorePreVisualComparableCandidate(listing, targetMetadata);
       return {
-        ...listing,
+        ...scoredListing,
         visualRequirement: "not_required_pre_visual",
         visualReviewStatus: declaredReview?.verdict ?? "not_reviewed",
         visualReviewRationale: reason,

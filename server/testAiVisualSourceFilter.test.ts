@@ -1216,6 +1216,31 @@ describe("visual source filter", () => {
     expect(result.contextListings?.slice(0, 2).every((item) => String(item.visualReviewRationale).includes("target item has no usable image"))).toBe(true);
   });
 
+  it("keeps one item-type score on comparable pre-vision holdouts", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "NES Nintendo Power Glove",
+      category: "video_games",
+      itemType: "accessory",
+      fullItemDetails: { accessoryType: "controller", accessoryName: "Power Glove", platform: "NES" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "eBay Active Listings",
+      targetImageUrl: "https://example.com/target.jpg",
+      targetMetadata: target,
+      listings: [{
+        title: "NES Nintendo Power Glove Large L New Open Box Complete w/ Manuals Mattel",
+        imageUrl: "https://example.com/candidate.jpg",
+      }],
+    });
+    const holdout = result.contextListings?.[0];
+    expect(holdout?.evidenceDisposition).toBe("context_only");
+    expect(holdout?.metadataMatchScore).toEqual(expect.any(Number));
+    expect(holdout?.metadataMatchReasons).toEqual(expect.any(Array));
+    expect(holdout?.visualRequirement).toBe("not_required_pre_visual");
+    expect(holdout?.visualReviewStatus).not.toBe("match");
+  });
+
   it("accepts a browser-visible HTTP target image for visual review", async () => {
     mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
       reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The target and candidate show the same item." }],
