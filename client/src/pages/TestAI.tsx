@@ -836,7 +836,21 @@ function AnalyzerUseLine({ eligible, reason = 'Final identity, date, grade/condi
 
 function MetadataMatchLine({ listing }: { listing: any }) {
   if (listing?.metadataMatchScore === undefined || listing?.metadataMatchScore === null) return null;
-  return <p className="text-[8px] text-cyan-200">{listing.metadataMatchLabel ?? 'Metadata'} rank #{listing.metadataMatchRank ?? '—'} · {listing.metadataMatchScore}/100 · {(listing.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{listing.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>;
+  return <p className="text-[8px] text-cyan-200">{listing.metadataMatchLabel ?? 'Ranking'} rank #{listing.metadataMatchRank ?? '—'} · {listing.metadataMatchScore}/100 · {(listing.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{listing.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>;
+}
+
+function sortRankedCandidates<T extends Record<string, any>>(listings: T[]): T[] {
+  return listings
+    .map((listing, index) => ({ listing, index }))
+    .sort((a, b) => {
+      const rankA = Number.isFinite(Number(a.listing.metadataMatchRank)) ? Number(a.listing.metadataMatchRank) : Number.POSITIVE_INFINITY;
+      const rankB = Number.isFinite(Number(b.listing.metadataMatchRank)) ? Number(b.listing.metadataMatchRank) : Number.POSITIVE_INFINITY;
+      if (rankA !== rankB) return rankA - rankB;
+      const scoreA = Number.isFinite(Number(a.listing.metadataMatchScore)) ? Number(a.listing.metadataMatchScore) : Number.NEGATIVE_INFINITY;
+      const scoreB = Number.isFinite(Number(b.listing.metadataMatchScore)) ? Number(b.listing.metadataMatchScore) : Number.NEGATIVE_INFINITY;
+      return scoreB - scoreA || a.index - b.index;
+    })
+    .map(({ listing }) => listing);
 }
 
 function AnalyzerRecordPanel({ records, acceptedCount, sourceLabel }: { records: AnalyzerRecordDetail[]; acceptedCount: number; sourceLabel: string }) {
@@ -1012,7 +1026,7 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
     if (controlledOpen === undefined) setUncontrolledOpen(nextOpen);
     onOpenChange?.(nextOpen);
   };
-  const candidates = data?.visualReviewListings ?? data?.listings ?? data?.sales ?? data?.data?.items ?? [];
+  const candidates = sortRankedCandidates(data?.visualReviewListings ?? data?.listings ?? data?.sales ?? data?.data?.items ?? []);
   const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualRequirement === 'required' && listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
   const excludedBeforeReview = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualRequirement !== 'required' && (listing.visualReviewStatus || listing.visualReviewRationale));
   const mismatches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
@@ -1265,6 +1279,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
   const visibleMetrics = showingVisualMatchMetrics ? effectiveVisualReviewData.visualMatchMetrics : data?.metrics;
   const visualMatchCount = effectiveVisualReviewData?.visualMatchMetrics?.count ?? 0;
   const autographMarketContextOnly = Boolean(displayData?.marketContextOnly);
+  const rankedDisplayListings = sortRankedCandidates(displayData?.listings ?? []);
   const autographValuationListings = autographMarketContextOnly
     ? (displayData?.listings ?? []).filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
     : [];
@@ -1278,7 +1293,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
         <div className="min-w-0 flex-1">
           <a href={l.itemUrl} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-400 hover:underline break-words block">{l.title}</a>
           <p className="text-[10px] text-gray-500">{[l.listingType === 'AUCTION' ? 'Auction' : 'Fixed price', l.condition, l.seller, l.bidCount != null ? `${l.bidCount} bids` : null, l.uniqueBidderCount != null ? `${l.uniqueBidderCount} unique bidders` : null].filter(Boolean).join(' · ')}</p>
-          {l.metadataMatchScore !== undefined && <p className="text-[9px] text-cyan-200">{l.metadataMatchLabel ?? 'Metadata'} rank #{l.metadataMatchRank} · {l.metadataMatchScore}/100 · {(l.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{l.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>}
+          {l.metadataMatchScore !== undefined && <p className="text-[9px] text-cyan-200">{l.metadataMatchLabel ?? 'Ranking'} rank #{l.metadataMatchRank} · {l.metadataMatchScore}/100 · {(l.metadataMatchReasons ?? []).join(', ') || 'No additional metadata match stated'}{l.metadataMatchLabel === 'Market Relevance Score' ? ' · not an exact comparable' : ''}</p>}
           {l.visualRequirement === 'not_required_no_target_image' && <p className="text-[8px] font-semibold text-amber-300">Context only — not visually analyzed because the target item image was unavailable.</p>}
           {autographMarketContextOnly && <p className={`text-[8px] font-semibold ${l.evidenceDisposition === 'valuation_eligible' ? 'text-emerald-300' : 'text-amber-300'}`}>{l.evidenceDisposition === 'valuation_eligible' ? 'Current-value market evidence — included in valuation' : `Context only — ${l.evidenceReasons?.[0] || 'not included in valuation'}`}</p>}
         </div>
@@ -1341,7 +1356,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
       {autographMarketContextOnly ? <>
         {autographValuationListings.length > 0 && <section className="rounded border border-emerald-700/40 bg-emerald-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-300">Current-Value Market Evidence</p><p className="mt-0.5 text-[9px] text-emerald-100/70">These listings passed the Autographs identity and score rules and are included in the valuation metrics above.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographValuationListings.map(renderListing)}</div></section>}
         {autographContextListings.length > 0 && <section className="rounded border border-amber-700/40 bg-amber-950/15 p-2"><p className="text-[10px] font-semibold uppercase tracking-wide text-amber-300">Context Only — Not Used in Valuation</p><p className="mt-0.5 text-[9px] text-amber-100/70">These listings remain visible for transparency but do not affect the current-value metrics.</p><div className="mt-1 max-h-72 space-y-1 overflow-y-auto pr-1">{autographContextListings.map(renderListing)}</div></section>}
-      </> : displayData?.listings && displayData.listings.length > 0 && <div className="space-y-1 max-h-72 overflow-y-auto pr-1">{displayData.listings.map(renderListing)}</div>}
+      </> : rankedDisplayListings.length > 0 && <div className="space-y-1 max-h-72 overflow-y-auto pr-1">{rankedDisplayListings.map(renderListing)}</div>}
       {displayData && !displayData.listings.length && !displayData.error && <p className="text-gray-500 text-xs">No listings found.</p>}
     </div>
   );

@@ -160,6 +160,15 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("object-contain p-0.5");
   });
 
+  it("renders visible marketplace candidates in ranking order", () => {
+    expect(pageSource).toContain("function sortRankedCandidates");
+    expect(pageSource).toContain("const candidates = sortRankedCandidates(");
+    expect(pageSource).toContain("const rankedDisplayListings = sortRankedCandidates(");
+    expect(pageSource).toContain("rankedDisplayListings.map(renderListing)");
+    expect(pageSource).toContain("return scoreB - scoreA || a.index - b.index");
+    expect(pageSource).not.toContain("displayData.listings.map(renderListing)");
+  });
+
   it("keeps selected ranks visible as context when visual analysis has no target image", () => {
     expect(visualSource).toContain("rankedSelectedContextListings");
     expect(visualSource).toContain("not_required_no_target_image");
