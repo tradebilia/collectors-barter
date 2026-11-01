@@ -217,6 +217,16 @@ describe('Sold-Comps API key validation', () => {
     expect(annotated.evidenceReasons ?? []).not.toContain(expect.stringMatching(/multi-item lot or bundle/i));
   });
 
+  it('accepts the UI-style spaced Box Set item type in the live Sold-Comps gate', () => {
+    const result = assessSoldCompsPreVisionCandidates({
+      category: 'movies',
+      targetMetadata: 'title=Moonlighting Season 1&2; category=movies; itemType=Box Set; fullItemDetails={"boxSetName":"Moonlighting Season 1&2","format":"DVD"}',
+      listings: [{ title: 'Moonlighting Seasons 1 & 2 DVD Collection', soldPrice: 13 }],
+    });
+    expect(result.eligible).toHaveLength(1);
+    expect(result.excluded).toHaveLength(0);
+  });
+
   it('retains grading-company variants until the shared universal filter can classify them with a visible reason', () => {
     const listings = [
       { title: 'Edge of the Spider-Verse #2 CGC 9.8' },

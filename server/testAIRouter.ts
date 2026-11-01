@@ -546,10 +546,10 @@ function isMovieBoxSetTarget(category: unknown, itemTypeOrMetadata: unknown): bo
   const normalizedCategory = String(category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
   if (normalizedCategory !== 'movies') return false;
   const raw = String(itemTypeOrMetadata ?? '').trim();
-  const itemType = raw.includes('=')
+  const itemType = (raw.includes('=')
     ? raw.match(/(?:^|;)\s*(?:itemType|productType|form)=([^;]*)/i)?.[1] ?? ''
-    : raw;
-  return /(?:^|[_\s-])(?:box_set|boxset|complete_series|collection_set)(?:$|[_\s-])/i.test(itemType);
+    : raw).trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return /(?:^|_)(?:box_set|boxset|complete_series|collection_set)(?:$|_)/i.test(itemType);
 }
 
 export function assessSoldCompsPreVisionCandidates(args: {
