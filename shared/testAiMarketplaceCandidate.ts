@@ -1,3 +1,5 @@
+import { buildMarketplaceTitleEvidence } from './testAiTitleEvidence';
+
 export type MarketplaceCandidateStatus = 'active' | 'completed' | 'closed' | 'unknown';
 export type MarketplaceCandidatePriceBasis = 'asking' | 'sold' | 'realized' | 'closed' | 'unknown';
 export type MarketplaceCandidateEvidenceSource = 'structured' | 'title' | 'description' | 'image' | 'unknown';
@@ -76,6 +78,9 @@ type CandidateInput = Record<string, unknown> & {
   name?: unknown;
   canonicalTitle?: unknown;
   canonicalTitleSource?: unknown;
+  normalizedListingTitle?: unknown;
+  normalizedListingTitleSource?: unknown;
+  normalizedListingTitleCandidates?: unknown;
   sourceId?: unknown;
   sourceLabel?: unknown;
   id?: unknown;
@@ -115,6 +120,8 @@ type CandidateInput = Record<string, unknown> & {
   visualAudit?: unknown;
   evidenceDisposition?: unknown;
   evidenceReasons?: unknown;
+  titleEvidence?: unknown;
+  titleEvidenceSources?: unknown;
 };
 
 function text(value: unknown): string {
@@ -206,6 +213,10 @@ function titleCandidates(input: CandidateInput): Array<{ source: MarketplaceCand
   });
 }
 
+function recordOf(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
 function structuredMetadata(input: CandidateInput): Record<string, unknown> {
   const metadata: Record<string, unknown> = {};
   for (const key of ['itemSpecifics', 'item_specifics', 'aspects', 'specifics', 'itemDetails', 'fullItemDetails']) {
@@ -239,6 +250,15 @@ export function normalizeMarketplaceCandidate(input: CandidateInput, defaults: P
   const rank = positiveInteger(input.metadataMatchRank);
   const universalFilter = defaults.universalFilter ?? { state: 'unknown', reasons: [] };
   const itemTypeFilter = defaults.itemTypeFilter ?? { state: 'unknown', reasons: [] };
+  const titleEvidence = defaults.titleEvidence ?? {
+    ...buildMarketplaceTitleEvidence(title),
+    ...recordOf(input.titleEvidence),
+  };
+  const titleEvidenceSources = defaults.titleEvidenceSources ?? {
+    productRole: 'title' as const,
+    packagingState: 'title' as const,
+    ...recordOf(input.titleEvidenceSources),
+  };
   const valuation = defaults.valuation ?? {
     disposition: input.evidenceDisposition === 'valuation_eligible' ? 'valuation_eligible' : input.evidenceDisposition === 'rejected_objective_conflict' ? 'rejected' : 'not_evaluated',
     reasons: arrayOfText(input.evidenceReasons),
@@ -260,8 +280,8 @@ export function normalizeMarketplaceCandidate(input: CandidateInput, defaults: P
     imageAvailability: defaults.imageAvailability ?? (imageUrl ? 'available' : images.invalid ? 'invalid' : 'missing'),
     rawMetadata: defaults.rawMetadata ?? { ...input },
     structuredMetadata: defaults.structuredMetadata ?? structuredMetadata(input),
-    titleEvidence: defaults.titleEvidence ?? {},
-    titleEvidenceSources: defaults.titleEvidenceSources ?? {},
+    titleEvidence,
+    titleEvidenceSources,
     price: defaults.price ?? marketValue(input.price ?? input.soldPrice),
     currency: defaults.currency ?? nullableText(input.currency ?? input.soldCurrency ?? (input.price && typeof input.price === 'object' ? (input.price as Record<string, unknown>).currency : null)),
     date: defaults.date ?? nullableText(input.date ?? input.endedAt),

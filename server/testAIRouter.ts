@@ -1720,6 +1720,8 @@ export const testAIRouter = router({
             normalizedListingTitle: marketplaceCandidate.title,
             normalizedListingTitleSource: marketplaceCandidate.titleSource,
             normalizedListingTitleCandidates: marketplaceCandidate.titleCandidates,
+            titleEvidence: marketplaceCandidate.titleEvidence,
+            titleEvidenceSources: marketplaceCandidate.titleEvidenceSources,
             normalizedStructuredMetadata: marketplaceCandidate.structuredMetadata,
             imageUrl: marketplaceCandidate.imageUrl,
             imageUrls: marketplaceCandidate.imageUrls,

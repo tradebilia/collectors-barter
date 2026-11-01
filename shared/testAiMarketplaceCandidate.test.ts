@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeMarketplaceCandidate, withMarketplaceCandidateDecision } from './testAiMarketplaceCandidate';
+import { classifyMarketplaceProductRole } from './testAiTitleEvidence';
 
 describe('shared marketplace candidate contract', () => {
   it('preserves provider metadata, title normalization, images, price, and source identity', () => {
@@ -75,6 +76,23 @@ describe('shared marketplace candidate contract', () => {
       itemSpecifics: { AccessoryType: 'Controller', Platform: 'NES' },
       aspects: { Brand: 'Nintendo' },
     });
+  });
+
+  it('records explicit product-role evidence without treating generic labels as conflicts', () => {
+    const wholeItem = normalizeMarketplaceCandidate({
+      sourceId: 'ebay_active',
+      title: 'PAX Power Glove NES Famicom Controller Tested Working Boxed',
+      itemSpecifics: { AccessoryType: 'Controller', Platform: 'NES' },
+    });
+    const replacement = normalizeMarketplaceCandidate({
+      sourceId: 'ebay_active',
+      title: 'Power Glove Replacement Cable for Nintendo NES',
+    });
+
+    expect(wholeItem.titleEvidence).toMatchObject({ productRole: { role: 'unknown' } });
+    expect(replacement.titleEvidence).toMatchObject({ productRole: { role: 'replacement_part' } });
+    expect(classifyMarketplaceProductRole('Controller Compatible with Power Glove').role).toBe('compatibility_only');
+    expect(classifyMarketplaceProductRole('Power Glove Empty Box').role).toBe('packaging_only');
   });
 
   it('keeps missing metadata unknown rather than inventing conflicts or a score', () => {

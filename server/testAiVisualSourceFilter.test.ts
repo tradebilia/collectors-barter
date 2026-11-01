@@ -2297,6 +2297,25 @@ describe("visual source filter", () => {
       { title: "Nintendo NES Power Glove Large L New Open Box Complete", condition: "Like New", imageUrl: "https://example.com/candidate.jpg" },
     ], metadata)).toEqual([]);
   });
+  it("uses explicit product-role wording without rejecting generic accessory labels", () => {
+    const metadata = `title=NES Power Glove; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working" })}`;
+    expect(buildDeclaredIdentityReviews([
+      { title: "Nintendo NES Power Glove Controller Tested Working" },
+    ], metadata)).toEqual([]);
+
+    const roleReviews = buildDeclaredIdentityReviews([
+      { title: "Power Glove Replacement Cable for Nintendo NES" },
+      { title: "Controller Compatible with Power Glove" },
+      { title: "Power Glove Empty Box" },
+      { title: "Power Glove Manual Only" },
+    ], metadata);
+    expect(roleReviews).toHaveLength(4);
+    const rationale = roleReviews.map((review) => review.rationale).join(" ");
+    expect(rationale).toContain("replacement or spare component");
+    expect(rationale).toContain("compatibility with another product");
+    expect(rationale).toContain("packaging only");
+    expect(rationale).toContain("manual or instructions only");
+  });
   it("does not reuse cosmetic condition as sealed status across item types", () => {
     for (const category of ["sports_cards", "pokemon", "video_games", "vintage_toys", "movies"]) {
       const metadata = `title=Test item; category=${category}; itemType=single; fullItemDetails=${JSON.stringify({ sealedStatus: "yes" })}`;

@@ -1,7 +1,12 @@
 import { invokeLLM, type ImageContent, type TextContent } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
-import { titleContainsValue, titlePackagingState } from "../shared/testAiTitleEvidence";
+import {
+  buildMarketplaceTitleEvidence,
+  classifyMarketplaceProductRole,
+  titleContainsValue,
+  titlePackagingState,
+} from "../shared/testAiTitleEvidence";
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 
 export type VisualSourceCandidate = {
@@ -1487,6 +1492,7 @@ type NormalizedVisualSourceCandidate = VisualSourceCandidate & {
   title: string;
   titleSource: string;
   titleCandidates: string[];
+  titleEvidence: Record<string, unknown>;
   imageUrls: string[];
   providerReference: string | null;
   quantity: number | null;
@@ -1564,19 +1570,23 @@ export function normalizeVisualSourceCandidate(listing: VisualSourceCandidate): 
     details.numberOfItems,
     details.quantity,
   ].map((value) => Number(value)).find((value) => Number.isFinite(value) && value > 0);
+  const title = firstCandidateText(
+    listing.normalizedListingTitle,
+    listing.title,
+    listing.itemTitle,
+    listing.listingTitle,
+    listing.name,
+    listing.productName,
+    details.title,
+    details.itemTitle,
+    details.listingTitle,
+  );
+  const suppliedTitleEvidence = listing.titleEvidence && typeof listing.titleEvidence === "object" && !Array.isArray(listing.titleEvidence)
+    ? listing.titleEvidence as Record<string, unknown>
+    : {};
   return {
     details,
-    title: firstCandidateText(
-      listing.normalizedListingTitle,
-      listing.title,
-      listing.itemTitle,
-      listing.listingTitle,
-      listing.name,
-      listing.productName,
-      details.title,
-      details.itemTitle,
-      details.listingTitle,
-    ),
+    title,
     titleSource: firstCandidateText(listing.normalizedListingTitleSource, listing.titleSource) || "unknown",
     titleCandidates: candidateTitleList(
       listing.normalizedListingTitleCandidates,
@@ -1590,6 +1600,7 @@ export function normalizeVisualSourceCandidate(listing: VisualSourceCandidate): 
       details.itemTitle,
       details.listingTitle,
     ),
+    titleEvidence: { ...buildMarketplaceTitleEvidence(title), ...suppliedTitleEvidence },
     imageUrls,
     providerReference: providerReference || null,
     quantity: quantityValue ?? null,
@@ -2083,6 +2094,37 @@ function videoGameItemTypeConflict(targetMetadata: string, listing: VisualSource
   }
   return null;
 }
+
+function videoGameProductRoleConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
+  const targetType = videoGameItemTypeLabel(videoGameTargetItemType(targetMetadata));
+  if (!targetType || targetType === "collection/lot") return null;
+  const candidate = normalizeVisualSourceCandidate(listing);
+  const evidence = classifyMarketplaceProductRole(candidate.title);
+  const targetDetails = extractTargetItemDetails(targetMetadata);
+  const targetIdentity = normalizedChoice(
+    targetDetails.accessoryName
+      ?? targetDetails.gameTitle
+      ?? targetDetails.consoleName
+      ?? extractTargetTitle(targetMetadata),
+  );
+  if (evidence.role === "replacement_part") {
+    return `Video Game product role differs: the candidate title identifies a replacement or spare component (${evidence.matchedTerms.join(", ")}), not the complete target item.`;
+  }
+  if (evidence.role === "compatibility_only") {
+    return `Video Game product role is unresolved: the candidate title describes compatibility with another product (${evidence.matchedTerms.join(", ")}) rather than clearly identifying the target item.`;
+  }
+  if (evidence.role === "packaging_only" && !/\b(?:box|case|packaging|package)\b/.test(targetIdentity)) {
+    return `Video Game product role differs: the candidate title identifies packaging only (${evidence.matchedTerms.join(", ")}), not the target item.`;
+  }
+  if (evidence.role === "manual_only" && !/\b(?:manual|instruction|booklet|guide)\b/.test(targetIdentity)) {
+    return `Video Game product role differs: the candidate title identifies a manual or instructions only (${evidence.matchedTerms.join(", ")}), not the target item.`;
+  }
+  if (evidence.role === "reproduction") {
+    return `Video Game product role differs: the candidate title explicitly identifies a reproduction (${evidence.matchedTerms.join(", ")}).`;
+  }
+  return null;
+}
+
 function videoGameIdentityConflict(targetMetadata: string, listing: VisualSourceCandidate): string | null {
   const category = normalizedChoice(metadataValue(targetMetadata, "category"));
   if (category !== "video_games") return null;
@@ -2091,6 +2133,8 @@ function videoGameIdentityConflict(targetMetadata: string, listing: VisualSource
   const details = extractTargetItemDetails(targetMetadata);
   const typeConflict = videoGameItemTypeConflict(targetMetadata, listing);
   if (typeConflict) return typeConflict;
+  const productRoleConflict = videoGameProductRoleConflict(targetMetadata, listing);
+  if (productRoleConflict) return productRoleConflict;
   const checks: Array<[unknown, string, string[], RegExp[]]> = [];
   if (targetType === "game") {
     checks.push([details.gameTitle ?? extractTargetTitle(targetMetadata), "game title", ["gameTitle", "title"], []]);
