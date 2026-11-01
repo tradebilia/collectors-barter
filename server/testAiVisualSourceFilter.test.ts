@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 vi.mock("./_core/llm", () => ({ invokeLLM: vi.fn() }));
 import { invokeLLM } from "./_core/llm";
+import { findMaterialMetadataConflicts } from "../shared/testAiMetadataConflict";
 import {
   applyVisualSourceReviews,
   applyDeclaredIdentityFilter,
@@ -509,6 +510,9 @@ describe("visual source filter", () => {
     const accessoryScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller Working", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" }) }, accessoryTarget);
     expect(accessoryScore.score).toBe(100);
     expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
+    const cosmeticConditionScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller", condition: "Like New", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }) }, accessoryTarget);
+    expect(cosmeticConditionScore.matched).not.toContain("workingCondition");
+    expect(cosmeticConditionScore.score).toBe(90);
   });
 
   it("uses marketplace aspects and accessory aliases for Video Games / Accessory", () => {
@@ -2214,6 +2218,13 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([
       { title: "Nintendo NES Power Glove Large L New Open Box Complete", condition: "Like New", imageUrl: "https://example.com/candidate.jpg" },
     ], metadata)).toEqual([]);
+  });
+  it("does not reuse cosmetic condition as sealed status across item types", () => {
+    for (const category of ["sports_cards", "pokemon", "video_games", "vintage_toys", "movies"]) {
+      const metadata = `title=Test item; category=${category}; itemType=single; fullItemDetails=${JSON.stringify({ sealedStatus: "yes" })}`;
+      const conflicts = findMaterialMetadataConflicts(metadata, { title: "Test item", condition: "Like New" });
+      expect(conflicts.some((conflict) => conflict.field === "sealedStatus")).toBe(false);
+    }
   });
   it("still compares explicit functional condition signals for Video Game accessories", () => {
     const metadata = `title=NES Power Glove; category=video_games; itemType=accessory; fullItemDetails=${JSON.stringify({ accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", workingCondition: "Working" })}`;

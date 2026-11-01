@@ -27,7 +27,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
   pressingDetails: ['pressingDetails', 'matrixRunout', 'runout', 'pressing'],
   serialNumber: ['serialNumber', 'serial', 'printRun'],
   packaging: ['packagingType', 'packageType', 'sealedStatus', 'completeness'],
-  sealedStatus: ['sealedStatus', 'condition', 'packageStatus'],
+  sealedStatus: ['sealedStatus', 'packageStatus'],
   gradingCompany: ['gradingCompany', 'certificationCompany', 'grader'],
   cardNumber: ['cardNumber', 'number'],
   issueNumber: ['issueNumber', 'number'],

@@ -3466,7 +3466,7 @@ function videoGameScore<T extends readonly (readonly [string, number])[]>(
     add('accessoryName', 25, videoGameAccessoryScoreValueMatches(target.accessoryName, listing, ['accessoryName', 'name', 'accessory_name', 'modelName', 'title'], [], 'name'));
     add('compatiblePlatform', 20, videoGameAccessoryScoreValueMatches(target.platform, listing, ['platform', 'compatiblePlatform', 'compatibleSystem', 'console', 'system'], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)/i], 'platform'));
     add('manufacturer', 10, videoGameAccessoryScoreValueMatches(target.manufacturer, listing, ['manufacturer', 'brand', 'maker'], [], 'manufacturer'));
-    add('workingCondition', 10, videoGameAccessoryScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested', 'condition', 'working_status'], [/(?:Working|Tested|For\s+Parts|Not\s+Working|Untested)/i], 'working'));
+    add('workingCondition', 10, videoGameAccessoryScoreValueMatches(target.workingCondition, listing, ['workingCondition', 'functionality', 'tested', 'working_status'], [/(?:Working|Tested|For\s+Parts|Not\s+Working|Untested)/i], 'working'));
     add('originalPackaging', 10, videoGameAccessoryScoreBoolean(target.originalPackaging, listing, ['originalPackaging', 'packaging', 'packageType', 'boxIncluded'], [/(?:original\s+(?:packaging|box)|no\s+(?:packaging|box))/i]));
   }
   void fields;

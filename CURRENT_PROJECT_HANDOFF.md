@@ -76,3 +76,10 @@ Corrected Test AI display semantics so the AI image-review panel counts only can
 - Scope: the correction applies to the shared Video Game accessory identity path; console behavior remains functional-only and game behavior remains unchanged. Collection/Lot blocking remains unchanged.
 - Regression coverage: Like New is accepted without a working-condition conflict; For Parts or Not Working remains a conflict against a Working target.
 - Validation passed: 220 focused eBay/visual-source tests, TypeScript, production build, and diff hygiene. No database, migration, credential, provider, deployment, or publishing changes.
+
+## Universal cosmetic-versus-functional condition audit (2026-11-01)
+- User requirement: the Video Game correction must apply anywhere the generic marketplace condition field could be confused with a functional or packaging field.
+- Audit result: functional fields are separate and explicitly named for Video Game consoles/accessories and Vintage Toys electronic toys (`workingCondition`, `functionality`, `tested`, or `working_status`). The generic `condition` field is no longer an alias for Video Game accessory working-condition scoring or identity checks.
+- Shared repair: removed generic `condition` from the universal `sealedStatus` alias map. Cosmetic values such as Like New, Good, and Fair can no longer be interpreted as sealed/packaging evidence for any category or item type. Explicit sealed/package fields remain supported; category-specific sealed gates remain responsible for explicit material states.
+- Regression coverage: cosmetic Like New does not earn working-condition points, does not create a working-condition conflict, and does not create sealed-status conflicts across Sports Cards, Pokémon, Video Games, Vintage Toys, and Movies. Explicit For Parts/Not Working remains a functional conflict.
+- Validation passed: 221 focused eBay/visual-source tests, TypeScript, production build, and diff hygiene. No database, migration, credential, provider, deployment, or publishing changes.
