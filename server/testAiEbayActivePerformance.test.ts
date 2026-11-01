@@ -153,6 +153,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("not visually analyzed because the target item image was unavailable");
   });
 
+  it("does not present deterministic pre-filter conflicts as AI image-review results", () => {
+    expect(pageSource).toContain("listing.visualRequirement === 'required'");
+    expect(pageSource).toContain("actually reviewed");
+    expect(pageSource).toContain("held out before AI image analysis");
+    expect(pageSource).toContain("AI mismatch");
+  });
+
   it("applies the shared pre-vision gate to active asking prices", () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: "video_games",
