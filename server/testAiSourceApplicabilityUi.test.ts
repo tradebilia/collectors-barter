@@ -57,8 +57,15 @@ describe('manual Test AI selector boundary', () => {
 
   it('never duplicates a confirmed category/source match in the pending tracker', () => {
     expect(source).toContain("'vintage toys:goldin': 'match'");
-    expect(source).toContain(".filter((sourceId) => SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match')");
+    expect(source).toContain(".filter((sourceId) => SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match')");
     expect(source).toContain('const categories = SOURCE_COVERAGE_CATEGORY_ORDER.map((category) => {');
+  });
+
+  it('keeps every historical match pending while the post-change verification reset is active', () => {
+    expect(source).toContain('const SOURCE_COVERAGE_RESET_TO_PENDING = true;');
+    expect(source).toContain('!SOURCE_COVERAGE_RESET_TO_PENDING && SOURCE_TEST_RESULTS');
+    expect(source).toContain('SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_TEST_RESULTS');
+    expect(source).toContain('previous source-test matches are retained for audit history but are pending recheck');
   });
 
   it('shows TCGdex, IGDB, and user-approved RAWG as factual specialist reference sources', () => {

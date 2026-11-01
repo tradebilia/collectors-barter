@@ -456,6 +456,11 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
   'coins:numista': 'match',
 };
 
+// Deliberate verification reset after the recent matching and valuation
+// changes. Keep the historical outcomes above for auditability, but do not
+// treat any of them as currently verified until the source is tested again.
+const SOURCE_COVERAGE_RESET_TO_PENDING = true;
+
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
 
 // Sources intentionally omitted from this manual coverage list. This does
@@ -476,11 +481,11 @@ function SourceCoverageTracker() {
       const applies = source.categories === '*' || source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category);
       return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
-    const activeSources = applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
+    const activeSources = applicableSources.filter((source) => !SOURCE_COVERAGE_RESET_TO_PENDING && SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
     const pendingSourceIds = Array.from(new Set([
       ...applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match').map((source) => source.sourceId),
       ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
-    ])).filter((sourceId) => SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match');
+    ])).filter((sourceId) => SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match');
     return { category, activeSources, pendingSourceIds };
   });
 
@@ -502,6 +507,7 @@ function SourceCoverageTracker() {
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Source coverage tracker</p>
       <h2 id="source-coverage-heading" className="mt-1 text-xl font-bold text-white">Which sources apply to each category?</h2>
       <p className="mt-2 max-w-3xl text-xs leading-5 text-slate-400">This reference is generated from the sandbox source registries. A source can appear under more than one category. The matching section is reserved for confirmed test matches; every other applicable source is listed as pending until it is confirmed.</p>
+      {SOURCE_COVERAGE_RESET_TO_PENDING && <p className="mt-2 max-w-3xl rounded border border-amber-700/40 bg-amber-950/20 px-3 py-2 text-[11px] leading-5 text-amber-200">Verification reset is active: previous source-test matches are retained for audit history but are pending recheck after recent matching and valuation changes.</p>}
     </div>
     <div className="grid gap-5 xl:grid-cols-2">
       <div className="rounded-xl border border-emerald-800/50 bg-emerald-950/10 p-4">
