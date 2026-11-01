@@ -77,6 +77,36 @@ async function withCustomSourceTimeout<T>(lookup: Promise<T>, sourceLabel: strin
   }
 }
 
+function normalizeCustomSourceImageUrl(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('//')) return `https:${trimmed}`;
+  return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+}
+
+function customSourceImageUrl(record: any): string | null {
+  const candidates = [
+    record?.imageUrl,
+    record?.thumbnailUrl,
+    record?.image?.url,
+    record?.image?.thumbnailUrl,
+    record?.image?.content,
+    record?.image?.thumbnail,
+    record?.background_image,
+    record?.metadata?.background_image,
+    record?.metadata?.cover?.url,
+    record?.metadata?.screenshots?.[0]?.url,
+  ];
+  return candidates.map(normalizeCustomSourceImageUrl).find((value): value is string => Boolean(value)) ?? null;
+}
+
+function withCustomSourceImages(records: unknown[]): Array<Record<string, unknown> & { imageUrl: string | null }> {
+  return records
+    .filter((record): record is Record<string, unknown> => Boolean(record) && typeof record === 'object')
+    .map((record) => ({ ...record, imageUrl: normalizeCustomSourceImageUrl(record.imageUrl) ?? customSourceImageUrl(record) }));
+}
+
 function normalizedPcgsAuctionGrade(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, '').toUpperCase();
 }
@@ -4179,37 +4209,37 @@ Return only the schema-compliant JSON response.`;
       try {
         if (sourceId === 'mercari_sold_comps') {
         const result = await withCustomSourceTimeout(lookupMercariSoldComps({ title: query, category: category || 'unknown' }), 'Mercari');
-        return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered Mercari search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: result.listings.slice(0, 20), contextOnly: true };
+        return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered Mercari search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: withCustomSourceImages(result.listings.slice(0, 20)), contextOnly: true };
         }
 
       if (sourceId === 'tcgplayer_sold_comps') {
         const result = await withCustomSourceTimeout(lookupTcgplayerSoldComps({ title: query, category: category || 'pokemon' }), 'TCGplayer');
-        return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered TCGplayer search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: result.listings.slice(0, 20), contextOnly: true };
+        return { status: result.error ? 'error' as const : 'success' as const, sourceId, query, message: result.error ?? `User-entered TCGplayer search returned ${result.listings.length} result${result.listings.length === 1 ? '' : 's'}.`, results: withCustomSourceImages(result.listings.slice(0, 20)), contextOnly: true };
       }
 
       if (sourceId === 'tcgdex') {
         const result = await withCustomSourceTimeout(lookupTcgDexCatalog(query), 'TCGdex');
-        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered TCGdex lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered TCGdex lookup completed.', results: result.data ? withCustomSourceImages([result.data]) : [], contextOnly: true };
       }
 
       if (sourceId === 'wikidata') {
         const result = await withCustomSourceTimeout(lookupWikidataMetadata(query, category === 'movies' ? 'movies' : 'autographs'), 'Wikidata');
-        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Wikidata lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Wikidata lookup completed.', results: result.data ? withCustomSourceImages([result.data]) : [], contextOnly: true };
       }
 
       if (sourceId === 'smithsonian') {
         const result = await withCustomSourceTimeout(lookupSmithsonianStampReference(query), 'Smithsonian');
-        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Smithsonian lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered Smithsonian lookup completed.', results: result.data ? withCustomSourceImages([result.data]) : [], contextOnly: true };
       }
 
       if (sourceId === 'igdb') {
         const result = await withCustomSourceTimeout(lookupIgdbGameMetadata(query), 'IGDB');
-        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered IGDB lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered IGDB lookup completed.', results: result.data ? withCustomSourceImages([result.data]) : [], contextOnly: true };
       }
 
       if (sourceId === 'rawg') {
         const result = await withCustomSourceTimeout(lookupRawgGameMetadata(query), 'RAWG');
-        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered RAWG lookup completed.', results: result.data ? [result.data] : [], contextOnly: true };
+        return { status: result.status === 'error' ? 'error' as const : 'success' as const, sourceId, query, message: result.message ?? 'User-entered RAWG lookup completed.', results: result.data ? withCustomSourceImages([result.data]) : [], contextOnly: true };
       }
 
         return {

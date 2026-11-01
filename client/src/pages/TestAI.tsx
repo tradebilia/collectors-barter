@@ -4313,6 +4313,20 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
+function customSourceResultImageUrl(row: any): string | null {
+  const candidates = [
+    row?.imageUrl,
+    row?.thumbnailUrl,
+    row?.image?.url,
+    row?.image?.thumbnailUrl,
+    row?.background_image,
+    row?.metadata?.background_image,
+    row?.metadata?.cover?.url,
+    row?.metadata?.screenshots?.[0]?.url,
+  ];
+  return candidates.find((value): value is string => typeof value === 'string' && /^https?:\/\//i.test(value.trim()))?.trim() ?? null;
+}
+
 function CustomSourceSearchPanel({ item, side, enabledSources }: { item: SelectedItem; side: 'left' | 'right'; enabledSources: Set<SourceId> }) {
   const sourceIds = useMemo(() => Array.from(enabledSources), [enabledSources]);
   const [sourceId, setSourceId] = useState(sourceIds[0] ?? '');
@@ -4356,7 +4370,19 @@ function CustomSourceSearchPanel({ item, side, enabledSources }: { item: Selecte
         <p className={result.status === 'success' ? 'text-emerald-300' : result.status === 'unsupported' ? 'text-amber-300' : 'text-red-300'}>{result.message}</p>
         {Array.isArray(result.results) && result.results.length > 0 && <div className="mt-2 max-h-48 space-y-1 overflow-auto">
           {result.results.slice(0, 20).map((row: any, index: number) => <div key={`${row?.url ?? row?.title ?? 'result'}-${index}`} className="flex items-start justify-between gap-2 border-t border-gray-800 pt-1 text-gray-300">
-            <span className="min-w-0">{row?.title ?? row?.name ?? row?.label ?? `Result ${index + 1}`}</span>
+            {customSourceResultImageUrl(row) ? (
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-700/70 bg-gray-900/80 p-1" title="Candidate image">
+                <img
+                  src={customSourceResultImageUrl(row) ?? undefined}
+                  alt=""
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full object-contain"
+                  onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                />
+              </div>
+            ) : <div className="h-12 w-12 shrink-0 rounded border border-dashed border-gray-800/80 bg-gray-950/40" aria-hidden="true" />}
+            <span className="min-w-0 flex-1">{row?.title ?? row?.name ?? row?.label ?? `Result ${index + 1}`}</span>
             {row?.price != null && <span className="shrink-0 text-emerald-300">{row.currency ?? '$'}{row.price}</span>}
           </div>)}
         </div>}

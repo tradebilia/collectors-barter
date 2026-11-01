@@ -9,7 +9,7 @@ describe('TCGdex metadata adapter', () => {
         { id: 'base2-4', localId: '4', name: 'Charizard' },
       ] })
       .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({
-        id: 'base1-4', localId: '4', name: 'Charizard', category: 'Pokemon', rarity: 'Rare', hp: 120,
+        id: 'base1-4', localId: '4', name: 'Charizard', image: 'https://assets.tcgdex.net/en/base/base1/4/high.webp', category: 'Pokemon', rarity: 'Rare', hp: 120,
         illustrator: 'Mitsuhiro Arita', types: ['Fire'], stage: 'Stage2',
         set: { id: 'base1', name: 'Base Set' }, variants: { firstEdition: true, holo: true },
         variants_detailed: [{ type: 'holo', subtype: 'shadowless' }],
@@ -24,6 +24,7 @@ describe('TCGdex metadata adapter', () => {
     expect(result.status).toBe('success');
     expect(result.data?.title).toBe('Charizard');
     expect(result.data?.id).toBe('base1-4');
+    expect(result.data?.imageUrl).toBe('https://assets.tcgdex.net/en/base/base1/4/high.webp');
     expect(result.data?.facts).toEqual(expect.arrayContaining([
       { label: 'Card number', value: '4' },
       { label: 'Set', value: 'Base Set' },

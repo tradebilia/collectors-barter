@@ -119,6 +119,18 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(customProcedure).toContain("The selected source could not complete the custom search. Please try again.");
   });
 
+  it("preserves candidate images across custom providers and renders them without cropping", () => {
+    const customProcedure = procedureSource("runCustomSourceSearch: protectedProcedure", "    }),\n});");
+    expect(routerSource).toContain("function normalizeCustomSourceImageUrl");
+    expect(routerSource).toContain("function customSourceImageUrl");
+    expect(customProcedure).toContain("withCustomSourceImages(result.listings.slice(0, 20))");
+    expect(customProcedure).toContain("withCustomSourceImages([result.data])");
+    expect(pageSource).toContain("function customSourceResultImageUrl");
+    expect(pageSource).toContain('className="h-full w-full object-contain"');
+    expect(pageSource).toContain('loading="lazy"');
+    expect(pageSource).toContain('title="Candidate image"');
+  });
+
   it("applies the shared pre-vision gate to active asking prices", () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: "video_games",

@@ -11,6 +11,7 @@ type TcgDexLookup = {
     id: string;
     title: string;
     sourceUrl: string;
+    imageUrl: string | null;
     matchNote: string;
     facts: TcgDexFact[];
   };
@@ -22,6 +23,7 @@ type TcgDexCard = {
   id?: string;
   localId?: string;
   name?: string;
+  image?: string | { url?: string };
   category?: string;
   rarity?: string;
   illustrator?: string;
@@ -91,7 +93,7 @@ function scoreCard(card: TcgDexCard, normalizedQuery: string, cardNumber?: strin
 }
 
 /**
- * Returns factual Pokémon card catalog metadata only. Pricing, images, certification,
+ * Returns factual Pokémon card catalog metadata only. Pricing, certification,
  * condition, ownership, and authenticity fields are intentionally excluded.
  */
 export async function lookupTcgDexCatalog(
@@ -172,6 +174,7 @@ export async function lookupTcgDexCatalog(
         id,
         title: card.name?.trim() || query.trim(),
         sourceUrl: `https://api.tcgdex.net/v2/en/cards/${encodeURIComponent(id)}`,
+        imageUrl: typeof card.image === 'string' ? card.image : card.image?.url ?? null,
         matchNote,
         facts,
       },
