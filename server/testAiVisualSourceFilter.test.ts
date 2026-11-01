@@ -560,12 +560,23 @@ describe("visual source filter", () => {
       sourceLabel: "eBay Sold-Comps",
       targetImageUrl: "https://example.com/moonlighting-target.jpg",
       targetMetadata: target,
-      listings: [{ title: "Moonlighting Seasons 1 & 2 DVD Collection", imageUrl: "https://example.com/moonlighting-candidate.jpg" }],
+      listings: [{ title: "Moonlighting Seasons 1 & 2 DVD Collection", itemType: "collection", imageUrl: "https://example.com/moonlighting-candidate.jpg" }],
     });
     expect(result.listings[0]?.metadataMatchScore).toBe(65);
     expect(result.listings).toHaveLength(1);
     expect(result.contextListings ?? []).toHaveLength(0);
     expect(mockedInvokeLLM).toHaveBeenCalled();
+  });
+
+  it("keeps generic Movie collections excluded even for a Box Set target", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Moonlighting Season 1 & 2",
+      category: "movies",
+      itemType: "box_set",
+      fullItemDetails: { boxSetName: "Moonlighting Season 1 & 2", format: "DVD" },
+    });
+    const candidate = { title: "Mixed Movie Collection DVD Lot", itemType: "collection", imageUrl: "https://example.com/generic-collection.jpg" };
+    expect(buildDeclaredIdentityReviews([candidate], target)[0]?.rationale).toMatch(/collection or lot/i);
   });
 
   it("treats Arabic, written, and Roman numerals as equivalent title evidence", () => {

@@ -2897,6 +2897,10 @@ function movieCandidateItemType(listing: VisualSourceCandidate): 'individual_mov
   if (/\b(?:collection|lot)\b/i.test(title)) return 'collection/lot';
   return '';
 }
+function movieCandidateHasBoxSetEvidence(listing: VisualSourceCandidate): boolean {
+  const title = canonicalCandidateTitle(listing);
+  return /\b(?:box\s*set|complete\s+(?:series|collection)|seasons?\s*(?:[0-9]+|one|two|three|four|five|six|seven|eight|nine|ten)(?:\s*(?:&|and|through|[-–])\s*(?:[0-9]+|one|two|three|four|five|six|seven|eight|nine|ten))?|trilogy|quadrilogy|movie\s+bundle|film\s+bundle)\b/i.test(title);
+}
 function movieCanonicalText(value: unknown): string {
   const normalized = normalizeComparableNumberWords(normalizedChoice(value).replace(/_/g, ' '))
     .replace(/\bseasons?\b/g, ' season')
@@ -3067,7 +3071,7 @@ function movieIdentityConflict(targetMetadata: string, listing: VisualSourceCand
   const targetType = movieTargetItemType(targetMetadata);
   if (!targetType || targetType === 'collection/lot') return null;
   const candidateType = movieCandidateItemType(listing);
-  if (candidateType === 'collection/lot') return 'Movie candidate is explicitly a collection or lot, not a comparable single product.';
+  if (candidateType === 'collection/lot' && !(targetType === 'box_set' && movieCandidateHasBoxSetEvidence(listing))) return 'Movie candidate is explicitly a collection or lot, not a comparable single product.';
   if (targetType === 'individual_movie' && candidateType === 'box_set') return 'Movie format differs: target is an individual movie, but the candidate is a box set or series.';
   if (targetType === 'box_set' && candidateType === 'individual_movie') return 'Movie format differs: target is a box set, but the candidate is an individual movie.';
   const target = extractTargetItemDetails(targetMetadata);
