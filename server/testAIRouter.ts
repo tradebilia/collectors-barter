@@ -1048,13 +1048,25 @@ export function annotateSoldComparableCandidate(
   const priceSafety = evaluateSoldCompPriceSafety(context.statedTradeValue, item?.soldPrice ?? item?.price);
   if (priceSafety.reason) reasons.push(priceSafety.reason);
   const carriedDisposition = item?.evidenceDisposition as SoldComparableDisposition | undefined;
-  if (carriedDisposition && carriedDisposition !== 'valuation_eligible') {
+  const visualAdmissionReason = String(item?.visualAdmissionReason ?? '').trim();
+  const carriedEvidenceReasons = Array.isArray(item?.evidenceReasons)
+    ? item.evidenceReasons.map((reason: unknown) => String(reason ?? '').trim()).filter(Boolean)
+    : [];
+  // A shared visual filter may carry a provisional context-only label into
+  // final Sold-Comps annotation. A confirmed visual match can clear that
+  // provisional label only when every deterministic check above is clean.
+  // Rough matches, mismatches, unreviewed rows, objective conflicts, lots,
+  // stale/invalid sales, and special context-only branches remain excluded.
+  const canPromoteConfirmedVisualMatch = carriedDisposition === 'context_only'
+    && carriedVisualStatus === 'match'
+    && !visualAdmissionReason
+    && carriedEvidenceReasons.length === 0;
+  if (carriedDisposition && carriedDisposition !== 'valuation_eligible' && !canPromoteConfirmedVisualMatch) {
     reasons.push(`source visual/evidence disposition retained: ${carriedDisposition}`);
   }
-  const visualAdmissionReason = String(item?.visualAdmissionReason ?? '').trim();
   if (visualAdmissionReason) reasons.push(visualAdmissionReason);
 
-  const evidenceDisposition: SoldComparableDisposition = carriedDisposition && carriedDisposition !== 'valuation_eligible'
+  const evidenceDisposition: SoldComparableDisposition = carriedDisposition && carriedDisposition !== 'valuation_eligible' && !canPromoteConfirmedVisualMatch
     ? carriedDisposition
     : reasons.length ? 'warning_review' : 'valuation_eligible';
   return {

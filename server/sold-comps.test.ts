@@ -267,6 +267,50 @@ describe('Sold-Comps API key validation', () => {
     expect(mismatch.evidenceReasons?.[0]).toContain('visual comparison flag');
   });
 
+  it('promotes the exact Rambo CGC 9.8 completed sale after confirmed visual matching', () => {
+    const candidate = annotateSoldComparableCandidate(
+      {
+        title: 'Rambo: First Blood Part 2 VHS CGC 9.8',
+        soldPrice: '380',
+        evidenceDisposition: 'context_only',
+        evidenceReasons: [],
+        visualReviewStatus: 'match',
+      },
+      {
+        category: 'movies',
+        targetItemType: 'single_movie',
+        certificationCompany: 'CGC',
+        targetGrade: 9.8,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+      },
+    );
+    expect(candidate.evidenceDisposition).toBe('valuation_eligible');
+    expect(candidate.evidenceReasons).toEqual([]);
+  });
+
+  it.each(['sports_cards', 'coins', 'comics', 'stamps', 'video_games', 'movies', 'vintage_toys', 'pokemon', 'disney_pins', 'music'])('promotes a clean confirmed visual match through the shared Sold-Comps path for %s', (category) => {
+    const candidate = annotateSoldComparableCandidate(
+      { title: 'Exact completed sale candidate', soldPrice: '100', evidenceDisposition: 'context_only', evidenceReasons: [], visualReviewStatus: 'match' },
+      { category, targetItemType: 'single_item', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, visualReviewRequired: true },
+    );
+    expect(candidate.evidenceDisposition).toBe('valuation_eligible');
+  });
+
+  it('does not promote a rough match or a carried context row with existing evidence reasons', () => {
+    const roughMatch = annotateSoldComparableCandidate(
+      { title: 'Exact completed sale candidate', soldPrice: '100', evidenceDisposition: 'context_only', evidenceReasons: [], visualReviewStatus: 'rough_match' },
+      { category: 'comics', targetItemType: 'single_item', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, visualReviewRequired: true },
+    );
+    const flaggedMatch = annotateSoldComparableCandidate(
+      { title: 'Exact completed sale candidate', soldPrice: '100', evidenceDisposition: 'context_only', evidenceReasons: ['candidate was held for an objective conflict'], visualReviewStatus: 'match' },
+      { category: 'comics', targetItemType: 'single_item', certificationCompany: '', targetGrade: null, targetNumber: null, targetPlayer: null, visualReviewRequired: true },
+    );
+    expect(roughMatch.evidenceDisposition).toBe('context_only');
+    expect(flaggedMatch.evidenceDisposition).toBe('context_only');
+  });
+
   it('keeps explicit multi-item lots out of source-level valuation acceptance', () => {
     expect(extractSoldCompLotQuantity('Hot Wheels 70 Plymouth AAR Cuda (Lot of 2 Short Card & Long Card)')).toBe(2);
     expect(extractSoldCompLotQuantity('Hot Wheels 70 Plymouth AAR Cuda 2026 P Case Lot of 3')).toBe(3);
