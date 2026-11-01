@@ -513,6 +513,16 @@ describe("visual source filter", () => {
     const cosmeticConditionScore = videoGameAccessoryVisualScore({ title: "Nintendo NES Controller", condition: "Like New", itemDetails: JSON.stringify({ accessoryType: "Controller", accessoryName: "NES Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }) }, accessoryTarget);
     expect(cosmeticConditionScore.matched).not.toContain("workingCondition");
     expect(cosmeticConditionScore.score).toBe(90);
+    const powerGloveTarget = buildVisualTargetMetadata({ title: "NES Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", workingCondition: "Working", originalPackaging: "Yes" } });
+    for (const [title, expectedScore, expectedFields] of [
+      ["VTG Nintendo NES Power Glove Controller Large Extremely RARE Sz L Original Box", 90, ["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
+      ["Nintendo NES Power Glove Large L New Open Box Complete w/ Manuals Mattel", 65, ["accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]],
+    ] as const) {
+      const titleScore = videoGameAccessoryVisualScore({ title }, powerGloveTarget);
+      expect(titleScore.score).toBe(expectedScore);
+      expect(titleScore.matched).toEqual(expect.arrayContaining(expectedFields));
+      expect(buildDeclaredIdentityReviews([{ title }], buildVisualTargetMetadata({ title: "NES Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" } }))).toEqual([]);
+    }
   });
 
   it("uses marketplace aspects and accessory aliases for Video Games / Accessory", () => {

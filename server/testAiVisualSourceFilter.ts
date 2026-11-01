@@ -1,6 +1,7 @@
 import { invokeLLM, type ImageContent, type TextContent } from "./_core/llm";
 import { parseAnalyzerResponse } from "./testAiResponse";
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from "../shared/testAiMetadataConflict";
+import { titleContainsValue, titlePackagingState } from "../shared/testAiTitleEvidence";
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
 
 export type VisualSourceCandidate = {
@@ -2019,12 +2020,13 @@ function videoGameAccessoryValuesAgree(targetValue: unknown, candidateValue: unk
   if (label === "original packaging") {
     const state = (value: unknown) => {
       const normalized = videoGameAccessoryCanonicalValue(value);
-      if (/^(?:yes|true|1|original_packaging|original_box|included|with_packaging|with_box)$/.test(normalized)) return "yes";
+      if (/^(?:yes|true|1|original_packaging|original_box|included|with_packaging|with_box|open_box|boxed|complete_with_box|complete_with_manuals|with_manuals)$/.test(normalized)) return "yes";
       if (/^(?:no|false|0|no_packaging|no_box|missing|without_packaging|without_box)$/.test(normalized)) return "no";
       return normalized;
     };
     return state(targetValue) === state(candidateValue);
   }
+  if (["accessory type", "accessory name", "manufacturer"].includes(label) && titleContainsValue(candidateValue, targetValue)) return true;
   const target = videoGameAccessoryCanonicalValue(targetValue);
   const candidate = videoGameAccessoryCanonicalValue(candidateValue);
   return target === candidate || videoGameValuesAgree(targetValue, candidateValue, label);
@@ -2061,11 +2063,11 @@ function videoGameIdentityConflict(targetMetadata: string, listing: VisualSource
     checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested"], [/(\bWorking\b|\bNot Working\b|\bUntested\b)/i]]);
   } else if (targetType === "accessory") {
     checks.push([details.accessoryType, "accessory type", ["accessoryType", "type", "accessory_type", "itemType"], []]);
-    checks.push([details.accessoryName, "accessory name", ["accessoryName", "name", "accessory_name", "modelName"], []]);
+    checks.push([details.accessoryName, "accessory name", ["accessoryName", "name", "accessory_name", "modelName", "title"], []]);
     checks.push([details.platform, "compatible platform", ["platform", "compatiblePlatform", "compatibleSystem", "console", "system"], [/(?:NES|SNES|N64|GameCube|Wii(?:\s+U)?|Switch(?:\s+2)?|PlayStation|PS[1-5]|Xbox|Sega|PC)\b/i]]);
     checks.push([details.manufacturer, "manufacturer", ["manufacturer", "brand", "maker"], []]);
     checks.push([details.workingCondition, "working condition", ["workingCondition", "functionality", "tested", "working_status"], [/(\bWorking\b|\bTested\b|\bNot Working\b|\bFor Parts\b|\bUntested\b)/i]]);
-    checks.push([details.originalPackaging, "original packaging", ["originalPackaging", "packaging", "packageType", "boxIncluded"], [/(\bOriginal Packaging\b|\bOriginal Box\b|\bNo Packaging\b|\bNo Box\b)/i]]);
+    checks.push([details.originalPackaging, "original packaging", ["originalPackaging", "packaging", "packageType", "boxIncluded"], [/(\bOriginal Packaging\b|\bOriginal Box\b|\bOpen Box\b|\bWith Box\b|\bBoxed\b|\bComplete with (?:Box|Manuals?|Instructions?)\b|\bWith (?:Manuals?|Instructions?)\b|\bNo Packaging\b|\bNo Box\b)/i]]);
   }
   for (const [targetValue, label, aliases, patterns] of checks) {
     const targetComparable = videoGameCanonicalValue(targetValue);
@@ -3409,6 +3411,9 @@ function videoGameScoreBoolean(targetValue: unknown, listing: VisualSourceCandid
 function videoGameAccessoryScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[], label: string): boolean | null {
   const target = videoGameAccessoryCanonicalValue(targetValue);
   if (!target || /^(?:unknown|n_a|na|none|not_applicable)$/.test(target)) return null;
+  const explicitAliases = aliases.filter((alias) => alias !== "title");
+  const explicitCandidate = videoGameAccessoryValue(listing, explicitAliases);
+  if (!explicitCandidate && ["name", "type", "manufacturer"].includes(label) && titleContainsValue(listing.title, targetValue)) return true;
   const candidateValue = videoGameAccessoryValue(listing, aliases, patterns);
   if (!candidateValue) return null;
   const candidate = videoGameAccessoryCanonicalValue(candidateValue);
@@ -3418,11 +3423,16 @@ function videoGameAccessoryScoreValueMatches(targetValue: unknown, listing: Visu
 function videoGameAccessoryScoreBoolean(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[]): boolean | null {
   const target = videoGameAccessoryCanonicalValue(targetValue);
   if (!target || !/^(?:yes|no|true|false|1|0)$/.test(target)) return null;
+  const hasStructuredValue = Boolean(videoGameAccessoryValue(listing, aliases));
+  if (!hasStructuredValue && aliases.some((alias) => ["originalPackaging", "packaging", "boxIncluded"].includes(alias))) {
+    const titleState = titlePackagingState(listing.title);
+    if (titleState !== "unknown") return target === "yes" || target === "true" || target === "1" ? titleState === "yes" : titleState === "no";
+  }
   const candidateValue = videoGameAccessoryValue(listing, aliases, patterns);
   if (!candidateValue) return null;
   const candidate = videoGameAccessoryCanonicalValue(candidateValue);
   if (!candidate) return null;
-  if (target === "yes" || target === "true" || target === "1") return /^(?:yes|true|1|original_packaging|original_box|included|with_packaging|with_box)$/.test(candidate);
+  if (target === "yes" || target === "true" || target === "1") return /^(?:yes|true|1|original_packaging|original_box|included|with_packaging|with_box|open_box|boxed|complete_with_box|complete_with_manuals|with_manuals)$/.test(candidate);
   return /^(?:no|false|0|no_packaging|no_box|missing|without_packaging|without_box)$/.test(candidate);
 }
 function videoGameScoreProductForm(targetMetadata: string, listing: VisualSourceCandidate): boolean | null {

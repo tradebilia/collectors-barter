@@ -1,3 +1,5 @@
+import { titleContainsValue } from "./testAiTitleEvidence";
+
 export type MetadataConflict = {
   field: string;
   targetValue: string;
@@ -114,7 +116,7 @@ function candidateFields(candidate: MetadataRecord): MetadataRecord {
 function valueMatchesEvidence(value: string, evidence: string): boolean {
   const wanted = compact(value);
   const haystack = compact(evidence);
-  return wanted.length >= 2 && haystack.includes(wanted);
+  return wanted.length >= 2 && (haystack.includes(wanted) || titleContainsValue(evidence, value));
 }
 
 function explicitNumberEvidence(field: string, value: string, title: string): boolean {
