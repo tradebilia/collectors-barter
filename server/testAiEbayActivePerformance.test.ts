@@ -143,6 +143,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain("displayData.preVisionFilter.excludedListings.map");
     expect(pageSource).toContain("listing.metadataMatchScore !== undefined");
     expect(pageSource).toContain("listing.metadataMatchRank");
+    expect(pageSource).toContain("Ranking score: not assigned — blocked by a universal identity filter before item-type ranking.");
     expect(pageSource).toContain("object-contain p-0.5");
   });
 

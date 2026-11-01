@@ -63,3 +63,9 @@ Corrected Test AI display semantics so the AI image-review panel counts only can
 - Added common marketplace aliases for accessory type/name, compatible system/platform, manufacturer/brand, working state, and packaging. Working wording such as Tested Working, Works, For Parts, and Untested is normalized before both the deterministic identity gate and the one ranking score; Original Box/No Box is normalized with packaging Yes/No.
 - Added regression coverage for marketplace aspects and aliases, including a 100/100 accessory candidate, and retained the Collection/Lot no-filter/no-score safeguard.
 - Validation passed: focused Video Game tests 4/4, full visual-source regression 187/187, TypeScript, production build, and git diff hygiene. Build emitted only the existing bundle-size warning. No database, migration, credential, provider, deployment, or publishing changes.
+
+## Ranking score visibility clarification (2026-11-01)
+- Diagnosis: the shared ranking score is still calculated for candidates that pass universal identity filtering. Candidates blocked earlier by a universal identity conflict intentionally do not receive an item-type ranking score, because assigning one would imply they were comparable.
+- UI repair: the eBay Active pre-analysis list now explicitly shows either the real ranking score/rank or `Ranking score: not assigned — blocked by a universal identity filter before item-type ranking.` instead of silently omitting the line.
+- This preserves the one-ranking pipeline and prevents a filtered candidate from appearing to have a missing or stale score.
+- Validation passed: focused eBay/visual-source tests 218/218, TypeScript, production build, diff hygiene, and preview screenshot capture. No database, migration, credential, provider, deployment, or publishing changes.
