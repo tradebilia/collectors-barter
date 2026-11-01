@@ -732,6 +732,17 @@ export function selectVideoGameVisualCandidates(listings: any[]): { selected: an
   return { selected, excluded, cap };
 }
 
+function clearPreVisionRankingMetadata(item: any): any {
+  const {
+    metadataMatchScore: _metadataMatchScore,
+    metadataMatchRank: _metadataMatchRank,
+    metadataMatchReasons: _metadataMatchReasons,
+    metadataMatchLabel: _metadataMatchLabel,
+    ...withoutRanking
+  } = item ?? {};
+  return withoutRanking;
+}
+
 // Backward-compatible aliases for existing Mercari-focused tests and callers.
 export const rankMercariVideoGameCandidates = rankVideoGameCandidates;
 export const mercariVideoGameVisualCap = videoGameVisualCap;
@@ -1701,7 +1712,7 @@ export const testAIRouter = router({
         const visualEligibleListings = videoGameAdmission?.selected ?? preVisionAssessment.eligible;
         const preVisionExcludedListings = [
           ...preVisionAssessment.excluded.map((entry) => ({
-          ...entry.item,
+          ...clearPreVisionRankingMetadata(entry.item),
           visualReviewStatus: 'not_reviewed',
           visualReviewRationale: entry.reasons.join('; '),
           evidenceDisposition: 'pre_vision_excluded',
