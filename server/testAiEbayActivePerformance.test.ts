@@ -131,6 +131,17 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(pageSource).toContain('title="Candidate image"');
   });
 
+  it("keeps excluded eBay candidates visibly auditable with image and rank data", () => {
+    const ebayProcedure = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
+    expect(ebayProcedure).toContain("imageUrl: s.imageUrl ?? collectEbayImageUrls(s)[0] ?? null");
+    expect(ebayProcedure).toContain("metadataMatchScore: s.metadataMatchScore");
+    expect(ebayProcedure).toContain("metadataMatchRank: s.metadataMatchRank");
+    expect(pageSource).toContain("displayData.preVisionFilter.excludedListings.map");
+    expect(pageSource).toContain("listing.metadataMatchScore !== undefined");
+    expect(pageSource).toContain("listing.metadataMatchRank");
+    expect(pageSource).toContain("object-contain p-0.5");
+  });
+
   it("applies the shared pre-vision gate to active asking prices", () => {
     const result = assessSoldCompsPreVisionCandidates({
       category: "video_games",
