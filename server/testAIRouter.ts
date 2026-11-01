@@ -23,6 +23,7 @@ import { lookupDiscogsReleases } from './discogsMetadata';
 import { formatHistoricalTrendContext } from './historicalTrendContext';
 import { AUTOGRAPH_SEARCH_DESIGNATION, buildComicsOriginalArtQueries, buildSportsCardTestAiCriteria, buildSportsCardTestAiQueries, buildVideoGameTestAiCriteria, filterTestAiListingsBySport, filterTestAiListingsByYear, isComicsOriginalArt, normalizeTestAiGrade, parseTestAiDetails, resolveTestAiDetailValue, resolveTestAiGradingCompany, resolveTestAiManufacturer, resolveTestAiYear } from '../shared/testAiCriteria';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
+import { normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';
 import { formatTestAiEvidenceForAnalysis } from '../shared/testAiEvidenceNormalization';
 import { deterministicTradeComparison, marketProfileForPrompt, type ComparableIdentityGate, type ComparableTarget, type MarketSale } from './testAiComparableEngine';
 import { buildAnalysisSnapshot, buildCashAwareTradeTerms } from './testAiAnalysisSnapshot';
@@ -1703,11 +1704,34 @@ export const testAIRouter = router({
         // The shared visual filter owns all universal and declared pre-vision
         // checks. Sending rows through a separate declared filter here caused
         // eBay Active to apply the same rule twice and lose one audit reason.
-        const visualInputListings = preVisionAssessment.eligible.map((item: any) => ({
-          ...item,
-          imageUrl: visualSourceCandidateImage(item),
-          imageUrls: collectEbayImageUrls(item),
-        }));
+        const visualInputListings = preVisionAssessment.eligible.map((item: any) => {
+          const imageUrls = collectEbayImageUrls(item);
+          const marketplaceCandidate = normalizeMarketplaceCandidate({
+            ...item,
+            sourceId: 'ebay_active',
+            sourceLabel: 'eBay active listings',
+            retrievalQuery: query,
+            imageUrl: imageUrls[0] ?? visualSourceCandidateImage(item),
+            imageUrls,
+            priceBasis: 'asking',
+            saleStatus: 'active',
+            marketplace: 'eBay',
+            originMarketplace: 'eBay',
+            seller: item.seller?.username,
+          }, {
+            structuredMetadata: {
+              ...(item.itemSpecifics && typeof item.itemSpecifics === 'object' ? { itemSpecifics: item.itemSpecifics } : {}),
+              ...(item.aspects && typeof item.aspects === 'object' ? { aspects: item.aspects } : {}),
+              ...(item.specifics && typeof item.specifics === 'object' ? { specifics: item.specifics } : {}),
+            },
+          });
+          return {
+            ...item,
+            marketplaceCandidate,
+            imageUrl: marketplaceCandidate.imageUrl,
+            imageUrls: marketplaceCandidate.imageUrls,
+          };
+        });
         const autographMarketContext = isAutographSignedItemTarget(targetMetadata);
         const visualActiveFilter = input.includeVisualReview || autographMarketContext
           ? await filterVisualSourceCandidates({

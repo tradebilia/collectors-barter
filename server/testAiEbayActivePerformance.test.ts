@@ -62,7 +62,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("item?.image?.thumbnailUrl");
     expect(routerSource).toContain("item?.image?.url");
     expect(routerSource).toContain(".map((url) => promoteEbayImageUrl(url))");
-    expect(routerSource).toContain("imageUrls: collectEbayImageUrls(item)");
+    expect(routerSource).toContain("const imageUrls = collectEbayImageUrls(item);");
   });
 
   it("keeps normalized eBay image URLs when constructing the visual-review payload", () => {
@@ -70,6 +70,17 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("imageUrl: normalizedImageUrls[0] ?? s.image?.imageUrl ?? null");
     expect(routerSource).toContain("imageUrls: normalizedImageUrls.slice(0, 3)");
     expect(routerSource).toContain("imageUrls: normalizedImageUrls,");
+  });
+
+  it("creates one shared marketplace candidate record before eBay visual admission", () => {
+    expect(routerSource).toContain("import { normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';");
+    expect(routerSource).toContain("const marketplaceCandidate = normalizeMarketplaceCandidate({");
+    expect(routerSource).toContain("sourceId: 'ebay_active'");
+    expect(routerSource).toContain("retrievalQuery: query");
+    expect(routerSource).toContain("structuredMetadata:");
+    expect(routerSource).toContain("marketplaceCandidate,");
+    expect(routerSource).toContain("imageUrl: marketplaceCandidate.imageUrl");
+    expect(routerSource).toContain("imageUrls: marketplaceCandidate.imageUrls");
   });
 
   it("preserves ranking metadata in both eBay listing transport arrays", () => {
