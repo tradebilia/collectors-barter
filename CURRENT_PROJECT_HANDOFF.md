@@ -170,3 +170,9 @@ Fixed a shared valuation-admission defect affecting comparable marketplace categ
 - The reported Moonlighting variants now receive 50/100 from the box-set title and format evidence instead of the previous 20/100, so they can be ranked appropriately before the visual cap and final visual approval.
 - Focused validation passed 283/283 across visual-source, eBay, and Sold-Comps tests; TypeScript and production build passed; diff hygiene passed. Full deterministic validation reached 1,940 passed / 7 skipped across 351 files. One unrelated pre-existing `server/testAiAnalyzerInput.test.ts` nullable-certification source-contract assertion remains failing.
 - No database, migration, credential, provider configuration, deployment, or publishing changes.
+
+## Arabic, written, and Roman numeral equivalence — November 1, 2026
+- Extended the bounded comparable-number normalizer so standalone Roman numerals `I` through `XX` are treated as their Arabic equivalents. For example, `5`, `five`, and `V` now produce the same identity evidence in supported comparable-text paths.
+- The conversion is token-boundary aware, so embedded text such as `VHS` is not converted. Numeric metadata, grades, issue/card numbers, item-type detection, packaging/state filters, Collection/Lot blocking, visual admission, and valuation safeguards remain unchanged.
+- Added a regression proving that `Rocky 5`, `Rocky Five`, and `Rocky V` receive equivalent Movie title evidence. Focused validation passed 284/284; TypeScript, production build, and diff checks passed. Full deterministic validation reached 1,941 passed / 7 skipped across 351 files. The one unrelated pre-existing `server/testAiAnalyzerInput.test.ts` nullable-certification source-contract assertion remains failing.
+- No database, migration, credential, provider configuration, deployment, or publishing changes.

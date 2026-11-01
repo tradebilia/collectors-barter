@@ -521,6 +521,21 @@ describe("visual source filter", () => {
     }
   });
 
+  it("treats Arabic, written, and Roman numerals as equivalent title evidence", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Rocky 5",
+      category: "movies",
+      itemType: "individual_movie",
+      fullItemDetails: { title: "Rocky 5", format: "DVD" },
+    });
+    const written = moviesIndividualVisualScore({ title: "Rocky Five DVD" }, target);
+    const roman = moviesIndividualVisualScore({ title: "Rocky V DVD" }, target);
+
+    expect(written.score).toBe(50);
+    expect(roman.score).toBe(written.score);
+    expect(roman.matched).toEqual(expect.arrayContaining(["movieTitle", "format"]));
+  });
+
   it("uses the approved Movies score-band cap limits", () => {
     expect(moviesVisualCap(95)).toBe(8);
     expect(moviesVisualCap(85)).toBe(6);

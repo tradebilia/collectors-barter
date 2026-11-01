@@ -1511,8 +1511,15 @@ const COMPARABLE_NUMBER_WORDS: Record<string, string> = {
   zero: "0", one: "1", two: "2", three: "3", four: "4", five: "5",
   six: "6", seven: "7", eight: "8", nine: "9", ten: "10", eleven: "11", twelve: "12",
 };
+const COMPARABLE_ROMAN_NUMERALS: Record<string, string> = {
+  i: "1", ii: "2", iii: "3", iv: "4", v: "5", vi: "6", vii: "7", viii: "8",
+  ix: "9", x: "10", xi: "11", xii: "12", xiii: "13", xiv: "14", xv: "15",
+  xvi: "16", xvii: "17", xviii: "18", xix: "19", xx: "20",
+};
 function normalizeComparableNumberWords(value: string): string {
-  return value.replace(/\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi, (word) => COMPARABLE_NUMBER_WORDS[word.toLowerCase()] ?? word);
+  return value
+    .replace(/\b(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\b/gi, (word) => COMPARABLE_NUMBER_WORDS[word.toLowerCase()] ?? word)
+    .replace(/\b(?:xviii|xvii|xvi|xiv|xiii|xii|xi|xix|xx|viii|vii|vi|ix|iv|iii|ii|x|v|i)\b/gi, (roman) => COMPARABLE_ROMAN_NUMERALS[roman.toLowerCase()] ?? roman);
 }
 function canonicalCandidateTitle(listing: VisualSourceCandidate): string {
   return normalizeVisualSourceCandidate(listing).title;
