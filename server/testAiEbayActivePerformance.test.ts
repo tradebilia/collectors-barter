@@ -82,7 +82,7 @@ describe("Test AI eBay active-listing responsiveness", () => {
     const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
     expect(section).toContain("includeVisualReview: z.boolean().optional()");
     expect(section).toContain("const visualActiveFilter = input.includeVisualReview");
-    expect(section).toContain("const visualInputListings = visualEligibleListings.map");
+    expect(section).toContain("const visualInputListings = preVisionAssessment.eligible.map");
     expect(section).toContain("filterVisualSourceCandidates({");
     expect(section).toContain("const metrics = computeMetrics(displaySummaries)");
     expect(section).toContain("const displaySummaries = visualActiveFilter?.listings ?? visualInputListings");

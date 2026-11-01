@@ -27,13 +27,13 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(section).toContain("if (normalizedCategory === 'video_games')");
     expect(section).toContain('enforceVideoGameTitleMatch: true');
     expect(section).toContain('preVisionExcludedListings');
-    expect(section).toContain('selectVideoGameVisualCandidates');
-    expect(section).toContain('minimum metadata score of 50');
-    expect(section).toContain('Score-band cap for this result set');
+    expect(section).toContain('const universalPreFilter = await filterVisualSourceCandidates');
+    expect(section).toContain('targetImageUrl: safeTargetImage');
+    expect(section).toContain('shared universal and item-type ranking pipeline');
     const universalPreparation = section.indexOf('const universalPreFilter = await filterVisualSourceCandidates');
-    const ranking = section.indexOf('const rankedListings = rankVideoGameCandidates');
     expect(universalPreparation).toBeGreaterThanOrEqual(0);
-    expect(ranking).toBeGreaterThan(universalPreparation);
+    expect(section).not.toContain('rankVideoGameCandidates');
+    expect(section).not.toContain('selectVideoGameVisualCandidates');
     expect(pageSource).toContain('Excluded before visual review');
   });
 
@@ -48,12 +48,15 @@ describe('Mercari Video Game pre-visual filtering', () => {
     const mercariEnd = routerSource.indexOf('// SoldComps TCGplayer coverage', mercariStart);
     const mercariSection = routerSource.slice(mercariStart, mercariEnd);
 
-    expect(activeSection).toContain('rankVideoGameCandidates');
-    expect(activeSection).toContain('selectVideoGameVisualCandidates');
-    expect(soldSection).toContain('rankVideoGameCandidates');
-    expect(soldSection).toContain('selectVideoGameVisualCandidates');
-    expect(mercariSection).toContain('rankVideoGameCandidates');
-    expect(mercariSection).toContain('selectVideoGameVisualCandidates');
+    expect(activeSection).toContain('filterVisualSourceCandidates');
+    expect(activeSection).not.toContain('rankVideoGameCandidates');
+    expect(activeSection).not.toContain('selectVideoGameVisualCandidates');
+    expect(soldSection).toContain('filterVisualSourceCandidates');
+    expect(soldSection).not.toContain('rankVideoGameCandidates');
+    expect(soldSection).not.toContain('selectVideoGameVisualCandidates');
+    expect(mercariSection).toContain('filterVisualSourceCandidates');
+    expect(mercariSection).not.toContain('rankVideoGameCandidates');
+    expect(mercariSection).not.toContain('selectVideoGameVisualCandidates');
   });
 
   it('routes every non-Video-Game Mercari result through shared universal preparation, even without a target image', () => {
