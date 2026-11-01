@@ -282,12 +282,12 @@ export function normalizeSearchGrade(value: string | undefined, category: string
 }
 
 export function extractGradeFromQuery(query: string): ExtractedGrade | null {
-  const match = query.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
+  const match = query.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:\\(\\s*)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
   return match ? normalizeExtractedGrade(match[2], match[3], match[4]) : null;
 }
 
 export function extractGradeFromTitle(title: string): ExtractedGrade | null {
-  const match = title.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
+  const match = title.match(new RegExp(`(${gradeProviderPattern})\\s+(?:graded?\\s+)?(?:\\(\\s*)?(?:([A-Za-z]{1,8})\\s*)?([QC]?\\d+\\.?\\d*)([+]?)`, "i"));
   return match ? normalizeExtractedGrade(match[2], match[3], match[4]) : null;
 }
 
@@ -1052,6 +1052,20 @@ export function annotateSoldComparableCandidate(
   const carriedEvidenceReasons = Array.isArray(item?.evidenceReasons)
     ? item.evidenceReasons.map((reason: unknown) => String(reason ?? '').trim()).filter(Boolean)
     : [];
+  const confirmedVisualIdentity = carriedVisualStatus === 'match';
+  const metadataUncertaintyReasons = new Set([
+    'grading or authentication company is not stated in the marketplace title',
+    'grade is not stated or cannot be normalized from the marketplace title',
+    'catalog, card, or issue number is not stated in the marketplace title',
+    'player surname is not stated in the marketplace title',
+  ]);
+  // The title parser is an admission aid, not the final identity authority.
+  // Once the shared visual review confirms the item, clear only title-reading
+  // uncertainty. Lots, price/date/currency failures, duplicates, objective
+  // conflicts, and source evidence reasons remain blocking safeguards.
+  const effectiveReasons = confirmedVisualIdentity
+    ? reasons.filter((reason) => !metadataUncertaintyReasons.has(reason))
+    : reasons;
   // A shared visual filter may carry a provisional context-only label into
   // final Sold-Comps annotation. A confirmed visual match can clear that
   // provisional label only when every deterministic check above is clean.
@@ -1068,11 +1082,11 @@ export function annotateSoldComparableCandidate(
 
   const evidenceDisposition: SoldComparableDisposition = carriedDisposition && carriedDisposition !== 'valuation_eligible' && !canPromoteConfirmedVisualMatch
     ? carriedDisposition
-    : reasons.length ? 'warning_review' : 'valuation_eligible';
+    : effectiveReasons.length ? 'warning_review' : 'valuation_eligible';
   return {
     ...item,
     evidenceDisposition,
-    evidenceReasons: reasons,
+    evidenceReasons: effectiveReasons,
     lotQuantity: item?.lotQuantity ?? lotQuantity,
     visualReviewStatus: carriedVisualStatus,
     visualReviewRationale: carriedVisualRationale,

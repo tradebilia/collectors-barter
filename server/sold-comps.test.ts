@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
+import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
@@ -225,6 +225,11 @@ describe('Sold-Comps API key validation', () => {
     expect(filterListingsByGrade(listings, 9.8)).toEqual([listings[0], listings[2]]);
   });
 
+  it('normalizes parenthesized VHS grading labels such as CGC Graded (9.8-A++)', () => {
+    expect(extractGradeFromTitle('Rambo: First Blood Part 2 VHS CGC Graded (9.8-A++) RARE! MINT!')).toBe(9.8);
+    expect(extractGradeFromQuery('Rambo: First Blood Part 2 VHS CGC Graded (9.8-A++)')).toBe(9.8);
+  });
+
   it('identifies explicit single-card forms in graded marketplace titles', () => {
     expect(hasSingleSportsCardForm('1985 Topps Mark McGwire 401 PSA 10')).toBe(true);
     expect(hasSingleSportsCardForm('Kirby Puckett Rookie 1985 Topps #536 RC Card HOF GEM MINT 10')).toBe(true);
@@ -288,6 +293,41 @@ describe('Sold-Comps API key validation', () => {
     );
     expect(candidate.evidenceDisposition).toBe('valuation_eligible');
     expect(candidate.evidenceReasons).toEqual([]);
+  });
+
+  it('lets a confirmed visual identity match clear missing title metadata without clearing objective safeguards', () => {
+    const candidate = annotateSoldComparableCandidate(
+      {
+        title: 'Rambo: First Blood Part 2 VHS CGC Graded (9.8-A++) RARE! MINT!',
+        soldPrice: '380',
+        evidenceDisposition: 'context_only',
+        evidenceReasons: [],
+        visualReviewStatus: 'match',
+        visualReviewRationale: 'The target and candidate are the same CGC graded VHS and the visible 9.8 grade matches.',
+      },
+      {
+        category: 'movies',
+        targetItemType: 'single_movie',
+        certificationCompany: 'CGC',
+        targetGrade: 9.8,
+        targetNumber: null,
+        targetPlayer: null,
+        visualReviewRequired: true,
+      },
+    );
+
+    expect(candidate.evidenceDisposition).toBe('valuation_eligible');
+    expect(candidate.evidenceReasons).toEqual([]);
+
+    const lot = annotateSoldComparableCandidate(
+      { title: 'Rambo: First Blood Part 2 VHS CGC Graded (9.8-A++) Lot of 2', soldPrice: '380', visualReviewStatus: 'match' },
+      {
+        category: 'movies', targetItemType: 'single_movie', certificationCompany: 'CGC', targetGrade: 9.8,
+        targetNumber: null, targetPlayer: null, visualReviewRequired: true,
+      },
+    );
+    expect(lot.evidenceDisposition).toBe('warning_review');
+    expect(lot.evidenceReasons?.[0]).toMatch(/multi-item lot/);
   });
 
   it.each(['sports_cards', 'coins', 'comics', 'stamps', 'video_games', 'movies', 'vintage_toys', 'pokemon', 'disney_pins', 'music'])('promotes a clean confirmed visual match through the shared Sold-Comps path for %s', (category) => {
