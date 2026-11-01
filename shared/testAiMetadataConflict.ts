@@ -219,6 +219,11 @@ export function findMaterialMetadataConflicts(
       continue;
     }
     if (directCandidateValue && compact(directCandidateValue) !== compact(targetValue)) {
+      const videoGameAccessoryTitleMatch = category === 'video_games'
+        && normalizeCategory(String(target.itemType ?? '')) === 'accessory'
+        && ['accessoryName', 'accessoryType'].includes(field)
+        && titleContainsValue(candidateTitle, targetValue);
+      if (videoGameAccessoryTitleMatch) continue;
       conflicts.push({ field, targetValue, candidateValue: directCandidateValue, reason: `${field} differs in explicit provider metadata` });
       continue;
     }

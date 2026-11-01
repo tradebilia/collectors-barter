@@ -2072,8 +2072,13 @@ function videoGameIdentityConflict(targetMetadata: string, listing: VisualSource
   for (const [targetValue, label, aliases, patterns] of checks) {
     const targetComparable = videoGameCanonicalValue(targetValue);
     if (!targetComparable || /^(unknown|n_a|na|none|not_applicable)$/.test(targetComparable)) continue;
+    const titleConfirmsSpecificAccessoryField = targetType === "accessory"
+      && ["accessory type", "accessory name", "manufacturer"].includes(label)
+      && titleContainsValue(listing.title, targetValue);
     const candidateRawValue = targetType === "accessory"
-      ? (videoGameAccessoryValue(listing, aliases, patterns) || (label === "working condition" ? videoGameFunctionalConditionValue(listing) : ""))
+      ? (titleConfirmsSpecificAccessoryField
+        ? String(targetValue)
+        : (videoGameAccessoryValue(listing, aliases, patterns) || (label === "working condition" ? videoGameFunctionalConditionValue(listing) : "")))
       : videoGameCandidateValue(listing, aliases, patterns);
     const candidateValue = targetType === "accessory" ? videoGameAccessoryCanonicalValue(candidateRawValue) : videoGameCanonicalValue(candidateRawValue);
     if (!candidateValue || /^(unknown|n_a|na|none|not_applicable)$/.test(candidateValue)) continue;
@@ -3411,9 +3416,11 @@ function videoGameScoreBoolean(targetValue: unknown, listing: VisualSourceCandid
 function videoGameAccessoryScoreValueMatches(targetValue: unknown, listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[], label: string): boolean | null {
   const target = videoGameAccessoryCanonicalValue(targetValue);
   if (!target || /^(?:unknown|n_a|na|none|not_applicable)$/.test(target)) return null;
+  // Prefer a specific product identity in the title over a generic provider
+  // label such as "Controller".
+  if (["name", "type", "manufacturer"].includes(label) && titleContainsValue(listing.title, targetValue)) return true;
   const explicitAliases = aliases.filter((alias) => alias !== "title");
   const explicitCandidate = videoGameAccessoryValue(listing, explicitAliases);
-  if (!explicitCandidate && ["name", "type", "manufacturer"].includes(label) && titleContainsValue(listing.title, targetValue)) return true;
   const candidateValue = videoGameAccessoryValue(listing, aliases, patterns);
   if (!candidateValue) return null;
   const candidate = videoGameAccessoryCanonicalValue(candidateValue);

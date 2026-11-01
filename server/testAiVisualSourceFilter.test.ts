@@ -523,6 +523,14 @@ describe("visual source filter", () => {
       expect(titleScore.matched).toEqual(expect.arrayContaining(expectedFields));
       expect(buildDeclaredIdentityReviews([{ title }], buildVisualTargetMetadata({ title: "NES Power Glove", category: "video_games", itemType: "accessory", fullItemDetails: { accessoryType: "Controller", accessoryName: "Power Glove", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" } }))).toEqual([]);
     }
+    const providerGenericLabelCandidate = {
+      title: "Nintendo NES Power Glove Large L New Open Box Complete w/ Manuals Mattel",
+      itemDetails: JSON.stringify({ accessoryName: "Controller", accessoryType: "Controller", platform: "NES", manufacturer: "Nintendo", originalPackaging: "Yes" }),
+    };
+    const providerGenericLabelScore = videoGameAccessoryVisualScore(providerGenericLabelCandidate, powerGloveTarget);
+    expect(providerGenericLabelScore.score).toBe(90);
+    expect(providerGenericLabelScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "originalPackaging"]));
+    expect(buildDeclaredIdentityReviews([providerGenericLabelCandidate], powerGloveTarget)).toEqual([]);
   });
 
   it("uses marketplace aspects and accessory aliases for Video Games / Accessory", () => {
