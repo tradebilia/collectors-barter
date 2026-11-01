@@ -511,6 +511,37 @@ describe("visual source filter", () => {
     expect(accessoryScore.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
   });
 
+  it("uses marketplace aspects and accessory aliases for Video Games / Accessory", () => {
+    const target = buildVisualTargetMetadata({
+      title: "NES Power Glove",
+      category: "video_games",
+      itemType: "accessory",
+      fullItemDetails: {
+        accessoryType: "Controller",
+        accessoryName: "Power Glove",
+        platform: "NES",
+        manufacturer: "Nintendo",
+        workingCondition: "Working",
+        originalPackaging: "Yes",
+      },
+    });
+    const candidate = {
+      title: "Nintendo Power Glove Tested Working Original Box",
+      itemSpecifics: [
+        { name: "Type", value: "Game Controller" },
+        { name: "Model Name", value: "Power Glove" },
+        { name: "Compatible System", value: "NES" },
+        { name: "Brand", value: "Nintendo" },
+        { name: "Condition", value: "Tested Working" },
+        { name: "Packaging", value: "Original Box" },
+      ],
+    };
+    const score = videoGameAccessoryVisualScore(candidate, target);
+    expect(score.score).toBe(100);
+    expect(score.matched).toEqual(expect.arrayContaining(["accessoryType", "accessoryName", "compatiblePlatform", "manufacturer", "workingCondition", "originalPackaging"]));
+    expect(buildDeclaredIdentityReviews([candidate], target)).toEqual([]);
+  });
+
   it("uses the approved Video Games score-band cap limits", () => {
     expect(videoGameVisualCap(95)).toBe(8);
     expect(videoGameVisualCap(85)).toBe(6);
