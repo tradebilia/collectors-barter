@@ -542,6 +542,16 @@ function marketplaceCandidatePrice(item: any): unknown {
   return item?.soldPrice ?? item?.price?.value ?? item?.price ?? item?.currentBidPrice ?? null;
 }
 
+function isMovieBoxSetTarget(category: unknown, itemTypeOrMetadata: unknown): boolean {
+  const normalizedCategory = String(category ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (normalizedCategory !== 'movies') return false;
+  const raw = String(itemTypeOrMetadata ?? '').trim();
+  const itemType = raw.includes('=')
+    ? raw.match(/(?:^|;)\s*(?:itemType|productType|form)=([^;]*)/i)?.[1] ?? ''
+    : raw;
+  return /(?:^|[_\s-])(?:box_set|boxset|complete_series|collection_set)(?:$|[_\s-])/i.test(itemType);
+}
+
 export function assessSoldCompsPreVisionCandidates(args: {
   listings: any[];
   category: string;
@@ -584,7 +594,7 @@ export function assessSoldCompsPreVisionCandidates(args: {
     if (args.targetIsGraded && hasConditionOnlyEvidence(item) && !hasExplicitGradedEvidence(item, metadata)) {
       reasons.push('graded target: candidate has explicit condition-only evidence but no grader or graded-item evidence');
     }
-    if (hasExplicitSoldCompLot(String(item?.title ?? ''))) {
+    if (hasExplicitSoldCompLot(String(item?.title ?? '')) && !isMovieBoxSetTarget(args.category, args.targetMetadata)) {
       reasons.push('candidate is an explicit lot, bundle, multipack, or collection; total price is not directly comparable to one target item');
     }
     const priceSafety = evaluateSoldCompPriceSafety(args.statedTradeValue, marketplaceCandidatePrice(item));
@@ -1029,7 +1039,7 @@ export function annotateSoldComparableCandidate(
   const carriedVisualRationale = item?.visualReviewRationale ?? context.visualReview?.rationale ?? null;
   const carriedVisualAudit = item?.visualAudit ?? context.visualReview?.visualAudit ?? null;
 
-  if (hasExplicitSoldCompLot(title)) {
+  if (hasExplicitSoldCompLot(title) && !isMovieBoxSetTarget(context.category, context.targetItemType)) {
     reasons.push(lotQuantity
       ? `candidate is a multi-item lot of ${lotQuantity}; total lot price is not directly comparable to one target item and is retained as context only`
       : 'candidate is a multi-item lot or bundle; total lot price is not directly comparable to one target item and is retained as context only');

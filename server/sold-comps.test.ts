@@ -184,6 +184,39 @@ describe('Sold-Comps API key validation', () => {
     expect(result.excluded).toHaveLength(0);
   });
 
+  it('allows Movie Box Set bundles through the shared pre-vision gate while keeping individual movies protected', () => {
+    const boxSetTarget = 'title=Moonlighting Season 1&2; category=movies; itemType=box_set; fullItemDetails={"boxSetName":"Moonlighting Season 1&2","format":"DVD"}';
+    const bundle = { title: 'Moonlighting Seasons 1 & 2 DVD Collection', soldPrice: 13 };
+    const boxSetResult = assessSoldCompsPreVisionCandidates({
+      category: 'movies',
+      targetMetadata: boxSetTarget,
+      listings: [bundle],
+    });
+    expect(boxSetResult.eligible[0]).toMatchObject(bundle);
+    expect(boxSetResult.excluded).toHaveLength(0);
+
+    const individualResult = assessSoldCompsPreVisionCandidates({
+      category: 'movies',
+      targetMetadata: 'title=Moonlighting Season 1; category=movies; itemType=individual_movie; fullItemDetails={"title":"Moonlighting Season 1","format":"DVD"}',
+      listings: [bundle],
+    });
+    expect(individualResult.eligible).toHaveLength(0);
+    expect(individualResult.excluded[0]?.reasons.join(' ')).toMatch(/lot, bundle|collection/i);
+
+    const annotated = annotateSoldComparableCandidate(bundle, {
+      category: 'movies',
+      targetItemType: 'box_set',
+      certificationCompany: '',
+      targetGrade: null,
+      targetNumber: null,
+      targetPlayer: null,
+      visualReviewRequired: true,
+      visualReview: { verdict: 'match', confidence: 'high', rationale: 'same box set', candidateIndex: 0 },
+    });
+    expect(annotated.evidenceDisposition).toBe('valuation_eligible');
+    expect(annotated.evidenceReasons ?? []).not.toContain(expect.stringMatching(/multi-item lot or bundle/i));
+  });
+
   it('retains grading-company variants until the shared universal filter can classify them with a visible reason', () => {
     const listings = [
       { title: 'Edge of the Spider-Verse #2 CGC 9.8' },
