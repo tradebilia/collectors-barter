@@ -3358,7 +3358,16 @@ function targetDescribesMultipleItems(targetMetadata: string): boolean {
   ].filter(value => value != null).map(String).join(" ");
   const combined = `${title} ${detailText}`;
   if (MULTI_ITEM_TITLE_PATTERNS.some(pattern => pattern.test(combined))) return true;
-  if (/\b(?:set|lot|bundle|group|collection|assortment)\b/i.test(String(details.itemType ?? details.productType ?? details.form ?? ""))) return true;
+  const normalizedDetailType = String(
+    metadataValue(targetMetadata, "itemType")
+      || metadataValue(targetMetadata, "productType")
+      || metadataValue(targetMetadata, "form")
+      || details.itemType
+      || details.productType
+      || details.form
+      || "",
+  ).replace(/[_-]+/g, " ");
+  if (/\b(?:set|lot|bundle|group|collection|assortment)\b/i.test(normalizedDetailType)) return true;
   if ([details.quantity, details.itemCount, details.numberOfItems, details.lotQuantity].some(value => Number(value) > 1)) return true;
   if (details.isSet === true || details.isLot === true || details.bundle === true) return true;
   return Array.isArray(details.items) && details.items.length > 1;

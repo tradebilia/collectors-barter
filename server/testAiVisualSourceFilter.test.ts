@@ -1212,6 +1212,16 @@ describe("visual source filter", () => {
     expect(isMultiItemLot({ title: "Amazing Spider-Man 299 + 300 + 301" }, singleComic)).toBe(true);
     const setTarget = "title=1986 Fleer Michael Jordan Complete Set; category=sports_cards; itemType=set; fullItemDetails={\"itemType\":\"set\",\"quantity\":132}";
     expect(isMultiItemLot({ title: "1986 Fleer Michael Jordan Complete Set" }, setTarget)).toBe(false);
+
+    const movieBoxSetTarget = buildVisualTargetMetadata({
+      title: "Moonlighting Season 1 & 2",
+      category: "movies",
+      itemType: "box_set",
+      fullItemDetails: { boxSetName: "Moonlighting Season 1 & 2", format: "DVD" },
+    });
+    expect(isMultiItemLot({ title: "Moonlighting Seasons 1 & 2 DVD Bundle" }, movieBoxSetTarget)).toBe(false);
+    const individualMovieTarget = buildVisualTargetMetadata({ title: "Moonlighting Season 1", category: "movies", itemType: "individual_movie" });
+    expect(isMultiItemLot({ title: "Moonlighting Seasons 1 & 2 DVD Bundle" }, individualMovieTarget)).toBe(true);
   });
 
   it("keeps pre-visual lots in context and makes no vision call when every candidate is a lot", async () => {
