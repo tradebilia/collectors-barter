@@ -222,6 +222,15 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(section).toContain("ignoreSubjectiveConditionDifferences: true,");
   });
 
+  it("blocks explicit replica wording before raw eBay Autographs listings reach pre-vision", () => {
+    const section = procedureSource("getEbayData: protectedProcedure", "// Fetch HIPStamp active listings");
+    expect(routerSource).toContain("function rawAutographReplicaReason");
+    expect(section).toContain("const rawAutographReplicaListings = input.category === 'autographs'");
+    expect(section).toContain("const preVisionEligibleSummaries = filteredSummaries.filter");
+    expect(section).toContain("listings: preVisionEligibleSummaries");
+    expect(routerSource).toContain("Autograph candidate explicitly declares");
+  });
+
   it("keeps the UI on the fast result while mandatory image checks run", () => {
     expect(pageSource).toContain("function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }");
     expect(pageSource).toContain("trpc.testAI.reviewEbayVisualData.useMutation");

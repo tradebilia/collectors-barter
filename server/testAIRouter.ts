@@ -113,6 +113,20 @@ function normalizedPcgsAuctionGrade(value: unknown): string {
   return String(value ?? '').replace(/\s+/g, '').toUpperCase();
 }
 
+function rawAutographReplicaReason(listing: Record<string, unknown>): string | null {
+  const rawTitle = [
+    listing.title,
+    listing.itemTitle,
+    listing.listingTitle,
+    listing.name,
+    listing.productName,
+  ].filter((value): value is string | number => typeof value === 'string' || typeof value === 'number').join(' ');
+  const match = rawTitle.match(/\b(replica|reproduction|facsimile|reprint|counterfeit)\b/i);
+  return match
+    ? `Autograph candidate explicitly declares ${match[1]}; replica or reproduction signed objects are excluded from market-range evidence.`
+    : null;
+}
+
 type EbayAppTokenResult = {
   token: string | null;
   error: string | null;
@@ -1715,6 +1729,13 @@ export const testAIRouter = router({
           isGraded: targetIsGraded ? 'Yes' : undefined,
           itemDetails: input.itemDetails,
         });
+        const rawAutographReplicaListings = input.category === 'autographs'
+          ? filteredSummaries
+            .map((listing: any) => ({ listing, reason: rawAutographReplicaReason(listing) }))
+            .filter((entry): entry is { listing: any; reason: string } => Boolean(entry.reason))
+          : [];
+        const rawAutographReplicaKeys = new Set(rawAutographReplicaListings.map(({ listing }) => listing));
+        const preVisionEligibleSummaries = filteredSummaries.filter((listing: any) => !rawAutographReplicaKeys.has(listing));
         const preVisionAssessment = assessSoldCompsPreVisionCandidates({
           category: input.category,
           targetMetadata,
@@ -1725,9 +1746,16 @@ export const testAIRouter = router({
           // collectible identity assertion. Explicit sealed, parts, grade,
           // grader, lot, and sports-card feature conflicts remain hard gates.
           ignoreSubjectiveConditionDifferences: true,
-          listings: filteredSummaries,
+          listings: preVisionEligibleSummaries,
         });
         const preVisionExcludedListings = [
+          ...rawAutographReplicaListings.map(({ listing, reason }) => ({
+            ...listing,
+            visualReviewStatus: 'not_reviewed',
+            visualReviewRationale: reason,
+            evidenceDisposition: 'pre_vision_excluded',
+            preVisionExclusionReasons: [reason],
+          })),
           ...preVisionAssessment.excluded.map((entry) => ({
           ...entry.item,
           visualReviewStatus: 'not_reviewed',
