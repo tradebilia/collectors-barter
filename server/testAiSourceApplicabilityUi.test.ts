@@ -309,9 +309,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />');
     expect(source).toContain("{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible");
     expect(source).toContain("listing.visualReviewStatus !== 'not_reviewed'");
-    expect(source).toContain("const valuationEligible = listing.evidenceDisposition === 'valuation_eligible'");
-    expect(source).toContain('Accepted for analyzer valuation — final comparable selection still applies');
-    expect(source).toContain('Visual match recorded, but not accepted for valuation');
+    expect(source).toContain('This-run source outcome');
+    expect(source).toContain('Completed sales found: {listings.length}. Accepted for valuation: {acceptedListings.length}. Current-value market evidence: {currentValueListings.length}. Historical trend records: {historicalTrendListings.length}.');
+    expect(source).toContain('{acceptedListings.length}</strong> sent to analyzer');
+    expect(source).toContain('{contextListings}</strong> context / review');
+    expect(source).toContain("<AnalyzerUseLine eligible={valuationEligible}");
+    expect(source).toContain('Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.');
     expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
     expect(source).toContain('View full explanation');
   });
