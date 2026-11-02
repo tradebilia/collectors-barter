@@ -81,7 +81,7 @@ function appendSearchContext(baseQuery: string, input: MarketplaceSearchDefiniti
     ? [cert, grade]
     : grade
       ? [grade]
-      : condition && category !== 'video_games'
+      : condition && category !== 'video_games' && category !== 'movies'
         ? [condition]
         : [];
   return unique([baseQuery, ...context]).join(' ').slice(0, 240).trim();

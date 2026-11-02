@@ -121,6 +121,20 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.query).not.toBe('1997 mint Blu-ray');
   });
 
+  it('omits cosmetic condition from an ungraded movie query', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Disney Hercules (1997) (Blu-ray) NEW',
+      category: 'movies',
+      itemType: 'individual_movie',
+      itemDetails: { title: '1997', format: 'Blu-ray' },
+      condition: 'mint',
+    });
+    expect(definition.query).toContain('Disney Hercules');
+    expect(definition.query).toContain('Blu-ray');
+    expect(definition.query.toLowerCase()).not.toContain('mint');
+    expect(definition.fallbackQueries).toContain('Disney Hercules (1997) (Blu-ray) NEW');
+  });
+
   it('does not put a zero placeholder grade into a coin query', () => {
     const definition = buildMarketplaceSearchDefinition({
       title: '1982 Mexican coin',
