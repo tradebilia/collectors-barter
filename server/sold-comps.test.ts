@@ -23,6 +23,7 @@ describe('Sold-Comps API key validation', () => {
     expect(soldCompsSection).toContain('metadataMatchScore: i.metadataMatchScore');
     expect(soldCompsSection).toContain('metadataMatchRank: i.metadataMatchRank');
     expect(soldCompsSection).toContain('metadataMatchReasons: i.metadataMatchReasons');
+    expect(soldCompsSection).toContain('ignoreSubjectiveConditionDifferences: true');
   });
 
   it('retains the precise sports-card grade for completed-sale retrieval', () => {

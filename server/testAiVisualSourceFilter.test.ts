@@ -1484,6 +1484,22 @@ describe("visual source filter", () => {
     expect(prepareUniversalVisualCandidates([
       { title: "Target collectible signed sealed reproduction", imageUrl: "https://example.com/unknown.jpg" },
     ], unknownTarget).contextReasons).toEqual(new Map());
+
+    const movieBoxSetTarget = buildVisualTargetMetadata({
+      title: "Moonlighting Season 1 & 2 DVD excellent",
+      category: "movies",
+      itemType: "box_set",
+      condition: "excellent",
+      fullItemDetails: { boxSetName: "Moonlighting Season 1 & 2", format: "DVD", numberOfMovies: 2 },
+    });
+    const preOwnedCandidate = {
+      title: "Moonlighting Seasons 1 & 2 (DVD) Complete w/ Excellent Case & 6 Discs",
+      condition: "Pre-Owned",
+      itemType: "collection",
+      imageUrl: "https://example.com/moonlighting-preowned.jpg",
+    };
+    expect(buildDeclaredIdentityReviews([preOwnedCandidate], movieBoxSetTarget)).toHaveLength(1);
+    expect(buildDeclaredIdentityReviews([preOwnedCandidate], movieBoxSetTarget, { ignoreSubjectiveConditionDifferences: true })).toEqual([]);
   });
 
   it("hard-excludes raw-versus-graded, explicit grade, and grading-company conflicts before visual review", async () => {

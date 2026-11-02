@@ -2746,6 +2746,10 @@ export const testAIRouter = router({
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
           targetMetadata: soldCompsTargetMetadata,
+          // eBay's Pre-Owned/Used condition is cosmetic marketplace metadata,
+          // not proof that a movie is damaged or incomplete. Let visual review
+          // make the final identity decision for these candidates.
+          ignoreSubjectiveConditionDifferences: true,
           listings: visualEligibleListings.map((item: any) => {
             const imageUrls = collectEbayImageUrls(item);
             return { ...item, imageUrl: imageUrls[0] ?? null, imageUrls };
