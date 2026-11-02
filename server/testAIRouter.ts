@@ -2889,22 +2889,25 @@ export const testAIRouter = router({
         });
         const visualSourceLabel = 'Mercari Video Game sold listings';
         const toVisualCandidate = (listing: any) => ({
+          ...(listing.canonicalCandidate ?? {}),
           ...listing,
           url: listing.itemUrl ?? listing.url,
           thumbnailUrl: listing.imageUrl ?? listing.thumbnailUrl,
           soldPrice: listing.price ?? listing.soldPrice,
           soldCurrency: listing.currency ?? listing.soldCurrency,
-          imageUrls: listing.imageUrl ? [listing.imageUrl] : [],
+          imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
           evidenceDisposition: undefined,
           evidenceReasons: [],
         });
         const assessment = assessSoldCompsPreVisionCandidates({
           listings: result.listings.map((listing) => ({
+            ...(listing.canonicalCandidate ?? {}),
             ...listing,
             url: listing.itemUrl,
             soldPrice: listing.price,
             soldCurrency: listing.currency,
             thumbnailUrl: listing.imageUrl,
+            imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
           })),
           category: normalizedCategory,
           targetMetadata,
@@ -3049,6 +3052,7 @@ export const testAIRouter = router({
         targetMetadata,
         ignoreSubjectiveConditionDifferences: true,
         listings: result.listings.map((listing) => ({
+          ...(listing.canonicalCandidate ?? {}),
           ...listing,
           // The common sold-comparable annotator uses the eBay-shaped aliases;
           // preserve the original Mercari fields while supplying those aliases
@@ -3057,7 +3061,7 @@ export const testAIRouter = router({
           thumbnailUrl: listing.imageUrl,
           soldPrice: listing.price,
           soldCurrency: listing.currency,
-          imageUrls: listing.imageUrl ? [listing.imageUrl] : [],
+          imageUrls: listing.imageUrls ?? listing.canonicalCandidate?.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
           // The adapter's warning is provisional. The strict visual result,
           // not the adapter warning, decides whether a Disney Pin can enter
           // valuation below.

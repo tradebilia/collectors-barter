@@ -4,6 +4,17 @@ export type MarketplaceCandidateStatus = 'active' | 'completed' | 'closed' | 'un
 export type MarketplaceCandidatePriceBasis = 'asking' | 'sold' | 'realized' | 'closed' | 'unknown';
 export type MarketplaceCandidateEvidenceSource = 'structured' | 'title' | 'description' | 'image' | 'unknown';
 export type MarketplaceCandidateTitleSource = 'title' | 'itemTitle' | 'listingTitle' | 'productName' | 'name' | 'structured' | 'unknown';
+export type MarketplaceConditionEvidence = {
+  marketplaceLabel: string | null;
+  usable: boolean | null;
+  damaged: boolean;
+  incomplete: boolean;
+  nonFunctional: boolean;
+  replacementOnly: boolean;
+  packagingOnly: boolean;
+  source: MarketplaceCandidateEvidenceSource;
+  reasons: string[];
+};
 export type MarketplaceCandidateDisposition = 'valuation_eligible' | 'context_only' | 'rejected' | 'not_evaluated';
 export type MarketplaceCandidateFilterState = 'passed' | 'blocked' | 'unknown';
 
@@ -59,6 +70,8 @@ export type MarketplaceCandidate = {
   marketplace: string | null;
   originMarketplace: string | null;
   seller: string | null;
+  marketplaceCondition: string | null;
+  conditionEvidence: MarketplaceConditionEvidence;
   lotQuantity: number | null;
   buyerPremium: 'included' | 'excluded' | 'unknown' | null;
   shipping: 'included' | 'excluded' | 'unknown' | null;
@@ -122,6 +135,10 @@ type CandidateInput = Record<string, unknown> & {
   evidenceReasons?: unknown;
   titleEvidence?: unknown;
   titleEvidenceSources?: unknown;
+  condition?: unknown;
+  marketplaceCondition?: unknown;
+  description?: unknown;
+  conditionEvidence?: unknown;
 };
 
 function text(value: unknown): string {
@@ -192,6 +209,36 @@ function imageList(input: CandidateInput): { urls: string[]; invalid: boolean } 
 
 function arrayOfText(value: unknown): string[] {
   return Array.isArray(value) ? value.map(text).filter(Boolean) : [];
+}
+
+function buildConditionEvidence(input: CandidateInput): MarketplaceConditionEvidence {
+  const marketplaceLabel = nullableText(input.marketplaceCondition ?? input.condition);
+  const title = text(input.title ?? input.itemTitle ?? input.listingTitle ?? input.productName ?? input.name);
+  const description = text(input.description);
+  const evidenceText = `${title} ${description}`;
+  const damaged = /\b(?:damaged|broken|cracked|defective)\b/i.test(evidenceText);
+  const incomplete = /\b(?:incomplete|missing\s+(?:disc|discs|case|manual|contents|parts)|no\s+(?:disc|discs|case|manual))\b/i.test(evidenceText);
+  const nonFunctional = /\b(?:not\s+working|does\s+not\s+work|untested|non[-\s]?working)\b/i.test(evidenceText);
+  const replacementOnly = /\b(?:replacement|spare|repair\s+part|for\s+parts|parts\s+only)\b/i.test(evidenceText);
+  const packagingOnly = /\b(?:empty\s+box|box\s+only|case\s+only|manual\s+only|packaging\s+only)\b/i.test(evidenceText);
+  const reasons = [
+    damaged ? 'explicit damage wording' : null,
+    incomplete ? 'explicit missing or incomplete contents wording' : null,
+    nonFunctional ? 'explicit non-functional or untested wording' : null,
+    replacementOnly ? 'replacement or repair-part wording' : null,
+    packagingOnly ? 'packaging-only or manual-only wording' : null,
+  ].filter((reason): reason is string => Boolean(reason));
+  return {
+    marketplaceLabel,
+    usable: reasons.length > 0 ? false : marketplaceLabel ? true : null,
+    damaged,
+    incomplete,
+    nonFunctional,
+    replacementOnly,
+    packagingOnly,
+    source: reasons.length > 0 ? (description ? 'description' : 'title') : marketplaceLabel ? 'structured' : 'unknown',
+    reasons,
+  };
 }
 
 function titleCandidates(input: CandidateInput): Array<{ source: MarketplaceCandidateTitleSource; value: string }> {
@@ -290,6 +337,8 @@ export function normalizeMarketplaceCandidate(input: CandidateInput, defaults: P
     marketplace: defaults.marketplace ?? nullableText(input.marketplace),
     originMarketplace: defaults.originMarketplace ?? nullableText(input.originMarketplace),
     seller: defaults.seller ?? nullableText(input.seller ?? input.sellerUsername),
+    marketplaceCondition: defaults.marketplaceCondition ?? nullableText(input.marketplaceCondition ?? input.condition),
+    conditionEvidence: defaults.conditionEvidence ?? buildConditionEvidence(input),
     lotQuantity: defaults.lotQuantity ?? positiveInteger(input.lotQuantity),
     buyerPremium: defaults.buyerPremium ?? (['included', 'excluded', 'unknown'].includes(text(input.buyerPremium)) ? text(input.buyerPremium) as MarketplaceCandidate['buyerPremium'] : null),
     shipping: defaults.shipping ?? (['included', 'excluded', 'unknown'].includes(text(input.shipping)) ? text(input.shipping) as MarketplaceCandidate['shipping'] : null),

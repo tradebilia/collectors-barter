@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { lookupMercariSoldComps, lookupTcgplayerSoldComps, SOLD_COMPS_ADDITIONAL_LIMITS } from './soldCompsAdditionalMarketData';
+import { lookupMercariSoldComps, lookupTcgplayerSoldComps, normalizeMercariSoldCandidate, SOLD_COMPS_ADDITIONAL_LIMITS } from './soldCompsAdditionalMarketData';
 
 const originalKey = process.env.SOLD_COMPS_API_KEY;
 
@@ -32,6 +32,38 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(requestedUrl).toContain('sold=true');
     expect(requestedUrl).toContain(`count=${SOLD_COMPS_ADDITIONAL_LIMITS.maxMercariItems}`);
     expect(result.listings).toMatchObject([{ sourceId: 'mercari_sold_comps', price: 185, evidenceDisposition: 'warning_review', endedAt: '2026-09-01' }]);
+  });
+
+  it('normalizes Mercari through the shared candidate contract without collapsing provider evidence', () => {
+    const listing = normalizeMercariSoldCandidate({
+      itemId: 'm-moonlighting',
+      title: 'Moonlighting Seasons 1 & 2 DVD Collection',
+      listingTitle: 'Moonlighting Seasons 1 & 2 DVD Collection',
+      price: '15',
+      currency: 'usd',
+      soldAt: '2026-09-01',
+      condition: 'Pre-Owned',
+      url: 'https://www.mercari.com/us/item/m-moonlighting/',
+      images: [{ url: 'https://img.test/front.jpg' }, { url: 'https://img.test/back.jpg' }],
+      categoryName: 'Movies & TV',
+    });
+    expect(listing).not.toBeNull();
+    expect(listing).toMatchObject({
+      title: 'Moonlighting Seasons 1 & 2 DVD Collection',
+      titleCandidates: ['Moonlighting Seasons 1 & 2 DVD Collection'],
+      imageUrl: 'https://img.test/front.jpg',
+      imageUrls: ['https://img.test/front.jpg', 'https://img.test/back.jpg'],
+      marketplaceCondition: 'Pre-Owned',
+      conditionEvidence: { usable: true, reasons: [] },
+    });
+    expect(listing?.canonicalCandidate).toMatchObject({
+      sourceId: 'mercari_sold_comps',
+      marketplace: 'Mercari',
+      saleStatus: 'completed',
+      priceBasis: 'sold',
+      imageUrls: ['https://img.test/front.jpg', 'https://img.test/back.jpg'],
+    });
+    expect(listing?.providerMetadata).toMatchObject({ categoryName: 'Movies & TV', providerCondition: 'Pre-Owned' });
   });
 
   it('builds Disney Pins Mercari criteria from character, pin name, and category', async () => {

@@ -1,4 +1,5 @@
 import { buildVideoGameTestAiCriteria, normalizeTestAiGrade, resolveTestAiGradingCompany } from '../shared/testAiCriteria';
+import { normalizeMarketplaceCandidate, type MarketplaceCandidate, type MarketplaceConditionEvidence } from '../shared/testAiMarketplaceCandidate';
 
 export type AdditionalSoldCompsInput = {
   title: string;
@@ -14,19 +15,24 @@ export type AdditionalSoldCompsInput = {
 
 export type AdditionalSoldCompsListing = {
   title: string;
+  titleCandidates?: string[];
   itemUrl: string | null;
   saleId: string;
   price: number;
   currency: string;
   endedAt: string | null;
   condition: string | null;
+  marketplaceCondition?: string | null;
+  conditionEvidence?: MarketplaceConditionEvidence;
   imageUrl: string | null;
+  imageUrls?: string[];
   sourceId: 'mercari_sold_comps' | 'tcgplayer_sold_comps';
   sourceLabel: string;
   marketplace: 'Mercari' | 'TCGplayer';
   evidenceDisposition: 'warning_review';
   evidenceReasons: string[];
   providerMetadata?: Record<string, unknown>;
+  canonicalCandidate?: MarketplaceCandidate;
 };
 
 const SOLD_COMPS_API_URL = 'https://api.sold-comps.com';
@@ -101,26 +107,80 @@ function queryKeyword(input: AdditionalSoldCompsInput): string {
   return title;
 }
 
-function mercariListing(item: any): AdditionalSoldCompsListing | null {
+export function normalizeMercariSoldCandidate(item: any): AdditionalSoldCompsListing | null {
   const price = Number(item?.price);
   if (!item?.itemId || !item?.title || !Number.isFinite(price) || price <= 0) return null;
-  return {
-    title: String(item.title),
-    itemUrl: typeof item.url === 'string' ? item.url : null,
+  const imageValues = [
+    ...(Array.isArray(item.images) ? item.images : []),
+    ...(Array.isArray(item.photos) ? item.photos : []),
+    item.imageUrl,
+    item.thumbnailUrl,
+  ];
+  const canonicalCandidate = normalizeMarketplaceCandidate({
+    ...item,
+    sourceId: 'mercari_sold_comps',
+    sourceLabel: 'Sold-Comps (Mercari Sold)',
+    title: item.title,
+    listingTitle: item.listingTitle,
+    name: item.name,
+    itemId: item.itemId,
     saleId: `mercari:${String(item.itemId)}`,
+    url: item.url,
+    itemUrl: item.itemUrl,
     price,
+    soldPrice: price,
     currency: String(item.currency || 'USD').toUpperCase(),
-    endedAt: typeof item.soldAt === 'string' ? item.soldAt : null,
-    condition: typeof item.condition === 'string' ? item.condition : null,
-    imageUrl: typeof item.imageUrl === 'string' ? item.imageUrl : typeof item.thumbnailUrl === 'string' ? item.thumbnailUrl : null,
+    soldCurrency: String(item.currency || 'USD').toUpperCase(),
+    date: item.soldAt,
+    endedAt: item.soldAt,
+    saleStatus: 'completed',
+    priceBasis: 'sold',
+    marketplace: 'Mercari',
+    originMarketplace: 'Mercari',
+    condition: item.condition,
+    marketplaceCondition: item.condition,
+    description: item.description,
+    imageUrls: imageValues,
+  }, {
+    sourceId: 'mercari_sold_comps',
+    sourceLabel: 'Sold-Comps (Mercari Sold)',
+    marketplace: 'Mercari',
+    originMarketplace: 'Mercari',
+    saleStatus: 'completed',
+    priceBasis: 'sold',
+  });
+  return {
+    title: canonicalCandidate.title,
+    titleCandidates: canonicalCandidate.titleCandidates,
+    itemUrl: canonicalCandidate.url,
+    saleId: `mercari:${String(item.itemId)}`,
+    price: canonicalCandidate.price ?? price,
+    currency: canonicalCandidate.currency ?? 'USD',
+    endedAt: canonicalCandidate.date,
+    condition: canonicalCandidate.marketplaceCondition,
+    marketplaceCondition: canonicalCandidate.marketplaceCondition,
+    conditionEvidence: canonicalCandidate.conditionEvidence,
+    imageUrl: canonicalCandidate.imageUrl,
+    imageUrls: canonicalCandidate.imageUrls,
     sourceId: 'mercari_sold_comps',
     sourceLabel: 'Sold-Comps (Mercari Sold)',
     marketplace: 'Mercari',
     evidenceDisposition: 'warning_review',
     evidenceReasons: ['Mercari results are available for testing but remain context-only until provider-specific identity and signed-admission review is complete.'],
-    providerMetadata: { marketplace: item.marketplace, categoryId: item.categoryId, categoryName: item.categoryName, brand: item.brand, status: item.status },
+    providerMetadata: {
+      ...canonicalCandidate.rawMetadata,
+      marketplace: item.marketplace,
+      categoryId: item.categoryId,
+      categoryName: item.categoryName,
+      brand: item.brand,
+      status: item.status,
+      providerCondition: item.condition,
+    },
+    canonicalCandidate,
   };
 }
+
+const mercariListing = normalizeMercariSoldCandidate;
 
 function tcgplayerListing(product: any, sale: any, index: number): AdditionalSoldCompsListing | null {
   const price = Number(sale?.price);

@@ -147,4 +147,31 @@ describe('shared marketplace candidate contract', () => {
     expect(candidate.imageAvailability).toBe('invalid');
     expect(candidate.price).toBe(100);
   });
+
+  it('keeps cosmetic marketplace condition separate from objective condition evidence', () => {
+    const cosmetic = normalizeMarketplaceCandidate({
+      sourceId: 'mercari_sold_comps',
+      title: 'Moonlighting Seasons 1 & 2 DVD Collection',
+      condition: 'Pre-Owned',
+    });
+    expect(cosmetic.marketplaceCondition).toBe('Pre-Owned');
+    expect(cosmetic.conditionEvidence).toMatchObject({
+      usable: true,
+      damaged: false,
+      incomplete: false,
+      nonFunctional: false,
+      replacementOnly: false,
+      packagingOnly: false,
+    });
+    expect(cosmetic.conditionEvidence.reasons).toEqual([]);
+
+    const objective = normalizeMarketplaceCandidate({
+      sourceId: 'mercari_sold_comps',
+      title: 'Moonlighting Seasons 1 & 2 DVD — missing disc, for parts',
+      condition: 'Used',
+    });
+    expect(objective.conditionEvidence.usable).toBe(false);
+    expect(objective.conditionEvidence.incomplete).toBe(true);
+    expect(objective.conditionEvidence.replacementOnly).toBe(true);
+  });
 });
