@@ -185,7 +185,8 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("does not present deterministic pre-filter conflicts as AI image-review results", () => {
-    expect(pageSource).toContain("listing.visualRequirement === 'required'");
+    expect(pageSource).toContain("function hasCompletedVisualReview(listing: any): boolean");
+    expect(pageSource).toContain("hasCompletedVisualReview(listing)");
     expect(pageSource).toContain("actually reviewed");
     expect(pageSource).toContain("held out before AI image analysis");
     expect(pageSource).toContain("AI mismatch");

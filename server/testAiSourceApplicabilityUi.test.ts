@@ -327,6 +327,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('View full explanation');
   });
 
+  it('distinguishes direct comparables from current-value evidence in visual-match wording', () => {
+    expect(source).toContain("statusLabel={currentValueEvidence ? 'Current-value evidence: INCLUDED' : undefined}");
+    expect(source).toContain('The visual match is retained in current-value market evidence; it is not a completed-sale comparable.');
+    expect(source).not.toContain(['Context / review only; the visual match did not receive a valuation-', 'eligible disposition.'].join(''));
+    expect(source).toContain('Direct comparable: NO — not submitted as a direct valuation comparable');
+  });
   it('keeps an explicit visual verdict in the reviewed count even if an adapter omits the requirement marker', () => {
     expect(source).toContain('function hasCompletedVisualReview(listing: any): boolean');
     expect(source).toContain("['match', 'rough_match', 'mismatch', 'unreadable'].includes(status)");
