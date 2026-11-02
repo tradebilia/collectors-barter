@@ -41,6 +41,7 @@ import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
 import { lookupTheCardApi } from './theCardApi';
 import { lookupCardsightAi } from './cardsightAi';
 import { evaluateSoldCompPriceSafety, HIGH_VALUE_SOLD_COMP_MAX_RATIO, HIGH_VALUE_SOLD_COMP_MIN_RATIO, HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD } from '../shared/testAiSoldCompSafety';
+import { normalizeEbayMarketplaceCandidate } from './ebayMarketplaceCandidate';
 import { lookupCollectAuctions, lookupLelandsAuctions, lookupPristineAuctions } from './parseAuctionMarketData';
 import { lookupSiriusSportsAuctions } from './siriusSportsAuctionMarketData';
 import { lookupComcListings } from './parseComcMarketData';
@@ -1740,7 +1741,7 @@ export const testAIRouter = router({
         // eBay Active to apply the same rule twice and lose one audit reason.
         const visualInputListings = preVisionAssessment.eligible.map((item: any) => {
           const imageUrls = collectEbayImageUrls(item);
-          const marketplaceCandidate = normalizeMarketplaceCandidate({
+          const marketplaceCandidate = normalizeEbayMarketplaceCandidate({
             ...item,
             sourceId: 'ebay_active',
             sourceLabel: 'eBay active listings',
@@ -1752,12 +1753,6 @@ export const testAIRouter = router({
             marketplace: 'eBay',
             originMarketplace: 'eBay',
             seller: item.seller?.username,
-          }, {
-            structuredMetadata: {
-              ...(item.itemSpecifics && typeof item.itemSpecifics === 'object' ? { itemSpecifics: item.itemSpecifics } : {}),
-              ...(item.aspects && typeof item.aspects === 'object' ? { aspects: item.aspects } : {}),
-              ...(item.specifics && typeof item.specifics === 'object' ? { specifics: item.specifics } : {}),
-            },
           });
           return {
             ...item,
@@ -2698,7 +2693,19 @@ export const testAIRouter = router({
           visualReviewRationale: 'Excluded before visual review by explicit metadata, lot/bundle, or high-value price-safety evidence.',
         }));
 
-        const visualEligibleListings = preVisionAssessment.eligible;
+        const visualEligibleListings = preVisionAssessment.eligible.map((item: any) => ({
+          ...normalizeEbayMarketplaceCandidate({
+            ...item,
+            imageUrls: collectEbayImageUrls(item),
+            sourceId: 'ebay_sold_comps',
+            sourceLabel: 'eBay Sold-Comps',
+            retrievalQuery: item.retrievalQuery ?? query,
+            saleStatus: 'completed',
+            priceBasis: 'sold',
+          }),
+          ...item,
+          imageUrls: collectEbayImageUrls(item),
+        }));
         const scoreExcludedListings: any[] = [];
 
         const stageRows = [

@@ -12,6 +12,7 @@ import { buildDeclaredIdentityReviews, prioritizeVisualSourceCandidates } from "
 import { assessSoldCompsPreVisionCandidates } from "./testAIRouter";
 
 const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
+const adapterSource = readFileSync(resolve(import.meta.dirname, "./ebayMarketplaceCandidate.ts"), "utf8");
 const pageSource = readFileSync(resolve(import.meta.dirname, "../client/src/pages/TestAI.tsx"), "utf8");
 const clientMainSource = readFileSync(resolve(import.meta.dirname, "../client/src/main.tsx"), "utf8");
 const visualSource = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
@@ -73,11 +74,12 @@ describe("Test AI eBay active-listing responsiveness", () => {
   });
 
   it("creates one shared marketplace candidate record before eBay visual admission", () => {
-    expect(routerSource).toContain("import { normalizeMarketplaceCandidate } from '../shared/testAiMarketplaceCandidate';");
-    expect(routerSource).toContain("const marketplaceCandidate = normalizeMarketplaceCandidate({");
+    expect(routerSource).toContain("import { normalizeEbayMarketplaceCandidate } from './ebayMarketplaceCandidate';");
+    expect(routerSource).toContain("const marketplaceCandidate = normalizeEbayMarketplaceCandidate({");
     expect(routerSource).toContain("sourceId: 'ebay_active'");
     expect(routerSource).toContain("retrievalQuery: query");
-    expect(routerSource).toContain("structuredMetadata:");
+    expect(adapterSource).toContain("structuredMetadata");
+    expect(adapterSource).toContain("itemSpecifics");
     expect(routerSource).toContain("marketplaceCandidate,");
     expect(routerSource).toContain("normalizedListingTitle: marketplaceCandidate.title");
     expect(routerSource).toContain("normalizedListingTitleSource: marketplaceCandidate.titleSource");
