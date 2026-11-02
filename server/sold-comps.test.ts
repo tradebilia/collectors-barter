@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, applyAutographPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
+import { annotateSoldComparableCandidate, applyAutographPriceTailGate, applyIsolatedMarketPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
@@ -609,5 +609,23 @@ describe('Autographs automatic price-tail protection', () => {
       evidenceDisposition: 'valuation_eligible',
     })));
     expect(gated.every((listing) => listing.evidenceDisposition === 'valuation_eligible')).toBe(true);
+  });
+});
+
+describe('Original Art automatic price-tail protection', () => {
+  it('keeps an isolated low-priced listing visible as context but excludes it from market-range metrics', () => {
+    const prices = [12_500, 10_000, 7_499, 1_099, 60, 9_000, 4_500];
+    const gated = applyIsolatedMarketPriceTailGate(prices.map((price, index) => ({
+      title: `Original art listing ${index}`,
+      price,
+      saleId: `original-art-${index}`,
+      evidenceDisposition: 'context_only',
+      evidenceReasons: ['Original Art market-range context only.'],
+    })), { label: 'Original Art', includeContextOnly: true });
+
+    const isolated = gated.find((listing) => listing.price === 60);
+    expect(isolated).toMatchObject({ evidenceDisposition: 'context_only', priceTailExcludedFromMetrics: true });
+    expect(isolated?.evidenceReasons?.join(' ')).toContain('isolated Original Art price-tail outlier');
+    expect(gated.filter((listing) => !listing.priceTailExcludedFromMetrics).map((listing) => listing.price)).toEqual([12_500, 10_000, 7_499, 1_099, 9_000, 4_500]);
   });
 });

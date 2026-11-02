@@ -1209,11 +1209,14 @@ export function computeMetrics(summaries: any[]) {
   };
 }
 
-/** Keep isolated extreme autograph prices visible, but never let them affect valuation. */
-export function applyAutographPriceTailGate<T extends Record<string, any>>(listings: T[]): T[] {
+/** Keep isolated extreme market-range prices visible, but never let them affect valuation metrics. */
+export function applyIsolatedMarketPriceTailGate<T extends Record<string, any>>(
+  listings: T[],
+  options: { label: 'Autographs' | 'Original Art'; includeContextOnly?: boolean },
+): T[] {
   const priced = listings
     .map((listing, index) => ({ listing, index, price: Number(listing.price?.value ?? listing.price ?? listing.soldPrice ?? 0) }))
-    .filter((entry) => entry.listing.evidenceDisposition === 'valuation_eligible' && Number.isFinite(entry.price) && entry.price > 0)
+    .filter((entry) => (options.includeContextOnly || entry.listing.evidenceDisposition === 'valuation_eligible') && Number.isFinite(entry.price) && entry.price > 0)
     .sort((a, b) => a.price - b.price || a.index - b.index);
   if (priced.length < 5) return listings;
 
@@ -1233,14 +1236,20 @@ export function applyAutographPriceTailGate<T extends Record<string, any>>(listi
   return listings.map((listing, index) => {
     if (!isolatedTailIndexes.has(index)) return listing;
     const price = Number(listing.price?.value ?? listing.price ?? listing.soldPrice ?? 0);
-    const reason = `isolated Autographs price-tail outlier: $${Math.round(price).toLocaleString()} is excluded from valuation metrics and retained as context only`;
+    const reason = `isolated ${options.label} price-tail outlier: $${Math.round(price).toLocaleString()} is excluded from valuation metrics and retained as context only`;
     return {
       ...listing,
       evidenceDisposition: 'context_only',
+      priceTailExcludedFromMetrics: true,
       evidenceReasons: [...(Array.isArray(listing.evidenceReasons) ? listing.evidenceReasons : []), reason],
       visualReviewRationale: listing.visualReviewRationale ?? reason,
     } as T;
   });
+}
+
+/** Backward-compatible Autographs wrapper used by focused route tests. */
+export function applyAutographPriceTailGate<T extends Record<string, any>>(listings: T[]): T[] {
+  return applyIsolatedMarketPriceTailGate(listings, { label: 'Autographs' });
 }
 
 /**
@@ -2715,14 +2724,18 @@ export const testAIRouter = router({
             metadataMatchRank: index + 1,
             metadataMatchLabel: 'Market Relevance Score',
           }));
-          const metrics = computeMetrics(marketListings.map((item: any) => ({
+          const gatedMarketListings = applyIsolatedMarketPriceTailGate(marketListings, {
+            label: 'Original Art',
+            includeContextOnly: true,
+          });
+          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => !item.priceTailExcludedFromMetrics).map((item: any) => ({
             ...item,
             price: { value: item.price, currency: item.currency ?? 'USD' },
           })));
           return {
             query,
             marketContextOnly: true,
-            listings: marketListings,
+            listings: gatedMarketListings,
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
@@ -2730,9 +2743,9 @@ export const testAIRouter = router({
               rawReceived: rawItems.length,
               retrievalCoverage,
               valuationEligible: 0,
-              warningReview: marketListings.length,
+              warningReview: gatedMarketListings.length,
               objectiveConflicts: 0,
-              notVisuallyReviewed: marketListings.length,
+              notVisuallyReviewed: gatedMarketListings.length,
             },
             note: 'Original Art market context only: the results provide a broad price range and are not used as exact comparables or sent to visual analysis.',
           };
