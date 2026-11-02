@@ -1209,6 +1209,40 @@ export function computeMetrics(summaries: any[]) {
   };
 }
 
+/** Keep isolated extreme autograph prices visible, but never let them affect valuation. */
+export function applyAutographPriceTailGate<T extends Record<string, any>>(listings: T[]): T[] {
+  const priced = listings
+    .map((listing, index) => ({ listing, index, price: Number(listing.price?.value ?? listing.price ?? listing.soldPrice ?? 0) }))
+    .filter((entry) => entry.listing.evidenceDisposition === 'valuation_eligible' && Number.isFinite(entry.price) && entry.price > 0)
+    .sort((a, b) => a.price - b.price || a.index - b.index);
+  if (priced.length < 5) return listings;
+
+  const median = priced[Math.floor(priced.length / 2)]!.price;
+  const isolatedTailIndexes = new Set<number>();
+  const lower = priced[0];
+  const nextLower = priced[1];
+  const upper = priced[priced.length - 1];
+  const nextUpper = priced[priced.length - 2];
+  // Require both a large distance from the market center and a large gap to
+  // the neighboring observation. This catches $60 beside $1,099+ without
+  // treating every lower-priced signed item as invalid.
+  if (lower && nextLower && lower.price <= median / 4 && nextLower.price / lower.price >= 6) isolatedTailIndexes.add(lower.index);
+  if (upper && nextUpper && upper.price >= median * 4 && upper.price / nextUpper.price >= 6) isolatedTailIndexes.add(upper.index);
+  if (!isolatedTailIndexes.size) return listings;
+
+  return listings.map((listing, index) => {
+    if (!isolatedTailIndexes.has(index)) return listing;
+    const price = Number(listing.price?.value ?? listing.price ?? listing.soldPrice ?? 0);
+    const reason = `isolated Autographs price-tail outlier: $${Math.round(price).toLocaleString()} is excluded from valuation metrics and retained as context only`;
+    return {
+      ...listing,
+      evidenceDisposition: 'context_only',
+      evidenceReasons: [...(Array.isArray(listing.evidenceReasons) ? listing.evidenceReasons : []), reason],
+      visualReviewRationale: listing.visualReviewRationale ?? reason,
+    } as T;
+  });
+}
+
 /**
  * A transparent secondary view for active-market context: it uses only records
  * whose individual image comparison accepted the target identity. The full
@@ -1840,6 +1874,7 @@ export const testAIRouter = router({
               ],
             };
           });
+          displaySummaries = applyAutographPriceTailGate(displaySummaries);
         }
         const metrics = computeMetrics(autographMarketContext
           ? displaySummaries.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
@@ -2619,24 +2654,25 @@ export const testAIRouter = router({
               metadataMatchLabel: 'Market Relevance Score',
             };
           });
-          const metrics = computeMetrics(marketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').map((item: any) => ({
+          const gatedMarketListings = applyAutographPriceTailGate(marketListings);
+          const metrics = computeMetrics(gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').map((item: any) => ({
             ...item,
             price: { value: item.price, currency: item.currency ?? 'USD' },
           })));
           return {
             query,
             marketContextOnly: true,
-            listings: marketListings,
+            listings: gatedMarketListings,
             visualReviewListings: [],
             visualFilter: undefined,
             metrics,
             audit: {
               rawReceived: rawItems.length,
               retrievalCoverage,
-              valuationEligible: marketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
-              warningReview: marketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
+              valuationEligible: gatedMarketListings.filter((item: any) => item.evidenceDisposition === 'valuation_eligible').length,
+              warningReview: gatedMarketListings.filter((item: any) => item.evidenceDisposition !== 'valuation_eligible').length,
               objectiveConflicts: 0,
-              notVisuallyReviewed: marketListings.length,
+              notVisuallyReviewed: gatedMarketListings.length,
             },
             note: 'Autographs / Signed Item market range only: the results provide similar-signer/item/authentication evidence and price metrics; they are not exact comparables and are not sent to visual analysis.',
           };

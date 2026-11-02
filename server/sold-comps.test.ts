@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
+import { annotateSoldComparableCandidate, applyAutographPriceTailGate, assessSoldCompsPreVisionCandidates, buildEbayBrowseQuery, buildSoldCompsQueryCandidates, extractGradeFromQuery, extractGradeFromTitle, extractSoldCompLotQuantity, filterListingsByCertificationCompany, filterListingsByGrade, filterListingsByNumber, getSoldCompsApiKey, hasExplicitSoldCompLot, hasSingleSportsCardForm, normalizeSearchGrade, normalizeSoldCompsMetadata } from './testAIRouter';
 import { evaluateSoldCompPriceSafety } from '../shared/testAiSoldCompSafety';
 
 describe('Sold-Comps API key validation', () => {
@@ -582,5 +582,32 @@ describe('Sold-Comps API key validation', () => {
     expect(tooLow.evidenceReasons).toContain('high-value price safety gate: sold comp $4,999 is below 25% of the stated trade value $20,000 ($5,000 minimum); retained as context only');
     expect(tooHigh.evidenceDisposition).toBe('warning_review');
     expect(tooHigh.evidenceReasons).toContain('high-value price safety gate: sold comp $50,001 is above 250% of the stated trade value $20,000 ($50,000 maximum); retained as context only');
+  });
+});
+
+describe('Autographs automatic price-tail protection', () => {
+  it('keeps an isolated $60 result visible as context but excludes it from valuation metrics', () => {
+    const prices = [12_500, 10_000, 7_499, 1_099, 60, 9_000, 4_500];
+    const gated = applyAutographPriceTailGate(prices.map((price, index) => ({
+      title: `Babe Ruth signed baseball ${index}`,
+      price,
+      saleId: `babe-ruth-${index}`,
+      evidenceDisposition: 'valuation_eligible',
+      evidenceReasons: [],
+    })));
+
+    expect(gated.find((listing) => listing.price === 60)).toMatchObject({ evidenceDisposition: 'context_only' });
+    expect(gated.find((listing) => listing.price === 60)?.evidenceReasons?.join(' ')).toContain('isolated Autographs price-tail outlier');
+    expect(gated.filter((listing) => listing.evidenceDisposition === 'valuation_eligible').map((listing) => listing.price)).toEqual([12_500, 10_000, 7_499, 1_099, 9_000, 4_500]);
+  });
+
+  it('does not trim a normal five-item spread merely because prices differ', () => {
+    const gated = applyAutographPriceTailGate([100, 250, 500, 900, 1_800].map((price, index) => ({
+      title: `signed item ${index}`,
+      price,
+      saleId: `normal-${index}`,
+      evidenceDisposition: 'valuation_eligible',
+    })));
+    expect(gated.every((listing) => listing.evidenceDisposition === 'valuation_eligible')).toBe(true);
   });
 });
