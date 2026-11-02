@@ -34,6 +34,22 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(result.listings).toMatchObject([{ sourceId: 'mercari_sold_comps', price: 185, evidenceDisposition: 'warning_review', endedAt: '2026-09-01' }]);
   });
 
+  it('runs the clean-title fallback when the primary Mercari query returns zero records', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ itemId: 'm-fallback', title: 'Disney Hercules Blu-ray', price: '15', soldAt: '2026-09-01' }] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: 'Disney Hercules (1997) (Blu-ray) NEW',
+      category: 'movies',
+      condition: 'mint',
+      itemDetails: JSON.stringify({ title: '1997', format: 'Blu-ray' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result.listings).toHaveLength(1);
+    expect(result.metrics).toMatchObject({ fallbackQueriesUsed: [expect.any(String)], retrievalCoverage: [{ received: 0, status: 'success' }, { received: 1, status: 'success' }] });
+  });
+
   it('normalizes Mercari through the shared candidate contract without collapsing provider evidence', () => {
     const listing = normalizeMercariSoldCandidate({
       itemId: 'm-moonlighting',
@@ -185,5 +201,21 @@ describe('SoldComps additional marketplace adapters', () => {
     expect(String(fetchMock.mock.calls[1][0])).toContain('/v1/tcgplayer/sales?productId=123');
     expect(result.listings).toHaveLength(1);
     expect(result.listings[0]).toMatchObject({ sourceId: 'tcgplayer_sold_comps', price: 42, endedAt: '2026-09-07T18:32:25Z', evidenceDisposition: 'warning_review' });
+  });
+
+  it('runs the Pokémon title fallback when the primary TCGplayer product search is empty', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ productId: 456, name: 'Charizard', productLine: 'Pokemon', imageUrl: 'https://img.test/card.jpg' }] }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ items: [{ price: 42, soldDate: '2026-09-07T18:32:25Z' }] }), { status: 200 }));
+    const result = await lookupTcgplayerSoldComps({
+      title: 'Charizard Base Set #4',
+      category: 'pokemon',
+      itemDetails: JSON.stringify({ cardName: 'Charizard', cardNumber: '4', editionEra: 'Base Set' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(result.listings).toHaveLength(1);
+    expect(result.metrics).toMatchObject({ fallbackQueriesUsed: [expect.any(String)], retrievalCoverage: [{ received: 0, status: 'success' }, { received: 1, status: 'success' }] });
   });
 });

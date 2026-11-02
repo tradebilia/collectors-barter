@@ -38,6 +38,7 @@ export type AdditionalSoldCompsListing = {
 const SOLD_COMPS_API_URL = 'https://api.sold-comps.com';
 const MAX_MERCARI_ITEMS = 100;
 const MAX_TCG_PRODUCTS = 4;
+const MAX_FALLBACK_QUERIES = 3;
 const REQUEST_TIMEOUT_MS = 10_000;
 
 function getApiKey(env: NodeJS.ProcessEnv = process.env): string | null {
@@ -63,6 +64,20 @@ async function getJson(path: string, apiKey: string, fetchImpl: typeof fetch = f
 
 function queryKeyword(input: AdditionalSoldCompsInput): string {
   return buildMarketplaceSearchDefinition(input).query;
+}
+
+function queryCandidates(input: AdditionalSoldCompsInput): string[] {
+  return buildMarketplaceSearchDefinition(input).fallbackQueries.slice(0, MAX_FALLBACK_QUERIES + 1);
+}
+
+function uniqueByKey<T>(items: T[], key: (item: T) => string): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const value = key(item);
+    if (seen.has(value)) return false;
+    seen.add(value);
+    return true;
+  });
 }
 
 export function normalizeMercariSoldCandidate(item: any): AdditionalSoldCompsListing | null {
@@ -176,14 +191,44 @@ function tcgplayerListing(product: any, sale: any, index: number): AdditionalSol
 
 export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fetchImpl: typeof fetch = fetch) {
   const apiKey = getApiKey();
-  const keyword = queryKeyword(input);
+  const keywords = queryCandidates(input);
+  const keyword = keywords[0] ?? queryKeyword(input);
   if (!apiKey) return { query: keyword, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
   if (!keyword) return { query: keyword, listings: [], metrics: null, error: 'A title is required for Mercari Sold-Comps lookup' };
   try {
-    const params = new URLSearchParams({ keyword, page: '1', count: String(MAX_MERCARI_ITEMS), sortOrder: 'newest', sold: 'true' });
-    const data = await getJson(`/v1/mercari?${params.toString()}`, apiKey, fetchImpl);
-    const listings = (Array.isArray(data?.items) ? data.items : []).map(mercariListing).filter(Boolean) as AdditionalSoldCompsListing[];
-    return { query: keyword, listings, metrics: null, error: null, provider: 'mercari', received: listings.length, hasNextPage: Boolean(data?.hasNextPage) };
+    const executedQueries: string[] = [];
+    const retrievalCoverage: Array<{ query: string; received: number; status: 'success' | 'error' }> = [];
+    const rawItems: any[] = [];
+    let hasNextPage = false;
+    let lastError: string | null = null;
+    for (const candidate of keywords) {
+      const params = new URLSearchParams({ keyword: candidate, page: '1', count: String(MAX_MERCARI_ITEMS), sortOrder: 'newest', sold: 'true' });
+      try {
+        const data = await getJson(`/v1/mercari?${params.toString()}`, apiKey, fetchImpl);
+        const items = Array.isArray(data?.items) ? data.items : [];
+        executedQueries.push(candidate);
+        retrievalCoverage.push({ query: candidate, received: items.length, status: 'success' });
+        hasNextPage = hasNextPage || Boolean(data?.hasNextPage);
+        rawItems.push(...items);
+        lastError = null;
+        if (items.length > 0) break;
+      } catch (error) {
+        executedQueries.push(candidate);
+        retrievalCoverage.push({ query: candidate, received: 0, status: 'error' });
+        lastError = error instanceof Error ? error.message : 'Mercari Sold-Comps lookup failed';
+        if (rawItems.length > 0) break;
+      }
+    }
+    const listings = uniqueByKey(rawItems.map(mercariListing).filter(Boolean) as AdditionalSoldCompsListing[], (listing) => listing.saleId);
+    return {
+      query: keyword,
+      listings,
+      metrics: { executedQueries, fallbackQueriesUsed: executedQueries.slice(1), retrievalCoverage },
+      error: listings.length > 0 ? null : lastError,
+      provider: 'mercari',
+      received: listings.length,
+      hasNextPage,
+    };
   } catch (error) {
     return { query: keyword, listings: [], metrics: null, error: error instanceof Error ? error.message : 'Mercari Sold-Comps lookup failed' };
   }
@@ -191,16 +236,33 @@ export async function lookupMercariSoldComps(input: AdditionalSoldCompsInput, fe
 
 export async function lookupTcgplayerSoldComps(input: AdditionalSoldCompsInput, fetchImpl: typeof fetch = fetch) {
   const apiKey = getApiKey();
-  const keyword = queryKeyword(input);
+  const keywords = queryCandidates(input);
+  const keyword = keywords[0] ?? queryKeyword(input);
   if (input.category.trim().toLowerCase().replace(/[_-]+/g, ' ') !== 'pokemon') {
     return { query: keyword, listings: [], metrics: null, error: 'Sold-Comps TCGplayer is available for Pokémon only' };
   }
   if (!apiKey) return { query: keyword, listings: [], metrics: null, error: 'Sold-Comps API key not configured' };
   if (!keyword) return { query: keyword, listings: [], metrics: null, error: 'A title is required for TCGplayer Sold-Comps lookup' };
   try {
-    const searchParams = new URLSearchParams({ keyword, page: '1', count: String(MAX_TCG_PRODUCTS), sortOrder: 'bestMatch' });
-    const search = await getJson(`/v1/tcgplayer/search?${searchParams.toString()}`, apiKey, fetchImpl);
-    const products = (Array.isArray(search?.items) ? search.items : []).filter((product: any) => String(product?.productLine || '').toLowerCase() === 'pokemon').slice(0, MAX_TCG_PRODUCTS);
+    const executedQueries: string[] = [];
+    const retrievalCoverage: Array<{ query: string; received: number; status: 'success' | 'error' }> = [];
+    let products: any[] = [];
+    let lastError: string | null = null;
+    for (const candidate of keywords) {
+      const searchParams = new URLSearchParams({ keyword: candidate, page: '1', count: String(MAX_TCG_PRODUCTS), sortOrder: 'bestMatch' });
+      try {
+        const search = await getJson(`/v1/tcgplayer/search?${searchParams.toString()}`, apiKey, fetchImpl);
+        executedQueries.push(candidate);
+        products = (Array.isArray(search?.items) ? search.items : []).filter((product: any) => String(product?.productLine || '').toLowerCase() === 'pokemon').slice(0, MAX_TCG_PRODUCTS);
+        retrievalCoverage.push({ query: candidate, received: products.length, status: 'success' });
+        lastError = null;
+        if (products.length > 0) break;
+      } catch (error) {
+        executedQueries.push(candidate);
+        retrievalCoverage.push({ query: candidate, received: 0, status: 'error' });
+        lastError = error instanceof Error ? error.message : 'TCGplayer Sold-Comps lookup failed';
+      }
+    }
     const listings: AdditionalSoldCompsListing[] = [];
     for (const product of products) {
       const salesParams = new URLSearchParams({ productId: String(product.productId), listingType: 'ListingWithPhotos' });
@@ -210,7 +272,7 @@ export async function lookupTcgplayerSoldComps(input: AdditionalSoldCompsInput, 
         if (listing) listings.push(listing);
       }
     }
-    return { query: keyword, listings, metrics: null, error: null, provider: 'tcgplayer', productsReviewed: products.length, received: listings.length };
+    return { query: keyword, listings, metrics: { executedQueries, fallbackQueriesUsed: executedQueries.slice(1), retrievalCoverage }, error: listings.length > 0 ? null : lastError, provider: 'tcgplayer', productsReviewed: products.length, received: listings.length };
   } catch (error) {
     return { query: keyword, listings: [], metrics: null, error: error instanceof Error ? error.message : 'TCGplayer Sold-Comps lookup failed' };
   }

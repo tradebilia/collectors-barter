@@ -163,7 +163,7 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
   const query = category === 'cert_direct'
     ? input.title.trim()
     : appendSearchContext(baseQuery, input, details);
-  const standardFallbacks = unique([query, baseQuery, input.title]);
+  const standardFallbacks = unique([query, input.title, baseQuery]);
   const mergedFallbacks = unique([...fallbackQueries, ...standardFallbacks]).slice(0, 10);
 
   return {
