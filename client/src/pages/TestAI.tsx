@@ -895,6 +895,10 @@ function visualEvidenceSummary(evidence: any): string {
   ].join(' · ');
 }
 
+function ProcessCompleteNotice() {
+  return <p className="rounded border border-emerald-700/40 bg-emerald-950/25 px-2 py-1 text-[10px] font-semibold text-emerald-200">✓ Process complete — final source results are displayed below.</p>;
+}
+
 function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem; side: 'left' | 'right'; data?: any; isLoading?: boolean }) {
   const accentColor = side === 'left' ? 'text-cyan-300' : 'text-amber-300';
   const [showVisualReview, setShowVisualReview] = useState(false);
@@ -924,6 +928,7 @@ function SoldCompsSection({ item, side, data, isLoading }: { item: SelectedItem;
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
+      <ProcessCompleteNotice />
       <p className="text-gray-500 text-[10px]">Data type: Completed eBay sales · Up to 90 days history</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.marketContextOnly && <p className="rounded border border-amber-700/40 bg-amber-950/25 px-2 py-1 text-[10px] text-amber-200">{item.category === 'autographs' ? 'Autographs / Signed Item market context only' : 'Original Art market context only'} — these are broad price-range references, not exact comparables, and no candidate images are sent to visual analysis.</p>}
@@ -1017,6 +1022,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
         {isLoading && <Spinner className="w-3 h-3" />}
       </div>
       <MarketplaceQueryBanner item={item} query={data?.query} isLoading={isLoading} />
+      <ProcessCompleteNotice />
       <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-[10px] text-amber-200">{strictVisualReview ? `Data type: Completed Mercari sales · ${item.category === 'coins' ? 'Coins' : 'Disney Pins'} use strict two-pass visual identity admission. Only exact visual matches can affect valuation.` : marketplace === 'Mercari' ? 'Data type: Completed Mercari sales · records can affect valuation after the shared sold-evidence and identity gates.' : `Data type: Completed ${marketplace} sales · context-only during provider-specific testing. These records do not affect valuation yet.`}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data && <p className="text-gray-400 text-[10px]">{listings.length} completed record{listings.length === 1 ? '' : 's'} returned.</p>}
@@ -1354,6 +1360,7 @@ function EbayActiveSection({ item, side, data, isLoading, onVisualReviewData }: 
         <p className="mt-0.5 break-words font-mono text-[10px] text-gray-200">"{visibleSearchQuery}"</p>
         {displayData?.debug?.executedQueries?.length > 1 && <div className="mt-1 space-y-0.5 text-[9px] text-cyan-200/70"><p className="font-semibold uppercase tracking-wide">Executed query tiers</p>{displayData.debug.executedQueries.map((executedQuery: string, index: number) => <p key={`${executedQuery}-${index}`} className="break-words font-mono">{index + 1}. "{executedQuery}"</p>)}</div>}
       </div>
+      <ProcessCompleteNotice />
       <p className="text-gray-500 text-[10px]">Data type: Current fixed-price and auction listings · {showingVisualMatchMetrics ? 'Visual-match-only current-market metrics' : 'Full-market current-market context'}</p>
       {data?.error && <p className="text-red-400 text-xs">{data.error}</p>}
       {data?.marketContextOnly && <p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1.5 text-[10px] text-amber-200">Autographs / Signed Item market context only — ranked by relevance, with no visual cap because these candidates are never sent to visual analysis.</p>}

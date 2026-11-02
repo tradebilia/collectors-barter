@@ -312,3 +312,9 @@ The user’s fresh sandbox rerun showed that explicit eBay titles such as “Bab
 - During processing, the UI shows only the source heading, query/status, spinner, and a plain explanation that final results will appear after completion. This prevents users and the future Trade Analyzer from acting on a temporary population.
 - Focused UI validation passed **66/66**. TypeScript and production build passed. Full deterministic validation reached **1,977 passed / 7 skipped** across 353 files. Three unrelated failures remained: FedEx credential availability, a RAWG live-network timeout, and the pre-existing nullable-certification analyzer source-contract assertion.
 - No database, migration, seed, destructive, credential, provider configuration, or deployment changes were made.
+
+
+## Final-result completion verification — November 2, 2026
+Added one shared `ProcessCompleteNotice` to the completed branches of eBay Active, eBay Sold-Comps, and additional sold-marketplace source panels. The notice is not rendered during active fetching or eBay visual review; it appears only with the final source result set and states: “Process complete — final source results are displayed below.” This prevents users from mistaking an intermediate or shrinking result set for the final answer. Collection/Lot rules, source boundaries, ranking, valuation, and visual-admission behavior were not changed.
+
+Validation: focused UI/eBay tests passed **67/67**; TypeScript and production build passed. Full deterministic suite reached **1,979 passed / 7 skipped** with two unrelated failures: RAWG network timeout and the existing nullable-certification analyzer source-contract assertion. No database writes, migrations, credentials, provider changes, deployment, or publishing changes.

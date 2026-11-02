@@ -278,6 +278,14 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain('trpc.testAI.getSoldCompsData.useQuery(\n    { title: item.title');
   });
 
+  it('shows process complete only after final marketplace results are ready', () => {
+    expect(source).toContain('function ProcessCompleteNotice()');
+    expect(source).toContain('✓ Process complete — final source results are displayed below.');
+    expect(source).toContain('const resultsReady = !isLoading;');
+    expect(source).toContain('const resultsReady = !isLoading && !(reviewBaseEnabled && visualReviewLoading);');
+    expect(source.match(/<ProcessCompleteNotice \/>/g)?.length).toBe(3);
+  });
+
   it('shows current-run source outcomes without claiming historical provider reliability', () => {
     expect(source).toContain('SourceRunOutcomeSummary');
     expect(outcomeSource).toContain('summarizeTestAiSourceRunOutcomes');
