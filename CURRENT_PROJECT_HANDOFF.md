@@ -1,13 +1,10 @@
 
 
-## Current-value evidence wording repair — November 2, 2026
-- User-visible issue confirmed: a visually matched Hercules Blu-ray active listing was correctly included in **current-value market evidence**, but its row said **“Analyzer: NO — context/review only”**, which incorrectly implied it had been excluded.
-- Cause: the shared `AnalyzerUseLine` treated “not a direct completed-sale comparable” and “context only” as the same state. Active asking-price evidence can be retained as current-value market evidence without being a completed-sale direct comparable.
-- Repair: visual-review rows now say **“Current-value evidence: INCLUDED”** when an accepted visual match is retained from an active listing, followed by the clarification that it is not a completed-sale comparable. Other rows now use **“Direct comparable: YES/NO”** rather than the ambiguous Analyzer YES/NO wording.
-- Scope audit: the shared line is used across the other marketplace panels, so the terminology is corrected consistently. Genuine context-only sources such as active COMC asking-price context and unconfirmed provider estimates retain their explicit context-only wording. The valuation ledger’s “Context / review only” label remains intentionally unchanged because it describes records excluded from direct valuation after the full comparable-selection process.
-- Validation: focused visual-source, UI wording, and eBay active contract tests passed **271/271**; TypeScript check passed; production build passed; `git diff --check` passed. Existing bundle-size warnings are informational and unchanged.
-- Safeguards preserved: current-value versus completed-sale distinction, one ranking/one score, visual minimums and caps, deterministic pre-visual exclusions, Collection/Lot non-comparable treatment, final valuation disposition gates, full-image `object-contain` rendering, and all P0 safeguard markers. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes.
-
-
-## Shared final valuation summary — November 2, 2026
-The Test AI result now presents one concise **Final valuation summary** for each item across all categories. It shows the estimated market range, confidence, and a plain-language **Where pricing goes** statement that distinguishes completed sales sent to valuation from current-value market evidence and from records with no qualifying valuation evidence. The redundant “This-run source outcomes” panel was removed from the primary evidence view; the detailed deterministic analyzer ledger remains available for audit. Focused UI tests passed 40/40, TypeScript passed, the production build passed, and visual verification confirmed the protected development Test AI page and Hercules source-review flow. No database, migration, seed, destructive, credential, deployment, or publishing changes were made. P0 safeguards and `object-contain` image rendering remain preserved.
+## Shared identity-first marketplace queries — November 2, 2026
+- Repair: Mercari and TCGplayer now use the same shared marketplace search definition as eBay and Sold-Comps instead of maintaining a separate keyword builder.
+- Guard: every query keeps a meaningful item identity anchor from the required item title when structured metadata alone would produce a metadata-only query such as `1997 mint Blu-ray`.
+- Guard: placeholder grades such as `0.00` are removed, and video-game cosmetic condition labels are not appended to the search query.
+- Regression coverage: Hercules Blu-ray, coins, Disney Pins, video games, Pokémon, and cross-source query contracts were rechecked. Focused query tests passed 29/29; broader marketplace adapter tests passed 121/121; TypeScript and production build passed.
+- P0 remediation completed: this change preserves the existing custom database, the read-only database baseline, one shared query definition, universal/item-type filters, one ranking score, visual-review safeguards, valuation disposition gates, and full-image `object-contain` rendering.
+- P1 performance and maintainability: provider adapters now have one source-neutral query contract, reducing category drift and making future fallback behavior easier to audit.
+- Do not apply migrations, seed data, or destructive scripts. No database writes, credentials, provider configuration, deployment, or publishing changes were made.

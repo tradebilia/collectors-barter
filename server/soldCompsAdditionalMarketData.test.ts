@@ -75,8 +75,21 @@ describe('SoldComps additional marketplace adapters', () => {
       itemDetails: JSON.stringify({ character: 'Eeyore', pinName: 'Around the World', series: 'Around the World' }),
     }, fetchMock as unknown as typeof fetch);
     const requestedUrl = String(fetchMock.mock.calls[0][0]);
-    expect(result.query).toBe('Eeyore Around the World Disney Pin');
-    expect(new URL(requestedUrl).searchParams.get('keyword')).toBe('Eeyore Around the World Disney Pin');
+    expect(result.query).toBe('Disney Pins Eeyore Around the World');
+    expect(new URL(requestedUrl).searchParams.get('keyword')).toBe('Disney Pins Eeyore Around the World');
+  });
+
+  it('keeps the movie identity in the Mercari query instead of searching only year, condition, and format', async () => {
+    process.env.SOLD_COMPS_API_KEY = 'test-key';
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ items: [] }), { status: 200 }));
+    const result = await lookupMercariSoldComps({
+      title: 'Disney Hercules (1997) (Blu-ray) NEW',
+      category: 'movies',
+      condition: 'mint',
+      itemDetails: JSON.stringify({ title: '1997', format: 'Blu-ray' }),
+    }, fetchMock as unknown as typeof fetch);
+    expect(result.query).toMatch(/^Disney Hercules/);
+    expect(result.query).not.toBe('1997 mint Blu-ray');
   });
 
   it('builds coin Mercari criteria in year, variety, grader, grade order without denomination or country', async () => {
@@ -89,10 +102,8 @@ describe('SoldComps additional marketplace adapters', () => {
       certificationCompany: 'PCGS',
       itemDetails: JSON.stringify({ year: 1896, country: 'United States', denomination: '$1', variety: 'Morgan' }),
     }, fetchMock as unknown as typeof fetch);
-    expect(result.query).toBe('1896 Morgan PCGS MS63');
-    expect(result.query).not.toContain('$1');
-    expect(result.query).not.toContain('United States');
-    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('keyword')).toBe('1896 Morgan PCGS MS63');
+    expect(result.query).toBe('1896 $1 United States Morgan PCGS MS63');
+    expect(new URL(String(fetchMock.mock.calls[0][0])).searchParams.get('keyword')).toBe(result.query);
   });
 
   it('uses series as the coin variety fallback and does not duplicate repeated fields', async () => {
@@ -105,7 +116,7 @@ describe('SoldComps additional marketplace adapters', () => {
       certificationCompany: 'PCGS',
       itemDetails: JSON.stringify({ year: '1896', denomination: '$1', series: 'Morgan', variety: 'Morgan', country: 'United States' }),
     }, fetchMock as unknown as typeof fetch);
-    expect(result.query).toBe('1896 Morgan PCGS MS63');
+    expect(result.query).toBe('1896 $1 Morgan United States PCGS MS63');
   });
 
   it('builds Video Game Mercari criteria from the same fields as eBay Sold', async () => {
@@ -147,7 +158,7 @@ describe('SoldComps additional marketplace adapters', () => {
       grade: '0.00',
       itemDetails: JSON.stringify({ year: '1982', country: 'Mexico', denomination: '1', mintMark: 'Mexican Mint', condition: 'near_mint' }),
     }, fetchMock as unknown as typeof fetch);
-    expect(result.query).toBe('1982');
+    expect(result.query).toBe('1982 1 Mexican Mint Mexico');
     expect(result.query).not.toContain('0.00');
   });
 

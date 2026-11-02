@@ -5,6 +5,7 @@ import {
   buildSportsCardTestAiQueries,
   buildStructuredItemQuery,
   buildVideoGameTestAiCriteria,
+  normalizeTestAiGrade,
   parseTestAiDetails,
   resolveTestAiDetailValue,
   resolveTestAiGradingCompany,
@@ -47,16 +48,40 @@ function text(value: unknown): string {
 function unique(values: string[]): string[] {
   return [...new Set(values.map(text).filter(Boolean))];
 }
+const NON_IDENTITY_TITLE_TOKENS = new Set([
+  'new', 'used', 'mint', 'near', 'excellent', 'good', 'fair', 'poor', 'sealed', 'open', 'opened',
+  'unopened', 'like', 'condition', 'blu', 'ray', 'dvd', 'vhs', 'cd', 'box', 'set', 'raw', 'graded',
+  'authentic', 'authenticated', 'signed', 'autograph', 'psa', 'bgs', 'cgc', 'sgc', 'pcgs', 'ngc',
+  'wata', 'afa', 'jsa', 'coa', 'holo', 'holofoil', 'english', 'japanese', 'german', 'french',
+  'disney', 'pin', 'pins', 'movie', 'film', 'game', 'video',
+]);
+function meaningfulTitleTokens(title: string): string[] {
+  return title
+    .toLowerCase()
+    .replace(/\b(?:19|20)\d{2}\b/g, ' ')
+    .replace(/\b\d+(?:\.\d+)?\b/g, ' ')
+    .replace(/[^a-z]+/g, ' ')
+    .split(/\s+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 3 && !NON_IDENTITY_TITLE_TOKENS.has(token));
+}
+function ensureIdentityAnchor(baseQuery: string, title: string): string {
+  const normalizedBase = baseQuery.toLowerCase();
+  const identityTokens = meaningfulTitleTokens(title);
+  if (!identityTokens.length || identityTokens.some((token) => new RegExp(`\\b${token.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'i').test(normalizedBase))) return baseQuery;
+  return unique([title, baseQuery]).join(' ').slice(0, 240).trim();
+}
 
 function appendSearchContext(baseQuery: string, input: MarketplaceSearchDefinitionInput, details: Record<string, any>): string {
   const cert = resolveTestAiGradingCompany(details, input.certificationCompany ?? '');
-  const grade = text(input.grade);
+  const category = categoryName(input.category);
+  const grade = normalizeTestAiGrade(input.grade, cert, category);
   const condition = text(input.condition);
   const context = cert && grade
     ? [cert, grade]
     : grade
       ? [grade]
-      : condition
+      : condition && category !== 'video_games'
         ? [condition]
         : [];
   return unique([baseQuery, ...context]).join(' ').slice(0, 240).trim();
@@ -133,7 +158,8 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
     fieldsUsed.push('category-defined structured identity fields');
   }
 
-  const baseQuery = unique(baseTerms).join(' ').trim() || input.title.trim();
+  const structuredBaseQuery = unique(baseTerms).join(' ').trim() || input.title.trim();
+  const baseQuery = ensureIdentityAnchor(structuredBaseQuery, input.title.trim());
   const query = category === 'cert_direct'
     ? input.title.trim()
     : appendSearchContext(baseQuery, input, details);

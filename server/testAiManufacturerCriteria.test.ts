@@ -109,4 +109,26 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.fallbackQueries.length).toBeGreaterThan(1);
     expect(definition.fieldsUsed).toContain('artist');
   });
+
+  it('anchors a movie query to the title when structured fields contain only metadata', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Disney Hercules (1997) (Blu-ray) NEW',
+      category: 'movies',
+      itemDetails: { title: '1997', format: 'Blu-ray' },
+      condition: 'mint',
+    });
+    expect(definition.query).toMatch(/^Disney Hercules/);
+    expect(definition.query).not.toBe('1997 mint Blu-ray');
+  });
+
+  it('does not put a zero placeholder grade into a coin query', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: '1982 Mexican coin',
+      category: 'coins',
+      itemDetails: { year: '1982', country: 'Mexico', denomination: '1', mintMark: 'Mexican Mint' },
+      grade: '0.00',
+      condition: 'near_mint',
+    });
+    expect(definition.query).not.toContain('0.00');
+  });
 });
