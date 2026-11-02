@@ -271,3 +271,9 @@ Fixed a shared valuation-admission defect affecting comparable marketplace categ
 - Validation passed: focused visual-source/eBay/UI tests **266/266**, TypeScript check, production build, and diff hygiene. Build chunk-size warnings remain informational and unchanged.
 - This is a source-code repair in the sandbox. The previously viewed published domain must be refreshed with this new build before the mobile site can show the correction; seeing the old facsimile listing there does not disprove the sandbox fix.
 - No database, migration, seed, destructive, credential, or provider changes.
+## eBay Active final facsimile valuation defense — November 2, 2026
+- Follow-up audit reproduced the exact title `Babe Ruth Facsimile Autographed Baseball & Authentic Rawlings Hank Foiles Mitt` through the current eBay adapter and shared Autographs filter. The sandbox result correctly returns `eligible: false` with the explicit facsimile exclusion reason.
+- Added a final defense-in-depth check in the eBay Active response assembly. Before metrics and UI summaries are produced, any Autographs row that still contains replica/facsimile/reproduction evidence is forcibly labeled `context_only` and carries the exclusion reason. This protects valuation even if a provider supplies a stale or alternate title alias.
+- This is why the earlier screenshot was incorrect: it showed a stale/bypassed active-listing valuation designation, not a legitimate accepted comparable. The spelling `Facsimile` is recognized correctly; the new final gate prevents that row from being counted even if an upstream path fails to remove it.
+- Validation passed: focused visual-source/eBay/UI tests **266/266**, TypeScript check, production build, and diff hygiene. A direct full-filter reproduction produced zero valuation listings for the facsimile candidate.
+- No database, migration, seed, destructive, credential, provider, or publishing changes.

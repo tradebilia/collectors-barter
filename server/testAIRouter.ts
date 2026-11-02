@@ -1797,7 +1797,23 @@ export const testAIRouter = router({
         let displaySummaries = visualActiveFilter
           ? (visualActiveFilter.listings.length > 0 ? visualActiveFilter.listings : (visualActiveFilter.contextListings ?? []))
           : visualInputListings;
-        if (autographMarketContext) displaySummaries = visualActiveFilter?.contextListings ?? [];
+        if (autographMarketContext) {
+          // Defense in depth: a provider adapter must not be able to leave a
+          // facsimile/replica row valuation-eligible through a stale title
+          // alias after the shared autograph filter has already run.
+          displaySummaries = (visualActiveFilter?.contextListings ?? []).map((listing: any) => {
+            const replicaReason = autographMarketExclusionReason(targetMetadata, listing);
+            if (!replicaReason) return listing;
+            return {
+              ...listing,
+              evidenceDisposition: 'context_only',
+              evidenceReasons: [
+                ...(Array.isArray(listing.evidenceReasons) ? listing.evidenceReasons : []),
+                replicaReason,
+              ],
+            };
+          });
+        }
         const metrics = computeMetrics(autographMarketContext
           ? displaySummaries.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible')
           : displaySummaries);
