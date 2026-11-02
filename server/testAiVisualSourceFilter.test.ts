@@ -336,6 +336,21 @@ describe("visual source filter", () => {
     expect(mockedInvokeLLM).not.toHaveBeenCalled();
   });
 
+  it("excludes facsimile wording from the canonical provider title", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "JSA" },
+    });
+    const facsimile = {
+      normalizedListingTitle: "Babe Ruth Facsimile Autographed Baseball & Authenticated",
+      title: "Babe Ruth Autographed Baseball",
+    };
+    expect(autographReplicaReason(facsimile)).toContain("Facsimile");
+    expect(autographValuationEligibility(facsimile, target)).toMatchObject({ eligible: false });
+  });
+
   it("does not let Autographs Collection/Lot enter the Signed Item market path", async () => {
     const target = buildVisualTargetMetadata({
       title: "Michael Jordan autograph collection",

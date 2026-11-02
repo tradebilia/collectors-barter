@@ -262,3 +262,12 @@ Fixed a shared valuation-admission defect affecting comparable marketplace categ
 - Added `server/marketplaceAdapterContract.test.ts` with a shared eBay Active, eBay Sold-Comps, and Mercari regression matrix. It verifies title/image-gallery preservation, cosmetic versus objective condition separation, and parts-only hard evidence across both marketplace adapters.
 - Focused validation passed **74/74**; TypeScript and production build passed. Full deterministic validation reached **1,955 passed / 7 skipped** across 352 files. The two failures were unrelated: intermittent Hake’s catalog timeout and the pre-existing `server/testAiAnalyzerInput.test.ts` nullable-certification source-contract assertion.
 - No database, migration, credential, provider configuration, deployment, or publishing changes. The adapter is a transport consistency improvement; it does not by itself approve a listing for valuation. Visual confirmation and the existing evidence-disposition gates remain authoritative.
+
+## Autograph facsimile canonical-title exclusion — November 2, 2026
+- Live screenshot diagnosis: the visible `Babe Ruth Facsimile Autographed Baseball` was being treated as current-value market evidence even though facsimile wording is an objective replica/reproduction conflict.
+- Root cause: the autograph exclusion checked only the compatibility `title` field. The eBay/Mercari adapter can preserve the authoritative listing title in `normalizedListingTitle` or another provider title alias, so a stale or shortened compatibility title could bypass the facsimile check.
+- Repair: `autographReplicaReason` now reads the canonical provider-resolved candidate title used by the ranking pipeline. Facsimile, reproduction, replica, reprint, copy, and counterfeit wording remains excluded from Autographs market-range evidence regardless of which supported title alias carries it.
+- Added an exact regression for a canonical eBay-style title containing `Facsimile` while the legacy title omits that word. The candidate is now rejected from valuation eligibility.
+- Validation passed: focused visual-source/eBay/UI tests **266/266**, TypeScript check, production build, and diff hygiene. Build chunk-size warnings remain informational and unchanged.
+- This is a source-code repair in the sandbox. The previously viewed published domain must be refreshed with this new build before the mobile site can show the correction; seeing the old facsimile listing there does not disprove the sandbox fix.
+- No database, migration, seed, destructive, credential, or provider changes.

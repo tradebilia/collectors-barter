@@ -162,7 +162,10 @@ export function autographReplicaReason(listing: VisualSourceCandidate): string |
     details.isFacsimile,
     details.authenticity,
   ].filter((value) => String(value ?? "").trim()).map((value) => normalizedChoice(value));
-  const title = String(listing.title ?? "");
+  // eBay/Mercari adapters may carry the authoritative title in
+  // normalizedListingTitle or another provider alias. Replica wording is an
+  // objective exclusion, so use the same canonical title used by scoring.
+  const title = canonicalCandidateTitle(listing);
   const explicitReplica = explicitValues.some((value) => /^(?:yes|true|1|replica|reproduction|facsimile|reprint|copy|counterfeit)$/.test(value));
   const titleMatch = title.match(/\b(?:replica|reproduction|facsimile|reprint|copy|counterfeit)\b/i);
   if (!explicitReplica && !titleMatch) return null;
