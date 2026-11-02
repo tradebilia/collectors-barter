@@ -1058,6 +1058,11 @@ function formatVisualReviewPrice(listing: any): string {
   return currency === 'USD' ? formatWholeDollar(numericPrice) : `${currency} ${numericPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
 
+function hasCompletedVisualReview(listing: any): boolean {
+  const status = String(listing?.visualReviewStatus ?? '').trim().toLowerCase();
+  return ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
+}
+
 function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: controlledOpen, onOpenChange }: { data: any; targetImageUrl?: string | null; sourceLabel: string; open?: boolean; onOpenChange?: (open: boolean) => void }) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
   const open = controlledOpen ?? uncontrolledOpen;
@@ -1066,8 +1071,11 @@ function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: cont
     onOpenChange?.(nextOpen);
   };
   const candidates = sortRankedCandidates(data?.visualReviewListings ?? data?.listings ?? data?.sales ?? data?.data?.items ?? []);
-  const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualRequirement === 'required' && listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
-  const excludedBeforeReview = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => listing.visualRequirement !== 'required' && (listing.visualReviewStatus || listing.visualReviewRationale));
+  // An explicit model verdict is authoritative evidence that the candidate was
+  // reviewed. The requirement marker is provenance, but it must not erase a
+  // real verdict when an adapter omits that optional field.
+  const reviewed = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing));
+  const excludedBeforeReview = candidates.map((listing: any, index: number) => ({ listing, index })).filter(({ listing }: { listing: any }) => !hasCompletedVisualReview(listing) && listing.visualRequirement !== 'required' && (listing.visualReviewStatus || listing.visualReviewRationale));
   const mismatches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'mismatch');
   const matches = reviewed.filter(({ listing }: { listing: any }) => listing.visualReviewStatus === 'match' || listing.visualReviewStatus === 'rough_match');
   useEffect(() => {

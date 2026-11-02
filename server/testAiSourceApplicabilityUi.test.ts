@@ -327,6 +327,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('View full explanation');
   });
 
+  it('keeps an explicit visual verdict in the reviewed count even if an adapter omits the requirement marker', () => {
+    expect(source).toContain('function hasCompletedVisualReview(listing: any): boolean');
+    expect(source).toContain("['match', 'rough_match', 'mismatch', 'unreadable'].includes(status)");
+    expect(source).toContain('filter(({ listing }: { listing: any }) => hasCompletedVisualReview(listing))');
+    expect(source).toContain("!hasCompletedVisualReview(listing) && listing.visualRequirement !== 'required'");
+  });
   it('renders ranking score and rank through the shared candidate-row component', () => {
     expect(source).toContain('function MetadataMatchLine');
     expect(source).toContain('Metadata rank #');

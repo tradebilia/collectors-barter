@@ -1950,6 +1950,7 @@ export const testAIRouter = router({
             // Preserve the visual filter result in the transport object used by
             // MarketplaceVisualReview; dropping these made the button appear to
             // do nothing even when the server had flagged a listing.
+            visualRequirement: s.visualRequirement ?? null,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,
@@ -1978,6 +1979,7 @@ export const testAIRouter = router({
             metadataMatchRank: s.metadataMatchRank,
             metadataMatchReasons: s.metadataMatchReasons,
             metadataMatchLabel: s.metadataMatchLabel ?? (autographMarketContext ? 'Market Relevance Score' : undefined),
+            visualRequirement: s.visualRequirement ?? null,
             visualReviewStatus: s.visualReviewStatus ?? null,
             visualReviewRationale: s.visualReviewRationale ?? null,
             evidenceDisposition: s.evidenceDisposition ?? null,

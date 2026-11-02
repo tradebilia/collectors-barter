@@ -583,6 +583,39 @@ describe("visual source filter", () => {
     expect(mockedInvokeLLM).toHaveBeenCalled();
   });
 
+  it("keeps the Hercules Blu-ray visual verdict attached to the reviewed candidate", async () => {
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The target and candidate show the same Hercules Blu-ray packaging." }],
+    }) as never);
+    const target = buildVisualTargetMetadata({
+      title: "Hercules",
+      category: "movies",
+      itemType: "individual_movie",
+      fullItemDetails: { title: "Hercules", format: "Blu-ray", releaseYear: 1997 },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "eBay Active Listings",
+      targetImageUrl: "https://example.com/hercules-target.jpg",
+      targetMetadata: target,
+      listings: [{
+        title: "Hercules (Blu-ray, 1997) No DVD Disc, Tested Disney",
+        itemDetails: JSON.stringify({ format: "Blu-ray", releaseYear: 1997 }),
+        imageUrl: "https://example.com/hercules-candidate.jpg",
+      }],
+    });
+    expect(result.reviewedCount).toBe(1);
+    expect(result.listings).toHaveLength(1);
+    expect(result.listings[0]).toMatchObject({
+      metadataMatchScore: 65,
+      metadataMatchRank: 1,
+      visualRequirement: "required",
+      visualReviewStatus: "match",
+    });
+    expect(result.contextListings ?? []).toHaveLength(0);
+    expect(result.listings[0]?.visualReviewRationale).toContain("same Hercules Blu-ray packaging");
+  });
+
   it("keeps generic Movie collections excluded even for a Box Set target", () => {
     const target = buildVisualTargetMetadata({
       title: "Moonlighting Season 1 & 2",
@@ -2832,6 +2865,7 @@ describe("visual source filter", () => {
 
   it("preserves eBay visual status fields in the response consumed by the image-check panel", () => {
     const routerSource = readFileSync(resolve(import.meta.dirname, "./testAIRouter.ts"), "utf8");
+    expect(routerSource).toContain("visualRequirement: s.visualRequirement ?? null");
     expect(routerSource).toContain("visualReviewStatus: s.visualReviewStatus ?? null");
     expect(routerSource).toContain("visualReviewRationale: s.visualReviewRationale ?? null");
     expect(routerSource).toContain("collectEbayImageUrls");
