@@ -20,24 +20,19 @@ describe('Test AI comparable audit ledger UI', () => {
     expect(page).toContain('Range gap:');
   });
 
-  it('renders a simplified recommended trade summary for collectors', () => {
-    expect(page).toContain('Recommended Trade Summary · User View');
-    expect(page).toContain('Observed accepted-sale range:');
-    expect(page).toContain('Typical middle band:');
-    expect(page).toContain('Primary median value:');
-    expect(page).toContain('recency-weighted diagnostic:');
-    expect(page).toContain('Confidence:');
-    expect(page).toContain('Confidence basis:');
-    expect(page).toContain('Evidence-based');
+  it('renders one concise final valuation summary for collectors', () => {
+    expect(page).toContain('Final valuation summary');
+    expect(page).toContain('Estimated market range');
+    expect(page).toContain('Where pricing goes:');
+    expect(page).toContain('sent to valuation');
+    expect(page).toContain('Completed sales control the valuation.');
   });
 
-  it('renders source reliability and evidence coverage explanations', () => {
-    expect(page).toContain('Source reliability:');
-    expect(page).toContain('Evidence coverage:');
-    expect(page).toContain('selected records attributed');
-    expect(page).toContain('Source reliability meter');
-    expect(page).toContain('Category threshold:');
-    expect(page).toContain('Adapter reliability history');
+  it('keeps the technical evidence audit separate from the final conclusion', () => {
+    expect(page).toContain('Trade Analyzer 2.0 · Deterministic Evidence Layer');
+    expect(page).toContain('Range-first decision:');
+    expect(page).toContain('Evidence:');
+    expect(page).toContain('Confidence:');
   });
 
   it('shows ReefAPI history controls and per-run request usage without presenting it as billing', () => {

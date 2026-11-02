@@ -286,8 +286,9 @@ describe('manual Test AI selector boundary', () => {
     expect(source.match(/<ProcessCompleteNotice \/>/g)?.length).toBe(3);
   });
 
-  it('shows current-run source outcomes without claiming historical provider reliability', () => {
-    expect(source).toContain('SourceRunOutcomeSummary');
+  it('keeps the redundant current-run source-outcome panel out of the primary result', () => {
+    expect(source).not.toContain("import { SourceRunOutcomeSummary }");
+    expect(source).not.toContain('<SourceRunOutcomeSummary sourceDecisions={sourceDecisions} />');
     expect(outcomeSource).toContain('summarizeTestAiSourceRunOutcomes');
     expect(outcomeSource).toContain('This-run source outcomes');
     expect(outcomeSource).toContain('This is not a provider scorecard or historical reliability rate, and no result is stored.');

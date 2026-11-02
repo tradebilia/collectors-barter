@@ -3,7 +3,6 @@ import { skipToken } from '@tanstack/react-query';
 import { trpc } from "@/lib/trpc";
 import { formatTrackingDate } from "@/lib/formatTrackingDate";
 import { formatGrade, formatItemValue, formatWholeDollar } from '@/lib/tradebilia';
-import { SourceRunOutcomeSummary } from '@/components/test-ai/SourceRunOutcomeSummary';
 import { useAuth } from '@/_core/hooks/useAuth';
 import { useLocation } from 'wouter';
 import { Spinner } from '@/components/ui/spinner';
@@ -3223,7 +3222,6 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
       {discogsCandidates.length === 1 && <p className="mt-2 text-[9px] text-emerald-100/70">One Discogs candidate returned and is included as reference metadata for this sandbox run.</p>}
     </div>}
     {summary.alignedSources.length > 0 && <div className="rounded bg-emerald-950/20 p-2"><p className="text-[9px] font-semibold uppercase text-emerald-300">Aligned specialist fields</p>{summary.alignedSources.map((source) => <p key={source.id} className="mt-1 text-[10px] text-gray-300"><span className="font-medium text-emerald-200">{source.label}:</span> {source.fields.join(', ')}</p>)}</div>}
-    <SourceRunOutcomeSummary sourceDecisions={sourceDecisions} />
     <div className="rounded-lg border border-sky-700/30 bg-sky-950/15 p-2.5 space-y-2">
       <div><p className="text-[10px] font-semibold uppercase tracking-wide text-sky-200">How the analyzer uses the selected sources</p><p className="mt-0.5 text-[9px] text-gray-400">Each source appears once. Counts are separated by decision: valuation, historical trend, or context only.</p></div>
       <div className="grid gap-1 text-[9px] sm:grid-cols-2 lg:grid-cols-4"><p className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1 text-emerald-200"><strong>Accepted for valuation</strong><br />Completed, identity-checked sales sent as valuation comparables.</p><p className="rounded border border-cyan-700/30 bg-cyan-950/20 px-2 py-1 text-cyan-200"><strong>Current-value market evidence</strong><br />Identity-matched active asking listings; useful market context, not completed sales.</p><p className="rounded border border-amber-700/30 bg-amber-950/20 px-2 py-1 text-amber-200"><strong>Historical trend</strong><br />Matching older sales used to understand movement, not current value.</p><p className="rounded border border-gray-700/40 bg-gray-950/30 px-2 py-1 text-gray-300"><strong>Context only</strong><br />Asking prices, references, unavailable data, mismatches, and excluded records.</p></div>
@@ -3706,6 +3704,36 @@ function FieldCompletionPanel({ leftItem, rightItem }: { leftItem: SelectedItem 
   </section>;
 }
 
+function SimpleValuationSummary({ items }: { items: Array<{ label: string; item: SelectedItem; profile: any; evidenceSummary?: NormalizedEvidenceSummary | null }> }) {
+  const money = (value: number | null | undefined) => value == null ? 'Not verified' : `$${Number(value).toLocaleString()}`;
+  return <section aria-label="Final valuation summary" className="rounded-xl border-2 border-emerald-500/60 bg-emerald-950/20 p-4 space-y-3">
+    <div>
+      <p className="text-emerald-200 text-sm font-bold uppercase tracking-wide">Final valuation summary</p>
+      <p className="mt-1 text-gray-300 text-xs">This is the final destination of the pricing evidence. Only accepted identity-matched records can establish the value.</p>
+    </div>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {items.map(({ label, item, profile, evidenceSummary }) => {
+        const range = profile.marketRange?.supported ? `${money(profile.marketRange.low)}–${money(profile.marketRange.high)}` : 'Not verified';
+        const currentValueCount = (evidenceSummary?.sourceDecisions ?? []).reduce((sum, decision) => sum + Number(decision.currentValue ?? 0), 0);
+        const completedCount = Number(profile.directComparableCount ?? 0);
+        const destination = completedCount > 0
+          ? `${completedCount} completed sale${completedCount === 1 ? '' : 's'} sent to valuation`
+          : currentValueCount > 0
+            ? `${currentValueCount} current-value market record${currentValueCount === 1 ? '' : 's'} sent as supporting evidence`
+            : 'No qualifying pricing evidence sent to valuation';
+        return <div key={label} className="rounded-lg border border-emerald-700/50 bg-gray-950/50 p-3 space-y-2">
+          <p className="text-white text-sm font-semibold">{label} · {item.title}</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div><p className="text-[9px] uppercase tracking-wide text-gray-500">Estimated market range</p><p className="text-xl font-bold text-emerald-200">{range}</p></div>
+            <div><p className="text-[9px] uppercase tracking-wide text-gray-500">Confidence</p><p className="text-xl font-bold capitalize text-white">{profile.evidenceQuality ?? 'low'}</p></div>
+          </div>
+          <p className="text-[10px] text-emerald-100"><span className="font-semibold">Where pricing goes:</span> {destination}.</p>
+          <p className="text-[9px] text-gray-400">Primary value: {money(profile.primaryValue)} · {completedCount > 0 ? 'Completed sales control the valuation.' : currentValueCount > 0 ? 'Active market evidence supports the view but is not a completed sale.' : 'More qualifying market evidence is needed.'}</p>
+        </div>;
+      })}
+    </div>
+  </section>;
+}
 // ─── AI Analysis Section ─────────────────────────────────────────────────────
 function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysisItem, leftEbayData, rightEbayData, leftSources, rightSources, leftSoldCompsData, rightSoldCompsData, leftMercariSoldCompsData, rightMercariSoldCompsData, leftHipstampData, rightHipstampData, leftTheCardApiData, rightTheCardApiData, leftCardsightAiData, rightCardsightAiData, leftLelandsData, rightLelandsData, leftPristineAuctionData, rightPristineAuctionData, leftCollectAuctionData, rightCollectAuctionData, leftSiriusSportsAuctionData, rightSiriusSportsAuctionData, leftPcgsAuctionData, rightPcgsAuctionData, leftComicConnectData, rightComicConnectData, leftGoldinSales, rightGoldinSales, leftHistoricalTrendData, rightHistoricalTrendData, leftEvidenceSummary, rightEvidenceSummary }: {
   leftItem: SelectedItem;
@@ -3994,38 +4022,10 @@ function AIAnalysisSection({ leftItem, rightItem, leftAnalysisItem, rightAnalysi
           {result.sourceReferences && (result.sourceReferences.itemA?.length > 0 || result.sourceReferences.itemB?.length > 0) && <p className="text-gray-500 text-[10px]">Narrative sources: Item A — {result.sourceReferences.itemA?.join(', ') || 'none'} · Item B — {result.sourceReferences.itemB?.join(', ') || 'none'}</p>}
           {result.leftMarketProfile && result.rightMarketProfile && result.deterministicComparison && (
             <>
-              <div className="rounded-lg border border-emerald-600/50 bg-emerald-950/20 p-4 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-emerald-200 text-xs font-bold uppercase tracking-wide">Recommended Trade Summary · User View</p>
-                    <p className="text-gray-400 text-[10px] mt-1">This is the plain-language result intended for a collector. The technical evidence audit appears below.</p>
-                  </div>
-                  <span className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-900/40 px-2 py-1 text-[9px] font-semibold text-emerald-100">Evidence-based</span>
-                </div>
-                <div className="rounded border border-emerald-500/30 bg-gray-950/40 px-3 py-2">
-                  <p className="text-white text-sm font-semibold">{result.deterministicComparison.verdict}</p>
-                  <p className="text-gray-300 text-[10px] mt-1">{result.tradeTerms?.summary || result.deterministicComparison.decisionBasis}</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {[
-                    { label: 'Item A', item: leftItem, profile: result.leftMarketProfile },
-                    { label: 'Item B', item: rightItem, profile: result.rightMarketProfile },
-                  ].map(({ label, item, profile }) => (
-                    <div key={label} className="rounded border border-slate-700/60 bg-slate-950/50 p-3 space-y-1">
-                      <p className="text-gray-200 text-xs font-semibold">{label}{item?.title ? ` · ${item.title}` : ''}</p>
-                      <p className="text-gray-300 text-[10px]">Observed accepted-sale range: <span className="text-white font-semibold">{profile.marketRange.supported ? `$${profile.marketRange.low.toLocaleString()}–$${profile.marketRange.high.toLocaleString()}` : 'Not verified'}</span></p>
-                      <p className="text-gray-500 text-[9px]">Typical middle band: {profile.typicalBand?.supported ? `$${profile.typicalBand.low.toLocaleString()}–$${profile.typicalBand.high.toLocaleString()}` : 'not enough verified sales'}</p>
-                      <p className="text-gray-400 text-[10px]">Primary median value: <span className="text-white">{profile.primaryValue !== null ? `$${profile.primaryValue.toLocaleString()}` : 'Not verified'}</span> · Analyzer value is this deterministic figure · {profile.guideAnchorValue !== null ? `${profile.guideAnchorSourceLabel ?? 'Guide'} input $${profile.guideAnchorValue.toLocaleString()} at ${profile.guideAnchorWeightPct}%${profile.guideProvisional ? ' · provisional, not market-supported' : ' · blended with 75% accepted market value'}` : 'No guide input'} · recency-weighted diagnostic: {profile.weightedValue !== null ? `$${profile.weightedValue.toLocaleString()}` : 'unavailable'}</p>
-                      <p className="text-gray-400 text-[10px]">Confidence: <span className="text-emerald-200 capitalize">{profile.evidenceQuality}</span> — {profile.directComparableCount} direct completed sale{profile.directComparableCount === 1 ? '' : 's'} used.</p>
-                      <p className="text-gray-400 text-[10px]">Source reliability: <span className="text-emerald-200 capitalize">{profile.sourceReliability}</span>{profile.sourceReliabilityScore !== null ? ` (${profile.sourceReliabilityScore}/100)` : ''} · {profile.evidenceCoverage.attributedCount}/{profile.evidenceCoverage.selectedCount} selected records attributed.</p>
-                      <div aria-label={`Source reliability ${profile.sourceReliabilityScore ?? 0} out of 100`} className="space-y-0.5"><div className="flex justify-between text-[8px] uppercase tracking-wide text-slate-500"><span>Source reliability meter</span><span>{profile.sourceReliabilityScore ?? 0}/100</span></div><div className="h-1.5 overflow-hidden rounded-full bg-slate-800"><div className={`h-full rounded-full ${profile.sourceReliability === 'high' ? 'bg-emerald-400' : profile.sourceReliability === 'medium' ? 'bg-amber-400' : 'bg-rose-400'}`} style={{ width: `${profile.sourceReliabilityScore ?? 0}%` }} /></div></div>
-                    </div>
-                  ))}
-                </div>
-                {result.deterministicComparison.overlapBand && <p className="text-sky-200 text-[10px]">The observed accepted-sale ranges overlap from ${Number(result.deterministicComparison.overlapBand.low).toLocaleString()} to ${Number(result.deterministicComparison.overlapBand.high).toLocaleString()} ({Math.round(Number(result.deterministicComparison.overlapRatio ?? 0) * 100)}% of the narrower observed range), so the available evidence does not prove a clear winner.</p>}
-                {result.tradeTerms?.cashAdjustment && <p className="text-emerald-200 text-[10px]">Recorded cash adjustment: Item {result.tradeTerms.cashAdjustment.paidBy === 'item_a' ? 'A' : 'B'} contributes ${Number(result.tradeTerms.cashAdjustment.amount).toLocaleString()}.</p>}
-                {(result.valuationWarnings?.length > 0 || result.missingInformation?.length > 0) && <div className="rounded bg-orange-950/30 px-2 py-1.5 text-[10px] text-orange-200"><span className="font-semibold">Important limitation:</span> {[...(result.valuationWarnings ?? []), ...(result.missingInformation ?? []).map((value: string) => `Missing ${value}`)].slice(0, 2).join(' ')}</div>}
-              </div>
+              <SimpleValuationSummary items={[
+                { label: 'Item A', item: leftItem, profile: result.leftMarketProfile, evidenceSummary: leftEvidenceSummary },
+                { label: 'Item B', item: rightItem, profile: result.rightMarketProfile, evidenceSummary: rightEvidenceSummary },
+              ]} />
               <div className="rounded-lg border border-indigo-700/40 bg-indigo-950/20 p-3 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
