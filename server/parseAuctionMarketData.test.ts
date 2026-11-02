@@ -50,4 +50,11 @@ describe('Parse.bot auction market adapters', () => {
     expect(getParseAuctionApiKey({ PARSE_BOT_API_KEY: '  example  ' } as NodeJS.ProcessEnv)).toBe('example');
     expect(getParseAuctionApiKey({} as NodeJS.ProcessEnv)).toBeNull();
   });
+
+  it('keeps facsimile autograph auction records out of identity-matched sales', () => {
+    const target = { title: 'Babe Ruth Signed Baseball', category: 'autographs', itemDetails: JSON.stringify({ signer: 'Babe Ruth', signedItemType: 'Baseball' }) };
+    const candidate = normalizeCollectSale({ status: 'completed_sold', title: 'Babe Ruth Facsimile Autographed Baseball', hammer_price: 60, sale_date: '2026-01-15', currency: 'USD' }, target);
+    expect(candidate.identityMatched).toBe(false);
+    expect(candidate.completed).toBe(true);
+  });
 });

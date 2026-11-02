@@ -1,5 +1,6 @@
 import { numericGradesEquivalent } from '../shared/publicGradeValues';
 import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDefinition';
+import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 
 export type ParseAuctionLookupInput = {
   title: string;
@@ -88,6 +89,9 @@ async function apiGet(url: string, apiKey: string): Promise<{ status: number; pa
 }
 
 function identityMatch(target: ParseAuctionLookupInput, title: string, description = ''): { matched: boolean; score: number; matchedTokens: string[] } {
+  if (categoryName(target.category) === 'autographs' && autographReplicaReasonFromText(`${title} ${description}`)) {
+    return { matched: false, score: 0, matchedTokens: [] };
+  }
   const targetTokens = significantTokens(`${target.title} ${target.itemDetails ?? ''}`);
   const candidate = normalize(`${title} ${description}`);
   const matchedTokens = targetTokens.filter((token) => candidate.includes(token));

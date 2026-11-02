@@ -326,6 +326,20 @@ describe('bounded specialist marketplace adapters', () => {
     expect(request.url).toContain('searchvalue=autograph%20Donald%20Trump%20Photograph%20Sports%20%26%20Entertainment');
   });
 
+  it('rejects replica wording in specialist autograph identity review before any source can admit valuation', () => {
+    const target = {
+      sourceId: 'goldin' as const,
+      title: 'Babe Ruth Signed Baseball',
+      category: 'autographs',
+      itemDetails: JSON.stringify({ signer: 'Babe Ruth', signedItemType: 'Baseball' }),
+    };
+    for (const wording of ['Fascimile Autographed Baseball', 'Facsimile Autographed Baseball', 'Replica Babe Ruth Signed Baseball', 'Babe Ruth Autopen Signed Baseball']) {
+      const review = identityReview(target, wording, '', null, null);
+      expect(review.matched, wording).toBe(false);
+      expect(review.reason, wording).toMatch(/excluded|facsimile|replica|autopen/i);
+    }
+  });
+
   it('blocks Goldin Stamps, Music, and Disney Pins plus Weiss and Hake’s Video Games lookups as not applicable', async () => {
     for (const category of ['stamps', 'music', 'disney_pins']) {
       const goldinResult = await lookupSpecialistMarketplace({ ...videoGame, category });

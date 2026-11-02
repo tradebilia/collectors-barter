@@ -35,6 +35,7 @@ import { applyHighConfidenceVisualFields, buildFieldCompletionPrompt, extractFie
 import { evaluateVisionImpact, type VisionReview, VISUAL_IDENTITY_RESPONSE_FORMAT } from './testAiVisionImpact';
 import { buildVisualComparableContext, buildVisualComparableQuery, VISUAL_COMPARABLE_QUERY_NOTE, type VisualComparableQuery } from './testAiVisualComparable';
 import { applyDeclaredIdentityFilter, autographMarketExclusionReason, autographMarketRelevanceScore, autographValuationEligibility, buildVisualTargetMetadata, filterVisualSourceCandidates, isAutographSignedItemTarget, originalArtMarketRelevanceScore, promoteEbayImageUrl, visualSourceCandidateImage, VISUAL_REVIEW_MAX_CANDIDATES, type VisualSourceReview } from './testAiVisualSourceFilter';
+import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 import { findMaterialMetadataConflicts, metadataConflictReviewReason } from '../shared/testAiMetadataConflict';
 import { computeHipstampMetrics, lookupHipstampListings, lookupHipstampSoldListings } from './hipstampMarketData';
 import { lookupPokemonPriceTracker } from './pokemonPriceTracker';
@@ -121,10 +122,8 @@ function rawAutographReplicaReason(listing: Record<string, unknown>): string | n
     listing.name,
     listing.productName,
   ].filter((value): value is string | number => typeof value === 'string' || typeof value === 'number').join(' ');
-  const match = rawTitle.match(/\b(replica|reproduction|facsimile|reprint|counterfeit)\b/i);
-  return match
-    ? `Autograph candidate explicitly declares ${match[1]}; replica or reproduction signed objects are excluded from market-range evidence.`
-    : null;
+  // Autograph candidate explicitly declares a replica, reproduction, facsimile, reprint, or counterfeit.
+  return autographReplicaReasonFromText(rawTitle);
 }
 
 type EbayAppTokenResult = {

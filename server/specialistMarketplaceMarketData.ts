@@ -14,6 +14,7 @@ import { buildMarketplaceSearchDefinition } from '../shared/marketplaceSearchDef
 import { lookupHakes } from './hakesMarketData';
 import { lookupLcg, LCG_GALLERY_URL, LCG_MAX_RECORDS } from './lcgMarketData';
 import { lookupPcgsCertification } from './pcgsMarketData';
+import { autographReplicaReasonFromText } from '../shared/testAiAutographEvidence';
 
 export type SpecialistMarketplaceLookupInput = {
   sourceId: SandboxSpecialistSourceId;
@@ -515,6 +516,12 @@ export function identityReview(input: SpecialistMarketplaceLookupInput, title: s
   const details = parseDetails(input.itemDetails);
   const targetTokens = significantTokens([normalizePreservingSpelling(input.title), details.year, details.catalogNumber, details.cardNumber, details.issueNumber, details.model, details.edition].map(text).filter(Boolean).join(' '));
   const candidate = normalize(`${title} ${description}`);
+  const autographReplicaReason = normalize(input.category).replace(/_/g, ' ') === 'autographs'
+    ? autographReplicaReasonFromText(`${title} ${description}`)
+    : null;
+  if (autographReplicaReason) {
+    return { matched: false, matchedTokens: [], reason: autographReplicaReason };
+  }
   const matchedTokens = targetTokens.filter((token) => candidate.includes(token));
   const normalizedCategory = normalize(input.category).replace(/_/g, ' ');
   const sportsPlayer = firstDetail(details, ['player', 'athlete', 'subject']);

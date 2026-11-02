@@ -8,6 +8,7 @@ import {
   titlePackagingState,
 } from "../shared/testAiTitleEvidence";
 import { classifyStampFormat, stampFormatsCompatible } from "./stampFormat";
+import { autographReplicaReasonFromText } from "../shared/testAiAutographEvidence";
 
 export type VisualSourceCandidate = {
   title?: string | null;
@@ -167,9 +168,10 @@ export function autographReplicaReason(listing: VisualSourceCandidate): string |
   // objective exclusion, so use the same canonical title used by scoring.
   const title = canonicalCandidateTitle(listing);
   const explicitReplica = explicitValues.some((value) => /^(?:yes|true|1|replica|reproduction|facsimile|reprint|copy|counterfeit)$/.test(value));
-  const titleMatch = title.match(/\b(?:replica|reproduction|facsimile|reprint|copy|counterfeit)\b/i);
-  if (!explicitReplica && !titleMatch) return null;
-  const declared = titleMatch?.[0] ?? explicitValues.find((value) => /replica|reproduction|facsimile|reprint|copy|counterfeit/.test(value)) ?? "replica";
+  const titleReason = autographReplicaReasonFromText(title);
+  if (!explicitReplica && !titleReason) return null;
+  if (titleReason) return titleReason;
+  const declared = explicitValues.find((value) => /replica|reproduction|facsimile|reprint|copy|counterfeit/.test(value)) ?? "replica";
   return `Autograph candidate explicitly declares ${declared}; replica or reproduction signed objects are excluded from market-range evidence.`;
 }
 
