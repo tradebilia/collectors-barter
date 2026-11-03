@@ -227,6 +227,10 @@ describe('manual Test AI selector boundary', () => {
     expect(routerSource).toContain("record.completed && record.evidenceDisposition === 'valuation_eligible'");
     expect(routerSource).toContain('Do not rebuild Goldin');
     expect(routerSource).not.toContain("sales: allReviewed.filter((record: any) => record.completed && record.identityMatched)");
+    expect(source).toContain('const authoritativeSales = useMemo');
+    expect(source).toContain("data as any)?.visualFilter?.listings");
+    expect(source).toContain('onSales?.(authoritativeSales)');
+    expect(source).toContain('source.id === \'goldin\'\n      ? authoritativeSales.filter');
   });
 
   it('discloses the high-value Sold-Comps price safety gate and its exclusion treatment', () => {

@@ -188,3 +188,9 @@ Removed Bonhams Popular Culture completely from the Tradebilia source system. De
 Goldin specialist records now keep the shared post-retrieval autograph decision authoritative. The Goldin router no longer rebuilds its `sales` list from the weaker `identityMatched` retrieval flag; only completed records with `evidenceDisposition: valuation_eligible` enter Goldin valuation sales. Wrong signers, wrong signed-object types, multi-signed lots, replica/facsimile wording, and below-threshold records remain context-only when the shared gate rejects them.
 
 Added regression coverage for Goldin-style Babe Ruth examples including a signed publication, Jacob Ruppert-signed check, multi-signed envelope, and multi-signed ball. Focused visual-filter/UI tests passed 242/242; specialist and sold-marketplace tests passed 57/57; TypeScript validation passed; production build passed. Diff hygiene passed. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made.
+
+
+## Goldin provider-sales bypass closed — November 2, 2026
+A second Goldin path was still allowing wrong signers into the main valuation summary: the UI callback and analyzer-input assembly trusted the provider's broad `valuationEligible`/`sales` list instead of the shared visual-filter result. The Goldin UI now derives authoritative sales only from `visualFilter.listings` with `completed === true` and `evidenceDisposition === 'valuation_eligible'`; if that final review is absent, it fails closed at zero. Provider sales not admitted by the shared gate are retained as context rather than sent to valuation.
+
+Focused visual/UI tests passed 242/242; specialist and sold-marketplace tests passed 57/57; TypeScript and production build passed; diff hygiene passed. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made.

@@ -3444,11 +3444,30 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   const visibleMessages = data?.messages?.map((message: string) => omitGradingCriteria
     ? message.replace(/(used “)[^”]*(”)/, `$1${gradeFreeGoldinQuery}$2`)
     : message);
-  const records = useMemo(() => [...(data?.sales ?? []), ...(data?.context ?? [])].slice(0, data?.recordCap ?? 12), [data]);
-  useEffect(() => { onSales?.(data?.sales ?? []); }, [data]);
+  // Goldin's provider-level `valuationEligible` flag is only a broad retrieval
+  // signal. The shared visual/autograph filter is authoritative for valuation.
+  // Fail closed when that final review is unavailable instead of allowing a
+  // stale provider sales list to re-enter the analyzer summary.
+  const authoritativeSales = useMemo(() => {
+    if (source.id !== 'goldin') return data?.sales ?? [];
+    const reviewedListings = (data as any)?.visualFilter?.listings;
+    if (!Array.isArray(reviewedListings)) return [];
+    return reviewedListings.filter((record: any) => record.completed === true && record.evidenceDisposition === 'valuation_eligible');
+  }, [data, source.id]);
+  const records = useMemo(() => {
+    const providerSales = data?.sales ?? [];
+    const providerContext = data?.context ?? [];
+    const contextOnly = source.id === 'goldin'
+      ? [...providerContext, ...providerSales.filter((record: any) => !authoritativeSales.includes(record))]
+      : providerContext;
+    return [...authoritativeSales, ...contextOnly].slice(0, data?.recordCap ?? 12);
+  }, [authoritativeSales, data, source.id]);
+  useEffect(() => { onSales?.(authoritativeSales); }, [authoritativeSales, onSales]);
   useEffect(() => {
     const completed = records.filter((record: any) => record.completed === true || record.sold === true || /completed|closed|sold/i.test(String(record.saleStatus ?? record.status ?? '')));
-    const submitted = records.filter((record: any) => record.valuationEligible === true && Number.isFinite(Number(record.price ?? record.finalPrice)) && Number(record.price ?? record.finalPrice) > 0);
+    const submitted = source.id === 'goldin'
+      ? authoritativeSales.filter((record: any) => Number.isFinite(Number(record.price ?? record.finalPrice)) && Number(record.price ?? record.finalPrice) > 0)
+      : records.filter((record: any) => record.valuationEligible === true && Number.isFinite(Number(record.price ?? record.finalPrice)) && Number(record.price ?? record.finalPrice) > 0);
     const recent = submitted.filter((record: any) => { const time = Date.parse(String(record.date ?? '')); return Number.isFinite(time) && Date.now() - time <= 365 * 86_400_000; });
     const historical = submitted.filter((record: any) => !recent.includes(record));
     onEvidenceObservation?.({
@@ -3469,7 +3488,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
       },
       message: data?.messages?.join(' ') ?? null,
     });
-  }, [data, records, source.id, source.label, onEvidenceObservation]);
+  }, [authoritativeSales, data, records, source.id, source.label, onEvidenceObservation]);
   const formatPrice = (value: number | null | undefined) => value == null ? 'No realized price' : `$${Math.round(value).toLocaleString()}`;
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
