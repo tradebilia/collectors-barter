@@ -616,6 +616,33 @@ describe("visual source filter", () => {
     expect(result.listings[0]?.visualReviewRationale).toContain("same Hercules Blu-ray packaging");
   });
 
+  it("treats a movie Special Edition label as a soft difference before visual review", async () => {
+    mockedInvokeLLM.mockResolvedValue(structuredVisualResponse({
+      reviews: [{ candidateIndex: 0, verdict: "match", confidence: "high", rationale: "The Hercules cover artwork and Blu-ray packaging match the target." }],
+    }) as never);
+    const target = buildVisualTargetMetadata({
+      title: "Disney Hercules (1997) Blu-ray",
+      category: "movies",
+      itemType: "individual_movie",
+      fullItemDetails: { title: "Disney Hercules", format: "Blu-ray", releaseYear: 1997 },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "ebay",
+      sourceLabel: "eBay Active Listings",
+      targetImageUrl: "https://example.com/hercules-target.jpg",
+      targetMetadata: target,
+      listings: [{
+        title: "Hercules (Blu-ray + DVD, 1997) Special Edition",
+        itemDetails: JSON.stringify({ format: "Blu-ray", releaseYear: 1997 }),
+        imageUrl: "https://example.com/hercules-special-edition.jpg",
+      }],
+    });
+    expect(result.reviewedCount).toBe(1);
+    expect(result.listings[0]).toMatchObject({ visualReviewStatus: "match", visualRequirement: "required" });
+    expect(result.contextListings ?? []).toHaveLength(0);
+    expect(mockedInvokeLLM).toHaveBeenCalled();
+  });
+
   it("keeps generic Movie collections excluded even for a Box Set target", () => {
     const target = buildVisualTargetMetadata({
       title: "Moonlighting Season 1 & 2",

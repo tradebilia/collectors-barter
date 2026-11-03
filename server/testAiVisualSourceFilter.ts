@@ -2912,14 +2912,28 @@ function movieCanonicalText(value: unknown): string {
     .replace(/(\d+)\s+and\s+(\d+)/g, '$1 $2');
   return normalized.replace(/[_-]+/g, ' ').replace(/\bthe\b/g, '').replace(/\b(?:movie|film|dvd|blu\s*ray|4k\s+uhd|vhs|laserd?isc)\b/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
 }
+function movieTitleComparable(value: unknown): string {
+  return movieCanonicalText(value)
+    .replace(/\b(?:19|20)\d{2}\b/g, '')
+    .replace(/\b(?:special|standard|edition|new|used|tested)\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
 function movieValuesAgree(targetValue: unknown, candidateValue: unknown): boolean {
-  const target = movieCanonicalText(targetValue);
-  const candidate = movieCanonicalText(candidateValue);
+  const target = movieTitleComparable(targetValue);
+  const candidate = movieTitleComparable(candidateValue);
   if (!target || !candidate) return true;
   if (target === candidate) return true;
   const targetTokens = target.split(' ').filter((token) => token.length > 1);
-  const candidateTokens = new Set(candidate.split(' '));
-  return targetTokens.length > 0 && targetTokens.every((token) => candidateTokens.has(token));
+  const candidateTokens = candidate.split(' ').filter((token) => token.length > 1);
+  const targetTokenSet = new Set(targetTokens);
+  const candidateTokenSet = new Set(candidateTokens);
+  // Provider titles may omit a studio/distributor prefix (for example,
+  // "Hercules" instead of "Disney Hercules"). Treat either title as a
+  // compatible anchor; the image review still makes the final decision.
+  return targetTokens.length > 0 && candidateTokens.length > 0
+    && (targetTokens.every((token) => candidateTokenSet.has(token))
+      || candidateTokens.every((token) => targetTokenSet.has(token)));
 }
 function movieCandidateValue(listing: VisualSourceCandidate, aliases: string[], patterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
@@ -3085,12 +3099,10 @@ function movieIdentityConflict(targetMetadata: string, listing: VisualSourceCand
     checks.push([firstMeaningfulValue(target.title, target.movieTitle, extractTargetTitle(targetMetadata)), 'movie title', ['title', 'movieTitle'], [], true]);
     checks.push([target.format, 'format', ['format', 'mediaFormat'], [/(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc)/i], false]);
     checks.push([firstMeaningfulValue(target.releaseYear, target.year), 'release year', ['releaseYear', 'year'], [/(?:^|[^0-9])((?:19|20)\d{2})(?:[^0-9]|$)/], false]);
-    checks.push([target.edition, 'edition', ['edition', 'releaseType'], [], true]);
     checks.push([target.region, 'region', ['region', 'regionCode'], [/(?:Region\s*[0-9A-C]|NTSC|PAL)/i], false]);
   } else {
     checks.push([firstMeaningfulValue(target.boxSetName, target.title, extractTargetTitle(targetMetadata)), 'box-set name', ['boxSetName', 'title', 'seriesName'], [], true]);
     checks.push([target.format, 'format', ['format', 'mediaFormat'], [/(?:DVD|Blu[- ]?ray|4K\s+UHD|VHS|LaserDisc|Mixed)/i], false]);
-    checks.push([target.edition, 'edition', ['edition', 'releaseType'], [], true]);
   }
   for (const [targetValue, label, aliases, patterns, textMatch] of checks) {
     const targetComparable = textMatch ? movieCanonicalText(targetValue) : movieFormat(targetValue);
@@ -3314,11 +3326,20 @@ export function buildDeclaredIdentityReviews<T extends VisualSourceCandidate>(
 ): VisualSourceReview[] {
   const targetTitle = extractTargetTitle(targetMetadata).toLowerCase();
   const targetDetails = extractTargetItemDetails(targetMetadata);
+  const isMovieTarget = normalizedChoice(metadataValue(targetMetadata, 'category')) === 'movies';
   const targetFacsimile = normalizedChoice(targetDetails.facsimile);
   const targetDistribution = normalizedChoice(targetDetails.distributionType);
   return listings.flatMap((listing, candidateIndex) => {
     const title = canonicalCandidateTitle(listing);
-    const conflict = DECLARED_VARIANT_PATTERNS.find((pattern) => pattern.test(title) && !pattern.test(targetTitle));
+    // Movie listings commonly add a release label such as "Special Edition"
+    // while the target record leaves edition blank. That is a soft difference:
+    // send the candidate to image review and let the visual result decide.
+    // Edition wording remains a hard conflict for categories where it is an
+    // identity-defining variant (comics, cards, games, etc.).
+    const conflict = DECLARED_VARIANT_PATTERNS.find((pattern) => {
+      if (isMovieTarget && pattern.source.includes('edition')) return false;
+      return pattern.test(title) && !pattern.test(targetTitle);
+    });
     const phrase = conflict ? (title.match(conflict)?.[0] ?? "declared variant") : null;
     const candidateIsNewsstand = /\bnewsstand(?:\s+edition)?\b/i.test(title);
     const candidateIsDirect = /\b(?:direct\s+market|direct\s+edition)\b/i.test(title);

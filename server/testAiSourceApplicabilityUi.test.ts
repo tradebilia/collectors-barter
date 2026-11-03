@@ -5,6 +5,7 @@ import path from 'node:path';
 describe('manual Test AI selector boundary', () => {
   const source = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
   const outcomeSource = fs.readFileSync(path.resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
+  const routerSource = fs.readFileSync(path.resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 
   it('retains manual source state while highlighting sources applicable to the loaded item', () => {
     expect(source).toContain('const [leftSources, setLeftSources] = useState<Set<SourceId>>');
@@ -326,6 +327,17 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.');
     expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
     expect(source).toContain('View full explanation');
+  });
+
+  it('keeps Mercari pre-visual context records visible with image transport and a no-image fallback', () => {
+    expect(routerSource).toContain('visualReviewListings: [...annotatedListings, ...visualContextListings]');
+    expect(routerSource).toContain('preVisionExcludedListings: visualContextListings');
+    expect(routerSource).toContain('imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null');
+    expect(source).toContain('const preVisionExcludedListings = data?.preVisionExcludedListings ?? [];');
+    expect(source).toContain('Retained before visual review');
+    expect(source).toContain('listing.imageUrl || listing.thumbnailUrl || listing.imageUrls?.[0] || listing.images?.[0] || null');
+    expect(source).toContain('>No Image</span>');
+    expect(source).toContain('className="h-full w-full object-contain"');
   });
 
   it('distinguishes direct comparables from current-value evidence in visual-match wording', () => {

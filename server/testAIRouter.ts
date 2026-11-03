@@ -3194,6 +3194,19 @@ export const testAIRouter = router({
           marketplace: 'Mercari' as const,
         };
       });
+      const visualContextListings = (visualFilter.contextListings ?? []).map((listing: any) => ({
+        ...listing,
+        itemUrl: listing.itemUrl ?? listing.url ?? null,
+        imageUrl: listing.imageUrl ?? listing.thumbnailUrl ?? listing.imageUrls?.[0] ?? listing.images?.[0] ?? null,
+        imageUrls: listing.imageUrls ?? (listing.imageUrl ? [listing.imageUrl] : []),
+        price: Number(listing.price ?? listing.soldPrice ?? 0),
+        currency: listing.currency ?? listing.soldCurrency ?? null,
+        endedAt: listing.endedAt ?? null,
+        evidenceDisposition: listing.evidenceDisposition ?? 'context_only',
+        sourceId: 'mercari_sold_comps' as const,
+        sourceLabel: 'Sold-Comps (Mercari Sold)',
+        marketplace: 'Mercari' as const,
+      }));
       const valuationEligible = annotatedListings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible');
       const eligiblePrices = valuationEligible.map((listing: any) => Number(listing.price)).filter((price: number) => Number.isFinite(price) && price > 0);
       const metrics = eligiblePrices.length
@@ -3208,6 +3221,8 @@ export const testAIRouter = router({
       return {
         ...result,
         listings: annotatedListings,
+        visualReviewListings: [...annotatedListings, ...visualContextListings],
+        preVisionExcludedListings: visualContextListings,
         metrics,
         visualFilter: {
           ...visualFilter,
@@ -3216,8 +3231,9 @@ export const testAIRouter = router({
         audit: {
           rawReceived: result.listings.length,
           valuationEligible: valuationEligible.length,
-          warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length,
-          ledger: annotatedListings,
+          preVisionExcluded: visualContextListings.length,
+          warningReview: annotatedListings.filter((listing: any) => listing.evidenceDisposition !== 'valuation_eligible').length + visualContextListings.length,
+          ledger: [...annotatedListings, ...visualContextListings],
         },
       };
     }),
