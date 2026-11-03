@@ -3406,6 +3406,7 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   const locatorRequired = source.searchContract === 'public_locator_required';
   const blocked = source.searchContract === 'public_contract_unverified' || source.searchContract === 'price_table_locator_required';
   const normalizedCategory = item.category.trim().toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ');
+  const goldinAutographMarket = source.id === 'goldin' && normalizedCategory === 'autographs';
   const omitGradingCriteria = source.id === 'goldin' && /^video games?$/.test(normalizedCategory);
   const refreshOnMount = source.id === 'goldin';
   const gradeFreeGoldinQuery = omitGradingCriteria ? buildGoldinVideoGameDisplayQuery(item) : '';
@@ -3450,8 +3451,12 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   // stale provider sales list to re-enter the analyzer summary.
   const authoritativeSales = useMemo(() => {
     if (source.id !== 'goldin') return data?.sales ?? [];
-    const reviewedListings = (data as any)?.visualFilter?.listings;
-    if (!Array.isArray(reviewedListings)) return [];
+    const visualFilter = (data as any)?.visualFilter;
+    const reviewedListings = [
+      ...(Array.isArray(visualFilter?.listings) ? visualFilter.listings : []),
+      ...(Array.isArray(visualFilter?.contextListings) ? visualFilter.contextListings : []),
+    ];
+    if (!reviewedListings.length) return [];
     return reviewedListings.filter((record: any) => record.completed === true && record.evidenceDisposition === 'valuation_eligible');
   }, [data, source.id]);
   const records = useMemo(() => {
@@ -3492,9 +3497,10 @@ function SandboxSpecialistSection({ source, item, side, onEvidenceObservation, o
   const formatPrice = (value: number | null | undefined) => value == null ? 'No realized price' : `$${Math.round(value).toLocaleString()}`;
   return (
     <div className="bg-sky-950/20 rounded-lg p-3 border border-sky-700/40 space-y-2">
-      <div className="flex items-center justify-between gap-2"><p className={`flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}{source.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">context only</span></div>
+      <div className="flex items-center justify-between gap-2"><p className={`flex flex-wrap items-center gap-1.5 text-[11px] font-bold uppercase ${accentColor}`}>🧪 {source.label}{source.id === 'lcg' && <span className="rounded border border-red-500/60 bg-red-950/50 px-1.5 py-0.5 text-[8px] font-semibold tracking-wide text-red-200">403 error</span>}</p><span className="rounded border border-sky-700/40 bg-sky-950/40 px-1.5 py-0.5 text-[8px] uppercase text-sky-200">{goldinAutographMarket ? 'market source' : 'context only'}</span></div>
       <MarketplaceQueryBanner item={item} query={visibleQuery} isLoading={lookup.isFetching} omitGradingCriteria={omitGradingCriteria} sourceId={source.id} /><p className="text-gray-400 text-[10px]">Data type: bounded public completed-auction context</p>
-      <p className="text-[9px] text-sky-200/80">Transport: {source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: context-only</p>
+      <p className="text-[9px] text-sky-200/80">Transport: {source.id.endsWith('_reef') ? 'ReefAPI server-side read-only adapter' : 'direct public source adapter'} · valuation eligibility: {goldinAutographMarket ? 'shared Autographs signer/object/score gate' : 'context-only'}</p>
+      {goldinAutographMarket && <p className="rounded border border-emerald-700/30 bg-emerald-950/20 px-2 py-1.5 text-[9px] text-emerald-200">No image review is required for Autographs. Completed records that pass the shared signer, signed-object, authentication, replica, and 70-point score rules can enter valuation; other records remain context only.</p>}
       <div className="bg-sky-900/20 border border-sky-700/30 rounded p-2 space-y-1">
         <p className={`text-[10px] font-semibold ${blocked ? 'text-amber-300' : 'text-sky-300'}`}>{blocked ? 'Public contract not sufficient for automated lookup' : automatic ? 'Bounded automatic public lookup' : 'Bounded public locator lookup'}</p>
         <p className="text-gray-300 text-[10px]">{source.searchInstruction}</p>

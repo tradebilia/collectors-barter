@@ -194,3 +194,9 @@ Added regression coverage for Goldin-style Babe Ruth examples including a signed
 A second Goldin path was still allowing wrong signers into the main valuation summary: the UI callback and analyzer-input assembly trusted the provider's broad `valuationEligible`/`sales` list instead of the shared visual-filter result. The Goldin UI now derives authoritative sales only from `visualFilter.listings` with `completed === true` and `evidenceDisposition === 'valuation_eligible'`; if that final review is absent, it fails closed at zero. Provider sales not admitted by the shared gate are retained as context rather than sent to valuation.
 
 Focused visual/UI tests passed 242/242; specialist and sold-marketplace tests passed 57/57; TypeScript and production build passed; diff hygiene passed. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made.
+
+
+## Goldin Autographs no-vision path restored — November 2, 2026
+The previous provider-sales bypass repair was too strict for Autographs because this category intentionally does not use image analysis. Goldin’s Autographs filter stores candidates in `visualFilter.contextListings` with their final shared disposition, while `visualFilter.listings` is intentionally empty. The UI now reads both lists and accepts only completed records marked `evidenceDisposition: valuation_eligible`; rejected signer/object/replica/multi-signature/below-score records remain context-only. The Goldin panel now clearly states that no image review is required and that the shared signer/object/authentication/replica/70-point gate controls valuation.
+
+Focused Autographs/Goldin/UI tests passed 285/285; TypeScript and production build passed; diff and forbidden-path checks passed. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made.
