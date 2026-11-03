@@ -1827,7 +1827,34 @@ describe("visual source filter", () => {
   it("keeps declared-review audit records on the provider-unavailable return path", () => {
     const source = readFileSync(resolve(import.meta.dirname, "./testAiVisualSourceFilter.ts"), "utf8");
     const unavailablePath = source.slice(source.lastIndexOf('status: "provider_unavailable"') - 500);
-    expect(unavailablePath).toContain("reviews: declaredReviews");
+    expect(unavailablePath).toContain("reviews: []");
+  });
+
+  it("does not count a deterministic Conan title conflict as actually reviewed", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Conan the Destroyer",
+      category: "movies",
+      itemType: "individual_movie",
+      fullItemDetails: { title: "Conan the Destroyer", format: "VHS" },
+    });
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "marketplace",
+      sourceLabel: "Sold-Comps — Mercari Sold",
+      targetImageUrl: "https://example.com/conan-target.jpg",
+      targetMetadata: target,
+      listings: [{
+        title: "Conan CGC 8.0 A VHS Tape",
+        imageUrl: "https://example.com/conan-candidate.jpg",
+      }],
+    });
+    expect(mockedInvokeLLM).not.toHaveBeenCalled();
+    expect(result.reviewedCount).toBe(0);
+    expect(result.reviews).toEqual([]);
+    expect(result.contextListings?.[0]).toMatchObject({
+      visualRequirement: "not_required_pre_visual",
+      visualReviewStatus: "mismatch",
+      evidenceDisposition: "context_only",
+    });
   });
 
   it("retains high-confidence visual mismatches as review evidence", () => {

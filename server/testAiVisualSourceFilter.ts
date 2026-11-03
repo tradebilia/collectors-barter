@@ -5449,7 +5449,7 @@ export async function filterVisualSourceCandidates<
       reviewedCount: 0,
       removedCount: preVisualContextListings.length + preVisualScoreExcludedListings.length + remainingUnrankedEligible.length,
       retainedUnreviewedCount: 0,
-      reviews: declaredReviews,
+      reviews: [],
       note: `No target listing image was supplied; ${args.sourceLabel} candidates were not visually filtered. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   const candidates = allCandidates
@@ -5475,7 +5475,7 @@ export async function filterVisualSourceCandidates<
       reviewedCount: 0,
       removedCount: preVisualContextListings.length + preVisualScoreExcludedListings.length + remainingUnrankedEligible.length,
       retainedUnreviewedCount: 0,
-      reviews: declaredReviews,
+      reviews: [],
       note: eligibleListings.length === 0
         ? `No ${args.sourceLabel.toLowerCase()} candidates remained after deterministic identity and multi-item filtering; ${preVisualContextListings.length} listing${preVisualContextListings.length === 1 ? " was" : "s were"} retained as context-only before vision.`
         : `No ${args.sourceLabel.toLowerCase()} candidate images were available; all eligible candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
@@ -5935,7 +5935,7 @@ export async function filterVisualSourceCandidates<
       reviewedCount: 0,
       removedCount: unavailableContextListings.length,
       retainedUnreviewedCount: candidates.length,
-      reviews: declaredReviews,
+      reviews: [],
       note: `The ${args.sourceLabel.toLowerCase()} visual filter was unavailable; all eligible text-filtered candidates were retained. ${preVisualContextListings.length} explicit identity or multi-item listing${preVisualContextListings.length === 1 ? " was" : "s were"} excluded before vision and retained as context-only.`,
     };
   }
