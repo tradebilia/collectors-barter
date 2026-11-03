@@ -97,6 +97,45 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.marketContextOnly).toBe(true);
   });
 
+  it('omits cosmetic condition from the primary query for an ungraded Autograph', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Marlon Brando signed paper',
+      category: 'autographs',
+      itemType: 'signed_paper',
+      condition: 'near_mint',
+      itemDetails: {
+        signer: 'Marlon Brando',
+        signedItemType: 'Paper',
+        autographCategory: 'Entertainment',
+        authenticationCompany: 'East Coast Authenticators',
+      },
+    });
+
+    expect(definition.query).toBe('autograph Marlon Brando Paper Entertainment East Coast Authenticators');
+    expect(definition.query.toLowerCase()).not.toContain('near_mint');
+  });
+
+  it('retains grade and cosmetic condition for a graded Autograph query', () => {
+    const definition = buildMarketplaceSearchDefinition({
+      title: 'Babe Ruth signed baseball',
+      category: 'autographs',
+      itemType: 'signed_baseball',
+      grade: '9',
+      condition: 'near_mint',
+      certificationCompany: 'PSA',
+      itemDetails: {
+        signer: 'Babe Ruth',
+        signedItemType: 'Baseball',
+        autographCategory: 'Sports',
+        authenticationCompany: 'PSA/DNA',
+      },
+    });
+
+    expect(definition.query).toContain('PSA');
+    expect(definition.query).toContain('9');
+    expect(definition.query.toLowerCase()).toContain('near_mint');
+  });
+
   it('keeps Original Art broad and market-context-only in the shared definition', () => {
     const definition = buildMarketplaceSearchDefinition({
       title: 'Todd McFarlane original art',

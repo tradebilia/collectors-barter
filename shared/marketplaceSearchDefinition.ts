@@ -77,13 +77,18 @@ function appendSearchContext(baseQuery: string, input: MarketplaceSearchDefiniti
   const category = categoryName(input.category);
   const grade = normalizeTestAiGrade(input.grade, cert, category);
   const condition = text(input.condition);
-  const context = cert && grade
-    ? [cert, grade]
-    : grade
-      ? [grade]
-      : condition && category !== 'video_games' && category !== 'movies'
-        ? [condition]
-        : [];
+  const context = category === 'autographs'
+    // Cosmetic condition is not a reliable primary-search anchor for an
+    // ungraded signed item. For graded Autographs, retain the grade and
+    // optional condition because they describe the graded market evidence.
+    ? (grade ? [cert, grade, condition] : [])
+    : cert && grade
+      ? [cert, grade]
+      : grade
+        ? [grade]
+        : condition && category !== 'video_games' && category !== 'movies'
+          ? [condition]
+          : [];
   return unique([baseQuery, ...context]).join(' ').slice(0, 240).trim();
 }
 
