@@ -321,10 +321,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('<MarketplaceVisualReview data={data} targetImageUrl={item.primaryPhotoUrl} sourceLabel={sourceLabel} />');
     expect(source).toContain("{reviewedListings.length} candidate image{reviewedListings.length === 1 ? '' : 's'} reviewed · {acceptedListings.length} valuation-eligible");
     expect(source).toContain("listing.visualReviewStatus !== 'not_reviewed'");
-    expect(source).toContain('This-run source outcome');
-    expect(source).toContain('Completed sales found: {listings.length}. Accepted for valuation: {acceptedListings.length}. Current-value market evidence: {currentValueListings.length}. Historical trend records: {historicalTrendListings.length}.');
-    expect(source).toContain('{acceptedListings.length}</strong> sent to valuation');
-    expect(source).toContain('{contextListings}</strong> context / review');
+    expect(source).toContain('Where this pricing evidence is going');
+    expect(source).toContain('same server-approved records shown below');
+    expect(source).toContain('<strong>{acceptedListings.length}</strong><br />sent to valuation');
+    expect(source).toContain('<strong>{currentValueListings.length}</strong><br />current-value');
+    expect(source).toContain('<strong>{historicalTrendListings.length}</strong><br />historical trend');
+    expect(source).toContain('<strong>{preVisionExcludedListings.length}</strong><br />held out');
     expect(source).toContain("<AnalyzerUseLine eligible={valuationEligible}");
     expect(source).toContain('Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.');
     expect(source).toContain("{open ? 'Hide image checks' : 'View image checks'}");
