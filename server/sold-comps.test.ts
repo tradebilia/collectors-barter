@@ -78,6 +78,22 @@ describe('Sold-Comps API key validation', () => {
       .toBe('Transformers Megatron G1 AFA 60.0');
   });
 
+  it('uses the shared three-query Autographs sequence as the authoritative order', () => {
+    expect(buildSoldCompsQueryCandidates('autograph Marlon Brando Paper Entertainment East Coast Authenticators', {
+      preserveGrade: true,
+      prioritizeFallbackQueries: true,
+      fallbackQueries: [
+        'autograph Marlon Brando Paper Entertainment East Coast Authenticators',
+        'autograph Marlon Brando Paper East Coast Authenticators',
+        'autograph Marlon Brando Paper',
+      ],
+    })).toEqual([
+      'autograph Marlon Brando Paper Entertainment East Coast Authenticators',
+      'autograph Marlon Brando Paper East Coast Authenticators',
+      'autograph Marlon Brando Paper',
+    ]);
+  });
+
   it('adds an article-omission alias for marketplace titles that omit words such as the', () => {
     const queries = buildSoldCompsQueryCandidates('Edge of the Spider-Verse #2 CGC 9.8');
 

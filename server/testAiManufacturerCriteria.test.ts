@@ -113,6 +113,11 @@ describe('Test AI manufacturer criteria', () => {
 
     expect(definition.query).toBe('autograph Marlon Brando Paper Entertainment East Coast Authenticators');
     expect(definition.query.toLowerCase()).not.toContain('near_mint');
+    expect(definition.fallbackQueries).toEqual([
+      'autograph Marlon Brando Paper Entertainment East Coast Authenticators',
+      'autograph Marlon Brando Paper East Coast Authenticators',
+      'autograph Marlon Brando Paper',
+    ]);
   });
 
   it('retains grade and cosmetic condition for a graded Autograph query', () => {
@@ -134,6 +139,11 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.query).toContain('PSA');
     expect(definition.query).toContain('9');
     expect(definition.query.toLowerCase()).toContain('near_mint');
+    expect(definition.fallbackQueries).toEqual([
+      'autograph Babe Ruth Baseball Sports PSA/DNA PSA 9 near_mint',
+      'autograph Babe Ruth Baseball PSA/DNA',
+      'autograph Babe Ruth Baseball',
+    ]);
   });
 
   it('keeps Original Art broad and market-context-only in the shared definition', () => {

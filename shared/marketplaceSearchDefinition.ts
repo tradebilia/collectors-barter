@@ -168,8 +168,23 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
   const query = category === 'cert_direct'
     ? input.title.trim()
     : appendSearchContext(baseQuery, input, details);
-  const standardFallbacks = unique([query, input.title, baseQuery]);
-  const mergedFallbacks = unique([...fallbackQueries, ...standardFallbacks]).slice(0, 10);
+  const autographFallbacks = category === 'autographs'
+    ? [
+      unique([
+        designation ?? AUTOGRAPH_SEARCH_DESIGNATION,
+        value('signer') || input.title,
+        value('signedItemType'),
+        value('authenticationCompany', 'customAuthenticationCompany'),
+      ]).join(' '),
+      unique([
+        designation ?? AUTOGRAPH_SEARCH_DESIGNATION,
+        value('signer') || input.title,
+        value('signedItemType'),
+      ]).join(' '),
+    ]
+    : [];
+  const standardFallbacks = category === 'autographs' ? [] : unique([query, input.title, baseQuery]);
+  const mergedFallbacks = unique([query, ...fallbackQueries, ...autographFallbacks, ...standardFallbacks]).slice(0, 10);
 
   return {
     category,

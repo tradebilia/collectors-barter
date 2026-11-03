@@ -358,8 +358,11 @@ function hasConditionOnlyEvidence(item: any): boolean {
     || conditionOnlyPattern.test(conditionDescription);
 }
 
-export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean; fallbackQueries?: string[] }): string[] {
+export function buildSoldCompsQueryCandidates(query: string, options?: { preserveGrade?: boolean; fallbackQueries?: string[]; prioritizeFallbackQueries?: boolean }): string[] {
   const precise = query.trim();
+  if (options?.prioritizeFallbackQueries && options.fallbackQueries?.length) {
+    return [...new Set(options.fallbackQueries.map((candidate) => candidate.trim()).filter(Boolean))];
+  }
   const withoutGrade = buildEbayBrowseQuery(precise, { preserveGrade: false });
   const withoutProviderOrGrade = withoutGrade
     .replace(new RegExp(`\\b(${gradeProviderPattern})\\b`, 'gi'), '')
@@ -1650,7 +1653,11 @@ export const testAIRouter = router({
         const targetGrade = extractGradeFromQuery(query);
         const searchQueries = input.category === 'sports_cards'
           ? buildSportsCardTestAiQueries(details, input.title, cert, grade ? String(grade) : '', input.itemType || '')
-          : buildSoldCompsQueryCandidates(query, { preserveGrade: true, fallbackQueries: standardSearchDefinition.fallbackQueries });
+          : buildSoldCompsQueryCandidates(query, {
+            preserveGrade: true,
+            fallbackQueries: standardSearchDefinition.fallbackQueries,
+            prioritizeFallbackQueries: input.category === 'autographs',
+          });
         const boundedSearchQueries = searchQueries.slice(0, EBAY_ACTIVE_QUERY_TIER_LIMIT);
         const exactQuery = boundedSearchQueries[0] ?? query;
         const exactCandidateQuery = buildEbayBrowseQuery(exactQuery, {
@@ -2534,11 +2541,12 @@ export const testAIRouter = router({
         const queryCandidates = isComicsOriginalArt(input.itemType)
           ? buildComicsOriginalArtQueries(input.itemDetails, input.title)
           : buildSoldCompsQueryCandidates(query, {
-          // Keep grade in the first sports-card query, then use the broader
-          // fallbacks. The final grade/provider filters remain authoritative.
-          preserveGrade: input.category === 'sports_cards',
-          fallbackQueries: standardSearchDefinition.fallbackQueries,
-        });
+            // Keep grade in the first sports-card query, then use the broader
+            // fallbacks. The final grade/provider filters remain authoritative.
+            preserveGrade: input.category === 'sports_cards',
+            fallbackQueries: standardSearchDefinition.fallbackQueries,
+            prioritizeFallbackQueries: input.category === 'autographs',
+          });
         const rawItems: any[] = [];
         const seenSoldKeys = new Set<string>();
         const retrievalCoverage: Array<{ query: string; received: number; status: 'success' | 'error' }> = [];
