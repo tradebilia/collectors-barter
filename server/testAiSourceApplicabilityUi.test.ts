@@ -223,6 +223,12 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('Completed sales that passed the Sold-Comps evidence gate. Final analyzer comparable-selection rules still apply.');
   });
 
+  it('keeps Goldin valuation sales on the shared evidence disposition gate', () => {
+    expect(routerSource).toContain("record.completed && record.evidenceDisposition === 'valuation_eligible'");
+    expect(routerSource).toContain('Do not rebuild Goldin');
+    expect(routerSource).not.toContain("sales: allReviewed.filter((record: any) => record.completed && record.identityMatched)");
+  });
+
   it('discloses the high-value Sold-Comps price safety gate and its exclusion treatment', () => {
     expect(source).toContain("HIGH_VALUE_SOLD_COMP_TRADE_VALUE_THRESHOLD");
     expect(source).toContain('High-value price safety check');

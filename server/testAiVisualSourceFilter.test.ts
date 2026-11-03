@@ -257,6 +257,33 @@ describe("visual source filter", () => {
     expect(autographValuationEligibility({ title: "Babe Ruth New York Yankees Single Signed Baseball JSA Authenticated" }, target)).toMatchObject({ eligible: true });
   });
 
+  it("applies the shared autograph gate to Goldin-style wrong-object and wrong-signer lots", async () => {
+    const target = buildVisualTargetMetadata({
+      title: "Babe Ruth signed baseball",
+      category: "autographs",
+      itemType: "signed_item",
+      fullItemDetails: { signer: "Babe Ruth", signedItemType: "Baseball", authenticationCompany: "PSA/DNA" },
+    });
+    const goldinLots = [
+      { title: "1929 R316 Kashin Publications Signed Babe Ruth PSA 9 MINT Autograph", completed: true },
+      { title: "Historic New York Yankees Babe Ruth Sale to Yankees Payment Check Signed By Jacob Ruppert PSA/DNA", completed: true },
+      { title: "June 12, 1939 First Day Cooperstown Envelope Signed by Ruth, Cobb, Wagner, Mack & Grove PSA/DNA", completed: true },
+      { title: "1934 Tour Of Japan Multi-Signed Ball with Ruth, Gehrig, Foxx, Mack and Berg Beckett PSA/DNA", completed: true },
+    ];
+
+    const result = await filterVisualSourceCandidates({
+      sourceRole: "marketplace",
+      sourceLabel: "Goldin specialist auction records",
+      targetMetadata: target,
+      listings: goldinLots,
+    });
+
+    expect(result.listings).toHaveLength(0);
+    expect(result.contextListings).toHaveLength(4);
+    expect(result.contextListings?.every((listing) => listing.evidenceDisposition === "context_only")).toBe(true);
+    expect(result.contextListings?.map((listing) => listing.evidenceReasons?.join(" ")).join(" ")).toMatch(/signer|signed object type|signers|score/i);
+  });
+
   it("treats signer suffixes as distinct people for Autographs valuation", () => {
     const target = buildVisualTargetMetadata({
       title: "Donald Trump signed photo",

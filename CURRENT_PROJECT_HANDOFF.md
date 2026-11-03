@@ -182,3 +182,9 @@ Corrected the specific “THIS-RUN SOURCE OUTCOME” block shown in the Batman L
 
 ## Bonhams Popular Culture removed — November 2, 2026
 Removed Bonhams Popular Culture completely from the Tradebilia source system. Deleted it from source applicability, permission-pending and sandbox specialist registries, specialist router validation, marketplace URL rules, canonical provenance metadata, comparable-engine adapter tracking, provider-health tracking, and market-news feeds. Removed stale Bonhams references from the project’s source-audit and research documents. All active source registries and source-audit documents were rechecked; the retired provider is no longer selectable or queried. Focused source/provider tests passed 93/93; TypeScript and production build passed; no database, migration, seed, destructive, credential, deployment, or publishing changes were made.
+
+
+## Goldin uses the shared Autographs valuation gate — November 2, 2026
+Goldin specialist records now keep the shared post-retrieval autograph decision authoritative. The Goldin router no longer rebuilds its `sales` list from the weaker `identityMatched` retrieval flag; only completed records with `evidenceDisposition: valuation_eligible` enter Goldin valuation sales. Wrong signers, wrong signed-object types, multi-signed lots, replica/facsimile wording, and below-threshold records remain context-only when the shared gate rejects them.
+
+Added regression coverage for Goldin-style Babe Ruth examples including a signed publication, Jacob Ruppert-signed check, multi-signed envelope, and multi-signed ball. Focused visual-filter/UI tests passed 242/242; specialist and sold-marketplace tests passed 57/57; TypeScript validation passed; production build passed. Diff hygiene passed. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes were made.

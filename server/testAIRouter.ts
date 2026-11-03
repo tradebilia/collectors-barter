@@ -2400,10 +2400,19 @@ export const testAIRouter = router({
       const visible = visualFilter.listings;
       const context = visualFilter.contextListings ?? [];
       const allReviewed = [...visible, ...context];
+      // The specialist adapter's identityMatched flag is only a broad
+      // retrieval signal. The shared visual filter applies the authoritative
+      // autograph checks (signer, signed-object type, signature count,
+      // replica wording, and the valuation score gate). Do not rebuild Goldin
+      // sales from identityMatched alone or rejected autograph lots can leak
+      // back into valuation evidence.
+      const valuationRecords = allReviewed.filter((record: any) =>
+        record.completed && record.evidenceDisposition === 'valuation_eligible'
+      );
       return {
         ...result,
-        sales: allReviewed.filter((record: any) => record.completed && record.identityMatched),
-        context: allReviewed.filter((record: any) => !(record.completed && record.identityMatched)),
+        sales: valuationRecords,
+        context: allReviewed.filter((record: any) => !valuationRecords.includes(record)),
         visualReviewListings: allReviewed,
         visualFilter,
       };
