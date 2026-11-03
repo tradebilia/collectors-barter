@@ -32,7 +32,6 @@ type AdapterId =
   | 'morphy'
   | 'theriaults'
   | 'poster_auctions'
-  | 'bonhams'
   | 'comicconnect'
   | 'university_archives'
   | 'swann'
@@ -127,7 +126,6 @@ export const CANONICAL_ADAPTER_REGISTRY: Record<AdapterId, CanonicalAdapterDefin
   morphy: { id: 'morphy', label: 'Morphy Auctions', version: '1.0.0', defaultOriginMarketplace: 'morphy', defaultPriceBasis: 'closed', completedStatusBasis: 'Morphy closed lot final price' },
   theriaults: { id: 'theriaults', label: "Theriault's Archive", version: '1.0.0', defaultOriginMarketplace: 'theriaults', defaultPriceBasis: 'unknown', completedStatusBasis: "Theriault's archived Sold listing" },
   poster_auctions: { id: 'poster_auctions', label: 'Poster Auctions International', version: '1.0.0', defaultOriginMarketplace: 'poster_auctions', defaultPriceBasis: 'closed', completedStatusBasis: 'Poster Auctions completed lot result' },
-  bonhams: { id: 'bonhams', label: 'Bonhams Popular Culture', version: '1.0.0', defaultOriginMarketplace: 'bonhams', defaultPriceBasis: 'closed', completedStatusBasis: 'Bonhams completed lot result' },
   comicconnect: { id: 'comicconnect', label: 'ComicConnect Sold Archive', version: '1.1.0', defaultOriginMarketplace: 'comicconnect', defaultPriceBasis: 'sold', completedStatusBasis: 'ComicConnect sold archive record with explicit sold amount and date' },
   university_archives: { id: 'university_archives', label: 'University Archives', version: '1.0.0', defaultOriginMarketplace: 'university_archives', defaultPriceBasis: 'unknown', completedStatusBasis: 'University Archives sold lot' },
   swann: { id: 'swann', label: 'Swann Galleries', version: '1.0.0', defaultOriginMarketplace: 'swann', defaultPriceBasis: 'closed', completedStatusBasis: 'Swann closed lot result' },

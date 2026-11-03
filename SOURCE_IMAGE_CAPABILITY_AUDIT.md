@@ -52,7 +52,7 @@ These sources may provide an image or media field for display or reference, but 
 
 These are either locator-required, permission-pending, blocked, or otherwise not verified for automatic image-bearing candidate transport:
 
-- NGC Auction Central, Rumsey, Cherrystone, Raritan, Morphy, Theriault’s, Poster Auctions International, Bonhams, Bertoia, RR Auction, and other permission-pending/locator-only specialist sources.
+- NGC Auction Central, Rumsey, Cherrystone, Raritan, Morphy, Theriault’s, Poster Auctions International, Bertoia, RR Auction, and other permission-pending/locator-only specialist sources.
 - Sources shown as `public_contract_unverified` or `price_table_locator_required` remain deliberately blocked; no image URL is guessed and no visual call is made.
 
 ## Rules to preserve while adding future filters

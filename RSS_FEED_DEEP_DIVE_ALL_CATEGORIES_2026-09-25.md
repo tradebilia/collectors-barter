@@ -96,7 +96,6 @@ Propstore, Heritage, The Digital Bits, Criterion, Mondo and Vinegar Syndrome wer
 ## Autographs — 4 candidates
 
 - [John Reznikoff — News & History](https://johnreznikoff.com/feed/) — rare-autograph, manuscript, book and photograph auction context.
-- [Bonhams Press Releases](https://www.bonhams.com/press_release/rss/) — international auction, provenance and rare-book context.
 - [Antiques And The Arts Weekly](https://www.antiquesandthearts.com/feed/) — auction reporting, estimates, demand and historical-document sales context.
 - [Rare Book Buyer](https://www.rarebookbuyer.com/feed/) — signed books, manuscripts, libraries, appraisals and provenance; moderate confidence because of dealer perspective.
 

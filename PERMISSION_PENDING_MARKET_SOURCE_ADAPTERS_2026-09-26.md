@@ -25,7 +25,7 @@ They cannot be enabled. The category-specific cards are intentionally informativ
 | Stamps | Rumsey, Cherrystone, Raritan | Lot/catalog number, condition, certificate, date, price and price basis, auction name |
 | Music | Omega Auctions, RR Auction | Artist/release, edition/pressing, condition, signed/authentication context, date, price |
 | Vintage Toys | Bertoia, Morphy, Theriault’s, Hake’s | Maker/line, scale/model, condition, lot composition, date, price |
-| Movies | Propstore, Poster Auctions International, Bonhams | Production/title, prop/costume/poster identity, provenance fields, date, price |
+| Movies | Propstore, Poster Auctions International | Production/title, prop/costume/poster identity, provenance fields, date, price |
 | Comics | ComicConnect | Publisher/title/issue/variant, grader/grade, date, price |
 | Autographs | University Archives, Swann, RR Auction, Alexander Historical | Signer, item type, inscription/authentication/provenance, date, price |
 | Video Games | Goldin, Hake’s | Platform/edition/sealed status, grader/grade, date, price |

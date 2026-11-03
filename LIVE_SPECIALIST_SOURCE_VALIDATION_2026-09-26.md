@@ -33,7 +33,6 @@
 | **Theriault’s Archive** | Vintage Toys | Schoenhut Arabian Camel listing 87064; Iki-ningyo Peddler listing 706 | **Verified** | Both public archived records exposed title, stable listing/lot ID, sold state, event date, dollar amount, and available condition context. |
 | **Propstore** | Movies | *Cast Away* Wilson Stock 139035; *Jurassic Park* Mosquito in Amber Lot 208869 | **Partial** | A public top-seller/results route exposes title, stable ID, *SOLD FOR*, date, and $403,200; ordinary completed lot pages gate the winning price behind login. The public price field is therefore inconsistent. |
 | **Poster Auctions International** | Movies | *Die Rache im Goldtal* Lot 239; *Godzilla: King of the Monsters* Lot 129 | **Verified** | The official `posterauctions.com` archive—not the older client-rendered host—returned two public film-poster results with title, stable lot route, date, dollar result, and buyer-premium context. |
-| **Bonhams Popular Culture** | Movies | *Forbidden Planet* Robby the Robot Lot 1070; Theda Bara as Cleopatra Lot 78 | **Verified** | Both public lot pages exposed title, stable auction/lot ID, date, *Sold for US$* result, and **inc. premium** wording. |
 | **ComicConnect Sold Archive** | Comics | *Spider-Man: Redemption #3* cover prelim item 1107774; *New Warriors #68* half splash item 1107787 | **Verified** | Both public item pages exposed ID, title, explicit sold time/status, USD *Sold For* amount, grade, and premium wording. |
 | **Heritage Auction Archives** | Comics | *Murder Incorporated #1* auction 7469 lot 92196; *Adventure Comics #78* auction 122132 lot 13020 | **Deferred by owner** | Prior testing found title, identifiers, date, and grading context, but numeric realized prices are **Sign-in/Join-gated**. Do not perform further checks or activation unless the owner explicitly reactivates the source. |
 | **University Archives** | Autographs | G.H.W. Bush ALS Lot 6; Abigail Adams cover Lot 2 | **Verified** | Both public lots supplied title, stable URL, explicit *Sold* amount in USD, date, and available authentication/grading context. |
@@ -56,7 +55,6 @@ The following **16 technically validated sources** can move to source-specific, 
 7. Morphy Auctions
 8. Theriault’s Archive
 9. Poster Auctions International
-10. Bonhams
 11. ComicConnect
 12. University Archives
 13. Swann Galleries

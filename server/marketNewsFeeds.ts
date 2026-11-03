@@ -249,7 +249,6 @@ export const MARKET_NEWS_FEEDS: FeedDefinition[] = [
   { source: 'Museum of the Moving Image', sourceType: 'official', category: 'Movies', url: 'https://movingimage.org/feed/' },
   { source: 'American Film Institute', sourceType: 'official', category: 'Movies', url: 'https://www.afi.com/feed/' },
   { source: 'John Reznikoff — News & History', sourceType: 'specialist', category: 'Autographs', url: 'https://johnreznikoff.com/feed/' },
-  { source: 'Bonhams Press Releases', sourceType: 'official', category: 'Autographs', url: 'https://www.bonhams.com/press_release/rss/' },
   { source: 'Antiques And The Arts Weekly', sourceType: 'specialist', category: 'Autographs', url: 'https://www.antiquesandthearts.com/feed/' },
   { source: 'Rare Book Buyer', sourceType: 'specialist', category: 'Autographs', url: 'https://www.rarebookbuyer.com/feed/' },
   { source: 'Laughing Place Disney Pins', sourceType: 'specialist', category: 'Disney Pins', url: 'https://www.laughingplace.com/w/tag/disney-pins/feed/' },

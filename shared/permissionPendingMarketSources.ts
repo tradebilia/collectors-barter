@@ -9,7 +9,6 @@ export type PermissionPendingMarketSourceId =
   | 'theriaults'
   | 'propstore'
   | 'poster_auctions'
-  | 'bonhams'
   | 'comicconnect'
   | 'heritage'
   | 'university_archives'
@@ -159,18 +158,6 @@ export const PERMISSION_PENDING_MARKET_SOURCES: readonly PermissionPendingMarket
     liveTestStatus: 'verified',
     liveTestSummary: 'Two distinct public completed film-poster lots returned title, stable lot URL, results state, date, USD result, and source wording.',
     permissionNote: 'Awaiting written permission before any automated price-guide collection.',
-  },
-  {
-    id: 'bonhams',
-    label: 'Bonhams Popular Culture',
-    categories: ['movies'],
-    sourceUrl: 'https://www.bonhams.com/',
-    purpose: 'High-end popular-culture lot descriptions, provenance, and results.',
-    priceBasis: 'including_buyers_premium',
-    status: 'pending_permission',
-    liveTestStatus: 'verified',
-    liveTestSummary: 'Two distinct public completed lots returned title, stable IDs, Sold amount in USD including premium, and sale date.',
-    permissionNote: 'Awaiting written permission before automated record collection or reuse.',
   },
   {
     id: 'comicconnect',

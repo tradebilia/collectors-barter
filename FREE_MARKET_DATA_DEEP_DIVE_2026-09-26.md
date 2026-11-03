@@ -23,7 +23,7 @@ The strongest immediate approach is a **rights-conscious sandbox layer**:
 | Stamps / philately | High | Rumsey; Cherrystone | Lot-level Scott/catalog identity, condition, certificates, realized prices | Best next specialist-source candidates, but permission before systematic collection |
 | Music collectibles / vinyl | High | Discogs identity data; Omega Auctions | Strong release identity; specialist vinyl auction results | Use Discogs CC0 catalog data for matching; keep sales-history use permissioned/manual |
 | Vintage toys | High | Bertoia; Morphy; Theriault’s | Public price-realized PDFs and antique-toy lot pages | Small provenance-rich seed set; retain premium basis and source links |
-| Movies / film memorabilia | Medium | Propstore; PAI; Bonhams | Screen-used props, costumes, posters, provenance, realized prices | Manual proof of concept or licensed integration |
+| Movies / film memorabilia | Medium | Propstore; PAI | Screen-used props, costumes, posters, provenance, realized prices | Manual proof of concept or licensed integration |
 | Comics | Medium | ComicConnect; Heritage | Sold issue/variant/grade/service/date/price records | Manual lookup only unless written automation/data permission is obtained |
 | Autographs / signed memorabilia | Medium | University Archives; Swann; RR Auction | Sold lots with inscriptions, provenance, authentication and premium fields | Hand-curated sandbox fixtures; license for recurring use |
 | Video games | Medium | Goldin; Heritage; Hake’s | High-end sealed/graded auction results | Human-facing or permissioned lookup; do not treat retailer buyback offers as sales |
@@ -84,11 +84,10 @@ The PDFs and lot pages are suitable for a small, provenance-rich sandbox seed se
 
 **Propstore’s Sold Archive** is the best category-specific starting point for screen-used props, costumes, and production material. It contains rich identity and provenance, but archive prices are auction hammer-before-premium and the archive is not a verified reusable API.
 
-**Poster Auctions International’s Price Guide** is a strong public reference for posters because it includes title, artist, date, variant, condition, lot/date, realized result, and unsold markers. **Bonhams** adds authoritative high-end comps with dimensions and provenance. Normalize the price basis carefully: Propstore may be hammer-only; PAI and Bonhams may include premium; LiveAuctioneers commonly presents hammer prices.
+**Poster Auctions International’s Price Guide** is a strong public reference for posters because it includes title, artist, date, variant, condition, lot/date, realized result, and unsold markers. Normalize the price basis carefully: Propstore may be hammer-only; PAI may include premium; LiveAuctioneers commonly presents hammer prices.
 
 - Propstore FAQs / archive context: https://propstore.com/general-faqs-2/
 - PAI price-guide usage: https://auctions.posterauctions.com/poster-price-guide-usage
-- Bonhams example: https://www.bonhams.com/auction/24465/lot/1070/the-iconic-original-robby-the-robot-suit-and-jeep-from-forbidden-planet/
 
 ### Comics — medium priority
 

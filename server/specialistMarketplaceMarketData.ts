@@ -110,7 +110,6 @@ const SOURCE_RULES: Partial<Record<SandboxSpecialistSourceId, SourceRule>> = {
   cherrystone: { hosts: ['cherrystoneauctions.com', 'www.cherrystoneauctions.com'], linkPattern: /\/_auction\/(?:pr|results)\.asp/i, recordCap: 8 },
   morphy: { hosts: ['auctions.morphyauctions.com', 'morphyauctions.com', 'www.morphyauctions.com'], linkPattern: /(?:LOT\d+\.aspx|past-auctions)/i, recordCap: 8 },
   theriaults: { hosts: ['theriaults.com', 'www.theriaults.com'], linkPattern: /\/events\/(?:event|listing|archive)/i, recordCap: 8 },
-  bonhams: { hosts: ['bonhams.com', 'www.bonhams.com'], linkPattern: /\/auction\//i, recordCap: 8 },
   university_archives: { hosts: ['universityarchives.com', 'www.universityarchives.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   alexander_historical: { hosts: ['alexautographs.com', 'www.alexautographs.com'], linkPattern: /\/(?:auction-catalog|auction-lot)\//i, recordCap: 8 },
   goldin: { hosts: ['goldin.co', 'www.goldin.co'], linkPattern: /\/item\//i, recordCap: 50 },

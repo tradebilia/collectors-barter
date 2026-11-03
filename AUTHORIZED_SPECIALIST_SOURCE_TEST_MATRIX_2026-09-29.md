@@ -14,7 +14,6 @@ Eight of sixteen sources passed the minimum public completed-item contract and a
 | cng | CNG Past Auctions | Coins | https://www.cngcoins.com/Lot.aspx?LOT_ID=207893 | LOT_ID, title, Sold For, closing date/time, category, buyer-fee terms. Displayed amount excludes buyer fee; $→USD is source-specific inference. |
 | rumsey | Rumsey Auction Results | Stamps | https://www.rumseyauctions.com/auctions/lot/125/2686 | Lot ID, title, Realized state, sale date, realized amount, sale/lot mapping. Excludes 18% buyer premium. |
 | morphy | Morphy Auctions | Vintage Toys | https://auctions.morphyauctions.com/LOT_OF_3__TOY_SOLDIERS_SETS_IN_BOXES-LOT657693.aspx | Lot ID, closed date, title/category, final price, USD-symbol context. Final prices include buyer premium. |
-| bonhams | Bonhams Popular Culture | Movies | https://www.bonhams.com/auction/27634/lot/122/goldfinger/ | Auction+lot ID, finished state, date, Sold for US$, category, inc. premium. |
 | university_archives | University Archives | Autographs | https://www.universityarchives.com/auction-lot/john-adams-signed-receipt-handsomely-displayed_6c96393481 | Stable opaque lot ID, Sold, date, price, category/catalog, 25% direct / 28% LiveAuctioneers premium terms. |
 | swann | Swann Galleries | Autographs | https://www.swanngalleries.com/auction-lot/artists-andy-warhol-and-robert-rauschenberg-exhib_441db79027 | Lot/URL suffix, Sold, date, USD display, Autographs category, Sold Price includes buyer premium. |
 
