@@ -126,32 +126,13 @@ describe("Test AI eBay active-listing responsiveness", () => {
     expect(routerSource).toContain("eBay rejected the configured sandbox authorization. Recheck the secure eBay credentials.");
   });
 
-  it("keeps custom source searches bounded and prevents eBay custom searches from paging three times", () => {
-    const customProcedure = procedureSource("runCustomSourceSearch: protectedProcedure", "    }),\n});");
-    expect(routerSource).toContain("const CUSTOM_SOURCE_LOOKUP_TIMEOUT_MS = 10_000");
-    expect(routerSource).toContain("withCustomSourceTimeout");
-    expect(customProcedure).toContain("fetchEbayListings(query, tokenResult.token, EBAY_ACTIVE_DISPLAY_TARGET, 0)");
-    expect(customProcedure).not.toContain("fetchEbayExactTierPages(query, tokenResult.token)");
-    for (const sourceLabel of ["Mercari", "TCGplayer", "TCGdex", "Wikidata", "Smithsonian", "IGDB", "RAWG"]) {
-      expect(customProcedure).toContain(`'${sourceLabel}'`);
-    }
-    expect(customProcedure).toContain("The selected source could not complete the custom search. Please try again.");
-  });
-
-  it("preserves candidate images across custom providers and renders them without cropping", () => {
-    const customProcedure = procedureSource("runCustomSourceSearch: protectedProcedure", "    }),\n});");
-    expect(routerSource).toContain("function normalizeCustomSourceImageUrl");
-    expect(routerSource).toContain("function customSourceImageUrl");
-    expect(customProcedure).toContain("withCustomSourceImages(result.listings.slice(0, 20))");
-    expect(customProcedure).toContain("withCustomSourceImages([result.data])");
-    expect(pageSource).toContain("function customSourceResultImageUrl");
-    expect(pageSource).toContain('className="h-full w-full object-contain"');
-    expect(pageSource).toContain('loading="lazy"');
-    expect(pageSource).toContain('title="Candidate image"');
-    expect(pageSource).toContain("function CustomSourceCandidateRow");
-    expect(pageSource).toContain("Search result #");
-    expect(pageSource).toContain("Ranking score: not used for this custom lookup");
-    expect(pageSource).not.toContain("object-cover");
+  it("removes the retired custom source-search path", () => {
+    expect(routerSource).not.toContain("runCustomSourceSearch");
+    expect(routerSource).not.toContain("CUSTOM_SOURCE_LOOKUP_TIMEOUT_MS");
+    expect(routerSource).not.toContain("withCustomSourceTimeout");
+    expect(pageSource).not.toContain("CustomSourceSearchPanel");
+    expect(pageSource).not.toContain("CustomSourceCandidateRow");
+    expect(pageSource).not.toContain("customSourceResultImageUrl");
   });
 
   it("keeps excluded eBay candidates visibly auditable with image and rank data", () => {

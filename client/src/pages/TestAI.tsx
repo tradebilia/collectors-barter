@@ -4429,87 +4429,6 @@ function normalizeNgcGradeForDisplay(value: string): string {
   return match ? String(Number(match[1])) : value.trim();
 }
 
-function customSourceResultImageUrl(row: any): string | null {
-  const candidates = [
-    row?.imageUrl,
-    row?.thumbnailUrl,
-    row?.image?.url,
-    row?.image?.thumbnailUrl,
-    row?.background_image,
-    row?.metadata?.background_image,
-    row?.metadata?.cover?.url,
-    row?.metadata?.screenshots?.[0]?.url,
-  ];
-  return candidates.find((value): value is string => typeof value === 'string' && /^https?:\/\//i.test(value.trim()))?.trim() ?? null;
-}
-
-function customSourceResultScore(row: any): number | null {
-  const value = row?.metadataMatchScore ?? row?.rankingScore ?? row?.matchScore;
-  const score = Number(value);
-  return Number.isFinite(score) ? score : null;
-}
-
-function CustomSourceCandidateRow({ row, index }: { row: any; index: number }) {
-  const imageUrl = customSourceResultImageUrl(row);
-  const score = customSourceResultScore(row);
-  const title = row?.title ?? row?.name ?? row?.label ?? `Result ${index + 1}`;
-  const resultNumber = Number(row?.rank ?? row?.resultRank ?? index + 1);
-  return <div className="flex items-start gap-2 border-t border-gray-800 pt-1 text-gray-300">
-    {imageUrl ? <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded border border-gray-700/70 bg-gray-900/80 p-1" title="Candidate image"><img src={imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" className="h-full w-full object-contain" onError={(event) => { event.currentTarget.style.display = 'none'; }} /></div> : <div className="h-12 w-12 shrink-0 rounded border border-dashed border-gray-800/80 bg-gray-950/40" aria-label="No candidate image supplied" />}
-    <div className="min-w-0 flex-1"><p className="break-words text-[10px] text-gray-200">{title}</p><p className="text-[9px] text-gray-500">Search result #{Number.isFinite(resultNumber) ? resultNumber : index + 1}</p>{score !== null ? <p className="text-[9px] text-cyan-200">Ranking score: <strong>{score}/100</strong></p> : <p className="text-[9px] text-gray-500">Ranking score: not used for this custom lookup</p>}</div>
-    {row?.price != null && <span className="shrink-0 text-emerald-300">{row.currency ?? '$'}{row.price}</span>}
-  </div>;
-}
-
-function CustomSourceSearchPanel({ item, side, enabledSources }: { item: SelectedItem; side: 'left' | 'right'; enabledSources: Set<SourceId> }) {
-  const sourceIds = useMemo(() => Array.from(enabledSources), [enabledSources]);
-  const [sourceId, setSourceId] = useState(sourceIds[0] ?? '');
-  const [query, setQuery] = useState('');
-  const [result, setResult] = useState<any | null>(null);
-  const search = trpc.testAI.runCustomSourceSearch.useMutation();
-  const accent = side === 'left' ? 'cyan' : 'amber';
-
-  useEffect(() => {
-    if (!sourceId || !sourceIds.includes(sourceId)) setSourceId(sourceIds[0] ?? '');
-  }, [sourceId, sourceIds]);
-
-  const selectedLabel = sourceId ? DATA_SOURCES[sourceId]?.label ?? sourceId : 'selected source';
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const trimmed = query.trim();
-    if (trimmed.length < 2 || !sourceId || isCollectionLotItemType(item.itemType)) return;
-    try {
-      setResult(await search.mutateAsync({ sourceId, query: trimmed, category: item.category, itemType: item.itemType ?? undefined }));
-    } catch (error) {
-      setResult({ status: 'error', message: error instanceof Error ? error.message : 'Custom search failed.', results: [] });
-    }
-  };
-
-  return (
-    <section className={`rounded-lg border border-${accent}-500/30 bg-${accent}-950/20 p-3 space-y-2`}>
-      <div>
-        <p className={`text-[11px] font-bold uppercase text-${accent}-300`}>Custom source search</p>
-        <p className="text-[10px] text-gray-400">Search one enabled eBay, marketplace, grading, or reference source. Results are context-only and never bypass source safeguards.</p>
-      </div>
-      <form onSubmit={submit} className="flex flex-col gap-2 sm:flex-row">
-        <select value={sourceId} onChange={(event) => { setSourceId(event.target.value); setResult(null); }} className="min-w-0 rounded border border-gray-600 bg-gray-950 px-2 py-2 text-xs text-gray-200 sm:w-56">
-          {sourceIds.map((id) => <option key={id} value={id}>{DATA_SOURCES[id]?.label ?? id}</option>)}
-        </select>
-        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${selectedLabel}`} maxLength={180} className="min-w-0 flex-1 rounded border border-gray-600 bg-gray-950 px-3 py-2 text-xs text-gray-100 placeholder:text-gray-600" />
-        <button type="submit" disabled={search.isPending || query.trim().length < 2 || !sourceId} className={`rounded bg-${accent}-600 px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50`}>
-          {search.isPending ? 'Searching…' : 'Search'}
-        </button>
-      </form>
-      {result && <div className="rounded border border-gray-700/60 bg-gray-950/60 p-2 text-[10px]">
-        <p className={result.status === 'success' ? 'text-emerald-300' : result.status === 'unsupported' ? 'text-amber-300' : 'text-red-300'}>{result.message}</p>
-        {Array.isArray(result.results) && result.results.length > 0 && <div className="mt-2 max-h-48 space-y-1 overflow-auto">
-          {result.results.slice(0, 20).map((row: any, index: number) => <CustomSourceCandidateRow key={`${row?.url ?? row?.title ?? 'result'}-${index}`} row={row} index={index} />)}
-        </div>}
-      </div>}
-    </section>
-  );
-}
-
 function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvidenceData, ebayLoading, onEbayVisualReview, soldCompsData, soldCompsLoading, mercariSoldCompsData, mercariSoldCompsLoading, tcgplayerSoldCompsData, tcgplayerSoldCompsLoading, hipstampData, hipstampSoldData, pokemonPriceTrackerData, pokemonPriceTrackerLoading, theCardApiData, theCardApiLoading, cardsightAiData, cardsightAiLoading, comcData, comcLoading, lelandsData, lelandsLoading, pristineAuctionData, pristineAuctionLoading, collectAuctionData, collectAuctionLoading, siriusSportsAuctionData, siriusSportsAuctionLoading, comicConnectData, comicConnectLoading, pcgsAuctionData, pcgsAuctionLoading, oneThirtyPointData, onEvidenceSummary, onSpecialistSales }: {
   item: SelectedItem | null;
   searchItem: SelectedItem | null;
@@ -4579,7 +4498,6 @@ function DataColumn({ item, searchItem, side, enabledSources, ebayData, ebayEvid
 
   return (
     <div className="space-y-3">
-      <CustomSourceSearchPanel item={item} side={side} enabledSources={enabledSources} />
       <EvidenceNormalizationSummary item={item} marketItem={queryItem} side={side} enabledSources={enabledSources} ebayData={ebayEvidenceData ?? ebayData} soldCompsData={soldCompsData} mercariSoldCompsData={mercariSoldCompsData} hipstampData={hipstampData} hipstampSoldData={hipstampSoldData} pokemonPriceTrackerData={pokemonPriceTrackerData} theCardApiData={theCardApiData} cardsightAiData={cardsightAiData} lelandsData={lelandsData} pristineAuctionData={pristineAuctionData} collectAuctionData={collectAuctionData} siriusSportsAuctionData={siriusSportsAuctionData} pcgsAuctionData={pcgsAuctionData} oneThirtyPointData={oneThirtyPointData} comicConnectData={comicConnectData} specialistObservations={specialistObservationList} onSummaryChange={onEvidenceSummary} />
       {enabledSources.has('ebay_active') && (
         searchItem || item.category !== 'unknown'

@@ -2,6 +2,10 @@
 
 The current project’s P0 remediation is completed. The marketplace analyzer remains subject to the existing identity, evidence, source-boundary, privacy, and Collection/Lot safeguards.
 
+## Custom Source Search retired — November 2, 2026
+
+Removed the Custom Source Search panel from Test AI and removed its `runCustomSourceSearch` router mutation, timeout helpers, provider free-text dispatch, and candidate-image presentation helpers. Test AI now uses only the configured source workflows and their standard category/item-type search definitions. Historical notes below describe the feature while it existed; they are superseded by this retirement entry. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes.
+
 ## Migration and database safety
 
 Do not apply migrations, seed scripts, destructive scripts, or production database writes from this development-only task. The existing custom database remains protected, and any database work requires the documented read-only database baseline and explicit approval gate.
