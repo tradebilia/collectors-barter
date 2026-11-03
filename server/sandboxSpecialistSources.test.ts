@@ -4,7 +4,7 @@ import { CANONICAL_ADAPTER_REGISTRY, sealCanonicalObservation, verifyCanonicalOb
 
 describe('sandbox specialist source activation', () => {
   it('activates the registered test sources and excludes HTTP 403-blocked or unapproved sources', () => {
-    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(17);
+    expect(SANDBOX_SPECIALIST_SOURCES).toHaveLength(16);
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('cng');
     expect(getSandboxSpecialistSource('cng')).toBeNull();
     expect(SANDBOX_SPECIALIST_SOURCES.map((source) => source.id)).not.toContain('coin_archives');

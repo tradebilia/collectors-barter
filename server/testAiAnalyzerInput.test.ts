@@ -6,7 +6,7 @@ const clientSource = readFileSync(new URL('../client/src/pages/TestAI.tsx', impo
 
 describe('Test AI analyzer input compatibility', () => {
   it('accepts nullable certification metadata for both analyzer items', () => {
-    const analyzeBlock = routerSource.slice(routerSource.indexOf('analyzeItems:'));
+    const analyzeBlock = routerSource.slice(routerSource.indexOf('analyzeTrade:'));
     expect(analyzeBlock.match(/certificationCompany: z\.string\(\)\.nullish\(\)/g)).toHaveLength(2);
   });
 

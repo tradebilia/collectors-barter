@@ -5,6 +5,7 @@ import { annotateSoldComparableCandidate, assessSoldCompsPreVisionCandidates, me
 
 const routerSource = readFileSync(resolve(import.meta.dirname, './testAIRouter.ts'), 'utf8');
 const pageSource = readFileSync(resolve(import.meta.dirname, '../client/src/pages/TestAI.tsx'), 'utf8');
+const sourceOutcomeSource = readFileSync(resolve(import.meta.dirname, '../client/src/components/test-ai/SourceRunOutcomeSummary.tsx'), 'utf8');
 
 describe('Mercari Video Game pre-visual filtering', () => {
   it('keeps the title gate opt-in so eBay behavior is not changed by this Mercari scope', () => {
@@ -34,7 +35,7 @@ describe('Mercari Video Game pre-visual filtering', () => {
     expect(universalPreparation).toBeGreaterThanOrEqual(0);
     expect(section).not.toContain('rankVideoGameCandidates');
     expect(section).not.toContain('selectVideoGameVisualCandidates');
-    expect(pageSource).toContain('Excluded before visual review');
+    expect(sourceOutcomeSource).toContain('<strong>Held out</strong>');
   });
 
   it('uses the shared Video Game scorer across the marketplace visual-review routes', () => {

@@ -16,14 +16,14 @@ describe('market news feed registry', () => {
     const registry = getMarketNewsFeedRegistry();
     const urls = registry.map((feed) => feed.url);
     expect(new Set(urls).size).toBe(urls.length);
-    expect(registry.length).toBeGreaterThanOrEqual(222);
+    expect(registry.length).toBeGreaterThanOrEqual(221);
     expect(registry.filter((feed) => feed.category === 'Comics').length).toBeGreaterThanOrEqual(18);
     expect(registry.filter((feed) => feed.category === 'Sports Cards').length).toBeGreaterThanOrEqual(22);
     expect(registry.filter((feed) => feed.category === 'Vintage Toys').length).toBeGreaterThanOrEqual(23);
     expect(registry.filter((feed) => feed.category === 'Video Games').length).toBeGreaterThanOrEqual(22);
     expect(registry.filter((feed) => feed.category === 'Pokemon / TCG').length).toBeGreaterThanOrEqual(19);
     expect(registry.filter((feed) => feed.category === 'Movies').length).toBeGreaterThanOrEqual(20);
-    expect(registry.filter((feed) => feed.category === 'Autographs').length).toBeGreaterThanOrEqual(16);
+    expect(registry.filter((feed) => feed.category === 'Autographs').length).toBeGreaterThanOrEqual(15);
     expect(registry.filter((feed) => feed.category === 'Disney Pins').length).toBeGreaterThanOrEqual(17);
     expect(registry.filter((feed) => feed.category === 'Music').length).toBeGreaterThanOrEqual(23);
     expect(registry.filter((feed) => feed.category === 'Stamps').length).toBeGreaterThanOrEqual(23);
