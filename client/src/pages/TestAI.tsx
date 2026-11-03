@@ -1000,7 +1000,7 @@ function AdditionalSoldCompsSection({ item, side, data, isLoading, sourceLabel, 
   const preVisionExcludedListings = data?.preVisionExcludedListings ?? [];
   const strictVisualReview = (item.category === 'disney_pins' || item.category === 'coins') && marketplace === 'Mercari';
   const acceptedListings = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
-  const reviewedListings = listings.filter((listing: any) => listing.visualReviewStatus && listing.visualReviewStatus !== 'not_reviewed');
+  const reviewedListings = listings.filter((listing: any) => hasCompletedVisualReview(listing));
   const currentValueListings = acceptedListings.filter((listing: any) => {
     const endedAt = Date.parse(String(listing.endedAt ?? ''));
     return Number.isFinite(endedAt) && Date.now() >= endedAt && Date.now() - endedAt <= 365 * 86_400_000;
@@ -1060,7 +1060,8 @@ function formatVisualReviewPrice(listing: any): string {
 
 function hasCompletedVisualReview(listing: any): boolean {
   const status = String(listing?.visualReviewStatus ?? '').trim().toLowerCase();
-  return ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
+  return listing?.visualRequirement !== 'not_required_pre_visual'
+    && ['match', 'rough_match', 'mismatch', 'unreadable'].includes(status);
 }
 
 function MarketplaceVisualReview({ data, targetImageUrl, sourceLabel, open: controlledOpen, onOpenChange }: { data: any; targetImageUrl?: string | null; sourceLabel: string; open?: boolean; onOpenChange?: (open: boolean) => void }) {
@@ -2999,10 +3000,10 @@ function EvidenceNormalizationSummary({ item, marketItem, side, enabledSources, 
     }
     if (enabledSources.has('mercari_sold_comps')) {
       const listings = mercariSoldCompsData?.listings ?? [];
-      const accepted = visualReviewAcceptedRecords(
-        listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0),
-        mercariSoldCompsData,
-      );
+      // The server has already applied the shared evidence gate and the final
+      // visual disposition. Re-filtering this list in the client can create a
+      // contradictory second count after visual-review data is merged.
+      const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);
       const currentValue = accepted.filter((listing: any) => {
         const timestamp = Date.parse(String(listing.endedAt ?? ''));
         return Number.isFinite(timestamp) && Date.now() >= timestamp && Date.now() - timestamp <= 365 * 86_400_000;

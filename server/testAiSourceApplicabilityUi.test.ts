@@ -262,7 +262,8 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain('cardApiAnalyzerSubmittedSales(visualReviewAcceptedRecords(sales, theCardApiData))');
     expect(source).toContain('sales.filter((sale: any) => sale.completed && Number(sale.price) > 0),\n        cardsightAiData');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter');
-    expect(source).toContain('visualReviewAcceptedRecords(\n        listings.filter');
+    expect(source).toContain("const accepted = listings.filter((listing: any) => listing.evidenceDisposition === 'valuation_eligible' && Number(listing.price) > 0);");
+    expect(source).toContain('server has already applied the shared evidence gate and the final');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        oneThirtyPointData');
     expect(source).toContain('visualReviewAcceptedRecords(\n        sales.filter((sale: any) => Number(sale.price ?? sale.finalPrice) > 0),\n        pwccQuery.data');
     expect(source).toContain('Identity-matched active asking price; not a completed sale.');
