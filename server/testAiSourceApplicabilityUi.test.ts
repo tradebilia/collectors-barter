@@ -292,18 +292,19 @@ describe('manual Test AI selector boundary', () => {
     expect(source).not.toContain("import { SourceRunOutcomeSummary }");
     expect(source).not.toContain('<SourceRunOutcomeSummary sourceDecisions={sourceDecisions} />');
     expect(outcomeSource).toContain('summarizeTestAiSourceRunOutcomes');
-    expect(outcomeSource).toContain('This-run source outcomes');
-    expect(outcomeSource).toContain('This is not a provider scorecard or historical reliability rate, and no result is stored.');
+    expect(outcomeSource).toContain('Where the pricing evidence is going');
+    expect(outcomeSource).toContain('Sent to valuation');
+    expect(outcomeSource).toContain('Current-value');
+    expect(outcomeSource).toContain('Historical trend');
+    expect(outcomeSource).toContain('Context only');
     expect(outcomeSource).toContain('Held out');
-    expect(outcomeSource).toContain('<strong>{sentToAnalyzer}</strong> sent to analyzer');
-    expect(outcomeSource).toContain('Completed sales found: {outcome.completed}. Accepted for valuation: {outcome.accepted}. Current-value market evidence: {outcome.currentValue}. Historical trend records: {outcome.historicalTrend}.');
-    expect(outcomeSource).toContain('Returned records');
-    expect(outcomeSource).toContain('Context / review');
+    expect(outcomeSource).toContain('<strong>{outcome.accepted}</strong> sent to valuation');
+    expect(outcomeSource).toContain('Completed sales found: {outcome.completed}. Sent to valuation is the final accepted comparable count.');
     expect(outcomeSource).toContain('timed out');
   });
 
   it('keeps market-context evidence out of the visual-analyzer submission count', () => {
-    expect(outcomeSource).toContain('const sentToAnalyzer = outcome.visualAnalysisRequired');
+    expect(outcomeSource).not.toContain('sentToAnalyzer');
     expect(source).toContain('visualAnalysisRequired: !autographMarketContext');
     expect(source).toContain("listing.evidenceDisposition === 'valuation_eligible'");
   });
@@ -322,7 +323,7 @@ describe('manual Test AI selector boundary', () => {
     expect(source).toContain("listing.visualReviewStatus !== 'not_reviewed'");
     expect(source).toContain('This-run source outcome');
     expect(source).toContain('Completed sales found: {listings.length}. Accepted for valuation: {acceptedListings.length}. Current-value market evidence: {currentValueListings.length}. Historical trend records: {historicalTrendListings.length}.');
-    expect(source).toContain('{acceptedListings.length}</strong> sent to analyzer');
+    expect(source).toContain('{acceptedListings.length}</strong> sent to valuation');
     expect(source).toContain('{contextListings}</strong> context / review');
     expect(source).toContain("<AnalyzerUseLine eligible={valuationEligible}");
     expect(source).toContain('Accepted for valuation; current-value versus historical-trend classification is shown in the source outcome summary.');
