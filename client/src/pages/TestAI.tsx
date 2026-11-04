@@ -4789,19 +4789,19 @@ export default function TestAI() {
   );
 
   const leftHipstampQuery = trpc.testAI.getHipstampData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade, condition: leftSearchItem.condition, certificationCompany: leftSearchItem.certificationCompany, itemDetails: leftSearchItem.itemDetails, imageUrl: leftSearchItem.primaryPhotoUrl, visualProvider } : { title: '', category: '' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('hipstamp') }
   );
   const rightHipstampQuery = trpc.testAI.getHipstampData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: '' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade, condition: rightSearchItem.condition, certificationCompany: rightSearchItem.certificationCompany, itemDetails: rightSearchItem.itemDetails, imageUrl: rightSearchItem.primaryPhotoUrl, visualProvider } : { title: '', category: '' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('hipstamp') }
   );
   const leftHipstampSoldQuery = trpc.testAI.getHipstampSoldData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftSearchItem.category, itemType: leftSearchItem.itemType, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? '', itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftSearchItem.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('hipstamp_sold') }
   );
   const rightHipstampSoldQuery = trpc.testAI.getHipstampSoldData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightSearchItem.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightSearchItem.category, itemType: rightSearchItem.itemType, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? '', itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightSearchItem.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('hipstamp_sold') }
   );
 
@@ -4814,19 +4814,19 @@ export default function TestAI() {
     { enabled: !rightIsCollectionLot && !!rightItem && rightSourcesEnabled.has('pokemon_price_tracker') }
   );
   const leftTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType ?? undefined, imageUrl: leftItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('the_card_api') }
   );
   const rightTheCardApiQuery = trpc.testAI.getTheCardApiData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType ?? undefined, imageUrl: rightItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('the_card_api') }
   );
   const leftCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, itemType: leftSearchItem.itemType ?? undefined, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, itemType: leftSearchItem.itemType ?? undefined, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, imageUrl: leftItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('cardsight_ai') }
   );
   const rightCardsightAiQuery = trpc.testAI.getCardsightAiData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, itemType: rightSearchItem.itemType ?? undefined, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, itemType: rightSearchItem.itemType ?? undefined, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, imageUrl: rightItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('cardsight_ai') }
   );
   const leftComcQuery = trpc.testAI.getComcData.useQuery(
@@ -4838,35 +4838,35 @@ export default function TestAI() {
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('comc_parse') }
   );
   const leftLelandsQuery = trpc.testAI.getLelandsAuctionData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('lelands') }
   );
   const rightLelandsQuery = trpc.testAI.getLelandsAuctionData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('lelands') }
   );
   const leftPristineAuctionQuery = trpc.testAI.getPristineAuctionData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('pristine_auction') }
   );
   const rightPristineAuctionQuery = trpc.testAI.getPristineAuctionData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('pristine_auction') }
   );
   const leftCollectAuctionQuery = trpc.testAI.getCollectAuctionData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('collect_auction') }
   );
   const rightCollectAuctionQuery = trpc.testAI.getCollectAuctionData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('collect_auction') }
   );
   const leftSiriusSportsAuctionQuery = trpc.testAI.getSiriusSportsAuctionData.useQuery(
-    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    leftSearchItem ? { title: leftSearchItem.title, category: leftItem?.category ?? leftSearchItem.category, grade: leftSearchItem.grade ?? undefined, condition: leftSearchItem.condition ?? undefined, certificationCompany: leftSearchItem.certificationCompany ?? undefined, itemDetails: leftSearchItem.itemDetails ?? undefined, itemType: leftSearchItem.itemType, imageUrl: leftItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('sirius_sports_auctions') }
   );
   const rightSiriusSportsAuctionQuery = trpc.testAI.getSiriusSportsAuctionData.useQuery(
-    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl } : { title: '', category: 'unknown' },
+    rightSearchItem ? { title: rightSearchItem.title, category: rightItem?.category ?? rightSearchItem.category, grade: rightSearchItem.grade ?? undefined, condition: rightSearchItem.condition ?? undefined, certificationCompany: rightSearchItem.certificationCompany ?? undefined, itemDetails: rightSearchItem.itemDetails ?? undefined, itemType: rightSearchItem.itemType, imageUrl: rightItem?.primaryPhotoUrl, visualProvider } : { title: '', category: 'unknown' },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('sirius_sports_auctions') }
   );
   const leftComicConnectQuery = trpc.testAI.getComicConnectData.useQuery(
@@ -4914,11 +4914,11 @@ export default function TestAI() {
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('tcgplayer_sold_comps') && normalizeCoverageCategory(rightSearchItem.category) === 'pokemon', retry: false }
   );
   const left130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: leftSearchItem?.title, title: leftSearchItem?.title, category: leftSearchItem?.category || '', grade: leftSearchItem?.grade, condition: leftSearchItem?.condition, certificationCompany: leftSearchItem?.certificationCompany ?? '', itemType: leftSearchItem?.itemType, itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl },
+    { query: leftSearchItem?.title, title: leftSearchItem?.title, category: leftSearchItem?.category || '', grade: leftSearchItem?.grade, condition: leftSearchItem?.condition, certificationCompany: leftSearchItem?.certificationCompany ?? '', itemType: leftSearchItem?.itemType, itemDetails: leftSearchItem?.itemDetails, imageUrl: leftSearchItem?.primaryPhotoUrl, visualProvider },
     { enabled: !leftIsCollectionLot && !!leftSearchItem && leftSourcesEnabled.has('one_thirty_point') },
   );
   const right130PointQuery = trpc.testAI.get130PointData.useQuery(
-    { query: rightSearchItem?.title, title: rightSearchItem?.title, category: rightSearchItem?.category || '', grade: rightSearchItem?.grade, condition: rightSearchItem?.condition, certificationCompany: rightSearchItem?.certificationCompany ?? '', itemType: rightSearchItem?.itemType, itemDetails: rightSearchItem?.itemDetails, imageUrl: rightSearchItem?.primaryPhotoUrl },
+    { query: rightSearchItem?.title, title: rightSearchItem?.title, category: rightSearchItem?.category || '', grade: rightSearchItem?.grade, condition: rightSearchItem?.condition, certificationCompany: rightSearchItem?.certificationCompany ?? '', itemType: rightSearchItem?.itemType, itemDetails: rightSearchItem?.itemDetails, imageUrl: rightSearchItem?.primaryPhotoUrl, visualProvider },
     { enabled: !rightIsCollectionLot && !!rightSearchItem && rightSourcesEnabled.has('one_thirty_point') },
   );
 

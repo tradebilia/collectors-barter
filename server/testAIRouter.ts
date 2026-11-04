@@ -2037,6 +2037,7 @@ export const testAIRouter = router({
       itemDetails: z.string().optional(),
       itemType: z.string().optional(),
       imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2050,6 +2051,7 @@ export const testAIRouter = router({
       if (result.error || result.listings.length === 0) return { ...result, visualFilter: null };
 
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'HIPStamp active listings',
         targetImageUrl: input.imageUrl,
@@ -2071,6 +2073,7 @@ export const testAIRouter = router({
       itemDetails: z.string().optional(),
       itemType: z.string().optional(),
       imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2082,6 +2085,7 @@ export const testAIRouter = router({
       const result = await lookupHipstampSoldListings(input);
       if (result.error || result.listings.length === 0) return { ...result, visualFilter: null };
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'HIPStamp sold / closed listings',
         targetImageUrl: input.imageUrl,
@@ -2124,6 +2128,7 @@ export const testAIRouter = router({
       itemDetails: z.string().nullish(),
       itemType: z.string().nullish(),
       imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2132,6 +2137,7 @@ export const testAIRouter = router({
       const result = await lookupTheCardApi(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'The Card API completed sales',
         targetImageUrl: input.imageUrl,
@@ -2164,6 +2170,7 @@ export const testAIRouter = router({
       itemDetails: z.string().nullish(),
       itemType: z.string().nullish(),
       imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2172,6 +2179,7 @@ export const testAIRouter = router({
       const result = await lookupCardsightAi(input);
       if (!result.sales.length) return { ...result, visualFilter: null };
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Cardsight.ai auction-price records',
         targetImageUrl: input.imageUrl,
@@ -2196,6 +2204,7 @@ export const testAIRouter = router({
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2204,6 +2213,7 @@ export const testAIRouter = router({
       const result = await lookupLelandsAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Lelands completed auction records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -2228,6 +2238,7 @@ export const testAIRouter = router({
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2236,6 +2247,7 @@ export const testAIRouter = router({
       const result = await lookupPristineAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Pristine Auction completed records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -2260,6 +2272,7 @@ export const testAIRouter = router({
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2268,6 +2281,7 @@ export const testAIRouter = router({
       const result = await lookupCollectAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Collect Auctions completed records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -2289,6 +2303,7 @@ export const testAIRouter = router({
     .input(z.object({
       title: z.string(), category: z.string(), grade: z.string().nullish(), condition: z.string().nullish(),
       certificationCompany: z.string().nullish(), itemDetails: z.string().nullish(), itemType: z.string().nullish(), imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -2297,6 +2312,7 @@ export const testAIRouter = router({
       const result = await lookupSiriusSportsAuctions(input);
       if (!result.sales.length) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'Sirius Sports Auctions completed records', targetImageUrl: input.imageUrl,
         targetMetadata: buildVisualTargetMetadata({ title: input.title, category: input.category, itemType: input.itemType, grade: input.grade, certificationCompany: input.certificationCompany, itemDetails: input.itemDetails }),
@@ -2830,6 +2846,7 @@ export const testAIRouter = router({
         // image it returns after universal/category context classification and
         // makes no AI call; with an image it continues into bounded review.
         const sharedVisualFilter = await filterVisualSourceCandidates({
+          visualProvider: input.visualProvider,
               sourceRole: 'ebay',
           sourceLabel: 'eBay Sold-Comps',
           targetImageUrl: safeTargetImage,
@@ -3140,6 +3157,7 @@ export const testAIRouter = router({
         sourceLabel: visualSourceLabel,
         targetImageUrl: safeTargetImage,
         targetMetadata,
+        visualProvider: input.visualProvider,
         ignoreSubjectiveConditionDifferences: true,
         listings: result.listings.map((listing) => ({
           ...(listing.canonicalCandidate ?? {}),
@@ -3582,7 +3600,7 @@ export const testAIRouter = router({
 
   // Parse.bot 130point sold-card search — administrator-only and read-only.
   get130PointData: protectedProcedure
-    .input(z.object({ query: z.string().trim().max(240).optional(), title: z.string().trim().max(240).optional(), category: z.string().trim(), grade: z.string().trim().max(32).optional(), condition: z.string().trim().max(80).optional(), certificationCompany: z.string().trim().max(80).optional(), itemType: z.string().trim().max(80).optional(), itemDetails: z.string().optional(), imageUrl: z.string().url().optional() }))
+    .input(z.object({ query: z.string().trim().max(240).optional(), title: z.string().trim().max(240).optional(), category: z.string().trim(), grade: z.string().trim().max(32).optional(), condition: z.string().trim().max(80).optional(), certificationCompany: z.string().trim().max(80).optional(), itemType: z.string().trim().max(80).optional(), itemDetails: z.string().optional(), imageUrl: z.string().url().optional(), visualProvider: z.enum(['manus_forge', 'openai']).optional() }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
       const collectionLotBlock = collectionLotGuard(input);
@@ -3590,6 +3608,7 @@ export const testAIRouter = router({
       const result = await lookupParse130PointSales(input);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: '130point sold listings',
         targetImageUrl: input.imageUrl,
@@ -3622,6 +3641,7 @@ export const testAIRouter = router({
       itemType: z.string().trim().max(80).optional(),
       itemDetails: z.string().optional(),
       imageUrl: z.string().url().optional(),
+      visualProvider: z.enum(['manus_forge', 'openai']).optional(),
     }))
     .query(async ({ ctx, input }) => {
       if (ctx.user.role !== 'admin') throw new TRPCError({ code: 'FORBIDDEN' });
@@ -3630,6 +3650,7 @@ export const testAIRouter = router({
       const result = await lookupPwccSales(input.query);
       if (result.status !== 'success' || !result.data) return result;
       const visualFilter = await filterVisualSourceCandidates({
+        visualProvider: input.visualProvider,
               sourceRole: 'marketplace',
         sourceLabel: 'PWCC / Fanatics Collect sold listings',
         targetImageUrl: input.imageUrl,

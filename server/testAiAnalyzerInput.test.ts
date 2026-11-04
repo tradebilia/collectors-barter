@@ -32,6 +32,47 @@ describe('Test AI analyzer input compatibility', () => {
     expect(clientSource).toContain('Image-Review Impact Check');
   });
 
+  it('forwards the sandbox visual-provider toggle to every image-review source', () => {
+    const visualSourceLabels = [
+      'eBay Sold-Comps',
+      'HIPStamp active listings',
+      'HIPStamp sold / closed listings',
+      'The Card API completed sales',
+      'Cardsight.ai auction-price records',
+      'Lelands completed auction records',
+      'Pristine Auction completed records',
+      'Collect Auctions completed records',
+      'Sirius Sports Auctions completed records',
+      '130point sold listings',
+      'PWCC / Fanatics Collect sold listings',
+    ];
+    for (const label of visualSourceLabels) {
+      const sourceMarker = `sourceLabel: '${label}'`;
+      const occurrences: number[] = [];
+      let occurrence = routerSource.indexOf(sourceMarker);
+      while (occurrence >= 0) {
+        occurrences.push(occurrence);
+        occurrence = routerSource.indexOf(sourceMarker, occurrence + sourceMarker.length);
+      }
+      expect(occurrences.length, `${label} must exist`).toBeGreaterThan(0);
+      expect(
+        occurrences.some((sourceStart) => routerSource.slice(Math.max(0, sourceStart - 260), sourceStart).includes('visualProvider: input.visualProvider')),
+        `${label} must forward visualProvider`,
+      ).toBe(true);
+    }
+    for (const queryName of [
+      'leftHipstampQuery', 'leftHipstampSoldQuery', 'leftTheCardApiQuery', 'leftCardsightAiQuery',
+      'leftLelandsQuery', 'leftPristineAuctionQuery', 'leftCollectAuctionQuery', 'leftSiriusSportsAuctionQuery',
+      'left130PointQuery',
+    ]) {
+      const queryStart = clientSource.indexOf(`const ${queryName}`);
+      expect(queryStart, `${queryName} must exist`).toBeGreaterThanOrEqual(0);
+      expect(clientSource.slice(queryStart, queryStart + 900), `${queryName} must send visualProvider`).toContain('visualProvider');
+    }
+    expect(routerSource).toContain("visualProvider: z.enum(['manus_forge', 'openai']).optional()");
+    expect(clientSource).toContain('const [visualProvider, setVisualProvider]');
+  });
+
   it('supports a separate A/B toggle for temporary visual missing-field context', () => {
     expect(routerSource).toContain('useVisualFieldCompletion: z.boolean().optional().default(false)');
     expect(routerSource).toContain('scanMissingFieldsForAnalysis');
