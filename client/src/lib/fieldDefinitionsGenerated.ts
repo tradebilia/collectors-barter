@@ -139,7 +139,7 @@ export const AUTOGRAPHS_SIGNED_ITEM_FIELDS: FieldDefinition[] = [
     label: 'Authentication Company',
     inputType: 'dropdown',
     requirement: 'required',
-    dropdownOptions: ['PSA/DNA', 'JSA', 'Beckett Authentication Services', 'Other'],
+    dropdownOptions: ['PSA/DNA', 'JSA', 'UDA', 'Beckett Authentication Services', 'Other'],
     supportsOther: true,
     inlineCustomField: true,
     otherFieldName: 'Custom Authentication Company',
