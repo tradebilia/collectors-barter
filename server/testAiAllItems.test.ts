@@ -43,6 +43,19 @@ describe('Test AI all-sandbox-items selector', () => {
     expect(pageSource).toContain('administrator-only analyzer sandbox');
   });
 
+  it('groups both item selector modes by category and keeps option details intact', () => {
+    expect(pageSource).toContain('const groupedSelectableItems = Array.from(');
+    expect(pageSource).toContain('<optgroup key={group.label} label={group.label}>');
+    expect(pageSource).toContain(".sort((left, right) => left.label.localeCompare(right.label))");
+    expect(pageSource).toContain("items: [...group.items].sort((left, right) => String(left.title ?? '').localeCompare(String(right.title ?? '')))");
+    expect(pageSource).toContain("? rawCategory.replace(/[_-]+/g, ' ').replace(/\\b\\w/g, character => character.toUpperCase())");
+    expect(pageSource).toContain(": 'Uncategorized'");
+    expect(pageSource).toContain('ownerDisplayName');
+    expect(pageSource).toContain('formatGrade(i.grade)');
+    expect(pageSource).toContain('formatItemValue(i.estimatedValue)');
+    expect(pageSource).toContain('itemAvailabilityLabel(i)');
+  });
+
   it('does not render an empty Item B column and preserves the Collection/Lot data-panel block', () => {
     expect(pageSource).toContain("${leftItem && rightItem ? 'grid-cols-2' : 'grid-cols-1'}");
     expect(pageSource).toContain('{rightItem && <SourceSelector enabled={rightSourcesEnabled}');

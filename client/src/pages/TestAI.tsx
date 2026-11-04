@@ -685,6 +685,25 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
   const selectableItems = inventoryScope === 'all' ? sandboxItems : inventory;
   const selectableItemsLoading = inventoryScope === 'all' ? sandboxItemsLoading : inventoryLoading;
 
+  const groupedSelectableItems = Array.from(
+    selectableItems.reduce((groups: Map<string, { label: string; items: any[] }>, currentItem: any) => {
+      const rawCategory = String(currentItem.category ?? '').trim();
+      const label = rawCategory && rawCategory.toLowerCase() !== 'unknown'
+        ? rawCategory.replace(/[_-]+/g, ' ').replace(/\b\w/g, character => character.toUpperCase())
+        : 'Uncategorized';
+      const key = label.toLowerCase();
+      const group = groups.get(key) ?? { label, items: [] };
+      group.items.push(currentItem);
+      groups.set(key, group);
+      return groups;
+    }, new Map<string, { label: string; items: any[] }>()).values(),
+  )
+    .sort((left, right) => left.label.localeCompare(right.label))
+    .map(group => ({
+      ...group,
+      items: [...group.items].sort((left, right) => String(left.title ?? '').localeCompare(String(right.title ?? ''))),
+    }));
+
   const handleInventorySelect = (id: number) => {
     setSelectedInventoryId(id);
     const found = selectableItems.find((i: any) => i.id === id);
@@ -750,10 +769,14 @@ function ItemPanel({ side, item, onItemChange, onSourceChange, inventory, invent
             <select value={selectedInventoryId ?? ''} onChange={e => handleInventorySelect(Number(e.target.value))}
               className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none">
               <option value="">— Select an item —</option>
-              {selectableItems.map((i: any) => (
-                <option key={i.id} value={i.id}>
-                  {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${formatGrade(i.grade)})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''} — {itemAvailabilityLabel(i)}
-                </option>
+              {groupedSelectableItems.map(group => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.items.map((i: any) => (
+                    <option key={i.id} value={i.id}>
+                      {i.title}{inventoryScope === 'all' && i.ownerDisplayName ? ` — ${i.ownerDisplayName}` : ''}{i.grade ? ` (Grade ${formatGrade(i.grade)})` : ''}{i.estimatedValue != null ? ` — ${formatItemValue(i.estimatedValue)}` : ''} — {itemAvailabilityLabel(i)}
+                    </option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           )}
