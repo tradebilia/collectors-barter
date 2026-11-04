@@ -14,6 +14,9 @@ Do not apply migrations, seed scripts, destructive scripts, or production databa
 
 P1 performance and maintainability work remains bounded by focused tests, TypeScript validation, production-build validation, and diff review. Provider-specific marketplace behavior must remain source-safe and must not weaken marketplace versus grading/reference boundaries.
 
+## Autograph Category removed from marketplace search construction — November 3, 2026
+Autograph Category is no longer included in the shared Autographs marketplace query or its two fallback queries. The primary query now uses the autograph designation, signer, signed-item type, authentication company, and inscription when available; grade, grading company, and condition remain available only for graded Autographs. The direct eBay and Sold-Comps builders were aligned with the shared definition, and query regressions were updated. The Autograph Category field remains available for existing non-search UI and matching behavior unless separately retired. No database, migration, seed, destructive, credential, provider, deployment, or publishing changes.
+
 ## Standard marketplace search definition — October 31, 2026
 
 Added one source-neutral category/item-type search definition used by eBay Active and Sold-Comps, with the same structured identity fields routed into 130point, Parse.bot auction searches, COMC, TheCardApi, and Hake’s. It covers category-specific fields for Sports Cards, Comics, Video Games, Movies, Autographs, Pokémon, Vintage Toys, Disney Pins, Stamps, Music, and Coins; Autographs retain their `autograph` designation and market-context-only behavior, while Original Art retains its similar-items market-range behavior. Existing provider-specific URL/API formatting and bounded fallback tiers remain intact where required by tested source contracts, including Goldin and HIPStamp. Collection/Lot and grading/reference source boundaries were not changed.

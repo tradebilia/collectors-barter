@@ -94,7 +94,7 @@ describe('bounded specialist marketplace adapters', () => {
       title: 'Donald Trump signed photo',
       category: 'autographs',
       itemDetails: JSON.stringify({ signer: 'Donald Trump', signedItemType: 'Photo', autographCategory: 'Presidential', authenticationCompany: 'JSA' }),
-    })).toBe('autograph Donald Trump Photo Presidential JSA');
+    })).toBe('autograph Donald Trump Photo JSA');
   });
 
   it('omits grading company and grade from every Goldin video-game search query', () => {
@@ -323,7 +323,7 @@ describe('bounded specialist marketplace adapters', () => {
   it('uses the shared Autographs identity definition for Nate Sanders keyword search', () => {
     const request = buildSpecialistMarketplaceRequest(nateAutograph);
     expect(request.error).toBeNull();
-    expect(request.url).toContain('searchvalue=autograph%20Donald%20Trump%20Photograph%20Sports%20%26%20Entertainment');
+    expect(request.url).toContain('searchvalue=autograph%20Donald%20Trump%20Photograph');
   });
 
   it('rejects replica wording in specialist autograph identity review before any source can admit valuation', () => {

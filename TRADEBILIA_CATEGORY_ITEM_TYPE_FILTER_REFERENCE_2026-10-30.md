@@ -321,9 +321,9 @@ All five Music formats share the same 100-point model, but the format identity g
 
 ### Signed Item
 
-**Identity filter fields:** signer, signed item type, autograph category, authentication company, inscription/personalization, and signed status where available.
+**Identity filter fields:** signer, signed item type, authentication company, inscription/personalization, and signed status where available. Autograph Category is not used in marketplace search construction.
 
-**100-point market-relevance model:** signer 35; signed item type 25; autograph category 10; authentication company 20; inscription 10.
+**100-point market-relevance model:** signer 35; signed item type 25; autograph category 10; authentication company 20; inscription 10. This ranking field is separate from marketplace search construction.
 
 **Workflow:** signed pucks, balls, photos, jerseys, helmets, books, and similar items are not expected to be physically identical. Results are used to establish a market range for similar signed items, not to claim an exact visual match.
 

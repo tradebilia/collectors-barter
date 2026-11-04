@@ -1624,12 +1624,11 @@ export const testAIRouter = router({
       if (input.category === 'autographs') {
         const signer = details.signer || input.title;
         const itemType = details.signedItemType || '';
-        const autographCategory = details.autographCategory || '';
         const authCompany = input.certificationCompany === 'Other' 
           ? (details.customAuthenticationCompany || '')
           : (input.certificationCompany || '');
         const inscription = details.inscription || details.inscriptionText || details.personalization || '';
-        const parts = [AUTOGRAPH_SEARCH_DESIGNATION, signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
+        const parts = [AUTOGRAPH_SEARCH_DESIGNATION, signer, itemType, authCompany, inscription].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
         console.log(`[Autographs Debug] signer="${signer}", itemType="${itemType}", authCompany="${authCompany}", query="${query}"`);
       }
@@ -2488,12 +2487,11 @@ export const testAIRouter = router({
       else if (input.category === 'autographs') {
         const signer = details.signer || input.title;
         const itemType = details.signedItemType || '';
-        const autographCategory = details.autographCategory || '';
         const authCompany = input.certificationCompany === 'Other'
           ? (details.customAuthenticationCompany || '')
           : (input.certificationCompany || '');
         const inscription = details.inscription || details.inscriptionText || details.personalization || '';
-        const parts = [AUTOGRAPH_SEARCH_DESIGNATION, signer, itemType, autographCategory, authCompany, inscription].filter((p: string) => p);
+        const parts = [AUTOGRAPH_SEARCH_DESIGNATION, signer, itemType, authCompany, inscription].filter((p: string) => p);
         query = parts.join(' ').trim() || input.title;
       }
       // Pokemon

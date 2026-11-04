@@ -52,7 +52,7 @@ The eBay/Sold-Comps query can include, depending on item type:
 - year/release/publication date;
 - set, series, issue, card number, Scott number, catalog number, UPC/EAN, model number, or certificate/grade identifiers;
 - format, platform, region, edition, finish, language, packaging, sealed/opened status, and authentication/grading terms;
-- Autographs default designation plus signer, signed-object type, autograph category, authentication evidence, and inscription when available.
+- Autographs default designation plus signer, signed-object type, authentication evidence, and inscription when available. Autograph Category is not used in marketplace search construction.
 
 ### 3.2 Other marketplace and specialist sources
 
@@ -75,7 +75,7 @@ The following sections list every current item type. “Available inventory fiel
 ### Autographs / Signed Item
 
 **Pipeline status:** Market range; no visual review.  
-**Standard search identity:** Signer, Signed Item Type, Autograph Category, Authentication Included, Authentication Company, Authentication Type, Certificate Number.
+**Standard search identity:** Signer, Signed Item Type, Authentication Included, Authentication Company, Authentication Type, Certificate Number. Autograph Category is not part of the marketplace search query.
 
 **Available inventory fields:**
 - **Listing Title** (`listingTitle`) — required.

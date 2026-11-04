@@ -91,9 +91,9 @@ describe('Test AI manufacturer criteria', () => {
       },
     });
 
-    expect(definition.query).toBe('autograph Wayne Gretzky Hockey Puck Sports JSA HOF');
+    expect(definition.query).toBe('autograph Wayne Gretzky Hockey Puck JSA HOF');
     expect(definition.baseQuery).toBe(definition.query);
-    expect(definition.fieldsUsed).toEqual(['signer', 'signed item type', 'autograph category', 'authentication company', 'inscription']);
+    expect(definition.fieldsUsed).toEqual(['signer', 'signed item type', 'authentication company', 'inscription']);
     expect(definition.marketContextOnly).toBe(true);
   });
 
@@ -111,10 +111,9 @@ describe('Test AI manufacturer criteria', () => {
       },
     });
 
-    expect(definition.query).toBe('autograph Marlon Brando Paper Entertainment East Coast Authenticators');
+    expect(definition.query).toBe('autograph Marlon Brando Paper East Coast Authenticators');
     expect(definition.query.toLowerCase()).not.toContain('near_mint');
     expect(definition.fallbackQueries).toEqual([
-      'autograph Marlon Brando Paper Entertainment East Coast Authenticators',
       'autograph Marlon Brando Paper East Coast Authenticators',
       'autograph Marlon Brando Paper',
     ]);
@@ -140,7 +139,7 @@ describe('Test AI manufacturer criteria', () => {
     expect(definition.query).toContain('9');
     expect(definition.query.toLowerCase()).toContain('near_mint');
     expect(definition.fallbackQueries).toEqual([
-      'autograph Babe Ruth Baseball Sports PSA/DNA PSA 9 near_mint',
+      'autograph Babe Ruth Baseball PSA/DNA PSA 9 near_mint',
       'autograph Babe Ruth Baseball PSA/DNA',
       'autograph Babe Ruth Baseball',
     ]);

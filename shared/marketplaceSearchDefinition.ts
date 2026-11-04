@@ -137,8 +137,8 @@ export function buildMarketplaceSearchDefinition(input: MarketplaceSearchDefinit
     fieldsUsed.push('movie title', 'format');
   } else if (category === 'autographs') {
     designation = AUTOGRAPH_SEARCH_DESIGNATION;
-    baseTerms = [designation, value('signer') || input.title, value('signedItemType'), value('autographCategory'), value('authenticationCompany', 'customAuthenticationCompany'), value('inscription', 'inscriptionText', 'personalization')];
-    fieldsUsed.push('signer', 'signed item type', 'autograph category', 'authentication company', 'inscription');
+    baseTerms = [designation, value('signer') || input.title, value('signedItemType'), value('authenticationCompany', 'customAuthenticationCompany'), value('inscription', 'inscriptionText', 'personalization')];
+    fieldsUsed.push('signer', 'signed item type', 'authentication company', 'inscription');
     marketContextOnly = true;
   } else if (category === 'pokemon') {
     baseTerms = [value('year'), value('editionEra'), value('cardName', 'pokemonName', 'name'), value('cardNumber', 'cardNo', 'number'), value('finish', 'finishVariant'), value('cardType', 'mechanic'), value('language')];
