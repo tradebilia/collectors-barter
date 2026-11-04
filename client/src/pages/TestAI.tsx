@@ -460,6 +460,15 @@ const SOURCE_TEST_RESULTS: Record<string, 'match' | 'mismatch'> = {
 // treat any of them as currently verified until the source is tested again.
 const SOURCE_COVERAGE_RESET_TO_PENDING = true;
 
+// These Movie marketplace paths have now been explicitly confirmed for the
+// current source matrix. They remain visible as matching while the broader
+// post-change verification reset stays active for every other source.
+const SOURCE_COVERAGE_CONFIRMED_MATCHES = new Set([
+  'movies:ebay_active',
+  'movies:sold_comps',
+  'movies:mercari_sold_comps',
+]);
+
 const SOURCE_COVERAGE_CATEGORY_ORDER = ['comics', 'sports cards', 'vintage toys', 'video games', 'stamps', 'coins', 'pokemon', 'movies', 'music', 'autographs', 'disney pins'] as const;
 
 // Sources intentionally omitted from this manual coverage list. This does
@@ -480,11 +489,20 @@ function SourceCoverageTracker() {
       const applies = source.categories === '*' || source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category);
       return applies && !isSandboxSiteBlockedSource(source.sourceId);
     });
-    const activeSources = applicableSources.filter((source) => !SOURCE_COVERAGE_RESET_TO_PENDING && SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] === 'match');
+    const activeSources = applicableSources.filter((source) => {
+      const key = `${category}:${source.sourceId}`;
+      return SOURCE_TEST_RESULTS[key] === 'match' && (!SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key));
+    });
     const pendingSourceIds = Array.from(new Set([
-      ...applicableSources.filter((source) => SOURCE_TEST_RESULTS[`${category}:${source.sourceId}`] !== 'match').map((source) => source.sourceId),
+      ...applicableSources.filter((source) => {
+        const key = `${category}:${source.sourceId}`;
+        return SOURCE_TEST_RESULTS[key] !== 'match' || (SOURCE_COVERAGE_RESET_TO_PENDING && !SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key));
+      }).map((source) => source.sourceId),
       ...SANDBOX_SPECIALIST_SOURCES.filter((source) => source.evidenceMode === 'context_only_until_adapter' && !SOURCE_COVERAGE_EXCLUDED_PENDING_SOURCE_IDS.has(source.id) && source.categories.some((candidate) => normalizeCoverageCategory(candidate) === category)).map((source) => source.id),
-    ])).filter((sourceId) => SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_TEST_RESULTS[`${category}:${sourceId}`] !== 'match');
+    ])).filter((sourceId) => {
+      const key = `${category}:${sourceId}`;
+      return !SOURCE_COVERAGE_CONFIRMED_MATCHES.has(key) && (SOURCE_COVERAGE_RESET_TO_PENDING || SOURCE_TEST_RESULTS[key] !== 'match');
+    });
     return { category, activeSources, pendingSourceIds };
   });
 
