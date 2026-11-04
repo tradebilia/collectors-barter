@@ -422,6 +422,7 @@
   "server/apiProviderHealthSpecialistsUi.test.ts",
   "server/apifyCredentials.test.ts",
   "server/auth.logout.test.ts",
+  "server/authenticationCompanyOptions.test.ts",
   "server/avatarImageFit.test.ts",
   "server/buildStamp.test.ts",
   "server/cardsightAi.test.ts",

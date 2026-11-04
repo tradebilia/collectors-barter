@@ -1038,6 +1038,7 @@ export function annotateSoldComparableCandidate(
     && confirmedVisualIdentity
     && carriedVisualAudit?.retryStatus === 'performed'
     && carriedVisualAudit?.finalPass === 'high_resolution_retry'
+    && carriedVisualAudit?.adjudicationStatus === 'confirmed'
     && disneyFinalEvidence?.characterMatches === true
     && disneyFinalEvidence?.artworkMatches === true
     && disneyFinalEvidence?.silhouetteMatches === true
