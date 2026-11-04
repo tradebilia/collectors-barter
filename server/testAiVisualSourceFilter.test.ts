@@ -2294,6 +2294,19 @@ describe("visual source filter", () => {
     expect(buildDeclaredIdentityReviews([{ title: "Disney Pin", imageUrl: "https://example.com/unknown.jpg" }], target)).toHaveLength(0);
   });
 
+  it("accepts descriptive Disney Pins titles when the meaningful individual-pin name is present", () => {
+    const target = buildVisualTargetMetadata({
+      title: "Donald Duck Black & White Snapshots",
+      category: "disney_pins",
+      itemType: "single_pin",
+      fullItemDetails: { pinName: "Donald Duck Black & White Snapshots", character: "Donald Duck", series: "Snapshots" },
+    });
+    expect(buildDeclaredIdentityReviews([{ title: "2011 Walt Disney World Pin 84196 WDW Donald Duck Black & White Snapshots", imageUrl: "https://example.com/catalog.jpg" }], target)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "Disney Trading Pin - Donald Duck Black & White Snapshots", imageUrl: "https://example.com/trading.jpg" }], target)).toHaveLength(0);
+    expect(buildDeclaredIdentityReviews([{ title: "Minnie Mouse Black & White Snapshots Disney Pin", imageUrl: "https://example.com/wrong-character.jpg" }], target)[0]?.rationale).toContain("pin name differs");
+    expect(buildDeclaredIdentityReviews([{ title: "DLR PWP Collection Sepia Snapshots Donald Duck Black White Disney Pin (A2)", imageUrl: "https://example.com/lot.jpg" }], target)[0]?.rationale).toContain("collection, lot");
+  });
+
   it("requires a focused escalation for every initial mismatch against a graded target", () => {
     const args = {
       title: "Mario Bros. 3 NES Nintendo Game PSA Graded 9.0 CIB Complete In Box Oval Seal",

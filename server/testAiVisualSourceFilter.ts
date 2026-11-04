@@ -506,6 +506,17 @@ function disneyPinsValuesConflict(targetValue: unknown, candidateValue: unknown)
   return !target.includes(candidate) && !candidate.includes(target);
 }
 
+function disneyPinsPinNameValuesConflict(targetValue: unknown, candidateValue: unknown): boolean {
+  const genericWords = new Set(["disney", "trading", "pin", "pins"]);
+  const meaningfulWords = (value: unknown) => disneyPinsComparableValue(value)
+    .split(" ")
+    .filter((word) => word && !genericWords.has(word));
+  const targetWords = meaningfulWords(targetValue);
+  const candidateWords = meaningfulWords(candidateValue);
+  if (!targetWords.length || !candidateWords.length) return false;
+  return !targetWords.every((word) => candidateWords.includes(word));
+}
+
 function disneyPinsExplicitValue(listing: VisualSourceCandidate, aliases: string[], titlePatterns: RegExp[] = []): string {
   const details = candidateStructuredDetails(listing);
   const structured = aliases.filter((key) => key !== "title").map((key) => listing[key] ?? details[key]).find((value) => String(value ?? "").trim());
@@ -563,10 +574,13 @@ function disneyPinsIdentityConflict(targetMetadata: string, listing: VisualSourc
         ["set name", target.setName ?? extractTargetTitle(targetMetadata), ["setName", "series", "seriesName", "title"], []],
         ["series", target.series, ["series", "seriesName"], []],
         ["characters included", target.charactersIncluded, ["charactersIncluded", "characters", "characterList"], []],
-      ];
+  ];
   for (const [label, targetValue, aliases, titlePatterns] of checks) {
     const candidateValue = disneyPinsExplicitValue(listing, aliases, titlePatterns);
-    if (disneyPinsValuesConflict(targetValue, candidateValue)) return `Disney Pins ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${candidateValue}.`;
+    const conflicts = label === "pin name"
+      ? disneyPinsPinNameValuesConflict(targetValue, candidateValue)
+      : disneyPinsValuesConflict(targetValue, candidateValue);
+    if (conflicts) return `Disney Pins ${label} differs: target explicitly declares ${String(targetValue)}, but the candidate explicitly declares ${candidateValue}.`;
   }
   if (targetType === "individual_pin") {
     for (const [label, targetValue, aliases] of [
